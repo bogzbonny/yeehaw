@@ -1,11 +1,10 @@
-use crate::Event;
-
 // Priority is a rank to determine which element should be receiving user
 // key strokes as they come in. When an element is in focus it should be given
 // the priority of Focused which can only be exceeded if an element is given the
 // Highest priority.
 // NONE for unchanged
-pub struct Priority(Option<usize>);
+#[derive(Clone, Copy)]
+pub struct Priority(pub Option<u8>);
 
 //const (
 //    Highest      Priority = 0
@@ -16,12 +15,16 @@ pub struct Priority(Option<usize>);
 //    Unchanged Priority = -1 // used for when changing priorities
 //)
 
+// TRANSLATION NOTE replaced by just Event
+// TODO delete post translation
+//
 // PrioritizableEv is a type capable of being prioritized by the EvPrioritizer.
 // It can be thought of as an Event or a category of Event capable of
 // categorizing whether or not another event is a part of the category.
-pub trait PrioritizableEv {
-    // The input_event  allows the PrioritizableEv to test whether it
-    // matches an input event of arbitrary kind.
-    fn matches(&self, input_event: &Event) -> bool;
-    fn key(&self) -> String;
-}
+//pub trait PrioritizableEv: Clone + Sized {
+//pub trait PrioritizableEv {
+//    // The input_event  allows the PrioritizableEv to test whether it
+//    // matches an input event of arbitrary kind.
+//    fn matches(&self, input_event: &Event) -> bool;
+//    fn key(&self) -> String; // unique key for the event
+//}

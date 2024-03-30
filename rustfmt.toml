@@ -1,0 +1,21 @@
+edition = "2021"
+fn_args_layout = "Compressed"
+use_field_init_shorthand = true
+use_try_shorthand = true
+single_line_if_else_max_width = 100
+
+# Things I'd like to have if on unstable
+#version = "Two"
+#unstable_features = true
+#fn_single_line = true
+#indent_style = "Visual"
+#overflow_delimited_expr = true
+#struct_field_align_threshold = 40
+#enum_discrim_align_threshold = 40
+#normalize_doc_attributes = true
+#format_code_in_doc_comments = true
+#format_strings = true
+#normalize_comments = false
+#wrap_comments = false
+
+

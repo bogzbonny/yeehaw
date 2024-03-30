@@ -8,7 +8,7 @@
     cui_keyboard.go                      │ 
     cui_location.go                      │ DONE
     debug.go                             │ 
-    element.go                           │ 
+    element.go                           │ DONE
     element_organizer.go                 │ 
     event.go                             │ DONE
     GLOSSARY.md                          │ DONE

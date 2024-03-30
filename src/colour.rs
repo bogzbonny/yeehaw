@@ -406,11 +406,7 @@ pub struct ColourScheme {
 
 impl ColourScheme {
     pub const fn new(
-        fg: RgbColour,
-        bg: RgbColour,
-        alt_bg: RgbColour,
-        sel_fg: RgbColour,
-        sel_bg: RgbColour,
+        fg: RgbColour, bg: RgbColour, alt_bg: RgbColour, sel_fg: RgbColour, sel_bg: RgbColour,
     ) -> ColourScheme {
         ColourScheme {
             normal: (fg, bg),

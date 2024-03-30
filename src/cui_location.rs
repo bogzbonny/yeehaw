@@ -86,7 +86,7 @@ impl Location {
 
     // GetSize returns the size of the Location
     pub fn get_size(&self) -> Size {
-        Size::new(self.width(), self.height())
+        Size::new(self.width() as u16, self.height() as u16)
     }
 
     // TODO for crossterm

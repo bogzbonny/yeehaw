@@ -1,13 +1,14 @@
 use {
     crate::{Location, Size, Style},
-    anyhow::Error,
+    anyhow::{anyhow, Error},
 };
 
 // DrawCh is a character with a style and transparency
+#[derive(Clone)]
 pub struct DrawCh {
-    ch: char,
-    transparent: bool, // aka do not draw this character
-    style: Style,
+    pub ch: char,
+    pub transparent: bool, // aka do not draw this character
+    pub style: Style,
 }
 
 impl DrawCh {
@@ -18,8 +19,8 @@ impl DrawCh {
             style,
         }
     }
-    pub fn at(&self, x: i32, y: i32) -> DrawChPos {
-        DrawChPos { ch: *self, x, y }
+    pub fn at(self, x: u16, y: u16) -> DrawChPos {
+        DrawChPos { ch: self, x, y }
     }
 
     pub fn str_to_draw_chs(s: &str, sty: Style) -> Vec<DrawCh> {
@@ -34,17 +35,17 @@ impl DrawCh {
 // and begin from 0 and count right and down respecively.
 pub struct DrawChPos {
     pub ch: DrawCh,
-    pub x: usize,
-    pub y: usize,
+    pub x: u16,
+    pub y: u16,
 }
 
 impl DrawChPos {
-    pub fn new(ch: DrawCh, x: usize, y: usize) -> DrawChPos {
+    pub fn new(ch: DrawCh, x: u16, y: u16) -> DrawChPos {
         DrawChPos { ch, x, y }
     }
     pub fn adjust_by_location(&mut self, loc: Location) {
-        self.x += loc.start_x;
-        self.y += loc.start_y;
+        self.x += loc.start_x as u16; // TODO check for overflow
+        self.y += loc.start_y as u16;
     }
 }
 
@@ -60,15 +61,23 @@ impl DrawChs2D {
 
     pub fn from_string(text: String, sty: Style) -> DrawChs2D {
         let lines = text.split('\n');
-        let mut chs = Vec::with_capacity(lines.len());
+        let mut chs = Vec::new();
         for line in lines {
             chs.push(DrawCh::str_to_draw_chs(line, sty));
         }
         DrawChs2D(chs)
     }
 
-    pub fn from_runes(text: Vec<Vec<char>>, sty: Style) -> DrawChs2D {
-        text.map(|line| line.map(|c| DrawCh::new(c, false, sty)))
+    pub fn from_runes(text: &mut Vec<Vec<char>>, sty: Style) -> DrawChs2D {
+        let mut out = Vec::new();
+        for line in text.iter_mut() {
+            let mut new_line = Vec::new();
+            for c in line.iter_mut() {
+                new_line.push(DrawCh::new(*c, false, sty));
+            }
+            out.push(new_line);
+        }
+        DrawChs2D(out)
     }
 
     pub fn width(&self) -> usize {
@@ -90,7 +99,7 @@ impl DrawChs2D {
     }
 
     pub fn size(&self) -> Size {
-        Size::new(self.width(), self.height())
+        Size::new(self.width() as u16, self.height() as u16)
     }
 
     pub fn to_string(&self) -> String {
@@ -114,7 +123,7 @@ impl DrawChs2D {
             return Ok(self.clone());
         }
         if self.height() != chs2.height() {
-            return Err(Error::new(
+            return Err(anyhow!(
                 "DrawChs2D ConcatRuneMatrices: chs.len() != chs2.len()",
             ));
         }

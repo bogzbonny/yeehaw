@@ -1,8 +1,5 @@
 use {
-    crate::{
-        prioritizer::{PrioritizableEv, Priority},
-        DrawChPos, Event, Location, Locations, Size,
-    },
+    crate::{prioritizer::Priority, DrawChPos, Event, Location, Locations, Size},
     std::any::Any,
 };
 
@@ -15,7 +12,7 @@ pub trait Element {
     // one).
     // NOTE in this current design, elements are always expected to receive
     // mouse events.
-    fn receivable(&self) -> Vec<(Priority, Box<dyn PrioritizableEv>)>;
+    fn receivable(&self) -> Vec<(Priority, Event)>;
 
     // This is used to receive an event from a parent. The receiving element may
     // consume the event and/or pass it to a child. The element is expected to
@@ -41,7 +38,7 @@ pub trait Element {
     // to the given priority, while telling to parent to change the priority of
     // all of the element's children's evs to whatever is recorded in the
     // element's prioritizers.
-    fn change_priority(&self, ctx: Context, p: Priority) -> InputabilityChanges;
+    fn change_priority(&self, ctx: Context, p: Priority) -> ReceivableEventChanges;
 
     // get the element's full drawing for the provided width and height
     // this is provided as an ordered list of individual elements to draw
@@ -69,15 +66,28 @@ pub trait Element {
     // sibling), the parent must be notified of the changes. This function
     // accomplishes that.
     fn propagate_upward_changes_to_inputability(
-        &self,
-        el: Box<dyn Element>,
-        ic: InputabilityChanges,
+        &self, el: Box<dyn Element>, ic: ReceivableEventChanges,
         update_this_elements_prioritizers: bool,
     );
 
     // Assign a reference to the element's parent through the UpwardPropagator
     // interface. This is used to pass changes in inputability to the parent.
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>);
+}
+
+pub trait UpwardPropagator {
+    fn propagate_upward_changes_to_inputability(
+        &self, el: Box<dyn Element>, ic: ReceivableEventChanges,
+        update_this_elements_prioritizers: bool,
+    );
+
+    // XXX TODO add a function to get an elements name here (for debugging),
+    // once an element has SetUpwardPropagator called on it, it will
+    // be able to construct its own name, by tacking on it's own name to its
+    // parents name.
+
+    // returns a name of the element (for debugging purposes)
+    //fn name(&self) -> String;
 }
 
 // Context is a struct which contains information about the current context of a
@@ -103,7 +113,7 @@ impl Context {
     }
 
     // TODO return error
-    fn new_context_for_screen() -> Context {
+    pub fn new_context_for_screen() -> Context {
         let (xmax, ymax) = crossterm::terminal::size().unwrap();
         Context {
             s: Size::new(xmax, ymax),
@@ -112,7 +122,7 @@ impl Context {
         }
     }
 
-    fn with_metadata(self, md: Box<dyn Any>) -> Context {
+    pub fn with_metadata(self, md: Box<dyn Any>) -> Context {
         Context {
             s: self.s,
             visible: self.visible,
@@ -120,11 +130,11 @@ impl Context {
         }
     }
 
-    fn get_width(&self) -> u16 {
+    pub fn get_width(&self) -> u16 {
         self.s.width
     }
 
-    fn get_height(&self) -> u16 {
+    pub fn get_height(&self) -> u16 {
         self.s.height
     }
 }
@@ -134,373 +144,155 @@ impl Context {
 // EventResponse is used to send information back to the parent that delivered
 // the event to the element
 #[derive(Default)]
-pub struct EventResponses(Vec<EventResponse>);
-
-pub enum EventResponse {
+pub struct EventResponse {
+    // quit the application
+    pub quit: bool,
+    // deactivate (used with widgets
+    pub deactivate: bool,
+    // destroy the current element
+    pub destruct: bool,
     // character updates to the element's drawing
-    ChUpdates(Vec<DrawChPos>),
+    pub ch_updates: Option<Vec<DrawChPos>>,
     // metadata can be used to send back any arbitrary information
     // it is up to the parent to interpret the metadata
-    Metadata(Box<dyn Any>),
+    pub metadata: Option<Box<dyn Any>>,
     // replace the current element with the provided element
-    Replacement(Box<dyn Element>),
+    pub replacement: Option<Box<dyn Element>>,
     // request that the provided window element be created at the location
-    Window(CreateWindow), // TODO
-    // destroy the current element
-    Destruct,
-    // quit the application
-    Quit,
-    // deactivate (used with widgets
-    Deactivate,
+    pub window: Option<CreateWindow>,
     // sends a request to the parent to change the size of the element
-    Resize(Size),
+    pub resize: Option<Size>,
     // send a request to the parent to change the position of the element
-    Relocation(RelocationRequest),
+    pub relocation: Option<RelocationRequest>,
     // sends a request to the parent to change the extra locations
     // of the element
-    ExtraLocations(ExtraLocationsRequest),
+    pub extra_locations: Option<ExtraLocationsRequest>,
     // contains priority updates that should be made to the receiver's prioritizer
-    InputabilityChanges(InputabilityChanges),
+    pub inputability_changes: Option<ReceivableEventChanges>,
     // for use with scrollbars
-    ScrollXStatic(i32),
-    ScrollYStatic(i32),
+    pub scroll_x_static: Option<i32>,
+    pub scroll_y_static: Option<i32>,
 }
 
-impl EventResponses {
-    pub fn with_ch_updates(mut self, chs: Vec<DrawChPos>) -> EventResponses {
-        self.0.push(EventResponse::ChUpdates(chs));
+impl EventResponse {
+    pub fn with_quit(mut self) -> EventResponse {
+        self.quit = true;
         self
     }
 
-    pub fn with_metadata(mut self, md: Box<dyn Any>) -> EventResponses {
-        self.0.push(EventResponse::Metadata(md));
+    pub fn with_deactivate(mut self) -> EventResponse {
+        self.deactivate = true;
         self
     }
 
-    pub fn with_replacement(mut self, el: Box<dyn Element>) -> EventResponses {
-        self.0.push(EventResponse::Replacement(el));
+    pub fn with_destruct(mut self) -> EventResponse {
+        self.destruct = true;
         self
     }
 
-    pub fn with_window(mut self, w: CreateWindow) -> EventResponses {
-        self.0.push(EventResponse::Window(w));
+    pub fn with_ch_updates(mut self, chs: Vec<DrawChPos>) -> EventResponse {
+        self.ch_updates = Some(chs);
         self
     }
 
-    pub fn with_destruct(mut self) -> EventResponses {
-        self.0.push(EventResponse::Destruct);
+    pub fn with_metadata(mut self, md: Box<dyn Any>) -> EventResponse {
+        self.metadata = Some(md);
         self
     }
 
-    pub fn with_quit(mut self) -> EventResponses {
-        self.0.push(EventResponse::Quit);
+    pub fn with_replacement(mut self, el: Box<dyn Element>) -> EventResponse {
+        self.replacement = Some(el);
         self
     }
 
-    pub fn with_deactivate(mut self) -> EventResponses {
-        self.0.push(EventResponse::Deactivate);
+    pub fn with_window(mut self, w: CreateWindow) -> EventResponse {
+        self.window = Some(w);
         self
     }
 
-    pub fn with_resize(mut self, s: Size) -> EventResponses {
-        self.0.push(EventResponse::Resize(s));
+    pub fn with_resize(mut self, s: Size) -> EventResponse {
+        self.resize = Some(s);
         self
     }
 
-    pub fn with_relocation(mut self, rr: RelocationRequest) -> EventResponses {
-        self.0.push(EventResponse::Relocation(rr));
+    pub fn with_relocation(mut self, r: RelocationRequest) -> EventResponse {
+        self.relocation = Some(r);
         self
     }
 
-    pub fn with_extra_locations(mut self, elr: ExtraLocationsRequest) -> EventResponses {
-        self.0.push(EventResponse::ExtraLocations(elr));
+    pub fn with_extra_locations(mut self, elr: ExtraLocationsRequest) -> EventResponse {
+        self.extra_locations = Some(elr);
         self
     }
 
-    pub fn with_inputability_changes(mut self, ic: InputabilityChanges) -> EventResponses {
-        self.0.push(EventResponse::InputabilityChanges(ic));
+    pub fn with_inputability_changes(mut self, ic: ReceivableEventChanges) -> EventResponse {
+        self.inputability_changes = Some(ic);
         self
     }
 
-    pub fn with_scroll_x_static(mut self, i: i32) -> EventResponses {
-        self.0.push(EventResponse::ScrollXStatic(i));
+    pub fn with_scroll_x_static(mut self, x: i32) -> EventResponse {
+        self.scroll_x_static = Some(x);
         self
     }
 
-    pub fn with_scroll_y_static(mut self, i: i32) -> EventResponses {
-        self.0.push(EventResponse::ScrollYStatic(i));
+    pub fn with_scroll_y_static(mut self, y: i32) -> EventResponse {
+        self.scroll_y_static = Some(y);
         self
-    }
-
-    // --------------------
-
-    fn get_ch_updates(&self) -> Option<&Vec<DrawChPos>> {
-        for er in &self.0 {
-            if let EventResponse::ChUpdates(chs) = er {
-                return Some(chs.clone());
-            }
-        }
-        None
-    }
-
-    fn remove_ch_updates(&mut self) {
-        self.0.retain(|er| {
-            if let EventResponse::ChUpdates(_) = er {
-                false
-            } else {
-                true
-            }
-        });
-    }
-
-    fn get_metadata(&self) -> Option<&Box<dyn Any>> {
-        for er in &self.0 {
-            if let EventResponse::Metadata(md) = er {
-                return Some(md.clone());
-            }
-        }
-        None
-    }
-
-    fn remove_metadata(&mut self) {
-        self.0.retain(|er| {
-            if let EventResponse::Metadata(_) = er {
-                false
-            } else {
-                true
-            }
-        });
-    }
-    fn get_replacement(&self) -> Option<&Box<dyn Element>> {
-        for er in &self.0 {
-            if let EventResponse::Replacement(el) = er {
-                return Some(el.clone());
-            }
-        }
-        None
-    }
-    fn remove_replacement(&mut self) {
-        self.0.retain(|er| {
-            if let EventResponse::Replacement(_) = er {
-                false
-            } else {
-                true
-            }
-        });
-    }
-    fn get_window(&self) -> Option<&CreateWindow> {
-        for er in &self.0 {
-            if let EventResponse::Window(w) = er {
-                return Some(w.clone());
-            }
-        }
-        None
-    }
-    fn remove_window(&mut self) {
-        self.0.retain(|er| {
-            if let EventResponse::Window(_) = er {
-                false
-            } else {
-                true
-            }
-        });
-    }
-    fn get_destruct(&self) -> bool {
-        for er in &self.0 {
-            if let EventResponse::Destruct = er {
-                return true;
-            }
-        }
-        false
-    }
-    fn remove_destruct(&mut self) {
-        self.0.retain(|er| {
-            if let EventResponse::Destruct = er {
-                false
-            } else {
-                true
-            }
-        });
-    }
-    fn get_quit(&self) -> bool {
-        for er in &self.0 {
-            if let EventResponse::Quit = er {
-                return true;
-            }
-        }
-        false
-    }
-    fn remove_quit(&mut self) {
-        self.0.retain(|er| {
-            if let EventResponse::Quit = er {
-                false
-            } else {
-                true
-            }
-        });
-    }
-    fn get_deactivate(&self) -> bool {
-        for er in &self.0 {
-            if let EventResponse::Deactivate = er {
-                return true;
-            }
-        }
-        false
-    }
-    fn remove_deactivate(&mut self) {
-        self.0.retain(|er| {
-            if let EventResponse::Deactivate = er {
-                false
-            } else {
-                true
-            }
-        });
-    }
-    fn get_resize(&self) -> Option<&Size> {
-        for er in &self.0 {
-            if let EventResponse::Resize(s) = er {
-                return Some(s.clone());
-            }
-        }
-        None
-    }
-    fn remove_resize(&mut self) {
-        self.0.retain(|er| {
-            if let EventResponse::Resize(_) = er {
-                false
-            } else {
-                true
-            }
-        });
-    }
-    fn get_relocation(&self) -> Option<RelocationRequest> {
-        for er in &self.0 {
-            if let EventResponse::Relocation(rr) = er {
-                return Some(rr.clone());
-            }
-        }
-        None
-    }
-    fn remove_relocation(&mut self) {
-        self.0.retain(|er| {
-            if let EventResponse::Relocation(_) = er {
-                false
-            } else {
-                true
-            }
-        });
-    }
-    fn get_extra_locations(&self) -> Option<&ExtraLocationsRequest> {
-        for er in &self.0 {
-            if let EventResponse::ExtraLocations(elr) = er {
-                return Some(elr.clone());
-            }
-        }
-        None
-    }
-    fn remove_extra_locations(&mut self) {
-        self.0.retain(|er| {
-            if let EventResponse::ExtraLocations(_) = er {
-                false
-            } else {
-                true
-            }
-        });
-    }
-    fn get_inputability_changes(&self) -> Option<&InputabilityChanges> {
-        for er in &self.0 {
-            if let EventResponse::InputabilityChanges(ic) = er {
-                return Some(ic.clone());
-            }
-        }
-        None
-    }
-    fn remove_inputability_changes(&mut self) {
-        self.0.retain(|er| {
-            if let EventResponse::InputabilityChanges(_) = er {
-                false
-            } else {
-                true
-            }
-        });
-    }
-    fn get_scroll_x_static(&self) -> Option<i32> {
-        for er in &self.0 {
-            if let EventResponse::ScrollXStatic(i) = er {
-                return Some(*i);
-            }
-        }
-        None
-    }
-    fn remove_scroll_x_static(&mut self) {
-        self.0.retain(|er| {
-            if let EventResponse::ScrollXStatic(_) = er {
-                false
-            } else {
-                true
-            }
-        });
-    }
-    fn get_scroll_y_static(&self) -> Option<i32> {
-        for er in &self.0 {
-            if let EventResponse::ScrollYStatic(i) = er {
-                return Some(*i);
-            }
-        }
-        None
-    }
-    fn remove_scroll_y_static(&mut self) {
-        self.0.retain(|er| {
-            if let EventResponse::ScrollYStatic(_) = er {
-                false
-            } else {
-                true
-            }
-        });
     }
 
     // --------------------------------------
-    // InputabilityChanges
+    // ReceivableEventChanges
 
-    fn set_rm_rec_evs(&mut self, rm_rec_evs: Vec<Box<dyn PrioritizableEv>>) {
-        if let Some(mut ic) = self.get_inputability_changes() {
-            ic.rm_rec_evs = rm_rec_evs;
-            self.remove_inputability_changes();
-            self.0.push(EventResponse::InputabilityChanges(*ic));
+    // TRANSLATION NOTE, used to be called remove_evs
+    pub fn remove(&mut self, evs: Vec<Event>) {
+        if let Some(ic) = &mut self.inputability_changes {
+            ic.remove_evs(evs);
         } else {
-            self.0
-                .push(EventResponse::InputabilityChanges(InputabilityChanges {
-                    rm_rec_evs,
-                    add_rec_evs: Vec::new(),
-                }));
+            self.inputability_changes =
+                Some(ReceivableEventChanges::default().with_remove_evs(evs));
         }
     }
 
-    fn set_add_rec_evs(&mut self, add_rec_evs: Vec<(Box<dyn PrioritizableEv>, Priority)>) {
-        if let Some(mut ic) = self.get_inputability_changes() {
-            ic.add_rec_evs = add_rec_evs;
-            self.remove_inputability_changes();
-            self.0.push(EventResponse::InputabilityChanges(*ic));
+    pub fn add(&mut self, evs: Vec<(Event, Priority)>) {
+        if let Some(ic) = &mut self.inputability_changes {
+            ic.add_evs(evs);
         } else {
-            self.0
-                .push(EventResponse::InputabilityChanges(InputabilityChanges {
-                    rm_rec_evs: Vec::new(),
-                    add_rec_evs,
-                }));
+            self.inputability_changes = Some(ReceivableEventChanges::default().with_evs(evs));
         }
     }
 
-    fn remove_evs(&mut self, ecs: Vec<Box<dyn PrioritizableEv>>) {
-        if let Some(mut ic) = self.get_inputability_changes() {
-            ic.remove_evs(ecs);
-            self.remove_inputability_changes();
-            self.0.push(EventResponse::InputabilityChanges(ic));
+    pub fn set_rm_receivable_evs(&mut self, evs: Vec<Event>) {
+        if let Some(ic) = &mut self.inputability_changes {
+            ic.remove = evs;
         } else {
-            self.0
-                .push(EventResponse::InputabilityChanges(InputabilityChanges {
-                    rm_rec_evs: ecs,
-                    add_rec_evs: Vec::new(),
-                }));
+            self.inputability_changes =
+                Some(ReceivableEventChanges::default().with_remove_evs(evs));
+        }
+    }
+
+    pub fn set_add_receivable_evs(&mut self, evs: Vec<(Event, Priority)>) {
+        if let Some(ic) = &mut self.inputability_changes {
+            ic.add = evs;
+        } else {
+            self.inputability_changes = Some(ReceivableEventChanges::default().with_evs(evs));
+        }
+    }
+
+    // ----------------------------------------------------------------------------
+
+    pub fn append_chs(&mut self, chs: Vec<DrawChPos>) {
+        if let Some(existing_chs) = &mut self.ch_updates {
+            existing_chs.extend(chs);
+        } else {
+            self.ch_updates = Some(chs);
+        }
+    }
+
+    pub fn concat_inputability_changes(&mut self, ic: ReceivableEventChanges) {
+        if let Some(existing_ic) = &mut self.inputability_changes {
+            existing_ic.concat(ic);
+        } else {
+            self.inputability_changes = Some(ic);
         }
     }
 }
@@ -526,71 +318,75 @@ impl CreateWindow {
 
 // ----------------------------------------------------------------------------
 
-// InputabilityChanges is used to update the receivable events of an element
+// ReceivableEventChanges is used to update the receivable events of an element
 // registered in the prioritizers of all ancestors
 // NOTE: While processing inputability changes, element organizers remove events
 // BEFORE adding events.
+//
+
 #[derive(Default)]
-pub struct InputabilityChanges {
+// TRANSLATION NOTE used to be ReceivableEventChanges
+pub struct ReceivableEventChanges {
     // Receivable events to deregistered from an element.
     // NOTE: one instance of an event being passed up the hierarchy through
     // RmRecEvs will remove ALL instances of that event from the prioritizer of
     // every element higher in the hierarchy that processes the
-    // InputabilityChanges.
-    rm_rec_evs: Vec<Box<dyn PrioritizableEv>>,
-
-    add_rec_evs: Vec<(Box<dyn PrioritizableEv>, Priority)>, // receivable events being added to the element
+    // ReceivableEventChanges.
+    pub remove: Vec<Event>,
+    pub add: Vec<(Event, Priority)>, // receivable events being added to the element
+    pub update: Vec<(Event, Priority)>, // receivable events being updated
 }
 
-impl InputabilityChanges {
-    pub fn with_ev(mut self, ev: Box<dyn PrioritizableEv>, p: Priority) -> InputabilityChanges {
-        self.add_rec_evs.push((ev, p));
+impl ReceivableEventChanges {
+    pub fn with_ev(mut self, ev: Event, p: Priority) -> ReceivableEventChanges {
+        self.add.push((ev, p));
         self
     }
 
-    pub fn with_evs(
-        mut self,
-        evs: Vec<(Box<dyn PrioritizableEv>, Priority)>,
-    ) -> InputabilityChanges {
-        self.add_rec_evs.extend(evs);
+    pub fn with_evs(mut self, evs: Vec<(Event, Priority)>) -> ReceivableEventChanges {
+        self.add.extend(evs);
         self
     }
 
-    pub fn with_remove_ev(mut self, ev: Box<dyn PrioritizableEv>) -> InputabilityChanges {
-        self.rm_rec_evs.push(ev);
+    pub fn with_remove_ev(mut self, ev: Event) -> ReceivableEventChanges {
+        self.remove.push(ev);
         self
     }
 
-    pub fn with_remove_evs(mut self, evs: Vec<Box<dyn PrioritizableEv>>) -> InputabilityChanges {
-        self.rm_rec_evs.extend(evs);
+    pub fn with_remove_evs(mut self, evs: Vec<Event>) -> ReceivableEventChanges {
+        self.remove.extend(evs);
         self
     }
 
-    pub fn update_priority_for_ev(
-        mut self,
-        ev: Box<dyn PrioritizableEv>,
-        p: Priority,
-    ) -> InputabilityChanges {
-        self.rm_rec_evs.push(ev);
-        self.add_rec_evs.push((ev, p));
-        self
+    pub fn add_ev(&mut self, ev: Event, p: Priority) {
+        self.add.push((ev, p));
     }
 
-    pub fn update_priority_for_evs(
-        mut self,
-        evs: Vec<Box<dyn PrioritizableEv>>,
-        p: Priority,
-    ) -> InputabilityChanges {
+    pub fn add_evs(&mut self, evs: Vec<(Event, Priority)>) {
+        self.add.extend(evs);
+    }
+
+    pub fn remove_ev(&mut self, ev: Event) {
+        self.remove.push(ev);
+    }
+
+    pub fn remove_evs(&mut self, evs: Vec<Event>) {
+        self.remove.extend(evs);
+    }
+
+    pub fn update_priority_for_ev(&mut self, ev: Event, p: Priority) {
+        self.update.push((ev, p));
+    }
+
+    pub fn update_priority_for_evs(&mut self, evs: Vec<Event>, p: Priority) {
         for ev in evs {
-            self.rm_rec_evs.push(ev);
-            self.add_rec_evs.push((ev, p));
+            self.update.push((ev, p));
         }
-        self
     }
 
-    pub fn concat(&mut self, cti2: InputabilityChanges) {
-        self.rm_rec_evs.extend(cti2.rm_rec_evs);
-        self.add_rec_evs.extend(cti2.add_rec_evs);
+    pub fn concat(&mut self, cti2: ReceivableEventChanges) {
+        self.remove.extend(cti2.remove);
+        self.add.extend(cti2.add);
     }
 }
 
@@ -661,8 +457,8 @@ impl RelocationRequest {
 // ExtraLocationRequest contains info for adding or removing extra locations for
 // the given element
 pub struct ExtraLocationRequest {
-    add: Vec<Location>,
-    rm: Vec<Location>,
+    pub add: Vec<Location>,
+    pub rm: Vec<Location>,
 }
 
 impl ExtraLocationRequest {
@@ -674,8 +470,8 @@ impl ExtraLocationRequest {
 // sends a request to the parent to change the extra locations
 // of the element
 pub struct ExtraLocationsRequest {
-    requested: bool,
-    extra_locs: Vec<Location>,
+    pub requested: bool,
+    pub extra_locs: Vec<Location>,
 }
 
 impl ExtraLocationsRequest {
@@ -685,23 +481,4 @@ impl ExtraLocationsRequest {
             extra_locs,
         }
     }
-}
-
-// ---------------------------------------------------
-
-pub trait UpwardPropagator {
-    fn propagate_upward_changes_to_inputability(
-        &self,
-        el: Box<dyn Element>,
-        ic: InputabilityChanges,
-        update_this_elements_prioritizers: bool,
-    );
-
-    // XXX TODO add a function to get an elements name here (for debugging),
-    // once an element has SetUpwardPropagator called on it, it will
-    // be able to construct its own name, by tacking on it's own name to its
-    // parents name.
-
-    // returns a name of the element (for debugging purposes)
-    //fn name(&self) -> String;
 }
