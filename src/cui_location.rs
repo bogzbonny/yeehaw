@@ -1,19 +1,9 @@
 use crate::element::RelocationRequest;
-use std::ops::Deref;
 
 // ZIndex is the z-index or position in the z-dimension of the element
 // The lower the z-index, further toward the front the element is
 // (0 is the front, 1 is behind 0, etc.)
-#[derive(Clone, Copy, Default)]
-pub struct ZIndex(pub i32);
-
-impl Deref for ZIndex {
-    type Target = i32;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
+pub type ZIndex = i32;
 
 // Location holds the primary location of an element in the context of
 // its parent element
@@ -170,6 +160,7 @@ impl Locations {
 }
 
 // Size holds the width and height of an element
+#[derive(Clone, Copy, Default, Debug, PartialEq)]
 pub struct Size {
     pub width: u16,
     pub height: u16,

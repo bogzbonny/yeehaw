@@ -4,15 +4,15 @@
     _ISSUES.md                           │ DONE
     cui.go                               │ 
     cui_ch.go                            │ DONE
-    cui_ch_test.go                       │ 
-    cui_keyboard.go                      │ 
+    cui_ch_test.go                       │ DONE
+    cui_keyboard.go                      │ COPIED (PROBABLY DONE)
     cui_location.go                      │ DONE
-    debug.go                             │ 
+    debug.go                             │  
     element.go                           │ DONE
     element_organizer.go                 │ 
     event.go                             │ DONE
     GLOSSARY.md                          │ DONE
-    prioritizer.go                       │ 
+    prioritizer.go                       │ DONE
     README.md                            │ DONE
 ▾ yeehaw/                                │ DONE
   ▾ docs/                                │ DONE

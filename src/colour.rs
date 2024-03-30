@@ -3,7 +3,7 @@ use {
     rand::Rng,
 };
 
-#[derive(Encode, Decode, Copy, Clone, Default, Debug, PartialEq)]
+#[derive(Encode, Decode, Copy, Clone, Default, Debug, PartialEq, Eq)]
 pub struct RgbColour {
     pub r: u8,
     pub g: u8,

@@ -4,7 +4,7 @@ use {
 };
 
 // DrawCh is a character with a style and transparency
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DrawCh {
     pub ch: char,
     pub transparent: bool, // aka do not draw this character
@@ -33,6 +33,7 @@ impl DrawCh {
 // DrawChPos is a DrawCh with an X and Y position
 // The positions X and Y are local positions within the element
 // and begin from 0 and count right and down respecively.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DrawChPos {
     pub ch: DrawCh,
     pub x: u16,
@@ -43,7 +44,7 @@ impl DrawChPos {
     pub fn new(ch: DrawCh, x: u16, y: u16) -> DrawChPos {
         DrawChPos { ch, x, y }
     }
-    pub fn adjust_by_location(&mut self, loc: Location) {
+    pub fn adjust_by_location(&mut self, loc: &Location) {
         self.x += loc.start_x as u16; // TODO check for overflow
         self.y += loc.start_y as u16;
     }
@@ -53,6 +54,20 @@ impl DrawChPos {
 
 #[derive(Clone)]
 pub struct DrawChs2D(Vec<Vec<DrawCh>>); // y, x
+
+impl std::fmt::Display for DrawChs2D {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        for (i, line) in self.0.iter().enumerate() {
+            for ch in line {
+                write!(f, "{}", ch.ch)?;
+            }
+            if i < self.0.len() - 1 {
+                writeln!(f)?;
+            }
+        }
+        Ok(())
+    }
+}
 
 impl DrawChs2D {
     pub fn new(chs: Vec<Vec<DrawCh>>) -> DrawChs2D {
@@ -68,7 +83,7 @@ impl DrawChs2D {
         DrawChs2D(chs)
     }
 
-    pub fn from_runes(text: &mut Vec<Vec<char>>, sty: Style) -> DrawChs2D {
+    pub fn from_runes(text: &mut [Vec<char>], sty: Style) -> DrawChs2D {
         let mut out = Vec::new();
         for line in text.iter_mut() {
             let mut new_line = Vec::new();
@@ -90,27 +105,8 @@ impl DrawChs2D {
         self.0.len()
     }
 
-    pub fn clone(&self) -> DrawChs2D {
-        let mut out = Vec::new();
-        for line in &self.0 {
-            out.push(line.clone());
-        }
-        DrawChs2D(out)
-    }
-
     pub fn size(&self) -> Size {
         Size::new(self.width() as u16, self.height() as u16)
-    }
-
-    pub fn to_string(&self) -> String {
-        let mut out = String::new();
-        for line in &self.0 {
-            for ch in line {
-                out.push(ch.ch);
-            }
-            out.push('\n');
-        }
-        out
     }
 
     // TODO rename concat_right
@@ -181,6 +177,7 @@ impl DrawChs2D {
         }
     }
 
+    #[allow(clippy::needless_range_loop)]
     pub fn rotate_90_deg(&self) -> DrawChs2D {
         let mut new_chs = Vec::with_capacity(self.width());
         for _ in 0..self.width() {
@@ -192,5 +189,54 @@ impl DrawChs2D {
             }
         }
         DrawChs2D(new_chs)
+    }
+}
+
+// test
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_draw_chs2d() {
+        let chs = DrawChs2D::from_string("abc\ndef".to_string(), Style::new());
+        assert_eq!(chs.width(), 3);
+        assert_eq!(chs.height(), 2);
+        assert_eq!(chs.size(), Size::new(3, 2));
+        assert_eq!(chs.to_string(), "abc\ndef");
+
+        let chs2 = DrawChs2D::from_string("123\n456".to_string(), Style::new());
+        assert_eq!(chs2.width(), 3);
+        assert_eq!(chs2.height(), 2);
+        assert_eq!(chs2.size(), Size::new(3, 2));
+        assert_eq!(chs2.to_string(), "123\n456");
+
+        let chs3 = chs.concat_top_bottom(chs2);
+        assert_eq!(chs3.width(), 3);
+        assert_eq!(chs3.height(), 4);
+        assert_eq!(chs3.size(), Size::new(3, 4));
+        assert_eq!(chs3.to_string(), "abc\ndef\n123\n456");
+    }
+
+    #[test]
+    fn test_adjust_by_location() {
+        let a = DrawCh::new('a', false, Style::new());
+        let b = DrawCh::new('b', false, Style::new());
+        let c = DrawCh::new('c', false, Style::new());
+        let chs = vec![
+            DrawChPos::new(a.clone(), 0, 0),
+            DrawChPos::new(b.clone(), 1, 0),
+            DrawChPos::new(c.clone(), 2, 3),
+        ];
+        let loc = Location::new(10, 20, 30, 40, 0);
+
+        let mut out = Vec::new();
+        for mut ch in chs {
+            ch.adjust_by_location(&loc);
+            out.push(ch);
+        }
+        assert_eq!(out[0], DrawChPos::new(a, 10, 30));
+        assert_eq!(out[1], DrawChPos::new(b, 11, 30));
+        assert_eq!(out[2], DrawChPos::new(c, 12, 33));
     }
 }

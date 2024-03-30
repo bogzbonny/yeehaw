@@ -90,6 +90,11 @@ pub trait UpwardPropagator {
     //fn name(&self) -> String;
 }
 
+// ElementID is a unique identifier nonce assigned to each active element
+// in the cui beginning with 0.
+// NOTE: the id is a nonce in the scope of a particular element organizer
+pub type ElementID = u64;
+
 // Context is a struct which contains information about the current context of a
 // given element.
 // The context of an element is passed to the element during key function calls
@@ -334,7 +339,6 @@ pub struct ReceivableEventChanges {
     // ReceivableEventChanges.
     pub remove: Vec<Event>,
     pub add: Vec<(Event, Priority)>, // receivable events being added to the element
-    pub update: Vec<(Event, Priority)>, // receivable events being updated
 }
 
 impl ReceivableEventChanges {
@@ -375,12 +379,14 @@ impl ReceivableEventChanges {
     }
 
     pub fn update_priority_for_ev(&mut self, ev: Event, p: Priority) {
-        self.update.push((ev, p));
+        self.remove.push(ev.clone());
+        self.add.push((ev, p));
     }
 
     pub fn update_priority_for_evs(&mut self, evs: Vec<Event>, p: Priority) {
         for ev in evs {
-            self.update.push((ev, p));
+            self.remove.push(ev.clone());
+            self.add.push((ev, p));
         }
     }
 

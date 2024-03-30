@@ -1,8 +1,8 @@
-#[derive(Clone)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Event {
     Mouse(crossterm::event::MouseEvent),
 
-    KeyCombo(Vec<crossterm::event::KeyEvent>),
+    KeyCombo(Vec<KeyPossibility>),
 
     // The ExternalMouseEvent is send to all elements
     // who are not considered to be the "Receiver" of the event
@@ -23,6 +23,12 @@ pub enum Event {
     Refresh,
 
     Command(CommandEvent),
+}
+
+impl From<Vec<crossterm::event::KeyEvent>> for Event {
+    fn from(keys: Vec<crossterm::event::KeyEvent>) -> Self {
+        Event::KeyCombo(keys.into_iter().map(KeyPossibility::Key).collect())
+    }
 }
 
 impl Event {
@@ -49,11 +55,41 @@ impl Event {
     }
 }
 
-// ----------------------------------------
-
 // Event for triggering a command execution for an element
-#[derive(Clone)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct CommandEvent {
     pub cmd: String,
     pub args: Vec<String>,
+}
+
+// KeyPossibility is used to match a key event
+// with a specific key or a group of keys
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub enum KeyPossibility {
+    Key(crossterm::event::KeyEvent),
+    Chars,  // any char
+    Digits, // any digit
+}
+
+impl From<crossterm::event::KeyEvent> for KeyPossibility {
+    fn from(k: crossterm::event::KeyEvent) -> Self {
+        KeyPossibility::Key(k)
+    }
+}
+
+impl KeyPossibility {
+    pub fn matches(&self, ct_key: &crossterm::event::KeyEvent) -> bool {
+        match self {
+            KeyPossibility::Key(k) => k == ct_key,
+            KeyPossibility::Chars => {
+                matches!(ct_key.code, crossterm::event::KeyCode::Char(_))
+            }
+            KeyPossibility::Digits => {
+                let crossterm::event::KeyCode::Char(c) = ct_key.code else {
+                    return false;
+                };
+                c.is_ascii_digit()
+            }
+        }
+    }
 }
