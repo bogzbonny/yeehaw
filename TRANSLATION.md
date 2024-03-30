@@ -1,4 +1,19 @@
-                                          
+
+
+
+    _ISSUES.md                           │ DONE
+    cui.go                               │ 
+    cui_ch.go                            │ DONE
+    cui_ch_test.go                       │ 
+    cui_keyboard.go                      │ 
+    cui_location.go                      │ DONE
+    debug.go                             │ 
+    element.go                           │ 
+    element_organizer.go                 │ 
+    event.go                             │ DONE
+    GLOSSARY.md                          │ DONE
+    prioritizer.go                       │ 
+    README.md                            │ DONE
 ▾ yeehaw/                                │ DONE
   ▾ docs/                                │ DONE
       architecture.md                    │ DONE
@@ -69,17 +84,3 @@
       widget_textbox_numbers.go          │
       widget_title.go                    │
       widget_toggle.go                   │
-    _ISSUES.md                           │
-    cui.go                               │
-    cui_ch.go                            │
-    cui_ch_test.go                       │
-    cui_keyboard.go                      │
-    cui_location.go                      │ DONE
-    debug.go                             │
-    element.go                           │
-    element_organizer.go                 │
-    event.go                             │
-    GLOSSARY.md                          │ DONE
-    prioritizer.go                       │
-    README.md                            │ DONE
-

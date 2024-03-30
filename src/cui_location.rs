@@ -171,12 +171,12 @@ impl Locations {
 
 // Size holds the width and height of an element
 pub struct Size {
-    pub width: i32,
-    pub height: i32,
+    pub width: u16,
+    pub height: u16,
 }
 
 impl Size {
-    pub fn new(width: i32, height: i32) -> Size {
+    pub fn new(width: u16, height: u16) -> Size {
         Size { width, height }
     }
 }
