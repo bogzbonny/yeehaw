@@ -1,3 +1,6 @@
+#[macro_use]
+pub mod debug; // note, must be first for the macro to work throughout
+
 pub mod colour;
 pub mod cui_ch;
 pub mod cui_location;

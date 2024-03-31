@@ -7,7 +7,7 @@
     cui_ch_test.go                       │ DONE
     cui_keyboard.go                      │ COPIED (PROBABLY DONE)
     cui_location.go                      │ DONE
-    debug.go                             │  
+    debug.go                             │ DONE
     element.go                           │ DONE
     element_organizer.go                 │ 
     event.go                             │ DONE
