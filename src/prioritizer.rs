@@ -32,7 +32,7 @@ pub const UNFOCUSED: Priority = Priority(3);
 // EventPrioritizer registers/provides elements and priorities which ought to
 // execute specified events.
 // NOTE: used to sort events by priority
-#[derive(PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Clone, Default)]
 pub struct EventPrioritizer(Vec<PriorityIdEvent>);
 
 #[derive(PartialEq, Eq, Clone)]
