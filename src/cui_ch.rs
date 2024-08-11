@@ -4,7 +4,7 @@ use {
 };
 
 // DrawCh is a character with a style and transparency
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct DrawCh {
     pub ch: char,
     pub transparent: bool, // aka do not draw this character

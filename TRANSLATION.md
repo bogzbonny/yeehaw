@@ -2,7 +2,7 @@
 
 
     _ISSUES.md                           │ DONE
-    cui.go                               │ 
+    cui.go                               │ DONE
     cui_ch.go                            │ DONE
     cui_ch_test.go                       │ DONE
     cui_keyboard.go                      │ COPIED (PROBABLY DONE)
@@ -32,7 +32,7 @@
       pane_parent.go                     │
       pane_size.go                       │
       pane_stack.go                      │
-      pane_standard.go                   │
+      pane_standard.go                   │ WORKING
       tab.go                             │
   ▾ examples/                            │
     ▾ comment2/                          │

@@ -9,11 +9,12 @@ use crate::{ElementID, Event, Keyboard};
 #[derive(Clone, Copy, PartialEq, Eq, Debug, PartialOrd, Ord)]
 pub struct Priority(pub u8);
 
-pub const HIGHEST: Priority = Priority(0);
-pub const ABOVE_FOCUSED: Priority = Priority(1);
-pub const FOCUSED: Priority = Priority(2);
-pub const UNFOCUSED: Priority = Priority(3);
-//pub const UNCHANGED: Priority = Priority(None); // used for when changing priorities
+impl Priority {
+    pub const HIGHEST: Priority = Priority(0);
+    pub const ABOVE_FOCUSED: Priority = Priority(1);
+    pub const FOCUSED: Priority = Priority(2);
+    pub const UNFOCUSED: Priority = Priority(3);
+}
 
 // TRANSLATION NOTE PrioritizableEv was replaced by just Event
 // TODO delete post translation
@@ -135,7 +136,7 @@ impl EventPrioritizer {
         &self, kb: &mut Keyboard,
     ) -> Option<(ElementID, Vec<crossterm::event::KeyEvent>)> {
         for priority_id_event in self.0.iter() {
-            if priority_id_event.priority == UNFOCUSED {
+            if priority_id_event.priority == Priority::UNFOCUSED {
                 break;
             }
             let Event::KeyCombo(ref ekc) = priority_id_event.event else {
@@ -154,7 +155,7 @@ impl EventPrioritizer {
         // loop through all events registered by elements (PriorityIdEvent's)
         // and check if the input_ev matches any of them
         for priority_id_event in self.0.iter() {
-            if priority_id_event.priority == UNFOCUSED {
+            if priority_id_event.priority == Priority::UNFOCUSED {
                 // since the evprioritizer is sorted by priority, there is no point
                 // in continuing to loop through the rest of the events as elements
                 // with a priority of unfocused will never be sent events

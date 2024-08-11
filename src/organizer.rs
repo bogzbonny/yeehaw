@@ -4,9 +4,8 @@ use {
         CreateWindow, DrawChPos, Element, ElementID, Event, EventResponse, Location, LocationSet,
         Priority, UpwardPropagator, ZIndex,
     },
-    parking_lot::Mutex,
     std::collections::HashMap,
-    std::sync::Arc,
+    std::{cell::RefCell, rc::Rc},
 };
 
 // ElementOrganizer prioritizes and organizes all the elements contained
@@ -15,7 +14,7 @@ pub struct ElementOrganizer {
     largest: ElementID, // the largest ID currently registered to the organizer
 
     // XXX TODO combine into one hashmap
-    elements: HashMap<ElementID, Arc<Mutex<dyn Element>>>,
+    elements: HashMap<ElementID, Rc<RefCell<dyn Element>>>,
     locations: HashMap<ElementID, LocationSet>, // LocationSet of all of the elements contained
     visibility: HashMap<ElementID, bool>,       // whether the element is set to display
 
@@ -44,7 +43,7 @@ impl Default for ElementOrganizer {
 
 impl ElementOrganizer {
     pub fn add_element(
-        &mut self, el: Arc<Mutex<dyn Element>>, up: Option<Arc<Mutex<dyn UpwardPropagator>>>,
+        &mut self, el: Rc<RefCell<dyn Element>>, up: Option<Rc<RefCell<dyn UpwardPropagator>>>,
         loc: LocationSet, vis: bool,
     ) -> ElementID {
         // assign the new element id
@@ -59,7 +58,7 @@ impl ElementOrganizer {
         self.visibility.insert(el_id, vis);
 
         // add the elements recievable events and commands to the prioritizer
-        let receivable_evs = el.lock().receivable();
+        let receivable_evs = el.borrow().receivable();
         self.prioritizer
             .include(el_id, &receivable_evs, self.panic_on_overload);
 
@@ -70,7 +69,7 @@ impl ElementOrganizer {
         // (ex: a sibling initiating a change to inputability, as opposed to this eo
         // passing an event to the child through ReceiveEventKeys)
         if let Some(up) = up {
-            el.lock().set_upward_propagator(up);
+            el.borrow().set_upward_propagator(up);
         }
 
         el_id
@@ -108,16 +107,16 @@ impl ElementOrganizer {
     }
 
     // get_element_by_id returns the element registered under the given id in the eo
-    pub fn get_element_by_id(&self, el_id: ElementID) -> Option<Arc<Mutex<dyn Element>>> {
+    pub fn get_element_by_id(&self, el_id: ElementID) -> Option<Rc<RefCell<dyn Element>>> {
         self.elements.get(&el_id).cloned()
     }
 
     // get_id_from_el returns the id registered under the given element in the eo
-    pub fn get_id_from_el(&self, el: Arc<Mutex<dyn Element>>) -> ElementID {
+    pub fn get_id_from_el(&self, el: Rc<RefCell<dyn Element>>) -> ElementID {
         for (id, e) in &self.elements {
             // check if the two elements are the same object
             // if so, return the id
-            if Arc::ptr_eq(e, &el) {
+            if Rc::ptr_eq(e, &el) {
                 // XXX check if this works
                 return *id;
             }
@@ -134,7 +133,7 @@ impl ElementOrganizer {
     }
 
     // get_el_at_pos returns the element at the given position
-    pub fn get_el_at_pos(&self, x: i32, y: i32) -> Option<Arc<Mutex<dyn Element>>> {
+    pub fn get_el_at_pos(&self, x: i32, y: i32) -> Option<Rc<RefCell<dyn Element>>> {
         for (id, locs) in &self.locations {
             if locs.contains(x, y) {
                 return self.elements.get(id).cloned();
@@ -234,7 +233,7 @@ impl ElementOrganizer {
     pub fn receivable(&self) -> Vec<(Event, Priority)> {
         let mut out = Vec::new();
         for el in self.elements.values() {
-            let pr_evs = el.lock().receivable();
+            let pr_evs = el.borrow().receivable();
             out.extend(pr_evs);
         }
         out
@@ -264,7 +263,7 @@ impl ElementOrganizer {
         for el_id_z in eoz {
             let ctx = self.get_context_for_el_id(el_id_z.0);
             let el = self.get_element_by_id(el_id_z.0).unwrap();
-            let dcps = el.lock().drawing(&ctx);
+            let dcps = el.borrow().drawing(&ctx);
 
             let locs = self.must_get_locations(el_id_z.0);
 
@@ -303,7 +302,7 @@ impl ElementOrganizer {
             // resize replacement
             // TODO may not be neccessary. Explore further w/ fixes to resizing
             let el = self.get_element_by_id(el_id).unwrap(); // XXX remove unwrap?? use expect here??
-            el.lock().receive_event(&ctx, Event::Resize);
+            el.borrow().receive_event(&ctx, Event::Resize);
         }
 
         if let Some(ref elr) = r.extra_locations {
@@ -346,14 +345,14 @@ impl ElementOrganizer {
 
     // Replaces the element at the given ID with a new element
     pub fn replace_el(
-        &mut self, el_id: ElementID, new_el: Arc<Mutex<dyn Element>>,
+        &mut self, el_id: ElementID, new_el: Rc<RefCell<dyn Element>>,
     ) -> ReceivableEventChanges {
         let mut ic = ReceivableEventChanges::default();
 
         // register new element to organizer under ID of old element
         if let Some(old_el) = self.elements.insert(el_id, new_el.clone()) {
             let evs: Vec<Event> = old_el
-                .lock()
+                .borrow()
                 .receivable()
                 .drain(..)
                 .map(|(e, _)| e)
@@ -363,7 +362,7 @@ impl ElementOrganizer {
         }
 
         // register all events of new element to the prioritizers
-        let new_evs = new_el.lock().receivable();
+        let new_evs = new_el.borrow().receivable();
         self.prioritizer
             .include(el_id, &new_evs, self.panic_on_overload);
         ic.add_evs(new_evs);
@@ -389,7 +388,7 @@ impl ElementOrganizer {
 
         // send EventKeys to element w/ context
         let ctx = self.get_context_for_el_id(el_id);
-        let (_, r) = el.lock().receive_event(&ctx, evs);
+        let (_, r) = el.borrow().receive_event(&ctx, evs);
         let r = self.partially_process_ev_resp(el_id, r);
 
         if let Some(changes) = r.get_receivable_event_changes() {
@@ -414,8 +413,8 @@ impl ElementOrganizer {
         // refresh all children
         for (el_id, el) in self.elements.iter() {
             let el_ctx = self.get_context_for_el_id(*el_id);
-            el.lock().receive_event(&el_ctx, Event::Refresh);
-            el.lock().receive_event(&el_ctx, Event::Resize);
+            el.borrow().receive_event(&el_ctx, Event::Refresh);
+            el.borrow().receive_event(&el_ctx, Event::Resize);
         }
     }
 
@@ -433,7 +432,7 @@ impl ElementOrganizer {
 
         // NOTE these changes are the changes for
         // THIS element organizer (not the child element)
-        let changes = el.lock().change_priority(&ctx, pr);
+        let changes = el.borrow().change_priority(&ctx, pr);
         self.process_receivable_event_changes(el_id, &changes);
         changes
     }
@@ -488,7 +487,7 @@ impl ElementOrganizer {
         let ev_adj = locs.l.adjust_mouse_event(ev);
 
         // send mouse event to element
-        let (_, ev_resp) = el.lock().receive_event(&ctx, Event::Mouse(ev_adj));
+        let (_, ev_resp) = el.borrow().receive_event(&ctx, Event::Mouse(ev_adj));
         if let Some(changes) = ev_resp.get_receivable_event_changes() {
             self.process_receivable_event_changes(el_id, &changes);
         }
@@ -509,7 +508,7 @@ impl ElementOrganizer {
             if *el_id2 == el_id {
                 continue;
             }
-            let (_, r) = el.lock().receive_event(&ctx, Event::Mouse(*ev));
+            let (_, r) = el.borrow().receive_event(&ctx, Event::Mouse(*ev));
             resps.push((*el_id2, r));
         }
 
@@ -590,7 +589,7 @@ impl ElementOrganizer {
         };
         let ctx = self.get_context_for_el_id(el_id);
 
-        let (captured, resp) = el.lock().receive_event(&ctx, ev);
+        let (captured, resp) = el.borrow().receive_event(&ctx, ev);
         if let Some(changes) = resp.get_receivable_event_changes() {
             self.process_receivable_event_changes(el_id, &changes);
         }

@@ -6,6 +6,7 @@ pub mod cui;
 pub mod cui_ch;
 pub mod cui_location;
 pub mod element;
+pub mod elements;
 pub mod errors;
 pub mod event;
 pub mod keyboard;
@@ -15,6 +16,7 @@ pub mod style;
 
 pub use {
     colour::RgbColour,
+    cui::Cui,
     cui_ch::{DrawCh, DrawChPos},
     cui_location::{Location, LocationSet, Size, ZIndex},
     element::{Context, CreateWindow, Element, ElementID, EventResponse, UpwardPropagator},

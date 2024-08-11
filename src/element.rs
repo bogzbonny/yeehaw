@@ -1,13 +1,12 @@
 use {
     crate::{prioritizer::Priority, DrawChPos, Event, Location, LocationSet, Size},
-    parking_lot::Mutex,
     std::any::Any,
-    std::sync::Arc,
+    std::{cell::RefCell, rc::Rc},
 };
 
 // Element is the base interface which all viewable elements are
 // expected to fulfill
-pub trait Element {
+pub trait Element: UpwardPropagator {
     // Returns all events (key events and commands, etc.) that are registered to
     // an element. This includes all events that are registered to the element
     // itself, as well as its children, via its ElementOrganizer (if it has
@@ -50,6 +49,20 @@ pub trait Element {
     //                element border
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos>;
 
+    // Assign a reference to the element's parent through the UpwardPropagator
+    // interface. This is used to pass ReceivableEventChanges to the parent.
+    fn set_upward_propagator(&self, up: Rc<RefCell<dyn UpwardPropagator>>);
+}
+
+impl PartialEq for dyn Element {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(self, other)
+    }
+}
+
+// ----------------------------------------
+
+pub trait UpwardPropagator {
     // Passes ReceivableEventChanges to the parent of this element, while optionally making changes
     // to the calling element organizer's prioritizers.
     //
@@ -72,26 +85,7 @@ pub trait Element {
     //
     // TRANSLATION NOTE PropagateUpwardChangesToInputability propagate_upward_changes_to_inputability
     fn propagate_receivable_event_changes_upward(
-        &self, child_el: Arc<Mutex<dyn Element>>, rec: ReceivableEventChanges,
-        update_this_elements_prioritizers: bool,
-    );
-
-    // Assign a reference to the element's parent through the UpwardPropagator
-    // interface. This is used to pass changes in inputability to the parent.
-    fn set_upward_propagator(&self, up: Arc<Mutex<dyn UpwardPropagator>>);
-}
-
-impl PartialEq for dyn Element {
-    fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self, other)
-    }
-}
-
-// ----------------------------------------
-
-pub trait UpwardPropagator {
-    fn propagate_receivable_event_changes_upward(
-        &self, child_el: Arc<Mutex<dyn Element>>, changes: ReceivableEventChanges,
+        &mut self, child_el: Rc<RefCell<dyn Element>>, rec: ReceivableEventChanges,
         update_this_elements_prioritizers: bool,
     );
 
@@ -176,7 +170,7 @@ pub struct EventResponse {
     // it is up to the parent to interpret the metadata
     pub metadata: Option<Box<dyn Any>>,
     // replace the current element with the provided element
-    pub replacement: Option<Arc<Mutex<dyn Element>>>,
+    pub replacement: Option<Rc<RefCell<dyn Element>>>,
     // request that the provided window element be created at the location
     pub window: Option<CreateWindow>,
     // sends a request to the parent to change the size of the element
@@ -219,7 +213,7 @@ impl EventResponse {
         self
     }
 
-    pub fn with_replacement(mut self, el: Arc<Mutex<dyn Element>>) -> EventResponse {
+    pub fn with_replacement(mut self, el: Rc<RefCell<dyn Element>>) -> EventResponse {
         self.replacement = Some(el);
         self
     }
@@ -327,12 +321,12 @@ impl EventResponse {
 // response type for creating a window
 #[derive(Clone)]
 pub struct CreateWindow {
-    pub el: Arc<Mutex<dyn Element>>,
+    pub el: Rc<RefCell<dyn Element>>,
     pub loc: LocationSet,
 }
 
 impl CreateWindow {
-    pub fn new(el: Arc<Mutex<dyn Element>>, loc: LocationSet) -> CreateWindow {
+    pub fn new(el: Rc<RefCell<dyn Element>>, loc: LocationSet) -> CreateWindow {
         CreateWindow { el, loc }
     }
 }
