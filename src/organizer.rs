@@ -1,19 +1,25 @@
 use {
     crate::{
-        prioritizer::EventPrioritizer, Element, ElementID, InputabilityChanges, Locations,
-        UpwardPropagator,
+        element::ReceivableEventChanges, prioritizer::EventPrioritizer, CommandEvent, Context,
+        CreateWindow, DrawChPos, Element, ElementID, Event, EventResponse, Location, LocationSet,
+        Priority, UpwardPropagator, ZIndex,
     },
+    parking_lot::Mutex,
     std::collections::HashMap,
+    std::sync::Arc,
 };
 
 // ElementOrganizer prioritizes and organizes all the elements contained
 // within it
 pub struct ElementOrganizer {
     largest: ElementID, // the largest ID currently registered to the organizer
-    elements: HashMap<ElementID, Box<dyn Element>>,
-    locations: HashMap<ElementID, Locations>, // Locations of all of the elements contained
-    visibility: HashMap<ElementID, bool>,     // whether the element is set to display
-    prioritizer: EventPrioritizer,
+
+    // XXX TODO combine into one hashmap
+    elements: HashMap<ElementID, Arc<Mutex<dyn Element>>>,
+    locations: HashMap<ElementID, LocationSet>, // LocationSet of all of the elements contained
+    visibility: HashMap<ElementID, bool>,       // whether the element is set to display
+
+    pub prioritizer: EventPrioritizer,
 
     // TODO turn to debug assert statement?
     //
@@ -38,7 +44,8 @@ impl Default for ElementOrganizer {
 
 impl ElementOrganizer {
     pub fn add_element(
-        &mut self, el: Box<dyn Element>, up: Box<dyn UpwardPropagator>, loc: Locations, vis: bool,
+        &mut self, el: Arc<Mutex<dyn Element>>, up: Option<Arc<Mutex<dyn UpwardPropagator>>>,
+        loc: LocationSet, vis: bool,
     ) -> ElementID {
         // assign the new element id
         self.largest += 1;
@@ -48,13 +55,13 @@ impl ElementOrganizer {
         self.update_el_z_index(el_id, 0);
 
         self.locations.insert(el_id, loc);
-        self.elements.insert(el_id, el);
+        self.elements.insert(el_id, el.clone());
         self.visibility.insert(el_id, vis);
 
         // add the elements recievable events and commands to the prioritizer
-        let receivable_evs = el.receivable();
+        let receivable_evs = el.lock().receivable();
         self.prioritizer
-            .include(el_id, receivable_evs, self.panic_on_overload);
+            .include(el_id, &receivable_evs, self.panic_on_overload);
 
         // give the child element a reference to the parent (the up passed in as an
         // input)
@@ -62,12 +69,14 @@ impl ElementOrganizer {
         // initiated by an element other than the parent (via this element organizer)
         // (ex: a sibling initiating a change to inputability, as opposed to this eo
         // passing an event to the child through ReceiveEventKeys)
-        el.set_upward_propagator(up);
+        if let Some(up) = up {
+            el.lock().set_upward_propagator(up);
+        }
 
         el_id
     }
 
-    pub fn remove_element(&mut self, el_id: ElementID) -> InputabilityChanges {
+    pub fn remove_element(&mut self, el_id: ElementID) -> ReceivableEventChanges {
         self.elements.remove(&el_id);
         self.locations.remove(&el_id);
         self.visibility.remove(&el_id);
@@ -78,565 +87,515 @@ impl ElementOrganizer {
 
         let rm_evs = self.prioritizer.remove_entire_element(el_id);
 
-        InputabilityChanges::default().with_remove_evs(rm_evs)
-    }
-}
-
-/*
-
-
-// RemoveElement removes the element associated with the given id
-func (eo *ElementOrganizer) RemoveElement(elID ElementID) (ic InputabilityChanges) {
-
-    delete(eo.Elements, elID)
-    delete(eo.Locations, elID)
-    delete(eo.Visibility, elID)
-
-    if eo.Largest == elID {
-        eo.Largest = eo.Largest - 1
+        ReceivableEventChanges::default().with_remove_evs(rm_evs)
     }
 
-    rmEvs := eo.Prioritizer.RemoveEntireElement(elID)
-    ic.RemoveEvs(rmEvs)
-    return ic
-}
+    // remove_all_elements removes all elements from the element organizer
+    pub fn remove_all_elements(&mut self) -> ReceivableEventChanges {
+        self.elements.clear();
+        self.locations.clear();
+        self.visibility.clear();
+        self.largest = 0;
 
-// RemoveAllElements removes all elements from the element organizer
-func (eo *ElementOrganizer) RemoveAllElements() (ic InputabilityChanges) {
-
-    eo.Elements = make(map[ElementID]Element)
-    eo.Locations = make(map[ElementID]Locations)
-    eo.Visibility = make(map[ElementID]bool)
-    eo.Largest = -1
-    pes := eo.Receivable()
-    ic.RemoveEvs(ToPrioritizableEvs(pes))
-    eo.Prioritizer = NewEvPrioritizer()
-    return ic
-}
-
-// GetLargestElID returns the element w/ the largest ID registered to element organizer
-func (eo *ElementOrganizer) GetLargestElID() ElementID {
-    return eo.Largest
-}
-
-// GetElementByID returns the element registered under the given id in the eo
-func (eo *ElementOrganizer) GetElementByID(elID ElementID) Element {
-    return eo.Elements[elID]
-}
-
-// GetIDFromEl returns the id registered under the given element in the eo
-func (eo *ElementOrganizer) GetIDFromEl(el Element) ElementID {
-    for id, e := range eo.Elements {
-        if reflect.DeepEqual(e, el) {
-            return id
-        }
-    }
-    return NoElement
-}
-
-// MustGetLocations returns the context for the element registered under the given id
-func (eo *ElementOrganizer) MustGetLocations(elID ElementID) Locations {
-
-    locs, found := eo.Locations[elID]
-    if !found {
-        panic(fmt.Sprintf("Location not found for id %v but should exist", elID))
-    }
-    return locs
-}
-
-// GetElAtPos returns the element at the given position
-func (eo *ElementOrganizer) GetElAtPos(x, y int) Element {
-    for id, locs := range eo.Locations {
-        if locs.Contains(x, y) {
-            return eo.Elements[id]
-        }
-    }
-    return nil
-}
-
-// GetElIDAtPos returns the element id at the given position
-func (eo *ElementOrganizer) GetElIDAtPos(x, y int) ElementID {
-    for id, locs := range eo.Locations {
-        if locs.Contains(x, y) {
-            return id
-        }
-    }
-    return NoElement
-}
-
-// UpdateElLocationsByID updates the locations of the element with the given id
-// to the given locations
-func (eo *ElementOrganizer) UpdateElLocations(elID ElementID, locs Locations) {
-    eo.Locations[elID] = locs
-}
-
-// UpdateElPrimaryLocation updates the primary location of the element with the given id
-func (eo *ElementOrganizer) UpdateElPrimaryLocation(elID ElementID, loc Location) {
-    locations := NewLocations(loc, eo.Locations[elID].Extra)
-    eo.Locations[elID] = locations
-}
-
-// UpdateElZIndex updates the z-index of the element with the given id
-// NOTE: if the given index is taken, the element currently filling that index
-// will be pushed further back in the z-dimension (i.e. its z-index will be
-// incremented)
-func (eo *ElementOrganizer) UpdateElZIndex(elID ElementID, z ZIndex) {
-
-    if eo.IsZIndexOccupied(z) {
-        id := eo.GetElIDAtZIndex(z)
-        eo.IncrementZIndexForElID(id)
+        let pes = self.receivable().drain(..).map(|(e, _)| e).collect();
+        self.prioritizer = EventPrioritizer::default();
+        ReceivableEventChanges::default().with_remove_evs(pes)
     }
 
-    loc := eo.Locations[elID].Location
-    newLoc := NewLocation(loc.StartX, loc.EndX, loc.StartY, loc.EndY, z)
-    eo.UpdateElPrimaryLocation(elID, newLoc)
-}
-
-// GetContextForElID returns the context for the element registered under the given id
-func (eo *ElementOrganizer) GetContextForElID(elID ElementID) Context {
-    size := eo.Locations[elID].GetSize()
-    return NewContext(
-        size,
-        eo.Visibility[elID],
-    )
-}
-
-// GetHighestZIndex returns the highest z-index of all elements
-// NOTE: the highest z-index is the furthest back visually
-func (eo *ElementOrganizer) GetHighestZIndex() ZIndex {
-    var highest ZIndex
-    for _, locs := range eo.Locations {
-        if locs.Location.Z > highest {
-            highest = locs.Location.Z
-        }
-    }
-    return highest
-}
-
-// GetLowestZIndex returns the lowest z-index of all elements
-// NOTE: the lowest z-index is the furthest forward visually
-func (eo *ElementOrganizer) GetLowestZIndex() ZIndex {
-    var lowest ZIndex
-    for _, locs := range eo.Locations {
-        if locs.Location.Z < lowest {
-            lowest = locs.Location.Z
-        }
-    }
-    return lowest
-}
-
-// Receivable returns all of the key combos and commands registered to this
-// element organizer, along with their priorities
-func (eo *ElementOrganizer) Receivable() []PriorityEv {
-    var pe []PriorityEv
-    for _, el := range eo.Elements {
-        pe1 := el.Receivable()
-        pe = append(pe, pe1...)
-    }
-    return pe
-}
-
-// ElIDZIndex holds the z index and id of an element
-type ElIDZIndex struct {
-    id ElementID
-    z  ZIndex
-}
-
-// NewElIDZIndex returns a new ElIDZIndex
-func NewElIDZIndex(id ElementID, z ZIndex) ElIDZIndex {
-    return ElIDZIndex{
-        id,
-        z,
-    }
-}
-
-// ElIDZOrder is a slice of ElIDZIndex
-// NOTE: it is used to sort the elements by z index
-type ElIDZOrder []ElIDZIndex
-
-// XXX TODO determine which way the sort is occurring for z index (high to low
-// or low to high??)
-
-// fulfill the sort interface
-// NOTE: sorts high to low
-func (c ElIDZOrder) Len() int           { return len(c) }
-func (c ElIDZOrder) Less(i, j int) bool { return (c)[i].z > (c)[j].z }
-func (c ElIDZOrder) Swap(i, j int)      { (c)[i], (c)[j] = (c)[j], (c)[i] }
-
-// AllDrawing executes Drawing functions on all elements in the element
-// organizer.
-// A DrawChPos slice is returned and passed up the chain to the top of the CUI
-// element hierarchy.
-// NOTE: the elements are sorted by z-index, from highest to lowest (furthest
-// back to furthest forward) and then drawn in that order, such that the element
-// with the lowest z-index is drawn last and thus is on top of all others in the
-// DrawChPos slice
-func (eo *ElementOrganizer) AllDrawing() []DrawChPos {
-
-    out := []DrawChPos{}
-    var eoz ElIDZOrder
-
-    for elID := range eo.Elements {
-        z := eo.Locations[elID].Z
-        eoz = append(eoz, NewElIDZIndex(elID, z))
+    // get_largest_el_id returns the element w/ the largest ID registered to element organizer
+    pub fn get_largest_el_id(&self) -> ElementID {
+        self.largest
     }
 
-    sort.Sort(eoz) // sort z index from high to low
-
-    // draw elements in order from highest z-index to lowest
-    for _, elIDZ := range eoz {
-
-        ctx := eo.GetContextForElID(elIDZ.id)
-        el := eo.GetElementByID(elIDZ.id)
-        dcps := el.Drawing(ctx)
-
-        locs := eo.MustGetLocations(elIDZ.id)
-
-        for _, dcp := range dcps {
-            dcp.AdjustByLocation(locs.Location)
-            out = append(out, dcp)
-        }
+    // get_element_by_id returns the element registered under the given id in the eo
+    pub fn get_element_by_id(&self, el_id: ElementID) -> Option<Arc<Mutex<dyn Element>>> {
+        self.elements.get(&el_id).cloned()
     }
 
-    return out
-}
-
-// write func to remove/add evCombos and commands from EvPrioritizer and
-// CommandPrioritizer, using the InputabilityChanges struct
-func (eo *ElementOrganizer) ProcessChangesToInputability(elID ElementID, ic InputabilityChanges) {
-    eo.Prioritizer.Remove(elID, ic.RmRecEvs)
-    eo.Prioritizer.Include(elID, ic.AddRecEvs, eo.PanicOnOverload)
-}
-
-// Partially process the event response for whatever is possible to be processed
-// in the element organizer. Further processing may be required by the element
-// which owns this element organizer.
-func (eo *ElementOrganizer) PartiallyProcessEvResp(id ElementID,
-    r EventResponse) EventResponse {
-
-    // replace this entire element
-    if repl, found := r.GetReplacement(); found {
-        ctx := eo.GetContextForElID(id) // get element context
-        eo.ReplaceEl(id, repl)
-        r.RemoveReplacement()
-
-        // resize replacement
-        // TODO may not be neccessary. Explore further w/ fixes to resizing
-        el := eo.GetElementByID(id)
-        el.ReceiveEvent(ctx, ResizeEvent{})
-    }
-
-    if elr, found := r.GetExtraLocations(); found {
-
-        // adjust extra locations to be relative to the given element
-        loc := eo.Locations[id] // location of element
-        var adjExtraLocs []Location
-        for _, l := range elr.extraLocs {
-            l.AdjustLocationBy(loc.StartX, loc.StartY)
-            adjExtraLocs = append(adjExtraLocs, l)
+    // get_id_from_el returns the id registered under the given element in the eo
+    pub fn get_id_from_el(&self, el: Arc<Mutex<dyn Element>>) -> ElementID {
+        for (id, e) in &self.elements {
+            // check if the two elements are the same object
+            // if so, return the id
+            if Arc::ptr_eq(e, &el) {
+                // XXX check if this works
+                return *id;
+            }
         }
 
-        // update extra locations
-        eo.UpdateExtraLocationsForEl(id, adjExtraLocs)
+        0
     }
 
-    if window, found := r.GetWindow(); found && window.HasWindow() {
-        eo.ProcessCreateWindow(id, window)
-        r.RemoveWindow() // remove from response
+    // must_get_locations returns the context for the element registered under the given id
+    pub fn must_get_locations(&self, el_id: ElementID) -> &LocationSet {
+        self.locations
+            .get(&el_id)
+            .expect("must get locations which doesn't exist")
     }
 
-    if destruct := r.GetDestruct(); destruct {
-        ic := eo.RemoveElement(id)
-
-        r.ConcatInputabilityChanges(ic)
-        r.RemoveDestruct()
+    // get_el_at_pos returns the element at the given position
+    pub fn get_el_at_pos(&self, x: i32, y: i32) -> Option<Arc<Mutex<dyn Element>>> {
+        for (id, locs) in &self.locations {
+            if locs.contains(x, y) {
+                return self.elements.get(id).cloned();
+            }
+        }
+        None
     }
 
-    return r
-}
-
-func (eo *ElementOrganizer) ProcessCreateWindow(id ElementID, cw CreateWindow) {
-
-    // adjust location of window to be relative to the given element
-    loc := eo.Locations[id] // location of element
-    cw.Loc.AdjustLocationsBy(loc.StartX, loc.StartY)
-
-    eo.AddElement(cw.El, nil, cw.Loc, true)
-}
-
-// KeyEventsProcess :
-// - determines the appropriate element to send key events to
-// - sends the event combo to the element
-// - processes changes to the elements receivable events
-func (eo *ElementOrganizer) KeyEventsProcess(evs []*tcell.EventKey) (
-    ElementID, EventResponse) {
-
-    // determine elementID to send events to
-    elID := eo.Prioritizer.GetDestinationEl(evs)
-    if elID == NoElement {
-        return NoElement, EventResponse{}
+    // get_el_id_at_pos returns the element id at the given position
+    pub fn get_el_id_at_pos(&self, x: i32, y: i32) -> Option<ElementID> {
+        for (id, locs) in &self.locations {
+            if locs.contains(x, y) {
+                return Some(*id);
+            }
+        }
+        None
     }
 
-    el := eo.GetElementByID(elID) // get element
-    if el == nil {
-        panic("no ID associated with destination el")
+    // update_el_locations_by_id updates the locations of the element with the given id
+    // to the given locations
+    pub fn update_el_locations_by_id(&mut self, el_id: ElementID, locs: LocationSet) {
+        self.locations.insert(el_id, locs);
     }
-    ctx := eo.GetContextForElID(elID) // get element context
 
-    // send EventKeys to element w/ context
-    _, r := el.ReceiveEvent(ctx, KeysEvent(evs))
-    r = eo.PartiallyProcessEvResp(elID, r)
-    //Debug("\n\nEO.KeyEventsProcess: r.IC: %v\n", r.IC)
-    if ic, found := r.GetInputabilityChanges(); found {
-        eo.ProcessChangesToInputability(elID, ic)
+    // update_el_primary_location updates the primary location of the element with the given id
+    pub fn update_el_primary_location(&mut self, el_id: ElementID, loc: Location) {
+        self.locations.entry(el_id).and_modify(|l| l.l = loc);
     }
-    return elID, r
-}
 
-// Refresh does the following:
-// - updates prioritizers
-// - triggers a resize event in all children.
-// This essentially refreshes the state of the element organizer.
-//
-// NOTE: the refresh allows for less meticulous construction of the
-// main.go file. Elements can be added in whatever order, so long as
-// MainEl.Refresh() is called after all elements are added.
-func (eo *ElementOrganizer) Refresh(ctx Context) {
+    // update_el_primary_location updates the primary location of the element with the given id
+    pub fn update_el_location(&mut self, el_id: ElementID, loc: LocationSet) {
+        self.locations.entry(el_id).and_modify(|l| (*l) = loc);
+    }
 
-    // reset prioritizers
-    eo.Prioritizer = NewEvPrioritizer()
+    // TODO rename to consisten with above
+    // updates the extra locations for the given element
+    pub fn update_extra_locations_for_el(
+        &mut self, el_id: ElementID, extra_locations: Vec<Location>,
+    ) {
+        self.locations
+            .entry(el_id)
+            .and_modify(|l| l.extra = extra_locations);
+    }
 
-    for elID, el := range eo.Elements {
+    // update_el_z_index updates the z-index of the element with the given id
+    //
+    // NOTE: if the given index is taken, the element currently filling that index
+    // will be pushed further back in the z-dimension (i.e. its z-index will be
+    // incremented)
+    //
+    // TRANSLATION: SetZIndexForElement set_z_index_for_element
+    pub fn update_el_z_index(&mut self, el_id: ElementID, z: i32) {
+        if self.is_z_index_occupied(z) {
+            let id = self.get_el_id_at_z_index(z).unwrap(); // XXX shouldn't panic
+            self.increment_z_index_for_el_id(id);
+        }
+
+        self.locations.entry(el_id).and_modify(|l| (l.z) = z);
+    }
+
+    // get_context_for_el_id returns the context for the element registered under the given id
+    pub fn get_context_for_el_id(&self, el_id: ElementID) -> Context {
+        let size = self.locations[&el_id].l.get_size();
+        Context::new(size, self.visibility[&el_id])
+    }
+
+    // GetHighestZIndex returns the highest z-index of all elements
+    // NOTE: the highest z-index is the furthest back visually
+    pub fn get_highest_z_index(&self) -> i32 {
+        let mut highest = 0;
+        for locs in self.locations.values() {
+            if locs.z > highest {
+                highest = locs.z;
+            }
+        }
+        highest
+    }
+
+    // get_lowest_z_index returns the lowest z-index of all elements
+    // NOTE: the lowest z-index is the furthest forward visually
+    pub fn get_lowest_z_index(&self) -> i32 {
+        let mut lowest = None;
+        for locs in self.locations.values() {
+            if let Some(l) = lowest {
+                if locs.z < l {
+                    lowest = Some(locs.z);
+                }
+            } else {
+                lowest = Some(locs.z);
+            }
+        }
+        lowest.unwrap_or(0)
+    }
+
+    // Receivable returns all of the key combos and commands registered to this
+    // element organizer, along with their priorities
+    pub fn receivable(&self) -> Vec<(Event, Priority)> {
+        let mut out = Vec::new();
+        for el in self.elements.values() {
+            let pr_evs = el.lock().receivable();
+            out.extend(pr_evs);
+        }
+        out
+    }
+
+    // AllDrawing executes Drawing functions on all elements in the element
+    // organizer.
+    // A DrawChPos slice is returned and passed up the chain to the top of the CUI
+    // element hierarchy.
+    // NOTE: the elements are sorted by z-index, from highest to lowest (furthest
+    // back to furthest forward) and then drawn in that order, such that the element
+    // with the lowest z-index is drawn last and thus is on top of all others in the
+    // DrawChPos slice
+    pub fn all_drawing(&self) -> Vec<DrawChPos> {
+        let mut out = Vec::new();
+        let mut eoz: Vec<(ElementID, ZIndex)> = Vec::new();
+
+        for el_id in self.elements.keys() {
+            let z = self.locations[el_id].z;
+            eoz.push((*el_id, z));
+        }
+
+        // sort z index from high to low
+        eoz.sort_by(|a, b| b.1.cmp(&a.1));
+
+        // draw elements in order from highest z-index to lowest
+        for el_id_z in eoz {
+            let ctx = self.get_context_for_el_id(el_id_z.0);
+            let el = self.get_element_by_id(el_id_z.0).unwrap();
+            let dcps = el.lock().drawing(&ctx);
+
+            let locs = self.must_get_locations(el_id_z.0);
+
+            for mut dcp in dcps {
+                dcp.adjust_by_location(&locs.l);
+                out.push(dcp);
+            }
+        }
+
+        out
+    }
+
+    // write func to remove/add evCombos and commands from EvPrioritizer and
+    // CommandPrioritizer, using the ReceivableEventChanges struct
+    /*pub fn process_changes_to_inputability(*/
+    pub fn process_receivable_event_changes(
+        &mut self, el_id: ElementID, ic: &ReceivableEventChanges,
+    ) {
+        self.prioritizer.remove(el_id, &ic.remove);
+        self.prioritizer
+            .include(el_id, &ic.add, self.panic_on_overload);
+    }
+
+    // Partially process the event response for whatever is possible to be processed
+    // in the element organizer. Further processing may be required by the element
+    // which owns this element organizer.
+    pub fn partially_process_ev_resp(
+        &mut self, el_id: ElementID, mut r: EventResponse,
+    ) -> EventResponse {
+        // replace this entire element
+        if let Some(repl) = r.replacement {
+            let ctx = self.get_context_for_el_id(el_id);
+            self.replace_el(el_id, repl);
+            r.replacement = None;
+
+            // resize replacement
+            // TODO may not be neccessary. Explore further w/ fixes to resizing
+            let el = self.get_element_by_id(el_id).unwrap(); // XXX remove unwrap?? use expect here??
+            el.lock().receive_event(&ctx, Event::Resize);
+        }
+
+        if let Some(ref elr) = r.extra_locations {
+            // adjust extra locations to be relative to the given element
+            let loc = self.locations[&el_id].clone();
+            let mut adj_extra_locs = Vec::new();
+            for mut l in elr.extra_locs.clone() {
+                l.adjust_location_by(loc.l.start_x, loc.l.start_y);
+                adj_extra_locs.push(l.clone());
+            }
+
+            // update extra locations
+            self.update_extra_locations_for_el(el_id, adj_extra_locs);
+        }
+
+        let window = r.window.take();
+        if let Some(window) = window {
+            self.process_create_window(el_id, window);
+        }
+
+        if r.destruct {
+            let ic = self.remove_element(el_id);
+
+            r.concat_receivable_event_changes(ic);
+            r.destruct = false;
+        }
+
+        r
+    }
+
+    // ProcessCreateWindow adjusts the location of the window to be relative to the
+    // given element and adds the element to the element organizer
+    pub fn process_create_window(&mut self, el_id: ElementID, mut cw: CreateWindow) {
+        // adjust location of window to be relative to the given element
+        let loc = self.locations[&el_id].clone(); // location of element
+        cw.loc.l.adjust_location_by(loc.l.start_x, loc.l.start_y);
+
+        self.add_element(cw.el, None, cw.loc, true);
+    }
+
+    // Replaces the element at the given ID with a new element
+    pub fn replace_el(
+        &mut self, el_id: ElementID, new_el: Arc<Mutex<dyn Element>>,
+    ) -> ReceivableEventChanges {
+        let mut ic = ReceivableEventChanges::default();
+
+        // register new element to organizer under ID of old element
+        if let Some(old_el) = self.elements.insert(el_id, new_el.clone()) {
+            let evs: Vec<Event> = old_el
+                .lock()
+                .receivable()
+                .drain(..)
+                .map(|(e, _)| e)
+                .collect();
+            self.prioritizer.remove(el_id, &evs);
+            ic = ic.with_remove_evs(evs);
+        }
+
+        // register all events of new element to the prioritizers
+        let new_evs = new_el.lock().receivable();
+        self.prioritizer
+            .include(el_id, &new_evs, self.panic_on_overload);
+        ic.add_evs(new_evs);
+
+        ic
+    }
+
+    // key_events_process:
+    // - determines the appropriate element to send key events to
+    // - sends the event combo to the element
+    // - processes changes to the elements receivable events
+    pub fn key_events_process(
+        &mut self, evs: Vec<crossterm::event::KeyEvent>,
+    ) -> Option<(ElementID, EventResponse)> {
+        // determine elementID to send events to
+        let evs: Event = evs.into();
+        let el_id = self.prioritizer.get_destination_el(&evs)?;
+
+        // get element
+        let el = self
+            .get_element_by_id(el_id)
+            .expect("no element for destination id");
+
+        // send EventKeys to element w/ context
+        let ctx = self.get_context_for_el_id(el_id);
+        let (_, r) = el.lock().receive_event(&ctx, evs);
+        let r = self.partially_process_ev_resp(el_id, r);
+
+        if let Some(changes) = r.get_receivable_event_changes() {
+            self.process_receivable_event_changes(el_id, &changes);
+        }
+
+        Some((el_id, r))
+    }
+
+    // refresh does the following:
+    // - updates prioritizers
+    // - triggers a resize event in all children.
+    // This essentially refreshes the state of the element organizer.
+    //
+    // NOTE: the refresh allows for less meticulous construction of the
+    // main.go file. Elements can be added in whatever order, so long as
+    // your_main_el.refresh() is called after all elements are added.
+    pub fn refresh(&mut self) {
+        // reset prioritizers
+        self.prioritizer = EventPrioritizer::default();
 
         // refresh all children
-        elCtx := eo.GetContextForElID(elID)
-        el.ReceiveEvent(elCtx, RefreshEvent{})
-        el.ReceiveEvent(elCtx, ResizeEvent{})
-
-        // update prioritizers w/ all receivable events/cmds
-        pe := el.Receivable()
-        eo.Prioritizer.Include(elID, pe, eo.PanicOnOverload)
-    }
-}
-
-// Replaces the element at the given ID with a new element
-func (eo *ElementOrganizer) ReplaceEl(elID ElementID, newEl Element) (
-    ic InputabilityChanges) {
-
-    oldEl := eo.GetElementByID(elID) // get the element being replaced
-
-    // remove all events to old element from the prioritizers
-
-    evs := ToPrioritizableEvs(oldEl.Receivable())
-    eo.Prioritizer.Remove(elID, evs)
-    ic.RemoveEvs(evs)
-
-    // register new element to organizer under ID of old element
-    eo.Elements[elID] = newEl
-
-    // register all events of new element to the prioritizers
-    newEvs := newEl.Receivable()
-    eo.Prioritizer.Include(elID, newEvs, eo.PanicOnOverload)
-    ic.AddEvs(newEvs)
-
-    return ic // pass back upward changes to inputability
-}
-
-// ChangePriorityForEl updates a child element (elId) to a new priority. It does
-// this by asking the child element to return its registered events w/
-// priorities updated to a given priority.
-func (eo *ElementOrganizer) ChangePriorityForEl(elID ElementID,
-    pr Priority) InputabilityChanges {
-
-    // this ic is the ic for THIS element organizer (not the child
-    // element)
-    var ic InputabilityChanges
-
-    el := eo.GetElementByID(elID) // get element
-    ctx := eo.GetContextForElID(elID)
-
-    ic = el.ChangePriority(ctx, pr) // change priority of element
-    eo.ProcessChangesToInputability(elID, ic)
-
-    return ic
-}
-
-// MouseEventProcess :
-// - determines the appropriate element to send mouse events to
-// - sends the event to the element
-// - processes changes to the element's receivable events
-func (eo *ElementOrganizer) MouseEventProcess(ev *tcell.EventMouse) (
-    elID ElementID, evResp EventResponse) {
-
-    ezo := eo.getElIDZOrderUnderMouse(ev)
-
-    if len(ezo) == 0 {
-        return NoElement, EventResponse{}
+        for (el_id, el) in self.elements.iter() {
+            let el_ctx = self.get_context_for_el_id(*el_id);
+            el.lock().receive_event(&el_ctx, Event::Refresh);
+            el.lock().receive_event(&el_ctx, Event::Resize);
+        }
     }
 
-    // get highest z element that falls under mouse event
-    // NOTE: a reverse sort is required as the default use of the sort is to
-    // draw elements in order of highest to lowest z so that lower z
-    // elements sit on top of higher
-    sort.Sort(sort.Reverse(ezo))
-    e := ezo[0] // moused element (ElIDZIndex) with highest z
+    // change_priority_for_el updates a child element (el_id) to a new priority. It does
+    // this by asking the child element to return its registered events w/
+    // priorities updated to a given priority.
+    pub fn change_priority_for_el(
+        &mut self, el_id: ElementID, pr: Priority,
+    ) -> ReceivableEventChanges {
+        let el = self
+            .get_element_by_id(el_id)
+            .expect("no element for destination id"); // XXX something else
 
-    el := eo.GetElementByID(e.id)
-    locs := eo.Locations[e.id]
-    ctx := eo.GetContextForElID(e.id)
+        let ctx = self.get_context_for_el_id(el_id);
 
-    // adjust event to the relative position of the element
-    evAdj := locs.AdjustMouseEvent(ev)
-
-    // send mouse event to element
-    _, evResp = el.ReceiveEvent(ctx, MouseEvent(evAdj))
-
-    if ic, found := evResp.GetInputabilityChanges(); found {
-        eo.ProcessChangesToInputability(e.id, ic)
-    }
-    evResp = eo.PartiallyProcessEvResp(e.id, evResp)
-
-    // move element to top of z-dim if primary click
-    if ev.Buttons() == tcell.Button1 {
-        eo.UpdateElZIndex(e.id, 0)
+        // NOTE these changes are the changes for
+        // THIS element organizer (not the child element)
+        let changes = el.lock().change_priority(&ctx, pr);
+        self.process_receivable_event_changes(el_id, &changes);
+        changes
     }
 
-    // send the mouse event as an external event to all other elements
-    for id, el := range eo.Elements {
-        if id == e.id {
-            continue
+    // get_el_id_z_order_under_mouse returns a list of all Elements whose locations
+    // include the position of the mouse event
+    pub fn get_el_id_z_order_under_mouse(
+        &self, ev: &crossterm::event::MouseEvent,
+    ) -> Vec<(ElementID, ZIndex)> {
+        let mut ezo: Vec<(ElementID, ZIndex)> = Vec::new();
+
+        for (el_id, _) in self.elements.iter() {
+            let ctx = self.get_context_for_el_id(*el_id);
+            let locs = &self.locations[el_id];
+            if !ctx.visible {
+                continue;
+            }
+
+            let Some(z) = locs.get_z_index_for_point(ev.column.into(), ev.row.into()) else {
+                continue;
+            };
+
+            ezo.push((*el_id, z));
+        }
+        ezo
+    }
+
+    // mouse_event_process :
+    // - determines the appropriate element to send mouse events to
+    // - sends the event to the element
+    // - processes changes to the element's receivable events
+    pub fn mouse_event_process(
+        &mut self, ev: &crossterm::event::MouseEvent,
+    ) -> Option<(ElementID, EventResponse)> {
+        let mut eoz = self.get_el_id_z_order_under_mouse(ev);
+        if eoz.is_empty() {
+            return None;
+        }
+
+        // get highest z element that falls under mouse event
+
+        // sort z index from high to low
+        eoz.sort_by(|a, b| b.1.cmp(&a.1));
+        let el_id = eoz[0].0;
+        let el = self
+            .get_element_by_id(el_id)
+            .expect("no element for destination id");
+        let locs = &self.locations[&el_id];
+        let ctx = self.get_context_for_el_id(el_id);
+
+        // adjust event to the relative position of the element
+        let ev_adj = locs.l.adjust_mouse_event(ev);
+
+        // send mouse event to element
+        let (_, ev_resp) = el.lock().receive_event(&ctx, Event::Mouse(ev_adj));
+        if let Some(changes) = ev_resp.get_receivable_event_changes() {
+            self.process_receivable_event_changes(el_id, &changes);
+        }
+        let mut ev_resp = self.partially_process_ev_resp(el_id, ev_resp);
+
+        // move element to top of z-dim if primary click
+        // TODO why... why do we do this here?!
+        if let crossterm::event::MouseEventKind::Up(button) = ev_adj.kind {
+            if button == crossterm::event::MouseButton::Left {
+                self.update_el_z_index(el_id, 0);
+            }
+        }
+
+        // send the mouse event as an external event to all other elements
+        // capture the responses
+        let mut resps = Vec::new();
+        for (el_id2, el) in self.elements.iter() {
+            if *el_id2 == el_id {
+                continue;
+            }
+            let (_, r) = el.lock().receive_event(&ctx, Event::Mouse(*ev));
+            resps.push((*el_id2, r));
         }
 
         // combine the event responses from the elements that receive the event
         // and all the elements that receive an external event
+        for (el_id2, r) in resps {
+            if let Some(changes) = r.get_receivable_event_changes() {
+                self.process_receivable_event_changes(el_id2, &changes);
+            }
+            let r = self.partially_process_ev_resp(el_id2, r);
 
-        _, r := el.ReceiveEvent(ctx, ExternalMouseEvent(ev))
+            // combine the receivable-event changes, all other external responses are
+            // ignored. TODO explain why.
 
-        if ic, found := r.GetInputabilityChanges(); found {
-            eo.ProcessChangesToInputability(id, ic)
-        }
-        rProc := eo.PartiallyProcessEvResp(id, r)
-
-        // combine the inputability changes, all other external responses are
-        // ignored
-        //evResp.Concat(rProc)
-        if ic, found := rProc.GetInputabilityChanges(); found {
-            evResp.ConcatInputabilityChanges(ic)
-        }
-    }
-
-    return e.id, evResp
-}
-
-// GetElIDAtZIndex returns the element ID at the given z index, or NoElement if
-// no element exists at the given z index
-func (eo *ElementOrganizer) GetElIDAtZIndex(z ZIndex) ElementID {
-    for id, loc := range eo.Locations {
-        if loc.Z == z {
-            return id
-        }
-    }
-    return NoElement
-}
-
-// IncrementZIndexForElID increments the z-index of the element with the given id,
-// pushing it further back in the visual stack.
-// NOTE: If an element already occupies the index that the given element is
-// attempting to occupy, the element occupying the index will be pushed back as
-// well.
-// To move an element in the z-dimension, relative to other elements, use
-// UpdateZIndexForElID
-func (eo *ElementOrganizer) IncrementZIndexForElID(elID ElementID) {
-
-    z := eo.Locations[elID].Z // current z of element
-
-    // check if element exists at next z-index
-    if eo.IsZIndexOccupied(z + 1) {
-
-        // recursively increment z-index of element at next z-index
-        id := eo.GetElIDAtZIndex(z + 1)
-        eo.IncrementZIndexForElID(id)
-    }
-
-    // increment z-index of element
-    eo.UpdateElZIndex(elID, z+1)
-}
-
-// IsZIndexOccupied returns true if an element exists at the given z-index
-func (eo *ElementOrganizer) IsZIndexOccupied(z ZIndex) bool {
-    for _, locs := range eo.Locations {
-        if locs.Z == z {
-            return true
-        }
-    }
-    return false
-}
-
-// SetVisibilityForEl sets the Visibility of the given element ID
-func (eo *ElementOrganizer) SetVisibilityForEl(elID ElementID, visible bool) {
-    eo.Visibility[elID] = visible
-}
-
-// UpdateExtraLocationsForEl updates the extra locations for the given element
-func (eo *ElementOrganizer) UpdateExtraLocationsForEl(id ElementID,
-    extraLocations []Location) {
-
-    newLocs := NewLocations(eo.Locations[id].Location, extraLocations)
-    eo.Locations[id] = newLocs
-}
-
-// ReceiveCommandEvent attempts to execute the given command
-func (eo *ElementOrganizer) ReceiveCommandEvent(ev CommandEvent,
-) (cmdExecuted bool, resp EventResponse) {
-
-    elID := eo.Prioritizer.GetDestinationEl(ev.Cmd)
-    if elID == NoElement {
-        return false, EventResponse{}
-    }
-    el := eo.GetElementByID(elID)
-    ctx := eo.GetContextForElID(elID) // get context for element
-
-    cmdExecuted, resp = el.ReceiveEvent(ctx, ev)
-    if ic, found := resp.GetInputabilityChanges(); found {
-        eo.ProcessChangesToInputability(elID, ic)
-    }
-    resp = eo.PartiallyProcessEvResp(elID, resp)
-    return cmdExecuted, resp
-}
-
-// SetZIndexForElement sets the z index of the given element
-func (eo *ElementOrganizer) SetZIndexForElement(elID ElementID, z ZIndex) {
-    oldLoc := eo.Locations[elID]
-    newLoc := NewLocation(oldLoc.StartX, oldLoc.EndX, oldLoc.StartY, oldLoc.EndY, z)
-    newLocs := NewLocations(newLoc, oldLoc.Extra)
-    eo.Locations[elID] = newLocs
-}
-
-// getElIDZOrderUnderMouse returns an ElIDZOrder of all Elements whose locations
-// include the position of the mouse event
-func (eo *ElementOrganizer) getElIDZOrderUnderMouse(ev *tcell.EventMouse) ElIDZOrder {
-
-    // make array to hold all elements that are under the mouse click
-    var ezo ElIDZOrder
-
-    // determine what element is being clicked on
-    for id := range eo.Elements {
-
-        ctx := eo.GetContextForElID(id)
-        locs := eo.Locations[id]
-
-        // check if element is visible
-        if !ctx.Visible {
-            continue
+            if let Some(re) = r.get_receivable_event_changes() {
+                ev_resp.concat_receivable_event_changes(re);
+            }
         }
 
-        // check if mouse click is within location of element
-        if locs.Contains(ev.Position()) {
-            ezo = append(ezo, NewElIDZIndex(id, locs.Z))
-        }
+        Some((el_id, ev_resp))
     }
 
-    return ezo
-}
+    // get_el_id_at_z_index returns the element-id at the given z index, or None if
+    // no element exists at the given z index
+    pub fn get_el_id_at_z_index(&self, z: ZIndex) -> Option<ElementID> {
+        for (el_id, loc) in self.locations.iter() {
+            if loc.z == z {
+                return Some(*el_id);
+            }
+        }
+        None
+    }
 
-*/
+    // increment_z_index_for_el_id increments the z-index of the element with the given id,
+    // pushing it further back in the visual stack.
+    //
+    // NOTE: If an element already occupies the index that the given element is
+    // attempting to occupy, the element occupying the index will be pushed back as
+    // well.
+    //
+    // To move an element in the z-dimension, relative to other elements, use
+    // UpdateZIndexForElID
+    pub fn increment_z_index_for_el_id(&mut self, el_id: ElementID) {
+        let z = self.locations[&el_id].z; // current z of element
+
+        // check if element exists at next z-index
+        if self.is_z_index_occupied(z + 1) {
+            // recursively increment z-index of element at next z-index
+            let id = self.get_el_id_at_z_index(z + 1).unwrap();
+            self.increment_z_index_for_el_id(id);
+        }
+
+        // increment z-index of the element
+        self.locations.entry(el_id).and_modify(|l| (l.z) = z + 1);
+    }
+
+    // is_z_index_occupied returns true if an element exists at the given z-index
+    pub fn is_z_index_occupied(&self, z: ZIndex) -> bool {
+        self.locations.values().any(|locs| locs.z == z)
+    }
+
+    // set_visibility_for_el sets the Visibility of the given element ID
+    pub fn set_visibility_for_el(&mut self, el_id: ElementID, visible: bool) {
+        self.visibility.insert(el_id, visible);
+    }
+
+    // receive_command_event attempts to execute the given command
+    //                                                       (captured, resp         )
+    pub fn receive_command_event(&mut self, ev: CommandEvent) -> (bool, EventResponse) {
+        let ev = Event::Command(ev);
+        let Some(el_id) = self.prioritizer.get_destination_el(&ev) else {
+            return (false, EventResponse::default());
+        };
+
+        let Some(el) = self.get_element_by_id(el_id) else {
+            // XXX TODO return error
+            return (false, EventResponse::default());
+        };
+        let ctx = self.get_context_for_el_id(el_id);
+
+        let (captured, resp) = el.lock().receive_event(&ctx, ev);
+        if let Some(changes) = resp.get_receivable_event_changes() {
+            self.process_receivable_event_changes(el_id, &changes);
+        }
+        let resp = self.partially_process_ev_resp(el_id, resp);
+
+        (captured, resp)
+    }
+}

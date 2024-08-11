@@ -228,7 +228,7 @@ mod tests {
             DrawChPos::new(b.clone(), 1, 0),
             DrawChPos::new(c.clone(), 2, 3),
         ];
-        let loc = Location::new(10, 20, 30, 40, 0);
+        let loc = Location::new(10, 20, 30, 40);
 
         let mut out = Vec::new();
         for mut ch in chs {

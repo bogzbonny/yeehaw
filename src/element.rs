@@ -1,6 +1,8 @@
 use {
-    crate::{prioritizer::Priority, DrawChPos, Event, Location, Locations, Size},
+    crate::{prioritizer::Priority, DrawChPos, Event, Location, LocationSet, Size},
+    parking_lot::Mutex,
     std::any::Any,
+    std::sync::Arc,
 };
 
 // Element is the base interface which all viewable elements are
@@ -12,14 +14,15 @@ pub trait Element {
     // one).
     // NOTE in this current design, elements are always expected to receive
     // mouse events.
-    fn receivable(&self) -> Vec<(Priority, Event)>;
+    fn receivable(&self) -> Vec<(Event, Priority)>;
 
     // This is used to receive an event from a parent. The receiving element may
     // consume the event and/or pass it to a child. The element is expected to
     // return a response to the event, along with any changes to its
     // inputability that its parent will use as well pass up the tree. When the
     // event is captured, the element is expected to returns captured=true.
-    fn receive_event(&self, ctx: Context, ev: Event) -> (bool, EventResponse);
+    //                                               (captured, response     )
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponse);
 
     // ChangePriority will change the priority of an element relative to its
     // ancestors. All events owned directly by the element will have their local
@@ -38,46 +41,57 @@ pub trait Element {
     // to the given priority, while telling to parent to change the priority of
     // all of the element's children's evs to whatever is recorded in the
     // element's prioritizers.
-    fn change_priority(&self, ctx: Context, p: Priority) -> ReceivableEventChanges;
+    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges;
 
     // get the element's full drawing for the provided width and height
     // this is provided as an ordered list of individual elements to draw
     // z = the element viewing depth, 0 is the topmost element
     // freeFloating = whether the element is constrained by the parent
     //                element border
-    fn drawing(&self, ctx: Context) -> Vec<DrawChPos>;
+    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos>;
 
-    // Passes ChangesInInputability to the parent of this element, while
-    // optionally making changes to the calling element organizer's prioritizers.
+    // Passes ReceivableEventChanges to the parent of this element, while optionally making changes
+    // to the calling element organizer's prioritizers.
     //
-    // childEl is the element which is invoking the propagation from BELOW this
-    // parent pane. This is used by the parent to determine which events/cmds to
-    // update the prioritizers for.
+    // child_el is the child element which is invoking the propagation from BELOW this element.
+    // This is used by the parent element (this one) to determine which events/cmds to update the
+    // prioritizers for.
     //
-    // If updateThisElementsPrioritizers is true, then the prioritizers for this
-    // element will be updated. This should always be the case except at the
-    // initialization of the upward propagation process. In that case, the
-    // changes to the element calling should have alread been handled by said
-    // element.
+    // If update_this_elements_prioritizers is true, then the prioritizers for this element will be
+    // updated. This should always be the case except at the initialization of the upward
+    // propagation process. In that case, the changes to the element calling should have already
+    // been handled by said element. TODO can this be deleted?
     //
-    // NOTE: In most cases, changes in inputability are passed to the parent in
-    // the return values of a function invoked on the element by the parent (ex.
-    // ReceiveEvent). However, when changes are initiated laterally (by a
-    // sibling), the parent must be notified of the changes. This function
-    // accomplishes that.
-    fn propagate_upward_changes_to_inputability(
-        &self, el: Box<dyn Element>, ic: ReceivableEventChanges,
+    // NOTE: In most cases, changes in inputability are passed to the parent in the return values
+    // of a function invoked on the element by the parent (ex. ReceiveEvent). However, when changes
+    // are initiated laterally (by a sibling), the parent must be notified of the changes. This
+    // function accomplishes that. For instance, a child-pane in a split pane may with to initiate a
+    // movement to a different child-pane, in this case it could activate the child pane and
+    // deactivate itself, this newly activated child pane would need a way to inform the parent
+    // pane of its changes to inputability. (TODO confirm this example)
+    //
+    // TRANSLATION NOTE PropagateUpwardChangesToInputability propagate_upward_changes_to_inputability
+    fn propagate_receivable_event_changes_upward(
+        &self, child_el: Arc<Mutex<dyn Element>>, rec: ReceivableEventChanges,
         update_this_elements_prioritizers: bool,
     );
 
     // Assign a reference to the element's parent through the UpwardPropagator
     // interface. This is used to pass changes in inputability to the parent.
-    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>);
+    fn set_upward_propagator(&self, up: Arc<Mutex<dyn UpwardPropagator>>);
 }
 
+impl PartialEq for dyn Element {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(self, other)
+    }
+}
+
+// ----------------------------------------
+
 pub trait UpwardPropagator {
-    fn propagate_upward_changes_to_inputability(
-        &self, el: Box<dyn Element>, ic: ReceivableEventChanges,
+    fn propagate_receivable_event_changes_upward(
+        &self, child_el: Arc<Mutex<dyn Element>>, changes: ReceivableEventChanges,
         update_this_elements_prioritizers: bool,
     );
 
@@ -162,7 +176,7 @@ pub struct EventResponse {
     // it is up to the parent to interpret the metadata
     pub metadata: Option<Box<dyn Any>>,
     // replace the current element with the provided element
-    pub replacement: Option<Box<dyn Element>>,
+    pub replacement: Option<Arc<Mutex<dyn Element>>>,
     // request that the provided window element be created at the location
     pub window: Option<CreateWindow>,
     // sends a request to the parent to change the size of the element
@@ -205,7 +219,7 @@ impl EventResponse {
         self
     }
 
-    pub fn with_replacement(mut self, el: Box<dyn Element>) -> EventResponse {
+    pub fn with_replacement(mut self, el: Arc<Mutex<dyn Element>>) -> EventResponse {
         self.replacement = Some(el);
         self
     }
@@ -230,9 +244,14 @@ impl EventResponse {
         self
     }
 
-    pub fn with_inputability_changes(mut self, ic: ReceivableEventChanges) -> EventResponse {
+    //pub fn with_inputability_changes(mut self, ic: ReceivableEventChanges) -> EventResponse {
+    pub fn with_receivable_event_changes(mut self, ic: ReceivableEventChanges) -> EventResponse {
         self.inputability_changes = Some(ic);
         self
+    }
+
+    pub fn get_receivable_event_changes(&self) -> Option<ReceivableEventChanges> {
+        self.inputability_changes.clone()
     }
 
     pub fn with_scroll_x_static(mut self, x: i32) -> EventResponse {
@@ -293,7 +312,8 @@ impl EventResponse {
         }
     }
 
-    pub fn concat_inputability_changes(&mut self, ic: ReceivableEventChanges) {
+    //pub fn concat_inputability_changes(&mut self, ic: ReceivableEventChanges) {
+    pub fn concat_receivable_event_changes(&mut self, ic: ReceivableEventChanges) {
         if let Some(existing_ic) = &mut self.inputability_changes {
             existing_ic.concat(ic);
         } else {
@@ -305,19 +325,15 @@ impl EventResponse {
 // ----------------------------------------------------------------------------
 
 // response type for creating a window
-
+#[derive(Clone)]
 pub struct CreateWindow {
-    pub el: Option<Box<dyn Element>>,
-    pub loc: Locations,
+    pub el: Arc<Mutex<dyn Element>>,
+    pub loc: LocationSet,
 }
 
 impl CreateWindow {
-    pub fn new(el: Box<dyn Element>, loc: Locations) -> CreateWindow {
-        CreateWindow { el: Some(el), loc }
-    }
-
-    pub fn has_window(&self) -> bool {
-        self.el.is_some()
+    pub fn new(el: Arc<Mutex<dyn Element>>, loc: LocationSet) -> CreateWindow {
+        CreateWindow { el, loc }
     }
 }
 
@@ -329,8 +345,8 @@ impl CreateWindow {
 // BEFORE adding events.
 //
 
-#[derive(Default)]
-// TRANSLATION NOTE used to be ReceivableEventChanges
+#[derive(Clone, Default)]
+// TRANSLATION NOTE used to be InputabilityChanges
 pub struct ReceivableEventChanges {
     // Receivable events to deregistered from an element.
     // NOTE: one instance of an event being passed up the hierarchy through
@@ -342,7 +358,7 @@ pub struct ReceivableEventChanges {
 }
 
 impl ReceivableEventChanges {
-    pub fn with_ev(mut self, ev: Event, p: Priority) -> ReceivableEventChanges {
+    pub fn with_ev(mut self, p: Priority, ev: Event) -> ReceivableEventChanges {
         self.add.push((ev, p));
         self
     }

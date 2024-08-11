@@ -15,7 +15,7 @@ pub const FOCUSED: Priority = Priority(2);
 pub const UNFOCUSED: Priority = Priority(3);
 //pub const UNCHANGED: Priority = Priority(None); // used for when changing priorities
 
-// TRANSLATION NOTE replaced by just Event
+// TRANSLATION NOTE PrioritizableEv was replaced by just Event
 // TODO delete post translation
 //
 // PrioritizableEv is a type capable of being prioritized by the EvPrioritizer.
@@ -64,10 +64,10 @@ impl PriorityIdEvent {
 impl EventPrioritizer {
     // are there any priority events already registered with the same priority and
     // event (independant of the event prioritizers element id).
-    pub fn has_priority_ev(&self, priority_ev: &[(Priority, Event)]) -> bool {
+    pub fn has_priority_ev(&self, priority_ev: &[(Event, Priority)]) -> bool {
         for pec in self.0.iter() {
             for p in priority_ev.iter() {
-                if p.0 == pec.priority && p.1 == pec.event {
+                if p.0 == pec.event && p.1 == pec.priority {
                     return true;
                 }
             }
@@ -76,12 +76,12 @@ impl EventPrioritizer {
     }
 
     pub fn include(
-        &mut self, id: ElementID, priority_ev: Vec<(Priority, Event)>, panic_on_overload: bool,
+        &mut self, id: ElementID, priority_ev: &Vec<(Event, Priority)>, panic_on_overload: bool,
     ) {
         // check for priority overloading
         if panic_on_overload {
             // TODO change to error
-            if self.has_priority_ev(&priority_ev) {
+            if self.has_priority_ev(priority_ev) {
                 panic!(
                     "EvPrioritizer found at least 2 events registered to different elements with the same priority: {:?}",
                     priority_ev
@@ -90,7 +90,7 @@ impl EventPrioritizer {
         }
 
         for pe in priority_ev {
-            let peie = PriorityIdEvent::new(pe.0, id, pe.1);
+            let peie = PriorityIdEvent::new(pe.1, id, pe.0.clone());
             self.0.push(peie);
             self.0.sort();
         }
@@ -112,13 +112,13 @@ impl EventPrioritizer {
     }
 
     // removes all the registered events for the given id, returning them
-    pub fn remove_entire_element(&mut self, id: ElementID) -> Vec<PriorityIdEvent> {
+    pub fn remove_entire_element(&mut self, id: ElementID) -> Vec<Event> {
         let mut out = vec![];
         self.0.retain(|priority_id_event| {
             if id != priority_id_event.id {
                 return true;
             }
-            out.push(priority_id_event.clone());
+            out.push(priority_id_event.event.clone());
             false
         });
         out
@@ -149,10 +149,10 @@ impl EventPrioritizer {
     }
 
     // GetDestinationEl returns the id of the element that should
-    // receive the given events.
+    // receive the given event.
     pub fn get_destination_el(&self, input_ev: &Event) -> Option<ElementID> {
         // loop through all events registered by elements (PriorityIdEvent's)
-        // and check if keyboard queue matches any of them
+        // and check if the input_ev matches any of them
         for priority_id_event in self.0.iter() {
             if priority_id_event.priority == UNFOCUSED {
                 // since the evprioritizer is sorted by priority, there is no point
@@ -161,7 +161,7 @@ impl EventPrioritizer {
                 break;
             }
 
-            // check if event registered w/ element matches keyboard queue
+            // check if event registered w/ element matches the input_ev
             if priority_id_event.event == *input_ev {
                 return Some(priority_id_event.id);
             }

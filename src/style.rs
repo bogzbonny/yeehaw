@@ -4,7 +4,7 @@ use {
     crossterm::style::{Attribute, Attributes, ContentStyle},
 };
 
-#[derive(Clone, Copy, PartialEq, Debug, Eq)]
+#[derive(Clone, Copy, PartialEq, Debug, Eq, Default)]
 pub struct Style {
     pub fg: Option<RgbColour>,
     pub bg: Option<RgbColour>,
@@ -112,7 +112,7 @@ impl Justification {
 }
 
 // mirroring the crossterm Attributes
-#[derive(Encode, Decode, Clone, Copy, PartialEq, Debug, Eq)]
+#[derive(Encode, Decode, Clone, Copy, PartialEq, Debug, Eq, Default)]
 pub struct AttributesMirror {
     pub bold: bool,
     pub faded: bool,

@@ -9,7 +9,7 @@
     cui_location.go                      │ DONE
     debug.go                             │ DONE
     element.go                           │ DONE
-    element_organizer.go                 │ 
+    element_organizer.go                 │ DONE
     event.go                             │ DONE
     GLOSSARY.md                          │ DONE
     prioritizer.go                       │ DONE

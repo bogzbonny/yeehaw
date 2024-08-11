@@ -13,17 +13,15 @@ pub struct Location {
     pub end_x: i32,
     pub start_y: i32,
     pub end_y: i32,
-    pub z: ZIndex,
 }
 
 impl Location {
-    pub fn new(start_x: i32, end_x: i32, start_y: i32, end_y: i32, z: ZIndex) -> Location {
+    pub fn new(start_x: i32, end_x: i32, start_y: i32, end_y: i32) -> Location {
         Location {
             start_x,
             end_x,
             start_y,
             end_y,
-            z,
         }
     }
 
@@ -66,6 +64,13 @@ impl Location {
         false
     }
 
+    pub fn contains_point(&self, x: i32, y: i32) -> bool {
+        if x >= self.start_x && x <= self.end_x && y >= self.start_y && y <= self.end_y {
+            return true;
+        }
+        false
+    }
+
     // Relocate increments the Location by the given values
     pub fn relocate(&mut self, rr: RelocationRequest) {
         self.start_x += rr.left;
@@ -79,13 +84,19 @@ impl Location {
         Size::new(self.width() as u16, self.height() as u16)
     }
 
-    // TODO for crossterm
-    //pub fn adjust_mouse_event(&self, ev: &tcell::EventMouse) -> tcell::EventMouse {
-    //    let (x_adj, y_adj) = ev.position();
-    //    let x_adj = x_adj - self.start_x;
-    //    let y_adj = y_adj - self.start_y;
-    //    tcell::EventMouse::new(x_adj, y_adj, ev.buttons(), ev.modifiers())
-    //}
+    pub fn adjust_mouse_event(
+        &self, ev: &crossterm::event::MouseEvent,
+    ) -> crossterm::event::MouseEvent {
+        let (x_adj, y_adj) = (ev.column, ev.row);
+        let start_x = if self.start_x < 0 { 0 } else { self.start_x as u16 };
+        let start_y = if self.start_y < 0 { 0 } else { self.start_y as u16 };
+        let x_adj = x_adj.saturating_sub(start_x);
+        let y_adj = y_adj.saturating_sub(start_y);
+        let mut ev = *ev; // copy
+        ev.column = x_adj;
+        ev.row = y_adj;
+        ev
+    }
 
     pub fn adjust_location_by(&mut self, x: i32, y: i32) {
         self.start_x += x;
@@ -95,30 +106,40 @@ impl Location {
     }
 }
 
-// Locations holds the primary location as well as the extra
-// locations of an element
-#[derive(Default)]
-pub struct Locations {
-    l: Location,
+// LocationSet holds the primary location as well as the extra
+// locations of an element. In addition it holds a ZIndex which all
+// locations are said to exist at.
+#[derive(Default, Clone)]
+pub struct LocationSet {
+    pub l: Location,
+
     // Extra locations are locations that are not within the primary location
     // but are still considered to be part of the element.
     // This is useful for elements that do not have a rectangular shape (ie, the
     // menu element)
-    extra: Vec<Location>,
+    pub extra: Vec<Location>,
+
+    pub z: ZIndex,
 }
 
-impl From<Location> for Locations {
-    fn from(l: Location) -> Self {
-        Locations {
-            l,
-            extra: Vec::new(),
-        }
+impl LocationSet {
+    pub fn new(l: Location, extra: Vec<Location>, z: ZIndex) -> LocationSet {
+        LocationSet { l, extra, z }
     }
-}
 
-impl Locations {
-    pub fn new(l: Location, extra: Vec<Location>) -> Locations {
-        Locations { l, extra }
+    pub fn with_location(mut self, l: Location) -> LocationSet {
+        self.l = l;
+        self
+    }
+
+    pub fn with_extra(mut self, extra: Vec<Location>) -> LocationSet {
+        self.extra = extra;
+        self
+    }
+
+    pub fn with_z(mut self, z: ZIndex) -> LocationSet {
+        self.z = z;
+        self
     }
 
     // Contains checks if the given location falls in the primary
@@ -128,19 +149,33 @@ impl Locations {
     }
 
     pub fn contains_within_primary(&self, x: i32, y: i32) -> bool {
-        if x >= self.l.start_x && x <= self.l.end_x && y >= self.l.start_y && y <= self.l.end_y {
+        if self.l.contains_point(x, y) {
             return true;
         }
         false
     }
 
     pub fn contains_within_extra(&self, x: i32, y: i32) -> bool {
-        for loc in self.extra.iter() {
-            if x >= loc.start_x && x <= loc.end_x && y >= loc.start_y && y <= loc.end_y {
+        for eloc in self.extra.iter() {
+            if eloc.contains_point(x, y) {
                 return true;
             }
         }
         false
+    }
+
+    // returns None is the point is not contained by the LocationSet
+    pub fn get_z_index_for_point(&self, x: i32, y: i32) -> Option<ZIndex> {
+        if self.l.contains_point(x, y) {
+            return Some(self.z);
+        }
+
+        for eloc in self.extra.iter() {
+            if eloc.contains_point(x, y) {
+                return Some(self.z);
+            }
+        }
+        None
     }
 
     pub fn set_extra_locations(&mut self, extra: Vec<Location>) {
