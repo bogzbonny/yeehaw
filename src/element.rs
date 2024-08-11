@@ -21,7 +21,7 @@ pub trait Element: UpwardPropagator {
     // inputability that its parent will use as well pass up the tree. When the
     // event is captured, the element is expected to returns captured=true.
     //                                               (captured, response     )
-    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponse);
+    fn receive_event(&mut self, ctx: &Context, ev: Event) -> (bool, EventResponse);
 
     // ChangePriority will change the priority of an element relative to its
     // ancestors. All events owned directly by the element will have their local
@@ -40,7 +40,7 @@ pub trait Element: UpwardPropagator {
     // to the given priority, while telling to parent to change the priority of
     // all of the element's children's evs to whatever is recorded in the
     // element's prioritizers.
-    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges;
+    fn change_priority(&mut self, ctx: &Context, p: Priority) -> ReceivableEventChanges;
 
     // get the element's full drawing for the provided width and height
     // this is provided as an ordered list of individual elements to draw
@@ -51,7 +51,7 @@ pub trait Element: UpwardPropagator {
 
     // Assign a reference to the element's parent through the UpwardPropagator
     // interface. This is used to pass ReceivableEventChanges to the parent.
-    fn set_upward_propagator(&self, up: Rc<RefCell<dyn UpwardPropagator>>);
+    fn set_upward_propagator(&mut self, up: Rc<RefCell<dyn UpwardPropagator>>);
 }
 
 impl PartialEq for dyn Element {

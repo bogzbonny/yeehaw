@@ -53,7 +53,7 @@ impl DrawChPos {
 // ----------------------------------------------------
 
 #[derive(Clone)]
-pub struct DrawChs2D(Vec<Vec<DrawCh>>); // y, x
+pub struct DrawChs2D(pub Vec<Vec<DrawCh>>); // y, x
 
 impl std::fmt::Display for DrawChs2D {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

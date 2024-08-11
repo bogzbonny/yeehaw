@@ -69,7 +69,7 @@ impl ElementOrganizer {
         // (ex: a sibling initiating a change to inputability, as opposed to this eo
         // passing an event to the child through ReceiveEventKeys)
         if let Some(up) = up {
-            el.borrow().set_upward_propagator(up);
+            el.borrow_mut().set_upward_propagator(up);
         }
 
         el_id
@@ -302,7 +302,7 @@ impl ElementOrganizer {
             // resize replacement
             // TODO may not be neccessary. Explore further w/ fixes to resizing
             let el = self.get_element_by_id(el_id).unwrap(); // XXX remove unwrap?? use expect here??
-            el.borrow().receive_event(&ctx, Event::Resize);
+            el.borrow_mut().receive_event(&ctx, Event::Resize);
         }
 
         if let Some(ref elr) = r.extra_locations {
@@ -388,7 +388,7 @@ impl ElementOrganizer {
 
         // send EventKeys to element w/ context
         let ctx = self.get_context_for_el_id(el_id);
-        let (_, r) = el.borrow().receive_event(&ctx, evs);
+        let (_, r) = el.borrow_mut().receive_event(&ctx, evs);
         let r = self.partially_process_ev_resp(el_id, r);
 
         if let Some(changes) = r.get_receivable_event_changes() {
@@ -413,8 +413,8 @@ impl ElementOrganizer {
         // refresh all children
         for (el_id, el) in self.elements.iter() {
             let el_ctx = self.get_context_for_el_id(*el_id);
-            el.borrow().receive_event(&el_ctx, Event::Refresh);
-            el.borrow().receive_event(&el_ctx, Event::Resize);
+            el.borrow_mut().receive_event(&el_ctx, Event::Refresh);
+            el.borrow_mut().receive_event(&el_ctx, Event::Resize);
         }
     }
 
@@ -432,7 +432,7 @@ impl ElementOrganizer {
 
         // NOTE these changes are the changes for
         // THIS element organizer (not the child element)
-        let changes = el.borrow().change_priority(&ctx, pr);
+        let changes = el.borrow_mut().change_priority(&ctx, pr);
         self.process_receivable_event_changes(el_id, &changes);
         changes
     }
@@ -487,7 +487,7 @@ impl ElementOrganizer {
         let ev_adj = locs.l.adjust_mouse_event(ev);
 
         // send mouse event to element
-        let (_, ev_resp) = el.borrow().receive_event(&ctx, Event::Mouse(ev_adj));
+        let (_, ev_resp) = el.borrow_mut().receive_event(&ctx, Event::Mouse(ev_adj));
         if let Some(changes) = ev_resp.get_receivable_event_changes() {
             self.process_receivable_event_changes(el_id, &changes);
         }
@@ -508,7 +508,7 @@ impl ElementOrganizer {
             if *el_id2 == el_id {
                 continue;
             }
-            let (_, r) = el.borrow().receive_event(&ctx, Event::Mouse(*ev));
+            let (_, r) = el.borrow_mut().receive_event(&ctx, Event::Mouse(*ev));
             resps.push((*el_id2, r));
         }
 
@@ -589,7 +589,7 @@ impl ElementOrganizer {
         };
         let ctx = self.get_context_for_el_id(el_id);
 
-        let (captured, resp) = el.borrow().receive_event(&ctx, ev);
+        let (captured, resp) = el.borrow_mut().receive_event(&ctx, ev);
         if let Some(changes) = resp.get_receivable_event_changes() {
             self.process_receivable_event_changes(el_id, &changes);
         }

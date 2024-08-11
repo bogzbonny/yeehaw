@@ -92,7 +92,7 @@ impl Cui {
                                     let loc = LocationSet::default().with_location(loc);
                                     // There should only be one element at index 0 in the upper level EO
                                     self.eo.borrow_mut().update_el_locations_by_id(0, loc);
-                                    self.eo.borrow().get_element_by_id(0).unwrap().borrow().receive_event(&ctx, Event::Resize{});
+                                    self.eo.borrow().get_element_by_id(0).unwrap().borrow_mut().receive_event(&ctx, Event::Resize{});
                                     self.render()
                                 }
                                 _ => {}

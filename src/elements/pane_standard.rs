@@ -1,5 +1,9 @@
 use {
-    crate::{element::ReceivableEventChanges, DrawCh, Element, Event, Priority, UpwardPropagator},
+    crate::{
+        element::ReceivableEventChanges, Context, DrawCh, DrawChPos, Element, Event, EventResponse,
+        Priority, UpwardPropagator,
+    },
+    std::ops::{Deref, DerefMut},
     std::{cell::RefCell, rc::Rc},
 };
 
@@ -14,15 +18,15 @@ pub struct StandardPane {
 
     // This elements "overall" reference priority
     //
-    // NOTE this is only used currently by the ParentPane,
+    // TODO this is only used currently by the ParentPane,
     // consider moving this field into the ParentPane, if nothing
     // else ever uses it.
     element_priority: Priority,
 
     up: Option<Rc<RefCell<dyn UpwardPropagator>>>,
 
-    view_height: usize,
-    view_width: usize,
+    view_height: u16,
+    view_width: u16,
 
     // The pane's Content need not be the dimensions provided within
     // the Location, however the Content will simply be cut off if it exceeds
@@ -30,11 +34,11 @@ pub struct StandardPane {
     // of the Location all extra characters will be filled with the DefaultCh.
     // The location of where to begin drawing from within the Content can be
     // offset using content_view_offset_x and content_view_offset_y
-    content: Vec<Vec<DrawCh>>,
-    default_ch: DrawCh,
-    default_line: Vec<DrawCh>,
-    content_view_offset_x: usize,
-    content_view_offset_y: usize,
+    pub content: Vec<Vec<DrawCh>>,
+    pub default_ch: DrawCh,
+    pub default_line: Vec<DrawCh>,
+    pub content_view_offset_x: u16,
+    pub content_view_offset_y: u16,
 }
 
 impl Default for StandardPane {
@@ -46,10 +50,10 @@ impl Default for StandardPane {
 impl StandardPane {
     pub fn new(
         content: Vec<Vec<DrawCh>>, default_ch: DrawCh, default_line: Vec<DrawCh>,
-        content_view_offset_x: usize, content_view_offset_y: usize,
+        content_view_offset_x: u16, content_view_offset_y: u16,
     ) -> StandardPane {
         StandardPane {
-            self_evs: SelfReceivableEvents::new(),
+            self_evs: SelfReceivableEvents::default(),
             element_priority: Priority::UNFOCUSED,
             up: None,
             view_height: 0,
@@ -61,6 +65,20 @@ impl StandardPane {
             content_view_offset_y,
         }
     }
+
+    // TODO delete post translation... just made the fields public
+    //pub fn get_content_view_offset_x(&self) -> usize {
+    //    self.content_view_offset_x
+    //}
+    //pub fn get_content_view_offset_y(&self) -> usize {
+    //    self.content_view_offset_y
+    //}
+    //pub fn set_content_view_offset_x(&mut self, x: usize) {
+    //    self.content_view_offset_x = x
+    //}
+    //pub fn set_content_view_offset_y(&mut self, y: usize) {
+    //    self.content_view_offset_y = y
+    //}
 }
 
 impl UpwardPropagator for StandardPane {
@@ -82,154 +100,80 @@ impl UpwardPropagator for StandardPane {
 }
 
 impl Element for StandardPane {
+    // Receivable returns the event keys and commands that can
+    // be received by this element along with their priorities
     fn receivable(&self) -> Vec<(Event, Priority)> {
-        self.self_evs.clone()
+        self.self_evs.0.clone()
     }
-    //fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponse);
-    //fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges;
-    //fn drawing(&self, ctx: &Context) -> Vec<DrawChPos>;
-    //fn set_upward_propagator(&self, up: Rc<RefCell<dyn UpwardPropagator>>);
-}
 
-/*
+    //                                               (captured, resp         )
+    fn receive_event(&mut self, ctx: &Context, _ev: Event) -> (bool, EventResponse) {
+        self.view_height = ctx.get_height();
+        self.view_width = ctx.get_width();
+        (false, EventResponse::default())
+    }
 
-
-
-// Receivable returns the event keys and commands that can
-// be received by this element along with their priorities
-func (sp *StandardPane) Receivable() []yh.PriorityEv {
-    return sp.SelfEvs
-}
-
-// DeregisterEvCombo removes an event combo from the element's
-// list of receivable event combos
-func (sp *StandardPane) DeregisterEv(ec yh.PrioritizableEv) {
-    for i, pef := range sp.SelfEvs {
-        if pef.Ev.Key() != ec.Key() {
-            continue
+    // ChangePriority returns a priority change request to its parent organizer so
+    // as to update the priority of all commands registered to this element.
+    // The element iterates through its registered cmds/evCombos, and returns a
+    // priority change request for each one.
+    fn change_priority(&mut self, _: &Context, p: Priority) -> ReceivableEventChanges {
+        // update the priority of all registered events
+        for pef in self.self_evs.iter_mut() {
+            pef.1 = p;
         }
-        sp.SelfEvs = append(sp.SelfEvs[:i], sp.SelfEvs[i+1:]...)
-        return
+        self.element_priority = p;
+        ReceivableEventChanges::default().with_evs(self.self_evs.0.clone())
     }
-}
 
-func (sp *StandardPane) ReceiveEvent(ctx yh.Context, ev interface{}) (
-    captured bool, resp yh.EventResponse) {
+    // Drawing compiles all of the DrawChPos necessary to draw this element
+    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        let mut chs = vec![];
 
-    sp.ViewHeight, sp.ViewWidth = ctx.GetHeight(), ctx.GetWidth()
+        // convert the Content to DrawChPos
+        // NOTE: width/height values must subtract 1 to get final cell locations
+        for y in 0..=ctx.s.height - 1 {
+            for x in 0..=ctx.s.width - 1 {
+                // default ch being added next is the DefaultCh
+                let mut ch_out = self.default_ch.clone();
 
-    return false, yh.EventResponse{}
-}
+                // TODO XXX allow for negative offsets! currently crashes
 
-// Drawing compiles all of the DrawChPos necessary to draw this element
-func (sp *StandardPane) Drawing(ctx yh.Context) (chs []yh.DrawChPos) {
+                let offset_y = (y + self.content_view_offset_y) as usize;
+                let offset_x = (x + self.content_view_offset_x) as usize;
 
-    // convert the Content to DrawChPos
-    // NOTE: width/height values must subtract 1 to get final cell locations
-    for y := 0; y <= ctx.S.Height-1; y++ {
-        for x := 0; x <= ctx.S.Width-1; x++ {
-
-            // default ch being added next is the DefaultCh
-            chOut := sp.DefaultCh
-
-            // TODO XXX allow for negative offsets! currently crashes
-
-            offsetY := y + sp.contentViewOffsetY
-            offsetX := x + sp.contentViewOffsetX
-
-            // if the offset isn't pushing all the content out of view,
-            // assign the next ch to be the one at the offset in the Content
-            // matrix
-            if offsetY < len(sp.Content) && offsetX < len(sp.Content[offsetY]) {
-                chOut = sp.Content[offsetY][offsetX]
-            }
-
-            // if y is greater than the height of the visible content,
-            // trigger a default line.
-            // NOTE: height of the visible content is the height of the
-            // content minus the offset
-            if y > len(sp.Content) {
-                if x < len(sp.DefaultLine) {
-                    chOut = sp.DefaultLine[x]
-                } else {
-                    chOut = sp.DefaultCh
+                // if the offset isn't pushing all the content out of view,
+                // assign the next ch to be the one at the offset in the Content
+                // matrix
+                if offset_y < self.content.len() && offset_x < self.content[offset_y].len() {
+                    ch_out = self.content[offset_y][offset_x].clone();
                 }
+
+                // if y is greater than the height of the visible content,
+                // trigger a default line.
+                // NOTE: height of the visible content is the height of the
+                // content minus the offset
+                if (y as usize) > self.content.len() {
+                    if (x as usize) < self.default_line.len() {
+                        ch_out = self.default_line[x as usize].clone();
+                    } else {
+                        ch_out = self.default_ch.clone();
+                    }
+                }
+
+                // convert the DrawCh to a DrawChPos
+                chs.push(DrawChPos::new(ch_out, x, y))
             }
-
-            chs = append(chs, yh.NewDrawChPos(chOut, x, y))
         }
-    }
-    return chs
-}
-
-// Update the priority for an event on the standard pane.
-// This function is intended to be used by higher level elements
-// embedding the StandardPane.
-func (sp *StandardPane) UpdatePriorityForEv(ev yh.PrioritizableEv, pr yh.Priority) yh.InputabilityChanges {
-    var ic yh.InputabilityChanges
-    for i, pef := range sp.SelfEvs {
-        if pef.Ev.Key() != ev.Key() {
-            continue
-        }
-        sp.SelfEvs[i].Pr = pr
-        ic.UpdatePriorityForEv(ev, pr)
-        break
-    }
-    return ic
-}
-
-func (sp *StandardPane) UpdatePriorityForEvs(evs []yh.PrioritizableEv, pr yh.Priority) yh.InputabilityChanges {
-    var ic yh.InputabilityChanges
-    for _, ev := range evs {
-        ic.Concat(sp.UpdatePriorityForEv(ev, pr))
-    }
-    return ic
-}
-
-// ChangePriority returns a priority change request to its parent organizer so
-// as to update the priority of all commands registered to this element.
-// The element iterates through its registered cmds/evCombos, and returns a
-// priority change request for each one.
-func (sp *StandardPane) ChangePriority(_ yh.Context, pr yh.Priority) yh.InputabilityChanges {
-
-    var ic yh.InputabilityChanges
-
-    // update the priority of all registered events
-    for _, pef := range sp.SelfEvs {
-        sp.SelfEvs.UpdatePriorityForEv(pef.Ev, pr)
-        ic.UpdatePriorityForEv(pef.Ev, pr)
+        chs
     }
 
-    sp.ElementPriority = pr
-
-    return ic
-}
-
-func (sp *StandardPane) SetUpwardPropagator(up yh.UpwardPropagator) {
-    sp.UP = up
+    fn set_upward_propagator(&mut self, up: Rc<RefCell<dyn UpwardPropagator>>) {
+        self.up = Some(up);
+    }
 }
 
 // ---------------------------------------------------------------------------
-
-func (sp *StandardPane) GetContentViewOffsetX() int {
-    return sp.contentViewOffsetX
-}
-
-func (sp *StandardPane) GetContentViewOffsetY() int {
-    return sp.contentViewOffsetY
-}
-
-func (sp *StandardPane) SetContentViewOffsetX(offsetX int) {
-    sp.contentViewOffsetX = offsetX
-}
-
-func (sp *StandardPane) SetContentViewOffsetY(offsetY int) {
-    sp.contentViewOffsetY = offsetY
-}
-
-// ---------------------------------------------------------------------------
-*/
-
 // The SelfReceivableEvents are used to manage events and associated functions
 // registered directly to an element (AND NOT to that elements children!). They
 // are similar to the EvPrioritizer, but they are used to manage the events and
@@ -239,63 +183,62 @@ func (sp *StandardPane) SetContentViewOffsetY(offsetY int) {
 // children in the ElementOrganizer).
 // NOTE: these fulfill a similar function to the prioritizers
 // in that they manage inclusion/removal more cleanly and can be sorted
-#[derive(Clone)]
-pub struct SelfReceivableEvents(Vec<(Event, Priority)>);
+#[derive(Clone, Default)]
+pub struct SelfReceivableEvents(pub Vec<(Event, Priority)>);
+
+impl Deref for SelfReceivableEvents {
+    type Target = Vec<(Event, Priority)>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for SelfReceivableEvents {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl SelfReceivableEvents {
-    pub fn new() -> SelfReceivableEvents {
-        SelfReceivableEvents(Vec::new())
-    }
-
-    // TRANSLATION NewSelfReceivableEventsFromPrioritizableEv(
+    // TRANSLATION NewSelfReceivableEventsFromPrioritizableEv new_self_receivable_events_from_prioritizable_ev
     pub fn new_from_priority_events(p: Priority, evs: Vec<Event>) -> SelfReceivableEvents {
         SelfReceivableEvents(evs.into_iter().map(|ev| (ev, p)).collect())
     }
 
-    // Include
+    // TRANSLATION Include include
     pub fn push(&mut self, ev: Event, p: Priority) {
         self.0.push((ev, p))
     }
 
-    // IncludeMany
+    // TRANSLATION IncludeMany include_many
     pub fn extend(&mut self, evs: Vec<(Event, Priority)>) {
         self.0.extend(evs)
     }
-}
 
-/*
+    pub fn remove(&mut self, ev: Event) {
+        self.0.retain(|(e, _)| e != &ev)
+    }
 
-func (sre *SelfReceivableEvents) Remove(ec yh.EvKeyCombo) {
-    for i, pef := range *sre {
-        if pef.Ev.Key() != ec.Key() {
-            continue
+    pub fn remove_many(&mut self, evs: Vec<Event>) {
+        self.0.retain(|(e, _)| !evs.contains(e))
+    }
+
+    // update_priority_for_ev updates the priority of the given event
+    // registered directly to this element
+    // TRANSLATION UpdatePriorityForEvCombo update_priority_for_ev_combo
+    pub fn update_priority_for_ev(&mut self, ev: Event, p: Priority) {
+        for i in 0..self.0.len() {
+            if self.0[i].0 != ev {
+                continue;
+            }
+            self.0[i].1 = p;
+            break;
         }
-        *sre = append((*sre)[:i], (*sre)[i+1:]...)
     }
-}
 
-func (sre *SelfReceivableEvents) RemoveMany(ecs []yh.EvKeyCombo) {
-    for _, ec := range ecs {
-        sre.Remove(ec)
-    }
-}
-
-// UpdatePriorityForEvCombo updates the priority of the given event combo
-// registered directly to this element
-func (sre *SelfReceivableEvents) UpdatePriorityForEv(ec yh.PrioritizableEv, pr yh.Priority) {
-    for i, pef := range *sre {
-        if pef.Ev.Key() != ec.Key() {
-            continue
+    pub fn update_priority_for_evs(&mut self, evs: Vec<Event>, p: Priority) {
+        for ev in evs {
+            self.update_priority_for_ev(ev, p)
         }
-        (*sre)[i].Pr = pr
     }
 }
-
-// UpdatePrioritiesForEvCombos updates the priorities of the given event combos
-// registered directly to this element
-func (sre *SelfReceivableEvents) UpdatePrioritiesForEvCombos(ecs []yh.PrioritizableEv, pr yh.Priority) {
-    for _, ec := range ecs {
-        sre.UpdatePriorityForEv(ec, pr)
-    }
-}
-*/

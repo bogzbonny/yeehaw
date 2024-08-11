@@ -17,9 +17,10 @@ pub mod style;
 pub use {
     colour::RgbColour,
     cui::Cui,
-    cui_ch::{DrawCh, DrawChPos},
+    cui_ch::{DrawCh, DrawChPos, DrawChs2D},
     cui_location::{Location, LocationSet, Size, ZIndex},
     element::{Context, CreateWindow, Element, ElementID, EventResponse, UpwardPropagator},
+    elements::StandardPane,
     errors::Error,
     event::{CommandEvent, Event, KeyPossibility},
     keyboard::Keyboard,
