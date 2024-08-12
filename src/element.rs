@@ -1,12 +1,16 @@
 use {
-    crate::{prioritizer::Priority, DrawChPos, Event, Location, LocationSet, Size},
+    crate::{prioritizer::Priority, DrawChPos, ElementID, Event, Location, LocationSet, Size},
     std::any::Any,
     std::{cell::RefCell, rc::Rc},
 };
 
 // Element is the base interface which all viewable elements are
 // expected to fulfill
-pub trait Element: UpwardPropagator {
+pub trait Element {
+    fn kind(&self) -> &'static str; // a name for the kind of the element
+
+    fn id(&self) -> &ElementID; // the element id as assigned by the SortingHat
+
     // Returns all events (key events and commands, etc.) that are registered to
     // an element. This includes all events that are registered to the element
     // itself, as well as its children, via its ElementOrganizer (if it has
@@ -63,33 +67,31 @@ impl PartialEq for dyn Element {
 // ----------------------------------------
 
 pub trait UpwardPropagator {
-    // Passes ReceivableEventChanges to the parent of this element, while optionally making changes
-    // to the calling element organizer's prioritizers.
+    // The UpwardPropagator trait is a trait that a parent element should fulfill
+    // which can then be provided to child elements as a means for those child elements to
+    // propagate changes upward to their parent (and grand-parents etc.).
     //
-    // child_el is the child element which is invoking the propagation from BELOW this element.
-    // This is used by the parent element (this one) to determine which events/cmds to update the
-    // prioritizers for.
+    // In most cases, receivable event changes are passed to the parent in the return values of a
+    // function invoked on the element by the parent (ex. ReceiveEvent). However, when changes are
+    // initiated through hooks of non-parent elements, the parent must be notified of the changes
+    // from the child directly. By providing this trait to a child element it enables it to propagate
+    // receivable event changes when it hasn't been modified directly by its parent.
     //
-    // If update_this_elements_prioritizers is true, then the prioritizers for this element will be
-    // updated. This should always be the case except at the initialization of the upward
-    // propagation process. In that case, the changes to the element calling should have already
-    // been handled by said element. TODO can this be deleted?
+    // For instance, a file-navigator may with to initiate a content change in an adjacent
+    // content-pane in this case it could activate the content-pane and deactivate itself, this
+    // newly activated content-pane would need a way to inform its parent pane of its receivable
+    // event changes.
     //
-    // NOTE: In most cases, changes in inputability are passed to the parent in the return values
-    // of a function invoked on the element by the parent (ex. ReceiveEvent). However, when changes
-    // are initiated laterally (by a sibling), the parent must be notified of the changes. This
-    // function accomplishes that. For instance, a child-pane in a split pane may with to initiate a
-    // movement to a different child-pane, in this case it could activate the child pane and
-    // deactivate itself, this newly activated child pane would need a way to inform the parent
-    // pane of its changes to inputability. (TODO confirm this example)
+    // child_el_id is the child element-id which is invoking the propagation from BELOW the element
+    // fulfilling the UpwardPropagator trait. This is used by the parent element (this one) to
+    // determine which events/cmds to update the prioritizers for.
     //
     // TRANSLATION NOTE PropagateUpwardChangesToInputability propagate_upward_changes_to_inputability
     fn propagate_receivable_event_changes_upward(
-        &mut self, child_el: Rc<RefCell<dyn Element>>, rec: ReceivableEventChanges,
-        update_this_elements_prioritizers: bool,
+        &mut self, child_el_id: &ElementID, rec: ReceivableEventChanges,
     );
 
-    // XXX TODO add a function to get an elements name here (for debugging),
+    // TODO add a function to get an elements name here (for debugging),
     // once an element has SetUpwardPropagator called on it, it will
     // be able to construct its own name, by tacking on it's own name to its
     // parents name.
@@ -97,11 +99,6 @@ pub trait UpwardPropagator {
     // returns a name of the element (for debugging purposes)
     //fn name(&self) -> String;
 }
-
-// ElementID is a unique identifier nonce assigned to each active element
-// in the cui beginning with 0.
-// NOTE: the id is a nonce in the scope of a particular element organizer
-pub type ElementID = u64;
 
 // Context is a struct which contains information about the current context of a
 // given element.

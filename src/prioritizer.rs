@@ -77,7 +77,7 @@ impl EventPrioritizer {
     }
 
     pub fn include(
-        &mut self, id: ElementID, priority_ev: &Vec<(Event, Priority)>, panic_on_overload: bool,
+        &mut self, id: &ElementID, priority_ev: &Vec<(Event, Priority)>, panic_on_overload: bool,
     ) {
         // check for priority overloading
         if panic_on_overload {
@@ -91,7 +91,7 @@ impl EventPrioritizer {
         }
 
         for pe in priority_ev {
-            let peie = PriorityIdEvent::new(pe.1, id, pe.0.clone());
+            let peie = PriorityIdEvent::new(pe.1, id.clone(), pe.0.clone());
             self.0.push(peie);
             self.0.sort();
         }
@@ -102,9 +102,9 @@ impl EventPrioritizer {
     //
     // NOTE: Every event in the input slice will remove ALL instances of that event
     // from the prioritizer.
-    pub fn remove(&mut self, id: ElementID, evs: &[Event]) {
+    pub fn remove(&mut self, id: &ElementID, evs: &[Event]) {
         self.0.retain(|priority_id_event| {
-            if id != priority_id_event.id {
+            if id != &priority_id_event.id {
                 return true;
             }
             let has_event = evs.iter().any(|ev| ev == &priority_id_event.event);
@@ -113,10 +113,10 @@ impl EventPrioritizer {
     }
 
     // removes all the registered events for the given id, returning them
-    pub fn remove_entire_element(&mut self, id: ElementID) -> Vec<Event> {
+    pub fn remove_entire_element(&mut self, id: &ElementID) -> Vec<Event> {
         let mut out = vec![];
         self.0.retain(|priority_id_event| {
-            if id != priority_id_event.id {
+            if id != &priority_id_event.id {
                 return true;
             }
             out.push(priority_id_event.event.clone());
@@ -143,7 +143,7 @@ impl EventPrioritizer {
                 continue;
             };
             if let Some(eks) = kb.matches(ekc, true) {
-                return Some((priority_id_event.id, eks));
+                return Some((priority_id_event.id.clone(), eks));
             }
         }
         None
@@ -164,7 +164,7 @@ impl EventPrioritizer {
 
             // check if event registered w/ element matches the input_ev
             if priority_id_event.event == *input_ev {
-                return Some(priority_id_event.id);
+                return Some(priority_id_event.id.clone());
             }
         }
         None

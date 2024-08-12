@@ -1,7 +1,7 @@
 use {
     crate::{
-        element::ReceivableEventChanges, Context, DrawCh, DrawChPos, Element, Event, EventResponse,
-        Priority, UpwardPropagator,
+        element::ReceivableEventChanges, Context, DrawCh, DrawChPos, Element, ElementID, Event,
+        EventResponse, Priority, SortingHat, UpwardPropagator,
     },
     std::ops::{Deref, DerefMut},
     std::{cell::RefCell, rc::Rc},
@@ -10,6 +10,10 @@ use {
 // StandardPane is a pane element which other objects can embed and build off
 // of. It defines the basic draw functionality of a pane.
 pub struct StandardPane {
+    kind: &'static str,
+
+    id: String, // element-id as assigned by the sorting-hat
+
     // The SelfEvs are NOT handled by the standard pane. The element inheriting the
     // standard pane is expected to handle all SelfReceivableEvents in the
     // ReceiveEvent function. The standard pane is only responsible for
@@ -41,18 +45,24 @@ pub struct StandardPane {
     pub content_view_offset_y: u16,
 }
 
-impl Default for StandardPane {
-    fn default() -> Self {
-        StandardPane::new(vec![], DrawCh::default(), vec![], 0, 0)
-    }
-}
+//impl Default for StandardPane {
+//    fn default() -> Self {
+//        StandardPane::new(vec![], DrawCh::default(), vec![], 0, 0)
+//    }
+//}
 
 impl StandardPane {
+    // NOTE kind is a name for the kind of pane, typically a different kind will be applied
+    // to the standard pane, as the standard pane is only boilerplate.
+    pub const KIND: &'static str = "standard_pane";
+
     pub fn new(
-        content: Vec<Vec<DrawCh>>, default_ch: DrawCh, default_line: Vec<DrawCh>,
-        content_view_offset_x: u16, content_view_offset_y: u16,
+        hat: &SortingHat, kind: &'static str, content: Vec<Vec<DrawCh>>, default_ch: DrawCh,
+        default_line: Vec<DrawCh>, content_view_offset_x: u16, content_view_offset_y: u16,
     ) -> StandardPane {
         StandardPane {
+            kind,
+            id: hat.create_element_id(kind),
             self_evs: SelfReceivableEvents::default(),
             element_priority: Priority::UNFOCUSED,
             up: None,
@@ -64,6 +74,10 @@ impl StandardPane {
             content_view_offset_x,
             content_view_offset_y,
         }
+    }
+
+    pub fn new_empty(hat: &SortingHat, kind: &'static str) -> StandardPane {
+        StandardPane::new(hat, kind, vec![], DrawCh::default(), vec![], 0, 0)
     }
 
     // TODO delete post translation... just made the fields public
@@ -81,25 +95,33 @@ impl StandardPane {
     //}
 }
 
-impl UpwardPropagator for StandardPane {
-    // NOTE this function should NOT be used if the standard pane is used as a base for a
-    // more complex element. As the developer you should be fulfilling the
-    // PropagateUpwardChangesToInputability function directly in your element.
-    fn propagate_receivable_event_changes_upward(
-        &mut self, child_el: Rc<RefCell<dyn Element>>, rec: ReceivableEventChanges,
-        update_this_elements_prioritizers: bool,
-    ) {
-        if let Some(up) = self.up.as_ref() {
-            up.borrow_mut().propagate_receivable_event_changes_upward(
-                child_el,
-                rec,
-                update_this_elements_prioritizers,
-            );
-        }
-    }
-}
+// TODO delete this code post-TRANSLATION. the upward propogator should only be implemented at the parent pane level.
+//impl UpwardPropagator for StandardPane {
+//    // NOTE this function should NOT be used if the standard pane is used as a base for a
+//    // more complex element. As the developer you should be fulfilling the
+//    // PropagateUpwardChangesToInputability function directly in your element.
+//    fn propagate_receivable_event_changes_upward(
+//        &mut self, child_el: Rc<RefCell<dyn Element>>, rec: ReceivableEventChanges,
+//    ) {
+//        if let Some(up) = self.up.as_ref() {
+//            up.borrow_mut().propagate_receivable_event_changes_upward(
+//                child_el,
+//                rec,
+//                update_this_elements_prioritizers,
+//            );
+//        }
+//    }
+//}
 
 impl Element for StandardPane {
+    fn kind(&self) -> &'static str {
+        self.kind
+    }
+
+    fn id(&self) -> &ElementID {
+        &self.id
+    }
+
     // Receivable returns the event keys and commands that can
     // be received by this element along with their priorities
     fn receivable(&self) -> Vec<(Event, Priority)> {

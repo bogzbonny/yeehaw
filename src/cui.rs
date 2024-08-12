@@ -1,7 +1,7 @@
 use {
     crate::{
-        element::ReceivableEventChanges, keyboard::Keyboard, Context, Element, ElementOrganizer,
-        Error, Event, Location, LocationSet, UpwardPropagator,
+        element::ReceivableEventChanges, keyboard::Keyboard, Context, Element, ElementID,
+        ElementOrganizer, Error, Event, Location, LocationSet, UpwardPropagator,
     },
     crossterm::{
         cursor,
@@ -27,6 +27,7 @@ const ANIMATION_SPEED: Duration = Duration::from_micros(100);
 // configuration of a cui zelt instance
 pub struct Cui {
     eo: Rc<RefCell<ElementOrganizer>>,
+    main_el_id: ElementID,
     kb: Keyboard,
 }
 
@@ -35,6 +36,7 @@ impl Cui {
         let eo = Rc::new(RefCell::new(ElementOrganizer::default()));
         let cui = Cui {
             eo: eo.clone(),
+            main_el_id: main_el.borrow().id().clone(),
             kb: Keyboard::default(),
         };
 
@@ -91,8 +93,8 @@ impl Cui {
                                     let loc = Location::new(0, (ctx.s.width - 1).into(), 0, (ctx.s.height - 1).into());
                                     let loc = LocationSet::default().with_location(loc);
                                     // There should only be one element at index 0 in the upper level EO
-                                    self.eo.borrow_mut().update_el_locations_by_id(0, loc);
-                                    self.eo.borrow().get_element_by_id(0).unwrap().borrow_mut().receive_event(&ctx, Event::Resize{});
+                                    self.eo.borrow_mut().update_el_locations_by_id(self.main_el_id.clone(), loc);
+                                    self.eo.borrow().get_element_by_id(&self.main_el_id).unwrap().borrow_mut().receive_event(&ctx, Event::Resize{});
                                     self.render()
                                 }
                                 _ => {}
@@ -207,18 +209,12 @@ impl UpwardPropagator for CuiUpwardPropagator {
     // the CUI and  be able to call this function (as opposed to calling it on an
     // Element, as a child normally would in the rest of the tree).
     fn propagate_receivable_event_changes_upward(
-        &mut self, child_el: Rc<RefCell<dyn Element>>, rec: ReceivableEventChanges,
-        update_this_elements_prioritizers: bool,
+        &mut self, child_el_id: &ElementID, rec: ReceivableEventChanges,
     ) {
-        if update_this_elements_prioritizers {
-            // get the id of the element propagating changes to the CUI
-            let el_id = self.eo.borrow().get_id_from_el(child_el);
-
-            // process changes in element organizer
-            self.eo
-                .borrow_mut()
-                .process_receivable_event_changes(el_id, &rec);
-        }
+        // process changes in element organizer
+        self.eo
+            .borrow_mut()
+            .process_receivable_event_changes(child_el_id, &rec);
     }
 }
 

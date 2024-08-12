@@ -32,7 +32,7 @@
       pane_parent.go                     │
       pane_size.go                       │
       pane_stack.go                      │
-      pane_standard.go                   │ WORKING
+      pane_standard.go                   │ DONE
       tab.go                             │
   ▾ examples/                            │
     ▾ comment2/                          │
@@ -58,16 +58,16 @@
       README.md                          │
   ▾ widgets/                             │
     ▾ megafonts/                         │
-        font_ansi_reg.go                 │
+        font_ansi_reg.go                 │ WORKING
         font_ansi_shadow.go              │
         font_pagga.go                    │
         font_stick.go                    │
-        megafont.go                      │
+        megafont.go                      │ WORKING
       common.go                          │
       el_clr_sel.go                      │
       el_widget_pane.go                  │
       organizer.go                       │
-      README.md                          │
+      README.md                          │ DONE
       scaled_value.go                    │
       widget.go                          │
       widget__test.go                    │
