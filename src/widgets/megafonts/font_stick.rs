@@ -1,75 +1,72 @@
-/*
-package megafonts
-
-import (
-	"github.com/gdamore/tcell/v2"
-	yh "keybase.io/nwmod/nwmod/yeehaw"
-)
+use {
+    super::FontInputGroup,
+    crate::{DrawChs2D, Style},
+    std::collections::HashMap,
+};
 
 // This font is down and grimey!
 // no special characters, just letters and numbers you can type on the keyboard!
 // watch out world!
 //
-//  - by bogz modded out from trad js-stick
-
-var stickInputGroups = []FontInputGroup{
-	{
-		Glyphs: [][]rune{
-			[]rune(`               __                                `),
-			[]rune(`   | '' _/_/_ (|  o/ r  ' / \ \|/ _|_   ---    / `),
-			[]rune(`   .    / /-  _|) /o C\   \ / /|\  |  ,     . /  `),
-		},
-		Chars:  []rune(` !"#$%&'()*+,-./`),
-		Widths: []rune(`3236433222442423`),
-	},
-	{
-		Glyphs: [][]rune{
-			[]rune(` __  _   _  _       _   _  __  _   _               _  `),
-			[]rune(`/ /\  |   ) _) |_| |_  |_   / (_) (_) . . / _ \ ? | a `),
-			[]rune(`\/_/ _|_ /_ _)   |  _) |_| /  (_)  _) . , \ - / . |__ `),
-		},
-		Chars:  []rune(`0123456789:;<=>?@`),
-		Widths: []rune(`54334443442222224`),
-	},
-	{
-		Glyphs: [][]rune{
-			[]rune(`      __   __  __   __  __  __       ___  ___          .  . .  .  _  `),
-			[]rune(` /\  |__) /   |  \ |__ |__ / _  |__|  |    |  |__/ |   |\/| |\ | / \ `),
-			[]rune(`/--\ |__) \__ |__/ |__ |   \__| |  | _|_ \_/  |  \ |__ |  | | \| \_/ `),
-		},
-		Chars:  []rune(`ABCDEFGHIJKLMNO`),
-		Widths: []rune(`554544554554554`),
-	},
-	{
-		Glyphs: [][]rune{
-			[]rune(` __   __   __   __  ___                       __ `),
-			[]rune(`|__) /  \ |__) |__   |  |  | \  / |  | \/ \ /  / `),
-			[]rune(`|    \__X |  \  __|  |  \__/  \/  |/\| /\  |  /_ `),
-		},
-		Chars:  []rune(`PQRSTUVWXYZ`),
-		Widths: []rune(`55554555343`),
-	},
-	{
-		Glyphs: [][]rune{
-			[]rune(` _    _            _   _      `),
-			[]rune(`|  \   | /\    ' _|  |  |_ ^v `),
-			[]rune(`|_  \ _|    __    |_ | _|     `),
-		},
-		Chars:  []rune(`[\]^_` + "`" + `{|}~`),
-		Widths: []rune(`33333` + "2" + `4243`),
-	},
-}
+// Credit: original author of Stick Letters Joan Stark.
+// This version has been modified by bogz.
 
 // TODO options
 // - text colour
 // - background colour
 
-func Stick() map[rune]yh.DrawChs2D {
-	out := make(map[rune]yh.DrawChs2D)
-	sty := tcell.StyleDefault
-	for _, ig := range stickInputGroups {
-		ig.AddGlyphsToMap(&out, sty)
-	}
-	return out
+#[rustfmt::skip]
+pub fn stick() -> HashMap<char, DrawChs2D> {
+    let mut font_input_group = vec![
+    FontInputGroup{
+        glyphs: vec![
+        r#"               __                                "#.chars().collect(),
+        r#"   | '' _/_/_ (|  o/ r  ' / \ \|/ _|_   ---    / "#.chars().collect(),
+        r#"   .    / /-  _|) /o C\   \ / /|\  |  ,     . /  "#.chars().collect(),
+        ],
+        widths: vec![3,2,3,6,4,3,3,2,2,2,4,4,2,4,2,3],
+        chars: r##" !"#$%&'()*+,-./"##.chars().collect(),
+    },
+    FontInputGroup{
+        glyphs: vec![
+        r#" __  _   _  _       _   _  __  _   _               _  "#.chars().collect(),
+        r#"/ /\  |   ) _) |_| |_  |_   / (_) (_) . . / _ \ ? | a "#.chars().collect(),
+        r#"\/_/ _|_ /_ _)   |  _) |_| /  (_)  _) . , \ - / . |__ "#.chars().collect(),
+        ],
+        widths: vec![5,4,3,3,4,4,4,3,4,4,2,2,2,2,2,2,4],
+        chars: r##"0123456789:;<=>?@"##.chars().collect(),
+    },
+    FontInputGroup{
+        glyphs: vec![
+        r#"      __   __  __   __  __  __       ___  ___          .  . .  .  _  "#.chars().collect(),
+        r#" /\  |__) /   |  \ |__ |__ / _  |__|  |    |  |__/ |   |\/| |\ | / \ "#.chars().collect(),
+        r#"/--\ |__) \__ |__/ |__ |   \__| |  | _|_ \_/  |  \ |__ |  | | \| \_/ "#.chars().collect(),
+        ],
+        widths: vec![5,5,4,5,4,4,5,5,4,5,5,4,5,5,4],
+        chars: r##"ABCDEFGHIJKLMNO"##.chars().collect(),
+    },
+    FontInputGroup{
+        glyphs: vec![
+        r#" __   __   __   __  ___                       __ "#.chars().collect(),
+        r#"|__) /  \ |__) |__   |  |  | \  / |  | \/ \ /  / "#.chars().collect(),
+        r#"|    \__X |  \  __|  |  \__/  \/  |/\| /\  |  /_ "#.chars().collect(),
+        ],
+        widths: vec![5,5,5,5,4,5,5,5,3,4,3],
+        chars: r##"PQRSTUVWXYZ"##.chars().collect(),
+    }, 
+    FontInputGroup{
+        glyphs: vec![
+        r#" _    _            _   _      "#.chars().collect(),
+        r#"|  \   | /\    ' _|  |  |_ ^v "#.chars().collect(),
+        r#"|_  \ _|    __    |_ | _|     "#.chars().collect(),
+        ],
+        widths: vec![3,3,3,3,3,2,4,2,4,3],
+        chars: r##"[\]^_`{|}~"##.chars().collect(),
+    }
+    ];
+    let mut out = HashMap::new();
+    for ig in font_input_group.iter_mut() {
+        ig.add_glyphs_to_map(&mut out, Style::default());
+    }
+    out
 }
-*/

@@ -6,8 +6,7 @@ use {
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     let hat = SortingHat::default();
-    let mut el = StandardPane::new_empty(&hat, StandardPane::KIND);
-    let text = DrawChs2D::from_string("Hello, World!".to_string(), Style::default());
-    el.content = text.0;
+    let text = DrawChs2D::from_string("Hello, Werld!".to_string(), Style::default());
+    let el = StandardPane::new(&hat, StandardPane::KIND).with_content(text.0);
     Cui::new(Rc::new(RefCell::new(el)))?.run().await
 }

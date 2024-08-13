@@ -14,6 +14,8 @@ pub struct StandardPane {
 
     id: String, // element-id as assigned by the sorting-hat
 
+    description: String, // can be used for debuggin' purposes
+
     // The SelfEvs are NOT handled by the standard pane. The element inheriting the
     // standard pane is expected to handle all SelfReceivableEvents in the
     // ReceiveEvent function. The standard pane is only responsible for
@@ -56,63 +58,51 @@ impl StandardPane {
     // to the standard pane, as the standard pane is only boilerplate.
     pub const KIND: &'static str = "standard_pane";
 
-    pub fn new(
-        hat: &SortingHat, kind: &'static str, content: Vec<Vec<DrawCh>>, default_ch: DrawCh,
-        default_line: Vec<DrawCh>, content_view_offset_x: u16, content_view_offset_y: u16,
-    ) -> StandardPane {
+    pub fn new(hat: &SortingHat, kind: &'static str) -> StandardPane {
+        //StandardPane::new(hat, kind, vec![], DrawCh::default(), vec![], 0, 0)
         StandardPane {
             kind,
             id: hat.create_element_id(kind),
+            description: String::new(),
             self_evs: SelfReceivableEvents::default(),
             element_priority: Priority::UNFOCUSED,
             up: None,
             view_height: 0,
             view_width: 0,
-            content,
-            default_ch,
-            default_line,
-            content_view_offset_x,
-            content_view_offset_y,
+            content: vec![],
+            default_ch: DrawCh::default(),
+            default_line: vec![],
+            content_view_offset_x: 0,
+            content_view_offset_y: 0,
         }
     }
 
-    pub fn new_empty(hat: &SortingHat, kind: &'static str) -> StandardPane {
-        StandardPane::new(hat, kind, vec![], DrawCh::default(), vec![], 0, 0)
+    pub fn with_description(mut self, desc: String) -> StandardPane {
+        self.description = desc;
+        self
     }
 
-    // TODO delete post translation... just made the fields public
-    //pub fn get_content_view_offset_x(&self) -> usize {
-    //    self.content_view_offset_x
-    //}
-    //pub fn get_content_view_offset_y(&self) -> usize {
-    //    self.content_view_offset_y
-    //}
-    //pub fn set_content_view_offset_x(&mut self, x: usize) {
-    //    self.content_view_offset_x = x
-    //}
-    //pub fn set_content_view_offset_y(&mut self, y: usize) {
-    //    self.content_view_offset_y = y
-    //}
+    pub fn with_content(mut self, content: Vec<Vec<DrawCh>>) -> StandardPane {
+        self.content = content;
+        self
+    }
+
+    pub fn with_default_ch(mut self, ch: DrawCh) -> StandardPane {
+        self.default_ch = ch;
+        self
+    }
+
+    pub fn with_default_line(mut self, line: Vec<DrawCh>) -> StandardPane {
+        self.default_line = line;
+        self
+    }
+
+    pub fn with_content_view_offset(mut self, x: u16, y: u16) -> StandardPane {
+        self.content_view_offset_x = x;
+        self.content_view_offset_y = y;
+        self
+    }
 }
-
-// TODO delete this code post-TRANSLATION. the upward propogator should only be implemented at the parent pane level.
-//impl UpwardPropagator for StandardPane {
-//    // NOTE this function should NOT be used if the standard pane is used as a base for a
-//    // more complex element. As the developer you should be fulfilling the
-//    // PropagateUpwardChangesToInputability function directly in your element.
-//    fn propagate_receivable_event_changes_upward(
-//        &mut self, child_el: Rc<RefCell<dyn Element>>, rec: ReceivableEventChanges,
-//    ) {
-//        if let Some(up) = self.up.as_ref() {
-//            up.borrow_mut().propagate_receivable_event_changes_upward(
-//                child_el,
-//                rec,
-//                update_this_elements_prioritizers,
-//            );
-//        }
-//    }
-//}
-
 impl Element for StandardPane {
     fn kind(&self) -> &'static str {
         self.kind
@@ -120,6 +110,10 @@ impl Element for StandardPane {
 
     fn id(&self) -> &ElementID {
         &self.id
+    }
+
+    fn description(&self) -> &str {
+        &self.description
     }
 
     // Receivable returns the event keys and commands that can

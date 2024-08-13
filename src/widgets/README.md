@@ -18,6 +18,7 @@
 
 ## Planned Features
  - widget: colour selector
+ - widget: table (see ratatui)
  - textbox vim line numbers and ~ endlines 
  - textbox custom colouring per character 
  - TGIF

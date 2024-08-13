@@ -11,6 +11,8 @@ pub trait Element {
 
     fn id(&self) -> &ElementID; // the element id as assigned by the SortingHat
 
+    fn description(&self) -> &str; // element description, useful for debugging
+
     // Returns all events (key events and commands, etc.) that are registered to
     // an element. This includes all events that are registered to the element
     // itself, as well as its children, via its ElementOrganizer (if it has
