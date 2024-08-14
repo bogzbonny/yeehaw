@@ -58,24 +58,24 @@
       README.md                          │
   ▾ widgets/                             │
     ▾ megafonts/                         │
-        font_ansi_reg.go                 │ WORKING
-        font_ansi_shadow.go              │
-        font_pagga.go                    │
-        font_stick.go                    │
-        megafont.go                      │ WORKING
-      common.go                          │
-      el_clr_sel.go                      │
+        font_ansi_reg.go                 │ DONE
+        font_ansi_shadow.go              │ DONE
+        font_pagga.go                    │ DONE
+        font_stick.go                    │ DONE
+        megafont.go                      │ DONE
+      common.go                          │ DONE
+      el_clr_sel.go                      │ DONE (DELETED)
       el_widget_pane.go                  │
       organizer.go                       │
       README.md                          │ DONE
-      scaled_value.go                    │
-      widget.go                          │
+      scaled_value.go                    │ DONE
+      widget.go                          │ DONE
       widget__test.go                    │
       widget_button.go                   │
       widget_checkbox.go                 │
-      widget_col_sel.go                  │
+      widget_col_sel.go                  │ DONE (DELETED)
       widget_dropdownlist.go             │
-      widget_label.go                    │
+      widget_label.go                    │ DONE
       widget_listbox.go                  │
       widget_listbox_mono.go             │
       widget_radio.go                    │

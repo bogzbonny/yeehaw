@@ -1,5 +1,4 @@
 pub mod common;
-pub mod el_clr_sel;
 pub mod el_widget_pane;
 pub mod megafonts;
 pub mod organizer;
@@ -7,7 +6,6 @@ pub mod scaled_value;
 pub mod widget;
 pub mod widget_button;
 pub mod widget_checkbox;
-pub mod widget_col_sel;
 pub mod widget_dropdownlist;
 pub mod widget_label;
 pub mod widget_listbox;
@@ -18,3 +16,7 @@ pub mod widget_textbox;
 pub mod widget_textbox_numbers;
 pub mod widget_title;
 pub mod widget_toggle;
+
+pub use scaled_value::{SclLocation, SclVal};
+pub use widget::{Selectability, WBStyles, Widget, WidgetBase, Widgets};
+pub use widget_label::Label;

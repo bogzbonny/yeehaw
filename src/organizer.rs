@@ -250,9 +250,9 @@ impl ElementOrganizer {
     pub fn process_receivable_event_changes(
         &mut self, el_id: &ElementID, ic: &ReceivableEventChanges,
     ) {
-        self.prioritizer.remove(&el_id, &ic.remove);
+        self.prioritizer.remove(el_id, &ic.remove);
         self.prioritizer
-            .include(&el_id, &ic.add, self.panic_on_overload);
+            .include(el_id, &ic.add, self.panic_on_overload);
     }
 
     // Partially process the event response for whatever is possible to be processed
@@ -263,13 +263,13 @@ impl ElementOrganizer {
     ) -> EventResponse {
         // replace this entire element
         if let Some(repl) = r.replacement {
-            let ctx = self.get_context_for_el_id(&el_id);
+            let ctx = self.get_context_for_el_id(el_id);
             self.replace_el(el_id, repl);
             r.replacement = None;
 
             // resize replacement
             // TODO may not be neccessary. Explore further w/ fixes to resizing
-            let el = self.get_element_by_id(&el_id).unwrap(); // XXX remove unwrap?? use expect here??
+            let el = self.get_element_by_id(el_id).unwrap(); // XXX remove unwrap?? use expect here??
             el.borrow_mut().receive_event(&ctx, Event::Resize);
         }
 
@@ -325,14 +325,14 @@ impl ElementOrganizer {
                 .drain(..)
                 .map(|(e, _)| e)
                 .collect();
-            self.prioritizer.remove(&el_id, &evs);
+            self.prioritizer.remove(el_id, &evs);
             ic = ic.with_remove_evs(evs);
         }
 
         // register all events of new element to the prioritizers
         let new_evs = new_el.borrow().receivable();
         self.prioritizer
-            .include(&el_id, &new_evs, self.panic_on_overload);
+            .include(el_id, &new_evs, self.panic_on_overload);
         ic.add_evs(new_evs);
 
         ic

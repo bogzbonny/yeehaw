@@ -1,12 +1,10 @@
-/*
-package widgets
-
-import (
-	"strings"
-
-	tcell "github.com/gdamore/tcell/v2"
-	yh "keybase.io/nwmod/nwmod/yeehaw"
-)
+use {
+    super::{Label, SclLocation, SclVal},
+    crate::{
+        event::Event, Context, DrawCh, DrawChPos, DrawChs2D, EventResponse, Location, Priority,
+        ReceivableEventChanges, Style, ZIndex,
+    },
+};
 
 //  WIDGET FARMER       ✲
 //                         /|\      *
@@ -26,527 +24,538 @@ import (
 
 // widgets are a basically really simple elements
 // besides that a widget is aware of its location
-type Widget interface {
+pub trait Widget {
+    // widgets can only receive events when they are active
+    fn receivable(&self) -> Vec<Event>;
 
-	// widgets can only receive events when they are active
-	Receivable() []yh.PrioritizableEv
+    fn get_parent_ctx(&self) -> &Context;
+    fn set_parent_ctx(&mut self, parent_ctx: Context);
 
-	GetParentCtx() yh.Context
-	SetParentCtx(parentCtx yh.Context)
+    // Draw the widget to the screen
+    fn drawing(&self) -> Vec<DrawChPos>;
 
-	// Draw the widget to the screen
-	Drawing() (chs []yh.DrawChPos)
+    fn set_styles(&mut self, styles: WBStyles);
 
-	SetStyles(styles WBStyles)
+    fn resize_event(&mut self, parent_ctx: Context);
 
-	ResizeEvent(parentCtx yh.Context)
+    fn get_location(&self) -> Location;
+    fn get_scl_location(&self) -> SclLocation;
 
-	GetLocation() yh.Location
-	GetSclLocation() SclLocation
+    // NOTE the mouse event input is adjusted for the widgets location
+    // (aka if you click on the top-left corner of the widget ev.Position()
+    // will be 0, 0)
+    fn receive_key_event(&mut self, ev: Event) -> (bool, EventResponse);
+    fn receive_mouse_event(&mut self, ev: Event) -> (bool, EventResponse);
 
-	ReceiveKeyEventCombo(evs []*tcell.EventKey) (captured bool, resp yh.EventResponse)
+    // NOTE window creation in response to SetSelectability
+    // is currently not supported
+    fn get_selectability(&self) -> Selectability;
+    fn set_selectability(&mut self, s: Selectability) -> EventResponse;
 
-	// NOTE the mouse event input is adjusted for the widgets location
-	// (aka if you click on the top-left corner of the widget ev.Position()
-	// will be 0, 0)
-	ReceiveMouseEvent(ev *tcell.EventMouse) (captured bool, resp yh.EventResponse)
-
-	GetSelectability() Selectability
-
-	// NOTE window creation in response to SetSelectability
-	// is currently not supported
-	SetSelectability(s Selectability) yh.EventResponse
-
-	ToWidgets() Widgets
+    // used in combination widgets (TODO confirm)
+    fn to_widgets(self) -> Widgets;
 }
 
-type Selectability string
+const WIDGET_Z_INDEX: ZIndex = 10;
 
-const (
-	Selected     Selectability = "selected"     // currently selected
-	Ready        Selectability = "ready"        // not selected but able to be selected
-	Unselectable Selectability = "unselectable" // unselectable
-)
+#[derive(Clone, Copy, PartialEq)]
+pub enum Selectability {
+    Selected,     // currently selected
+    Ready,        // not selected but able to be selected
+    Unselectable, // unselectable
+}
+
+// label positions
+//      1  2
+//     5████7
+//      ████
+//     6████8
+//      3  4
+pub enum LabelPosition {
+    AboveThenLeft,   // 1
+    AboveThenRight,  // 2
+    BelowThenLeft,   // 3
+    BelowThenRight,  // 4
+    LeftThenTop,     // 5
+    LeftThenBottom,  // 6
+    RightThenTop,    // 7
+    RightThenBottom, // 8
+}
+
+#[derive(Default)]
+pub struct Widgets(pub Vec<Box<dyn Widget>>);
+
+impl Widgets {
+    // returns the smallest location which encompasses all
+    // the sub-locations for all the contained widgets
+    pub fn overall_loc(&self) -> SclLocation {
+        if self.0.is_empty() {
+            return SclLocation::default();
+        }
+
+        let mut l = SclLocation::default();
+        for w in &self.0 {
+            let wl_loc = w.get_scl_location();
+            l.start_x = l.start_x.plus_min_of(wl_loc.start_x);
+            l.end_x = l.end_x.plus_max_of(wl_loc.end_x);
+            l.start_y = l.start_y.plus_min_of(wl_loc.start_y);
+            l.end_y = l.end_y.plus_max_of(wl_loc.end_y);
+        }
+        l
+    }
+
+    // get the label location from the label position
+    pub fn label_position_to_xy(
+        &self,
+        p: LabelPosition,
+        label_width: usize,
+        label_height: usize,
+        //(x    , y     )
+    ) -> (SclVal, SclVal) {
+        let l = self.overall_loc();
+        match p {
+            LabelPosition::AboveThenLeft => (l.start_x, l.start_y.minus_fixed(label_height)),
+            LabelPosition::AboveThenRight => (l.end_x, l.start_y.minus_fixed(label_height)),
+            LabelPosition::BelowThenLeft => (l.start_x, l.end_y.plus_fixed(1)),
+            LabelPosition::BelowThenRight => (l.end_x, l.end_y.plus_fixed(1)),
+            LabelPosition::LeftThenTop => (l.start_x.minus_fixed(label_width), l.start_y),
+            LabelPosition::LeftThenBottom => (l.start_x.minus_fixed(label_width), l.end_y),
+            LabelPosition::RightThenTop => (l.end_x.plus_fixed(1), l.start_y),
+            LabelPosition::RightThenBottom => (l.end_x.plus_fixed(1), l.end_y),
+        }
+    }
+
+    //adds the label at the position provided
+    pub fn add_label(&mut self, l: Label, p: LabelPosition) {
+        let (x, y) = self.label_position_to_xy(p, l.get_width(), l.get_height());
+        self.0.push(Box::new(l.at(x, y)));
+    }
+
+    pub fn with_label(self, l: String) -> Self {
+        // label toi the right if a width of 1 otherwise label the top left
+        if self.overall_loc().width(&(self).get_parent_ctx()) == 1 {
+            self.with_right_top_label(l)
+        } else {
+            self.with_above_left_label(l)
+        }
+    }
+
+    pub fn get_parent_ctx(&self) -> Context {
+        if self.0.is_empty() {
+            return Context::default();
+        }
+        (self.0[0].get_parent_ctx()).clone()
+    }
+
+    pub fn with_above_left_label(mut self, l: String) -> Self {
+        self.add_label(
+            Label::new(self.get_parent_ctx(), l),
+            LabelPosition::AboveThenLeft,
+        );
+        self
+    }
+
+    pub fn with_above_right_label(mut self, l: String) -> Self {
+        self.add_label(
+            Label::new(self.get_parent_ctx(), l),
+            LabelPosition::AboveThenRight,
+        );
+        self
+    }
+
+    pub fn with_below_left_label(mut self, l: String) -> Self {
+        self.add_label(
+            Label::new(self.get_parent_ctx(), l),
+            LabelPosition::BelowThenLeft,
+        );
+        self
+    }
+
+    pub fn with_below_right_label(mut self, l: String) -> Self {
+        self.add_label(
+            Label::new(self.get_parent_ctx(), l),
+            LabelPosition::BelowThenRight,
+        );
+        self
+    }
+
+    pub fn with_left_top_label(mut self, l: String) -> Self {
+        self.add_label(
+            Label::new(self.get_parent_ctx(), l),
+            LabelPosition::LeftThenTop,
+        );
+        self
+    }
+
+    pub fn with_left_bottom_label(mut self, l: String) -> Self {
+        self.add_label(
+            Label::new(self.get_parent_ctx(), l),
+            LabelPosition::LeftThenBottom,
+        );
+        self
+    }
+
+    pub fn with_right_top_label(mut self, l: String) -> Self {
+        self.add_label(
+            Label::new(self.get_parent_ctx(), l),
+            LabelPosition::RightThenTop,
+        );
+        self
+    }
+
+    pub fn with_right_bottom_label(mut self, l: String) -> Self {
+        self.add_label(
+            Label::new(self.get_parent_ctx(), l),
+            LabelPosition::RightThenBottom,
+        );
+        self
+    }
+
+    // ---------------
+    // vertical labels
+
+    pub fn with_left_top_vertical_label(mut self, l: String) -> Self {
+        self.add_label(
+            Label::new(self.get_parent_ctx(), l)
+                .with_rotated_text()
+                .with_down_justification(),
+            LabelPosition::LeftThenTop,
+        );
+        self
+    }
+
+    pub fn with_left_bottom_vertical_label(mut self, l: String) -> Self {
+        self.add_label(
+            Label::new(self.get_parent_ctx(), l)
+                .with_rotated_text()
+                .with_up_justification(),
+            LabelPosition::LeftThenBottom,
+        );
+        self
+    }
+
+    pub fn with_right_top_vertical_label(mut self, l: String) -> Self {
+        self.add_label(
+            Label::new(self.get_parent_ctx(), l)
+                .with_rotated_text()
+                .with_down_justification(),
+            LabelPosition::RightThenTop,
+        );
+        self
+    }
+
+    pub fn with_right_bottom_vertical_label(mut self, l: String) -> Self {
+        self.add_label(
+            Label::new(self.get_parent_ctx(), l)
+                .with_rotated_text()
+                .with_up_justification(),
+            LabelPosition::RightThenBottom,
+        );
+        self
+    }
+}
 
 //------------------------------------------------
 
-const WidgetZIndex = 10
+pub struct WidgetBase {
+    pub p_ctx: Context, // last parent context
 
-type Widgets []Widget
+    pub selectedness: Selectability, // lol
 
-func NewWidgets(ws ...Widget) Widgets {
-	return ws
+    // function called when a mouse event is successfully received
+    //ReceiveMouseEventFn func(ev *tcell.EventMouse)
+
+    // the receivableEvents when this widget is active
+    pub receivable_events: Vec<Event>,
+
+    // size of the widget (NOT the content space)
+    pub width: SclVal,
+    pub height: SclVal,
+    pub loc_x: SclVal,
+    pub loc_y: SclVal,
+
+    pub content: DrawChs2D,       // [Y][X]DrawCh
+    pub content_max_width: usize, // max width of the content
+    pub content_x_offset: usize,
+    pub content_y_offset: usize,
+    pub styles: WBStyles,
 }
 
-// returns the smallest location which encompasses all
-// the sub-locations for all the contained widgets
-func (ws Widgets) OverallLoc() (l SclLocation) {
-	if len(ws) == 0 {
-		return l
-	}
+impl WidgetBase {
+    pub fn new(
+        p_ctx: Context, width: SclVal, height: SclVal, sty: WBStyles, receivable_events: Vec<Event>,
+    ) -> Self {
+        Self {
+            p_ctx,
+            selectedness: Selectability::Ready,
+            receivable_events,
+            width,
+            height,
+            loc_x: SclVal::new_fixed(0),
+            loc_y: SclVal::new_fixed(0),
+            content: DrawChs2D::default(),
+            content_max_width: 0,
+            content_x_offset: 0,
+            content_y_offset: 0,
+            styles: sty,
+        }
+    }
 
-	for _, wl := range ws {
-		wlLoc := wl.GetSclLocation()
-		l.StartX = l.StartX.PlusMinOf(wlLoc.StartX)
-		l.EndX = l.EndX.PlusMaxOf(wlLoc.EndX)
-		l.StartY = l.StartY.PlusMinOf(wlLoc.StartY)
-		l.EndY = l.EndY.PlusMaxOf(wlLoc.EndY)
-	}
-	return l
+    pub fn at(&mut self, loc_x: SclVal, loc_y: SclVal) {
+        self.loc_x = loc_x;
+        self.loc_y = loc_y;
+    }
+
+    //-------------------------
+
+    pub fn get_width(&self) -> usize {
+        self.width.get_val(self.p_ctx.get_width().into())
+    }
+
+    pub fn get_height(&self) -> usize {
+        self.height.get_val(self.p_ctx.get_height().into())
+    }
+
+    pub fn get_parent_ctx(&self) -> &Context {
+        &self.p_ctx
+    }
+
+    pub fn set_parent_ctx(&mut self, p_ctx: Context) {
+        self.p_ctx = p_ctx;
+    }
+
+    pub fn resize_event(&mut self, p_ctx: Context) {
+        self.p_ctx = p_ctx;
+    }
+
+    pub fn get_location(&self) -> Location {
+        let w = self.get_width() as i32;
+        let h = self.get_height() as i32;
+        let x1 = self.loc_x.get_val(self.p_ctx.get_width().into()) as i32;
+        let y1 = self.loc_y.get_val(self.p_ctx.get_height().into()) as i32;
+        let x2 = x1 + w - 1;
+        let y2 = y1 + h - 1;
+        Location::new(x1, x2, y1, y2)
+    }
+
+    pub fn get_scl_location(&self) -> SclLocation {
+        let x1 = self.loc_x.clone();
+        let y1 = self.loc_y.clone();
+        let x2 = x1.clone().plus(self.width.clone()).minus_fixed(1);
+        let y2 = y1.clone().plus(self.height.clone()).minus_fixed(1);
+        SclLocation::new(x1, x2, y1, y2)
+    }
+
+    pub fn scroll_up(&mut self) {
+        self.set_content_y_offset(self.content_y_offset - 1);
+    }
+
+    pub fn scroll_down(&mut self) {
+        self.set_content_y_offset(self.content_y_offset + 1);
+    }
+
+    pub fn scroll_left(&mut self) {
+        self.set_content_x_offset(self.content_x_offset - 1);
+    }
+
+    pub fn scroll_right(&mut self) {
+        self.set_content_x_offset(self.content_x_offset + 1);
+    }
+
+    pub fn content_width(&self) -> usize {
+        self.content_max_width
+    }
+
+    pub fn content_height(&self) -> usize {
+        self.content.height()
+    }
+
+    pub fn set_content_x_offset(&mut self, x: usize) {
+        self.content_x_offset = if x > self.content_width() - self.get_width() {
+            self.content_max_width - self.get_width()
+        } else {
+            x
+        };
+    }
+
+    pub fn set_content_y_offset(&mut self, y: usize) {
+        self.content_y_offset = if y > self.content_height() - self.get_height() {
+            self.content_height() - self.get_height()
+        } else {
+            y
+        };
+    }
+
+    // sets content from string
+    pub fn set_content_from_string(&mut self, s: &str) {
+        let lines = s.split('\n');
+        let mut rs: Vec<Vec<char>> = Vec::new();
+        let sty = self.get_current_style();
+
+        let mut width = self.get_width();
+        let mut height = self.get_height();
+        for line in lines {
+            if width < line.len() {
+                width = line.len();
+            }
+            rs.push(line.chars().collect());
+        }
+        self.content_max_width = width;
+        if height < rs.len() {
+            height = rs.len();
+        }
+
+        // initialize the content with blank characters
+        // of the height and width of the widget
+        self.content = DrawChs2D::new_empty_of_size(width, height, sty);
+
+        // now fill in with actual content
+        for y in 0..height {
+            for x in 0..width {
+                let r = if y < rs.len() && x < rs[y].len() {
+                    rs[y][x]
+                } else {
+                    continue;
+                };
+                let dch = DrawCh::new(r, false, sty);
+                self.content.0[y][x] = dch;
+            }
+        }
+    }
+
+    pub fn set_content(&mut self, content: DrawChs2D) {
+        self.content_max_width = content.width();
+        self.content = content;
+    }
+
+    // correct_offsets_to_view_position changes the content offsets within the
+    // WidgetBase in order to bring the given view position into view.
+    pub fn correct_offsets_to_view_position(&mut self, x: usize, y: usize) {
+        // set y offset if cursor out of bounds
+        if y >= self.content_y_offset + self.get_height() {
+            self.set_content_y_offset(y - self.get_height() + 1);
+        } else if y < self.content_y_offset {
+            self.set_content_y_offset(y);
+        }
+
+        // correct the offset if the offset is now showing lines that don't exist in
+        // the content
+        if self.content_y_offset + self.get_height() > self.content_height() - 1 {
+            self.set_content_y_offset(self.content_height() - 1);
+        }
+
+        // set x offset if cursor out of bounds
+        if x >= self.content_x_offset + self.get_width() {
+            self.set_content_x_offset(x - self.get_width() + 1);
+        } else if x < self.content_x_offset {
+            self.set_content_x_offset(x);
+        }
+
+        // correct the offset if the offset is now showing characters to the right
+        // which don't exist in the content.
+        if self.content_x_offset + self.get_width() > self.content_width() - 1 {
+            self.set_content_x_offset(self.content_width() - 1);
+        }
+    }
+
+    // default implementation of Receivable, only receive when widget is active
+    pub fn receivable(&self) -> Vec<Event> {
+        if let Selectability::Selected = self.selectedness {
+            self.receivable_events.clone()
+        } else {
+            Vec::new()
+        }
+    }
+
+    pub fn get_selectability(&self) -> Selectability {
+        self.selectedness
+    }
+
+    pub fn set_selectability(&mut self, s: Selectability) -> EventResponse {
+        if self.selectedness == s {
+            return EventResponse::default();
+        }
+
+        let mut rec = ReceivableEventChanges::default();
+        match s {
+            Selectability::Selected => {
+                rec.add_evs_single_priority(self.receivable_events.clone(), Priority::FOCUSED);
+            }
+            Selectability::Ready | Selectability::Unselectable => {
+                if let Selectability::Selected = self.selectedness {
+                    rec.remove_evs(self.receivable_events.clone());
+                }
+            }
+        }
+        self.selectedness = s;
+        EventResponse::default().with_receivable_event_changes(rec)
+    }
+
+    pub fn disable(&mut self) -> EventResponse {
+        self.set_selectability(Selectability::Unselectable)
+    }
+
+    pub fn enable(&mut self) -> EventResponse {
+        self.set_selectability(Selectability::Ready)
+    }
+
+    pub fn get_current_style(&self) -> Style {
+        match self.selectedness {
+            Selectability::Selected => self.styles.selected_style,
+            Selectability::Ready => self.styles.ready_style,
+            Selectability::Unselectable => self.styles.unselectable_style,
+        }
+    }
+
+    pub fn drawing(&self) -> Vec<DrawChPos> {
+        let sty = self.get_current_style();
+        let h = self.get_height();
+        let w = self.get_width();
+
+        let mut chs = Vec::new();
+        for y in self.content_y_offset..self.content_y_offset + h {
+            for x in self.content_x_offset..self.content_x_offset + w {
+                let ch = if y < self.content.height() && x < self.content.width() {
+                    self.content.0[y][x]
+                } else {
+                    DrawCh::new(' ', false, sty)
+                };
+                chs.push(DrawChPos::new(
+                    ch,
+                    (x - self.content_x_offset) as u16,
+                    (y - self.content_y_offset) as u16,
+                ));
+            }
+        }
+        chs
+    }
+
+    pub fn set_styles(&mut self, styles: WBStyles) {
+        self.styles = styles;
+    }
+
+    pub fn receive_key_event(&mut self, _ev: Event) -> (bool, EventResponse) {
+        (false, EventResponse::default())
+    }
+
+    pub fn receive_mouse_event(&self, _ev: Event) -> (bool, EventResponse) {
+        (false, EventResponse::default())
+    }
 }
 
-type LabelPosition string
-
-const (
-	// label positions
-	//
-	//      1  2
-	//     5████7
-	//      ████
-	//     6████8
-	//      3  4
-
-	AboveThenLeft   LabelPosition = "above-then-left"  // 1
-	AboveThenRight  LabelPosition = "above-then-right" // 2
-	BelowThenLeft   LabelPosition = "below-then-left"  // 3
-	BelowThenRight  LabelPosition = "below-then-right" // 4
-	LeftThenTop     LabelPosition = "left-then-above"  // 5
-	LeftThenBottom  LabelPosition = "left-then-below"  // 6
-	RightThenTop    LabelPosition = "right-then-above" // 7
-	RightThenBottom LabelPosition = "right-then-below" // 8
-)
-
-// get the label location from the label position
-func (ws *Widgets) LabelPositionToXY(p LabelPosition, labelWidth, labelHeight int) (x, y SclVal) {
-	l := ws.OverallLoc()
-	switch p {
-	case AboveThenLeft:
-		x = l.StartX
-		y = l.StartY.MinusStatic(labelHeight)
-	case AboveThenRight:
-		x = l.EndX
-		y = l.StartY.MinusStatic(labelHeight)
-	case BelowThenLeft:
-		x = l.StartX
-		y = l.EndY.PlusStatic(1)
-	case BelowThenRight:
-		x = l.EndX
-		y = l.EndY.PlusStatic(1)
-	case LeftThenTop:
-		x = l.StartX.MinusStatic(labelWidth)
-		y = l.StartY
-	case LeftThenBottom:
-		x = l.StartX.MinusStatic(labelWidth)
-		y = l.EndY
-	case RightThenTop:
-		x = l.EndX.PlusStatic(1)
-		y = l.StartY
-	case RightThenBottom:
-		x = l.EndX.PlusStatic(1)
-		y = l.EndY
-	default:
-		panic("unknown label position")
-	}
-	return x, y
+#[derive(Copy, Clone, Default)]
+pub struct WBStyles {
+    pub selected_style: Style,
+    pub ready_style: Style,
+    pub unselectable_style: Style,
 }
 
-// adds the label at the position provided
-func (ws *Widgets) AddLabel(l *Label, p LabelPosition) {
-	x, y := ws.LabelPositionToXY(p, l.GetWidth(), l.GetHeight())
-	l.At(x, y)
-	*ws = append(*ws, l.ToWidgets()...)
+impl WBStyles {
+    pub fn new(selected_style: Style, ready_style: Style, unselectable_style: Style) -> WBStyles {
+        WBStyles {
+            selected_style,
+            ready_style,
+            unselectable_style,
+        }
+    }
 }
-
-func (ws Widgets) WithLabel(label string) Widgets {
-	// label to the right if a width of 1 otherwise label the top left
-	if ws.OverallLoc().Width(ws.GetParentCtx()) == 1 {
-		return ws.WithRightTopLabel(label)
-	}
-	return ws.WithAboveLeftLabel(label)
-}
-
-func (ws Widgets) GetParentCtx() yh.Context {
-	if len(ws) == 0 {
-		return yh.Context{}
-	}
-	return ws[0].GetParentCtx()
-}
-
-func (ws Widgets) WithAboveLeftLabel(label string) Widgets {
-	ws.AddLabel(NewLabel(ws.GetParentCtx(), label), AboveThenLeft)
-	return ws
-}
-
-func (ws Widgets) WithAboveRightLabel(label string) Widgets {
-	ws.AddLabel(NewLabel(ws.GetParentCtx(), label).WithRightJustification(), AboveThenRight)
-	return ws
-}
-
-func (ws Widgets) WithBelowLeftLabel(label string) Widgets {
-	ws.AddLabel(NewLabel(ws.GetParentCtx(), label), BelowThenLeft)
-	return ws
-}
-
-func (ws Widgets) WithBelowRightLabel(label string) Widgets {
-	ws.AddLabel(NewLabel(ws.GetParentCtx(), label).WithRightJustification(), BelowThenRight)
-	return ws
-}
-
-func (ws Widgets) WithLeftTopLabel(label string) Widgets {
-	ws.AddLabel(NewLabel(ws.GetParentCtx(), label).WithRightJustification(), LeftThenTop)
-	return ws
-}
-
-func (ws Widgets) WithLeftBottomLabel(label string) Widgets {
-	ws.AddLabel(NewLabel(ws.GetParentCtx(), label).WithRightJustification(), LeftThenBottom)
-	return ws
-}
-
-func (ws Widgets) WithRightTopLabel(label string) Widgets {
-	ws.AddLabel(NewLabel(ws.GetParentCtx(), label).WithLeftJustification(), RightThenTop)
-	return ws
-}
-
-func (ws Widgets) WithRightBottomLabel(label string) Widgets {
-	ws.AddLabel(NewLabel(ws.GetParentCtx(), label).WithLeftJustification(), RightThenBottom)
-	return ws
-}
-
-// ---------------
-// vertical labels
-
-func (ws Widgets) WithLeftTopVerticalLabel(label string) Widgets {
-	ws.AddLabel(NewLabel(ws.GetParentCtx(), label).WithRotatedText().WithDownJustification(), LeftThenTop)
-	return ws
-}
-
-func (ws Widgets) WithLeftBottomVerticalLabel(label string) Widgets {
-	ws.AddLabel(NewLabel(ws.GetParentCtx(), label).WithRotatedText().WithUpJustification(), LeftThenBottom)
-	return ws
-}
-
-func (ws Widgets) WithRightTopVerticalLabel(label string) Widgets {
-	ws.AddLabel(NewLabel(ws.GetParentCtx(), label).WithRotatedText().WithDownJustification(), RightThenTop)
-	return ws
-}
-
-func (ws Widgets) WithRightBottomVerticalLabel(label string) Widgets {
-	ws.AddLabel(NewLabel(ws.GetParentCtx(), label).WithRotatedText().WithUpJustification(), RightThenBottom)
-	return ws
-}
-
-//------------------------------------------------
-
-type WidgetBase struct {
-	pCtx yh.Context // last parent context
-
-	Selectedness Selectability // lol
-
-	// function called when a mouse event is successfully received
-	//ReceiveMouseEventFn func(ev *tcell.EventMouse)
-
-	// the receivableEvents when this widget is active
-	//ReceivableEvs []yh.PriorityEv
-	ReceivableEvs []yh.PrioritizableEv
-
-	// size of the widget (NOT the content space)
-	Width, Height SclVal
-	LocX, LocY    SclVal // top left location of the widget relative to parent
-
-	Content         yh.DrawChs2D // [Y][X]DrawCh
-	ContentMaxWidth int          // max width of the content
-	ContentXOffset  int
-	ContentYOffset  int
-	Styles          WBStyles
-}
-
-// func NewWidgetBase(pCtx, width, height int, sty WBStyles, receivableEvs []yh.PriorityEv) *WidgetBase {
-func NewWidgetBase(pCtx yh.Context, width, height SclVal, sty WBStyles, receivableEvs []yh.PrioritizableEv) *WidgetBase {
-	return &WidgetBase{
-		pCtx:         pCtx,
-		Selectedness: Ready,
-		//ReceiveMouseEventFn: nil,
-		ReceivableEvs:  receivableEvs,
-		Width:          width,
-		Height:         height,
-		LocX:           NewStatic(0),
-		LocY:           NewStatic(0),
-		Content:        [][]yh.DrawCh{},
-		ContentYOffset: 0,
-		ContentXOffset: 0,
-		Styles:         sty,
-	}
-}
-
-type WBStyles struct {
-	SelectedStyle     tcell.Style
-	ReadyStyle        tcell.Style
-	UnselectableStyle tcell.Style
-}
-
-var (
-	// default styles
-	DefaultWBStyles = WBStyles{
-		SelectedStyle:     tcell.StyleDefault,
-		ReadyStyle:        tcell.StyleDefault,
-		UnselectableStyle: tcell.StyleDefault,
-	}
-)
-
-func NewWBStyles(selectedStyle, readyStyle, unselectableStyle tcell.Style) WBStyles {
-	return WBStyles{
-		SelectedStyle:     selectedStyle,
-		ReadyStyle:        readyStyle,
-		UnselectableStyle: unselectableStyle,
-	}
-}
-
-//-------------------------
-
-func (wb *WidgetBase) GetWidth() int {
-	return wb.Width.GetVal(wb.pCtx.GetWidth())
-}
-
-func (wb *WidgetBase) GetHeight() int {
-	return wb.Height.GetVal(wb.pCtx.GetHeight())
-}
-
-func (wb *WidgetBase) At(locX, locY SclVal) {
-	wb.LocX, wb.LocY = locX, locY
-}
-
-func (wb *WidgetBase) GetParentCtx() yh.Context {
-	return wb.pCtx
-}
-
-func (wb *WidgetBase) SetParentCtx(pCtx yh.Context) {
-	wb.pCtx = pCtx
-}
-
-func (wb *WidgetBase) ResizeEvent(pCtx yh.Context) {
-	wb.SetParentCtx(pCtx)
-}
-
-func (wb *WidgetBase) GetLocation() yh.Location {
-	w, h := wb.GetWidth(), wb.GetHeight()
-	x1, y1 := wb.LocX.GetVal(wb.pCtx.GetWidth()), wb.LocY.GetVal(wb.pCtx.GetHeight())
-	x2, y2 := x1+w-1, y1+h-1
-	return yh.NewLocation(x1, x2, y1, y2, WidgetZIndex)
-}
-
-func (wb *WidgetBase) GetSclLocation() SclLocation {
-	x1, y1 := wb.LocX, wb.LocY
-	x2, y2 := x1.Plus(wb.Width).MinusStatic(1), y1.Plus(wb.Height).MinusStatic(1)
-	return NewSclLocation(x1, x2, y1, y2)
-}
-
-func (wb *WidgetBase) ScrollUp() {
-	wb.SetContentYOffset(wb.ContentYOffset - 1)
-}
-
-func (wb *WidgetBase) ScrollDown() {
-	wb.SetContentYOffset(wb.ContentYOffset + 1)
-}
-
-func (wb *WidgetBase) ScrollLeft() {
-	wb.SetContentXOffset(wb.ContentXOffset - 1)
-}
-
-func (wb *WidgetBase) ScrollRight() {
-	wb.SetContentXOffset(wb.ContentXOffset + 1)
-}
-
-func (wb *WidgetBase) SetContentXOffset(x int) {
-	if x < 0 {
-		x = 0
-	} else if x > wb.ContentWidth()-wb.GetWidth() {
-		x = wb.ContentWidth() - wb.GetWidth()
-	}
-	wb.ContentXOffset = x
-}
-
-func (wb *WidgetBase) SetContentYOffset(y int) {
-	if y < 0 {
-		y = 0
-	} else if y > wb.ContentHeight()-wb.GetHeight() {
-		y = wb.ContentHeight() - wb.GetHeight()
-	}
-	wb.ContentYOffset = y
-}
-
-func (wb *WidgetBase) ContentWidth() int {
-	return wb.ContentMaxWidth
-}
-
-func (wb *WidgetBase) ContentHeight() int {
-	return len(wb.Content)
-}
-
-// sets content from string
-func (wb *WidgetBase) SetContentFromString(s string) {
-
-	lines := strings.Split(string(s), "\n")
-	rs := [][]rune{}
-	sty := wb.GetCurrentStyle()
-
-	width, height := wb.GetWidth(), wb.GetHeight() // width and height of the content area
-	for _, line := range lines {
-		if width < len(line) {
-			width = len(line)
-		}
-		rs = append(rs, []rune(line))
-	}
-	wb.ContentMaxWidth = width
-	if height < len(rs) {
-		height = len(rs)
-	}
-
-	// initialize the content with blank characters
-	// of the height and width of the widget
-	wb.Content = [][]yh.DrawCh{}
-	for y := 0; y < height; y++ {
-		wb.Content = append(wb.Content, []yh.DrawCh{})
-		for x := 0; x < width; x++ {
-			wb.Content[y] = append(wb.Content[y], yh.NewDrawCh(' ', false, sty))
-		}
-	}
-
-	// now fill in with actual content
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			var r rune
-			if y < len(rs) && x < len(rs[y]) {
-				r = rs[y][x]
-			} else {
-				continue
-			}
-			dch := yh.NewDrawCh(r, false, sty)
-			wb.Content[y][x] = dch
-		}
-	}
-}
-
-func (wb *WidgetBase) SetContent(content yh.DrawChs2D) []yh.PrioritizableEv {
-	wb.Content = content
-	wb.ContentMaxWidth = content.Width()
-	return nil
-}
-
-// CorrectOffsetsToViewPosition changes the content offsets within the
-// WidgetBase in order to bring the given view position into view.
-func (wb *WidgetBase) CorrectOffsetsToViewPosition(x, y int) {
-
-	// set y offset if cursor out of bounds
-	if y >= wb.ContentYOffset+wb.GetHeight() {
-		yh.Debug("cor1, %d, %d, %d", y, wb.ContentYOffset, wb.GetHeight())
-		wb.SetContentYOffset(y - wb.GetHeight() + 1)
-	} else if y < wb.ContentYOffset {
-		yh.Debug("cor2")
-		wb.SetContentYOffset(y)
-	}
-
-	// correct the offset if the offset is now showing lines that don't exist in
-	// the content
-	if wb.ContentYOffset+wb.GetHeight() > wb.ContentHeight()-1 {
-		yh.Debug("cor3")
-		wb.SetContentYOffset(wb.ContentHeight() - 1)
-	}
-
-	// set x offset if cursor out of bounds
-	if x >= wb.ContentXOffset+wb.GetWidth() {
-		yh.Debug("cor4")
-		wb.SetContentXOffset(x - wb.GetWidth() + 1)
-	} else if x < wb.ContentXOffset {
-		yh.Debug("cor5")
-		wb.SetContentXOffset(x)
-	}
-
-	// correct the offset if the offset is now showing characters to the right
-	// which don't exist in the content.
-	if wb.ContentXOffset+wb.GetWidth() > wb.ContentWidth()-1 {
-		yh.Debug("cor6")
-		wb.SetContentXOffset(wb.ContentWidth() - 1)
-	}
-}
-
-// default implementation of Receivable, only receive when widget is active
-func (wb *WidgetBase) Receivable() []yh.PrioritizableEv {
-	if wb.Selectedness == Selected {
-		//return yh.ToPrioritizableEvs(wb.ReceivableEvs)
-		return wb.ReceivableEvs
-	}
-	return []yh.PrioritizableEv{}
-}
-
-func (wb *WidgetBase) GetSelectability() Selectability {
-	return wb.Selectedness
-}
-
-func (wb *WidgetBase) SetSelectability(s Selectability) yh.EventResponse {
-	if wb.Selectedness == s {
-		return yh.NewEventResponse()
-	}
-
-	var ic yh.InputabilityChanges
-	switch s {
-	case Selected:
-		pes := yh.NewPriorityEvs(yh.Focused, wb.ReceivableEvs)
-		ic.AddEvs(pes)
-	case Ready, Unselectable:
-		if wb.Selectedness == Selected {
-			ic.RemoveEvs(wb.ReceivableEvs)
-		}
-	}
-	wb.Selectedness = s
-	return yh.NewEventResponse().WithInputabilityChanges(ic)
-}
-
-func (wb *WidgetBase) Disable() yh.EventResponse {
-	return wb.SetSelectability(Unselectable)
-}
-
-func (wb *WidgetBase) Enable() yh.EventResponse {
-	return wb.SetSelectability(Ready)
-}
-
-func (wb *WidgetBase) GetCurrentStyle() tcell.Style {
-	switch wb.Selectedness {
-	case Selected:
-		return wb.Styles.SelectedStyle
-	case Ready:
-		return wb.Styles.ReadyStyle
-	case Unselectable:
-		return wb.Styles.UnselectableStyle
-	}
-	panic("unreachable style")
-}
-
-func (wb *WidgetBase) Drawing() (chs []yh.DrawChPos) {
-	sty := wb.GetCurrentStyle()
-	h, w := wb.GetHeight(), wb.GetWidth()
-
-	for y := wb.ContentYOffset; y < wb.ContentYOffset+h; y++ {
-		for x := wb.ContentXOffset; x < wb.ContentXOffset+w; x++ {
-			var ch yh.DrawCh
-			if y < len(wb.Content) && x < len(wb.Content[y]) {
-				ch = wb.Content[y][x]
-			} else {
-				ch = yh.NewDrawCh(' ', false, sty)
-			}
-			chs = append(chs, yh.NewDrawChPos(ch, x-wb.ContentXOffset, y-wb.ContentYOffset))
-		}
-	}
-	return chs
-}
-
-func (wb *WidgetBase) SetStyles(styles WBStyles) {
-	wb.Styles = styles
-}
-
-func (wb *WidgetBase) ReceiveMouseEvent(ev *tcell.EventMouse) (captured bool, resp yh.EventResponse) {
-	//if wb.ReceiveMouseEventFn != nil {
-	//    wb.ReceiveMouseEventFn(ev)
-	//}
-	return false, yh.NewEventResponse()
-}
-*/

@@ -4,7 +4,7 @@ use {
 };
 
 // DrawCh is a character with a style and transparency
-#[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
 pub struct DrawCh {
     pub ch: char,
     pub transparent: bool, // aka do not draw this character
@@ -91,6 +91,19 @@ impl DrawChs2D {
                 new_line.push(DrawCh::new(*c, false, sty));
             }
             out.push(new_line);
+        }
+        DrawChs2D(out)
+    }
+
+    // filles a new empty DrawChs2D to the provided size
+    pub fn new_empty_of_size(width: usize, height: usize, sty: Style) -> DrawChs2D {
+        let mut out = Vec::new();
+        for _ in 0..height {
+            let mut line = Vec::new();
+            for _ in 0..width {
+                line.push(DrawCh::new(' ', false, sty));
+            }
+            out.push(line);
         }
         DrawChs2D(out)
     }
@@ -185,7 +198,7 @@ impl DrawChs2D {
         }
         for y in 0..self.height() {
             for x in 0..self.width() {
-                new_chs[x].push(self.0[y][x].clone());
+                new_chs[x].push(self.0[y][x]);
             }
         }
         DrawChs2D(new_chs)
@@ -224,9 +237,9 @@ mod tests {
         let b = DrawCh::new('b', false, Style::new());
         let c = DrawCh::new('c', false, Style::new());
         let chs = vec![
-            DrawChPos::new(a.clone(), 0, 0),
-            DrawChPos::new(b.clone(), 1, 0),
-            DrawChPos::new(c.clone(), 2, 3),
+            DrawChPos::new(a, 0, 0),
+            DrawChPos::new(b, 1, 0),
+            DrawChPos::new(c, 2, 3),
         ];
         let loc = Location::new(10, 20, 30, 40);
 

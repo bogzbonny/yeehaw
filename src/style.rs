@@ -37,6 +37,16 @@ impl Style {
         }
     }
 
+    pub const fn with_fg(mut self, fg: RgbColour) -> Self {
+        self.fg = Some(fg);
+        self
+    }
+
+    pub const fn with_bg(mut self, bg: RgbColour) -> Self {
+        self.bg = Some(bg);
+        self
+    }
+
     pub fn set_fg(&mut self, fg: RgbColour) {
         self.fg = Some(fg);
     }

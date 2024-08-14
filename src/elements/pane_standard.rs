@@ -151,7 +151,7 @@ impl Element for StandardPane {
         for y in 0..=ctx.s.height - 1 {
             for x in 0..=ctx.s.width - 1 {
                 // default ch being added next is the DefaultCh
-                let mut ch_out = self.default_ch.clone();
+                let mut ch_out = self.default_ch;
 
                 // TODO XXX allow for negative offsets! currently crashes
 
@@ -162,7 +162,7 @@ impl Element for StandardPane {
                 // assign the next ch to be the one at the offset in the Content
                 // matrix
                 if offset_y < self.content.len() && offset_x < self.content[offset_y].len() {
-                    ch_out = self.content[offset_y][offset_x].clone();
+                    ch_out = self.content[offset_y][offset_x];
                 }
 
                 // if y is greater than the height of the visible content,
@@ -171,9 +171,9 @@ impl Element for StandardPane {
                 // content minus the offset
                 if (y as usize) > self.content.len() {
                     if (x as usize) < self.default_line.len() {
-                        ch_out = self.default_line[x as usize].clone();
+                        ch_out = self.default_line[x as usize];
                     } else {
-                        ch_out = self.default_ch.clone();
+                        ch_out = self.default_ch;
                     }
                 }
 

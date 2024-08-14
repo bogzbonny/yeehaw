@@ -1,22 +1,14 @@
-/*
-package widgets
-
-import "strings"
-
 // get the width and height of the text
-func TextSize(text string) (width, height int) {
-    lines := strings.Split(text, "\n")
-    maxWidth := 0
-    for _, line := range lines {
-        if len(line) > maxWidth {
-            maxWidth = len(line)
+//                                  (width, height)
+pub fn get_text_size(text: &str) -> (usize, usize) {
+    let lines = text.lines();
+    let mut max_width = 0;
+    let mut height = 0;
+    for line in lines {
+        if line.len() > max_width {
+            max_width = line.len();
         }
+        height += 1;
     }
-    return maxWidth, len(lines)
+    (max_width, height)
 }
-
-func TextHeight(text string) (height int) {
-    lines := strings.Split(text, "\n")
-    return len(lines)
-}
-*/

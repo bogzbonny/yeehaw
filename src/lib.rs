@@ -21,7 +21,9 @@ pub use {
     cui::Cui,
     cui_ch::{DrawCh, DrawChPos, DrawChs2D},
     cui_location::{Location, LocationSet, Size, ZIndex},
-    element::{Context, CreateWindow, Element, EventResponse, UpwardPropagator},
+    element::{
+        Context, CreateWindow, Element, EventResponse, ReceivableEventChanges, UpwardPropagator,
+    },
     elements::StandardPane,
     errors::Error,
     event::{CommandEvent, Event, KeyPossibility},

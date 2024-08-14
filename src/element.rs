@@ -109,10 +109,11 @@ pub trait UpwardPropagator {
 //
 // Additionally, Metadata may be addended to the context to pass additional
 // arbitrary information.
+#[derive(Default, Clone)]
 pub struct Context {
     pub s: Size,
     pub visible: bool,
-    pub metadata: Option<Box<dyn Any>>,
+    pub metadata: Option<String>, // should be in json
 }
 
 impl Context {
@@ -134,7 +135,7 @@ impl Context {
         }
     }
 
-    pub fn with_metadata(self, md: Box<dyn Any>) -> Context {
+    pub fn with_metadata(self, md: String) -> Context {
         Context {
             s: self.s,
             visible: self.visible,
@@ -377,6 +378,12 @@ impl ReceivableEventChanges {
 
     pub fn add_evs(&mut self, evs: Vec<(Event, Priority)>) {
         self.add.extend(evs);
+    }
+
+    pub fn add_evs_single_priority(&mut self, evs: Vec<Event>, pr: Priority) {
+        for ev in evs {
+            self.add.push((ev, pr));
+        }
     }
 
     pub fn remove_ev(&mut self, ev: Event) {
