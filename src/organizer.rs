@@ -17,13 +17,6 @@ pub struct ElementOrganizer {
     visibility: HashMap<ElementID, bool>,       // whether the element is set to display
 
     pub prioritizer: EventPrioritizer,
-
-    // TODO turn to debug assert statement?
-    //
-    // Panic if two children have registered the same ev/cmd at the same
-    // priority. If false the event will be sent to the ev/cmd to which happens
-    // to be first in the prioritizer
-    panic_on_overload: bool,
 }
 
 impl Default for ElementOrganizer {
@@ -33,7 +26,6 @@ impl Default for ElementOrganizer {
             locations: HashMap::new(),
             visibility: HashMap::new(),
             prioritizer: EventPrioritizer::default(),
-            panic_on_overload: true,
         }
     }
 }
@@ -55,8 +47,7 @@ impl ElementOrganizer {
 
         // add the elements recievable events and commands to the prioritizer
         let receivable_evs = el.borrow().receivable();
-        self.prioritizer
-            .include(&el_id, &receivable_evs, self.panic_on_overload);
+        self.prioritizer.include(&el_id, &receivable_evs);
 
         // give the child element a reference to the parent (the up passed in as an
         // input)
@@ -251,8 +242,7 @@ impl ElementOrganizer {
         &mut self, el_id: &ElementID, ic: &ReceivableEventChanges,
     ) {
         self.prioritizer.remove(el_id, &ic.remove);
-        self.prioritizer
-            .include(el_id, &ic.add, self.panic_on_overload);
+        self.prioritizer.include(el_id, &ic.add);
     }
 
     // Partially process the event response for whatever is possible to be processed
@@ -331,8 +321,7 @@ impl ElementOrganizer {
 
         // register all events of new element to the prioritizers
         let new_evs = new_el.borrow().receivable();
-        self.prioritizer
-            .include(el_id, &new_evs, self.panic_on_overload);
+        self.prioritizer.include(el_id, &new_evs);
         ic.add_evs(new_evs);
 
         ic

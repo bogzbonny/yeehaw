@@ -8,55 +8,55 @@ use {
 // expected to fulfill
 pub trait Element {
     fn kind(&self) -> &'static str; // a name for the kind of the element
-
     fn id(&self) -> &ElementID; // the element id as assigned by the SortingHat
 
-    fn description(&self) -> &str; // element description, useful for debugging
-
-    // Returns all events (key events and commands, etc.) that are registered to
-    // an element. This includes all events that are registered to the element
-    // itself, as well as its children, via its ElementOrganizer (if it has
-    // one).
-    // NOTE in this current design, elements are always expected to receive
-    // mouse events.
+    // Returns all event kinds (key events and commands, etc.) which are receivable by the element.
+    // This includes all events that are registered to the element itself, as well as its children,
+    // via its ElementOrganizer (if it has one).
+    //
+    // NOTE in this current design, elements are always routed mouse events independently of
+    // whether or not they are receivable according to this function.
     fn receivable(&self) -> Vec<(Event, Priority)>;
 
-    // This is used to receive an event from a parent. The receiving element may
-    // consume the event and/or pass it to a child. The element is expected to
-    // return a response to the event, along with any changes to its
-    // inputability that its parent will use as well pass up the tree. When the
-    // event is captured, the element is expected to returns captured=true.
-    //                                               (captured, response     )
+    // Receive an event from a parent. The receiving element may consume the event and/or pass it
+    // to a child. The element is expected to return a response to the event, along with any
+    // changes receivable events. When the event is captured, the element is expected to returns
+    // captured=true.
+    //                                                   (captured, response     )
     fn receive_event(&mut self, ctx: &Context, ev: Event) -> (bool, EventResponse);
 
-    // ChangePriority will change the priority of an element relative to its
-    // ancestors. All events owned directly by the element will have their local
-    // priority changed to the given priority while everything registered in
-    // this element's prioritizers will remain unchanged. The element will then
-    // tell relay the appropriate changes in priority to its parent. This is
-    // dependant on the directionality of the priority change.
+    // change_priority is expected to change the priority of an element relative to its parents.
+    // All receivable-events registered directly by the element should have their local priority
+    // changed to 'p' while everything registered in this element's prioritizers will remain
+    // unchanged (if this element is a parent element). The element will then respond with the
+    // appropriate changes to its receivable events through the function return variable.
     //
-    // If the priority is changing from Focused to Unfocused, then the element
-    // will tell its parent to change the priority of all the element's
-    // registered evs (local and registered) to Unfocused in the
-    // parent's prioritizers.
+    // If the priority is changing from Focused to Unfocused, then the element should respond with
+    // ReceivableEventChanges where all events (local, and of its children) are set to Unfocused.
     //
-    // If the priority is changed from Unfocused to Focused, then the element
-    // will tell its parent to change the priority of the element's local evs
-    // to the given priority, while telling to parent to change the priority of
-    // all of the element's children's evs to whatever is recorded in the
-    // element's prioritizers.
+    // If the priority is changed from Unfocused to Focused, then the element should respond with
+    // ReceivableEventChanges with the element's local receivable events set to Focused, and all of
+    // the elements children's receivable events set to whatever their local priority is.
+    //
+    // In all cases the reponse of this function is intended to be passed to the element's
+    // parent's event prioritizer.
     fn change_priority(&mut self, ctx: &Context, p: Priority) -> ReceivableEventChanges;
 
-    // get the element's full drawing for the provided width and height
-    // this is provided as an ordered list of individual elements to draw
-    // z = the element viewing depth, 0 is the topmost element
-    // freeFloating = whether the element is constrained by the parent
-    //                element border
+    // Get the element's full drawing for the provided context.
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos>;
 
-    // Assign a reference to the element's parent through the UpwardPropagator
-    // interface. This is used to pass ReceivableEventChanges to the parent.
+    // Element attributes can be used to store arbitrary values (as encoded bytes) within the
+    // element. Typically if you are developing a new Element, you can simply store local values
+    // within your struct, only in the situation where you a creating a new sub-class of Elements
+    // (such as Widgets) does it make sense to be utilizing the get/set attribute functions.
+    //
+    // Current attributes used within this library:
+    //  - "description": a string description of the element used everywhere
+    fn get_attribute(&self, key: &str) -> Option<&[u8]>;
+    fn set_attribute(&mut self, key: &str, value: Vec<u8>);
+
+    // Assign a reference to the element's parent through the UpwardPropagator trait. This is used
+    // to pass ReceivableEventChanges to the parent. (see UpwardPropogator for more context)
     fn set_upward_propagator(&mut self, up: Rc<RefCell<dyn UpwardPropagator>>);
 }
 
@@ -69,9 +69,9 @@ impl PartialEq for dyn Element {
 // ----------------------------------------
 
 pub trait UpwardPropagator {
-    // The UpwardPropagator trait is a trait that a parent element should fulfill
-    // which can then be provided to child elements as a means for those child elements to
-    // propagate changes upward to their parent (and grand-parents etc.).
+    // The UpwardPropagator is a trait that a parent element should fulfill which can then be
+    // provided to child elements as a means for those child elements to propagate changes upward
+    // to their parent (and grand-parents etc.).
     //
     // In most cases, receivable event changes are passed to the parent in the return values of a
     // function invoked on the element by the parent (ex. ReceiveEvent). However, when changes are
@@ -92,14 +92,6 @@ pub trait UpwardPropagator {
     fn propagate_receivable_event_changes_upward(
         &mut self, child_el_id: &ElementID, rec: ReceivableEventChanges,
     );
-
-    // TODO add a function to get an elements name here (for debugging),
-    // once an element has SetUpwardPropagator called on it, it will
-    // be able to construct its own name, by tacking on it's own name to its
-    // parents name.
-
-    // returns a name of the element (for debugging purposes)
-    //fn name(&self) -> String;
 }
 
 // Context is a struct which contains information about the current context of a

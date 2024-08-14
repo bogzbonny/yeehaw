@@ -1,10 +1,13 @@
 use {
     crate::{
-        element::ReceivableEventChanges, Context, DrawCh, DrawChPos, Element, ElementID, Event,
-        EventResponse, Priority, SortingHat, UpwardPropagator,
+        element::ReceivableEventChanges, Context, DrawCh, DrawChPos, DrawChs2D, Element, ElementID,
+        Event, EventResponse, Priority, SortingHat, UpwardPropagator,
     },
-    std::ops::{Deref, DerefMut},
-    std::{cell::RefCell, rc::Rc},
+    std::{
+        collections::HashMap,
+        ops::{Deref, DerefMut},
+        {cell::RefCell, rc::Rc},
+    },
 };
 
 // StandardPane is a pane element which other objects can embed and build off
@@ -14,13 +17,13 @@ pub struct StandardPane {
 
     id: String, // element-id as assigned by the sorting-hat
 
-    description: String, // can be used for debuggin' purposes
+    attributes: HashMap<String, Vec<u8>>,
 
     // The SelfEvs are NOT handled by the standard pane. The element inheriting the
     // standard pane is expected to handle all SelfReceivableEvents in the
     // ReceiveEvent function. The standard pane is only responsible for
     // listing the receivable events when Receivable() is called
-    self_evs: SelfReceivableEvents,
+    pub self_evs: SelfReceivableEvents,
 
     // This elements "overall" reference priority
     //
@@ -40,36 +43,31 @@ pub struct StandardPane {
     // of the Location all extra characters will be filled with the DefaultCh.
     // The location of where to begin drawing from within the Content can be
     // offset using content_view_offset_x and content_view_offset_y
-    pub content: Vec<Vec<DrawCh>>,
+    pub content: DrawChs2D,
     pub default_ch: DrawCh,
     pub default_line: Vec<DrawCh>,
-    pub content_view_offset_x: u16,
-    pub content_view_offset_y: u16,
+    pub content_view_offset_x: usize,
+    pub content_view_offset_y: usize,
 }
-
-//impl Default for StandardPane {
-//    fn default() -> Self {
-//        StandardPane::new(vec![], DrawCh::default(), vec![], 0, 0)
-//    }
-//}
 
 impl StandardPane {
     // NOTE kind is a name for the kind of pane, typically a different kind will be applied
     // to the standard pane, as the standard pane is only boilerplate.
     pub const KIND: &'static str = "standard_pane";
+    pub const ATTR_DESCRIPTION: &'static str = "standard_pane";
 
     pub fn new(hat: &SortingHat, kind: &'static str) -> StandardPane {
         //StandardPane::new(hat, kind, vec![], DrawCh::default(), vec![], 0, 0)
         StandardPane {
             kind,
             id: hat.create_element_id(kind),
-            description: String::new(),
+            attributes: HashMap::new(),
             self_evs: SelfReceivableEvents::default(),
             element_priority: Priority::UNFOCUSED,
             up: None,
             view_height: 0,
             view_width: 0,
-            content: vec![],
+            content: DrawChs2D::default(),
             default_ch: DrawCh::default(),
             default_line: vec![],
             content_view_offset_x: 0,
@@ -78,11 +76,12 @@ impl StandardPane {
     }
 
     pub fn with_description(mut self, desc: String) -> StandardPane {
-        self.description = desc;
+        self.attributes
+            .insert(Self::ATTR_DESCRIPTION.to_string(), desc.into_bytes());
         self
     }
 
-    pub fn with_content(mut self, content: Vec<Vec<DrawCh>>) -> StandardPane {
+    pub fn with_content(mut self, content: DrawChs2D) -> StandardPane {
         self.content = content;
         self
     }
@@ -97,9 +96,14 @@ impl StandardPane {
         self
     }
 
-    pub fn with_content_view_offset(mut self, x: u16, y: u16) -> StandardPane {
+    pub fn with_content_view_offset(mut self, x: usize, y: usize) -> StandardPane {
         self.content_view_offset_x = x;
         self.content_view_offset_y = y;
+        self
+    }
+
+    pub fn with_self_receivable_events(mut self, evs: Vec<(Event, Priority)>) -> StandardPane {
+        self.self_evs = SelfReceivableEvents(evs);
         self
     }
 }
@@ -110,10 +114,6 @@ impl Element for StandardPane {
 
     fn id(&self) -> &ElementID {
         &self.id
-    }
-
-    fn description(&self) -> &str {
-        &self.description
     }
 
     // Receivable returns the event keys and commands that can
@@ -148,8 +148,8 @@ impl Element for StandardPane {
 
         // convert the Content to DrawChPos
         // NOTE: width/height values must subtract 1 to get final cell locations
-        for y in 0..=ctx.s.height - 1 {
-            for x in 0..=ctx.s.width - 1 {
+        for y in 0..=ctx.s.height as usize - 1 {
+            for x in 0..=ctx.s.width as usize - 1 {
                 // default ch being added next is the DefaultCh
                 let mut ch_out = self.default_ch;
 
@@ -161,15 +161,15 @@ impl Element for StandardPane {
                 // if the offset isn't pushing all the content out of view,
                 // assign the next ch to be the one at the offset in the Content
                 // matrix
-                if offset_y < self.content.len() && offset_x < self.content[offset_y].len() {
-                    ch_out = self.content[offset_y][offset_x];
+                if offset_y < self.content.0.len() && offset_x < self.content.0[offset_y].len() {
+                    ch_out = self.content.0[offset_y][offset_x];
                 }
 
                 // if y is greater than the height of the visible content,
                 // trigger a default line.
                 // NOTE: height of the visible content is the height of the
                 // content minus the offset
-                if (y as usize) > self.content.len() {
+                if (y as usize) > self.content.0.len() {
                     if (x as usize) < self.default_line.len() {
                         ch_out = self.default_line[x as usize];
                     } else {
@@ -178,10 +178,18 @@ impl Element for StandardPane {
                 }
 
                 // convert the DrawCh to a DrawChPos
-                chs.push(DrawChPos::new(ch_out, x, y))
+                chs.push(DrawChPos::new(ch_out, x as u16, y as u16))
             }
         }
         chs
+    }
+
+    fn get_attribute(&self, key: &str) -> Option<&[u8]> {
+        self.attributes.get(key).map(|v| v.as_slice())
+    }
+
+    fn set_attribute(&mut self, key: &str, value: Vec<u8>) {
+        self.attributes.insert(key.to_string(), value);
     }
 
     fn set_upward_propagator(&mut self, up: Rc<RefCell<dyn UpwardPropagator>>) {

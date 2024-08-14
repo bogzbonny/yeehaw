@@ -1,4 +1,4 @@
-use crate::Context;
+use crate::{Context, Location};
 
 // SclVal represents a X or Y screen position value which scales based on the
 // size of the parent widget. The value is a static number of characters
@@ -8,7 +8,7 @@ use crate::Context;
 // SclVals. This is useful or Labels which depend on the size of a number of
 // other elements.
 
-#[derive(Clone, Debug, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Default)]
 pub struct SclVal {
     fixed: usize,  // fixed number of characters
     fraction: f64, // fraction of the parent widget size number of characters
@@ -162,5 +162,23 @@ impl SclLocation {
         self.end_x.get_val(p_ctx.get_width() as usize)
             - self.start_x.get_val(p_ctx.get_width() as usize)
             + 1
+    }
+
+    //pub fn get_location(&self) -> Location {
+    //    let w = self.get_width() as i32;
+    //    let h = self.get_height() as i32;
+    //    let x1 = self.loc_x.get_val(self.p_ctx.get_width().into()) as i32;
+    //    let y1 = self.loc_y.get_val(self.p_ctx.get_height().into()) as i32;
+    //    let x2 = x1 + w - 1;
+    //    let y2 = y1 + h - 1;
+    //    Location::new(x1, x2, y1, y2)
+    //}
+    pub fn get_location_for_context(&self, p_ctx: &Context) -> Location {
+        Location::new(
+            self.start_x.get_val(p_ctx.get_width() as usize) as i32,
+            self.end_x.get_val(p_ctx.get_width() as usize) as i32,
+            self.start_y.get_val(p_ctx.get_height() as usize) as i32,
+            self.end_y.get_val(p_ctx.get_height() as usize) as i32,
+        )
     }
 }

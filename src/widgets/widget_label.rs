@@ -1,6 +1,10 @@
 use {
-    super::{common, SclLocation, SclVal, Selectability, WBStyles, Widget, WidgetBase, Widgets},
-    crate::{Context, DrawChPos, Event, EventResponse, Location, RgbColour, Style},
+    super::{common, SclVal, Selectability, WBStyles, Widget, WidgetBase, Widgets},
+    crate::{
+        Context, DrawChPos, Element, ElementID, Event, EventResponse, Priority,
+        ReceivableEventChanges, RgbColour, SortingHat, Style, UpwardPropagator,
+    },
+    std::{cell::RefCell, rc::Rc},
 };
 
 pub struct Label {
@@ -26,10 +30,14 @@ pub static LABEL_STYLE: WBStyles = WBStyles {
 };
 
 impl Label {
-    pub fn new(p_ctx: Context, text: String) -> Self {
+    const KIND: &'static str = "widget_label";
+
+    pub fn new(hat: &SortingHat, ctx: &Context, text: String) -> Self {
         let (w, h) = common::get_text_size(&text);
         let mut wb = WidgetBase::new(
-            p_ctx,
+            hat,
+            Self::KIND,
+            ctx.clone(),
             SclVal::new_fixed(w),
             SclVal::new_fixed(h),
             LABEL_STYLE,
@@ -75,7 +83,7 @@ impl Label {
     // Rotate the text by 90 degrees
     // intended to be used with WithDownJustification or WithUpJustification
     pub fn with_rotated_text(mut self) -> Self {
-        self.base.content = self.base.content.rotate_90_deg();
+        self.base.sp.content = self.base.sp.content.rotate_90_deg();
         let old_height = self.base.height.clone();
         let old_width = self.base.width.clone();
         self.base.width = old_height;
@@ -107,72 +115,8 @@ impl Label {
         self.base.at(loc_x, loc_y);
         self
     }
-}
 
-/*
-OLD GO CODE TO TRANSLATE
-
-func (l *Label) ToWidgets() Widgets {
-    x, y := l.LocX, l.LocY
-    switch l.Justification {
-    case JustifyLeft: // do nothing
-    case JustifyRight:
-        x = x.Minus(l.Width.MinusStatic(1))
-    case JustifyDown: // do nothing
-    case JustifyUp:
-        y = y.Minus(l.Height.MinusStatic(1))
-    }
-    l.At(x, y)
-    return Widgets{l}
-}
-
-func (l *Label) ReceiveKeyEventCombo(_ []*tcell.EventKey) (captured bool, resp yh.EventResponse) {
-    return false, yh.NewEventResponse()
-}
-
-func (l *Label) ReceiveMouseEvent(_ *tcell.EventMouse) (captured bool, resp yh.EventResponse) {
-    return false, yh.NewEventResponse()
-}
-*/
-
-impl Widget for Label {
-    fn receivable(&self) -> Vec<Event> {
-        self.base.receivable()
-    }
-    fn get_parent_ctx(&self) -> &Context {
-        self.base.get_parent_ctx()
-    }
-    fn set_parent_ctx(&mut self, parent_ctx: Context) {
-        self.base.set_parent_ctx(parent_ctx);
-    }
-    fn drawing(&self) -> Vec<DrawChPos> {
-        self.base.drawing()
-    }
-    fn set_styles(&mut self, styles: WBStyles) {
-        self.base.set_styles(styles);
-    }
-    fn resize_event(&mut self, parent_ctx: Context) {
-        self.base.resize_event(parent_ctx);
-    }
-    fn get_location(&self) -> Location {
-        self.base.get_location()
-    }
-    fn get_scl_location(&self) -> SclLocation {
-        self.base.get_scl_location()
-    }
-    fn receive_key_event(&mut self, ev: Event) -> (bool, EventResponse) {
-        self.base.receive_key_event(ev)
-    }
-    fn receive_mouse_event(&mut self, ev: Event) -> (bool, EventResponse) {
-        self.base.receive_mouse_event(ev)
-    }
-    fn get_selectability(&self) -> Selectability {
-        self.base.get_selectability()
-    }
-    fn set_selectability(&mut self, s: Selectability) -> EventResponse {
-        self.base.set_selectability(s)
-    }
-    fn to_widgets(mut self) -> Widgets {
+    pub fn to_widgets(mut self) -> Widgets {
         let mut x = self.base.loc_x.clone();
         let mut y = self.base.loc_y.clone();
         match self.justification {
@@ -187,5 +131,46 @@ impl Widget for Label {
         }
         self.base.at(x, y);
         Widgets(vec![Box::new(self)])
+    }
+}
+impl Widget for Label {}
+
+//fn kind(&self) -> &'static str;
+//fn id(&self) -> &ElementID;
+//fn receivable(&self) -> Vec<(Event, Priority)>;
+//fn receive_event(&mut self, ctx: &Context, ev: Event) -> (bool, EventResponse);
+//fn change_priority(&mut self, ctx: &Context, p: Priority) -> ReceivableEventChanges;
+//fn drawing(&self, ctx: &Context) -> Vec<DrawChPos>;
+//fn get_attribute(&self, key: &str) -> Option<&[u8]>;
+//fn set_attribute(&mut self, key: &str, value: Vec<u8>);
+//fn set_upward_propagator(&mut self, up: Rc<RefCell<dyn UpwardPropagator>>);
+
+impl Element for Label {
+    fn kind(&self) -> &'static str {
+        self.base.kind()
+    }
+    fn id(&self) -> &ElementID {
+        self.base.id()
+    }
+    fn receivable(&self) -> Vec<(Event, Priority)> {
+        self.base.receivable()
+    }
+    fn receive_event(&mut self, ctx: &Context, ev: Event) -> (bool, EventResponse) {
+        self.base.receive_event(ctx, ev)
+    }
+    fn change_priority(&mut self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
+        self.base.change_priority(ctx, p)
+    }
+    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        self.base.drawing(ctx)
+    }
+    fn get_attribute(&self, key: &str) -> Option<&[u8]> {
+        self.base.get_attribute(key)
+    }
+    fn set_attribute(&mut self, key: &str, value: Vec<u8>) {
+        self.base.set_attribute(key, value)
+    }
+    fn set_upward_propagator(&mut self, up: Rc<RefCell<dyn UpwardPropagator>>) {
+        self.base.set_upward_propagator(up)
     }
 }

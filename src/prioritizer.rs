@@ -5,7 +5,7 @@ use crate::{ElementID, Event, Keyboard};
 // the priority of Focused which can only be exceeded if an element is given the
 // Highest priority.
 //
-// NONE for unchanged
+// XXX change to enum
 #[derive(Clone, Copy, PartialEq, Eq, Debug, PartialOrd, Ord)]
 pub struct Priority(pub u8);
 
@@ -76,19 +76,16 @@ impl EventPrioritizer {
         false
     }
 
-    pub fn include(
-        &mut self, id: &ElementID, priority_ev: &Vec<(Event, Priority)>, panic_on_overload: bool,
-    ) {
-        // check for priority overloading
-        if panic_on_overload {
-            // TODO change to error
-            if self.has_priority_ev(priority_ev) {
-                panic!(
-                    "EvPrioritizer found at least 2 events registered to different elements with the same priority: {:?}",
-                    priority_ev
-                );
-            }
-        }
+    pub fn include(&mut self, id: &ElementID, priority_ev: &Vec<(Event, Priority)>) {
+        // check for priority overloading.
+        // Panic if two children have registered the same ev/cmd at the same
+        // priority. If false the event will be sent to the ev/cmd to which happens
+        // to be first in the prioritizer
+        debug_assert!(
+                !self.has_priority_ev(priority_ev),
+                "EvPrioritizer found at least 2 events registered to different elements with the same priority {:?}",
+                priority_ev
+            );
 
         for pe in priority_ev {
             let peie = PriorityIdEvent::new(pe.1, id.clone(), pe.0.clone());

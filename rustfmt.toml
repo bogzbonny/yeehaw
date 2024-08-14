@@ -17,5 +17,3 @@ single_line_if_else_max_width = 100
 #format_strings = true
 #normalize_comments = false
 #wrap_comments = false
-
-
