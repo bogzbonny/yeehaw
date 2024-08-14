@@ -1,15 +1,25 @@
 use {
-    super::Widget,
-    crate::{Context, EventResponse, Location},
+    super::{Selectability, Widget},
+    crate::{
+        Context, Event, EventResponse, Keyboard as KB, Location, Priority, ReceivableEventChanges,
+    },
 };
 
 #[derive(Default)]
 pub struct WidgetOrganizer {
     pub widgets: Vec<(Box<dyn Widget>, Location)>,
-    active_widget_index: Option<u32>, // None means no widget active
+    active_widget_index: Option<usize>, // None means no widget active
 }
 
 impl WidgetOrganizer {
+    pub fn default_receivable_events() -> Vec<Event> {
+        vec![
+            KB::KEY_ESC.into(),
+            KB::KEY_TAB.into(),
+            KB::KEY_BACKTAB.into(),
+        ]
+    }
+
     pub fn refresh(&mut self) {
         /*
             // get number of selectable Widgets
@@ -34,156 +44,152 @@ impl WidgetOrganizer {
 
     pub fn remove_widget(&mut self, w: Box<dyn Widget>) {
         for i in 0..self.widgets.len() {
-            if self.widgets[i].0 == w {
+            if self.widgets[i].0.id() == w.id() {
                 self.widgets.remove(i);
                 return;
             }
         }
     }
+
+    pub fn clear_widgets(&mut self) {
+        self.widgets.clear();
+        self.active_widget_index = None;
+    }
+
+    // deactivate all the Widgets
+    pub fn unselect_selected_widget(&mut self) -> ReceivableEventChanges {
+        if let Some(i) = self.active_widget_index {
+            let resp = self.widgets[i].0.set_selectability(Selectability::Ready);
+            // ignore all responses besides receiving event changes
+            let resp = resp.get_receivable_event_changes().unwrap_or_default();
+            self.active_widget_index = None;
+            resp
+        } else {
+            ReceivableEventChanges::default()
+        }
+    }
+
+    pub fn process_widget_resp(&mut self, resp: &mut EventResponse, widget_index: usize) {
+        // adjust right click menu location to the widget
+        // location which made the request
+        if let Some(mut win) = resp.window.clone() {
+            let loc = self.widgets[widget_index].1.clone();
+            win.loc.adjust_locations_by(loc.start_x, loc.start_y);
+            resp.window = Some(win);
+        }
+
+        // resize the widget
+        if let Some(reloc) = resp.relocation.clone() {
+            self.widgets[widget_index].1.relocate(reloc);
+            resp.relocation = None;
+        }
+
+        if resp.deactivate {
+            let rec = self.unselect_selected_widget();
+            resp.concat_receivable_event_changes(rec);
+            resp.deactivate = false
+        }
+    }
+
+    pub fn switch_between_widgets(
+        &mut self, old_index: Option<usize>, new_index: Option<usize>,
+    ) -> ReceivableEventChanges {
+        if old_index == new_index {
+            return ReceivableEventChanges::default();
+        }
+
+        if let Some(new_i) = new_index {
+            if self.widgets[new_i].0.get_selectability() == Selectability::Unselectable {
+                return ReceivableEventChanges::default();
+            }
+        }
+
+        let mut rec = ReceivableEventChanges::default();
+        if let Some(old_i) = old_index {
+            let mut resp = self.widgets[old_i]
+                .0
+                .set_selectability(Selectability::Ready);
+            // ignore all responses besides receiving event changes
+            self.process_widget_resp(&mut resp, old_i);
+            let resp = resp.get_receivable_event_changes().unwrap_or_default();
+            rec = resp;
+        }
+
+        if let Some(new_i) = new_index {
+            let mut resp = self.widgets[new_i]
+                .0
+                .set_selectability(Selectability::Selected);
+            // ignore all responses besides receiving event changes
+            self.process_widget_resp(&mut resp, new_i);
+            let resp = resp.get_receivable_event_changes().unwrap_or_default();
+            rec.concat(resp);
+            self.active_widget_index = Some(new_i);
+        }
+        rec
+    }
+
+    // gets the next ready widget index starting from the startingIndex provided
+    pub fn next_ready_widget_index(&self, starting_index: Option<usize>) -> Option<usize> {
+        let starting_index = starting_index.unwrap_or(0);
+        let mut working_index = starting_index;
+        for _ in 0..self.widgets.len() + 1 {
+            working_index = (working_index + 1) % self.widgets.len();
+            if self.widgets[working_index].0.get_selectability() != Selectability::Unselectable {
+                return Some(working_index);
+            }
+            if working_index == starting_index {
+                // we've come full circle just return the same index
+                return Some(starting_index);
+            }
+        }
+        None
+    }
+
+    // gets the previous ready widget index starting from the startingIndex provided
+    pub fn prev_ready_widget_index(&self, starting_index: Option<usize>) -> Option<usize> {
+        if self.widgets.is_empty() {
+            return None;
+        }
+        let starting_index = starting_index.unwrap_or(self.widgets.len() - 1);
+        let mut working_index = starting_index;
+        for _ in 0..self.widgets.len() + 1 {
+            working_index = (working_index + self.widgets.len() - 1) % self.widgets.len();
+            if self.widgets[working_index].0.get_selectability() != Selectability::Unselectable {
+                return Some(working_index);
+            }
+            if working_index == starting_index {
+                // we've come full circle just return the same index
+                return Some(starting_index);
+            }
+        }
+        None
+    }
+
+    pub fn switch_to_next_widget(&mut self) -> ReceivableEventChanges {
+        self.switch_between_widgets(
+            self.active_widget_index,
+            self.next_ready_widget_index(self.active_widget_index),
+        )
+    }
+
+    pub fn switch_to_prev_widget(&mut self) -> ReceivableEventChanges {
+        self.switch_between_widgets(
+            self.active_widget_index,
+            self.prev_ready_widget_index(self.active_widget_index),
+        )
+    }
+
+    pub fn receivable(&self) -> Vec<(Event, Priority)> {
+        match self.active_widget_index {
+            Some(i) => self.widgets[i].0.receivable(),
+            None => Vec::new(),
+        }
+    }
+
+    // Returns true if one of the Widgets captures the events
 }
 
 /*
-
-func (wo *WidgetOrganizer) RemoveWidget(w Widget) {
-    for i, widget := range wo.Widgets {
-        if widget == w {
-            wo.Widgets = append(wo.Widgets[:i], wo.Widgets[i+1:]...)
-            wo.locations = append(wo.locations[:i], wo.locations[i+1:]...)
-            return
-        }
-    }
-}
-
-func (wo *WidgetOrganizer) ClearWidgets() {
-    wo.Widgets = []Widget{}
-    wo.locations = []yh.Location{}
-    wo.activeWidgetIndex = -1
-}
-
-// deactivate all the Widgets
-func (wo *WidgetOrganizer) UnselectSelectedWidget() yh.InputabilityChanges {
-    if wo.activeWidgetIndex != -1 {
-        resp := wo.Widgets[wo.activeWidgetIndex].SetSelectability(Ready)
-        // ignore all responses besides inputability
-        wo.processWidgetResp(&resp, wo.activeWidgetIndex)
-        ic, _ := resp.GetInputabilityChanges()
-        wo.activeWidgetIndex = -1
-        return ic
-    }
-    return yh.InputabilityChanges{}
-}
-
-func (wo *WidgetOrganizer) switchBetweenWidgets(oldIndex, newIndex int) yh.InputabilityChanges {
-
-    ic := yh.InputabilityChanges{}
-    if wo.Widgets[newIndex].GetSelectability() == Unselectable {
-        return ic
-    }
-    if oldIndex == newIndex {
-        return ic
-    }
-    if oldIndex != -1 {
-        resp := wo.Widgets[oldIndex].SetSelectability(Ready)
-        // ignore all responses besides inputability
-        wo.processWidgetResp(&resp, oldIndex)
-        ic, _ = resp.GetInputabilityChanges()
-    }
-
-    resp := wo.Widgets[newIndex].SetSelectability(Selected)
-
-    // ignore all responses besides inputability
-    wo.processWidgetResp(&resp, newIndex)
-    ic2, _ := resp.GetInputabilityChanges()
-
-    ic.Concat(ic2)
-    wo.activeWidgetIndex = newIndex
-    return ic
-}
-
-// gets the next ready widget index starting from the startingIndex provided
-func (wo *WidgetOrganizer) nextReadyWidgetIndex(startingIndex int) int {
-    if startingIndex == -1 {
-        startingIndex = 0
-    }
-
-    workingIndex := startingIndex
-    for {
-        workingIndex = (workingIndex + 1) % len(wo.Widgets)
-        if wo.Widgets[workingIndex].GetSelectability() != Unselectable {
-            return workingIndex
-        }
-        if workingIndex == startingIndex {
-            // come full circle return the same index
-            return startingIndex
-        }
-    }
-}
-
-// gets the previous ready widget index starting from the startingIndex provided
-func (wo *WidgetOrganizer) prevReadyWidgetIndex(startingIndex int) int {
-    if wo.activeWidgetIndex == -1 {
-        return len(wo.Widgets) - 1
-    }
-
-    workingIndex := startingIndex
-    for {
-        workingIndex = (workingIndex - 1 + len(wo.Widgets)) % len(wo.Widgets)
-        if wo.Widgets[workingIndex].GetSelectability() != Unselectable {
-            return workingIndex
-        }
-        if workingIndex == startingIndex {
-            // come full circle return the same index
-            return startingIndex
-        }
-    }
-    //panic("can't get prev index")
-}
-
-func (wo *WidgetOrganizer) switchToNextWidget() yh.InputabilityChanges {
-    return wo.switchBetweenWidgets(wo.activeWidgetIndex,
-        wo.nextReadyWidgetIndex(wo.activeWidgetIndex))
-}
-
-func (wo *WidgetOrganizer) switchToPrevWidget() yh.InputabilityChanges {
-    return wo.switchBetweenWidgets(wo.activeWidgetIndex,
-        wo.prevReadyWidgetIndex(wo.activeWidgetIndex))
-}
-
-func (wo *WidgetOrganizer) Receivable() []yh.PrioritizableEv {
-    if wo.activeWidgetIndex == -1 {
-        return []yh.PrioritizableEv{}
-    }
-    return wo.Widgets[wo.activeWidgetIndex].Receivable()
-}
-
-func (wo *WidgetOrganizer) processWidgetResp(resp *yh.EventResponse, widgetIndex int) {
-
-    // adjust right click menu location to the widget
-    // location which made the request
-    if win, found := resp.GetWindow(); found {
-        loc := wo.locations[widgetIndex]
-        win.Loc.AdjustLocationsBy(loc.StartX, loc.StartY)
-        resp.SetWindow(win)
-    }
-
-    // resize the widget
-    if reloc, found := resp.GetRelocation(); found {
-        wo.locations[widgetIndex].Relocate(reloc)
-        resp.RemoveRelocation()
-    }
-
-    if deactivate := resp.GetDeactivate(); deactivate {
-        ic := wo.UnselectSelectedWidget()
-        resp.ConcatInputabilityChanges(ic)
-        resp.RemoveDeactivate()
-    }
-}
-
-var WOSelfReceivable = []yh.PrioritizableEv{
-    yh.EscEKC,
-    yh.TabEKC,
-    yh.BackTabEKC,
-}
 
 // Returns true if one of the Widgets captures the events
 func (wo *WidgetOrganizer) CaptureKeyEvents(evs []*tcell.EventKey) (

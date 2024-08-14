@@ -84,10 +84,10 @@ impl Label {
     // intended to be used with WithDownJustification or WithUpJustification
     pub fn with_rotated_text(mut self) -> Self {
         self.base.sp.content = self.base.sp.content.rotate_90_deg();
-        let old_height = self.base.height.clone();
-        let old_width = self.base.width.clone();
-        self.base.width = old_height;
-        self.base.height = old_width;
+        let old_height = self.base.get_attr_scl_height();
+        let old_width = self.base.get_attr_scl_width();
+        self.base.set_attr_scl_width(old_height);
+        self.base.set_attr_scl_height(old_width);
         self
     }
 
@@ -106,8 +106,8 @@ impl Label {
     pub fn set_text(&mut self, text: String) {
         self.base.set_content_from_string(&text);
         let (w, h) = common::get_text_size(&text);
-        self.base.width = SclVal::new_fixed(w);
-        self.base.height = SclVal::new_fixed(h);
+        self.base.set_attr_scl_width(SclVal::new_fixed(w));
+        self.base.set_attr_scl_height(SclVal::new_fixed(h));
         self.text = text;
     }
 
@@ -117,16 +117,18 @@ impl Label {
     }
 
     pub fn to_widgets(mut self) -> Widgets {
-        let mut x = self.base.loc_x.clone();
-        let mut y = self.base.loc_y.clone();
+        let mut x = self.base.get_attr_scl_loc_x();
+        let mut y = self.base.get_attr_scl_loc_y();
+        let w = self.base.get_attr_scl_width();
+        let h = self.base.get_attr_scl_height();
         match self.justification {
             LabelJustification::Left => {}
             LabelJustification::Right => {
-                x = x.minus(self.base.width.clone().minus_fixed(1));
+                x = x.minus(w.minus_fixed(1));
             }
             LabelJustification::Down => {}
             LabelJustification::Up => {
-                y = y.minus(self.base.height.clone().minus_fixed(1));
+                y = y.minus(h.minus_fixed(1));
             }
         }
         self.base.at(x, y);

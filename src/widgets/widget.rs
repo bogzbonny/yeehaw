@@ -186,7 +186,31 @@ pub trait Widget: Element {
         self.set_attribute(ATTR_SELECTABILITY, bz)
     }
 
-    // ---------------------------------------------
+    // ------------------
+
+    fn get_selectability(&self) -> Selectability {
+        self.get_attr_selectability()
+    }
+
+    // NOTE window creation in response to SetSelectability is currently not supported
+    fn set_selectability(&mut self, s: Selectability) -> EventResponse {
+        let attr_sel = self.get_attr_selectability();
+        if attr_sel == s {
+            return EventResponse::default();
+        }
+
+        let mut rec = ReceivableEventChanges::default();
+        match s {
+            Selectability::Selected => rec.add_evs(self.receivable()),
+            Selectability::Ready | Selectability::Unselectable => {
+                if let Selectability::Selected = attr_sel {
+                    rec.remove_evs(self.receivable().iter().map(|(ev, _)| ev.clone()).collect());
+                }
+            }
+        }
+        self.set_attr_selectability(s);
+        EventResponse::default().with_receivable_event_changes(rec)
+    }
 
     // get the scalable location of the widget
     fn get_scl_location(&self) -> SclLocation {
@@ -391,16 +415,15 @@ pub struct WidgetBase {
 
     pub last_ctx: Context, // last parent context
 
-    pub selectedness: Selectability, // lol
+    //pub selectedness: Selectability, // lol
 
     // size of the widget (NOT the content space)
     // These are scaling values and are used to generate the
     // exact location (when get_location is called).
-    pub width: SclVal,
-    pub height: SclVal,
-    pub loc_x: SclVal,
-    pub loc_y: SclVal,
-
+    //pub width: SclVal,
+    //pub height: SclVal,
+    //pub loc_x: SclVal,
+    //pub loc_y: SclVal,
     pub styles: WBStyles,
     // the receivableEvents when this widget is active
     //pub receivable_events: Vec<Event>,
@@ -420,51 +443,44 @@ impl WidgetBase {
             .map(|ev| (ev, Priority::FOCUSED))
             .collect();
         let sp = StandardPane::new(hat, kind).with_self_receivable_events(evs);
-        Self {
+
+        let mut wb = Self {
             sp,
             last_ctx,
-            selectedness: Selectability::Ready,
-            width,
-            height,
-            loc_x: SclVal::new_fixed(0),
-            loc_y: SclVal::new_fixed(0),
             styles: sty,
-        }
+        };
+        wb.set_attr_scl_width(width);
+        wb.set_attr_scl_height(height);
+        wb.set_attr_scl_loc_x(SclVal::new_fixed(0));
+        wb.set_attr_scl_loc_y(SclVal::new_fixed(0));
+        wb.set_attr_selectability(Selectability::Ready);
+
+        wb
     }
 
     pub fn at(&mut self, loc_x: SclVal, loc_y: SclVal) {
-        self.loc_x = loc_x;
-        self.loc_y = loc_y;
+        self.set_attr_scl_loc_x(loc_x);
+        self.set_attr_scl_loc_y(loc_y);
     }
 
     //-------------------------
 
     pub fn get_width(&self) -> usize {
-        self.width.get_val(self.last_ctx.get_width().into())
+        let scl_width = self.get_attr_scl_width();
+        scl_width.get_val(self.last_ctx.get_width().into())
     }
 
     pub fn get_height(&self) -> usize {
-        self.height.get_val(self.last_ctx.get_height().into())
+        let scl_height = self.get_attr_scl_height();
+        scl_height.get_val(self.last_ctx.get_height().into())
     }
 
-    pub fn get_parent_ctx(&self) -> &Context {
+    pub fn get_last_ctx(&self) -> &Context {
         &self.last_ctx
     }
 
-    pub fn set_parent_ctx(&mut self, last_ctx: Context) {
+    pub fn set_last_ctx(&mut self, last_ctx: Context) {
         self.last_ctx = last_ctx;
-    }
-
-    pub fn resize_event(&mut self, last_ctx: Context) {
-        self.last_ctx = last_ctx;
-    }
-
-    pub fn get_scl_location(&self) -> SclLocation {
-        let x1 = self.loc_x.clone();
-        let y1 = self.loc_y.clone();
-        let x2 = x1.clone().plus(self.width.clone()).minus_fixed(1);
-        let y2 = y1.clone().plus(self.height.clone()).minus_fixed(1);
-        SclLocation::new(x1, x2, y1, y2)
     }
 
     pub fn scroll_up(&mut self) {
@@ -577,29 +593,6 @@ impl WidgetBase {
         }
     }
 
-    pub fn get_selectability(&self) -> Selectability {
-        self.selectedness
-    }
-
-    // NOTE window creation in response to SetSelectability is currently not supported
-    pub fn set_selectability(&mut self, s: Selectability) -> EventResponse {
-        if self.selectedness == s {
-            return EventResponse::default();
-        }
-
-        let mut rec = ReceivableEventChanges::default();
-        match s {
-            Selectability::Selected => rec.add_evs(self.sp.receivable()),
-            Selectability::Ready | Selectability::Unselectable => {
-                if let Selectability::Selected = self.selectedness {
-                    rec.remove_evs(self.sp.self_evs.iter().map(|(ev, _)| ev.clone()).collect());
-                }
-            }
-        }
-        self.selectedness = s;
-        EventResponse::default().with_receivable_event_changes(rec)
-    }
-
     pub fn disable(&mut self) -> EventResponse {
         self.set_selectability(Selectability::Unselectable)
     }
@@ -609,7 +602,7 @@ impl WidgetBase {
     }
 
     pub fn get_current_style(&self) -> Style {
-        match self.selectedness {
+        match self.get_attr_selectability() {
             Selectability::Selected => self.styles.selected_style,
             Selectability::Ready => self.styles.ready_style,
             Selectability::Unselectable => self.styles.unselectable_style,
@@ -642,7 +635,8 @@ impl Element for WidgetBase {
 
     // default implementation of Receivable, only receive when widget is active
     fn receivable(&self) -> Vec<(Event, Priority)> {
-        if let Selectability::Selected = self.selectedness {
+        let attr_sel = self.get_attr_selectability();
+        if let Selectability::Selected = attr_sel {
             self.sp.receivable()
         } else {
             Vec::new()

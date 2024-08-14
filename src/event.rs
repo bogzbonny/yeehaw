@@ -25,6 +25,12 @@ pub enum Event {
     Command(CommandEvent),
 }
 
+impl From<crossterm::event::KeyEvent> for Event {
+    fn from(key: crossterm::event::KeyEvent) -> Self {
+        Event::KeyCombo(vec![KeyPossibility::Key(key)])
+    }
+}
+
 impl From<Vec<crossterm::event::KeyEvent>> for Event {
     fn from(keys: Vec<crossterm::event::KeyEvent>) -> Self {
         Event::KeyCombo(keys.into_iter().map(KeyPossibility::Key).collect())
@@ -32,7 +38,8 @@ impl From<Vec<crossterm::event::KeyEvent>> for Event {
 }
 
 impl Event {
-    pub fn key(&self) -> String {
+    // translation note used to be called 'key', TRANSLATION
+    pub fn identifier(&self) -> String {
         match self {
             Event::Mouse(_) => "MOUSE".to_string(),
             Event::KeyCombo(keys) => {

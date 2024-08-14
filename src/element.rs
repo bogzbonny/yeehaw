@@ -398,9 +398,9 @@ impl ReceivableEventChanges {
         }
     }
 
-    pub fn concat(&mut self, cti2: ReceivableEventChanges) {
-        self.remove.extend(cti2.remove);
-        self.add.extend(cti2.add);
+    pub fn concat(&mut self, rec: ReceivableEventChanges) {
+        self.remove.extend(rec.remove);
+        self.add.extend(rec.add);
     }
 }
 
