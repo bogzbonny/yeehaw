@@ -34,8 +34,8 @@ pub static LABEL_STYLE: WBStyles = WBStyles {
 impl Label {
     const KIND: &'static str = "widget_label";
 
-    pub fn new(hat: &SortingHat, ctx: &Context, text: String) -> Self {
-        let (w, h) = common::get_text_size(&text);
+    pub fn new(hat: &SortingHat, ctx: &Context, text: &str) -> Self {
+        let (w, h) = common::get_text_size(text);
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
@@ -46,11 +46,11 @@ impl Label {
             LABEL_EV_COMBOS.clone(),
         );
         _ = wb.set_selectability(Selectability::Unselectable);
-        wb.set_content_from_string(&text);
+        wb.set_content_from_string(text);
         Label {
             base: wb,
             justification: Rc::new(RefCell::new(LabelJustification::Left)),
-            text: Rc::new(RefCell::new(text)),
+            text: Rc::new(RefCell::new(text.to_string())),
         }
     }
 

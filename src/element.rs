@@ -101,7 +101,7 @@ pub trait UpwardPropagator {
 //
 // Additionally, Metadata may be addended to the context to pass additional
 // arbitrary information.
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct Context {
     pub s: Size,
     pub visible: bool,

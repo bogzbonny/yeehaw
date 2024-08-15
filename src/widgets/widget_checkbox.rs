@@ -45,28 +45,22 @@ impl Checkbox {
         vec![KB::KEY_ENTER.into()] // when "active" hitting enter will click the button
     }
 
-    pub fn new(
-        hat: &SortingHat, ctx: &Context, text: String,
-        clicked_fn: Box<dyn FnMut() -> EventResponse>,
-    ) -> Self {
+    pub fn new(hat: &SortingHat, ctx: &Context) -> Self {
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
             ctx.clone(),
-            SclVal::new_fixed(text.len() + 2),
+            SclVal::new_fixed(1),
             SclVal::new_fixed(1),
             Self::STYLE,
             Self::default_receivable_events(),
         );
-        _ = wb.set_selectability(Selectability::Unselectable);
-        let b = Checkbox {
+        Checkbox {
             base: wb,
-            text: Rc::new(RefCell::new(text)),
-            sides: Rc::new(RefCell::new((']', '['))),
-            clicked_fn: Rc::new(RefCell::new(clicked_fn)),
-        };
-        b.base.set_content_from_string(&b.button_text());
-        b
+            checked: Rc::new(RefCell::new(false)),
+            checkmark: Rc::new(RefCell::new('√')),
+            clicked_fn: Rc::new(RefCell::new(|_| EventResponse::default())),
+        }
     }
 
     // ----------------------------------------------
@@ -77,8 +71,8 @@ impl Checkbox {
         self
     }
 
-    pub fn with_sides(self, sides: (char, char)) -> Self {
-        *self.sides.borrow_mut() = sides;
+    pub fn with_clicked_fn(mut self, clicked_fn: Box<dyn FnMut(bool) -> EventResponse>) -> Self {
+        self.clicked_fn = Rc::new(RefCell::new(clicked_fn));
         self
     }
 
@@ -92,9 +86,19 @@ impl Checkbox {
     }
 
     // ----------------------------------------------
+
+    pub fn text(&self) -> String {
+        if *self.checked.borrow() {
+            return self.checkmark.borrow().to_string();
+        }
+        " ".to_string()
+    }
+
     pub fn click(&self) -> EventResponse {
-        let resp = (self.clicked_fn.borrow_mut())();
-        resp.with_deactivate()
+        let checked = !*self.checked.borrow();
+        self.checked.replace(checked);
+        self.base.set_content_from_string(&self.text());
+        (self.clicked_fn.borrow_mut())(checked)
     }
 }
 
@@ -136,6 +140,8 @@ impl Element for Checkbox {
         self.base.change_priority(ctx, p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        // need to re set the content in order to reflect active style
+        self.base.set_content_from_string(&self.text());
         self.base.drawing(ctx)
     }
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
@@ -148,79 +154,3 @@ impl Element for Checkbox {
         self.base.set_upward_propagator(up)
     }
 }
-
-/*
-
-
-func NewCheckbox(pCtx yh.Context) *Checkbox {
-    wb := NewWidgetBase(pCtx, NewStatic(1), NewStatic(1), CheckboxStyle, CheckboxEvCombos)
-
-    cb := &Checkbox{
-        WidgetBase: wb,
-        Checked:    false,
-        Checkmark:  '√',
-        ClickedFn:  nil,
-    }
-    wb.SetContentFromString(cb.Text())
-    return cb
-}
-
-func (cb *Checkbox) At(locX, locY SclVal) *Checkbox {
-    cb.WidgetBase.At(locX, locY)
-    return cb
-}
-
-func (cb *Checkbox) ToWidgets() Widgets {
-    return Widgets{cb}
-}
-
-// ---------------------------------------------------------
-
-func (cb *Checkbox) Text() string {
-    if cb.Checked {
-        return string(cb.Checkmark)
-    }
-    return " "
-}
-
-func (cb *Checkbox) SetClickedFn(fn func(checked bool) yh.EventResponse) {
-    cb.ClickedFn = fn
-}
-
-func (cb *Checkbox) Click() yh.EventResponse {
-    cb.Checked = !cb.Checked
-    resp := yh.NewEventResponse()
-    if cb.ClickedFn != nil {
-        resp = cb.ClickedFn(cb.Checked)
-    }
-    cb.SetContentFromString(cb.Text())
-    return resp
-}
-
-// need to re set the content in order to reflect active style
-func (cb *Checkbox) Drawing() (chs []yh.DrawChPos) {
-    cb.SetContentFromString(cb.Text())
-    return cb.WidgetBase.Drawing()
-}
-
-func (cb *Checkbox) ReceiveKeyEventCombo(
-    evs []*tcell.EventKey) (captured bool, resp yh.EventResponse) {
-
-    if cb.Selectedness != Selected {
-        return false, yh.NewEventResponse()
-    }
-
-    switch {
-    case yh.EnterEKC.Matches(evs):
-        return true, cb.Click()
-    }
-    return true, yh.NewEventResponse()
-}
-
-func (cb *Checkbox) ReceiveMouseEvent(ev *tcell.EventMouse) (captured bool, resp yh.EventResponse) {
-    if ev.Buttons() == tcell.Button1 {
-        return true, cb.Click()
-    }
-    return false, yh.NewEventResponse()
-}
-*/

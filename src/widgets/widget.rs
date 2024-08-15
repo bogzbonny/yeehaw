@@ -236,6 +236,7 @@ pub enum Selectability {
 //      ████
 //     6████8
 //      3  4
+#[derive(Clone, Copy, Debug)]
 pub enum LabelPosition {
     AboveThenLeft,   // 1
     AboveThenRight,  // 2
@@ -305,11 +306,24 @@ impl Widgets {
     //adds the label at the position provided
     pub fn add_label(&mut self, l: Label, p: LabelPosition) {
         let (x, y) = self.label_position_to_xy(p, l.get_width(), l.get_height());
+        debug!("label position: {:?}", p);
+        debug!("label at x: {:#?} \n y: {:#?}", x, y);
         self.0.push(Box::new(l.at(x, y)));
     }
 
-    pub fn with_label(self, hat: &SortingHat, ctx: &Context, l: String) -> Self {
+    pub fn with_label(self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
         // label toi the right if a width of 1 otherwise label the top left
+        debug!("overall_loc: {:#?}", self.overall_loc());
+        debug!("overall_loc.width(): {:#?}", self.overall_loc().width(ctx));
+        debug!("context width: {:#?}", ctx.get_width());
+        debug!(
+            "val end_x: {:#?}",
+            self.overall_loc().end_x.get_val(ctx.get_width() as usize)
+        );
+        debug!(
+            "val start_x: {:#?}",
+            self.overall_loc().start_x.get_val(ctx.get_width() as usize)
+        );
         if self.overall_loc().width(ctx) == 1 {
             self.with_right_top_label(hat, ctx, l)
         } else {
@@ -325,42 +339,42 @@ impl Widgets {
     //    (self.0[0].get_parent_ctx()).clone()
     //}
 
-    pub fn with_above_left_label(mut self, hat: &SortingHat, ctx: &Context, l: String) -> Self {
+    pub fn with_above_left_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
         self.add_label(Label::new(hat, ctx, l), LabelPosition::AboveThenLeft);
         self
     }
 
-    pub fn with_above_right_label(mut self, hat: &SortingHat, ctx: &Context, l: String) -> Self {
+    pub fn with_above_right_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
         self.add_label(Label::new(hat, ctx, l), LabelPosition::AboveThenRight);
         self
     }
 
-    pub fn with_below_left_label(mut self, hat: &SortingHat, ctx: &Context, l: String) -> Self {
+    pub fn with_below_left_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
         self.add_label(Label::new(hat, ctx, l), LabelPosition::BelowThenLeft);
         self
     }
 
-    pub fn with_below_right_label(mut self, hat: &SortingHat, ctx: &Context, l: String) -> Self {
+    pub fn with_below_right_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
         self.add_label(Label::new(hat, ctx, l), LabelPosition::BelowThenRight);
         self
     }
 
-    pub fn with_left_top_label(mut self, hat: &SortingHat, ctx: &Context, l: String) -> Self {
+    pub fn with_left_top_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
         self.add_label(Label::new(hat, ctx, l), LabelPosition::LeftThenTop);
         self
     }
 
-    pub fn with_left_bottom_label(mut self, hat: &SortingHat, ctx: &Context, l: String) -> Self {
+    pub fn with_left_bottom_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
         self.add_label(Label::new(hat, ctx, l), LabelPosition::LeftThenBottom);
         self
     }
 
-    pub fn with_right_top_label(mut self, hat: &SortingHat, ctx: &Context, l: String) -> Self {
+    pub fn with_right_top_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
         self.add_label(Label::new(hat, ctx, l), LabelPosition::RightThenTop);
         self
     }
 
-    pub fn with_right_bottom_label(mut self, hat: &SortingHat, ctx: &Context, l: String) -> Self {
+    pub fn with_right_bottom_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
         self.add_label(Label::new(hat, ctx, l), LabelPosition::RightThenBottom);
         self
     }
@@ -369,7 +383,7 @@ impl Widgets {
     // vertical labels
 
     pub fn with_left_top_vertical_label(
-        mut self, hat: &SortingHat, ctx: &Context, l: String,
+        mut self, hat: &SortingHat, ctx: &Context, l: &str,
     ) -> Self {
         self.add_label(
             Label::new(hat, ctx, l)
@@ -381,7 +395,7 @@ impl Widgets {
     }
 
     pub fn with_left_bottom_vertical_label(
-        mut self, hat: &SortingHat, ctx: &Context, l: String,
+        mut self, hat: &SortingHat, ctx: &Context, l: &str,
     ) -> Self {
         self.add_label(
             Label::new(hat, ctx, l)
@@ -393,7 +407,7 @@ impl Widgets {
     }
 
     pub fn with_right_top_vertical_label(
-        mut self, hat: &SortingHat, ctx: &Context, l: String,
+        mut self, hat: &SortingHat, ctx: &Context, l: &str,
     ) -> Self {
         self.add_label(
             Label::new(hat, ctx, l)
@@ -405,7 +419,7 @@ impl Widgets {
     }
 
     pub fn with_right_bottom_vertical_label(
-        mut self, hat: &SortingHat, ctx: &Context, l: String,
+        mut self, hat: &SortingHat, ctx: &Context, l: &str,
     ) -> Self {
         self.add_label(
             Label::new(hat, ctx, l)

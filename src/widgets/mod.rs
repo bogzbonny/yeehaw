@@ -22,4 +22,5 @@ pub use organizer::WidgetOrganizer;
 pub use scaled_value::{SclLocation, SclVal};
 pub use widget::{Selectability, WBStyles, Widget, WidgetBase, Widgets};
 pub use widget_button::Button;
+pub use widget_checkbox::Checkbox;
 pub use widget_label::Label;

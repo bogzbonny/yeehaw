@@ -46,12 +46,13 @@ impl SclVal {
     pub fn get_val(&self, max_size: usize) -> usize {
         let f = max_size as f64 * self.fraction;
         let rounded = (f + 0.5) as usize; // round the float to the nearest int
-        self.fixed
+
+        (self.fixed
             + rounded
             + self.min_from_plus_min_of(max_size)
             + self.max_from_plus_max_of(max_size)
-            + self.sum_of_plusses(max_size)
-            - self.sum_of_minuses(max_size)
+            + self.sum_of_plusses(max_size))
+        .saturating_sub(self.sum_of_minuses(max_size))
     }
 
     pub fn plus(mut self, sv: SclVal) -> SclVal {
@@ -108,14 +109,21 @@ impl SclVal {
     // gets the min value of the plus_min_of SclVals, if there are no
     // plus_min_of it returns 0
     pub fn min_from_plus_min_of(&self, max_size: usize) -> usize {
-        let mut out = 0;
+        let mut out = None;
         for k in self.plus_min_of.iter() {
             let v = k.get_val(max_size);
-            if v < out {
-                out = v;
+            match out {
+                Some(o) => {
+                    if v < o {
+                        out = Some(v);
+                    }
+                }
+                None => {
+                    out = Some(v);
+                }
             }
         }
-        out
+        out.unwrap_or(0)
     }
 
     // gets the max value of the plus_max_of SclVals, if there are no
@@ -134,7 +142,7 @@ impl SclVal {
 
 // ------------------------------------
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct SclLocation {
     pub start_x: SclVal,
     pub end_x: SclVal,
@@ -153,15 +161,13 @@ impl SclLocation {
     }
 
     pub fn height(&self, p_ctx: &Context) -> usize {
-        self.end_y.get_val(p_ctx.get_height() as usize)
-            - self.start_y.get_val(p_ctx.get_height() as usize)
-            + 1
+        (1 + self.end_y.get_val(p_ctx.get_height() as usize))
+            .saturating_sub(self.start_y.get_val(p_ctx.get_height() as usize))
     }
 
     pub fn width(&self, p_ctx: &Context) -> usize {
-        self.end_x.get_val(p_ctx.get_width() as usize)
-            - self.start_x.get_val(p_ctx.get_width() as usize)
-            + 1
+        (1 + self.end_x.get_val(p_ctx.get_width() as usize))
+            .saturating_sub(self.start_x.get_val(p_ctx.get_width() as usize))
     }
 
     //pub fn get_location(&self) -> Location {
