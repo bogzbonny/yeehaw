@@ -17,9 +17,10 @@ use {
 
 pub struct Button {
     pub base: WidgetBase,
-    pub text: String,
-    pub sides: (char, char),               // left right
-    pub clicked_fn: fn() -> EventResponse, // function which executes when button moves from pressed -> unpressed
+    pub text: Rc<RefCell<String>>,
+    pub sides: Rc<RefCell<(char, char)>>, // left right
+    // function which executes when button moves from pressed -> unpressed
+    pub clicked_fn: Rc<RefCell<dyn FnMut() -> EventResponse>>,
 }
 
 impl Button {
@@ -33,7 +34,7 @@ impl Button {
             .with_bg(RgbColour::WHITE)
             .with_fg(RgbColour::BLACK),
         unselectable_style: Style::new()
-            .with_bg(RgbColour::GREY5)
+            .with_bg(RgbColour::GREY13)
             .with_fg(RgbColour::BLACK),
     };
 
@@ -42,13 +43,15 @@ impl Button {
     }
 
     pub fn button_text(&self) -> String {
-        format!("{}{}{}", self.text, self.sides.0, self.sides.1)
+        let (left, right) = *self.sides.borrow();
+        format!("{}{}{}", left, *self.text.borrow(), right)
     }
 
     pub fn new(
-        hat: &SortingHat, ctx: &Context, text: String, clicked_fn: fn() -> EventResponse,
+        hat: &SortingHat, ctx: &Context, text: String,
+        clicked_fn: Box<dyn FnMut() -> EventResponse>,
     ) -> Self {
-        let mut wb = WidgetBase::new(
+        let wb = WidgetBase::new(
             hat,
             Self::KIND,
             ctx.clone(),
@@ -58,11 +61,11 @@ impl Button {
             Self::default_receivable_events(),
         );
         _ = wb.set_selectability(Selectability::Unselectable);
-        let mut b = Button {
+        let b = Button {
             base: wb,
-            text,
-            sides: (']', '['),
-            clicked_fn,
+            text: Rc::new(RefCell::new(text)),
+            sides: Rc::new(RefCell::new((']', '['))),
+            clicked_fn: Rc::new(RefCell::new(clicked_fn)),
         };
         b.base.set_content_from_string(&b.button_text());
         b
@@ -71,13 +74,13 @@ impl Button {
     // ----------------------------------------------
     // decorators
 
-    pub fn with_styles(mut self, styles: WBStyles) -> Self {
+    pub fn with_styles(self, styles: WBStyles) -> Self {
         self.base.set_styles(styles);
         self
     }
 
-    pub fn with_sides(mut self, sides: (char, char)) -> Self {
-        self.sides = sides;
+    pub fn with_sides(self, sides: (char, char)) -> Self {
+        *self.sides.borrow_mut() = sides;
         self
     }
 
@@ -92,7 +95,7 @@ impl Button {
 
     // ----------------------------------------------
     pub fn click(&self) -> EventResponse {
-        let resp = (self.clicked_fn)();
+        let resp = (self.clicked_fn.borrow_mut())();
         resp.with_deactivate()
     }
 }
@@ -103,14 +106,14 @@ impl Element for Button {
     fn kind(&self) -> &'static str {
         self.base.kind()
     }
-    fn id(&self) -> &ElementID {
+    fn id(&self) -> ElementID {
         self.base.id()
     }
     fn receivable(&self) -> Vec<(Event, Priority)> {
         self.base.receivable()
     }
 
-    fn receive_event(&mut self, ctx: &Context, ev: Event) -> (bool, EventResponse) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponse) {
         let _ = self.base.receive_event(ctx, ev.clone());
         match ev {
             Event::KeyCombo(ke) => {
@@ -131,19 +134,19 @@ impl Element for Button {
         (false, EventResponse::default())
     }
 
-    fn change_priority(&mut self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
+    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
         self.base.change_priority(ctx, p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.base.drawing(ctx)
     }
-    fn get_attribute(&self, key: &str) -> Option<&[u8]> {
+    fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
         self.base.get_attribute(key)
     }
-    fn set_attribute(&mut self, key: &str, value: Vec<u8>) {
+    fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.base.set_attribute(key, value)
     }
-    fn set_upward_propagator(&mut self, up: Rc<RefCell<dyn UpwardPropagator>>) {
+    fn set_upward_propagator(&self, up: Rc<RefCell<dyn UpwardPropagator>>) {
         self.base.set_upward_propagator(up)
     }
 }

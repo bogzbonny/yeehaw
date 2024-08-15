@@ -7,12 +7,14 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
+#[derive(Clone)]
 pub struct Label {
     pub base: WidgetBase,
-    pub justification: LabelJustification,
-    pub text: String,
+    pub justification: Rc<RefCell<LabelJustification>>,
+    pub text: Rc<RefCell<String>>,
 }
 
+#[derive(Clone, Copy)]
 pub enum LabelJustification {
     Left,
     Right,
@@ -34,7 +36,7 @@ impl Label {
 
     pub fn new(hat: &SortingHat, ctx: &Context, text: String) -> Self {
         let (w, h) = common::get_text_size(&text);
-        let mut wb = WidgetBase::new(
+        let wb = WidgetBase::new(
             hat,
             Self::KIND,
             ctx.clone(),
@@ -47,8 +49,8 @@ impl Label {
         wb.set_content_from_string(&text);
         Label {
             base: wb,
-            justification: LabelJustification::Left,
-            text,
+            justification: Rc::new(RefCell::new(LabelJustification::Left)),
+            text: Rc::new(RefCell::new(text)),
         }
     }
 
@@ -60,30 +62,31 @@ impl Label {
         self.base.get_height()
     }
 
-    pub fn with_left_justification(mut self) -> Self {
-        self.justification = LabelJustification::Left;
+    pub fn with_left_justification(self) -> Self {
+        *self.justification.borrow_mut() = LabelJustification::Left;
         self
     }
 
-    pub fn with_right_justification(mut self) -> Self {
-        self.justification = LabelJustification::Right;
+    pub fn with_right_justification(self) -> Self {
+        *self.justification.borrow_mut() = LabelJustification::Right;
         self
     }
 
-    pub fn with_down_justification(mut self) -> Self {
-        self.justification = LabelJustification::Down;
+    pub fn with_down_justification(self) -> Self {
+        *self.justification.borrow_mut() = LabelJustification::Down;
         self
     }
 
-    pub fn with_up_justification(mut self) -> Self {
-        self.justification = LabelJustification::Up;
+    pub fn with_up_justification(self) -> Self {
+        *self.justification.borrow_mut() = LabelJustification::Up;
         self
     }
 
     // Rotate the text by 90 degrees
     // intended to be used with WithDownJustification or WithUpJustification
-    pub fn with_rotated_text(mut self) -> Self {
-        self.base.sp.content = self.base.sp.content.rotate_90_deg();
+    pub fn with_rotated_text(self) -> Self {
+        let rotated = self.base.sp.content.borrow().rotate_90_deg();
+        *self.base.sp.content.borrow_mut() = rotated;
         let old_height = self.base.get_attr_scl_height();
         let old_width = self.base.get_attr_scl_width();
         self.base.set_attr_scl_width(old_height);
@@ -91,24 +94,28 @@ impl Label {
         self
     }
 
-    pub fn with_style(mut self, sty: Style) -> Self {
-        self.base.styles.unselectable_style = sty;
+    pub fn with_style(self, sty: Style) -> Self {
+        self.base.styles.borrow_mut().unselectable_style = sty;
 
         // this is necessary to actually update the content of the label w/
         // the new style
         // TODO: consider moving this somewhere else if it needs to be called in
         // many places
-        self.base.set_content_from_string(&self.text);
+        self.base.set_content_from_string(&self.text.borrow());
         self
     }
 
+    pub fn get_text(&self) -> String {
+        self.text.borrow().clone()
+    }
+
     // Updates the content and size of the label
-    pub fn set_text(&mut self, text: String) {
+    pub fn set_text(&self, text: String) {
         self.base.set_content_from_string(&text);
         let (w, h) = common::get_text_size(&text);
         self.base.set_attr_scl_width(SclVal::new_fixed(w));
         self.base.set_attr_scl_height(SclVal::new_fixed(h));
-        self.text = text;
+        *self.text.borrow_mut() = text;
     }
 
     pub fn at(mut self, loc_x: SclVal, loc_y: SclVal) -> Self {
@@ -121,7 +128,7 @@ impl Label {
         let mut y = self.base.get_attr_scl_loc_y();
         let w = self.base.get_attr_scl_width();
         let h = self.base.get_attr_scl_height();
-        match self.justification {
+        match *self.justification.borrow() {
             LabelJustification::Left => {}
             LabelJustification::Right => {
                 x = x.minus(w.minus_fixed(1));
@@ -151,28 +158,28 @@ impl Element for Label {
     fn kind(&self) -> &'static str {
         self.base.kind()
     }
-    fn id(&self) -> &ElementID {
+    fn id(&self) -> ElementID {
         self.base.id()
     }
     fn receivable(&self) -> Vec<(Event, Priority)> {
         self.base.receivable()
     }
-    fn receive_event(&mut self, ctx: &Context, ev: Event) -> (bool, EventResponse) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponse) {
         self.base.receive_event(ctx, ev)
     }
-    fn change_priority(&mut self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
+    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
         self.base.change_priority(ctx, p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.base.drawing(ctx)
     }
-    fn get_attribute(&self, key: &str) -> Option<&[u8]> {
+    fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
         self.base.get_attribute(key)
     }
-    fn set_attribute(&mut self, key: &str, value: Vec<u8>) {
+    fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.base.set_attribute(key, value)
     }
-    fn set_upward_propagator(&mut self, up: Rc<RefCell<dyn UpwardPropagator>>) {
+    fn set_upward_propagator(&self, up: Rc<RefCell<dyn UpwardPropagator>>) {
         self.base.set_upward_propagator(up)
     }
 }

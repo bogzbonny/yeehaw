@@ -178,14 +178,34 @@ impl Cui {
     pub fn render(&mut self) {
         let mut sc = stdout();
         let chs = self.eo.borrow().all_drawing();
+
+        //let chs2 = chs.clone();
+        //let mut non_transp = 0;
+        //let mut non_space = 0;
+
         for c in chs {
             if c.ch.transparent {
                 // TODO see ISSUE 2206-1000
             } else {
                 let st = StyledContent::new((c.ch.style).into(), &c.ch.ch);
                 queue!(&mut sc, MoveTo(c.x, c.y), style::PrintStyledContent(st)).unwrap();
+                //non_transp += 1;
+
+                //if c.ch.ch.is_ascii_lowercase() {
+                //    non_space += 1;
+                //}
             }
         }
+
+        //let t = format!(
+        //    "chs len: {}, non_transp: {}, non_space: {}",
+        //    chs2.len(),
+        //    non_transp,
+        //    non_space
+        //);
+        //use crossterm::style::ContentStyle;
+        //let st = StyledContent::new(ContentStyle::default(), t);
+        //queue!(&mut sc, cursor::MoveTo(0, 0), style::PrintStyledContent(st),).unwrap();
         sc.flush().unwrap();
     }
 }

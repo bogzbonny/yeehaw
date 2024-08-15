@@ -4,11 +4,22 @@ use {
 };
 
 // DrawCh is a character with a style and transparency
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct DrawCh {
     pub ch: char,
     pub transparent: bool, // aka do not draw this character
     pub style: Style,
+}
+
+// NOTE need to implement Default for DrawCh so that it is a space character
+impl Default for DrawCh {
+    fn default() -> DrawCh {
+        DrawCh {
+            ch: ' ',
+            transparent: false,
+            style: Style::new(),
+        }
+    }
 }
 
 impl DrawCh {

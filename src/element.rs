@@ -8,7 +8,7 @@ use {
 // expected to fulfill
 pub trait Element {
     fn kind(&self) -> &'static str; // a name for the kind of the element
-    fn id(&self) -> &ElementID; // the element id as assigned by the SortingHat
+    fn id(&self) -> ElementID; // the element id as assigned by the SortingHat
 
     // Returns all event kinds (key events and commands, etc.) which are receivable by the element.
     // This includes all events that are registered to the element itself, as well as its children,
@@ -23,7 +23,7 @@ pub trait Element {
     // changes receivable events. When the event is captured, the element is expected to returns
     // captured=true.
     //                                                   (captured, response     )
-    fn receive_event(&mut self, ctx: &Context, ev: Event) -> (bool, EventResponse);
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponse);
 
     // change_priority is expected to change the priority of an element relative to its parents.
     // All receivable-events registered directly by the element should have their local priority
@@ -40,7 +40,7 @@ pub trait Element {
     //
     // In all cases the reponse of this function is intended to be passed to the element's
     // parent's event prioritizer.
-    fn change_priority(&mut self, ctx: &Context, p: Priority) -> ReceivableEventChanges;
+    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges;
 
     // Get the element's full drawing for the provided context.
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos>;
@@ -52,12 +52,12 @@ pub trait Element {
     //
     // Current attributes used within this library:
     //  - "description": a string description of the element used everywhere
-    fn get_attribute(&self, key: &str) -> Option<&[u8]>;
-    fn set_attribute(&mut self, key: &str, value: Vec<u8>);
+    fn get_attribute(&self, key: &str) -> Option<Vec<u8>>;
+    fn set_attribute(&self, key: &str, value: Vec<u8>);
 
     // Assign a reference to the element's parent through the UpwardPropagator trait. This is used
     // to pass ReceivableEventChanges to the parent. (see UpwardPropogator for more context)
-    fn set_upward_propagator(&mut self, up: Rc<RefCell<dyn UpwardPropagator>>);
+    fn set_upward_propagator(&self, up: Rc<RefCell<dyn UpwardPropagator>>);
 }
 
 impl PartialEq for dyn Element {

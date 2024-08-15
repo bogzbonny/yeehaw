@@ -32,4 +32,5 @@ pub use {
     prioritizer::Priority,
     sorting_hat::{ElementID, SortingHat},
     style::Style,
+    widgets::WidgetPane,
 };

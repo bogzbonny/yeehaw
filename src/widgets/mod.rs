@@ -17,7 +17,9 @@ pub mod widget_textbox_numbers;
 pub mod widget_title;
 pub mod widget_toggle;
 
+pub use el_widget_pane::WidgetPane;
 pub use organizer::WidgetOrganizer;
 pub use scaled_value::{SclLocation, SclVal};
 pub use widget::{Selectability, WBStyles, Widget, WidgetBase, Widgets};
+pub use widget_button::Button;
 pub use widget_label::Label;
