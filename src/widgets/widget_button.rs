@@ -15,6 +15,7 @@ use {
 //  ⢸button⡇   ⎤button⎣
 //  ❳button❲  ⎣button⎤
 
+#[derive(Clone)]
 pub struct Button {
     pub base: WidgetBase,
     pub text: Rc<RefCell<String>>,

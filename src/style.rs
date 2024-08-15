@@ -47,6 +47,11 @@ impl Style {
         self
     }
 
+    pub const fn with_attr(mut self, attr: AttributesMirror) -> Self {
+        self.attr = attr;
+        self
+    }
+
     pub fn set_fg(&mut self, fg: RgbColour) {
         self.fg = Some(fg);
     }
@@ -165,6 +170,95 @@ impl AttributesMirror {
             overlined: false,
         }
     }
+
+    pub const fn with_bold(mut self) -> Self {
+        self.bold = true;
+        self
+    }
+
+    pub const fn with_faded(mut self) -> Self {
+        self.faded = true;
+        self
+    }
+
+    pub const fn with_italic(mut self) -> Self {
+        self.italic = true;
+        self
+    }
+
+    pub const fn with_underlined(mut self) -> Self {
+        self.underlined = true;
+        self
+    }
+
+    pub const fn with_doubleunderlined(mut self) -> Self {
+        self.doubleunderlined = true;
+        self
+    }
+
+    pub const fn with_undercurled(mut self) -> Self {
+        self.undercurled = true;
+        self
+    }
+
+    pub const fn with_underdotted(mut self) -> Self {
+        self.underdotted = true;
+        self
+    }
+
+    pub const fn with_underdashed(mut self) -> Self {
+        self.underdashed = true;
+        self
+    }
+
+    pub const fn with_slowblink(mut self) -> Self {
+        self.slowblink = true;
+        self
+    }
+
+    pub const fn with_rapidblink(mut self) -> Self {
+        self.rapidblink = true;
+        self
+    }
+
+    pub const fn with_reverse(mut self) -> Self {
+        self.reverse = true;
+        self
+    }
+
+    pub const fn with_hidden(mut self) -> Self {
+        self.hidden = true;
+        self
+    }
+
+    pub const fn with_crossedout(mut self) -> Self {
+        self.crossedout = true;
+        self
+    }
+
+    pub const fn with_fraktur(mut self) -> Self {
+        self.fraktur = true;
+        self
+    }
+
+    pub const fn with_framed(mut self) -> Self {
+        self.framed = true;
+        self
+    }
+
+    pub const fn with_encircled(mut self) -> Self {
+        self.encircled = true;
+        self
+    }
+
+    pub const fn with_overlined(mut self) -> Self {
+        self.overlined = true;
+        self
+    }
+
+    pub const fn new_bold() -> Self {
+        Self::new().with_bold()
+    }
 }
 
 impl From<AttributesMirror> for Attributes {
@@ -222,6 +316,13 @@ impl From<AttributesMirror> for Attributes {
             att_out.set(Attribute::OverLined);
         }
         att_out
+    }
+}
+
+impl From<Attribute> for AttributesMirror {
+    fn from(attr: Attribute) -> Self {
+        let attrs = Attributes::from(attr);
+        attrs.into()
     }
 }
 

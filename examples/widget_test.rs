@@ -22,20 +22,15 @@ async fn main() -> Result<(), Error> {
 
     el.add_widgets(&ctx, l);
 
-    let button = Button::new(
-        &hat,
-        &ctx,
-        "click me".to_string(),
-        Box::new(move || {
-            let t = l1.get_text();
-            let t = t + "0";
-            l1.set_text(t);
-            EventResponse::default()
-        }),
-    )
-    .at(SclVal::new_frac(0.25), SclVal::new_frac(0.25))
-    .to_widgets();
-
+    let button_click_fn = Box::new(move || {
+        let t = l1.get_text();
+        let t = t + "0";
+        l1.set_text(t);
+        EventResponse::default()
+    });
+    let button = Button::new(&hat, &ctx, "click me".to_string(), button_click_fn)
+        .at(SclVal::new_frac(0.25), SclVal::new_frac(0.25))
+        .to_widgets();
     el.add_widgets(&ctx, button);
 
     //let text = DrawChs2D::from_string("Hello, Werld!".to_string(), Style::default());

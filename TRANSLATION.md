@@ -71,8 +71,8 @@
       scaled_value.go                    │ DONE
       widget.go                          │ DONE
       widget__test.go                    │ DONE
-      widget_button.go                   │
-      widget_checkbox.go                 │
+      widget_button.go                   │ DONE
+      widget_checkbox.go                 │ 
       widget_col_sel.go                  │ DONE (DELETED)
       widget_dropdownlist.go             │
       widget_label.go                    │ DONE
