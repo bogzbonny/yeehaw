@@ -10,6 +10,7 @@ use {
 
 // ElementOrganizer prioritizes and organizes all the elements contained
 // within it
+#[derive(Default)]
 pub struct ElementOrganizer {
     // XXX TODO combine into one hashmap
     elements: HashMap<ElementID, Rc<RefCell<dyn Element>>>,
@@ -17,17 +18,6 @@ pub struct ElementOrganizer {
     visibility: HashMap<ElementID, bool>,       // whether the element is set to display
 
     pub prioritizer: EventPrioritizer,
-}
-
-impl Default for ElementOrganizer {
-    fn default() -> Self {
-        ElementOrganizer {
-            elements: HashMap::new(),
-            locations: HashMap::new(),
-            visibility: HashMap::new(),
-            prioritizer: EventPrioritizer::default(),
-        }
-    }
 }
 
 impl ElementOrganizer {

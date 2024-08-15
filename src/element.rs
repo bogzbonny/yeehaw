@@ -408,7 +408,7 @@ impl ReceivableEventChanges {
 // RESPONSE REQUESTS
 
 // RelocationRequest contains info for moving an element within its context
-#[derive(Clone, Default)]
+#[derive(Clone, Copy, Default)]
 pub struct RelocationRequest {
     pub up: i32,
     pub down: i32,

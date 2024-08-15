@@ -1,13 +1,14 @@
 use {
     super::{Selectability, Widget},
     crate::{
-        Context, Event, EventResponse, Keyboard as KB, Location, Priority, ReceivableEventChanges,
+        Context, DrawChPos, Event, EventResponse, KeyPossibility, Keyboard as KB, LocationSet,
+        Priority, ReceivableEventChanges,
     },
 };
 
 #[derive(Default)]
 pub struct WidgetOrganizer {
-    pub widgets: Vec<(Box<dyn Widget>, Location)>,
+    pub widgets: Vec<(Box<dyn Widget>, LocationSet)>,
     active_widget_index: Option<usize>, // None means no widget active
 }
 
@@ -38,7 +39,7 @@ impl WidgetOrganizer {
         */
     }
 
-    pub fn add_widget(&mut self, w: Box<dyn Widget>, loc: Location) {
+    pub fn add_widget(&mut self, w: Box<dyn Widget>, loc: LocationSet) {
         self.widgets.push((w, loc));
     }
 
@@ -74,12 +75,12 @@ impl WidgetOrganizer {
         // location which made the request
         if let Some(mut win) = resp.window.clone() {
             let loc = self.widgets[widget_index].1.clone();
-            win.loc.adjust_locations_by(loc.start_x, loc.start_y);
+            win.loc.adjust_locations_by(loc.l.start_x, loc.l.start_y);
             resp.window = Some(win);
         }
 
         // resize the widget
-        if let Some(reloc) = resp.relocation.clone() {
+        if let Some(reloc) = resp.relocation {
             self.widgets[widget_index].1.relocate(reloc);
             resp.relocation = None;
         }
@@ -187,132 +188,139 @@ impl WidgetOrganizer {
     }
 
     // Returns true if one of the Widgets captures the events
-}
+    pub fn capture_key_event(
+        &mut self, ctx: &Context, ev: Vec<KeyPossibility>,
+        /*(captured, resp    )*/
+    ) -> (bool, EventResponse) {
+        if ev.is_empty() {
+            return (false, EventResponse::default());
+        }
+        match true {
+            _ if ev[0].matches(&KB::KEY_ESC) => {
+                let rec = self.unselect_selected_widget();
+                return (
+                    true,
+                    EventResponse::default().with_receivable_event_changes(rec),
+                );
+            }
+            _ if ev[0].matches(&KB::KEY_TAB) => {
+                let rec = self.switch_to_next_widget();
+                return (
+                    true,
+                    EventResponse::default().with_receivable_event_changes(rec),
+                );
+            }
+            _ if ev[0].matches(&KB::KEY_BACKTAB) => {
+                let rec = self.switch_to_prev_widget();
+                return (
+                    true,
+                    EventResponse::default().with_receivable_event_changes(rec),
+                );
+            }
+            _ => {}
+        }
 
-/*
-
-// Returns true if one of the Widgets captures the events
-func (wo *WidgetOrganizer) CaptureKeyEvents(evs []*tcell.EventKey) (
-    captured bool, resp yh.EventResponse) {
-
-    if len(evs) == 0 {
-        return false, yh.NewEventResponse()
+        if let Some(i) = self.active_widget_index {
+            let (captured, mut resp) = self.widgets[i].0.receive_event(ctx, Event::KeyCombo(ev));
+            self.process_widget_resp(&mut resp, i);
+            return (captured, resp);
+        }
+        (false, EventResponse::default())
     }
 
-    switch {
-    case yh.EscEKC.Matches(evs):
-        ic := wo.UnselectSelectedWidget()
-        return true, yh.NewEventResponse().WithInputabilityChanges(ic)
-    case yh.TabEKC.Matches(evs):
-        ic := wo.switchToNextWidget()
-        return true, yh.NewEventResponse().WithInputabilityChanges(ic)
-    case yh.BackTabEKC.Matches(evs):
-        ic := wo.switchToPrevWidget()
-        return true, yh.NewEventResponse().WithInputabilityChanges(ic)
-    }
+    pub fn capture_mouse_event(
+        &mut self,
+        ctx: &Context,
+        ev: crossterm::event::MouseEvent,
+        //(captured, resp    )
+    ) -> (bool, EventResponse) {
+        let mut clicked = false;
+        if let crossterm::event::MouseEventKind::Up(crossterm::event::MouseButton::Left) = ev.kind {
+            clicked = true;
+        }
 
-    if wo.activeWidgetIndex == -1 {
-        return false, yh.NewEventResponse()
-    }
-    captured, resp = wo.Widgets[wo.activeWidgetIndex].ReceiveKeyEventCombo(evs)
-    wo.processWidgetResp(&resp, wo.activeWidgetIndex)
-    return captured, resp
-}
+        let mut most_front_z_index = 1000; // lowest value is the most front
+        let mut widget_index = None; // index of widget with most front z index
+        let mut widget_loc = LocationSet::default();
 
-func (wo *WidgetOrganizer) CaptureMouseEvent(ev *tcell.EventMouse) (
-    captured bool, resp yh.EventResponse) {
-
-    clicked := true
-    if ev.Buttons() == tcell.ButtonNone {
-        clicked = false
-    }
-
-    var mostFrontZIndex yh.ZIndex = 1000 // lowest value is the most front
-    widgetIndex := -1                    // index of widget with most front z index
-    widgetLoc := yh.Location{}
-
-    // find the widget with the most front z index
-    for i, loc := range wo.locations {
-        //if locs.ContainsWithinPrimary(ev.Position()) {
-        if loc.Contains(ev.Position()) {
-            if loc.Z < mostFrontZIndex {
-                mostFrontZIndex = loc.Z
-                widgetIndex = i
-                widgetLoc = loc
+        // find the widget with the most front z index
+        for (i, (_, loc)) in self.widgets.iter().enumerate() {
+            if loc.contains(ev.column.into(), ev.row.into()) && loc.z < most_front_z_index {
+                most_front_z_index = loc.z;
+                widget_index = Some(i);
+                widget_loc = loc.clone();
             }
         }
+
+        let Some(widget_index) = widget_index else {
+            if clicked {
+                let rec = self.unselect_selected_widget();
+                return (
+                    false,
+                    EventResponse::default().with_receivable_event_changes(rec),
+                );
+            }
+            return (false, EventResponse::default());
+        };
+
+        let rec = if clicked {
+            self.switch_between_widgets(self.active_widget_index, Some(widget_index))
+        } else {
+            ReceivableEventChanges::default()
+        };
+        let ev_adj = widget_loc.l.adjust_mouse_event(&ev);
+        let (captured, mut resp) = self.widgets[widget_index]
+            .0
+            .receive_event(ctx, Event::Mouse(ev_adj));
+        self.process_widget_resp(&mut resp, widget_index);
+        resp.concat_receivable_event_changes(rec);
+        (captured, resp)
     }
 
-    if widgetIndex == -1 {
-        if clicked {
-            ic := wo.UnselectSelectedWidget()
-            return false, yh.NewEventResponse().WithInputabilityChanges(ic)
+    pub fn resize_event(&mut self, ctx: &Context) {
+        for (w, loc) in &mut self.widgets {
+            w.receive_event(ctx, Event::Resize);
+            loc.l = w.get_scl_location().get_location_for_context(ctx);
         }
-        return false, yh.NewEventResponse()
     }
 
-    ic := yh.NewInputabilityChanges()
-    if clicked {
-        ic = wo.switchBetweenWidgets(wo.activeWidgetIndex, widgetIndex)
-    }
-    evAdj := widgetLoc.AdjustMouseEvent(ev)
-    captured, resp = wo.Widgets[widgetIndex].ReceiveMouseEvent(evAdj)
-    wo.processWidgetResp(&resp, widgetIndex)
-    resp.ConcatInputabilityChanges(ic)
+    // draws all the Widgets
+    pub fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        let mut out = Vec::new();
 
-    return captured, resp
-}
+        for (i, (w, loc)) in self.widgets.iter().enumerate() {
+            // skip the active widget the will be drawn on the top after
+            if Some(i) == self.active_widget_index {
+                continue;
+            }
 
-func (wo *WidgetOrganizer) ResizeEvent(ctx yh.Context) {
-    // resize and refresh all locations
-    for i, w := range wo.Widgets {
-        w.ResizeEvent(ctx)
-        wo.locations[i] = w.GetLocation()
-    }
-}
-
-// draws all the Widgets
-func (wo *WidgetOrganizer) Drawing(ctx yh.Context) []yh.DrawChPos {
-    out := []yh.DrawChPos{}
-    for i, w := range wo.Widgets {
-
-        // skip the active widget the will be drawn on the top after
-        if i == wo.activeWidgetIndex {
-            continue
-        }
-
-        ds := w.Drawing()
-        loc := wo.locations[i]
-
-        for _, d := range ds {
-
-            // adjust the location of the drawChPos relative to the WidgetPane
-            d.AdjustByLocation(loc)
-
-            // filter out chs that are outside of the WidgetPane bounds
-            if d.Y >= 0 && d.Y < ctx.S.Height && d.X >= 0 && d.X < ctx.S.Width {
-                out = append(out, d)
-                //yh.Debug("drawing: %v\n", d)
+            let ds = w.drawing(ctx);
+            for mut d in ds {
+                // adjust the location of the drawChPos relative to the WidgetPane
+                d.adjust_by_location(&loc.l);
+                // filter out chs that are outside of the WidgetPane bounds
+                if d.y < ctx.s.height && d.x < ctx.s.width {
+                    out.push(d);
+                }
             }
         }
-    }
 
-    // lastly draw the active widget on top
-    if wo.activeWidgetIndex != -1 {
-        ds := wo.Widgets[wo.activeWidgetIndex].Drawing()
-        locs := wo.locations[wo.activeWidgetIndex]
+        // lastly draw the active widget on top
+        if let Some(i) = self.active_widget_index {
+            let ds = self.widgets[i].0.drawing(ctx);
+            let locs = self.widgets[i].1.clone();
 
-        for _, d := range ds {
+            for mut d in ds {
+                // adjust the location of the drawChPos relative to the WidgetPane
+                d.adjust_by_location(&locs.l);
 
-            // adjust the location of the drawChPos relative to the WidgetPane
-            d.AdjustByLocation(locs)
-
-            // filter out chs that are outside of the WidgetPane bounds
-            if d.Y >= 0 && d.Y < ctx.S.Height && d.X >= 0 && d.X < ctx.S.Width {
-                out = append(out, d)
+                // filter out chs that are outside of the WidgetPane bounds
+                if d.y < ctx.s.height && d.x < ctx.s.width {
+                    out.push(d);
+                }
             }
         }
+
+        out
     }
-    return out
 }
-*/

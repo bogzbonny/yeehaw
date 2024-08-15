@@ -77,7 +77,7 @@ pub trait Widget: Element {
         let Some(bz) = self.get_attribute(ATTR_SCL_WIDTH) else {
             return SclVal::default();
         };
-        match serde_json::from_slice(&bz) {
+        match serde_json::from_slice(bz) {
             Ok(v) => v,
             Err(_e) => {
                 // TODO log error
@@ -99,7 +99,7 @@ pub trait Widget: Element {
         let Some(bz) = self.get_attribute(ATTR_SCL_HEIGHT) else {
             return SclVal::default();
         };
-        match serde_json::from_slice(&bz) {
+        match serde_json::from_slice(bz) {
             Ok(v) => v,
             Err(_e) => {
                 // TODO log error
@@ -121,7 +121,7 @@ pub trait Widget: Element {
         let Some(bz) = self.get_attribute(ATTR_SCL_LOC_X) else {
             return SclVal::default();
         };
-        match serde_json::from_slice(&bz) {
+        match serde_json::from_slice(bz) {
             Ok(v) => v,
             Err(_e) => {
                 // TODO log error
@@ -143,7 +143,7 @@ pub trait Widget: Element {
         let Some(bz) = self.get_attribute(ATTR_SCL_LOC_Y) else {
             return SclVal::default();
         };
-        match serde_json::from_slice(&bz) {
+        match serde_json::from_slice(bz) {
             Ok(v) => v,
             Err(_e) => {
                 // TODO log error
@@ -166,7 +166,7 @@ pub trait Widget: Element {
         let Some(bz) = self.get_attribute(ATTR_SELECTABILITY) else {
             return Selectability::Ready;
         };
-        match serde_json::from_slice(&bz) {
+        match serde_json::from_slice(bz) {
             Ok(v) => v,
             Err(_e) => {
                 // TODO log error
@@ -569,7 +569,7 @@ impl WidgetBase {
         // set y offset if cursor out of bounds
         if y >= self.sp.content_view_offset_y + self.get_height() {
             self.set_content_y_offset(y - self.get_height() + 1);
-        } else if y < self.sp.content_view_offset_y.into() {
+        } else if y < self.sp.content_view_offset_y {
             self.set_content_y_offset(y);
         }
 
@@ -582,7 +582,7 @@ impl WidgetBase {
         // set x offset if cursor out of bounds
         if x >= self.sp.content_view_offset_x + self.get_width() {
             self.set_content_x_offset(x - self.get_width() + 1);
-        } else if x < self.sp.content_view_offset_x.into() {
+        } else if x < self.sp.content_view_offset_x {
             self.set_content_x_offset(x);
         }
 
@@ -660,10 +660,8 @@ impl Element for WidgetBase {
         let mut chs = Vec::new();
         for y in self.sp.content_view_offset_y..self.sp.content_view_offset_y + h {
             for x in self.sp.content_view_offset_x..self.sp.content_view_offset_x + w {
-                let ch = if (y as usize) < self.sp.content.height()
-                    && (x as usize) < self.sp.content.width()
-                {
-                    self.sp.content.0[y as usize][x as usize]
+                let ch = if y < self.sp.content.height() && x < self.sp.content.width() {
+                    self.sp.content.0[y][x]
                 } else {
                     DrawCh::new(' ', false, sty)
                 };

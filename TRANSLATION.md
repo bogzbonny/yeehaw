@@ -66,7 +66,7 @@
       common.go                          │ DONE
       el_clr_sel.go                      │ DONE (DELETED)
       el_widget_pane.go                  │
-      organizer.go                       │ WORKING
+      organizer.go                       │ DONE
       README.md                          │ DONE
       scaled_value.go                    │ DONE
       widget.go                          │ DONE

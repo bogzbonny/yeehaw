@@ -164,6 +164,14 @@ impl LocationSet {
         false
     }
 
+    // Relocate increments the Location by the given values
+    pub fn relocate(&mut self, rr: RelocationRequest) {
+        self.l.relocate(rr);
+        for loc in self.extra.iter_mut() {
+            loc.relocate(rr);
+        }
+    }
+
     // returns None is the point is not contained by the LocationSet
     pub fn get_z_index_for_point(&self, x: i32, y: i32) -> Option<ZIndex> {
         if self.l.contains_point(x, y) {

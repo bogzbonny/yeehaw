@@ -155,8 +155,8 @@ impl Element for StandardPane {
 
                 // TODO XXX allow for negative offsets! currently crashes
 
-                let offset_y = (y + self.content_view_offset_y) as usize;
-                let offset_x = (x + self.content_view_offset_x) as usize;
+                let offset_y = y + self.content_view_offset_y;
+                let offset_x = x + self.content_view_offset_x;
 
                 // if the offset isn't pushing all the content out of view,
                 // assign the next ch to be the one at the offset in the Content
@@ -169,9 +169,9 @@ impl Element for StandardPane {
                 // trigger a default line.
                 // NOTE: height of the visible content is the height of the
                 // content minus the offset
-                if (y as usize) > self.content.0.len() {
-                    if (x as usize) < self.default_line.len() {
-                        ch_out = self.default_line[x as usize];
+                if y > self.content.0.len() {
+                    if x < self.default_line.len() {
+                        ch_out = self.default_line[x];
                     } else {
                         ch_out = self.default_ch;
                     }
