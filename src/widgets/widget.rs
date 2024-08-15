@@ -3,7 +3,6 @@ use {
     crate::{
         event::Event, Context, DrawCh, DrawChPos, DrawChs2D, Element, ElementID, EventResponse,
         Priority, ReceivableEventChanges, SortingHat, StandardPane, Style, UpwardPropagator,
-        ZIndex,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -223,8 +222,6 @@ pub trait Widget: Element {
         SclLocation::new(x1, x2, y1, y2)
     }
 }
-
-const WIDGET_Z_INDEX: ZIndex = 10;
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq)]
 pub enum Selectability {

@@ -234,6 +234,12 @@ impl SelfReceivableEvents {
         self.0.push((ev, p))
     }
 
+    pub fn push_many_at_priority(&mut self, evs: Vec<Event>, p: Priority) {
+        for ev in evs {
+            self.push(ev, p)
+        }
+    }
+
     // TRANSLATION IncludeMany include_many
     pub fn extend(&mut self, evs: Vec<(Event, Priority)>) {
         self.0.extend(evs)

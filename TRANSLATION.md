@@ -65,12 +65,12 @@
         megafont.go                      │ DONE
       common.go                          │ DONE
       el_clr_sel.go                      │ DONE (DELETED)
-      el_widget_pane.go                  │
+      el_widget_pane.go                  │ DONE
       organizer.go                       │ DONE
       README.md                          │ DONE
       scaled_value.go                    │ DONE
       widget.go                          │ DONE
-      widget__test.go                    │
+      widget__test.go                    │ DONE
       widget_button.go                   │
       widget_checkbox.go                 │
       widget_col_sel.go                  │ DONE (DELETED)

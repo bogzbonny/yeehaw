@@ -182,3 +182,20 @@ impl SclLocation {
         )
     }
 }
+
+#[cfg(test)]
+pub mod scl_val_tests {
+    use super::*;
+
+    #[test]
+    fn test_scl_val() {
+        let sv = SclVal::new_fixed(1);
+        assert_eq!(1, sv.get_val(10));
+
+        let sv = SclVal::new_frac(0.5);
+        assert_eq!(5, sv.get_val(10));
+
+        let sv = SclVal::new_frac(0.5).plus(SclVal::new_fixed(1));
+        assert_eq!(6, sv.get_val(10));
+    }
+}
