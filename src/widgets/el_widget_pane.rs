@@ -53,15 +53,6 @@ impl WidgetPane {
     }
 }
 
-//fn kind(&self) -> &'static str;
-//fn id(&self) -> &ElementID;
-//fn receivable(&self) -> Vec<(Event, Priority)>;
-//fn receive_event(&mut self, ctx: &Context, ev: Event) -> (bool, EventResponse);
-//fn change_priority(&mut self, ctx: &Context, p: Priority) -> ReceivableEventChanges;
-//fn drawing(&self, ctx: &Context) -> Vec<DrawChPos>;
-//fn get_attribute(&self, key: &str) -> Option<&[u8]>;
-//fn set_attribute(&mut self, key: &str, value: Vec<u8>);
-//fn set_upward_propagator(&mut self, up: Rc<RefCell<dyn UpwardPropagator>>);
 impl Element for WidgetPane {
     fn kind(&self) -> &'static str {
         Self::KIND

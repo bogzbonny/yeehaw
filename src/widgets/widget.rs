@@ -250,6 +250,18 @@ pub enum LabelPosition {
 #[derive(Default)]
 pub struct Widgets(pub Vec<Box<dyn Widget>>);
 
+impl From<Vec<Box<dyn Widget>>> for Widgets {
+    fn from(v: Vec<Box<dyn Widget>>) -> Self {
+        Widgets(v)
+    }
+}
+
+impl From<Box<dyn Widget>> for Widgets {
+    fn from(w: Box<dyn Widget>) -> Self {
+        Widgets(vec![w])
+    }
+}
+
 impl Widgets {
     // returns the smallest location which encompasses all
     // the sub-locations for all the contained widgets

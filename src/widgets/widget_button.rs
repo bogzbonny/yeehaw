@@ -1,122 +1,149 @@
-/*
-package widgets
+use {
+    super::{SclVal, Selectability, WBStyles, Widget, WidgetBase, Widgets},
+    crate::{
+        Context, DrawChPos, Element, ElementID, Event, EventResponse, Keyboard as KB, Priority,
+        ReceivableEventChanges, RgbColour, SortingHat, Style, UpwardPropagator,
+    },
+    crossterm::event::{MouseButton, MouseEventKind},
+    std::{cell::RefCell, rc::Rc},
+};
 
-import (
-	"github.com/gdamore/tcell/v2"
-	yh "keybase.io/nwmod/nwmod/yeehaw"
-)
+// TODO simulate button press with down click
 
-// TODO figure out how to simulate being pressed with time based events
-
-type Button struct {
-	*WidgetBase
-	Text      string
-	HasSides  bool // if false no depression runes will be displayed
-	Sides     ButtonSides
-	ClickedFn func() yh.EventResponse // function which executes when button moves from pressed -> unpressed
-}
-
-type ButtonSides struct {
-	Left  rune
-	Right rune
-}
-
-// Button Sides Inspiration:
-//
+// button sides inspiration:
 //	]button[  ⡇button⢸
-//	]button[  ⢸button⡇
-//	⎤button⎣  ❳button❲ ⎣⦘button⦗⎤
-var ButtonSides1 = ButtonSides{
-	Left:  ']',
-	Right: '[',
+//  ⢸button⡇   ⎤button⎣
+//  ❳button❲  ⎣button⎤
+
+pub struct Button {
+    pub base: WidgetBase,
+    pub text: String,
+    pub sides: (char, char),               // left right
+    pub clicked_fn: fn() -> EventResponse, // function which executes when button moves from pressed -> unpressed
 }
 
-func (bs ButtonSides) ButtonText(text string) string {
-	return string(bs.Left) + text + string(bs.Right)
+impl Button {
+    const KIND: &'static str = "widget_button";
+
+    const STYLE: WBStyles = WBStyles {
+        selected_style: Style::new()
+            .with_bg(RgbColour::YELLOW)
+            .with_fg(RgbColour::BLACK),
+        ready_style: Style::new()
+            .with_bg(RgbColour::WHITE)
+            .with_fg(RgbColour::BLACK),
+        unselectable_style: Style::new()
+            .with_bg(RgbColour::GREY5)
+            .with_fg(RgbColour::BLACK),
+    };
+
+    pub fn default_receivable_events() -> Vec<Event> {
+        vec![KB::KEY_ENTER.into()] // when "active" hitting enter will click the button
+    }
+
+    pub fn button_text(&self) -> String {
+        format!("{}{}{}", self.text, self.sides.0, self.sides.1)
+    }
+
+    pub fn new(
+        hat: &SortingHat, ctx: &Context, text: String, clicked_fn: fn() -> EventResponse,
+    ) -> Self {
+        let mut wb = WidgetBase::new(
+            hat,
+            Self::KIND,
+            ctx.clone(),
+            SclVal::new_fixed(text.len() + 2),
+            SclVal::new_fixed(1),
+            Self::STYLE,
+            Self::default_receivable_events(),
+        );
+        _ = wb.set_selectability(Selectability::Unselectable);
+        let mut b = Button {
+            base: wb,
+            text,
+            sides: (']', '['),
+            clicked_fn,
+        };
+        b.base.set_content_from_string(&b.button_text());
+        b
+    }
+
+    // ----------------------------------------------
+    // decorators
+
+    pub fn with_styles(mut self, styles: WBStyles) -> Self {
+        self.base.set_styles(styles);
+        self
+    }
+
+    pub fn with_sides(mut self, sides: (char, char)) -> Self {
+        self.sides = sides;
+        self
+    }
+
+    pub fn at(mut self, loc_x: SclVal, loc_y: SclVal) -> Self {
+        self.base.at(loc_x, loc_y);
+        self
+    }
+
+    pub fn to_widgets(self) -> Widgets {
+        Widgets(vec![Box::new(self)])
+    }
+
+    // ----------------------------------------------
+    pub fn click(&self) -> EventResponse {
+        let resp = (self.clicked_fn)();
+        resp.with_deactivate()
+    }
 }
 
-// when "active" hitting enter will click the button
-var ButtonEvCombos = []yh.PrioritizableEv{yh.EnterEKC}
+impl Widget for Button {}
 
-var ButtonStyle = WBStyles{
-	SelectedStyle:     tcell.StyleDefault.Background(tcell.ColorLightYellow).Foreground(tcell.ColorBlack),
-	ReadyStyle:        tcell.StyleDefault.Background(tcell.ColorWhite).Foreground(tcell.ColorBlack),
-	UnselectableStyle: tcell.StyleDefault.Background(tcell.ColorLightSlateGrey).Foreground(tcell.ColorBlack),
+impl Element for Button {
+    fn kind(&self) -> &'static str {
+        self.base.kind()
+    }
+    fn id(&self) -> &ElementID {
+        self.base.id()
+    }
+    fn receivable(&self) -> Vec<(Event, Priority)> {
+        self.base.receivable()
+    }
+
+    fn receive_event(&mut self, ctx: &Context, ev: Event) -> (bool, EventResponse) {
+        let _ = self.base.receive_event(ctx, ev.clone());
+        match ev {
+            Event::KeyCombo(ke) => {
+                if self.base.get_selectability() != Selectability::Selected || ke.is_empty() {
+                    return (false, EventResponse::default());
+                }
+                if ke[0].matches(&KB::KEY_ENTER) {
+                    return (true, self.click());
+                }
+            }
+            Event::Mouse(me) => {
+                if let MouseEventKind::Up(MouseButton::Left) = me.kind {
+                    return (true, self.click());
+                }
+            }
+            _ => {}
+        }
+        (false, EventResponse::default())
+    }
+
+    fn change_priority(&mut self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
+        self.base.change_priority(ctx, p)
+    }
+    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        self.base.drawing(ctx)
+    }
+    fn get_attribute(&self, key: &str) -> Option<&[u8]> {
+        self.base.get_attribute(key)
+    }
+    fn set_attribute(&mut self, key: &str, value: Vec<u8>) {
+        self.base.set_attribute(key, value)
+    }
+    fn set_upward_propagator(&mut self, up: Rc<RefCell<dyn UpwardPropagator>>) {
+        self.base.set_upward_propagator(up)
+    }
 }
-
-func NewButton(pCtx yh.Context, text string, clickedFn func() yh.EventResponse) *Button {
-	sides := ButtonSides1
-	//r := yh.NewPriorityEvs(yh.Focused, ButtonEvCombos)
-	//wb := NewWidgetBase(pCtx, len(text)+2, 1, ButtonStyle, r)
-	wb := NewWidgetBase(pCtx, NewStatic(len(text)+2), NewStatic(1), ButtonStyle, ButtonEvCombos)
-	wb.SetContentFromString(sides.ButtonText(text))
-
-	return &Button{
-		WidgetBase: wb,
-		Text:       text,
-		HasSides:   true,
-		Sides:      sides,
-		ClickedFn:  clickedFn,
-	}
-}
-
-// ----------------------------------------------
-// decorators
-
-func (b *Button) WithoutSides() *Button {
-	b.HasSides = false
-	b.SetContentFromString(b.Text)
-	b.WidgetBase.Width = NewStatic(len([]rune(b.Text)))
-	return b
-}
-
-func (b *Button) ToWidgets() Widgets {
-	return Widgets{b}
-}
-
-func (b *Button) WithStyles(styles WBStyles) *Button {
-	b.Styles = styles
-	return b
-}
-
-func (b *Button) At(locX, locY SclVal) *Button {
-	b.WidgetBase.At(locX, locY)
-	return b
-}
-
-// ----------------------------------------------
-
-func (b *Button) Click() yh.EventResponse {
-	resp := b.ClickedFn()
-	return resp.WithDeactivate()
-}
-
-// need to re set the content in order to reflect active style
-func (b *Button) Drawing() (chs []yh.DrawChPos) {
-	if b.HasSides {
-		b.SetContentFromString(b.Sides.ButtonText(b.Text))
-	} else {
-		b.SetContentFromString(b.Text)
-	}
-	return b.WidgetBase.Drawing()
-}
-
-func (b *Button) ReceiveKeyEventCombo(evs []*tcell.EventKey) (captured bool, resp yh.EventResponse) {
-	if b.Selectedness != Selected {
-		return false, yh.NewEventResponse()
-	}
-
-	switch {
-	case yh.EnterEKC.Matches(evs):
-		return true, b.Click()
-	}
-	return false, yh.NewEventResponse()
-}
-
-func (b *Button) ReceiveMouseEvent(ev *tcell.EventMouse) (captured bool, resp yh.EventResponse) {
-	if ev.Buttons() == tcell.Button1 { //left click
-		return true, b.Click()
-	}
-	return false, yh.NewEventResponse()
-}
-*/

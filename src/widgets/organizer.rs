@@ -4,6 +4,7 @@ use {
         Context, DrawChPos, Event, EventResponse, KeyPossibility, Keyboard as KB, LocationSet,
         Priority, ReceivableEventChanges,
     },
+    crossterm::event::{MouseButton, MouseEventKind},
 };
 
 #[derive(Default)]
@@ -235,7 +236,7 @@ impl WidgetOrganizer {
         //(captured, resp    )
     ) -> (bool, EventResponse) {
         let mut clicked = false;
-        if let crossterm::event::MouseEventKind::Up(crossterm::event::MouseButton::Left) = ev.kind {
+        if let MouseEventKind::Up(MouseButton::Left) = ev.kind {
             clicked = true;
         }
 
