@@ -57,7 +57,7 @@ impl Toggle {
             hat,
             Self::KIND,
             ctx.clone(),
-            SclVal::new_fixed(left.len() + right.len()),
+            SclVal::new_fixed(left.chars().count() + right.chars().count()),
             SclVal::new_fixed(1),
             Self::STYLE,
             Self::default_receivable_events(),
@@ -150,8 +150,8 @@ impl Element for Toggle {
                 if let MouseEventKind::Up(MouseButton::Left) = me.kind {
                     let x = me.column as usize;
                     let left_sel = *self.left_selected.borrow();
-                    if (!left_sel && x < self.left.borrow().len())
-                        || (left_sel && x >= self.left.borrow().len())
+                    if (!left_sel && x < self.left.borrow().chars().count())
+                        || (left_sel && x >= self.left.borrow().chars().count())
                     {
                         return (true, self.perform_toggle());
                     }
@@ -170,13 +170,15 @@ impl Element for Toggle {
         // need to re set the content in order to reflect active style
         let left = self.left.borrow();
         let right = self.right.borrow();
+        let left_len = left.chars().count();
+        let right_len = right.chars().count();
         self.base.set_content_from_string(&(left.clone() + &right));
         if *self.left_selected.borrow() {
-            for i in 0..left.len() {
+            for i in 0..left_len {
                 self.base.sp.content.borrow_mut()[0][i].style = *self.selected_sty.borrow();
             }
         } else {
-            for i in left.len()..left.len() + right.len() {
+            for i in left_len..left_len + right_len {
                 self.base.sp.content.borrow_mut()[0][i].style = *self.selected_sty.borrow();
             }
         }

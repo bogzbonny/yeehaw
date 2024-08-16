@@ -50,7 +50,7 @@ impl RadioButtons {
     }
 
     pub fn new(hat: &SortingHat, ctx: &Context, radios: Vec<String>) -> Self {
-        let max_width = radios.iter().map(|r| r.len()).max().unwrap_or(0) + 1; // +1 for the radio button
+        let max_width = radios.iter().map(|r| r.chars().count()).max().unwrap_or(0) + 1; // +1 for the radio button
         let wb = WidgetBase::new(
             hat,
             Self::KIND,

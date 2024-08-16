@@ -1,16 +1,21 @@
 use {
     std::{cell::RefCell, rc::Rc},
     yeehaw::{
-        debug,
+        //debug,
         widgets::{megafonts, Button, Checkbox, Label, Megatext, RadioButtons, SclVal, Toggle},
-        Context, Cui, Error, EventResponse, SortingHat, WidgetPane,
+        Context,
+        Cui,
+        Error,
+        EventResponse,
+        SortingHat,
+        WidgetPane,
     },
 };
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    debug::set_log_file("./widget_test.log".to_string());
-    debug::clear();
+    //debug::set_log_file("./widget_test.log".to_string());
+    //debug::clear();
     let hat = SortingHat::default();
 
     let mut el = WidgetPane::new(&hat);
@@ -72,11 +77,14 @@ async fn main() -> Result<(), Error> {
     .to_widgets();
     el.add_widgets(&ctx, mtext);
 
+    // moon runes: ⏾
+    // sun runes: ★
+
     let toggle = Toggle::new(
         &hat,
         &ctx,
-        "left".to_string(),
-        "right".to_string(),
+        " ★ ".to_string(),
+        " ⏾ ".to_string(),
         Box::new(|_| EventResponse::default()),
     )
     .at(SclVal::new_frac(0.1), SclVal::new_frac(0.4))

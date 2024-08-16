@@ -56,7 +56,7 @@ impl Button {
             hat,
             Self::KIND,
             ctx.clone(),
-            SclVal::new_fixed(text.len() + 2),
+            SclVal::new_fixed(text.chars().count() + 2),
             SclVal::new_fixed(1),
             Self::STYLE,
             Self::default_receivable_events(),
