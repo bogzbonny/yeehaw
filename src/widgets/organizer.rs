@@ -121,6 +121,7 @@ impl WidgetOrganizer {
             let mut resp = self.widgets[new_i]
                 .0
                 .set_selectability(Selectability::Selected);
+
             // ignore all responses besides receiving event changes
             self.process_widget_resp(&mut resp, new_i);
             let resp = resp.get_receivable_event_changes().unwrap_or_default();

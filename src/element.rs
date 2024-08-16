@@ -331,7 +331,7 @@ impl CreateWindow {
 // BEFORE adding events.
 //
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 // TRANSLATION NOTE used to be InputabilityChanges
 pub struct ReceivableEventChanges {
     // Receivable events to deregistered from an element.

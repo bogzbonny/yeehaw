@@ -200,14 +200,19 @@ pub trait Widget: Element {
 
         let mut rec = ReceivableEventChanges::default();
         match s {
-            Selectability::Selected => rec.add_evs(self.receivable()),
+            Selectability::Selected => {
+                self.set_attr_selectability(s); // NOTE needs to happen before the next line or
+                                                // else receivable will return the wrong value
+                rec.add_evs(self.receivable())
+            }
             Selectability::Ready | Selectability::Unselectable => {
                 if let Selectability::Selected = attr_sel {
                     rec.remove_evs(self.receivable().iter().map(|(ev, _)| ev.clone()).collect());
                 }
+                self.set_attr_selectability(s); // NOTE needs to after before the prev line or else
+                                                // receivable will return the wrong value
             }
         }
-        self.set_attr_selectability(s);
         EventResponse::default().with_receivable_event_changes(rec)
     }
 
@@ -306,24 +311,11 @@ impl Widgets {
     //adds the label at the position provided
     pub fn add_label(&mut self, l: Label, p: LabelPosition) {
         let (x, y) = self.label_position_to_xy(p, l.get_width(), l.get_height());
-        debug!("label position: {:?}", p);
-        debug!("label at x: {:#?} \n y: {:#?}", x, y);
         self.0.push(Box::new(l.at(x, y)));
     }
 
     pub fn with_label(self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
-        // label toi the right if a width of 1 otherwise label the top left
-        debug!("overall_loc: {:#?}", self.overall_loc());
-        debug!("overall_loc.width(): {:#?}", self.overall_loc().width(ctx));
-        debug!("context width: {:#?}", ctx.get_width());
-        debug!(
-            "val end_x: {:#?}",
-            self.overall_loc().end_x.get_val(ctx.get_width() as usize)
-        );
-        debug!(
-            "val start_x: {:#?}",
-            self.overall_loc().start_x.get_val(ctx.get_width() as usize)
-        );
+        // label to the right if a width of 1 otherwise label the top left
         if self.overall_loc().width(ctx) == 1 {
             self.with_right_top_label(hat, ctx, l)
         } else {

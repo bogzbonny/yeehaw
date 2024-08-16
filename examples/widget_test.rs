@@ -9,7 +9,7 @@ use {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    debug::set_log_file("~/Desktop/widget_test.log".to_string());
+    debug::set_log_file("./widget_test.log".to_string());
     debug::clear();
     let hat = SortingHat::default();
 
