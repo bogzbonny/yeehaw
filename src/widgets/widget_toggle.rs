@@ -1,130 +1,194 @@
-/*
-package widgets
+use {
+    super::{SclVal, Selectability, WBStyles, Widget, WidgetBase, Widgets},
+    crate::{
+        Context, DrawChPos, Element, ElementID, Event, EventResponse, Keyboard as KB, Priority,
+        ReceivableEventChanges, RgbColour, SortingHat, Style, UpwardPropagator,
+    },
+    crossterm::event::{MouseButton, MouseEventKind},
+    std::{cell::RefCell, rc::Rc},
+};
 
-import (
-	"github.com/gdamore/tcell/v2"
-	yh "keybase.io/nwmod/nwmod/yeehaw"
-)
-
-// TODO figure out how to simulate being pressed with time based events
-
-type Toggle struct {
-	*WidgetBase
-	Left         string
-	Right        string
-	LeftSelected bool //otherwise right is selected
-	SelectedSty  tcell.Style
-	ToggledFn    func(selected string) yh.EventResponse // function which executes when button moves from pressed -> unpressed
+#[derive(Clone)]
+pub struct Toggle {
+    pub base: WidgetBase,
+    pub left: Rc<RefCell<String>>,
+    pub right: Rc<RefCell<String>>,
+    pub left_selected: Rc<RefCell<bool>>, // otherwise right is selected
+    pub selected_sty: Rc<RefCell<Style>>,
+    //                                   selected
+    pub toggled_fn: Rc<RefCell<dyn FnMut(String) -> EventResponse>>,
 }
 
-// when "active" hitting enter will click the button
-var (
-	ToggleEvCombos = []yh.PrioritizableEv{
-		yh.EnterEKC, yh.LeftEKC, yh.RightEKC, yh.HLowerEKC, yh.LLowerEKC}
+impl Toggle {
+    const KIND: &'static str = "widget_button";
 
-	ToggleStyle = WBStyles{
-		SelectedStyle:     tcell.StyleDefault.Background(tcell.ColorLightYellow).Foreground(tcell.ColorBlack),
-		ReadyStyle:        tcell.StyleDefault.Background(tcell.ColorWhite).Foreground(tcell.ColorBlack),
-		UnselectableStyle: tcell.StyleDefault.Background(tcell.ColorLightSlateGrey).Foreground(tcell.ColorBlack),
-	}
+    const STYLE: WBStyles = WBStyles {
+        selected_style: Style::new()
+            .with_bg(RgbColour::LIGHT_YELLOW2)
+            .with_fg(RgbColour::BLACK),
+        ready_style: Style::new()
+            .with_bg(RgbColour::WHITE)
+            .with_fg(RgbColour::BLACK),
+        unselectable_style: Style::new()
+            .with_bg(RgbColour::GREY13)
+            .with_fg(RgbColour::BLACK),
+    };
 
-	DefaultSelectedSty = tcell.StyleDefault.Background(tcell.ColorBlue).Foreground(tcell.ColorBlack)
-)
+    // for the selected toggle
+    const DEFAULT_SELECTED_STY: Style = Style::new()
+        .with_bg(RgbColour::LIGHT_BLUE)
+        .with_fg(RgbColour::BLACK);
 
-func NewToggle(pCtx yh.Context, left, right string, toggledFn func(selected string) yh.EventResponse) *Toggle {
-	wb := NewWidgetBase(pCtx, NewStatic(len(left)+len(right)), NewStatic(1), ToggleStyle, ToggleEvCombos)
-	wb.SetContentFromString(left + right)
-	t := &Toggle{
-		WidgetBase:   wb,
-		Left:         left,
-		Right:        right,
-		LeftSelected: true,
-		SelectedSty:  DefaultSelectedSty,
-		ToggledFn:    toggledFn,
-	}
+    pub fn default_receivable_events() -> Vec<Event> {
+        vec![
+            KB::KEY_ENTER.into(),
+            KB::KEY_LEFT.into(),
+            KB::KEY_RIGHT.into(),
+            KB::KEY_H.into(),
+            KB::KEY_L.into(),
+        ]
+    }
 
-	_ = t.Drawing()
-	return t
+    pub fn new(
+        hat: &SortingHat, ctx: &Context, left: String, right: String,
+        toggeld_fn: Box<dyn FnMut(String) -> EventResponse>,
+    ) -> Self {
+        let wb = WidgetBase::new(
+            hat,
+            Self::KIND,
+            ctx.clone(),
+            SclVal::new_fixed(left.len() + right.len()),
+            SclVal::new_fixed(1),
+            Self::STYLE,
+            Self::default_receivable_events(),
+        );
+        wb.set_content_from_string(&(left.clone() + &right));
+        Toggle {
+            base: wb,
+            left: Rc::new(RefCell::new(left)),
+            right: Rc::new(RefCell::new(right)),
+            left_selected: Rc::new(RefCell::new(true)),
+            selected_sty: Rc::new(RefCell::new(Self::DEFAULT_SELECTED_STY)),
+            toggled_fn: Rc::new(RefCell::new(toggeld_fn)),
+        }
+    }
+
+    // ----------------------------------------------
+    // decorators
+
+    pub fn with_styles(self, styles: WBStyles) -> Self {
+        self.base.set_styles(styles);
+        self
+    }
+
+    pub fn at(mut self, loc_x: SclVal, loc_y: SclVal) -> Self {
+        self.base.at(loc_x, loc_y);
+        self
+    }
+
+    pub fn to_widgets(self) -> Widgets {
+        Widgets(vec![Box::new(self)])
+    }
+
+    // ----------------------------------------------
+
+    pub fn selected(&self) -> String {
+        if *self.left_selected.borrow() {
+            return self.left.borrow().clone();
+        }
+        self.right.borrow().clone()
+    }
+
+    pub fn perform_toggle(&self) -> EventResponse {
+        let l_sel = *self.left_selected.borrow();
+        *self.left_selected.borrow_mut() = !l_sel;
+        self.toggled_fn.borrow_mut()(self.selected())
+    }
 }
 
-func (t *Toggle) At(locX, locY SclVal) *Toggle {
-	t.WidgetBase.At(locX, locY)
-	return t
+impl Widget for Toggle {}
+
+impl Element for Toggle {
+    fn kind(&self) -> &'static str {
+        self.base.kind()
+    }
+    fn id(&self) -> ElementID {
+        self.base.id()
+    }
+    fn receivable(&self) -> Vec<(Event, Priority)> {
+        self.base.receivable()
+    }
+
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponse) {
+        let _ = self.base.receive_event(ctx, ev.clone());
+        match ev {
+            Event::KeyCombo(ke) => {
+                if self.base.get_selectability() != Selectability::Selected || ke.is_empty() {
+                    return (false, EventResponse::default());
+                }
+                match true {
+                    _ if ke[0].matches(&KB::KEY_ENTER) => {
+                        return (true, self.perform_toggle());
+                    }
+                    _ if ke[0].matches(&KB::KEY_LEFT) || ke[0].matches(&KB::KEY_H) => {
+                        if !*self.left_selected.borrow() {
+                            return (true, self.perform_toggle());
+                        }
+                        return (true, EventResponse::default());
+                    }
+                    _ if ke[0].matches(&KB::KEY_RIGHT) || ke[0].matches(&KB::KEY_L) => {
+                        if *self.left_selected.borrow() {
+                            return (true, self.perform_toggle());
+                        }
+                        return (true, EventResponse::default());
+                    }
+                    _ => {}
+                }
+                return (false, EventResponse::default());
+            }
+            Event::Mouse(me) => {
+                if let MouseEventKind::Up(MouseButton::Left) = me.kind {
+                    let x = me.column as usize;
+                    let left_sel = *self.left_selected.borrow();
+                    if (!left_sel && x < self.left.borrow().len())
+                        || (left_sel && x >= self.left.borrow().len())
+                    {
+                        return (true, self.perform_toggle());
+                    }
+                }
+                return (false, EventResponse::default());
+            }
+            _ => {}
+        }
+        (false, EventResponse::default())
+    }
+
+    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
+        self.base.change_priority(ctx, p)
+    }
+    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        // need to re set the content in order to reflect active style
+        let left = self.left.borrow();
+        let right = self.right.borrow();
+        self.base.set_content_from_string(&(left.clone() + &right));
+        if *self.left_selected.borrow() {
+            for i in 0..left.len() {
+                self.base.sp.content.borrow_mut()[0][i].style = *self.selected_sty.borrow();
+            }
+        } else {
+            for i in left.len()..left.len() + right.len() {
+                self.base.sp.content.borrow_mut()[0][i].style = *self.selected_sty.borrow();
+            }
+        }
+        self.base.drawing(ctx)
+    }
+    fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
+        self.base.get_attribute(key)
+    }
+    fn set_attribute(&self, key: &str, value: Vec<u8>) {
+        self.base.set_attribute(key, value)
+    }
+    fn set_upward_propagator(&self, up: Rc<RefCell<dyn UpwardPropagator>>) {
+        self.base.set_upward_propagator(up)
+    }
 }
-
-// returns Widgets for ease of labeling
-func (t *Toggle) ToWidgets() Widgets {
-	return Widgets{t}
-}
-
-func (t *Toggle) PerformToggle() yh.EventResponse {
-	t.LeftSelected = !t.LeftSelected
-	if t.ToggledFn != nil {
-		return t.ToggledFn(t.Selected())
-	}
-	return yh.NewEventResponse()
-}
-
-func (t *Toggle) Selected() string {
-	if t.LeftSelected {
-		return t.Left
-	}
-	return t.Right
-}
-
-// need to re set the content in order to reflect active style
-func (t *Toggle) Drawing() (chs []yh.DrawChPos) {
-	t.SetContentFromString(t.Left + t.Right)
-	if t.LeftSelected {
-		for i := 0; i < len(t.Left); i++ {
-			t.Content[0][i].Style = t.SelectedSty
-		}
-	} else {
-		for i := len(t.Left); i < len(t.Left)+len(t.Right); i++ {
-			t.Content[0][i].Style = t.SelectedSty
-		}
-	}
-	return t.WidgetBase.Drawing()
-}
-
-func (t *Toggle) ReceiveKeyEventCombo(evs []*tcell.EventKey) (captured bool, resp yh.EventResponse) {
-	resp = yh.NewEventResponse()
-	if t.Selectedness != Selected {
-		return false, resp
-	}
-
-	captured = false
-	switch {
-	case yh.EnterEKC.Matches(evs):
-		captured = true
-		resp = t.PerformToggle()
-	case yh.LeftEKC.Matches(evs) || yh.HLowerEKC.Matches(evs):
-		if !t.LeftSelected {
-			captured = true
-			resp = t.PerformToggle()
-		}
-	case yh.RightEKC.Matches(evs) || yh.LLowerEKC.Matches(evs):
-		if t.LeftSelected {
-			captured = true
-			resp = t.PerformToggle()
-		}
-	}
-	return captured, resp
-}
-
-func (t *Toggle) ReceiveMouseEvent(ev *tcell.EventMouse) (captured bool, resp yh.EventResponse) {
-	resp = yh.NewEventResponse()
-	if ev.Buttons() != tcell.Button1 { //left click
-		return false, yh.NewEventResponse()
-	}
-
-	x, _ := ev.Position()
-	switch {
-	case !t.LeftSelected && x < len(t.Left):
-		resp = t.PerformToggle()
-	case t.LeftSelected && x >= len(t.Left):
-		resp = t.PerformToggle()
-	}
-	return true, resp
-}
-*/

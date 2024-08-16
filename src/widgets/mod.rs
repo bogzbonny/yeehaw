@@ -17,13 +17,16 @@ pub mod widget_textbox;
 pub mod widget_textbox_numbers;
 pub mod widget_toggle;
 
-pub use el_widget_pane::WidgetPane;
-pub use megafonts::Megafont;
-pub use organizer::WidgetOrganizer;
-pub use scaled_value::{SclLocation, SclVal};
-pub use widget::{Selectability, WBStyles, Widget, WidgetBase, Widgets};
-pub use widget_button::Button;
-pub use widget_checkbox::Checkbox;
-pub use widget_label::Label;
-pub use widget_megatext::Megatext;
-pub use widget_radio::RadioButtons;
+pub use {
+    el_widget_pane::WidgetPane,
+    megafonts::Megafont,
+    organizer::WidgetOrganizer,
+    scaled_value::{SclLocation, SclVal},
+    widget::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
+    widget_button::Button,
+    widget_checkbox::Checkbox,
+    widget_label::Label,
+    widget_megatext::Megatext,
+    widget_radio::RadioButtons,
+    widget_toggle::Toggle,
+};

@@ -2,7 +2,7 @@ use {
     std::{cell::RefCell, rc::Rc},
     yeehaw::{
         debug,
-        widgets::{megafonts, Button, Checkbox, Label, Megatext, RadioButtons, SclVal},
+        widgets::{megafonts, Button, Checkbox, Label, Megatext, RadioButtons, SclVal, Toggle},
         Context, Cui, Error, EventResponse, SortingHat, WidgetPane,
     },
 };
@@ -71,6 +71,17 @@ async fn main() -> Result<(), Error> {
     .at(SclVal::new_frac(0.1), SclVal::new_frac(0.6))
     .to_widgets();
     el.add_widgets(&ctx, mtext);
+
+    let toggle = Toggle::new(
+        &hat,
+        &ctx,
+        "left".to_string(),
+        "right".to_string(),
+        Box::new(|_| EventResponse::default()),
+    )
+    .at(SclVal::new_frac(0.1), SclVal::new_frac(0.4))
+    .to_widgets();
+    el.add_widgets(&ctx, toggle);
 
     //let text = DrawChs2D::from_string("Hello, Werld!".to_string(), Style::default());
     //let el = StandardPane::new(&hat, StandardPane::KIND).with_content(text);

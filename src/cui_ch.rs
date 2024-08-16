@@ -1,6 +1,7 @@
 use {
     crate::{Location, Size, Style},
     anyhow::{anyhow, Error},
+    std::ops::{Deref, DerefMut},
 };
 
 // DrawCh is a character with a style and transparency
@@ -65,6 +66,19 @@ impl DrawChPos {
 
 #[derive(Clone, Default)]
 pub struct DrawChs2D(pub Vec<Vec<DrawCh>>); // y, x
+
+impl Deref for DrawChs2D {
+    type Target = Vec<Vec<DrawCh>>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for DrawChs2D {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl std::fmt::Display for DrawChs2D {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

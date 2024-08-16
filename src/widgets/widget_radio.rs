@@ -141,17 +141,15 @@ impl Element for RadioButtons {
             }
             Event::Mouse(me) => {
                 if let MouseEventKind::Up(MouseButton::Left) = me.kind {
-                } else {
-                    return (false, EventResponse::default());
+                    let y = me.row as usize;
+                    if y < self.radios.borrow().len() {
+                        *self.selected.borrow_mut() = y;
+                        let resp =
+                            self.radio_selected_fn.borrow_mut()(y, self.radios.borrow()[y].clone());
+                        return (true, resp);
+                    }
                 }
-
-                let y = me.row as usize;
-                if y < self.radios.borrow().len() {
-                    *self.selected.borrow_mut() = y;
-                    let resp =
-                        self.radio_selected_fn.borrow_mut()(y, self.radios.borrow()[y].clone());
-                    return (true, resp);
-                }
+                return (false, EventResponse::default());
             }
             _ => {}
         }
