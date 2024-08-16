@@ -1,6 +1,6 @@
 use {
     crate::RgbColour,
-    bincode::{Decode, Encode},
+    
     crossterm::style::{Attribute, Attributes, ContentStyle},
 };
 
@@ -8,7 +8,7 @@ use {
 pub struct Style {
     pub fg: Option<RgbColour>,
     pub bg: Option<RgbColour>,
-    pub attr: AttributesMirror,
+    pub attr: YHAttributes,
 }
 
 impl Style {
@@ -17,7 +17,7 @@ impl Style {
         Self {
             fg: None,
             bg: None,
-            attr: AttributesMirror::new(),
+            attr: YHAttributes::new(),
         }
     }
 
@@ -25,7 +25,7 @@ impl Style {
         Self {
             fg: Some(fg),
             bg: Some(bg),
-            attr: AttributesMirror::new(),
+            attr: YHAttributes::new(),
         }
     }
 
@@ -33,7 +33,7 @@ impl Style {
         Self {
             fg,
             bg,
-            attr: AttributesMirror::new(),
+            attr: YHAttributes::new(),
         }
     }
 
@@ -47,7 +47,7 @@ impl Style {
         self
     }
 
-    pub const fn with_attr(mut self, attr: AttributesMirror) -> Self {
+    pub const fn with_attr(mut self, attr: YHAttributes) -> Self {
         self.attr = attr;
         self
     }
@@ -58,7 +58,7 @@ impl Style {
     pub fn set_bg(&mut self, bg: RgbColour) {
         self.bg = Some(bg);
     }
-    pub fn set_attr(&mut self, attr: AttributesMirror) {
+    pub fn set_attr(&mut self, attr: YHAttributes) {
         self.attr = attr;
     }
 }
@@ -81,12 +81,12 @@ impl From<(RgbColour, RgbColour)> for Style {
         Self {
             fg: Some(fg),
             bg: Some(bg),
-            attr: AttributesMirror::new(),
+            attr: YHAttributes::new(),
         }
     }
 }
 
-//#[derive(Encode, Decode, Clone, Copy)]
+//#[derive(Clone, Copy)]
 //pub struct LetterStyle {
 //    pub ch:    char,
 //    pub style: Style,
@@ -96,7 +96,7 @@ impl From<(RgbColour, RgbColour)> for Style {
 //    pub fn new(ch: char, style: Style) -> Self { LetterStyle { ch, style } }
 //}
 
-#[derive(Encode, Decode, Debug, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Justification {
     Left,
     Centre,
@@ -127,8 +127,8 @@ impl Justification {
 }
 
 // mirroring the crossterm Attributes
-#[derive(Encode, Decode, Clone, Copy, PartialEq, Debug, Eq, Default)]
-pub struct AttributesMirror {
+#[derive(Clone, Copy, PartialEq, Debug, Eq, Default)]
+pub struct YHAttributes {
     pub bold: bool,
     pub faded: bool,
     pub italic: bool,
@@ -148,7 +148,7 @@ pub struct AttributesMirror {
     pub overlined: bool,
 }
 
-impl AttributesMirror {
+impl YHAttributes {
     pub const fn new() -> Self {
         Self {
             bold: false,
@@ -261,8 +261,8 @@ impl AttributesMirror {
     }
 }
 
-impl From<AttributesMirror> for Attributes {
-    fn from(attr: AttributesMirror) -> Self {
+impl From<YHAttributes> for Attributes {
+    fn from(attr: YHAttributes) -> Self {
         let mut att_out = Attributes::default();
         if attr.bold {
             att_out.set(Attribute::Bold);
@@ -319,14 +319,14 @@ impl From<AttributesMirror> for Attributes {
     }
 }
 
-impl From<Attribute> for AttributesMirror {
+impl From<Attribute> for YHAttributes {
     fn from(attr: Attribute) -> Self {
         let attrs = Attributes::from(attr);
         attrs.into()
     }
 }
 
-impl From<Attributes> for AttributesMirror {
+impl From<Attributes> for YHAttributes {
     fn from(attr: Attributes) -> Self {
         Self {
             bold: attr.has(Attribute::Bold),

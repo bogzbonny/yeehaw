@@ -29,7 +29,7 @@ impl Button {
 
     const STYLE: WBStyles = WBStyles {
         selected_style: Style::new()
-            .with_bg(RgbColour::YELLOW)
+            .with_bg(RgbColour::LIGHT_YELLOW2)
             .with_fg(RgbColour::BLACK),
         ready_style: Style::new()
             .with_bg(RgbColour::WHITE)

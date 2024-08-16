@@ -2,7 +2,7 @@ use {
     std::{cell::RefCell, rc::Rc},
     yeehaw::{
         debug,
-        widgets::{Button, Checkbox, Label, SclVal},
+        widgets::{megafonts, Button, Checkbox, Label, Megatext, RadioButtons, SclVal},
         Context, Cui, Error, EventResponse, SortingHat, WidgetPane,
     },
 };
@@ -48,6 +48,29 @@ async fn main() -> Result<(), Error> {
         .to_widgets()
         .with_label(&hat, &ctx, "check me2");
     el.add_widgets(&ctx, cb2);
+
+    let rbs = RadioButtons::new(
+        &hat,
+        &ctx,
+        vec![
+            "radio1".to_string(),
+            "radio2".to_string(),
+            "radio3".to_string(),
+        ],
+    )
+    .at(SclVal::new_frac(0.1), SclVal::new_frac(0.1).plus_fixed(10))
+    .to_widgets();
+    el.add_widgets(&ctx, rbs);
+
+    let mtext = Megatext::new(
+        &hat,
+        &ctx,
+        "HELLO, WERLD!".to_string(),
+        megafonts::ansi_regular_ex(),
+    )
+    .at(SclVal::new_frac(0.1), SclVal::new_frac(0.6))
+    .to_widgets();
+    el.add_widgets(&ctx, mtext);
 
     //let text = DrawChs2D::from_string("Hello, Werld!".to_string(), Style::default());
     //let el = StandardPane::new(&hat, StandardPane::KIND).with_content(text);

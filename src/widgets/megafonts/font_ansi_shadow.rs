@@ -1,6 +1,6 @@
 use {
-    super::FontInputGroup,
-    crate::{DrawChs2D, Style},
+    super::{FontInputGroup, Megafont},
+    crate::Style,
     std::collections::HashMap,
 };
 
@@ -13,7 +13,7 @@ use {
 // - bg character
 
 #[rustfmt::skip]
-pub fn ansi_shadow_ex() -> HashMap<char, DrawChs2D> {
+pub fn ansi_shadow_ex() -> Megafont {
     let mut font_input_group = vec![
     FontInputGroup{
         glyphs: vec![
@@ -88,9 +88,9 @@ pub fn ansi_shadow_ex() -> HashMap<char, DrawChs2D> {
         chars: r##"[]^_"##.chars().collect(),
     }
     ];
-    let mut out = HashMap::new();
+    let mut chs = HashMap::new();
     for ig in font_input_group.iter_mut() {
-        ig.add_glyphs_to_map(&mut out, Style::default());
+        ig.add_glyphs_to_map(&mut chs, Style::default());
     }
-    out
+    Megafont::new(chs)
 }

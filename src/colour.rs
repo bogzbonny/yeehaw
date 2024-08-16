@@ -1,9 +1,6 @@
-use {
-    bincode::{Decode, Encode},
-    rand::Rng,
-};
+use rand::Rng;
 
-#[derive(Encode, Decode, Copy, Clone, Default, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Default, Debug, PartialEq, Eq)]
 pub struct RgbColour {
     pub r: u8,
     pub g: u8,
@@ -58,11 +55,15 @@ impl RgbColour {
     pub const GREY9:         RgbColour = RgbColour::new(90, 90, 95);
     pub const GREY11:        RgbColour = RgbColour::new(110, 110, 115);
     pub const GREY13:        RgbColour = RgbColour::new(130, 130, 135);
+
     // TODO remove these colours only use the css ones
     pub const DIM_YELLOW:    RgbColour = RgbColour::new(200, 200, 100);
     pub const ORANGE2:       RgbColour = RgbColour::new(200, 100, 50);
     pub const YELLOW2:       RgbColour = RgbColour::new(220, 220, 0);
     pub const PALLID_BLUE:   RgbColour = RgbColour::new(90, 110, 190);
+
+    pub const LIGHT_YELLOW2:    RgbColour = RgbColour::new(255, 255, 200);
+
 
     // css named colours
     pub const MAROON:                  RgbColour = RgbColour::new(128, 0, 0);
@@ -384,7 +385,7 @@ impl From<RgbColour> for crossterm::style::Color {
 //}
 
 // used for zell custom colour additions
-#[derive(Copy, Clone, Encode, Decode)]
+#[derive(Copy, Clone)]
 pub struct Colouring {
     pub fg: Option<RgbColour>,
     pub bg: Option<RgbColour>,
@@ -396,7 +397,7 @@ pub struct Colouring {
 // [ norm  ] [ alt   ] [ norm  ] [ alt   ]
 // [ norm  ] [ norm  ] [ norm  ] [ norm  ]
 // [ norm  ] [ alt   ] [ norm  ] [ alt   ]
-#[derive(Encode, Decode, Copy, Clone, Default, Debug)]
+#[derive(Copy, Clone, Default, Debug)]
 pub struct ColourScheme {
     //          (fg       , bg       ),
     pub normal: (RgbColour, RgbColour),

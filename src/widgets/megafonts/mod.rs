@@ -8,31 +8,34 @@ use {
     std::collections::HashMap,
 };
 
+pub use font_ansi_reg::ansi_regular_ex;
+pub use font_ansi_shadow::ansi_shadow_ex;
+pub use font_pagga::pagga;
+pub use font_stick::stick;
+
 // Reference Material:
 // http://www.roysac.com/thedrawfonts-tdf.html
 // https://www.patorjk.com/software/taag/#p=display&f=Graffiti&t=Type%20Something%20
 // https://www.asciiart.eu/text-to-ascii-art
 
 // map the rune to the megafont glyph
-pub struct Megafont {
-    chs: HashMap<char, DrawChs2D>,
-    //height: u16, // height of the characters
-}
+pub struct Megafont(pub HashMap<char, DrawChs2D>);
 
 impl Megafont {
     pub fn new(chs: HashMap<char, DrawChs2D>) -> Self {
-        //let mut height = 0;
-        //if let Some(mega_ch) = chs.get(&'a') {
-        //    height = mega_ch.0.len();
-        //}
-        Megafont {
-            chs,
-            //height: height as u16,
-        }
+        Megafont(chs)
     }
 
     pub fn mega_ch(&self, r: char) -> DrawChs2D {
-        self.chs[&r].clone()
+        //debug_assert!(
+        //    self.0.contains_key(&r),
+        //    "character {} not found in megafont",
+        //    r
+        //);
+        if !self.0.contains_key(&r) {
+            return DrawChs2D::default();
+        }
+        self.0[&r].clone()
     }
 
     pub fn get_mega_text(&self, input: &str) -> DrawChs2D {

@@ -31,6 +31,6 @@ pub use {
     organizer::ElementOrganizer,
     prioritizer::Priority,
     sorting_hat::{ElementID, SortingHat},
-    style::{AttributesMirror, Style},
+    style::{YHAttributes, Style},
     widgets::WidgetPane,
 };

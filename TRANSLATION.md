@@ -72,15 +72,15 @@
       widget.go                          │ DONE
       widget__test.go                    │ DONE
       widget_button.go                   │ DONE
-      widget_checkbox.go                 │ 
+      widget_checkbox.go                 │ DONE
       widget_col_sel.go                  │ DONE (DELETED)
-      widget_dropdownlist.go             │
+      widget_dropdownlist.go             │  -> dependant on scrollbar
       widget_label.go                    │ DONE
-      widget_listbox.go                  │
-      widget_listbox_mono.go             │
-      widget_radio.go                    │
-      widget_scrollbar.go                │
-      widget_textbox.go                  │
-      widget_textbox_numbers.go          │
-      widget_title.go                    │
-      widget_toggle.go                   │
+      widget_listbox.go                  │  -> dependant on scrollbar + right click menu template
+      widget_listbox_mono.go             │  -> dependant on listbox
+      widget_radio.go                    │ DONE
+      widget_scrollbar.go                │ 
+      widget_textbox.go                  │  -> dependant on scrollbar + right click menu template
+      widget_textbox_numbers.go          │  -> dependant on textbox
+      widget_title.go                    │ DONE (megatext)
+      widget_toggle.go                   │  

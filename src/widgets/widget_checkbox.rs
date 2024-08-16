@@ -1,7 +1,7 @@
 use {
     super::{SclVal, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        AttributesMirror, Context, DrawChPos, Element, ElementID, Event, EventResponse,
+        YHAttributes, Context, DrawChPos, Element, ElementID, Event, EventResponse,
         Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SortingHat, Style,
         UpwardPropagator,
     },
@@ -28,17 +28,17 @@ impl Checkbox {
 
     const STYLE: WBStyles = WBStyles {
         selected_style: Style::new()
-            .with_bg(RgbColour::YELLOW)
+            .with_bg(RgbColour::LIGHT_YELLOW2)
             .with_fg(RgbColour::BLACK)
-            .with_attr(AttributesMirror::new().with_bold()),
+            .with_attr(YHAttributes::new().with_bold()),
         ready_style: Style::new()
             .with_bg(RgbColour::WHITE)
             .with_fg(RgbColour::BLACK)
-            .with_attr(AttributesMirror::new().with_bold()),
+            .with_attr(YHAttributes::new().with_bold()),
         unselectable_style: Style::new()
             .with_bg(RgbColour::GREY13)
             .with_fg(RgbColour::BLACK)
-            .with_attr(AttributesMirror::new().with_bold()),
+            .with_attr(YHAttributes::new().with_bold()),
     };
 
     pub fn default_receivable_events() -> Vec<Event> {

@@ -1,12 +1,12 @@
 use {
-    super::FontInputGroup,
-    crate::{DrawChs2D, Style},
+    super::{FontInputGroup, Megafont},
+    crate::Style,
     std::collections::HashMap,
 };
 
 // This font is down and grimey!
 // no special characters, just letters and numbers you can type on the keyboard!
-// watch out world!
+// watch chs world!
 //
 // Credit: original author of Stick Letters Joan Stark.
 // This version has been modified by bogz.
@@ -16,7 +16,7 @@ use {
 // - background colour
 
 #[rustfmt::skip]
-pub fn stick() -> HashMap<char, DrawChs2D> {
+pub fn stick() -> Megafont {
     let mut font_input_group = vec![
     FontInputGroup{
         glyphs: vec![
@@ -64,9 +64,9 @@ pub fn stick() -> HashMap<char, DrawChs2D> {
         chars: r##"[\]^_`{|}~"##.chars().collect(),
     }
     ];
-    let mut out = HashMap::new();
+    let mut chs = HashMap::new();
     for ig in font_input_group.iter_mut() {
-        ig.add_glyphs_to_map(&mut out, Style::default());
+        ig.add_glyphs_to_map(&mut chs, Style::default());
     }
-    out
+    Megafont::new(chs)
 }
