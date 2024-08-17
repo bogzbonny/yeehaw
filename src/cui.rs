@@ -1,7 +1,7 @@
 use {
     crate::{
         element::ReceivableEventChanges, keyboard::Keyboard, Context, Element, ElementID,
-        ElementOrganizer, Error, Event, Location, LocationSet, UpwardPropagator,
+        ElementOrganizer, Error, Event, Location, LocationSet, Style, UpwardPropagator,
     },
     crossterm::{
         cursor,
@@ -14,6 +14,7 @@ use {
         terminal,
     },
     futures::{future::FutureExt, StreamExt},
+    std::collections::HashMap,
     std::io::{stdout, Write},
     std::{cell::RefCell, rc::Rc},
     tokio::time::{self, Duration},
@@ -29,6 +30,10 @@ pub struct Cui {
     eo: Rc<RefCell<ElementOrganizer>>,
     main_el_id: ElementID,
     kb: Keyboard,
+
+    // last flushed internal screen, used to determine what needs to be flushed next
+    //                            y  , x
+    pub sc_last_flushed: HashMap<(u16, u16), (char, Style)>,
 }
 
 impl Cui {
@@ -38,6 +43,7 @@ impl Cui {
             eo: eo.clone(),
             main_el_id: main_el.borrow().id().clone(),
             kb: Keyboard::default(),
+            sc_last_flushed: HashMap::new(),
         };
 
         // add the element here after the location has been created
@@ -179,34 +185,28 @@ impl Cui {
         let mut sc = stdout();
         let chs = self.eo.borrow().all_drawing();
 
-        //let chs2 = chs.clone();
-        //let mut non_transp = 0;
-        //let mut non_space = 0;
-
+        let mut do_flush = false;
         for c in chs {
             if c.ch.transparent {
                 // TODO see ISSUE 2206-1000
-            } else {
+            } else if self.is_ch_style_at_position_dirty(c.x, c.y, c.ch.ch, c.ch.style) {
                 let st = StyledContent::new((c.ch.style).into(), &c.ch.ch);
                 queue!(&mut sc, MoveTo(c.x, c.y), style::PrintStyledContent(st)).unwrap();
-                //non_transp += 1;
-
-                //if c.ch.ch.is_ascii_lowercase() {
-                //    non_space += 1;
-                //}
+                self.sc_last_flushed
+                    .insert((c.y, c.x), (c.ch.ch, c.ch.style));
+                do_flush = true;
             }
         }
+        if do_flush {
+            sc.flush().unwrap();
+        }
+    }
 
-        //let t = format!(
-        //    "chs len: {}, non_transp: {}, non_space: {}",
-        //    chs2.len(),
-        //    non_transp,
-        //    non_space
-        //);
-        //use crossterm::style::ContentStyle;
-        //let st = StyledContent::new(ContentStyle::default(), t);
-        //queue!(&mut sc, cursor::MoveTo(0, 0), style::PrintStyledContent(st),).unwrap();
-        sc.flush().unwrap();
+    pub fn is_ch_style_at_position_dirty(&self, x: u16, y: u16, ch: char, sty: Style) -> bool {
+        let Some((existing_ch, existing_sty)) = self.sc_last_flushed.get(&(y, x)) else {
+            return true;
+        };
+        !(*existing_ch == ch && *existing_sty == sty)
     }
 }
 
