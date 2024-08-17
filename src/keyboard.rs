@@ -209,6 +209,7 @@ impl Keyboard {
     pub const KEY_BACKSLASH: KeyEvent = KeyEvent::new(KeyCode::Char('\\'), KeyModifiers::NONE);
     pub const KEY_TAB: KeyEvent = KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE);
     pub const KEY_BACKTAB: KeyEvent = KeyEvent::new(KeyCode::BackTab, KeyModifiers::SHIFT);
+    pub const KEY_SPACE: KeyEvent = KeyEvent::new(KeyCode::Char(' '), KeyModifiers::NONE);
 
     pub const KEY_PLUS: KeyEvent = KeyEvent::new(KeyCode::Char('+'), KeyModifiers::NONE);
     pub const KEY_UNDERSCORE: KeyEvent = KeyEvent::new(KeyCode::Char('_'), KeyModifiers::NONE);

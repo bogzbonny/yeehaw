@@ -1,130 +1,199 @@
-/*
-package widgets
-
-import (
-	"math"
-
-	"github.com/gdamore/tcell/v2"
-	yh "keybase.io/nwmod/nwmod/yeehaw"
-)
+use {
+    super::{SclVal, Selectability, WBStyles, Widget, WidgetBase, Widgets},
+    crate::{
+        Context, DrawChPos, Element, ElementID, Event, EventResponse, Keyboard as KB, Priority,
+        ReceivableEventChanges, RgbColour, SortingHat, Style, UpwardPropagator, YHAttributes,
+    },
+    crossterm::event::{MouseButton, MouseEventKind},
+    std::ops::{Deref, DerefMut},
+    std::{cell::RefCell, rc::Rc},
+};
 
 // TODO Better handling of dragging if the mouse leaves the scrollbar
 // location but is still dragging
 
+// NOTE the code in this file is structured in a "zipper" fashion between vertical and horizontal
+// scrollbar, although this increases the line count (extra impl lines everywhere) it is useful for
+// ensuring that the two scrollbars have consistent code, as similar code is always grouped together.
+
 // up is backwards, down is forwards
-type VerticalScrollbar struct {
-	Scrollbar
-}
+pub struct VerticalScrollbar(Scrollbar);
 
 // left is backwards, right is forwards
-type HorizontalScrollbar struct {
-	Scrollbar
+pub struct HorizontalScrollbar(Scrollbar);
+
+impl Deref for VerticalScrollbar {
+    type Target = Scrollbar;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
-// Scrollbar Positions
-type ScrollbarOption string
-
-const (
-	NoScrollbar     ScrollbarOption = ""
-	LeftScrollbar   ScrollbarOption = "left"
-	RightScrollbar  ScrollbarOption = "right"
-	TopScrollbar    ScrollbarOption = "top"
-	BottomScrollbar ScrollbarOption = "bottom"
-)
-
-var VScrollbarEvCombos = []yh.PrioritizableEv{yh.UpEKC, yh.DownEKC, yh.SpaceEKC}
-var HScrollbarEvCombos = []yh.PrioritizableEv{yh.LeftEKC, yh.RightEKC}
-
-var ScrollbarStyle = WBStyles{
-	SelectedStyle:     tcell.StyleDefault.Background(tcell.ColorLightYellow).Foreground(tcell.ColorBlack),
-	ReadyStyle:        tcell.StyleDefault.Background(tcell.ColorDarkSlateGrey).Foreground(tcell.ColorWhite),
-	UnselectableStyle: tcell.StyleDefault.Background(tcell.ColorDarkSlateGrey).Foreground(tcell.ColorWhite),
+impl DerefMut for VerticalScrollbar {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
 }
 
-func NewVerticalScrollbar(pCtx yh.Context, scrollableViewHeight SclVal, scrollableHeight int) *VerticalScrollbar {
-	wb := NewWidgetBase(pCtx, NewStatic(1), scrollableViewHeight, ScrollbarStyle, VScrollbarEvCombos)
-	return &VerticalScrollbar{
-		Scrollbar{
-			WidgetBase:          wb,
-			ScrollableDomainChs: scrollableHeight,
-			ScrollableViewChs:   scrollableViewHeight,
-			ScrollbarLengthChs:  scrollableViewHeight,
-			ScrollablePosition:  0,
-			HasArrows:           true,
-			BackwardsArrow:      '▲',
-			ForwardsArrow:       '▼',
-			EmptyBlock:          ' ',
-			FullBlock:           '█',
-			ForwardsHalfBlock:   '▄',
-			BackwardsHalfBlock:  '▀',
-			Unnessecary:         '░',
-			PositionChangedHook: nil,
-			CurrentlyDragging:   false,
-			StartDragPosition:   0,
-			JumpScrollPercent:   10,
-			JumpScrollMinAmount: 3,
-		},
-	}
+impl Deref for HorizontalScrollbar {
+    type Target = Scrollbar;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
-func NewHorizontalScrollbar(pCtx yh.Context, scrollableViewWidth SclVal, scrollableWidth int) *HorizontalScrollbar {
-	wb := NewWidgetBase(pCtx, scrollableViewWidth, NewStatic(1), ScrollbarStyle, HScrollbarEvCombos)
-	return &HorizontalScrollbar{
-		Scrollbar{
-			WidgetBase:          wb,
-			ScrollableDomainChs: scrollableWidth,
-			ScrollableViewChs:   scrollableViewWidth,
-			ScrollbarLengthChs:  scrollableViewWidth,
-			ScrollablePosition:  0,
-			HasArrows:           true,
-			BackwardsArrow:      '◀',
-			ForwardsArrow:       '▶',
-			EmptyBlock:          ' ',
-			FullBlock:           '█',
-			ForwardsHalfBlock:   '▐',
-			BackwardsHalfBlock:  '▌',
-			Unnessecary:         '░',
-			PositionChangedHook: nil,
-			CurrentlyDragging:   false,
-			StartDragPosition:   0,
-			JumpScrollPercent:   10,
-			JumpScrollMinAmount: 3,
-		},
-	}
+impl DerefMut for HorizontalScrollbar {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
 }
 
-func (sb *VerticalScrollbar) SetHeight(viewHeight, scrollbarLength SclVal, scrollableHeight int) {
-	sb.ScrollableViewChs = viewHeight
-	sb.WidgetBase.Height = scrollbarLength
-	sb.ScrollbarLengthChs = scrollbarLength
-	sb.ScrollableDomainChs = scrollableHeight
+pub enum ScrollbarPositions {
+    NoScrollbar,
+    LeftScrollbar,
+    RightScrollbar,
+    TopScrollbar,
+    BottomScrollbar,
 }
 
-func (sb *HorizontalScrollbar) SetWidth(viewWidth, scrollbarLength SclVal, scrollableWidth int) {
-	sb.ScrollableViewChs = viewWidth
-	sb.WidgetBase.Width = scrollbarLength
-	sb.ScrollbarLengthChs = scrollbarLength
-	sb.ScrollableDomainChs = scrollableWidth
+impl VerticalScrollbar {
+    const KIND: &'static str = "widget_vertical_scrollbar";
+    pub fn default_receivable_events() -> Vec<Event> {
+        vec![KB::KEY_UP.into(), KB::KEY_DOWN.into(), KB::KEY_SPACE.into()]
+    }
+    pub fn new(
+        hat: &SortingHat, ctx: &Context, scrollable_view_height: SclVal, scrollable_height: usize,
+    ) -> Self {
+        let wb = WidgetBase::new(
+            hat,
+            Self::KIND,
+            ctx.clone(),
+            SclVal::new_fixed(1),
+            scrollable_view_height.clone(),
+            Scrollbar::STYLE,
+            Self::default_receivable_events(),
+        );
+        VerticalScrollbar(Scrollbar {
+            base: wb,
+            scrollable_domain_chs: Rc::new(RefCell::new(scrollable_height)),
+            scrollable_view_chs: Rc::new(RefCell::new(scrollable_view_height.clone())),
+            scrollbar_length_chs: Rc::new(RefCell::new(scrollable_view_height)),
+            scrollable_position: Rc::new(RefCell::new(0)),
+            has_arrows: Rc::new(RefCell::new(true)),
+            backwards_arrow: Rc::new(RefCell::new('▲')),
+            forwards_arrow: Rc::new(RefCell::new('▼')),
+            empty_block: Rc::new(RefCell::new(' ')),
+            full_block: Rc::new(RefCell::new('█')),
+            forwards_half_block: Rc::new(RefCell::new('▄')),
+            backwards_half_block: Rc::new(RefCell::new('▀')),
+            unnessecary: Rc::new(RefCell::new('░')),
+            position_changed_hook: Rc::new(RefCell::new(None)),
+            currently_dragging: Rc::new(RefCell::new(false)),
+            start_drag_position: Rc::new(RefCell::new(0)),
+            jump_scroll_percent: Rc::new(RefCell::new(10)),
+            jump_scroll_min_amount: Rc::new(RefCell::new(3)),
+        })
+    }
+
+    pub fn set_height(
+        &self, view_height: SclVal, scrollbar_length: SclVal, scrollable_height: usize,
+    ) {
+        *self.scrollable_view_chs.borrow_mut() = view_height;
+        self.base.set_attr_scl_height(scrollbar_length.clone());
+        *self.scrollbar_length_chs.borrow_mut() = scrollbar_length;
+        *self.scrollable_domain_chs.borrow_mut() = scrollable_height;
+    }
+
+    // ----------------------------------------------
+    // decorators
+
+    pub fn with_styles(self, styles: WBStyles) -> Self {
+        self.base.set_styles(styles);
+        self
+    }
+
+    pub fn at(mut self, loc_x: SclVal, loc_y: SclVal) -> Self {
+        self.base.at(loc_x, loc_y);
+        self
+    }
+
+    pub fn to_widgets(self) -> Widgets {
+        Widgets(vec![Box::new(self)])
+    }
+
+    pub fn without_arrows(self) -> Self {
+        *self.has_arrows.borrow_mut() = false;
+        self
+    }
 }
 
-func (sb *VerticalScrollbar) WithStyle(sty WBStyles) *VerticalScrollbar {
-	sb.WidgetBase.Styles = sty
-	return sb
-}
+impl HorizontalScrollbar {
+    const KIND: &'static str = "widget_horizontal_scrollbar";
+    pub fn default_receivable_events() -> Vec<Event> {
+        vec![KB::KEY_LEFT.into(), KB::KEY_RIGHT.into()]
+    }
+    pub fn new(
+        hat: &SortingHat, ctx: &Context, scrollable_view_width: SclVal, scrollable_width: usize,
+    ) -> Self {
+        let wb = WidgetBase::new(
+            hat,
+            Self::KIND,
+            ctx.clone(),
+            scrollable_view_width.clone(),
+            SclVal::new_fixed(1),
+            Scrollbar::STYLE,
+            Self::default_receivable_events(),
+        );
+        HorizontalScrollbar(Scrollbar {
+            base: wb,
+            scrollable_domain_chs: Rc::new(RefCell::new(scrollable_width)),
+            scrollable_view_chs: Rc::new(RefCell::new(scrollable_view_width.clone())),
+            scrollbar_length_chs: Rc::new(RefCell::new(scrollable_view_width)),
+            scrollable_position: Rc::new(RefCell::new(0)),
+            has_arrows: Rc::new(RefCell::new(true)),
+            backwards_arrow: Rc::new(RefCell::new('◀')),
+            forwards_arrow: Rc::new(RefCell::new('▶')),
+            empty_block: Rc::new(RefCell::new(' ')),
+            full_block: Rc::new(RefCell::new('█')),
+            forwards_half_block: Rc::new(RefCell::new('▐')),
+            backwards_half_block: Rc::new(RefCell::new('▌')),
+            unnessecary: Rc::new(RefCell::new('░')),
+            position_changed_hook: Rc::new(RefCell::new(None)),
+            currently_dragging: Rc::new(RefCell::new(false)),
+            start_drag_position: Rc::new(RefCell::new(0)),
+            jump_scroll_percent: Rc::new(RefCell::new(10)),
+            jump_scroll_min_amount: Rc::new(RefCell::new(3)),
+        })
+    }
 
-func (sb *HorizontalScrollbar) WithStyle(sty WBStyles) *HorizontalScrollbar {
-	sb.WidgetBase.Styles = sty
-	return sb
-}
+    pub fn set_width(&self, view_width: SclVal, scrollbar_length: SclVal, scrollable_width: usize) {
+        *self.scrollable_view_chs.borrow_mut() = view_width;
+        self.base.set_attr_scl_width(scrollbar_length.clone());
+        *self.scrollbar_length_chs.borrow_mut() = scrollbar_length;
+        *self.scrollable_domain_chs.borrow_mut() = scrollable_width;
+    }
 
-func (sb *VerticalScrollbar) WithoutArrows() *VerticalScrollbar {
-	sb.HasArrows = false
-	return sb
-}
+    // ----------------------------------------------
+    // decorators
 
-func (sb *HorizontalScrollbar) WithoutArrows() *HorizontalScrollbar {
-	sb.HasArrows = false
-	return sb
+    pub fn with_styles(self, styles: WBStyles) -> Self {
+        self.base.set_styles(styles);
+        self
+    }
+
+    pub fn at(mut self, loc_x: SclVal, loc_y: SclVal) -> Self {
+        self.base.at(loc_x, loc_y);
+        self
+    }
+
+    pub fn to_widgets(self) -> Widgets {
+        Widgets(vec![Box::new(self)])
+    }
+
+    pub fn without_arrows(self) -> Self {
+        *self.has_arrows.borrow_mut() = false;
+        self
+    }
 }
 
 // ------------------------------------------------------------------
@@ -139,667 +208,764 @@ func (sb *HorizontalScrollbar) WithoutArrows() *HorizontalScrollbar {
 // For horizontal scrollbars:
 //   - "backwards" should be thought of as "left" and
 //   - "forwards" should be thought of as "right".
-type Scrollbar struct {
-	*WidgetBase
+#[derive(Clone)]
+pub struct Scrollbar {
+    pub base: WidgetBase,
 
-	// The ScrollableDomainChs is the scrollable dimension in true characters.
-	// It is AFFECTED by the scrollbar and NOT the literal area of the scrollbar
-	// itself.
-	ScrollableDomainChs int // how large the area is that can be scrolled
+    // The ScrollableDomainChs is the scrollable dimension in true characters.
+    // It is AFFECTED by the scrollbar and NOT the literal area of the scrollbar
+    // itself.
+    pub scrollable_domain_chs: Rc<RefCell<usize>>, // how large the area is that can be scrolled
 
-	// how much of the scrollable area is visible in true chars.
-	ScrollableViewChs SclVal
+    // how much of the scrollable area is visible in true chars.
+    pub scrollable_view_chs: Rc<RefCell<SclVal>>,
 
-	// Length of the actual scrollbar (and arrows) in true characters.
-	// Typically this is the same as ScrollableViewChs, however some situations
-	// call for a different size scrollbar than the scrollable view, such as the
-	// dropdown menu with a scrollbar below the dropdown-arrow.
-	ScrollbarLengthChs SclVal
+    // Length of the actual scrollbar (and arrows) in true characters.
+    // Typically this is the same as ScrollableViewChs, however some situations
+    // call for a different size scrollbar than the scrollable view, such as the
+    // dropdown menu with a scrollbar below the dropdown-arrow.
+    pub scrollbar_length_chs: Rc<RefCell<SclVal>>,
 
-	// how far down the area is scrolled from the top in true chars.
-	// The ScrollablePosition will be the first line of the area scrolled to.
-	ScrollablePosition int
+    // how far down the area is scrolled from the top in true chars.
+    // The ScrollablePosition will be the first line of the area scrolled to.
+    pub scrollable_position: Rc<RefCell<usize>>,
 
-	HasArrows bool // if the scrollbar has arrows
+    pub has_arrows: Rc<RefCell<bool>>, // if the scrollbar has arrows
 
-	BackwardsArrow     rune
-	ForwardsArrow      rune
-	EmptyBlock         rune
-	FullBlock          rune
-	ForwardsHalfBlock  rune
-	BackwardsHalfBlock rune
-	Unnessecary        rune // for when the scrollbar ought not to exist
+    pub backwards_arrow: Rc<RefCell<char>>,
+    pub forwards_arrow: Rc<RefCell<char>>,
+    pub empty_block: Rc<RefCell<char>>,
+    pub full_block: Rc<RefCell<char>>,
+    pub forwards_half_block: Rc<RefCell<char>>,
+    pub backwards_half_block: Rc<RefCell<char>>,
+    pub unnessecary: Rc<RefCell<char>>, // for when the scrollbar ought not to exist
 
-	// function the scrollbar will call everytime there is a position change
-	PositionChangedHook func(newPosition int)
+    // function the scrollbar will call everytime there is a position change
+    pub position_changed_hook: Rc<RefCell<Option<Rc<RefCell<dyn FnMut(usize)>>>>>,
 
-	// is the scrollbar currently being dragged?
-	CurrentlyDragging bool
-	StartDragPosition int // in true characters
+    // is the scrollbar currently being dragged?
+    pub currently_dragging: Rc<RefCell<bool>>,
+    pub start_drag_position: Rc<RefCell<usize>>, // in true characters
 
-	// The percent (0-100) of the total scrollable domain
-	// to scroll when a click in the scrollbar whitespace is made.
-	JumpScrollPercent int
+    // The percent (0-100) of the total scrollable domain
+    // to scroll when a click in the scrollbar whitespace is made.
+    pub jump_scroll_percent: Rc<RefCell<usize>>,
 
-	// minimum amount to scroll during a jump scroll
-	JumpScrollMinAmount int
+    // minimum amount to scroll during a jump scroll
+    pub jump_scroll_min_amount: Rc<RefCell<usize>>,
 }
 
-// if the Scrollbar currently cannot be used due to insufficient domain.
-func (sb *Scrollbar) IsCurrentlyUnnecessary(pSize int) bool {
-	return sb.ScrollableDomainChs <= sb.ScrollableViewChs.GetVal(pSize)
+pub enum SBRelPosition {
+    None,
+    Before,
+    On,
+    After,
 }
 
-func (sb *Scrollbar) JumpScrollAmount() int {
-	js := sb.ScrollableDomainChs * sb.JumpScrollPercent / 100
-	if js < sb.JumpScrollMinAmount {
-		js = sb.JumpScrollMinAmount
-	}
-	return js
-}
+impl Scrollbar {
+    const STYLE: WBStyles = WBStyles {
+        //
+        selected_style: Style::new()
+            .with_bg(RgbColour::LIGHT_YELLOW2)
+            .with_fg(RgbColour::BLACK),
+        ready_style: Style::new()
+            .with_bg(RgbColour::GREY13)
+            .with_fg(RgbColour::WHITE),
+        unselectable_style: Style::new()
+            .with_bg(RgbColour::GREY13)
+            .with_fg(RgbColour::WHITE),
+    };
 
-func (sb *Scrollbar) JumpScrollBackwards(pSize int) {
-	sb.ScrollToPosition(pSize, sb.ScrollablePosition-sb.JumpScrollAmount())
-}
+    // if the Scrollbar currently cannot be used due to insufficient domain.
+    pub fn is_currently_unnecessary(&self, p_size: usize) -> bool {
+        *self.scrollable_domain_chs.borrow() <= self.scrollable_view_chs.borrow().get_val(p_size)
+    }
 
-func (sb *Scrollbar) JumpScrollForwards(pSize int) {
-	sb.ScrollToPosition(pSize, sb.ScrollablePosition+sb.JumpScrollAmount())
-}
+    pub fn jump_scroll_amount(&self) -> usize {
+        let js = *self.scrollable_domain_chs.borrow() * *self.jump_scroll_percent.borrow() / 100;
+        if js < *self.jump_scroll_min_amount.borrow() {
+            *self.jump_scroll_min_amount.borrow()
+        } else {
+            js
+        }
+    }
 
-func (sb *Scrollbar) CanScrollBackwards() bool {
-	return sb.ScrollablePosition > 0
-}
+    // scroll to the position within the scrollable domain.
+    pub fn scroll_to_position(&self, p_size: usize, mut position: usize) {
+        let sc_dom_len = *self.scrollable_domain_chs.borrow();
+        let sc_view_len = self.scrollable_view_chs.borrow().get_val(p_size);
+        if position > sc_dom_len - sc_view_len {
+            position = sc_dom_len - sc_view_len
+        }
+        *self.scrollable_position.borrow_mut() = position;
+        if let Some(hook) = self.position_changed_hook.borrow().as_ref() {
+            hook.borrow_mut()(position);
+        }
+    }
 
-func (sb *Scrollbar) ScrollBackwards() {
-	if !sb.CanScrollBackwards() {
-		return
-	}
-	sb.ScrollablePosition--
-	if sb.PositionChangedHook != nil {
-		sb.PositionChangedHook(sb.ScrollablePosition)
-	}
-}
+    pub fn jump_scroll_backwards(&self, p_size: usize) {
+        self.scroll_to_position(
+            p_size,
+            *self.scrollable_position.borrow() - self.jump_scroll_amount(),
+        );
+    }
 
-func (sb *Scrollbar) CanScrollForwards(pSize int) bool {
-	return sb.ScrollablePosition < sb.ScrollableDomainChs-sb.ScrollableViewChs.GetVal(pSize)
-}
+    pub fn jump_scroll_forwards(&self, p_size: usize) {
+        self.scroll_to_position(
+            p_size,
+            *self.scrollable_position.borrow() + self.jump_scroll_amount(),
+        );
+    }
 
-func (sb *Scrollbar) ScrollForwards(pSize int) {
-	if !sb.CanScrollForwards(pSize) {
-		return
-	}
-	sb.ScrollablePosition++
-	if sb.PositionChangedHook != nil {
-		sb.PositionChangedHook(sb.ScrollablePosition)
-	}
-}
+    pub fn can_scroll_backwards(&self) -> bool {
+        *self.scrollable_position.borrow() > 0
+    }
 
-// scroll to the position within the scrollable domain.
-func (sb *Scrollbar) ScrollToPosition(pSize, position int) {
-	if position < 0 {
-		position = 0
-	}
-	if position > sb.ScrollableDomainChs-sb.ScrollableViewChs.GetVal(pSize) {
-		position = sb.ScrollableDomainChs - sb.ScrollableViewChs.GetVal(pSize)
-	}
-	sb.ScrollablePosition = position
-	if sb.PositionChangedHook != nil {
-		sb.PositionChangedHook(sb.ScrollablePosition)
-	}
-}
+    pub fn scroll_backwards(&self) {
+        if !self.can_scroll_backwards() {
+            return;
+        }
+        *self.scrollable_position.borrow_mut() -= 1;
+        if let Some(hook) = self.position_changed_hook.borrow().as_ref() {
+            hook.borrow_mut()(*self.scrollable_position.borrow());
+        }
+    }
 
-// the scrollbar domain is the total space which the scroll bar may occupy (both
-// the bar and the empty space above and below it) measured in half-increments.
-// Each half-increment represents half a character, as the scrollbar may use
-// half characters to represent its position.
-func (sb *Scrollbar) ScrollBarDomainInHalfIncrements(pSize int) int {
-	// minus 2 for the backwards and forwards arrows
-	arrows := 2
-	if !sb.HasArrows {
-		arrows = 0
-	}
-	// times 2 for half characters
-	//return 2 * (sb.ScrollableViewChs - arrows)
-	out := 2 * (sb.ScrollbarLengthChs.GetVal(pSize) - arrows)
-	if out < 0 {
-		return 0
-	}
-	return out
-}
+    pub fn can_scroll_forwards(&self, p_size: usize) -> bool {
+        *self.scrollable_position.borrow()
+            < *self.scrollable_domain_chs.borrow()
+                - self.scrollable_view_chs.borrow().get_val(p_size)
+    }
 
-func (sb *Scrollbar) ScrollBarSizeInHalfIncrements(pSize int) int {
-	domainIncr := sb.ScrollBarDomainInHalfIncrements(pSize)
-	percentViewable := float64(sb.ScrollableViewChs.GetVal(pSize)) / float64(sb.ScrollableDomainChs)
-	// scrollbar size in half increments
-	scrollbarIncr := int(math.Round(
-		percentViewable * float64(domainIncr),
-	))
-	if scrollbarIncr < 1 { // minimum size of 1 half-increment
-		scrollbarIncr = 1
-	}
-	if scrollbarIncr > domainIncr { // safeguard
-		scrollbarIncr = domainIncr
-	}
-	return scrollbarIncr
-}
+    pub fn scroll_forwards(&self, p_size: usize) {
+        if !self.can_scroll_forwards(p_size) {
+            return;
+        }
+        *self.scrollable_position.borrow_mut() += 1;
+        if let Some(hook) = self.position_changed_hook.borrow().as_ref() {
+            hook.borrow_mut()(*self.scrollable_position.borrow());
+        }
+    }
 
-// the number of true view characters per full scrollbar character (aka 2
-// half-increments)
-func (sb *Scrollbar) TrueChsPerScrollbarCharacter(pSize int) int {
-	scrollbarIncr := sb.ScrollBarSizeInHalfIncrements(pSize)
-	return int(float64(sb.ScrollbarLengthChs.GetVal(pSize)) / (float64(scrollbarIncr) / 2))
-	//return sb.ScrollableDomainChs / (scrollbarIncr / 2)
-}
+    // the scrollbar domain is the total space which the scroll bar may occupy (both
+    // the bar and the empty space above and below it) measured in half-increments.
+    // Each half-increment represents half a character, as the scrollbar may use
+    // half characters to represent its position.
+    pub fn scrollbar_domain_in_half_increments(&self, p_size: usize) -> usize {
+        // minus 2 for the backwards and forwards arrows
+        let arrows = if *self.has_arrows.borrow() { 2 } else { 0 };
+        let sc_len_chs = self.scrollbar_length_chs.borrow().get_val(p_size);
+        // times 2 for half characters
+        2 * (sc_len_chs.saturating_sub(arrows))
+    }
 
-func (sb *Scrollbar) SetSelectability(s Selectability) yh.EventResponse {
-	sb.CurrentlyDragging = false
-	return sb.WidgetBase.SetSelectability(s)
-}
+    pub fn scroll_bar_size_in_half_increments(&self, p_size: usize) -> usize {
+        let domain_incr = self.scrollbar_domain_in_half_increments(p_size);
+        let percent_viewable = (self.scrollable_view_chs.borrow().get_val(p_size) as f64)
+            / (*self.scrollable_domain_chs.borrow() as f64);
 
-// Get an array of half-increments of the scrollbar domain area
-func (sb *Scrollbar) ScrollBarDomainArrayOfHalfIncrements(pSize int) (incrementIsFilled []bool) {
-	domainIncr := sb.ScrollBarDomainInHalfIncrements(pSize)
-	scrollbarIncr := sb.ScrollBarSizeInHalfIncrements(pSize)
+        // scrollbar size in half increments
+        let mut scrollbar_incr = (percent_viewable * domain_incr as f64).round() as usize;
 
-	// total increments within the scrollbar domain for space above and below the bar
-	totalSpacerIncr := domainIncr - scrollbarIncr
+        // minimum size of 1 half-increment
+        if scrollbar_incr < 1 {
+            scrollbar_incr = 1;
+        }
 
-	trueChsAbove := sb.ScrollablePosition
-	incrAbove := int(math.Round(
-		float64(trueChsAbove) /
-			float64(sb.ScrollableDomainChs-sb.ScrollableViewChs.GetVal(pSize)) * float64(totalSpacerIncr),
-	))
+        // safeguard
+        if scrollbar_incr > domain_incr {
+            scrollbar_incr = domain_incr;
+        }
 
-	// correct incase the rounding gives an extra increment
-	if incrAbove+scrollbarIncr > domainIncr {
-		incrAbove = domainIncr - scrollbarIncr
-	}
+        scrollbar_incr
+    }
 
-	// -----------------------------------------------
-	// determine whether each increment is a filled.
-	if domainIncr <= 0 {
-		//yh.Debug("----------------------------\n")
-		//yh.Debug("incrAbove: %v, scrollbarIncr: %v, domainIncr: %v\n", incrAbove, scrollbarIncr, domainIncr)
-		//yh.Debug("totalSpacerIncr: %v, trueChsAbove: %v, sb.ScrollableDomainChs: %v\n", totalSpacerIncr, trueChsAbove, sb.ScrollableDomainChs)
-		//yh.Debug("pSize: %v, sb.ScrollableViewChs.GetVal(pSize)): %v\n", pSize, sb.ScrollableViewChs.GetVal(pSize))
-		return []bool{}
-	}
-	incrFilled := make([]bool, domainIncr)
-	for i := incrAbove; i < incrAbove+scrollbarIncr; i++ {
-		incrFilled[i] = true
-	}
-	return incrFilled
-}
+    // the number of true view characters per full scrollbar character (aka 2
+    // half-increments)
+    pub fn true_chs_per_scrollbar_character(&self, p_size: usize) -> usize {
+        let scrollbar_incr = self.scroll_bar_size_in_half_increments(p_size);
+        (self.scrollbar_length_chs.borrow().get_val(p_size) as f64 / (scrollbar_incr as f64 / 2.0))
+            as usize
+    }
 
-func lastIncrFilled(incrFilled []bool) int {
-	for i := len(incrFilled) - 1; i >= 0; i-- {
-		if incrFilled[i] {
-			return i
-		}
-	}
-	return -1
-}
+    pub fn set_selectability(&self, s: Selectability) -> EventResponse {
+        *self.currently_dragging.borrow_mut() = false;
+        self.base.set_selectability(s)
+    }
 
-func firstIncrFilled(incrFilled []bool) int {
-	for i := 0; i < len(incrFilled); i++ {
-		if incrFilled[i] {
-			return i
-		}
-	}
-	return -1
-}
+    // Get an array of half-increments of the scrollbar domain area
+    fn scroll_bar_domain_array_of_half_increments(&self, p_size: usize) -> Vec<bool> {
+        //domainIncr := sb.ScrollBarDomainInHalfIncrements(pSize)
+        //scrollbarIncr := sb.ScrollBarSizeInHalfIncrements(pSize)
+        let domain_incr = self.scrollbar_domain_in_half_increments(p_size);
+        let scrollbar_incr = self.scroll_bar_size_in_half_increments(p_size);
 
-// used for mouse dragging the scrollbar. What the incrementIsFilled should look
-// like if it dragged down by one rune (aka 2 half increments)
-func (sb *Scrollbar) DragForwardsBy1Ch(pSize int) {
-	yh.Debug("dragging forwards by 1 ch\n")
-	startIncrs := sb.ScrollBarDomainArrayOfHalfIncrements(pSize)
-	yh.Debug("startIncrs: %v\n", startIncrs)
-	lastFilled := lastIncrFilled(startIncrs)
-	yh.Debug("lastFilled: %v\n", lastFilled)
-	if lastFilled == -1 {
-		return
-	}
-	goalLastFilled := lastFilled + 2
-	if goalLastFilled >= len(startIncrs) {
-		goalLastFilled = len(startIncrs) - 1
-	}
-	yh.Debug("goalLastFilled: %v\n", goalLastFilled)
+        // total increments within the scrollbar domain for space above and below the bar
+        //totalSpacerIncr := domainIncr - scrollbarIncr
+        let total_spacer_incr = domain_incr.saturating_sub(scrollbar_incr);
 
-	for {
-		// safegaurd against infinite loop
-		if !sb.CanScrollForwards(pSize) {
-			break
-		}
-		sb.ScrollForwards(pSize)
-		currentIncr := sb.ScrollBarDomainArrayOfHalfIncrements(pSize)
-		currLastFilled := lastIncrFilled(currentIncr)
-		if currLastFilled == goalLastFilled {
-			break
-		}
-	}
-}
+        //trueChsAbove := sb.ScrollablePosition
+        let true_chs_above = *self.scrollable_position.borrow();
 
-// Same as DragForwardsBy1Ch but in the backwards direction
-func (sb *Scrollbar) DragBackwardsBy1Ch(pSize int) {
-	startIncrs := sb.ScrollBarDomainArrayOfHalfIncrements(pSize)
-	firstFilled := firstIncrFilled(startIncrs)
-	if firstFilled == -1 {
-		return
-	}
-	goalFirstFilled := firstFilled - 2
-	if goalFirstFilled < 0 {
-		goalFirstFilled = 0
-	}
+        //incrAbove := int(math.Round(
+        //    float64(trueChsAbove) /
+        //        float64(sb.ScrollableDomainChs-sb.ScrollableViewChs.GetVal(pSize)) * float64(totalSpacerIncr),
+        //))
+        let sc_dom_chs = *self.scrollable_domain_chs.borrow();
+        let sc_view_chs = self.scrollable_view_chs.borrow().get_val(p_size);
+        let diff = sc_dom_chs.saturating_sub(sc_view_chs) as f64;
+        let incr_above = (true_chs_above as f64 / diff) * total_spacer_incr as f64;
+        let mut incr_above = incr_above.round() as usize;
 
-	for {
-		// safegaurd against infinite loop
-		if !sb.CanScrollBackwards() {
-			break
-		}
-		sb.ScrollBackwards()
-		currentIncr := sb.ScrollBarDomainArrayOfHalfIncrements(pSize)
-		currFirstFilled := firstIncrFilled(currentIncr)
-		if currFirstFilled == goalFirstFilled {
-			break
-		}
-	}
-}
+        // correct incase the rounding gives an extra increment
+        if incr_above + scrollbar_incr > domain_incr {
+            incr_above = domain_incr.saturating_sub(scrollbar_incr);
+        }
 
-func (sb *Scrollbar) ScrollBarDomainArrayOfRunes(pSize int) []rune {
-	incrFilled := sb.ScrollBarDomainArrayOfHalfIncrements(pSize)
-	rs := []rune{}
-	// determine the characters based on the filled increments
-	for i := range incrFilled {
-		if i%2 == 1 {
-			switch {
-			case incrFilled[i-1] && incrFilled[i]:
-				rs = append(rs, sb.FullBlock)
-			case incrFilled[i-1] && !incrFilled[i]:
-				rs = append(rs, sb.BackwardsHalfBlock)
-			case !incrFilled[i-1] && incrFilled[i]:
-				rs = append(rs, sb.ForwardsHalfBlock)
-			case !incrFilled[i-1] && !incrFilled[i]:
-				rs = append(rs, sb.EmptyBlock)
-			}
-		}
-	}
-	return rs
+        // -----------------------------------------------
+        // determine whether each increment is a filled.
+        if domain_incr == 0 {
+            //debug!("----------------------------\n")
+            //debug!("incrAbove: %v, scrollbarIncr: %v, domainIncr: %v\n", incrAbove, scrollbarIncr, domainIncr)
+            //debug!("totalSpacerIncr: %v, trueChsAbove: %v, sb.ScrollableDomainChs: %v\n", totalSpacerIncr, trueChsAbove, sb.ScrollableDomainChs)
+            //debug!("pSize: %v, sb.ScrollableViewChs.GetVal(pSize)): %v\n", pSize, sb.ScrollableViewChs.GetVal(pSize))
+            return vec![];
+        }
 
-}
+        let mut incr_filled = vec![false; domain_incr];
+        for i in incr_above..incr_above + scrollbar_incr {
+            incr_filled[i] = true;
+        }
+        incr_filled
+    }
 
-func (sb *Scrollbar) DrawingRunes(pSize int) (chs []rune) {
-	if sb.IsCurrentlyUnnecessary(pSize) {
-		for i := 0; i < sb.ScrollbarLengthChs.GetVal(pSize); i++ {
-			chs = append(chs, sb.Unnessecary)
-		}
-	} else {
-		if sb.HasArrows {
-			chs = []rune{sb.BackwardsArrow}
-		}
-		chs = append(chs, sb.ScrollBarDomainArrayOfRunes(pSize)...)
-		if sb.HasArrows {
-			chs = append(chs, sb.ForwardsArrow)
-		}
-	}
-	return chs
-}
+    fn last_incr_filled(incr_filled: &[bool]) -> Option<usize> {
+        for i in (0..incr_filled.len()).rev() {
+            if incr_filled[i] {
+                return Some(i);
+            }
+        }
+        None
+    }
 
-// Call this when the position has been changed external to the scrollbar
-// newViewOffset is the new position of the view in full characters
-// newViewDomain is the number of full characters of the full scrollable domain
-func (sb *Scrollbar) ExternalChange(pSize, newViewOffset, newDomainChs int) {
-	sb.ScrollablePosition = newViewOffset
-	sb.ScrollableDomainChs = newDomainChs
-	sb.UpdateSelectibility(pSize)
-}
+    fn first_incr_filled(incr_filled: &[bool]) -> Option<usize> {
+        for i in 0..incr_filled.len() {
+            if incr_filled[i] {
+                return Some(i);
+            }
+        }
+        None
+    }
 
-// process for the selectibility of the scrollbar
-func (sb *Scrollbar) UpdateSelectibility(pSize int) {
-	if sb.IsCurrentlyUnnecessary(pSize) {
-		sb.CurrentlyDragging = false
-		_ = sb.SetSelectability(Unselectable)
-	} else {
-		_ = sb.SetSelectability(Ready)
-	}
-}
+    // used for mouse dragging the scrollbar. What the incrementIsFilled should look
+    // like if it dragged down by one rune (aka 2 half increments)
+    pub fn drag_forwards_by_1_ch(&self, p_size: usize) {
+        let start_incrs = self.scroll_bar_domain_array_of_half_increments(p_size);
+        let last_filled = Self::last_incr_filled(&start_incrs);
+        let Some(last_filled) = last_filled else {
+            return;
+        };
+        let mut goal_last_filled = last_filled + 2;
+        if goal_last_filled >= start_incrs.len() {
+            goal_last_filled = start_incrs.len() - 1;
+        }
+        loop {
+            // safegaurd against infinite loop
+            if !self.can_scroll_forwards(p_size) {
+                return;
+            }
+            self.scroll_forwards(p_size);
+            let current_incr = self.scroll_bar_domain_array_of_half_increments(p_size);
+            let curr_last_filled = Self::last_incr_filled(&current_incr);
+            if curr_last_filled == Some(goal_last_filled) {
+                return;
+            }
+        }
+    }
 
-type sbRelPosition byte
+    // Same as DragForwardsBy1Ch but in the backwards direction
+    pub fn drag_backwards_by_1_ch(&self, p_size: usize) {
+        let start_incrs = self.scroll_bar_domain_array_of_half_increments(p_size);
+        let first_filled = Self::first_incr_filled(&start_incrs);
+        let Some(first_filled) = first_filled else {
+            return;
+        };
+        let mut goal_first_filled = first_filled - 2;
+        if goal_first_filled < 0 {
+            goal_first_filled = 0;
+        }
+        loop {
+            // safegaurd against infinite loop
+            if !self.can_scroll_backwards() {
+                return;
+            }
+            self.scroll_backwards();
+            let current_incr = self.scroll_bar_domain_array_of_half_increments(p_size);
+            let curr_first_filled = Self::first_incr_filled(&current_incr);
+            if curr_first_filled == Some(goal_first_filled) {
+                return;
+            }
+        }
+    }
 
-const (
-	none   sbRelPosition = 0x00
-	before sbRelPosition = 0x01
-	on     sbRelPosition = 0x02
-	after  sbRelPosition = 0x03
-)
+    pub fn scrollbar_domain_array_of_runes(&self, p_size: usize) -> Vec<char> {
+        let incr_filled = self.scroll_bar_domain_array_of_half_increments(p_size);
+        let mut rs = vec![];
+        // determine the characters based on the filled increments
+        for i in 0..incr_filled.len() {
+            if i % 2 == 1 {
+                match (incr_filled[i - 1], incr_filled[i]) {
+                    (true, true) => rs.push(*self.full_block.borrow()),
+                    (true, false) => rs.push(*self.backwards_half_block.borrow()),
+                    (false, true) => rs.push(*self.forwards_half_block.borrow()),
+                    (false, false) => rs.push(*self.empty_block.borrow()),
+                }
+            }
+        }
+        rs
+    }
 
-// is the provided position before, on, or after the scrollbar?
-func (sb *Scrollbar) PositionRelativeToScrollbar(pSize, pos int) sbRelPosition {
-	lastScrollbarPos := sb.ScrollbarLengthChs.GetVal(pSize) - 1 // last pos the actual scrollbar may be in
-	if sb.HasArrows {
-		if pos == 0 || pos == sb.ScrollbarLengthChs.GetVal(pSize)-1 {
-			return none
-		}
-		pos -= 1                                                   // account for the backwards arrow
-		lastScrollbarPos = sb.ScrollbarLengthChs.GetVal(pSize) - 3 // account for the both arrow
-	}
+    pub fn drawing_runes(&self, p_size: usize) -> Vec<char> {
+        let mut chs = vec![];
+        if self.is_currently_unnecessary(p_size) {
+            for _ in 0..self.scrollbar_length_chs.borrow().get_val(p_size) {
+                chs.push(*self.unnessecary.borrow());
+            }
+        } else {
+            if *self.has_arrows.borrow() {
+                chs.push(*self.backwards_arrow.borrow());
+            }
+            chs.append(&mut self.scrollbar_domain_array_of_runes(p_size));
+            if *self.has_arrows.borrow() {
+                chs.push(*self.forwards_arrow.borrow());
+            }
+        }
+        chs
+    }
 
-	rs := sb.ScrollBarDomainArrayOfRunes(pSize)
-	if pos >= len(rs) {
-		return after
-	}
+    // Call this when the position has been changed external to the scrollbar
+    // new_view_offset is the new position of the view in full characters
+    // new_view_domain is the number of full characters of the full scrollable domain
+    pub fn external_change(&self, p_size: usize, new_view_offset: usize, new_domain_chs: usize) {
+        *self.scrollable_position.borrow_mut() = new_view_offset;
+        *self.scrollable_domain_chs.borrow_mut() = new_domain_chs;
+        self.update_selectibility(p_size);
+    }
 
-	firstFull, lastFull := -1, -1
-	backwardsHalfPos, forwardsHalfPos := -1, -1
-	for i, r := range rs {
-		if r == sb.FullBlock {
-			if firstFull == -1 {
-				firstFull = i
-			}
-			lastFull = i
-		}
-		if r == sb.BackwardsHalfBlock {
-			backwardsHalfPos = i
-		}
-		if r == sb.ForwardsHalfBlock {
-			forwardsHalfPos = i
-		}
-	}
+    // process for the selectibility of the scrollbar
+    pub fn update_selectibility(&self, p_size: usize) {
+        if self.is_currently_unnecessary(p_size) {
+            *self.currently_dragging.borrow_mut() = false;
+            let _ = self.set_selectability(Selectability::Unselectable);
+        } else {
+            let _ = self.set_selectability(Selectability::Ready);
+        }
+    }
 
-	// edge cases for when very near the end
-	if pos == 0 && forwardsHalfPos == 0 {
-		return before
-	}
-	if pos == lastScrollbarPos && backwardsHalfPos == lastScrollbarPos {
-		return after
-	}
+    // is the provided position before, on, or after the scrollbar?
+    pub fn position_relative_to_scrollbar(&self, p_size: usize, mut pos: usize) -> SBRelPosition {
+        // last pos the actual scrollbar may be in
+        let mut last_scrollbar_pos = self.scrollbar_length_chs.borrow().get_val(p_size) - 1;
 
-	if firstFull == -1 {
-		switch {
-		case backwardsHalfPos == pos || forwardsHalfPos == pos:
-			return on
-		case pos < forwardsHalfPos || pos < backwardsHalfPos:
-			return before
-		case pos > forwardsHalfPos || pos > backwardsHalfPos:
-			return after
-		default:
-			return none
-		}
-	}
+        if *self.has_arrows.borrow() {
+            let sc_len_chs = self.scrollbar_length_chs.borrow().get_val(p_size);
+            if pos == 0 || pos == sc_len_chs - 1 {
+                return SBRelPosition::None;
+            }
+            pos -= 1; // account for the backwards arrow
+            last_scrollbar_pos = sc_len_chs - 3; // account for the forwards arrow
+        }
 
-	switch {
-	case pos < firstFull:
-		return before
-	case pos > lastFull:
-		return after
-	default:
-		return on
-	}
+        let rs = self.scrollbar_domain_array_of_runes(p_size);
+        if pos >= rs.len() {
+            return SBRelPosition::After;
+        }
+
+        let mut first_full: Option<usize> = None;
+        let mut last_full = 0;
+        let mut backwards_half_pos = 0;
+        let mut forwards_half_pos = 0;
+        for (i, r) in rs.iter().enumerate() {
+            if *r == *self.full_block.borrow() {
+                if first_full.is_none() {
+                    first_full = Some(i);
+                }
+                last_full = i;
+            }
+            if *r == *self.backwards_half_block.borrow() {
+                backwards_half_pos = i;
+            }
+            if *r == *self.forwards_half_block.borrow() {
+                forwards_half_pos = i;
+            }
+        }
+
+        // edge cases for when very near the end
+        if pos == 0 && forwards_half_pos == 0 {
+            return SBRelPosition::Before;
+        }
+        if pos == last_scrollbar_pos && backwards_half_pos == last_scrollbar_pos {
+            return SBRelPosition::After;
+        }
+
+        match first_full {
+            None => match pos {
+                _ if backwards_half_pos == pos || forwards_half_pos == pos => SBRelPosition::On,
+                _ if pos < forwards_half_pos || pos < backwards_half_pos => SBRelPosition::Before,
+                _ if pos > forwards_half_pos || pos > backwards_half_pos => SBRelPosition::After,
+                _ => SBRelPosition::None,
+            },
+            Some(first_full) => match pos {
+                _ if pos < first_full => SBRelPosition::Before,
+                _ if pos > last_full => SBRelPosition::After,
+                _ => SBRelPosition::On,
+            },
+        }
+    }
 }
 
 // -------------------------------------------------------------------
 // Specific implementations for the vertical and horizontal scrollbars
 
-func (vsb *VerticalScrollbar) ExternalChange(newViewOffset, newDomainChs int) {
-	vsb.ScrollablePosition = newViewOffset
-	vsb.ScrollableDomainChs = newDomainChs
-	ctx := vsb.WidgetBase.GetParentCtx()
-	vsb.UpdateSelectibility(ctx.GetHeight())
+impl VerticalScrollbar {
+    pub fn external_change(&self, new_view_offset: usize, new_domain_chs: usize) {
+        *self.scrollable_position.borrow_mut() = new_view_offset;
+        *self.scrollable_domain_chs.borrow_mut() = new_domain_chs;
+        self.update_selectibility(self.base.get_last_ctx().get_height().into());
+    }
+}
+impl HorizontalScrollbar {
+    pub fn external_change(&self, new_view_offset: usize, new_domain_chs: usize) {
+        *self.scrollable_position.borrow_mut() = new_view_offset;
+        *self.scrollable_domain_chs.borrow_mut() = new_domain_chs;
+        self.update_selectibility(self.base.get_last_ctx().get_width().into());
+    }
 }
 
-func (hsb *HorizontalScrollbar) ExternalChange(newViewOffset, newDomainChs int) {
-	hsb.ScrollablePosition = newViewOffset
-	hsb.ScrollableDomainChs = newDomainChs
-	ctx := hsb.WidgetBase.GetParentCtx()
-	hsb.UpdateSelectibility(ctx.GetWidth())
+impl VerticalScrollbar {
+    pub fn resize_event(&self, ctx: &Context) {
+        self.update_selectibility(ctx.get_height().into());
+    }
+}
+impl HorizontalScrollbar {
+    pub fn resize_event(&self, ctx: &Context) {
+        self.update_selectibility(ctx.get_width().into());
+    }
 }
 
-func (vsb *VerticalScrollbar) ResizeEvent(pCtx yh.Context) {
-	vsb.UpdateSelectibility(pCtx.GetHeight())
-	vsb.WidgetBase.ResizeEvent(pCtx)
+impl VerticalScrollbar {
+    pub fn drawing_(&self, ctx: &Context) -> Vec<DrawChPos> {
+        let chs = self.drawing_runes(ctx.get_height().into());
+
+        // compile the runes into a vertical string
+        let mut v_str = String::new();
+        for (i, ch) in chs.iter().enumerate() {
+            v_str.push(*ch);
+            if i != chs.len() - 1 {
+                v_str.push('\n');
+            }
+        }
+        self.base.set_content_from_string(&v_str);
+        self.base.drawing(ctx)
+    }
+}
+impl HorizontalScrollbar {
+    pub fn drawing_(&self, ctx: &Context) -> Vec<DrawChPos> {
+        let h_str = self
+            .drawing_runes(ctx.get_width().into())
+            .iter()
+            .collect::<String>();
+        self.base.set_content_from_string(&h_str);
+        self.base.drawing(ctx)
+    }
 }
 
-func (hsb *HorizontalScrollbar) ResizeEvent(pCtx yh.Context) {
-	hsb.UpdateSelectibility(pCtx.GetWidth())
-	hsb.WidgetBase.ResizeEvent(pCtx)
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+impl VerticalScrollbar {
+    pub fn receive_key_event(&self, ev: Vec<KeyPossibility>) -> (bool, EventResponse) {
+        if self.selectedness() != Selectability::Selected {
+            return (false, EventResponse::new());
+        }
+
+        for k in ev {
+            match k {
+                KeyPossibility::Up => {
+                    self.scroll_backwards();
+                    return (true, EventResponse::new());
+                }
+                KeyPossibility::Down => {
+                    self.scroll_forwards(self.base.get_last_ctx().get_height().into());
+                    return (true, EventResponse::new());
+                }
+                KeyPossibility::Space => {
+                    self.jump_scroll_forwards(self.base.get_last_ctx().get_height().into());
+                    return (true, EventResponse::new());
+                }
+            }
+        }
+        (false, EventResponse::new())
+    }
 }
 
-func (vsb *VerticalScrollbar) Drawing() []yh.DrawChPos {
-	ctx := vsb.WidgetBase.GetParentCtx()
-	chs := vsb.DrawingRunes(ctx.GetHeight())
-
-	// compile the runes into a horizontal string
-	str := ""
-	for i, ch := range chs {
-		str += string(ch)
-		if i != len(chs)-1 {
-			str += "\n"
-		}
-	}
-
-	vsb.SetContentFromString(str)
-	return vsb.WidgetBase.Drawing()
-}
-func (hsb *HorizontalScrollbar) Drawing() []yh.DrawChPos {
-	ctx := hsb.WidgetBase.GetParentCtx()
-	str := string(hsb.DrawingRunes(ctx.GetWidth()))
-	hsb.SetContentFromString(str)
-	return hsb.WidgetBase.Drawing()
-}
-
-func (vsb *VerticalScrollbar) ToWidgets() Widgets {
-	return Widgets{vsb}
-}
-
-func (hsb *HorizontalScrollbar) ToWidgets() Widgets {
-	return Widgets{hsb}
-}
-
+/*
 func (vsb *VerticalScrollbar) ReceiveKeyEventCombo(evs []*tcell.EventKey) (captured bool, resp yh.EventResponse) {
-	ctx := vsb.GetParentCtx()
-	if vsb.Selectedness != Selected {
-		return false, yh.NewEventResponse()
-	}
+    ctx := vsb.GetParentCtx()
+    if vsb.Selectedness != Selected {
+        return false, yh.NewEventResponse()
+    }
 
-	switch {
-	case yh.UpEKC.Matches(evs):
-		vsb.ScrollBackwards()
-		return true, yh.NewEventResponse()
-	case yh.DownEKC.Matches(evs):
-		vsb.ScrollForwards(ctx.GetHeight())
-		return true, yh.NewEventResponse()
-	case yh.SpaceEKC.Matches(evs):
-		vsb.JumpScrollForwards(ctx.GetHeight())
-		return true, yh.NewEventResponse()
+    switch {
+    case yh.UpEKC.Matches(evs):
+        vsb.ScrollBackwards()
+        return true, yh.NewEventResponse()
+    case yh.DownEKC.Matches(evs):
+        vsb.ScrollForwards(ctx.GetHeight())
+        return true, yh.NewEventResponse()
+    case yh.SpaceEKC.Matches(evs):
+        vsb.JumpScrollForwards(ctx.GetHeight())
+        return true, yh.NewEventResponse()
 
-	}
-	return false, yh.NewEventResponse()
+    }
+    return false, yh.NewEventResponse()
 }
 
 func (hsb *HorizontalScrollbar) ReceiveKeyEventCombo(evs []*tcell.EventKey) (captured bool, resp yh.EventResponse) {
-	ctx := hsb.GetParentCtx()
-	if hsb.Selectedness != Selected {
-		return false, yh.NewEventResponse()
-	}
+    ctx := hsb.GetParentCtx()
+    if hsb.Selectedness != Selected {
+        return false, yh.NewEventResponse()
+    }
 
-	switch {
-	case yh.LeftEKC.Matches(evs):
-		hsb.ScrollBackwards()
-		return true, yh.NewEventResponse()
-	case yh.RightEKC.Matches(evs):
-		hsb.ScrollForwards(ctx.GetWidth())
-		return true, yh.NewEventResponse()
-	}
-	return false, yh.NewEventResponse()
+    switch {
+    case yh.LeftEKC.Matches(evs):
+        hsb.ScrollBackwards()
+        return true, yh.NewEventResponse()
+    case yh.RightEKC.Matches(evs):
+        hsb.ScrollForwards(ctx.GetWidth())
+        return true, yh.NewEventResponse()
+    }
+    return false, yh.NewEventResponse()
 }
 
 func (vsb *VerticalScrollbar) ReceiveMouseEvent(ev *tcell.EventMouse) (captured bool, resp yh.EventResponse) {
-	yh.Debug("VerticalScrollbar received mouse event: %v\n", ev)
-	if vsb.Selectedness == Unselectable {
-		return false, yh.NewEventResponse()
-	}
+    yh.Debug("VerticalScrollbar received mouse event: %v\n", ev)
+    if vsb.Selectedness == Unselectable {
+        return false, yh.NewEventResponse()
+    }
 
-	ctx := vsb.GetParentCtx()
-	h := ctx.GetHeight()
+    ctx := vsb.GetParentCtx()
+    h := ctx.GetHeight()
 
-	if ev.Buttons() == tcell.WheelDown {
-		vsb.ScrollForwards(h)
-		return true, yh.NewEventResponse()
-	}
+    if ev.Buttons() == tcell.WheelDown {
+        vsb.ScrollForwards(h)
+        return true, yh.NewEventResponse()
+    }
 
-	if ev.Buttons() == tcell.WheelUp {
-		vsb.ScrollBackwards()
-		return true, yh.NewEventResponse()
-	}
+    if ev.Buttons() == tcell.WheelUp {
+        vsb.ScrollBackwards()
+        return true, yh.NewEventResponse()
+    }
 
-	if ev.Buttons() == tcell.Button1 { //left click
-		_, y := ev.Position()
+    if ev.Buttons() == tcell.Button1 { //left click
+        _, y := ev.Position()
 
-		if vsb.CurrentlyDragging {
-			if y == vsb.StartDragPosition {
-				return false, yh.NewEventResponse()
-			}
+        if vsb.CurrentlyDragging {
+            if y == vsb.StartDragPosition {
+                return false, yh.NewEventResponse()
+            }
 
-			// only allow dragging if the scrollbar is 1 away from the last
-			// drag position
-			if !(y == vsb.StartDragPosition-1 || y == vsb.StartDragPosition+1) {
-				vsb.CurrentlyDragging = false
-				return vsb.ReceiveMouseEvent(ev)
-			}
+            // only allow dragging if the scrollbar is 1 away from the last
+            // drag position
+            if !(y == vsb.StartDragPosition-1 || y == vsb.StartDragPosition+1) {
+                vsb.CurrentlyDragging = false
+                return vsb.ReceiveMouseEvent(ev)
+            }
 
-			// consider dragging on the arrow keys to be a drag ONLY if the
-			// mouse is already a single character away from each
-			// otherwise, cancel the drag and perform a single scroll
-			if vsb.HasArrows {
-				if y == 0 && vsb.StartDragPosition != 1 {
-					vsb.CurrentlyDragging = false
-					vsb.ScrollBackwards()
-					return true, yh.NewEventResponse()
-				} else if y == vsb.ScrollbarLengthChs.GetVal(h)-1 &&
-					vsb.StartDragPosition != vsb.ScrollbarLengthChs.GetVal(h)-2 {
+            // consider dragging on the arrow keys to be a drag ONLY if the
+            // mouse is already a single character away from each
+            // otherwise, cancel the drag and perform a single scroll
+            if vsb.HasArrows {
+                if y == 0 && vsb.StartDragPosition != 1 {
+                    vsb.CurrentlyDragging = false
+                    vsb.ScrollBackwards()
+                    return true, yh.NewEventResponse()
+                } else if y == vsb.ScrollbarLengthChs.GetVal(h)-1 &&
+                    vsb.StartDragPosition != vsb.ScrollbarLengthChs.GetVal(h)-2 {
 
-					vsb.CurrentlyDragging = false
-					vsb.ScrollForwards(h)
-					return true, yh.NewEventResponse()
-				}
-			}
+                    vsb.CurrentlyDragging = false
+                    vsb.ScrollForwards(h)
+                    return true, yh.NewEventResponse()
+                }
+            }
 
-			change := y - vsb.StartDragPosition
-			if change > 0 {
-				vsb.DragForwardsBy1Ch(h)
-			} else if change < 0 {
-				vsb.DragBackwardsBy1Ch(h)
-			}
+            change := y - vsb.StartDragPosition
+            if change > 0 {
+                vsb.DragForwardsBy1Ch(h)
+            } else if change < 0 {
+                vsb.DragBackwardsBy1Ch(h)
+            }
 
-			vsb.StartDragPosition = y
-		} else {
-			switch {
-			case vsb.HasArrows && y == 0:
-				vsb.ScrollBackwards()
-				vsb.CurrentlyDragging = false
-			case vsb.HasArrows && y == vsb.ScrollbarLengthChs.GetVal(h)-1:
-				vsb.ScrollForwards(h)
-				vsb.CurrentlyDragging = false
-			default:
-				rel := vsb.PositionRelativeToScrollbar(h, y)
-				switch rel {
-				case before:
-					vsb.JumpScrollBackwards(h)
-					vsb.CurrentlyDragging = false
-				case after:
-					vsb.JumpScrollForwards(h)
-					vsb.CurrentlyDragging = false
-				case on:
-					vsb.CurrentlyDragging = true
-					vsb.StartDragPosition = y
-				}
-			}
-		}
+            vsb.StartDragPosition = y
+        } else {
+            switch {
+            case vsb.HasArrows && y == 0:
+                vsb.ScrollBackwards()
+                vsb.CurrentlyDragging = false
+            case vsb.HasArrows && y == vsb.ScrollbarLengthChs.GetVal(h)-1:
+                vsb.ScrollForwards(h)
+                vsb.CurrentlyDragging = false
+            default:
+                rel := vsb.PositionRelativeToScrollbar(h, y)
+                switch rel {
+                case before:
+                    vsb.JumpScrollBackwards(h)
+                    vsb.CurrentlyDragging = false
+                case after:
+                    vsb.JumpScrollForwards(h)
+                    vsb.CurrentlyDragging = false
+                case on:
+                    vsb.CurrentlyDragging = true
+                    vsb.StartDragPosition = y
+                }
+            }
+        }
 
-	} else {
-		vsb.CurrentlyDragging = false
-	}
-	return true, yh.NewEventResponse()
+    } else {
+        vsb.CurrentlyDragging = false
+    }
+    return true, yh.NewEventResponse()
 }
 
 func (hsb *HorizontalScrollbar) ReceiveMouseEvent(ev *tcell.EventMouse) (captured bool, resp yh.EventResponse) {
-	if hsb.Selectedness == Unselectable {
-		return false, yh.NewEventResponse()
-	}
+    if hsb.Selectedness == Unselectable {
+        return false, yh.NewEventResponse()
+    }
 
-	ctx := hsb.GetParentCtx()
-	w := ctx.GetWidth()
+    ctx := hsb.GetParentCtx()
+    w := ctx.GetWidth()
 
-	if ev.Buttons() == tcell.WheelLeft || ev.Buttons() == tcell.WheelUp {
-		hsb.ScrollForwards(w)
-		return true, yh.NewEventResponse()
-	}
+    if ev.Buttons() == tcell.WheelLeft || ev.Buttons() == tcell.WheelUp {
+        hsb.ScrollForwards(w)
+        return true, yh.NewEventResponse()
+    }
 
-	if ev.Buttons() == tcell.WheelRight || ev.Buttons() == tcell.WheelDown {
-		hsb.ScrollBackwards()
-		return true, yh.NewEventResponse()
-	}
+    if ev.Buttons() == tcell.WheelRight || ev.Buttons() == tcell.WheelDown {
+        hsb.ScrollBackwards()
+        return true, yh.NewEventResponse()
+    }
 
-	if ev.Buttons() == tcell.Button1 { //left click
-		x, _ := ev.Position()
+    if ev.Buttons() == tcell.Button1 { //left click
+        x, _ := ev.Position()
 
-		if hsb.CurrentlyDragging {
-			if x != hsb.StartDragPosition {
+        if hsb.CurrentlyDragging {
+            if x != hsb.StartDragPosition {
 
-				// consider dragging on the arrow keys to be a drag ONLY if the
-				// mouse is already a single character away from each
-				// otherwise, cancel the drag and perform a single scroll
-				if hsb.HasArrows {
-					if x == 0 && hsb.StartDragPosition != 1 {
-						hsb.CurrentlyDragging = false
-						hsb.ScrollBackwards()
-						return true, yh.NewEventResponse()
-					} else if x == hsb.ScrollbarLengthChs.GetVal(w)-1 &&
-						hsb.StartDragPosition != hsb.ScrollbarLengthChs.GetVal(w)-2 {
+                // consider dragging on the arrow keys to be a drag ONLY if the
+                // mouse is already a single character away from each
+                // otherwise, cancel the drag and perform a single scroll
+                if hsb.HasArrows {
+                    if x == 0 && hsb.StartDragPosition != 1 {
+                        hsb.CurrentlyDragging = false
+                        hsb.ScrollBackwards()
+                        return true, yh.NewEventResponse()
+                    } else if x == hsb.ScrollbarLengthChs.GetVal(w)-1 &&
+                        hsb.StartDragPosition != hsb.ScrollbarLengthChs.GetVal(w)-2 {
 
-						hsb.CurrentlyDragging = false
-						hsb.ScrollForwards(w)
-						return true, yh.NewEventResponse()
-					}
-				}
+                        hsb.CurrentlyDragging = false
+                        hsb.ScrollForwards(w)
+                        return true, yh.NewEventResponse()
+                    }
+                }
 
-				change := x - hsb.StartDragPosition
-				if change > 0 {
-					hsb.DragForwardsBy1Ch(w)
-				} else if change < 0 {
-					hsb.DragBackwardsBy1Ch(w)
-				}
-				//newPosition := hsb.ScrollablePosition + (change * hsb.TrueChsPerScrollbarCharacter())
-				//hsb.ScrollToPosition(newPosition)
-			}
-			hsb.StartDragPosition = x
-		} else {
-			switch {
-			case hsb.HasArrows && x == 0:
-				hsb.ScrollBackwards()
-				hsb.CurrentlyDragging = false
-			case hsb.HasArrows && x == hsb.ScrollbarLengthChs.GetVal(w)-1:
-				hsb.ScrollForwards(w)
-				hsb.CurrentlyDragging = false
-			default:
-				rel := hsb.PositionRelativeToScrollbar(w, x)
-				switch rel {
-				case before:
-					hsb.JumpScrollBackwards(w)
-					hsb.CurrentlyDragging = false
-				case after:
-					hsb.JumpScrollForwards(w)
-					hsb.CurrentlyDragging = false
-				case on:
-					hsb.CurrentlyDragging = true
-					hsb.StartDragPosition = x
-				}
-			}
-		}
+                change := x - hsb.StartDragPosition
+                if change > 0 {
+                    hsb.DragForwardsBy1Ch(w)
+                } else if change < 0 {
+                    hsb.DragBackwardsBy1Ch(w)
+                }
+                //newPosition := hsb.ScrollablePosition + (change * hsb.TrueChsPerScrollbarCharacter())
+                //hsb.ScrollToPosition(newPosition)
+            }
+            hsb.StartDragPosition = x
+        } else {
+            switch {
+            case hsb.HasArrows && x == 0:
+                hsb.ScrollBackwards()
+                hsb.CurrentlyDragging = false
+            case hsb.HasArrows && x == hsb.ScrollbarLengthChs.GetVal(w)-1:
+                hsb.ScrollForwards(w)
+                hsb.CurrentlyDragging = false
+            default:
+                rel := hsb.PositionRelativeToScrollbar(w, x)
+                switch rel {
+                case before:
+                    hsb.JumpScrollBackwards(w)
+                    hsb.CurrentlyDragging = false
+                case after:
+                    hsb.JumpScrollForwards(w)
+                    hsb.CurrentlyDragging = false
+                case on:
+                    hsb.CurrentlyDragging = true
+                    hsb.StartDragPosition = x
+                }
+            }
+        }
 
-	} else {
-		hsb.CurrentlyDragging = false
-	}
-	return true, yh.NewEventResponse()
+    } else {
+        hsb.CurrentlyDragging = false
+    }
+    return true, yh.NewEventResponse()
 }
 */
+
+impl Widget for Scrollbar {}
+
+impl Element for Scrollbar {
+    fn kind(&self) -> &'static str {
+        self.base.kind()
+    }
+    fn id(&self) -> ElementID {
+        self.base.id()
+    }
+    fn receivable(&self) -> Vec<(Event, Priority)> {
+        self.base.receivable()
+    }
+
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponse) {
+        let _ = self.base.receive_event(ctx, ev.clone());
+        match ev {
+            Event::KeyCombo(ke) => {
+                if self.base.get_selectability() != Selectability::Selected || ke.is_empty() {
+                    return (false, EventResponse::default());
+                }
+                if ke[0].matches(&KB::KEY_ENTER) {
+                    return (true, self.click());
+                }
+            }
+            Event::Mouse(me) => {
+                if let MouseEventKind::Up(MouseButton::Left) = me.kind {
+                    return (true, self.click());
+                }
+            }
+            _ => {}
+        }
+        (false, EventResponse::default())
+    }
+
+    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
+        self.base.change_priority(ctx, p)
+    }
+    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        // need to re set the content in order to reflect active style
+        self.base.set_content_from_string(&self.text());
+        self.base.drawing(ctx)
+    }
+    fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
+        self.base.get_attribute(key)
+    }
+    fn set_attribute(&self, key: &str, value: Vec<u8>) {
+        self.base.set_attribute(key, value)
+    }
+    fn set_upward_propagator(&self, up: Rc<RefCell<dyn UpwardPropagator>>) {
+        self.base.set_upward_propagator(up)
+    }
+}
