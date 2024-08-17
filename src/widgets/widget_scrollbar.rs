@@ -765,8 +765,8 @@ impl VerticalScrollbar {
                         return (true, EventResponse::default());
                     }
                     let sb_len_chs = self.scrollbar_length_chs.borrow().get_val(h.into());
-                    if y == sb_len_chs
-                        ..saturating_sub(1) && start_drag_pos != sb_len_chs.saturating_sub(2)
+                    if y == sb_len_chs.saturating_sub(1)
+                        && start_drag_pos != sb_len_chs.saturating_sub(2)
                     {
                         *self.currently_dragging.borrow_mut() = false;
                         self.scroll_forwards(h.into());
@@ -794,8 +794,12 @@ impl VerticalScrollbar {
                         self.scroll_backwards();
                         *self.currently_dragging.borrow_mut() = false;
                     }
-                    _ if has_arrows && y == self.scrollbar_length_chs.borrow().get_val(h.into())
-                        ..saturating_sub(1) =>
+                    _ if has_arrows
+                        && y == self
+                            .scrollbar_length_chs
+                            .borrow()
+                            .get_val(h.into())
+                            .saturating_sub(1) =>
                     {
                         self.scroll_forwards(h.into());
                         *self.currently_dragging.borrow_mut() = false;

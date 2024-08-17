@@ -21,7 +21,8 @@ pub struct Button {
     pub text: Rc<RefCell<String>>,
     pub sides: Rc<RefCell<(char, char)>>, // left right
     // function which executes when button moves from pressed -> unpressed
-    pub clicked_fn: Rc<RefCell<dyn FnMut() -> EventResponse>>,
+    #[allow(clippy::type_complexity)]
+    pub clicked_fn: Rc<RefCell<dyn FnMut(Context) -> EventResponse>>,
 }
 
 impl Button {
@@ -50,7 +51,7 @@ impl Button {
 
     pub fn new(
         hat: &SortingHat, ctx: &Context, text: String,
-        clicked_fn: Box<dyn FnMut() -> EventResponse>,
+        clicked_fn: Box<dyn FnMut(Context) -> EventResponse>,
     ) -> Self {
         let wb = WidgetBase::new(
             hat,
@@ -94,8 +95,8 @@ impl Button {
     }
 
     // ----------------------------------------------
-    pub fn click(&self) -> EventResponse {
-        let resp = (self.clicked_fn.borrow_mut())();
+    pub fn click(&self, ctx: &Context) -> EventResponse {
+        let resp = (self.clicked_fn.borrow_mut())(ctx.clone());
         resp.with_deactivate()
     }
 }
@@ -121,12 +122,12 @@ impl Element for Button {
                     return (false, EventResponse::default());
                 }
                 if ke[0].matches(&KB::KEY_ENTER) {
-                    return (true, self.click());
+                    return (true, self.click(ctx));
                 }
             }
             Event::Mouse(me) => {
                 if let MouseEventKind::Up(MouseButton::Left) = me.kind {
-                    return (true, self.click());
+                    return (true, self.click(ctx));
                 }
             }
             _ => {}
