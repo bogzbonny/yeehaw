@@ -1,9 +1,8 @@
 use {
     super::{SclVal, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        YHAttributes, Context, DrawChPos, Element, ElementID, Event, EventResponse,
-        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SortingHat, Style,
-        UpwardPropagator,
+        Context, DrawChPos, Element, ElementID, Event, EventResponse, Keyboard as KB, Priority,
+        ReceivableEventChanges, RgbColour, SortingHat, Style, UpwardPropagator, YHAttributes,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -45,11 +44,10 @@ impl Checkbox {
         vec![KB::KEY_ENTER.into()] // when "active" hitting enter will click the button
     }
 
-    pub fn new(hat: &SortingHat, ctx: &Context) -> Self {
+    pub fn new(hat: &SortingHat) -> Self {
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
-            ctx.clone(),
             SclVal::new_fixed(1),
             SclVal::new_fixed(1),
             Self::STYLE,
@@ -94,10 +92,10 @@ impl Checkbox {
         " ".to_string()
     }
 
-    pub fn click(&self) -> EventResponse {
+    pub fn click(&self, ctx: &Context) -> EventResponse {
         let checked = !*self.checked.borrow();
         self.checked.replace(checked);
-        self.base.set_content_from_string(&self.text());
+        self.base.set_content_from_string(ctx, &self.text());
         (self.clicked_fn.borrow_mut())(checked)
     }
 }
@@ -123,12 +121,12 @@ impl Element for Checkbox {
                     return (false, EventResponse::default());
                 }
                 if ke[0].matches(&KB::KEY_ENTER) {
-                    return (true, self.click());
+                    return (true, self.click(ctx));
                 }
             }
             Event::Mouse(me) => {
                 if let MouseEventKind::Up(MouseButton::Left) = me.kind {
-                    return (true, self.click());
+                    return (true, self.click(ctx));
                 }
             }
             _ => {}
@@ -141,7 +139,7 @@ impl Element for Checkbox {
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         // need to re set the content in order to reflect active style
-        self.base.set_content_from_string(&self.text());
+        self.base.set_content_from_string(ctx, &self.text());
         self.base.drawing(ctx)
     }
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {

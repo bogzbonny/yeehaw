@@ -39,14 +39,13 @@ impl Label {
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
-            ctx.clone(),
             SclVal::new_fixed(w),
             SclVal::new_fixed(h),
             LABEL_STYLE,
             LABEL_EV_COMBOS.clone(),
         );
         _ = wb.set_selectability(Selectability::Unselectable);
-        wb.set_content_from_string(text);
+        wb.set_content_from_string(ctx, text);
         Label {
             base: wb,
             justification: Rc::new(RefCell::new(LabelJustification::Left)),
@@ -54,12 +53,12 @@ impl Label {
         }
     }
 
-    pub fn get_width(&self) -> usize {
-        self.base.get_width()
+    pub fn get_width(&self, ctx: &Context) -> usize {
+        self.base.get_width(ctx)
     }
 
-    pub fn get_height(&self) -> usize {
-        self.base.get_height()
+    pub fn get_height(&self, ctx: &Context) -> usize {
+        self.base.get_height(ctx)
     }
 
     pub fn with_left_justification(self) -> Self {
@@ -94,14 +93,14 @@ impl Label {
         self
     }
 
-    pub fn with_style(self, sty: Style) -> Self {
+    pub fn with_style(self, ctx: &Context, sty: Style) -> Self {
         self.base.styles.borrow_mut().unselectable_style = sty;
 
         // this is necessary to actually update the content of the label w/
         // the new style
         // TODO: consider moving this somewhere else if it needs to be called in
         // many places
-        self.base.set_content_from_string(&self.text.borrow());
+        self.base.set_content_from_string(ctx, &self.text.borrow());
         self
     }
 
@@ -110,8 +109,8 @@ impl Label {
     }
 
     // Updates the content and size of the label
-    pub fn set_text(&self, text: String) {
-        self.base.set_content_from_string(&text);
+    pub fn set_text(&self, ctx: &Context, text: String) {
+        self.base.set_content_from_string(ctx, &text);
         let (w, h) = common::get_text_size(&text);
         self.base.set_attr_scl_width(SclVal::new_fixed(w));
         self.base.set_attr_scl_height(SclVal::new_fixed(h));

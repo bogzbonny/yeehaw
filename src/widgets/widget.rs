@@ -309,8 +309,8 @@ impl Widgets {
     }
 
     //adds the label at the position provided
-    pub fn add_label(&mut self, l: Label, p: LabelPosition) {
-        let (x, y) = self.label_position_to_xy(p, l.get_width(), l.get_height());
+    pub fn add_label(&mut self, ctx: &Context, l: Label, p: LabelPosition) {
+        let (x, y) = self.label_position_to_xy(p, l.get_width(ctx), l.get_height(ctx));
         self.0.push(Box::new(l.at(x, y)));
     }
 
@@ -332,42 +332,42 @@ impl Widgets {
     //}
 
     pub fn with_above_left_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
-        self.add_label(Label::new(hat, ctx, l), LabelPosition::AboveThenLeft);
+        self.add_label(ctx, Label::new(hat, ctx, l), LabelPosition::AboveThenLeft);
         self
     }
 
     pub fn with_above_right_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
-        self.add_label(Label::new(hat, ctx, l), LabelPosition::AboveThenRight);
+        self.add_label(ctx, Label::new(hat, ctx, l), LabelPosition::AboveThenRight);
         self
     }
 
     pub fn with_below_left_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
-        self.add_label(Label::new(hat, ctx, l), LabelPosition::BelowThenLeft);
+        self.add_label(ctx, Label::new(hat, ctx, l), LabelPosition::BelowThenLeft);
         self
     }
 
     pub fn with_below_right_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
-        self.add_label(Label::new(hat, ctx, l), LabelPosition::BelowThenRight);
+        self.add_label(ctx, Label::new(hat, ctx, l), LabelPosition::BelowThenRight);
         self
     }
 
     pub fn with_left_top_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
-        self.add_label(Label::new(hat, ctx, l), LabelPosition::LeftThenTop);
+        self.add_label(ctx, Label::new(hat, ctx, l), LabelPosition::LeftThenTop);
         self
     }
 
     pub fn with_left_bottom_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
-        self.add_label(Label::new(hat, ctx, l), LabelPosition::LeftThenBottom);
+        self.add_label(ctx, Label::new(hat, ctx, l), LabelPosition::LeftThenBottom);
         self
     }
 
     pub fn with_right_top_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
-        self.add_label(Label::new(hat, ctx, l), LabelPosition::RightThenTop);
+        self.add_label(ctx, Label::new(hat, ctx, l), LabelPosition::RightThenTop);
         self
     }
 
     pub fn with_right_bottom_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
-        self.add_label(Label::new(hat, ctx, l), LabelPosition::RightThenBottom);
+        self.add_label(ctx, Label::new(hat, ctx, l), LabelPosition::RightThenBottom);
         self
     }
 
@@ -378,6 +378,7 @@ impl Widgets {
         mut self, hat: &SortingHat, ctx: &Context, l: &str,
     ) -> Self {
         self.add_label(
+            ctx,
             Label::new(hat, ctx, l)
                 .with_rotated_text()
                 .with_down_justification(),
@@ -390,6 +391,7 @@ impl Widgets {
         mut self, hat: &SortingHat, ctx: &Context, l: &str,
     ) -> Self {
         self.add_label(
+            ctx,
             Label::new(hat, ctx, l)
                 .with_rotated_text()
                 .with_up_justification(),
@@ -402,6 +404,7 @@ impl Widgets {
         mut self, hat: &SortingHat, ctx: &Context, l: &str,
     ) -> Self {
         self.add_label(
+            ctx,
             Label::new(hat, ctx, l)
                 .with_rotated_text()
                 .with_down_justification(),
@@ -414,6 +417,7 @@ impl Widgets {
         mut self, hat: &SortingHat, ctx: &Context, l: &str,
     ) -> Self {
         self.add_label(
+            ctx,
             Label::new(hat, ctx, l)
                 .with_rotated_text()
                 .with_up_justification(),
@@ -429,7 +433,7 @@ impl Widgets {
 pub struct WidgetBase {
     pub sp: StandardPane,
 
-    pub last_ctx: Rc<RefCell<Context>>, // last parent context
+    //pub last_ctx: Rc<RefCell<Context>>, // last parent context
 
     //pub selectedness: Selectability, // lol
 
@@ -451,8 +455,8 @@ pub struct WidgetBase {
 
 impl WidgetBase {
     pub fn new(
-        hat: &SortingHat, kind: &'static str, last_ctx: Context, width: SclVal, height: SclVal,
-        sty: WBStyles, mut receivable_events: Vec<Event>,
+        hat: &SortingHat, kind: &'static str, width: SclVal, height: SclVal, sty: WBStyles,
+        mut receivable_events: Vec<Event>,
     ) -> Self {
         let evs = receivable_events
             .drain(..)
@@ -462,7 +466,6 @@ impl WidgetBase {
 
         let wb = Self {
             sp,
-            last_ctx: Rc::new(RefCell::new(last_ctx)),
             styles: Rc::new(RefCell::new(sty)),
         };
         wb.set_attr_scl_width(width);
@@ -481,42 +484,34 @@ impl WidgetBase {
 
     //-------------------------
 
-    pub fn get_width(&self) -> usize {
+    pub fn get_width(&self, ctx: &Context) -> usize {
         let scl_width = self.get_attr_scl_width();
-        scl_width.get_val(self.last_ctx.borrow().get_width().into())
+        scl_width.get_val(ctx.get_width().into())
     }
 
-    pub fn get_height(&self) -> usize {
+    pub fn get_height(&self, ctx: &Context) -> usize {
         let scl_height = self.get_attr_scl_height();
-        scl_height.get_val(self.last_ctx.borrow().get_height().into())
+        scl_height.get_val(ctx.get_height().into())
     }
 
-    pub fn get_last_ctx(&self) -> Context {
-        self.last_ctx.borrow().clone()
-    }
-
-    pub fn set_last_ctx(&self, last_ctx: Context) {
-        *self.last_ctx.borrow_mut() = last_ctx;
-    }
-
-    pub fn scroll_up(&mut self) {
+    pub fn scroll_up(&mut self, ctx: &Context) {
         let view_offset_y = *self.sp.content_view_offset_y.borrow();
-        self.set_content_y_offset(view_offset_y - 1);
+        self.set_content_y_offset(ctx, view_offset_y - 1);
     }
 
-    pub fn scroll_down(&mut self) {
+    pub fn scroll_down(&mut self, ctx: &Context) {
         let view_offset_y = *self.sp.content_view_offset_y.borrow();
-        self.set_content_y_offset(view_offset_y + 1);
+        self.set_content_y_offset(ctx, view_offset_y + 1);
     }
 
-    pub fn scroll_left(&mut self) {
+    pub fn scroll_left(&mut self, ctx: &Context) {
         let view_offset_x = *self.sp.content_view_offset_x.borrow();
-        self.set_content_x_offset(view_offset_x - 1);
+        self.set_content_x_offset(ctx, view_offset_x - 1);
     }
 
-    pub fn scroll_right(&mut self) {
+    pub fn scroll_right(&mut self, ctx: &Context) {
         let view_offset_x = *self.sp.content_view_offset_x.borrow();
-        self.set_content_x_offset(view_offset_x + 1);
+        self.set_content_x_offset(ctx, view_offset_x + 1);
     }
 
     pub fn content_width(&self) -> usize {
@@ -527,32 +522,32 @@ impl WidgetBase {
         self.sp.content.borrow().height()
     }
 
-    pub fn set_content_x_offset(&mut self, x: usize) {
-        *self.sp.content_view_offset_x.borrow_mut() = if x > self.content_width() - self.get_width()
-        {
-            self.content_width() - self.get_width()
-        } else {
-            x
-        };
+    pub fn set_content_x_offset(&mut self, ctx: &Context, x: usize) {
+        *self.sp.content_view_offset_x.borrow_mut() =
+            if x > self.content_width() - self.get_width(ctx) {
+                self.content_width() - self.get_width(ctx)
+            } else {
+                x
+            };
     }
 
-    pub fn set_content_y_offset(&mut self, y: usize) {
+    pub fn set_content_y_offset(&mut self, ctx: &Context, y: usize) {
         *self.sp.content_view_offset_y.borrow_mut() =
-            if y > self.content_height() - self.get_height() {
-                self.content_height() - self.get_height()
+            if y > self.content_height() - self.get_height(ctx) {
+                self.content_height() - self.get_height(ctx)
             } else {
                 y
             };
     }
 
     // sets content from string
-    pub fn set_content_from_string(&self, s: &str) {
+    pub fn set_content_from_string(&self, ctx: &Context, s: &str) {
         let lines = s.split('\n');
         let mut rs: Vec<Vec<char>> = Vec::new();
         let sty = self.get_current_style();
 
-        let mut width = self.get_width();
-        let mut height = self.get_height();
+        let mut width = self.get_width(ctx);
+        let mut height = self.get_height(ctx);
         for line in lines {
             if width < line.len() {
                 width = line.len();
@@ -587,34 +582,34 @@ impl WidgetBase {
 
     // correct_offsets_to_view_position changes the content offsets within the
     // WidgetBase in order to bring the given view position into view.
-    pub fn correct_offsets_to_view_position(&mut self, x: usize, y: usize) {
+    pub fn correct_offsets_to_view_position(&mut self, ctx: &Context, x: usize, y: usize) {
         let view_offset_y = *self.sp.content_view_offset_y.borrow();
         let view_offset_x = *self.sp.content_view_offset_x.borrow();
 
         // set y offset if cursor out of bounds
-        if y >= view_offset_y + self.get_height() {
-            self.set_content_y_offset(y - self.get_height() + 1);
+        if y >= view_offset_y + self.get_height(ctx) {
+            self.set_content_y_offset(ctx, y - self.get_height(ctx) + 1);
         } else if y < view_offset_y {
-            self.set_content_y_offset(y);
+            self.set_content_y_offset(ctx, y);
         }
 
         // correct the offset if the offset is now showing lines that don't exist in
         // the content
-        if view_offset_y + self.get_height() > self.content_height() - 1 {
-            self.set_content_y_offset(self.content_height() - 1);
+        if view_offset_y + self.get_height(ctx) > self.content_height() - 1 {
+            self.set_content_y_offset(ctx, self.content_height() - 1);
         }
 
         // set x offset if cursor out of bounds
-        if x >= view_offset_x + self.get_width() {
-            self.set_content_x_offset(x - self.get_width() + 1);
+        if x >= view_offset_x + self.get_width(ctx) {
+            self.set_content_x_offset(ctx, x - self.get_width(ctx) + 1);
         } else if x < view_offset_x {
-            self.set_content_x_offset(x);
+            self.set_content_x_offset(ctx, x);
         }
 
         // correct the offset if the offset is now showing characters to the right
         // which don't exist in the content.
-        if view_offset_x + self.get_width() > self.content_width() - 1 {
-            self.set_content_x_offset(self.content_width() - 1);
+        if view_offset_x + self.get_width(ctx) > self.content_width() - 1 {
+            self.set_content_x_offset(ctx, self.content_width() - 1);
         }
     }
 
@@ -668,8 +663,7 @@ impl Element for WidgetBase {
         }
     }
 
-    fn receive_event(&self, ctx: &Context, _ev: Event) -> (bool, EventResponse) {
-        *self.last_ctx.borrow_mut() = ctx.clone();
+    fn receive_event(&self, _ctx: &Context, _ev: Event) -> (bool, EventResponse) {
         (false, EventResponse::default())
     }
 
@@ -677,10 +671,10 @@ impl Element for WidgetBase {
         self.sp.change_priority(ctx, p)
     }
 
-    fn drawing(&self, _ctx: &Context) -> Vec<DrawChPos> {
+    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let sty = self.get_current_style(); // XXX this is different than standard_pane draw... unless this should be set somewhere else
-        let h = self.get_height();
-        let w = self.get_width();
+        let h = self.get_height(ctx);
+        let w = self.get_width(ctx);
         let view_offset_y = *self.sp.content_view_offset_y.borrow();
         let view_offset_x = *self.sp.content_view_offset_x.borrow();
         let content_height = self.sp.content.borrow().height();

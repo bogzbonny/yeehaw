@@ -56,13 +56,12 @@ impl Toggle {
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
-            ctx.clone(),
             SclVal::new_fixed(left.chars().count() + right.chars().count()),
             SclVal::new_fixed(1),
             Self::STYLE,
             Self::default_receivable_events(),
         );
-        wb.set_content_from_string(&(left.clone() + &right));
+        wb.set_content_from_string(ctx, &(left.clone() + &right));
         Toggle {
             base: wb,
             left: Rc::new(RefCell::new(left)),
@@ -172,7 +171,8 @@ impl Element for Toggle {
         let right = self.right.borrow();
         let left_len = left.chars().count();
         let right_len = right.chars().count();
-        self.base.set_content_from_string(&(left.clone() + &right));
+        self.base
+            .set_content_from_string(ctx, &(left.clone() + &right));
         if *self.left_selected.borrow() {
             for i in 0..left_len {
                 self.base.sp.content.borrow_mut()[0][i].style = *self.selected_sty.borrow();

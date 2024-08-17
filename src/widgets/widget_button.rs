@@ -55,7 +55,6 @@ impl Button {
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
-            ctx.clone(),
             SclVal::new_fixed(text.chars().count() + 2),
             SclVal::new_fixed(1),
             Self::STYLE,
@@ -68,7 +67,7 @@ impl Button {
             sides: Rc::new(RefCell::new((']', '['))),
             clicked_fn: Rc::new(RefCell::new(clicked_fn)),
         };
-        b.base.set_content_from_string(&b.button_text());
+        b.base.set_content_from_string(ctx, &b.button_text());
         b
     }
 

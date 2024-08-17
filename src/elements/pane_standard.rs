@@ -33,6 +33,7 @@ pub struct StandardPane {
     // else ever uses it.
     element_priority: Rc<RefCell<Priority>>,
 
+    #[allow(clippy::type_complexity)]
     up: Rc<RefCell<Option<Rc<RefCell<dyn UpwardPropagator>>>>>, // TODO ugly, is there a better way
 
     view_height: Rc<RefCell<u16>>,

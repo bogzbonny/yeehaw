@@ -49,12 +49,11 @@ impl RadioButtons {
         ]
     }
 
-    pub fn new(hat: &SortingHat, ctx: &Context, radios: Vec<String>) -> Self {
+    pub fn new(hat: &SortingHat, radios: Vec<String>) -> Self {
         let max_width = radios.iter().map(|r| r.chars().count()).max().unwrap_or(0) + 1; // +1 for the radio button
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
-            ctx.clone(),
             SclVal::new_fixed(max_width),
             SclVal::new_fixed(radios.len()), // TODO change for multiline support
             Self::STYLE,
@@ -181,7 +180,7 @@ impl Element for RadioButtons {
                     }
                     acc
                 });
-        self.base.set_content_from_string(&s);
+        self.base.set_content_from_string(ctx, &s);
         self.base.drawing(ctx)
     }
 

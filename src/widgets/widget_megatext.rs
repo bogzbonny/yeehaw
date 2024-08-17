@@ -15,14 +15,13 @@ pub struct Megatext {
 impl Megatext {
     const KIND: &'static str = "widget_megatext";
 
-    pub fn new(hat: &SortingHat, ctx: &Context, text: String, font: Megafont) -> Self {
+    pub fn new(hat: &SortingHat, text: String, font: Megafont) -> Self {
         let mega_text = font.get_mega_text(&text);
         let size = mega_text.size();
 
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
-            ctx.clone(),
             SclVal::new_fixed(size.width.into()),
             SclVal::new_fixed(size.height.into()),
             WBStyles::default(),

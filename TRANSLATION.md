@@ -79,7 +79,7 @@
       widget_listbox.go                  │  -> dependant on scrollbar + right click menu template
       widget_listbox_mono.go             │  -> dependant on listbox
       widget_radio.go                    │ DONE
-      widget_scrollbar.go                │ 
+      widget_scrollbar.go                │ DONE 
       widget_textbox.go                  │  -> dependant on scrollbar + right click menu template
       widget_textbox_numbers.go          │  -> dependant on textbox
       widget_title.go                    │ DONE (megatext)
