@@ -23,6 +23,7 @@ pub struct RadioButtons {
 
     // function which executes when the radio selection is changed
     //                                           (index, selected)
+    #[allow(clippy::type_complexity)]
     pub radio_selected_fn: Rc<RefCell<dyn FnMut(Context, usize, String) -> EventResponses>>,
 }
 

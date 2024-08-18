@@ -333,8 +333,8 @@ impl ElementOrganizer {
         let ctx = self.get_context_for_el_id(&el_id);
         let (_, mut resps) = el.borrow_mut().receive_event(&ctx, evs);
 
-        for mut r in resps.iter_mut() {
-            self.partially_process_ev_resp(&el_id, &mut r);
+        for r in resps.iter_mut() {
+            self.partially_process_ev_resp(&el_id, r);
             if let Some(changes) = r.get_receivable_event_changes() {
                 self.process_receivable_event_changes(&el_id, &changes);
             }
@@ -438,11 +438,11 @@ impl ElementOrganizer {
 
         // send mouse event to element
         let (_, mut ev_resps) = el.borrow_mut().receive_event(&ctx, Event::Mouse(ev_adj));
-        for mut ev_resp in ev_resps.iter_mut() {
+        for ev_resp in ev_resps.iter_mut() {
             if let Some(changes) = ev_resp.get_receivable_event_changes() {
                 self.process_receivable_event_changes(&el_id, &changes);
             }
-            self.partially_process_ev_resp(&el_id, &mut ev_resp);
+            self.partially_process_ev_resp(&el_id, ev_resp);
         }
         //if let Some(changes) = ev_resp.get_receivable_event_changes() {
         //    self.process_receivable_event_changes(&el_id, &changes);
@@ -471,11 +471,11 @@ impl ElementOrganizer {
         // combine the event responses from the elements that receive the event
         // and all the elements that receive an external event
         for (el_id2, mut resps) in el_resps {
-            for mut resp in resps.iter_mut() {
+            for resp in resps.iter_mut() {
                 if let Some(changes) = resp.get_receivable_event_changes() {
                     self.process_receivable_event_changes(&el_id2, &changes);
                 }
-                self.partially_process_ev_resp(&el_id2, &mut resp);
+                self.partially_process_ev_resp(&el_id2, resp);
             }
             ev_resps.extend(resps.0);
         }

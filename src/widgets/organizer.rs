@@ -121,8 +121,8 @@ impl WidgetOrganizer {
                 .0
                 .set_selectability(ctx, Selectability::Ready);
 
-            for mut resp in resps_.iter_mut() {
-                self.process_widget_resp(ctx, &mut resp, old_i);
+            for resp in resps_.iter_mut() {
+                self.process_widget_resp(ctx, resp, old_i);
             }
             resps.extend(resps_.0);
         }
@@ -132,8 +132,8 @@ impl WidgetOrganizer {
                 .0
                 .set_selectability(ctx, Selectability::Selected);
 
-            for mut resp in resps_.iter_mut() {
-                self.process_widget_resp(ctx, &mut resp, new_i);
+            for resp in resps_.iter_mut() {
+                self.process_widget_resp(ctx, resp, new_i);
             }
             self.active_widget_index = Some(new_i);
             resps.extend(resps_.0);

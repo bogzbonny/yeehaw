@@ -3,7 +3,7 @@ use {
     crate::{
         element::RelocationRequest, Context, DrawCh, DrawChPos, Element, ElementID, Event,
         EventResponse, EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, RgbColour,
-        SortingHat, Style, UpwardPropagator, YHAttributes, ZIndex,
+        SortingHat, Style, UpwardPropagator, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -36,10 +36,10 @@ pub struct DropdownList {
     pub cursor: Rc<RefCell<usize>>,   // the entry that is currently hovered while open
     pub open: Rc<RefCell<bool>>,      // if the list is open
     pub max_expanded_height: Rc<RefCell<Option<usize>>>, // the max height of the entire dropdown list when expanded, None = no max
-    pub dropdown_arrow: Rc<RefCell<char>>,               // ▼
+    pub dropdown_arrow: Rc<RefCell<DrawCh>>,             // ▼
     pub cursor_style: Rc<RefCell<Style>>,                // style for the selected entry
     #[allow(clippy::type_complexity)]
-    pub selection_made_fn: Rc<RefCell<Box<dyn FnMut(Context, String) -> EventResponse>>>, // function which executes when button moves from pressed -> unpressed
+    pub selection_made_fn: Rc<RefCell<Box<dyn FnMut(Context, String) -> EventResponses>>>, // function which executes when button moves from pressed -> unpressed
     pub scrollbar: VerticalScrollbar, // embedded scrollbar in dropdown list
 }
 
@@ -72,6 +72,14 @@ impl DropdownList {
 
     const STYLE_DD_CURSOR: Style = Style::new().with_bg(RgbColour::BLUE);
 
+    const DEFAULT_DROPDOWN_ARROW: DrawCh = DrawCh::new(
+        '▼',
+        false,
+        Style::new()
+            .with_bg(RgbColour::GREY13)
+            .with_fg(RgbColour::BLACK),
+    );
+
     // needs to be slightly above other widgets to select properly
     // if widgets overlap
     const Z_INDEX: i32 = super::widget::WIDGET_Z_INDEX - 1;
@@ -89,7 +97,7 @@ impl DropdownList {
 
     pub fn new(
         hat: &SortingHat, entries: Vec<String>,
-        selection_made_fn: Box<dyn FnMut(Context, String) -> EventResponse>,
+        selection_made_fn: Box<dyn FnMut(Context, String) -> EventResponses>,
     ) -> Self {
         let max_width = entries.iter().map(|r| r.chars().count()).max().unwrap_or(0);
         let wb = WidgetBase::new(
@@ -121,7 +129,7 @@ impl DropdownList {
             cursor: Rc::new(RefCell::new(0)),
             open: Rc::new(RefCell::new(false)),
             max_expanded_height: Rc::new(RefCell::new(None)),
-            dropdown_arrow: Rc::new(RefCell::new('▼')),
+            dropdown_arrow: Rc::new(RefCell::new(Self::DEFAULT_DROPDOWN_ARROW)),
             cursor_style: Rc::new(RefCell::new(Self::STYLE_DD_CURSOR)),
             selection_made_fn: Rc::new(RefCell::new(selection_made_fn)),
             scrollbar: sb,
@@ -133,6 +141,11 @@ impl DropdownList {
 
     pub fn with_styles(self, styles: WBStyles) -> Self {
         self.base.set_styles(styles);
+        self
+    }
+
+    pub fn with_arrow(self, ch: DrawCh) -> Self {
+        *self.dropdown_arrow.borrow_mut() = ch;
         self
     }
 
@@ -235,17 +248,20 @@ impl DropdownList {
         self.scrollbar
             .external_change(ctx, 0, self.base.content_height());
         self.base.set_attr_scl_height(SclVal::new_fixed(1));
-        let resp = if !escaped && *self.selected.borrow() != *self.cursor.borrow() {
+        let mut resps = if !escaped && *self.selected.borrow() != *self.cursor.borrow() {
             *self.selected.borrow_mut() = *self.cursor.borrow();
             (self.selection_made_fn.borrow_mut())(
                 ctx.clone(),
                 self.entries.borrow()[*self.selected.borrow()].clone(),
             )
         } else {
-            EventResponse::default()
+            EventResponses::default()
         };
+
         let rr = RelocationRequest::new_down(-(self.expanded_height() as i32 - 1));
-        resp.with_relocation(rr).into()
+        let resp = EventResponse::default().with_relocation(rr);
+        resps.push(resp);
+        resps
     }
 
     pub fn cursor_up(&self, ctx: &Context) {
@@ -262,21 +278,6 @@ impl DropdownList {
         self.correct_offsets(ctx);
     }
 }
-
-/*
-// XXX must override the widget function here ... maybe through the use of a hook which should
-// be called in the widget function?? ... or can maybe override in the impl Widget for Dropdownlist {} block
-// SEE https://www.reddit.com/r/learnrust/comments/15wftju/referencing_a_traits_default_implementation_of_a/
-//   - can use the pre-processing example by minno
-func (d *DropdownList) SetSelectability(s Selectability) yh.EventResponse {
-    if d.Selectedness == Selected && s != Selected {
-        if d.Open {
-            return d.PerformClose(true)
-        }
-    }
-    return d.WidgetBase.SetSelectability(s)
-}
-*/
 
 impl Widget for DropdownList {
     fn get_z_index(&self) -> ZIndex {
@@ -312,14 +313,108 @@ impl Element for DropdownList {
                 if self.base.get_selectability() != Selectability::Selected || ke.is_empty() {
                     return (false, EventResponses::default());
                 }
-                //if ke[0].matches(&KB::KEY_ENTER) {
-                //    return (true, self.click());
-                //}
+                let open = *self.open.borrow();
+                return match true {
+                    _ if !open
+                        && (ke[0].matches(&KB::KEY_ENTER)
+                            || ke[0].matches(&KB::KEY_DOWN)
+                            || ke[0].matches(&KB::KEY_J)
+                            || ke[0].matches(&KB::KEY_UP)
+                            || ke[0].matches(&KB::KEY_K)) =>
+                    {
+                        (true, self.perform_open(ctx).into())
+                    }
+                    _ if open && ke[0].matches(&KB::KEY_ENTER) => {
+                        (true, self.perform_close(ctx, false))
+                    }
+                    _ if open && ke[0].matches(&KB::KEY_DOWN) || ke[0].matches(&KB::KEY_J) => {
+                        self.cursor_down(ctx);
+                        (true, EventResponses::default())
+                    }
+                    _ if open && ke[0].matches(&KB::KEY_UP) || ke[0].matches(&KB::KEY_K) => {
+                        self.cursor_up(ctx);
+                        (true, EventResponses::default())
+                    }
+                    _ if open && ke[0].matches(&KB::KEY_SPACE) => {
+                        if self.scrollbar.get_selectability() != Selectability::Selected {
+                            self.scrollbar
+                                .set_selectability(ctx, Selectability::Selected);
+                        }
+                        self.scrollbar.receive_event(ctx, Event::KeyCombo(ke))
+                    }
+                    _ => (false, EventResponses::default()),
+                };
             }
-            Event::Mouse(_me) => {
-                //if let MouseEventKind::Up(MouseButton::Left) = me.kind {
-                //    return (true, self.click());
-                //}
+            Event::Mouse(me) => {
+                let (mut clicked, mut scroll_up, mut scroll_down) = (false, false, false);
+                match me.kind {
+                    MouseEventKind::Up(MouseButton::Left) => clicked = true,
+                    MouseEventKind::ScrollUp => scroll_up = true,
+                    MouseEventKind::ScrollDown => scroll_down = true,
+                    _ => {}
+                }
+                let open = *self.open.borrow();
+
+                return match true {
+                    _ if !open && clicked => (true, self.perform_open(ctx).into()),
+                    _ if open && scroll_up => {
+                        self.cursor_up(ctx);
+                        (true, EventResponses::default())
+                    }
+                    _ if open && scroll_down => {
+                        self.cursor_down(ctx);
+                        (true, EventResponses::default())
+                    }
+                    _ if open && !clicked => {
+                        // change hovering location to the ev
+                        let (x, y) = (me.column as usize, me.row as usize);
+
+                        // on arrow
+                        if y == 0 && x == self.base.get_width(ctx).saturating_sub(1) {
+                            return (true, EventResponses::default());
+
+                        // on scrollbar
+                        } else if y > 0
+                            && x == self.base.get_width(ctx).saturating_sub(1)
+                            && self.display_scrollbar()
+                        {
+                            return (true, EventResponses::default());
+                        } else {
+                            *self.cursor.borrow_mut() =
+                                y + *self.base.sp.content_view_offset_y.borrow();
+                        }
+                        let _ = self.scrollbar.set_selectability(ctx, Selectability::Ready);
+                        (true, EventResponses::default())
+                    }
+                    _ if open && clicked => {
+                        let (x, y) = (me.column as usize, me.row as usize);
+                        if y > 0
+                            && x == self.base.get_width(ctx).saturating_sub(1)
+                            && self.display_scrollbar()
+                        {
+                            if self.scrollbar.get_selectability() != Selectability::Selected {
+                                let _ = self
+                                    .scrollbar
+                                    .set_selectability(ctx, Selectability::Selected);
+                            }
+                            // send the the event to the scrollbar (x adjusted to 0)
+                            let mut me_ = me;
+                            me_.column = 0;
+                            me_.row = y.saturating_sub(1) as u16;
+                            return self.scrollbar.receive_event(ctx, Event::Mouse(me_));
+                        }
+
+                        // on arrow close without change
+                        if y == 0 && x == self.base.get_width(ctx).saturating_sub(1) {
+                            return (true, self.perform_close(ctx, true));
+                        }
+                        let _ = self.scrollbar.set_selectability(ctx, Selectability::Ready);
+                        *self.cursor.borrow_mut() =
+                            y + *self.base.sp.content_view_offset_y.borrow();
+                        (true, self.perform_close(ctx, false))
+                    }
+                    _ => (false, EventResponses::default()),
+                };
             }
             _ => {}
         }
@@ -330,9 +425,41 @@ impl Element for DropdownList {
         self.base.change_priority(ctx, p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        // need to re set the content in order to reflect active style
-        //self.base.set_content_from_string(&self.text());
-        self.base.drawing(ctx)
+        self.base.set_content_from_string(ctx, &self.text(ctx));
+
+        let open = *self.open.borrow();
+
+        // highlight the hovering entry
+        if open {
+            self.base
+                .sp
+                .content
+                .borrow_mut()
+                .change_style_along_y(*self.cursor.borrow(), *self.cursor_style.borrow());
+        }
+
+        let mut chs = self.base.drawing(ctx);
+
+        // set the scrollbar on top of the content
+        if open && self.display_scrollbar() {
+            let mut sb_chs = self.scrollbar.drawing(ctx);
+            // shift the scrollbar content to below the arrow
+            for ch in sb_chs.iter_mut() {
+                ch.x += self.base.get_width(ctx).saturating_sub(1) as u16;
+                ch.y += 1;
+            }
+            chs.extend(sb_chs);
+        }
+
+        // set the arrow
+        let arrow_ch = DrawChPos::new(
+            *self.dropdown_arrow.borrow(),
+            self.base.get_width(ctx).saturating_sub(1) as u16,
+            0,
+        );
+        chs.push(arrow_ch);
+
+        chs
     }
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
         self.base.get_attribute(key)
@@ -344,108 +471,3 @@ impl Element for DropdownList {
         self.base.set_upward_propagator(up)
     }
 }
-
-/*
-
-
-// need to reset the content in order to reflect active style
-func (d *DropdownList) Drawing() []yh.DrawChPos {
-
-    d.SetContentFromString(d.Text())
-
-    // highlight the hovering entry
-    if d.Open {
-        d.Content = d.Content.ChangeStyleAlongY(d.Cursor, d.CursorStyle)
-    }
-
-    chs := d.WidgetBase.Drawing()
-
-    // set the scrollbar on top of the content
-    if d.Open && d.Scrollbar != nil && d.DisplayScrollbar() {
-        sbchs := d.Scrollbar.Drawing()
-        // shift the scrollbar content to below the arrow
-        for i := range sbchs {
-            sbchs[i].X += d.GetWidth() - 1
-            sbchs[i].Y += 1
-        }
-        chs = append(chs, sbchs...)
-    }
-
-    // set the arrow
-    chs = append(chs, yh.NewDrawChPos(d.DropdownArrow, d.GetWidth()-1, 0))
-
-    return chs
-}
-
-func (d *DropdownList) ReceiveKeyEventCombo(evs []*tcell.EventKey) (captured bool, resp yh.EventResponse) {
-
-    if d.Selectedness != Selected {
-        return false, yh.NewEventResponse()
-    }
-
-    switch {
-    case !d.Open && (yh.EnterEKC.Matches(evs) ||
-        yh.DownEKC.Matches(evs) || yh.JLowerEKC.Matches(evs) ||
-        yh.UpEKC.Matches(evs) || yh.KLowerEKC.Matches(evs)):
-        return true, d.PerformOpen()
-    case d.Open && yh.EnterEKC.Matches(evs):
-        return true, d.PerformClose(false)
-    case d.Open && (yh.DownEKC.Matches(evs) || yh.JLowerEKC.Matches(evs)):
-        d.CursorDown()
-    case d.Open && (yh.UpEKC.Matches(evs) || yh.KLowerEKC.Matches(evs)):
-        d.CursorUp()
-    case d.Open && yh.SpaceEKC.Matches(evs):
-        if d.Scrollbar.Selectedness != Selected {
-            _ = d.Scrollbar.SetSelectability(Selected)
-        }
-        return d.Scrollbar.ReceiveKeyEventCombo(evs)
-    }
-
-    return false, yh.NewEventResponse()
-}
-
-func (d *DropdownList) ReceiveMouseEvent(ev *tcell.EventMouse) (captured bool, resp yh.EventResponse) {
-
-    clicked := ev.Buttons() == tcell.Button1
-
-    switch {
-    case !d.Open && clicked:
-        return true, d.PerformOpen()
-
-    case d.Open && ev.Buttons() == tcell.WheelUp:
-        d.CursorUp()
-    case d.Open && ev.Buttons() == tcell.WheelDown:
-        d.CursorDown()
-
-    case d.Open && !clicked:
-        // change hovering location to the ev
-        x, y := ev.Position()
-        if y == 0 && x == d.GetWidth()-1 { // on arrow
-            break
-        } else if y > 0 && x == d.GetWidth()-1 && d.DisplayScrollbar() { // on scrollbar
-            break
-        } else {
-            d.Cursor = y + d.ContentYOffset
-        }
-        _ = d.Scrollbar.SetSelectability(Ready)
-
-    case d.Open && clicked:
-        x, y := ev.Position()
-        if y > 0 && x == d.GetWidth()-1 && d.DisplayScrollbar() {
-            if d.Scrollbar.Selectedness != Selected {
-                _ = d.Scrollbar.SetSelectability(Selected)
-            }
-            // send the the event to the scrollbar (x adjusted to 0)
-            ev2 := tcell.NewEventMouse(0, y-1, ev.Buttons(), ev.Modifiers())
-            return d.Scrollbar.ReceiveMouseEvent(ev2)
-        }
-        if y == 0 && x == d.GetWidth()-1 { // on arrow close without change
-            return true, d.PerformClose(true)
-        }
-        _ = d.Scrollbar.SetSelectability(Ready)
-        d.Cursor = y + d.ContentYOffset
-        return true, d.PerformClose(false)
-    }
-    return false, yh.NewEventResponse()
-}
-*/

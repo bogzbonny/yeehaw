@@ -25,6 +25,7 @@ pub use {
     widget::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     widget_button::Button,
     widget_checkbox::Checkbox,
+    widget_dropdownlist::DropdownList,
     widget_label::Label,
     widget_megatext::Megatext,
     widget_radio::RadioButtons,

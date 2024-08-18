@@ -2,7 +2,10 @@ use {
     std::{cell::RefCell, rc::Rc},
     yeehaw::{
         //debug,
-        widgets::{megafonts, Button, Checkbox, Label, Megatext, RadioButtons, SclVal, Toggle},
+        widgets::{
+            megafonts, Button, Checkbox, DropdownList, Label, Megatext, RadioButtons, SclVal,
+            Toggle,
+        },
         Context,
         Cui,
         Error,
@@ -89,6 +92,16 @@ async fn main() -> Result<(), Error> {
     .at(SclVal::new_frac(0.1), SclVal::new_frac(0.4))
     .to_widgets();
     el.add_widgets(&ctx, toggle);
+
+    // fill dd entries with 20 items
+    let dd_entries = (0..20)
+        .map(|i| format!("entry {}  ", i))
+        .collect::<Vec<String>>();
+
+    let dropdown = DropdownList::new(&hat, dd_entries, Box::new(|_, _| EventResponses::default()))
+        .at(SclVal::new_frac(0.1), SclVal::new_frac(0.8))
+        .to_widgets();
+    el.add_widgets(&ctx, dropdown);
 
     Cui::new(Rc::new(RefCell::new(el)))?.run().await
 }
