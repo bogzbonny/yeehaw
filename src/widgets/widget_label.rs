@@ -1,7 +1,7 @@
 use {
     super::{common, SclVal, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Context, DrawChPos, Element, ElementID, Event, EventResponse, Priority,
+        Context, DrawChPos, Element, ElementID, Event, EventResponses, Priority,
         ReceivableEventChanges, RgbColour, SortingHat, Style, UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
@@ -146,7 +146,7 @@ impl Widget for Label {}
 //fn kind(&self) -> &'static str;
 //fn id(&self) -> &ElementID;
 //fn receivable(&self) -> Vec<(Event, Priority)>;
-//fn receive_event(&mut self, ctx: &Context, ev: Event) -> (bool, EventResponse);
+//fn receive_event(&mut self, ctx: &Context, ev: Event) -> (bool, EventResponses);
 //fn change_priority(&mut self, ctx: &Context, p: Priority) -> ReceivableEventChanges;
 //fn drawing(&self, ctx: &Context) -> Vec<DrawChPos>;
 //fn get_attribute(&self, key: &str) -> Option<&[u8]>;
@@ -163,7 +163,7 @@ impl Element for Label {
     fn receivable(&self) -> Vec<(Event, Priority)> {
         self.base.receivable()
     }
-    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponse) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         self.base.receive_event(ctx, ev)
     }
     fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {

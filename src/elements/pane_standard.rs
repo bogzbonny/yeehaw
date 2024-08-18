@@ -1,7 +1,7 @@
 use {
     crate::{
         element::ReceivableEventChanges, Context, DrawCh, DrawChPos, DrawChs2D, Element, ElementID,
-        Event, EventResponse, Priority, SortingHat, UpwardPropagator,
+        Event, EventResponses, Priority, SortingHat, UpwardPropagator,
     },
     std::{
         collections::HashMap,
@@ -125,10 +125,10 @@ impl Element for StandardPane {
     }
 
     //                                               (captured, resp         )
-    fn receive_event(&self, ctx: &Context, _ev: Event) -> (bool, EventResponse) {
+    fn receive_event(&self, ctx: &Context, _ev: Event) -> (bool, EventResponses) {
         *self.view_height.borrow_mut() = ctx.get_height();
         *self.view_width.borrow_mut() = ctx.get_width();
-        (false, EventResponse::default())
+        (false, EventResponses::default())
     }
 
     // ChangePriority returns a priority change request to its parent organizer so

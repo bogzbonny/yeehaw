@@ -1,11 +1,13 @@
 use {
     super::{Megafont, SclVal, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Context, DrawChPos, Element, ElementID, Event, EventResponse, Priority,
+        Context, DrawChPos, Element, ElementID, Event, EventResponses, Priority,
         ReceivableEventChanges, SortingHat, UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
 };
+
+// TODO click function
 
 #[derive(Clone)]
 pub struct Megatext {
@@ -62,7 +64,7 @@ impl Element for Megatext {
     fn receivable(&self) -> Vec<(Event, Priority)> {
         self.base.receivable()
     }
-    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponse) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         self.base.receive_event(ctx, ev)
     }
     fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {

@@ -147,23 +147,33 @@ impl Cui {
         else {
             return false;
         };
-        let Some((_, resp)) = self.eo.borrow_mut().key_events_process(evs) else {
+        let Some((_, resps)) = self.eo.borrow_mut().key_events_process(evs) else {
             return false;
         };
 
         // only check for response for quit
-        resp.quit
+        for resp in resps.iter() {
+            if resp.quit {
+                return true;
+            }
+        }
+        false
     }
 
     // process_event_mouse handles mouse events
     //                                                                       exit-cui
     pub fn process_event_mouse(&mut self, mouse_ev: ct_event::MouseEvent) -> bool {
-        let Some((_, resp)) = self.eo.borrow_mut().mouse_event_process(&mouse_ev) else {
+        let Some((_, resps)) = self.eo.borrow_mut().mouse_event_process(&mouse_ev) else {
             return false;
         };
 
         // only check for response for quit
-        resp.quit
+        for resp in resps.iter() {
+            if resp.quit {
+                return true;
+            }
+        }
+        false
     }
 
     // Render all elements, draws the screen using the DrawChPos array passed to it

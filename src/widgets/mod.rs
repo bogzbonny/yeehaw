@@ -28,5 +28,6 @@ pub use {
     widget_label::Label,
     widget_megatext::Megatext,
     widget_radio::RadioButtons,
+    widget_scrollbar::{HorizontalScrollbar, VerticalScrollbar},
     widget_toggle::Toggle,
 };

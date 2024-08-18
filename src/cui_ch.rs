@@ -24,7 +24,7 @@ impl Default for DrawCh {
 }
 
 impl DrawCh {
-    pub fn new(ch: char, transparent: bool, style: Style) -> DrawCh {
+    pub const fn new(ch: char, transparent: bool, style: Style) -> DrawCh {
         DrawCh {
             ch,
             transparent,

@@ -1,8 +1,9 @@
 use {
     super::{SclVal, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Context, DrawChPos, Element, ElementID, Event, EventResponse, Keyboard as KB, Priority,
-        ReceivableEventChanges, RgbColour, SortingHat, Style, UpwardPropagator,
+        Context, DrawChPos, Element, ElementID, Event, EventResponse, EventResponses,
+        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SortingHat, Style,
+        UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -22,7 +23,7 @@ pub struct Button {
     pub sides: Rc<RefCell<(char, char)>>, // left right
     // function which executes when button moves from pressed -> unpressed
     #[allow(clippy::type_complexity)]
-    pub clicked_fn: Rc<RefCell<dyn FnMut(Context) -> EventResponse>>,
+    pub clicked_fn: Rc<RefCell<dyn FnMut(Context) -> EventResponses>>,
 }
 
 impl Button {
@@ -51,7 +52,7 @@ impl Button {
 
     pub fn new(
         hat: &SortingHat, ctx: &Context, text: String,
-        clicked_fn: Box<dyn FnMut(Context) -> EventResponse>,
+        clicked_fn: Box<dyn FnMut(Context) -> EventResponses>,
     ) -> Self {
         let wb = WidgetBase::new(
             hat,
@@ -95,9 +96,11 @@ impl Button {
     }
 
     // ----------------------------------------------
-    pub fn click(&self, ctx: &Context) -> EventResponse {
-        let resp = (self.clicked_fn.borrow_mut())(ctx.clone());
-        resp.with_deactivate()
+    pub fn click(&self, ctx: &Context) -> EventResponses {
+        let mut resps = (self.clicked_fn.borrow_mut())(ctx.clone());
+        //resp.with_deactivate()
+        resps.push(EventResponse::default().with_deactivate());
+        resps
     }
 }
 
@@ -114,12 +117,12 @@ impl Element for Button {
         self.base.receivable()
     }
 
-    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponse) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let _ = self.base.receive_event(ctx, ev.clone());
         match ev {
             Event::KeyCombo(ke) => {
                 if self.base.get_selectability() != Selectability::Selected || ke.is_empty() {
-                    return (false, EventResponse::default());
+                    return (false, EventResponses::default());
                 }
                 if ke[0].matches(&KB::KEY_ENTER) {
                     return (true, self.click(ctx));
@@ -132,7 +135,7 @@ impl Element for Button {
             }
             _ => {}
         }
-        (false, EventResponse::default())
+        (false, EventResponses::default())
     }
 
     fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {

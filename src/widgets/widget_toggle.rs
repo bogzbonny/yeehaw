@@ -1,7 +1,7 @@
 use {
     super::{SclVal, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Context, DrawChPos, Element, ElementID, Event, EventResponse, Keyboard as KB, Priority,
+        Context, DrawChPos, Element, ElementID, Event, EventResponses, Keyboard as KB, Priority,
         ReceivableEventChanges, RgbColour, SortingHat, Style, UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -16,7 +16,7 @@ pub struct Toggle {
     pub left_selected: Rc<RefCell<bool>>, // otherwise right is selected
     pub selected_sty: Rc<RefCell<Style>>,
     //                                   selected
-    pub toggled_fn: Rc<RefCell<dyn FnMut(String) -> EventResponse>>,
+    pub toggled_fn: Rc<RefCell<dyn FnMut(Context, String) -> EventResponses>>,
 }
 
 impl Toggle {
@@ -51,7 +51,7 @@ impl Toggle {
 
     pub fn new(
         hat: &SortingHat, ctx: &Context, left: String, right: String,
-        toggeld_fn: Box<dyn FnMut(String) -> EventResponse>,
+        toggeld_fn: Box<dyn FnMut(Context, String) -> EventResponses>,
     ) -> Self {
         let wb = WidgetBase::new(
             hat,
@@ -98,10 +98,10 @@ impl Toggle {
         self.right.borrow().clone()
     }
 
-    pub fn perform_toggle(&self) -> EventResponse {
+    pub fn perform_toggle(&self, ctx: &Context) -> EventResponses {
         let l_sel = *self.left_selected.borrow();
         *self.left_selected.borrow_mut() = !l_sel;
-        self.toggled_fn.borrow_mut()(self.selected())
+        self.toggled_fn.borrow_mut()(ctx.clone(), self.selected())
     }
 }
 
@@ -118,32 +118,32 @@ impl Element for Toggle {
         self.base.receivable()
     }
 
-    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponse) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let _ = self.base.receive_event(ctx, ev.clone());
         match ev {
             Event::KeyCombo(ke) => {
                 if self.base.get_selectability() != Selectability::Selected || ke.is_empty() {
-                    return (false, EventResponse::default());
+                    return (false, EventResponses::default());
                 }
                 match true {
                     _ if ke[0].matches(&KB::KEY_ENTER) => {
-                        return (true, self.perform_toggle());
+                        return (true, self.perform_toggle(ctx));
                     }
                     _ if ke[0].matches(&KB::KEY_LEFT) || ke[0].matches(&KB::KEY_H) => {
                         if !*self.left_selected.borrow() {
-                            return (true, self.perform_toggle());
+                            return (true, self.perform_toggle(ctx));
                         }
-                        return (true, EventResponse::default());
+                        return (true, EventResponses::default());
                     }
                     _ if ke[0].matches(&KB::KEY_RIGHT) || ke[0].matches(&KB::KEY_L) => {
                         if *self.left_selected.borrow() {
-                            return (true, self.perform_toggle());
+                            return (true, self.perform_toggle(ctx));
                         }
-                        return (true, EventResponse::default());
+                        return (true, EventResponses::default());
                     }
                     _ => {}
                 }
-                return (false, EventResponse::default());
+                return (false, EventResponses::default());
             }
             Event::Mouse(me) => {
                 if let MouseEventKind::Up(MouseButton::Left) = me.kind {
@@ -152,14 +152,14 @@ impl Element for Toggle {
                     if (!left_sel && x < self.left.borrow().chars().count())
                         || (left_sel && x >= self.left.borrow().chars().count())
                     {
-                        return (true, self.perform_toggle());
+                        return (true, self.perform_toggle(ctx));
                     }
                 }
-                return (false, EventResponse::default());
+                return (false, EventResponses::default());
             }
             _ => {}
         }
-        (false, EventResponse::default())
+        (false, EventResponses::default())
     }
 
     fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {

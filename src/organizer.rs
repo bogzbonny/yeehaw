@@ -1,8 +1,8 @@
 use {
     crate::{
         element::ReceivableEventChanges, prioritizer::EventPrioritizer, CommandEvent, Context,
-        CreateWindow, DrawChPos, Element, ElementID, Event, EventResponse, Location, LocationSet,
-        Priority, UpwardPropagator, ZIndex,
+        CreateWindow, DrawChPos, Element, ElementID, Event, EventResponse, EventResponses,
+        Location, LocationSet, Priority, UpwardPropagator, ZIndex,
     },
     std::collections::HashMap,
     std::{cell::RefCell, rc::Rc},
@@ -238,11 +238,9 @@ impl ElementOrganizer {
     // Partially process the event response for whatever is possible to be processed
     // in the element organizer. Further processing may be required by the element
     // which owns this element organizer.
-    pub fn partially_process_ev_resp(
-        &mut self, el_id: &ElementID, mut r: EventResponse,
-    ) -> EventResponse {
+    pub fn partially_process_ev_resp(&mut self, el_id: &ElementID, r: &mut EventResponse) {
         // replace this entire element
-        if let Some(repl) = r.replacement {
+        if let Some(repl) = r.replacement.clone() {
             let ctx = self.get_context_for_el_id(el_id);
             self.replace_el(el_id, repl);
             r.replacement = None;
@@ -277,8 +275,6 @@ impl ElementOrganizer {
             r.concat_receivable_event_changes(ic);
             r.destruct = false;
         }
-
-        r
     }
 
     // ProcessCreateWindow adjusts the location of the window to be relative to the
@@ -323,7 +319,7 @@ impl ElementOrganizer {
     // - processes changes to the elements receivable events
     pub fn key_events_process(
         &mut self, evs: Vec<crossterm::event::KeyEvent>,
-    ) -> Option<(ElementID, EventResponse)> {
+    ) -> Option<(ElementID, EventResponses)> {
         // determine elementID to send events to
         let evs: Event = evs.into();
         let el_id = self.prioritizer.get_destination_el(&evs)?;
@@ -335,14 +331,21 @@ impl ElementOrganizer {
 
         // send EventKeys to element w/ context
         let ctx = self.get_context_for_el_id(&el_id);
-        let (_, r) = el.borrow_mut().receive_event(&ctx, evs);
-        let r = self.partially_process_ev_resp(&el_id, r);
+        let (_, mut resps) = el.borrow_mut().receive_event(&ctx, evs);
 
-        if let Some(changes) = r.get_receivable_event_changes() {
-            self.process_receivable_event_changes(&el_id, &changes);
+        for mut r in resps.iter_mut() {
+            self.partially_process_ev_resp(&el_id, &mut r);
+            if let Some(changes) = r.get_receivable_event_changes() {
+                self.process_receivable_event_changes(&el_id, &changes);
+            }
         }
 
-        Some((el_id, r))
+        //if let Some(changes) = r.get_receivable_event_changes() {
+        //    self.process_receivable_event_changes(&el_id, &changes);
+        //}
+        //Some((el_id, r))
+
+        Some((el_id, resps))
     }
 
     // refresh does the following:
@@ -413,7 +416,7 @@ impl ElementOrganizer {
     // - processes changes to the element's receivable events
     pub fn mouse_event_process(
         &mut self, ev: &crossterm::event::MouseEvent,
-    ) -> Option<(ElementID, EventResponse)> {
+    ) -> Option<(ElementID, EventResponses)> {
         let mut eoz = self.get_el_id_z_order_under_mouse(ev);
         if eoz.is_empty() {
             return None;
@@ -434,11 +437,17 @@ impl ElementOrganizer {
         let ev_adj = locs.l.adjust_mouse_event(ev);
 
         // send mouse event to element
-        let (_, ev_resp) = el.borrow_mut().receive_event(&ctx, Event::Mouse(ev_adj));
-        if let Some(changes) = ev_resp.get_receivable_event_changes() {
-            self.process_receivable_event_changes(&el_id, &changes);
+        let (_, mut ev_resps) = el.borrow_mut().receive_event(&ctx, Event::Mouse(ev_adj));
+        for mut ev_resp in ev_resps.iter_mut() {
+            if let Some(changes) = ev_resp.get_receivable_event_changes() {
+                self.process_receivable_event_changes(&el_id, &changes);
+            }
+            self.partially_process_ev_resp(&el_id, &mut ev_resp);
         }
-        let mut ev_resp = self.partially_process_ev_resp(&el_id, ev_resp);
+        //if let Some(changes) = ev_resp.get_receivable_event_changes() {
+        //    self.process_receivable_event_changes(&el_id, &changes);
+        //}
+        //let mut ev_resp = self.partially_process_ev_resp(&el_id, ev_resp);
 
         // move element to top of z-dim if primary click
         // TODO why... why do we do this here?!
@@ -450,32 +459,44 @@ impl ElementOrganizer {
 
         // send the mouse event as an external event to all other elements
         // capture the responses
-        let mut resps = Vec::new();
+        let mut el_resps = Vec::new();
         for (el_id2, el) in self.elements.iter() {
             if *el_id2 == el_id {
                 continue;
             }
             let (_, r) = el.borrow_mut().receive_event(&ctx, Event::Mouse(*ev));
-            resps.push((el_id2.clone(), r));
+            el_resps.push((el_id2.clone(), r));
         }
 
         // combine the event responses from the elements that receive the event
         // and all the elements that receive an external event
-        for (el_id2, r) in resps {
-            if let Some(changes) = r.get_receivable_event_changes() {
-                self.process_receivable_event_changes(&el_id2, &changes);
+        for (el_id2, mut resps) in el_resps {
+            for mut resp in resps.iter_mut() {
+                if let Some(changes) = resp.get_receivable_event_changes() {
+                    self.process_receivable_event_changes(&el_id2, &changes);
+                }
+                self.partially_process_ev_resp(&el_id2, &mut resp);
             }
-            let r = self.partially_process_ev_resp(&el_id2, r);
-
-            // combine the receivable-event changes, all other external responses are
-            // ignored. TODO explain why.
-
-            if let Some(re) = r.get_receivable_event_changes() {
-                ev_resp.concat_receivable_event_changes(re);
-            }
+            ev_resps.extend(resps.0);
         }
 
-        Some((el_id, ev_resp))
+        // combine the event responses from the elements that receive the event
+        // and all the elements that receive an external event
+        //for (el_id2, r) in resps {
+        //    if let Some(changes) = r.get_receivable_event_changes() {
+        //        self.process_receivable_event_changes(&el_id2, &changes);
+        //    }
+        //    let r = self.partially_process_ev_resp(&el_id2, r);
+
+        //    // combine the receivable-event changes, all other external responses are
+        //    // ignored. TODO explain why.
+
+        //    if let Some(re) = r.get_receivable_event_changes() {
+        //        ev_resp.concat_receivable_event_changes(re);
+        //    }
+        //}
+
+        Some((el_id, ev_resps))
     }
 
     // get_el_id_at_z_index returns the element-id at the given z index, or None if
@@ -524,24 +545,31 @@ impl ElementOrganizer {
 
     // receive_command_event attempts to execute the given command
     //                                                       (captured, resp         )
-    pub fn receive_command_event(&mut self, ev: CommandEvent) -> (bool, EventResponse) {
+    pub fn receive_command_event(&mut self, ev: CommandEvent) -> (bool, EventResponses) {
         let ev = Event::Command(ev);
         let Some(el_id) = self.prioritizer.get_destination_el(&ev) else {
-            return (false, EventResponse::default());
+            return (false, EventResponses::default());
         };
 
         let Some(el) = self.get_element_by_id(&el_id) else {
             // XXX TODO return error
-            return (false, EventResponse::default());
+            return (false, EventResponses::default());
         };
         let ctx = self.get_context_for_el_id(&el_id);
 
-        let (captured, resp) = el.borrow_mut().receive_event(&ctx, ev);
-        if let Some(changes) = resp.get_receivable_event_changes() {
-            self.process_receivable_event_changes(&el_id, &changes);
-        }
-        let resp = self.partially_process_ev_resp(&el_id, resp);
+        let (captured, mut resps) = el.borrow_mut().receive_event(&ctx, ev);
 
-        (captured, resp)
+        for resp in resps.iter_mut() {
+            if let Some(changes) = resp.get_receivable_event_changes() {
+                self.process_receivable_event_changes(&el_id, &changes);
+            }
+            self.partially_process_ev_resp(&el_id, resp);
+        }
+        //if let Some(changes) = resp.get_receivable_event_changes() {
+        //    self.process_receivable_event_changes(&el_id, &changes);
+        //}
+        //let resps = self.partially_process_ev_resp(&el_id, resp);
+
+        (captured, resps)
     }
 }

@@ -1,9 +1,9 @@
 use {
     super::{SclVal, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Context, DrawChPos, Element, ElementID, Event, EventResponse, KeyPossibility,
-        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SortingHat, Style,
-        UpwardPropagator,
+        Context, DrawChPos, Element, ElementID, Event, EventResponse, EventResponses,
+        KeyPossibility, Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SortingHat,
+        Style, UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
     std::ops::{Deref, DerefMut},
@@ -18,9 +18,11 @@ use {
 // ensuring that the two scrollbars have consistent code, as similar code is always grouped together.
 
 // up is backwards, down is forwards
+#[derive(Clone)]
 pub struct VerticalScrollbar(Scrollbar);
 
 // left is backwards, right is forwards
+#[derive(Clone)]
 pub struct HorizontalScrollbar(Scrollbar);
 
 impl Deref for VerticalScrollbar {
@@ -237,7 +239,7 @@ pub struct Scrollbar {
 
     // function the scrollbar will call everytime there is a position change
     #[allow(clippy::type_complexity)]
-    pub position_changed_hook: Rc<RefCell<Option<Rc<RefCell<dyn FnMut(usize)>>>>>,
+    pub position_changed_hook: Rc<RefCell<Option<Rc<RefCell<dyn FnMut(Context, usize)>>>>>,
 
     // is the scrollbar currently being dragged?
     pub currently_dragging: Rc<RefCell<bool>>,
@@ -287,7 +289,7 @@ impl Scrollbar {
     }
 
     // scroll to the position within the scrollable domain.
-    pub fn scroll_to_position(&self, p_size: usize, mut position: usize) {
+    pub fn scroll_to_position(&self, ctx: &Context, p_size: usize, mut position: usize) {
         let sc_dom_len = *self.scrollable_domain_chs.borrow();
         let sc_view_len = self.scrollable_view_chs.borrow().get_val(p_size);
         if position > sc_dom_len.saturating_sub(sc_view_len) {
@@ -295,12 +297,13 @@ impl Scrollbar {
         }
         *self.scrollable_position.borrow_mut() = position;
         if let Some(hook) = self.position_changed_hook.borrow().as_ref() {
-            hook.borrow_mut()(position);
+            hook.borrow_mut()(ctx.clone(), position);
         }
     }
 
-    pub fn jump_scroll_backwards(&self, p_size: usize) {
+    pub fn jump_scroll_backwards(&self, ctx: &Context, p_size: usize) {
         self.scroll_to_position(
+            ctx,
             p_size,
             self.scrollable_position
                 .borrow()
@@ -308,8 +311,9 @@ impl Scrollbar {
         );
     }
 
-    pub fn jump_scroll_forwards(&self, p_size: usize) {
+    pub fn jump_scroll_forwards(&self, ctx: &Context, p_size: usize) {
         self.scroll_to_position(
+            ctx,
             p_size,
             *self.scrollable_position.borrow() + self.jump_scroll_amount(),
         );
@@ -319,13 +323,13 @@ impl Scrollbar {
         *self.scrollable_position.borrow() > 0
     }
 
-    pub fn scroll_backwards(&self) {
+    pub fn scroll_backwards(&self, ctx: &Context) {
         if !self.can_scroll_backwards() {
             return;
         }
         *self.scrollable_position.borrow_mut() -= 1;
         if let Some(hook) = self.position_changed_hook.borrow().as_ref() {
-            hook.borrow_mut()(*self.scrollable_position.borrow());
+            hook.borrow_mut()(ctx.clone(), *self.scrollable_position.borrow());
         }
     }
 
@@ -336,13 +340,13 @@ impl Scrollbar {
         sc_pos < sc_dom_chs.saturating_sub(sc_view_chs)
     }
 
-    pub fn scroll_forwards(&self, p_size: usize) {
+    pub fn scroll_forwards(&self, ctx: &Context, p_size: usize) {
         if !self.can_scroll_forwards(p_size) {
             return;
         }
         *self.scrollable_position.borrow_mut() += 1;
         if let Some(hook) = self.position_changed_hook.borrow().as_ref() {
-            hook.borrow_mut()(*self.scrollable_position.borrow());
+            hook.borrow_mut()(ctx.clone(), *self.scrollable_position.borrow());
         }
     }
 
@@ -446,7 +450,7 @@ impl Scrollbar {
 
     // used for mouse dragging the scrollbar. What the incrementIsFilled should look
     // like if it dragged down by one rune (aka 2 half increments)
-    pub fn drag_forwards_by_1_ch(&self, p_size: usize) {
+    pub fn drag_forwards_by_1_ch(&self, ctx: &Context, p_size: usize) {
         let start_incrs = self.scroll_bar_domain_array_of_half_increments(p_size);
         let last_filled = Self::last_incr_filled(&start_incrs);
         let Some(last_filled) = last_filled else {
@@ -461,7 +465,7 @@ impl Scrollbar {
             if !self.can_scroll_forwards(p_size) {
                 return;
             }
-            self.scroll_forwards(p_size);
+            self.scroll_forwards(ctx, p_size);
             let current_incr = self.scroll_bar_domain_array_of_half_increments(p_size);
             let curr_last_filled = Self::last_incr_filled(&current_incr);
             if curr_last_filled == Some(goal_last_filled) {
@@ -471,7 +475,7 @@ impl Scrollbar {
     }
 
     // Same as DragForwardsBy1Ch but in the backwards direction
-    pub fn drag_backwards_by_1_ch(&self, p_size: usize) {
+    pub fn drag_backwards_by_1_ch(&self, ctx: &Context, p_size: usize) {
         let start_incrs = self.scroll_bar_domain_array_of_half_increments(p_size);
         let first_filled = Self::first_incr_filled(&start_incrs);
         let Some(first_filled) = first_filled else {
@@ -483,7 +487,7 @@ impl Scrollbar {
             if !self.can_scroll_backwards() {
                 return;
             }
-            self.scroll_backwards();
+            self.scroll_backwards(ctx);
             let current_incr = self.scroll_bar_domain_array_of_half_increments(p_size);
             let curr_first_filled = Self::first_incr_filled(&current_incr);
             if curr_first_filled == Some(goal_first_filled) {
@@ -658,40 +662,40 @@ impl HorizontalScrollbar {
 }
 
 impl VerticalScrollbar {
-    pub fn resize_event(&self, ctx: &Context) -> (bool, EventResponse) {
+    pub fn resize_event(&self, ctx: &Context) -> (bool, EventResponses) {
         self.update_selectibility(ctx.get_height().into());
-        (false, EventResponse::default())
+        (false, EventResponses::default())
     }
 }
 impl HorizontalScrollbar {
-    pub fn resize_event(&self, ctx: &Context) -> (bool, EventResponse) {
+    pub fn resize_event(&self, ctx: &Context) -> (bool, EventResponses) {
         self.update_selectibility(ctx.get_width().into());
-        (false, EventResponse::default())
+        (false, EventResponses::default())
     }
 }
 
 impl VerticalScrollbar {
     pub fn receive_key_event(
         &self, ev: Vec<KeyPossibility>, ctx: &Context,
-    ) -> (bool, EventResponse) {
+    ) -> (bool, EventResponses) {
         if self.base.get_selectability() != Selectability::Selected || ev.is_empty() {
-            return (false, EventResponse::default());
+            return (false, EventResponses::default());
         }
 
         match true {
             _ if ev[0].matches(&KB::KEY_UP) => {
-                self.scroll_backwards();
-                (true, EventResponse::default())
+                self.scroll_backwards(ctx);
+                (true, EventResponses::default())
             }
             _ if ev[0].matches(&KB::KEY_DOWN) => {
-                self.scroll_forwards(ctx.get_height().into());
-                (true, EventResponse::default())
+                self.scroll_forwards(ctx, ctx.get_height().into());
+                (true, EventResponses::default())
             }
             _ if ev[0].matches(&KB::KEY_SPACE) => {
-                self.jump_scroll_forwards(ctx.get_height().into());
-                (true, EventResponse::default())
+                self.jump_scroll_forwards(ctx, ctx.get_height().into());
+                (true, EventResponses::default())
             }
-            _ => (false, EventResponse::default()),
+            _ => (false, EventResponses::default()),
         }
     }
 }
@@ -699,51 +703,51 @@ impl VerticalScrollbar {
 impl HorizontalScrollbar {
     pub fn receive_key_event(
         &self, ev: Vec<KeyPossibility>, ctx: &Context,
-    ) -> (bool, EventResponse) {
+    ) -> (bool, EventResponses) {
         if self.base.get_selectability() != Selectability::Selected || ev.is_empty() {
-            return (false, EventResponse::default());
+            return (false, EventResponses::default());
         }
 
         match true {
             _ if ev[0].matches(&KB::KEY_LEFT) => {
-                self.scroll_backwards();
-                (true, EventResponse::default())
+                self.scroll_backwards(ctx);
+                (true, EventResponses::default())
             }
             _ if ev[0].matches(&KB::KEY_RIGHT) => {
-                self.scroll_forwards(ctx.get_width().into());
-                (true, EventResponse::default())
+                self.scroll_forwards(ctx, ctx.get_width().into());
+                (true, EventResponses::default())
             }
-            _ => (false, EventResponse::default()),
+            _ => (false, EventResponses::default()),
         }
     }
 }
 
 impl VerticalScrollbar {
-    pub fn receive_mouse_event(&self, ctx: &Context, ev: MouseEvent) -> (bool, EventResponse) {
+    pub fn receive_mouse_event(&self, ctx: &Context, ev: MouseEvent) -> (bool, EventResponses) {
         if self.base.get_selectability() == Selectability::Unselectable {
-            return (false, EventResponse::default());
+            return (false, EventResponses::default());
         }
 
         let h = ctx.get_height();
         match ev.kind {
             MouseEventKind::ScrollDown => {
-                self.scroll_forwards(h.into());
-                (true, EventResponse::default())
+                self.scroll_forwards(ctx, h.into());
+                (true, EventResponses::default())
             }
             MouseEventKind::ScrollUp => {
-                self.scroll_backwards();
-                (true, EventResponse::default())
+                self.scroll_backwards(ctx);
+                (true, EventResponses::default())
             }
             MouseEventKind::Up(MouseButton::Left) => {
                 *self.currently_dragging.borrow_mut() = false;
-                (true, EventResponse::default())
+                (true, EventResponses::default())
             }
 
             MouseEventKind::Down(MouseButton::Left) if *self.currently_dragging.borrow() => {
                 let y = ev.row as usize;
                 let start_drag_pos = *self.start_drag_position.borrow();
                 if y == start_drag_pos {
-                    return (false, EventResponse::default());
+                    return (false, EventResponses::default());
                 }
 
                 // only allow dragging if the scrollbar is 1 away from the last
@@ -752,7 +756,7 @@ impl VerticalScrollbar {
                     *self.currently_dragging.borrow_mut() = false;
                     // TRANSLATION NOTE used to be below... but why?
                     // return self.receive_mouse_event(ctx, ev);
-                    return (false, EventResponse::default());
+                    return (false, EventResponses::default());
                 }
 
                 // consider dragging on the arrow keys to be a drag ONLY if the
@@ -761,37 +765,37 @@ impl VerticalScrollbar {
                 if *self.has_arrows.borrow() {
                     if y == 0 && start_drag_pos != 1 {
                         *self.currently_dragging.borrow_mut() = false;
-                        self.scroll_backwards();
-                        return (true, EventResponse::default());
+                        self.scroll_backwards(ctx);
+                        return (true, EventResponses::default());
                     }
                     let sb_len_chs = self.scrollbar_length_chs.borrow().get_val(h.into());
                     if y == sb_len_chs.saturating_sub(1)
                         && start_drag_pos != sb_len_chs.saturating_sub(2)
                     {
                         *self.currently_dragging.borrow_mut() = false;
-                        self.scroll_forwards(h.into());
-                        return (true, EventResponse::default());
+                        self.scroll_forwards(ctx, h.into());
+                        return (true, EventResponses::default());
                     }
                 }
 
                 match y.cmp(&start_drag_pos) {
                     Ordering::Greater => {
-                        self.drag_forwards_by_1_ch(h.into());
+                        self.drag_forwards_by_1_ch(ctx, h.into());
                     }
                     Ordering::Less => {
-                        self.drag_backwards_by_1_ch(h.into());
+                        self.drag_backwards_by_1_ch(ctx, h.into());
                     }
                     Ordering::Equal => {}
                 }
                 *self.start_drag_position.borrow_mut() = y;
-                (true, EventResponse::default())
+                (true, EventResponses::default())
             }
             MouseEventKind::Down(MouseButton::Left) if !*self.currently_dragging.borrow() => {
                 let y = ev.row as usize;
                 let has_arrows = *self.has_arrows.borrow();
                 match true {
                     _ if has_arrows && y == 0 => {
-                        self.scroll_backwards();
+                        self.scroll_backwards(ctx);
                         *self.currently_dragging.borrow_mut() = false;
                     }
                     _ if has_arrows
@@ -801,16 +805,16 @@ impl VerticalScrollbar {
                             .get_val(h.into())
                             .saturating_sub(1) =>
                     {
-                        self.scroll_forwards(h.into());
+                        self.scroll_forwards(ctx, h.into());
                         *self.currently_dragging.borrow_mut() = false;
                     }
                     _ => match self.position_relative_to_scrollbar(h.into(), y) {
                         SBRelPosition::Before => {
-                            self.jump_scroll_backwards(h.into());
+                            self.jump_scroll_backwards(ctx, h.into());
                             *self.currently_dragging.borrow_mut() = false;
                         }
                         SBRelPosition::After => {
-                            self.jump_scroll_forwards(h.into());
+                            self.jump_scroll_forwards(ctx, h.into());
                             *self.currently_dragging.borrow_mut() = false;
                         }
                         SBRelPosition::On => {
@@ -822,80 +826,80 @@ impl VerticalScrollbar {
                         }
                     },
                 }
-                (true, EventResponse::default())
+                (true, EventResponses::default())
             }
             _ => {
                 *self.currently_dragging.borrow_mut() = false;
-                (false, EventResponse::default())
+                (false, EventResponses::default())
             }
         }
     }
 }
 
 impl HorizontalScrollbar {
-    pub fn receive_mouse_event(&self, ctx: &Context, ev: MouseEvent) -> (bool, EventResponse) {
+    pub fn receive_mouse_event(&self, ctx: &Context, ev: MouseEvent) -> (bool, EventResponses) {
         if self.base.get_selectability() == Selectability::Unselectable {
-            return (false, EventResponse::default());
+            return (false, EventResponses::default());
         }
 
         let w = ctx.get_width();
 
         match ev.kind {
             MouseEventKind::ScrollUp | MouseEventKind::ScrollLeft => {
-                self.scroll_backwards();
-                (true, EventResponse::default())
+                self.scroll_backwards(ctx);
+                (true, EventResponses::default())
             }
             MouseEventKind::ScrollDown | MouseEventKind::ScrollRight => {
-                self.scroll_forwards(w.into());
-                (true, EventResponse::default())
+                self.scroll_forwards(ctx, w.into());
+                (true, EventResponses::default())
             }
             MouseEventKind::Up(MouseButton::Left) => {
                 *self.currently_dragging.borrow_mut() = false;
-                (true, EventResponse::default())
+                (true, EventResponses::default())
             }
 
             MouseEventKind::Down(MouseButton::Left) if *self.currently_dragging.borrow() => {
                 let x = ev.column as usize;
                 let start_drag_pos = *self.start_drag_position.borrow();
                 if x == start_drag_pos {
-                    return (false, EventResponse::default());
+                    return (false, EventResponses::default());
                 }
                 let has_arrows = *self.has_arrows.borrow();
                 if has_arrows {
                     if x == 0 && start_drag_pos != 1 {
                         *self.currently_dragging.borrow_mut() = false;
-                        self.scroll_backwards();
-                        return (true, EventResponse::default());
+                        self.scroll_backwards(ctx);
+                        return (true, EventResponses::default());
                     }
                     let sb_len_chs = self.scrollbar_length_chs.borrow().get_val(w.into());
                     if x == sb_len_chs.saturating_sub(1)
                         && start_drag_pos != sb_len_chs.saturating_sub(2)
                     {
                         *self.currently_dragging.borrow_mut() = false;
-                        self.scroll_forwards(w.into());
-                        return (true, EventResponse::default());
+                        self.scroll_forwards(ctx, w.into());
+                        return (true, EventResponses::default());
                     }
                 }
 
                 match x.cmp(&start_drag_pos) {
                     Ordering::Greater => {
-                        self.drag_forwards_by_1_ch(w.into());
+                        self.drag_forwards_by_1_ch(ctx, w.into());
                     }
                     Ordering::Less => {
-                        self.drag_backwards_by_1_ch(w.into());
+                        self.drag_backwards_by_1_ch(ctx, w.into());
                     }
                     Ordering::Equal => {}
                 }
                 *self.start_drag_position.borrow_mut() = x;
 
-                (true, EventResponse::default())
+                (true, EventResponses::default())
             }
             MouseEventKind::Down(MouseButton::Left) if !*self.currently_dragging.borrow() => {
                 let x = ev.column as usize;
                 let has_arrows = *self.has_arrows.borrow();
                 match true {
                     _ if has_arrows && x == 0 => {
-                        self.scroll_backwards();
+                        self.scroll_backwards(ctx);
                         *self.currently_dragging.borrow_mut() = false;
                     }
                     _ if has_arrows
@@ -905,16 +909,16 @@ impl HorizontalScrollbar {
                             .get_val(w.into())
                             .saturating_sub(1) =>
                     {
-                        self.scroll_forwards(w.into());
+                        self.scroll_forwards(ctx, w.into());
                         *self.currently_dragging.borrow_mut() = false;
                     }
                     _ => match self.position_relative_to_scrollbar(w.into(), x) {
                         SBRelPosition::Before => {
-                            self.jump_scroll_backwards(w.into());
+                            self.jump_scroll_backwards(ctx, w.into());
                             *self.currently_dragging.borrow_mut() = false;
                         }
                         SBRelPosition::After => {
-                            self.jump_scroll_forwards(w.into());
+                            self.jump_scroll_forwards(ctx, w.into());
                             *self.currently_dragging.borrow_mut() = false;
                         }
                         SBRelPosition::On => {
@@ -926,11 +930,11 @@ impl HorizontalScrollbar {
                         }
                     },
                 }
-                (true, EventResponse::default())
+                (true, EventResponses::default())
             }
             _ => {
                 *self.currently_dragging.borrow_mut() = false;
-                (false, EventResponse::default())
+                (false, EventResponses::default())
             }
         }
     }
@@ -949,12 +953,12 @@ impl Element for VerticalScrollbar {
     fn receivable(&self) -> Vec<(Event, Priority)> {
         self.base.receivable()
     }
-    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponse) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
             Event::KeyCombo(ke) => self.receive_key_event(ke, ctx),
             Event::Mouse(me) => self.receive_mouse_event(ctx, me),
             Event::Resize => self.resize_event(ctx),
-            _ => (false, EventResponse::default()),
+            _ => (false, EventResponses::default()),
         }
     }
 
@@ -984,12 +988,12 @@ impl Element for HorizontalScrollbar {
     fn receivable(&self) -> Vec<(Event, Priority)> {
         self.base.receivable()
     }
-    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponse) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
             Event::KeyCombo(ke) => self.receive_key_event(ke, ctx),
             Event::Mouse(me) => self.receive_mouse_event(ctx, me),
             Event::Resize => self.resize_event(ctx),
-            _ => (false, EventResponse::default()),
+            _ => (false, EventResponses::default()),
         }
     }
 

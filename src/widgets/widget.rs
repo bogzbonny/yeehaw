@@ -2,7 +2,8 @@ use {
     super::{Label, SclLocation, SclVal},
     crate::{
         event::Event, Context, DrawCh, DrawChPos, DrawChs2D, Element, ElementID, EventResponse,
-        Priority, ReceivableEventChanges, SortingHat, StandardPane, Style, UpwardPropagator,
+        EventResponses, Priority, ReceivableEventChanges, SortingHat, StandardPane, Style,
+        UpwardPropagator, ZIndex,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -23,41 +24,6 @@ use {
 //    \|/  \|/  \|/  \|/  \|/  \|/  \|/  \|/  \ u /
 //     |    |    |    | oo |    |    |    |     s
 
-// TODO delete old widget trait post-TRANSLATION
-/*pub trait Widget {
-    // widgets can only receive events when they are active
-    fn receivable(&self) -> Vec<Event>; // element
-
-    fn get_parent_ctx(&self) -> &Context; // remove entirely (can get locally doesn't need to be interface)
-                                          // - set/get parent ctx will just happen at each event
-    fn set_parent_ctx(&mut self, parent_ctx: Context); // set during event
-
-    // Draw the widget to the screen
-    fn drawing(&self) -> Vec<DrawChPos>; // element
-
-    fn set_styles(&mut self, styles: WBStyles); // remove entirely
-
-    fn resize_event(&mut self, parent_ctx: Context); // element
-
-    fn get_location(&self) -> Location; // remove introduce SclLocation.get_location_for_context()
-    fn get_scl_location(&self) -> SclLocation; // ????????? // keep in widget interface
-
-    // NOTE the mouse event input is adjusted for the widgets location
-    // (aka if you click on the top-left corner of the widget ev.Position()
-    // will be 0, 0)
-    fn receive_key_event(&mut self, ev: Event) -> (bool, EventResponse); // element
-    fn receive_mouse_event(&mut self, ev: Event) -> (bool, EventResponse); // element
-
-    // NOTE window creation in response to SetSelectability
-    // is currently not supported
-    fn get_selectability(&self) -> Selectability; // ???????? ** COULD reuse priority here (introduce new "unfocusable" last priority)
-                                                  //             Introduce "get_priority" into element trait
-    fn set_selectability(&mut self, s: Selectability) -> EventResponse; // could be an event.. however would need to add to enum
-
-    // used in combination widgets (TODO confirm)
-    fn to_widgets(self) -> Widgets; // *** Keep but as a seperate function outside of the element
-}*/
-
 // Widgets are a basically simple elements. Differently from standard elements, a widget also
 // stores its own scaled location, this is useful during the widget generation phase where multiple
 // widgets are often created in tandam as a Widget group (see Widgets struct).
@@ -70,6 +36,8 @@ pub const ATTR_SCL_HEIGHT: &str = "widget_scl_height";
 pub const ATTR_SCL_LOC_X: &str = "widget_scl_loc_x";
 pub const ATTR_SCL_LOC_Y: &str = "widget_scl_loc_y";
 pub const ATTR_SELECTABILITY: &str = "widget_selectability";
+
+pub const WIDGET_Z_INDEX: ZIndex = 10;
 
 pub trait Widget: Element {
     fn get_attr_scl_width(&self) -> SclVal {
@@ -216,6 +184,8 @@ pub trait Widget: Element {
         EventResponse::default().with_receivable_event_changes(rec)
     }
 
+    fn set_selectability_pre(&self, _s: Selectability) {}
+
     // get the scalable location of the widget
     fn get_scl_location(&self) -> SclLocation {
         let x1 = self.get_attr_scl_loc_x();
@@ -225,6 +195,10 @@ pub trait Widget: Element {
         let x2 = x1.clone().plus(w).minus_fixed(1);
         let y2 = y1.clone().plus(h).minus_fixed(1);
         SclLocation::new(x1, x2, y1, y2)
+    }
+
+    fn get_z_index(&self) -> ZIndex {
+        WIDGET_Z_INDEX
     }
 }
 
@@ -522,7 +496,7 @@ impl WidgetBase {
         self.sp.content.borrow().height()
     }
 
-    pub fn set_content_x_offset(&mut self, ctx: &Context, x: usize) {
+    pub fn set_content_x_offset(&self, ctx: &Context, x: usize) {
         *self.sp.content_view_offset_x.borrow_mut() =
             if x > self.content_width() - self.get_width(ctx) {
                 self.content_width() - self.get_width(ctx)
@@ -531,7 +505,7 @@ impl WidgetBase {
             };
     }
 
-    pub fn set_content_y_offset(&mut self, ctx: &Context, y: usize) {
+    pub fn set_content_y_offset(&self, ctx: &Context, y: usize) {
         *self.sp.content_view_offset_y.borrow_mut() =
             if y > self.content_height() - self.get_height(ctx) {
                 self.content_height() - self.get_height(ctx)
@@ -582,7 +556,7 @@ impl WidgetBase {
 
     // correct_offsets_to_view_position changes the content offsets within the
     // WidgetBase in order to bring the given view position into view.
-    pub fn correct_offsets_to_view_position(&mut self, ctx: &Context, x: usize, y: usize) {
+    pub fn correct_offsets_to_view_position(&self, ctx: &Context, x: usize, y: usize) {
         let view_offset_y = *self.sp.content_view_offset_y.borrow();
         let view_offset_x = *self.sp.content_view_offset_x.borrow();
 
@@ -613,11 +587,11 @@ impl WidgetBase {
         }
     }
 
-    pub fn disable(&mut self) -> EventResponse {
+    pub fn disable(&self) -> EventResponse {
         self.set_selectability(Selectability::Unselectable)
     }
 
-    pub fn enable(&mut self) -> EventResponse {
+    pub fn enable(&self) -> EventResponse {
         self.set_selectability(Selectability::Ready)
     }
 
@@ -636,15 +610,6 @@ impl WidgetBase {
 
 impl Widget for WidgetBase {}
 
-//fn kind(&self) -> &'static str; // a name for the kind of the element
-//fn id(&self) -> &ElementID; // the element id as assigned by the SortingHat
-//fn receivable(&self) -> Vec<(Event, Priority)>;
-//fn receive_event(&mut self, ctx: &Context, ev: Event) -> (bool, EventResponse);
-//fn change_priority(&mut self, ctx: &Context, p: Priority) -> ReceivableEventChanges;
-//fn drawing(&self, ctx: &Context) -> Vec<DrawChPos>;
-//fn get_attribute(&self, key: &str) -> Option<&[u8]>;
-//fn set_attribute(&mut self, key: &str, value: Vec<u8>);
-//fn set_upward_propagator(&mut self, up: Rc<RefCell<dyn UpwardPropagator>>);
 impl Element for WidgetBase {
     fn kind(&self) -> &'static str {
         self.sp.kind()
@@ -663,8 +628,8 @@ impl Element for WidgetBase {
         }
     }
 
-    fn receive_event(&self, _ctx: &Context, _ev: Event) -> (bool, EventResponse) {
-        (false, EventResponse::default())
+    fn receive_event(&self, _ctx: &Context, _ev: Event) -> (bool, EventResponses) {
+        (false, EventResponses::default())
     }
 
     fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {

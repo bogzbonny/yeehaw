@@ -1,7 +1,7 @@
 use {
     super::{SclVal, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Context, DrawChPos, Element, ElementID, Event, EventResponse, Keyboard as KB, Priority,
+        Context, DrawChPos, Element, ElementID, Event, EventResponses, Keyboard as KB, Priority,
         ReceivableEventChanges, RgbColour, SortingHat, Style, UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -23,7 +23,7 @@ pub struct RadioButtons {
 
     // function which executes when the radio selection is changed
     //                                           (index, selected)
-    pub radio_selected_fn: Rc<RefCell<dyn FnMut(usize, String) -> EventResponse>>,
+    pub radio_selected_fn: Rc<RefCell<dyn FnMut(Context, usize, String) -> EventResponses>>,
 }
 
 // inspiration:
@@ -65,7 +65,7 @@ impl RadioButtons {
             off_ch: Rc::new(RefCell::new('◯')),
             radios: Rc::new(RefCell::new(radios)),
             selected: Rc::new(RefCell::new(0)),
-            radio_selected_fn: Rc::new(RefCell::new(|_, _| EventResponse::default())),
+            radio_selected_fn: Rc::new(RefCell::new(|_, _, _| EventResponses::default())),
         }
     }
 
@@ -73,7 +73,7 @@ impl RadioButtons {
     // decorators
 
     pub fn with_radio_selected_fn(
-        mut self, clicked_fn: Box<dyn FnMut(usize, String) -> EventResponse>,
+        mut self, clicked_fn: Box<dyn FnMut(Context, usize, String) -> EventResponses>,
     ) -> Self {
         self.radio_selected_fn = Rc::new(RefCell::new(clicked_fn));
         self
@@ -107,12 +107,12 @@ impl Element for RadioButtons {
         self.base.receivable()
     }
 
-    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponse) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let _ = self.base.receive_event(ctx, ev.clone());
         match ev {
             Event::KeyCombo(ke) => {
                 if self.base.get_selectability() != Selectability::Selected || ke.is_empty() {
-                    return (false, EventResponse::default());
+                    return (false, EventResponses::default());
                 }
 
                 match true {
@@ -121,7 +121,8 @@ impl Element for RadioButtons {
                             *self.selected.borrow_mut() += 1;
                             let sel_i = *self.selected.borrow();
                             let sel_str = self.radios.borrow()[sel_i].clone();
-                            let resp = self.radio_selected_fn.borrow_mut()(sel_i, sel_str);
+                            let resp =
+                                self.radio_selected_fn.borrow_mut()(ctx.clone(), sel_i, sel_str);
                             return (true, resp);
                         }
                     }
@@ -130,29 +131,33 @@ impl Element for RadioButtons {
                             *self.selected.borrow_mut() -= 1;
                             let sel_i = *self.selected.borrow();
                             let sel_str = self.radios.borrow()[sel_i].clone();
-                            let resp = self.radio_selected_fn.borrow_mut()(sel_i, sel_str);
+                            let resp =
+                                self.radio_selected_fn.borrow_mut()(ctx.clone(), sel_i, sel_str);
                             return (true, resp);
                         }
                     }
                     _ => {}
                 }
-                return (false, EventResponse::default());
+                return (false, EventResponses::default());
             }
             Event::Mouse(me) => {
                 if let MouseEventKind::Up(MouseButton::Left) = me.kind {
                     let y = me.row as usize;
                     if y < self.radios.borrow().len() {
                         *self.selected.borrow_mut() = y;
-                        let resp =
-                            self.radio_selected_fn.borrow_mut()(y, self.radios.borrow()[y].clone());
+                        let resp = self.radio_selected_fn.borrow_mut()(
+                            ctx.clone(),
+                            y,
+                            self.radios.borrow()[y].clone(),
+                        );
                         return (true, resp);
                     }
                 }
-                return (false, EventResponse::default());
+                return (false, EventResponses::default());
             }
             _ => {}
         }
-        (false, EventResponse::default())
+        (false, EventResponses::default())
     }
 
     fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {

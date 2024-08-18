@@ -1,16 +1,16 @@
-//use {
-//    super::{SclVal, Selectability, WBStyles, Widget, WidgetBase, Widgets},
-//    crate::{
-//        YHAttributes, Context, DrawChPos, Element, ElementID, Event, EventResponse,
-//        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SortingHat, Style,
-//        UpwardPropagator,
-//    },
-//    crossterm::event::{MouseButton, MouseEventKind},
-//    std::{cell::RefCell, rc::Rc},
-//};
+use {
+    super::{SclVal, Selectability, VerticalScrollbar, WBStyles, Widget, WidgetBase, Widgets},
+    crate::{
+        element::RelocationRequest, Context, DrawCh, DrawChPos, Element, ElementID, Event,
+        EventResponse, EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, RgbColour,
+        SortingHat, Style, UpwardPropagator, YHAttributes, ZIndex,
+    },
+    crossterm::event::{MouseButton, MouseEventKind},
+    std::{cell::RefCell, rc::Rc},
+};
 
-// TODO add scrollbar support
-// TODO multiline dropdown entry support
+//TODO add scrollbar support
+//TODO multiline dropdown entry support
 
 //type DropdownList struct {
 //    *WidgetBase
@@ -24,284 +24,319 @@
 //    CursorStyle       tcell.Style                   // style for the selected entry
 //    SelectionMadeFn   func(string) yh.EventResponse // function which executes when button moves from pressed -> unpressed
 
-//    Scrollbar *VerticalScrollbar
+//    Scrollbar: VerticalScrollbar
 //}
 
-//#[derive(Clone)]
-//pub struct DropdownList {
-//    pub base: WidgetBase,
-//    pub entries: Rc<RefCell<Vec<String>>>,
-//    pub left_padding: Rc<RefCell<usize>>,
-//    pub selected: Rc<RefCell<usize>>,
-//    pub cursor: Rc<RefCell<usize>>,
-//    pub open: Rc<RefCell<bool>>,
-//    pub max_expanded_height: Rc<RefCell<i32>>,
-//    pub dropdown_arrow: Rc<RefCell<char>>,
-//    pub cursor_style: Rc<RefCell<Style>>,
-//    pub selection_made_fn: Rc<RefCell<Box<dyn FnMut(String) -> EventResponse>>>,
-//    // embedded scrollbar in dropdown list
-//    //pub scrollbar: Rc<RefCell<VerticalScrollbar>>,
-//}
+#[derive(Clone)]
+pub struct DropdownList {
+    pub base: WidgetBase,
+    pub entries: Rc<RefCell<Vec<String>>>,
+    pub left_padding: Rc<RefCell<usize>>,
+    pub selected: Rc<RefCell<usize>>, // the entry which has been selected
+    pub cursor: Rc<RefCell<usize>>,   // the entry that is currently hovered while open
+    pub open: Rc<RefCell<bool>>,      // if the list is open
+    pub max_expanded_height: Rc<RefCell<Option<usize>>>, // the max height of the entire dropdown list when expanded, None = no max
+    pub dropdown_arrow: Rc<RefCell<char>>,               // ▼
+    pub cursor_style: Rc<RefCell<Style>>,                // style for the selected entry
+    #[allow(clippy::type_complexity)]
+    pub selection_made_fn: Rc<RefCell<Box<dyn FnMut(Context, String) -> EventResponse>>>, // function which executes when button moves from pressed -> unpressed
+    pub scrollbar: VerticalScrollbar, // embedded scrollbar in dropdown list
+}
 
-//impl DropdownList {
-//    const KIND: &'static str = "widget_checkbox";
+impl DropdownList {
+    const KIND: &'static str = "widget_dropdownlist";
 
-//    const STYLE: WBStyles = WBStyles {
-//        selected_style: Style::new()
-//            .with_bg(RgbColour::YELLOW)
-//            .with_fg(RgbColour::BLACK)
-//            .with_attr(YHAttributes::new().with_bold()),
-//        ready_style: Style::new()
-//            .with_bg(RgbColour::WHITE)
-//            .with_fg(RgbColour::BLACK)
-//            .with_attr(YHAttributes::new().with_bold()),
-//        unselectable_style: Style::new()
-//            .with_bg(RgbColour::GREY13)
-//            .with_fg(RgbColour::BLACK)
-//            .with_attr(YHAttributes::new().with_bold()),
-//    };
+    const STYLE: WBStyles = WBStyles {
+        selected_style: Style::new()
+            .with_bg(RgbColour::YELLOW)
+            .with_fg(RgbColour::BLACK),
+        ready_style: Style::new()
+            .with_bg(RgbColour::WHITE)
+            .with_fg(RgbColour::BLACK),
+        unselectable_style: Style::new()
+            .with_bg(RgbColour::GREY13)
+            .with_fg(RgbColour::BLACK),
+    };
 
-//    pub fn default_receivable_events() -> Vec<Event> {
-//        vec![KB::KEY_ENTER.into()] // when "active" hitting enter will click the button
-//    }
+    const STYLE_SCROLLBAR: WBStyles = WBStyles {
+        selected_style: Style::new()
+            .with_bg(RgbColour::GREY13)
+            .with_fg(RgbColour::WHITE),
+        ready_style: Style::new()
+            .with_bg(RgbColour::GREY13)
+            .with_fg(RgbColour::WHITE),
+        unselectable_style: Style::new()
+            .with_bg(RgbColour::GREY13)
+            .with_fg(RgbColour::WHITE),
+    };
 
-//    pub fn new(hat: &SortingHat, ctx: &Context) -> Self {
-//        let wb = WidgetBase::new(
-//            hat,
-//            Self::KIND,
-//            ctx.clone(),
-//            SclVal::new_fixed(1),
-//            SclVal::new_fixed(1),
-//            Self::STYLE,
-//            Self::default_receivable_events(),
-//        );
-//        DropdownList {
-//            base: wb,
-//            checked: Rc::new(RefCell::new(false)),
-//            checkmark: Rc::new(RefCell::new('√')),
-//            clicked_fn: Rc::new(RefCell::new(|_| EventResponse::default())),
-//        }
-//    }
+    const STYLE_DD_CURSOR: Style = Style::new().with_bg(RgbColour::BLUE);
 
-//    // ----------------------------------------------
-//    // decorators
+    // needs to be slightly above other widgets to select properly
+    // if widgets overlap
+    const Z_INDEX: i32 = super::widget::WIDGET_Z_INDEX - 1;
 
-//    pub fn with_styles(self, styles: WBStyles) -> Self {
-//        self.base.set_styles(styles);
-//        self
-//    }
+    pub fn default_receivable_events() -> Vec<Event> {
+        vec![
+            KB::KEY_ENTER.into(),
+            KB::KEY_DOWN.into(),
+            KB::KEY_UP.into(),
+            KB::KEY_K.into(),
+            KB::KEY_J.into(),
+            KB::KEY_SPACE.into(),
+        ]
+    }
 
-//    pub fn with_clicked_fn(mut self, clicked_fn: Box<dyn FnMut(bool) -> EventResponse>) -> Self {
-//        self.clicked_fn = Rc::new(RefCell::new(clicked_fn));
-//        self
-//    }
+    pub fn new(
+        hat: &SortingHat, entries: Vec<String>,
+        selection_made_fn: Box<dyn FnMut(Context, String) -> EventResponse>,
+    ) -> Self {
+        let max_width = entries.iter().map(|r| r.chars().count()).max().unwrap_or(0);
+        let wb = WidgetBase::new(
+            hat,
+            Self::KIND,
+            SclVal::new_fixed(max_width),
+            SclVal::new_fixed(1),
+            Self::STYLE,
+            Self::default_receivable_events(),
+        );
+        let sb = VerticalScrollbar::new(hat, SclVal::new_fixed(0), 0)
+            .without_arrows()
+            .with_styles(Self::STYLE_SCROLLBAR);
 
-//    pub fn at(mut self, loc_x: SclVal, loc_y: SclVal) -> Self {
-//        self.base.at(loc_x, loc_y);
-//        self
-//    }
+        //wire the scrollbar to the dropdown list
+        let wb_ = wb.clone();
+        let hook = Rc::new(RefCell::new(move |ctx, y| {
+            wb_.set_content_y_offset(&ctx, y)
+        }));
+        *sb.position_changed_hook.borrow_mut() = Some(hook);
 
-//    pub fn to_widgets(self) -> Widgets {
-//        Widgets(vec![Box::new(self)])
-//    }
+        // TRANSLATION NOTE there used to be a drawing() call before returning the list
 
-//    // ----------------------------------------------
+        DropdownList {
+            base: wb,
+            entries: Rc::new(RefCell::new(entries)),
+            left_padding: Rc::new(RefCell::new(1)),
+            selected: Rc::new(RefCell::new(0)),
+            cursor: Rc::new(RefCell::new(0)),
+            open: Rc::new(RefCell::new(false)),
+            max_expanded_height: Rc::new(RefCell::new(None)),
+            dropdown_arrow: Rc::new(RefCell::new('▼')),
+            cursor_style: Rc::new(RefCell::new(Self::STYLE_DD_CURSOR)),
+            selection_made_fn: Rc::new(RefCell::new(selection_made_fn)),
+            scrollbar: sb,
+        }
+    }
 
-//    pub fn text(&self) -> String {
-//        if *self.checked.borrow() {
-//            return self.checkmark.borrow().to_string();
-//        }
-//        " ".to_string()
-//    }
+    // ----------------------------------------------
+    // decorators
 
-//    pub fn click(&self) -> EventResponse {
-//        let checked = !*self.checked.borrow();
-//        self.checked.replace(checked);
-//        self.base.set_content_from_string(&self.text());
-//        (self.clicked_fn.borrow_mut())(checked)
-//    }
-//}
+    pub fn with_styles(self, styles: WBStyles) -> Self {
+        self.base.set_styles(styles);
+        self
+    }
 
-//impl Widget for DropdownList {}
+    pub fn with_width(self, width: usize) -> Self {
+        self.base.set_attr_scl_width(SclVal::new_fixed(width));
+        self
+    }
 
-//impl Element for DropdownList {
-//    fn kind(&self) -> &'static str {
-//        self.base.kind()
-//    }
-//    fn id(&self) -> ElementID {
-//        self.base.id()
-//    }
-//    fn receivable(&self) -> Vec<(Event, Priority)> {
-//        self.base.receivable()
-//    }
+    pub fn with_max_expanded_height(self, height: usize) -> Self {
+        *self.max_expanded_height.borrow_mut() = Some(height);
+        self.scrollbar.set_height(
+            SclVal::new_fixed(height), // view height (same as the dropdown list height)
+            SclVal::new_fixed(height.saturating_sub(1)), // scrollbar height (1 less, b/c scrollbar's below the drop-arrow)
+            self.entries.borrow().len(),                 // scrollable domain
+        );
+        self
+    }
 
-//    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponse) {
-//        let _ = self.base.receive_event(ctx, ev.clone());
-//        match ev {
-//            Event::KeyCombo(ke) => {
-//                if self.base.get_selectability() != Selectability::Selected || ke.is_empty() {
-//                    return (false, EventResponse::default());
-//                }
-//                if ke[0].matches(&KB::KEY_ENTER) {
-//                    return (true, self.click());
-//                }
-//            }
-//            Event::Mouse(me) => {
-//                if let MouseEventKind::Up(MouseButton::Left) = me.kind {
-//                    return (true, self.click());
-//                }
-//            }
-//            _ => {}
-//        }
-//        (false, EventResponse::default())
-//    }
+    pub fn at(mut self, loc_x: SclVal, loc_y: SclVal) -> Self {
+        self.base.at(loc_x, loc_y);
+        self
+    }
 
-//    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
-//        self.base.change_priority(ctx, p)
-//    }
-//    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-//        // need to re set the content in order to reflect active style
-//        self.base.set_content_from_string(&self.text());
-//        self.base.drawing(ctx)
-//    }
-//    fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
-//        self.base.get_attribute(key)
-//    }
-//    fn set_attribute(&self, key: &str, value: Vec<u8>) {
-//        self.base.set_attribute(key, value)
-//    }
-//    fn set_upward_propagator(&self, up: Rc<RefCell<dyn UpwardPropagator>>) {
-//        self.base.set_upward_propagator(up)
-//    }
-//}
+    pub fn to_widgets(self) -> Widgets {
+        Widgets(vec![Box::new(self)])
+    }
+
+    // ----------------------------------------------
+
+    pub fn correct_offsets(&self, ctx: &Context) {
+        self.base
+            .correct_offsets_to_view_position(ctx, 0, *self.cursor.borrow());
+        self.scrollbar.external_change(
+            ctx,
+            *self.base.sp.content_view_offset_y.borrow(),
+            self.base.content_height(),
+        );
+    }
+
+    pub fn padded_entry_text(&self, ctx: &Context, i: usize) -> String {
+        let entry = self.entries.borrow()[i].clone();
+        let entry_len = entry.chars().count();
+        let width = self.base.get_width(ctx);
+        let left_padding = *self.left_padding.borrow();
+        let right_padding = width.saturating_sub(entry_len + left_padding);
+        let pad_left = " ".repeat(left_padding);
+        let pad_right = " ".repeat(right_padding);
+        format!("{}{}{}", pad_left, entry, pad_right)
+    }
+
+    // doesn't include the arrow text
+    pub fn text(&self, ctx: &Context) -> String {
+        if !*self.open.borrow() {
+            return self.padded_entry_text(ctx, *self.selected.borrow());
+        }
+        let mut out = String::new();
+        let entries_len = self.entries.borrow().len();
+        for i in 0..entries_len {
+            out += &self.padded_entry_text(ctx, i);
+            if i != entries_len - 1 {
+                out += "\n";
+            }
+        }
+        out
+    }
+
+    // the height of the dropdown list while expanded
+    pub fn expanded_height(&self) -> usize {
+        if let Some(max_height) = *self.max_expanded_height.borrow() {
+            if self.entries.borrow().len() > max_height {
+                return max_height;
+            }
+        }
+        self.entries.borrow().len()
+    }
+
+    // whether or not the dropdown list should display a scrollbar
+    pub fn display_scrollbar(&self) -> bool {
+        self.max_expanded_height.borrow().is_some()
+            && self.entries.borrow().len() > self.expanded_height()
+    }
+
+    pub fn perform_open(&self, ctx: &Context) -> EventResponse {
+        *self.open.borrow_mut() = true;
+        *self.cursor.borrow_mut() = *self.selected.borrow();
+        let h = self.expanded_height();
+        self.base.set_attr_scl_height(SclVal::new_fixed(h));
+
+        // must set the content for the offsets to be correct
+        self.base.set_content_from_string(ctx, &self.text(ctx));
+        self.correct_offsets(ctx);
+
+        let rr = RelocationRequest::new_down(h as i32 - 1);
+        EventResponse::default().with_relocation(rr)
+    }
+
+    pub fn perform_close(&self, ctx: &Context, escaped: bool) -> EventResponse {
+        *self.open.borrow_mut() = false;
+        *self.base.sp.content_view_offset_y.borrow_mut() = 0;
+        self.scrollbar
+            .external_change(ctx, 0, self.base.content_height());
+        self.base.set_attr_scl_height(SclVal::new_fixed(1));
+        let resp = if !escaped && *self.selected.borrow() != *self.cursor.borrow() {
+            *self.selected.borrow_mut() = *self.cursor.borrow();
+            (self.selection_made_fn.borrow_mut())(
+                ctx.clone(),
+                self.entries.borrow()[*self.selected.borrow()].clone(),
+            )
+        } else {
+            EventResponse::default()
+        };
+        let rr = RelocationRequest::new_down(-(self.expanded_height() as i32 - 1));
+        resp.with_relocation(rr)
+    }
+
+    pub fn cursor_up(&self, ctx: &Context) {
+        if *self.cursor.borrow() > 0 {
+            *self.cursor.borrow_mut() -= 1;
+        }
+        self.correct_offsets(ctx);
+    }
+
+    pub fn cursor_down(&self, ctx: &Context) {
+        if *self.cursor.borrow() < self.entries.borrow().len().saturating_sub(1) {
+            *self.cursor.borrow_mut() += 1;
+        }
+        self.correct_offsets(ctx);
+    }
+}
+
+/*
+// XXX must override the widget function here ... maybe through the use of a hook which should
+// be called in the widget function?? ... or can maybe override in the impl Widget for Dropdownlist {} block
+// SEE https://www.reddit.com/r/learnrust/comments/15wftju/referencing_a_traits_default_implementation_of_a/
+//   - can use the pre-processing example by minno
+func (d *DropdownList) SetSelectability(s Selectability) yh.EventResponse {
+    if d.Selectedness == Selected && s != Selected {
+        if d.Open {
+            return d.PerformClose(true)
+        }
+    }
+    return d.WidgetBase.SetSelectability(s)
+}
+*/
+
+impl Widget for DropdownList {
+    fn get_z_index(&self) -> ZIndex {
+        Self::Z_INDEX // slightly lower than the rest of the widgets so that the dropdown list will sit above the other widgets
+    }
+}
+
+impl Element for DropdownList {
+    fn kind(&self) -> &'static str {
+        self.base.kind()
+    }
+    fn id(&self) -> ElementID {
+        self.base.id()
+    }
+    fn receivable(&self) -> Vec<(Event, Priority)> {
+        self.base.receivable()
+    }
+
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        let _ = self.base.receive_event(ctx, ev.clone());
+        match ev {
+            Event::KeyCombo(ke) => {
+                if self.base.get_selectability() != Selectability::Selected || ke.is_empty() {
+                    return (false, EventResponses::default());
+                }
+                //if ke[0].matches(&KB::KEY_ENTER) {
+                //    return (true, self.click());
+                //}
+            }
+            Event::Mouse(_me) => {
+                //if let MouseEventKind::Up(MouseButton::Left) = me.kind {
+                //    return (true, self.click());
+                //}
+            }
+            _ => {}
+        }
+        (false, EventResponses::default())
+    }
+
+    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
+        self.base.change_priority(ctx, p)
+    }
+    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        // need to re set the content in order to reflect active style
+        //self.base.set_content_from_string(&self.text());
+        self.base.drawing(ctx)
+    }
+    fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
+        self.base.get_attribute(key)
+    }
+    fn set_attribute(&self, key: &str, value: Vec<u8>) {
+        self.base.set_attribute(key, value)
+    }
+    fn set_upward_propagator(&self, up: Rc<RefCell<dyn UpwardPropagator>>) {
+        self.base.set_upward_propagator(up)
+    }
+}
 
 /*
 
-// when "active" hitting enter will click the button
-var DropdownListEvCombos = []yh.PrioritizableEv{
-    yh.EnterEKC, yh.DownEKC, yh.UpEKC, yh.KLowerEKC, yh.JLowerEKC, yh.SpaceEKC}
-
-var DropdownListStyle = WBStyles{
-    SelectedStyle:     tcell.StyleDefault.Background(tcell.ColorLightYellow).Foreground(tcell.ColorBlack),
-    ReadyStyle:        tcell.StyleDefault.Background(tcell.ColorWhite).Foreground(tcell.ColorBlack),
-    UnselectableStyle: tcell.StyleDefault.Background(tcell.ColorLightSlateGrey).Foreground(tcell.ColorBlack),
-}
-
-var DefaultDropdownArrow = yh.NewDrawCh('▼', false,
-    tcell.StyleDefault.Background(tcell.ColorLightGrey).Foreground(tcell.ColorBlack))
-
-var DefaultDDLCursorStyle = tcell.StyleDefault.Background(tcell.ColorBlue)
-var DefaultDDLLeftPadding = 1
-
-// needs to be slightly above other widgets to select properly
-// if widgets overlap
-const DropdownListZIndex = WidgetZIndex - 1
-
-var DDScrollbarStyle = WBStyles{
-    SelectedStyle:     tcell.StyleDefault.Background(tcell.ColorDarkSlateGrey).Foreground(tcell.ColorWhite),
-    ReadyStyle:        tcell.StyleDefault.Background(tcell.ColorDarkSlateGrey).Foreground(tcell.ColorWhite),
-    UnselectableStyle: tcell.StyleDefault.Background(tcell.ColorDarkSlateGrey).Foreground(tcell.ColorWhite),
-}
-
-func NewDropdownList(pCtx yh.Context, entries []string, selectionMadeFn func(string) yh.EventResponse) *DropdownList {
-
-    maxWidth := 0
-    for _, entry := range entries {
-        if len(entry) > maxWidth {
-            maxWidth = len(entry)
-        }
-    }
-
-    wb := NewWidgetBase(pCtx, NewStatic(maxWidth), NewStatic(1), DropdownListStyle, DropdownListEvCombos)
-    sb := NewVerticalScrollbar(pCtx, NewStatic(0), 0).WithoutArrows().WithStyle(DDScrollbarStyle)
-
-    d := &DropdownList{
-        WidgetBase:        wb,
-        Entries:           entries,
-        LeftPadding:       DefaultDDLLeftPadding,
-        Selected:          0,
-        Open:              false,
-        MaxExpandedHeight: -1,
-        DropdownArrow:     DefaultDropdownArrow,
-        CursorStyle:       DefaultDDLCursorStyle,
-        SelectionMadeFn:   selectionMadeFn,
-        Scrollbar:         sb,
-    }
-
-    //wire the scrollbar to the dropdown list
-    sb.PositionChangedHook = d.SetContentYOffset
-
-    _ = d.Drawing()
-    return d
-}
-
-func (d *DropdownList) WithWidth(width int) *DropdownList {
-    d.Width = NewStatic(width)
-    return d
-}
-
-func (d *DropdownList) WithMaxExpandedHeight(height int) *DropdownList {
-    d.MaxExpandedHeight = height
-    d.Scrollbar.SetHeight(
-        NewStatic(height),   // view height (same as the dropdown list height)
-        NewStatic(height-1), // scrollbar height (1 less, b/c scrollbar's below the drop-arrow)
-        len(d.Entries))      // scrollable domain
-    return d
-}
-
-func (d *DropdownList) At(locX, locY SclVal) *DropdownList {
-    d.WidgetBase.At(locX, locY)
-    return d
-}
-
-// returns Widgets for ease of labeling
-func (d *DropdownList) ToWidgets() Widgets {
-    return []Widget{d}
-}
-
-// ----------------------------------------------
-
-func (d *DropdownList) GetLocation() yh.Location {
-    loc := d.WidgetBase.GetLocation()
-    loc.Z = DropdownListZIndex
-    return loc
-}
-
-// ----------------------------------------------
-
-func (d *DropdownList) CorrectOffsets() {
-    d.CorrectOffsetsToViewPosition(0, d.Cursor)
-    d.Scrollbar.ExternalChange(d.ContentYOffset, d.ContentHeight())
-}
-
-func (d *DropdownList) paddedEntryText(i int) string {
-    entry := d.Entries[i]
-    rightPadding := 0
-    width := d.GetWidth()
-    if width > len(entry)+d.LeftPadding {
-        rightPadding = width - len(entry) - d.LeftPadding
-    }
-    padLeft := strings.Repeat(" ", d.LeftPadding)
-    padRight := strings.Repeat(" ", rightPadding)
-    return fmt.Sprintf("%s%s%s", padLeft, entry, padRight)
-}
-
-// doesn't include the arrow text
-func (d *DropdownList) Text() string {
-
-    if !d.Open {
-        return d.paddedEntryText(d.Selected)
-    }
-
-    out := ""
-    for i := range d.Entries {
-        out += d.paddedEntryText(i)
-        if i != len(d.Entries)-1 {
-            out += "\n"
-        }
-    }
-    return out
-}
 
 // need to reset the content in order to reflect active style
 func (d *DropdownList) Drawing() []yh.DrawChPos {
@@ -330,71 +365,6 @@ func (d *DropdownList) Drawing() []yh.DrawChPos {
     chs = append(chs, yh.NewDrawChPos(d.DropdownArrow, d.GetWidth()-1, 0))
 
     return chs
-}
-
-func (d *DropdownList) SetSelectability(s Selectability) yh.EventResponse {
-    if d.Selectedness == Selected && s != Selected {
-        if d.Open {
-            return d.PerformClose(true)
-        }
-    }
-    return d.WidgetBase.SetSelectability(s)
-}
-
-func (d *DropdownList) ExpandedHeight() int {
-    if d.MaxExpandedHeight != -1 && len(d.Entries) > d.MaxExpandedHeight {
-        return d.MaxExpandedHeight
-    }
-    return len(d.Entries)
-}
-
-// whether or not the dropdown list should display a scrollbar
-func (d *DropdownList) DisplayScrollbar() bool {
-    return d.MaxExpandedHeight != -1 && len(d.Entries) > d.MaxExpandedHeight
-}
-
-func (d *DropdownList) PerformOpen() yh.EventResponse {
-    d.Open = true
-    d.Cursor = d.Selected
-    h := d.ExpandedHeight()
-    d.WidgetBase.Height = NewStatic(h)
-
-    // must set the content for the offsets to be correct
-    d.SetContentFromString(d.Text())
-    d.CorrectOffsets()
-
-    rr := yh.NewRelocationRequestDown(h - 1)
-    return yh.NewEventResponse().WithRelocation(rr)
-}
-
-func (d *DropdownList) PerformClose(escaped bool) yh.EventResponse {
-    d.Open = false
-    d.ContentYOffset = 0
-    d.Scrollbar.ExternalChange(d.ContentYOffset, d.ContentHeight())
-    d.WidgetBase.Height = NewStatic(1)
-    resp := yh.NewEventResponse()
-    if !escaped && d.Selected != d.Cursor {
-        d.Selected = d.Cursor
-        if d.SelectionMadeFn != nil {
-            resp = d.SelectionMadeFn(d.Entries[d.Selected])
-        }
-    }
-    rr := yh.NewRelocationRequestDown(-(d.ExpandedHeight() - 1))
-    return resp.WithRelocation(rr)
-}
-
-func (d *DropdownList) CursorUp() {
-    if d.Cursor > 0 {
-        d.Cursor--
-    }
-    d.CorrectOffsets()
-}
-
-func (d *DropdownList) CursorDown() {
-    if d.Cursor < len(d.Entries)-1 {
-        d.Cursor++
-    }
-    d.CorrectOffsets()
 }
 
 func (d *DropdownList) ReceiveKeyEventCombo(evs []*tcell.EventKey) (captured bool, resp yh.EventResponse) {

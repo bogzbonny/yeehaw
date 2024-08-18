@@ -22,7 +22,8 @@ pub use {
     cui_ch::{DrawCh, DrawChPos, DrawChs2D},
     cui_location::{Location, LocationSet, Size, ZIndex},
     element::{
-        Context, CreateWindow, Element, EventResponse, ReceivableEventChanges, UpwardPropagator,
+        Context, CreateWindow, Element, EventResponse, EventResponses, ReceivableEventChanges,
+        UpwardPropagator,
     },
     elements::StandardPane,
     errors::Error,
@@ -31,6 +32,6 @@ pub use {
     organizer::ElementOrganizer,
     prioritizer::Priority,
     sorting_hat::{ElementID, SortingHat},
-    style::{YHAttributes, Style},
+    style::{Style, YHAttributes},
     widgets::WidgetPane,
 };

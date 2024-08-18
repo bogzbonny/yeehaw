@@ -1,6 +1,7 @@
 use {
     crate::{prioritizer::Priority, DrawChPos, ElementID, Event, Location, LocationSet, Size},
     std::any::Any,
+    std::ops::{Deref, DerefMut},
     std::{cell::RefCell, rc::Rc},
 };
 
@@ -23,7 +24,7 @@ pub trait Element {
     // changes receivable events. When the event is captured, the element is expected to returns
     // captured=true.
     //                                                   (captured, response     )
-    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponse);
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses);
 
     // change_priority is expected to change the priority of an element relative to its parents.
     // All receivable-events registered directly by the element should have their local priority
@@ -145,6 +146,29 @@ impl Context {
 }
 
 // ----------------------------------------------------------------------------
+
+#[derive(Default)]
+pub struct EventResponses(pub Vec<EventResponse>);
+
+impl From<EventResponse> for EventResponses {
+    fn from(er: EventResponse) -> EventResponses {
+        EventResponses(vec![er])
+    }
+}
+
+impl Deref for EventResponses {
+    type Target = Vec<EventResponse>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for EventResponses {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 // EventResponse is used to send information back to the parent that delivered
 // the event to the element

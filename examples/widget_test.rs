@@ -6,7 +6,7 @@ use {
         Context,
         Cui,
         Error,
-        EventResponse,
+        EventResponses,
         SortingHat,
         WidgetPane,
     },
@@ -34,7 +34,7 @@ async fn main() -> Result<(), Error> {
         let t = l1.get_text();
         let t = t + "0";
         l1.set_text(&ctx_, t);
-        EventResponse::default()
+        EventResponses::default()
     });
     let button = Button::new(&hat, &ctx, "click me".to_string(), button_click_fn)
         .at(SclVal::new_frac(0.25), SclVal::new_frac(0.25))
@@ -83,7 +83,7 @@ async fn main() -> Result<(), Error> {
         &ctx,
         " ★ ".to_string(),
         " ⏾ ".to_string(),
-        Box::new(|_| EventResponse::default()),
+        Box::new(|_, _| EventResponses::default()),
     )
     .at(SclVal::new_frac(0.1), SclVal::new_frac(0.4))
     .to_widgets();

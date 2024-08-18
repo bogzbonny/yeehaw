@@ -20,12 +20,13 @@ have been assigned to them from parent elements.
 2) They're rapidly iterable
 3) They're distraction free
 4) They're conceptually simple, it's just a grid 
-5) You're server-side WebUIs are centralized and weak as shit
 
 ## Tribute
 
-[ratatui](https://ratatui.rs/) rocks! Check it out. The design goals are
-slightly different but it's a mature TUI framework you should consider.
+[ratatui](https://ratatui.rs/) rocks! Check it out. Their design goals are
+slightly different, it's a more mature TUI framework which you should consider.
+
+[dioxus](https://github.com/dioxuslabs/dioxus) seems lit (non-TUI)
 
 ## Examples
 
@@ -55,12 +56,14 @@ slightly different but it's a mature TUI framework you should consider.
 
 ## Planned Elements
  - accordion stack container
+ - hover comments
  - widgets:
    - colour selector
    - pixel art viewer
    - table 
+   - vim-style text editor
 
-## Planned Tools
+## Planned Tooling
  - TUI Application Builder 
    - basically drag and drop style element builder
  - Interactive Debugging TUI 

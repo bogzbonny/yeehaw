@@ -1,7 +1,7 @@
 use {
     super::{SclVal, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Context, DrawChPos, Element, ElementID, Event, EventResponse, Keyboard as KB, Priority,
+        Context, DrawChPos, Element, ElementID, Event, EventResponses, Keyboard as KB, Priority,
         ReceivableEventChanges, RgbColour, SortingHat, Style, UpwardPropagator, YHAttributes,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -19,7 +19,7 @@ pub struct Checkbox {
 
     // function which executes when checkbox is checked or unchecked,
     // bool is the new state of the checkbox (true = checked)
-    pub clicked_fn: Rc<RefCell<dyn FnMut(bool) -> EventResponse>>,
+    pub clicked_fn: Rc<RefCell<dyn FnMut(Context, bool) -> EventResponses>>,
 }
 
 impl Checkbox {
@@ -57,7 +57,7 @@ impl Checkbox {
             base: wb,
             checked: Rc::new(RefCell::new(false)),
             checkmark: Rc::new(RefCell::new('√')),
-            clicked_fn: Rc::new(RefCell::new(|_| EventResponse::default())),
+            clicked_fn: Rc::new(RefCell::new(|_, _| EventResponses::default())),
         }
     }
 
@@ -69,7 +69,9 @@ impl Checkbox {
         self
     }
 
-    pub fn with_clicked_fn(mut self, clicked_fn: Box<dyn FnMut(bool) -> EventResponse>) -> Self {
+    pub fn with_clicked_fn(
+        mut self, clicked_fn: Box<dyn FnMut(Context, bool) -> EventResponses>,
+    ) -> Self {
         self.clicked_fn = Rc::new(RefCell::new(clicked_fn));
         self
     }
@@ -92,11 +94,11 @@ impl Checkbox {
         " ".to_string()
     }
 
-    pub fn click(&self, ctx: &Context) -> EventResponse {
+    pub fn click(&self, ctx: &Context) -> EventResponses {
         let checked = !*self.checked.borrow();
         self.checked.replace(checked);
         self.base.set_content_from_string(ctx, &self.text());
-        (self.clicked_fn.borrow_mut())(checked)
+        (self.clicked_fn.borrow_mut())(ctx.clone(), checked)
     }
 }
 
@@ -113,12 +115,12 @@ impl Element for Checkbox {
         self.base.receivable()
     }
 
-    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponse) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let _ = self.base.receive_event(ctx, ev.clone());
         match ev {
             Event::KeyCombo(ke) => {
                 if self.base.get_selectability() != Selectability::Selected || ke.is_empty() {
-                    return (false, EventResponse::default());
+                    return (false, EventResponses::default());
                 }
                 if ke[0].matches(&KB::KEY_ENTER) {
                     return (true, self.click(ctx));
@@ -131,7 +133,7 @@ impl Element for Checkbox {
             }
             _ => {}
         }
-        (false, EventResponse::default())
+        (false, EventResponses::default())
     }
 
     fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {

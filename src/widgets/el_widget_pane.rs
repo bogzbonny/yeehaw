@@ -1,8 +1,8 @@
 use {
     super::{Widget, WidgetOrganizer, Widgets},
     crate::{
-        Context, DrawChPos, Element, ElementID, Event, EventResponse, LocationSet, Priority,
-        ReceivableEventChanges, SortingHat, StandardPane, UpwardPropagator, ZIndex,
+        Context, DrawChPos, Element, ElementID, Event, EventResponses, LocationSet, Priority,
+        ReceivableEventChanges, SortingHat, StandardPane, UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -12,8 +12,6 @@ pub struct WidgetPane {
     pub sp: StandardPane,
     pub org: Rc<RefCell<WidgetOrganizer>>,
 }
-
-const WIDGET_Z_INDEX: ZIndex = 10;
 
 impl WidgetPane {
     pub const KIND: &'static str = "widget_pane";
@@ -35,7 +33,7 @@ impl WidgetPane {
         let l = w.get_scl_location().get_location_for_context(ctx);
         let l = LocationSet::default()
             .with_location(l)
-            .with_z(WIDGET_Z_INDEX);
+            .with_z(w.get_z_index());
         self.org.borrow_mut().add_widget(w, l);
     }
 
@@ -77,7 +75,7 @@ impl Element for WidgetPane {
         rec
     }
 
-    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponse) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
             Event::Mouse(me) => {
                 return self.org.borrow_mut().capture_mouse_event(ctx, me);
