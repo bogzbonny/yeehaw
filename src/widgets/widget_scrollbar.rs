@@ -302,21 +302,16 @@ impl Scrollbar {
     }
 
     pub fn jump_scroll_backwards(&self, ctx: &Context, p_size: usize) {
-        self.scroll_to_position(
-            ctx,
-            p_size,
-            self.scrollable_position
-                .borrow()
-                .saturating_sub(self.jump_scroll_amount()),
-        );
+        let pos = self
+            .scrollable_position
+            .borrow()
+            .saturating_sub(self.jump_scroll_amount());
+        self.scroll_to_position(ctx, p_size, pos);
     }
 
     pub fn jump_scroll_forwards(&self, ctx: &Context, p_size: usize) {
-        self.scroll_to_position(
-            ctx,
-            p_size,
-            *self.scrollable_position.borrow() + self.jump_scroll_amount(),
-        );
+        let pos = *self.scrollable_position.borrow() + self.jump_scroll_amount();
+        self.scroll_to_position(ctx, p_size, pos);
     }
 
     pub fn can_scroll_backwards(&self) -> bool {
@@ -727,6 +722,9 @@ impl VerticalScrollbar {
             return (false, EventResponses::default());
         }
 
+        let curr_dragging = *self.currently_dragging.borrow();
+        //debug!("sb rec ev, curr_dragging: {}", curr_dragging);
+
         let h = ctx.get_height();
         match ev.kind {
             MouseEventKind::ScrollDown => {
@@ -738,11 +736,24 @@ impl VerticalScrollbar {
                 (true, EventResponses::default())
             }
             MouseEventKind::Up(MouseButton::Left) => {
+                //debug!("sb up click");
                 *self.currently_dragging.borrow_mut() = false;
+                let y = ev.row as usize;
+                match self.position_relative_to_scrollbar(h.into(), y) {
+                    SBRelPosition::Before => {
+                        self.jump_scroll_backwards(ctx, h.into());
+                    }
+                    SBRelPosition::After => {
+                        self.jump_scroll_forwards(ctx, h.into());
+                    }
+                    _ => {}
+                }
                 (true, EventResponses::default())
             }
-
-            MouseEventKind::Down(MouseButton::Left) if *self.currently_dragging.borrow() => {
+            MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Drag(MouseButton::Left)
+                if curr_dragging =>
+            {
+                //debug!("sb down click while dragging");
                 let y = ev.row as usize;
                 let start_drag_pos = *self.start_drag_position.borrow();
                 if y == start_drag_pos {
@@ -789,7 +800,10 @@ impl VerticalScrollbar {
                 *self.start_drag_position.borrow_mut() = y;
                 (true, EventResponses::default())
             }
-            MouseEventKind::Down(MouseButton::Left) if !*self.currently_dragging.borrow() => {
+            MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Drag(MouseButton::Left)
+                if !curr_dragging =>
+            {
+                //debug!("sb down click while not dragging");
                 let y = ev.row as usize;
                 let has_arrows = *self.has_arrows.borrow();
                 match true {

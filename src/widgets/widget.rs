@@ -569,15 +569,19 @@ impl WidgetBase {
 
         // set y offset if cursor out of bounds
         if y >= view_offset_y + self.get_height(ctx) {
+            //debug!("cor1");
             self.set_content_y_offset(ctx, y - self.get_height(ctx) + 1);
         } else if y < view_offset_y {
+            //debug!("cor2");
             self.set_content_y_offset(ctx, y);
         }
 
         // correct the offset if the offset is now showing lines that don't exist in
         // the content
-        if view_offset_y + self.get_height(ctx) > self.content_height() - 1 {
-            self.set_content_y_offset(ctx, self.content_height() - 1);
+        //if view_offset_y + self.get_height(ctx) > self.content_height() - 1 {
+        if view_offset_y + self.get_height(ctx) > self.content_height() {
+            //debug!("cor3");
+            self.set_content_y_offset(ctx, self.content_height());
         }
 
         // set x offset if cursor out of bounds
@@ -589,8 +593,9 @@ impl WidgetBase {
 
         // correct the offset if the offset is now showing characters to the right
         // which don't exist in the content.
-        if view_offset_x + self.get_width(ctx) > self.content_width() - 1 {
-            self.set_content_x_offset(ctx, self.content_width() - 1);
+        //if view_offset_x + self.get_width(ctx) > self.content_width() - 1 {
+        if view_offset_x + self.get_width(ctx) > self.content_width() {
+            self.set_content_x_offset(ctx, self.content_width());
         }
     }
 

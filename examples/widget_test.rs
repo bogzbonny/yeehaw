@@ -1,24 +1,19 @@
 use {
+    //std::env,
     std::{cell::RefCell, rc::Rc},
     yeehaw::{
-        //debug,
         widgets::{
             megafonts, Button, Checkbox, DropdownList, Label, Megatext, RadioButtons, SclVal,
             Toggle,
         },
-        Context,
-        Cui,
-        Error,
-        EventResponses,
-        SortingHat,
-        WidgetPane,
+        Context, Cui, Error, EventResponses, SortingHat, WidgetPane,
     },
 };
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    //debug::set_log_file("./widget_test.log".to_string());
-    //debug::clear();
+    //yeehaw::debug::set_log_file("./widget_test.log".to_string());
+    //yeehaw::debug::clear();
     let hat = SortingHat::default();
 
     let mut el = WidgetPane::new(&hat);
@@ -94,13 +89,24 @@ async fn main() -> Result<(), Error> {
     el.add_widgets(&ctx, toggle);
 
     // fill dd entries with 20 items
-    let dd_entries = (0..20)
-        .map(|i| format!("entry {}  ", i))
+    let dd_entries = (1..=20)
+        .map(|i| format!("entry {}", i))
         .collect::<Vec<String>>();
 
-    let dropdown = DropdownList::new(&hat, dd_entries, Box::new(|_, _| EventResponses::default()))
-        .at(SclVal::new_frac(0.1), SclVal::new_frac(0.8))
-        .to_widgets();
+    let dropdown = DropdownList::new(
+        &hat,
+        &ctx,
+        dd_entries,
+        Box::new(|_, _| EventResponses::default()),
+    )
+    .with_max_expanded_height(10)
+    .with_width(
+        SclVal::default()
+            .plus_max_of(SclVal::new_frac(0.2))
+            .plus_max_of(SclVal::new_fixed(12)),
+    )
+    .at(SclVal::new_frac(0.1), SclVal::new_frac(0.8))
+    .to_widgets();
     el.add_widgets(&ctx, dropdown);
 
     Cui::new(Rc::new(RefCell::new(el)))?.run().await
