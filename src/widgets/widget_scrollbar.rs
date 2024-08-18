@@ -52,11 +52,11 @@ impl DerefMut for HorizontalScrollbar {
 }
 
 pub enum ScrollbarPositions {
-    NoScrollbar,
-    LeftScrollbar,
-    RightScrollbar,
-    TopScrollbar,
-    BottomScrollbar,
+    None,
+    Left,
+    Right,
+    Top,
+    Bottom,
 }
 
 impl VerticalScrollbar {

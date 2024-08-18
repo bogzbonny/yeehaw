@@ -9,26 +9,7 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-// issues
-//  - scrollbar mouse drag doesn't work
-
-//TODO add scrollbar support
 //TODO multiline dropdown entry support
-
-//type DropdownList struct {
-//    *WidgetBase
-//    Entries           []string
-//    LeftPadding       int
-//    Selected          int                           // the entry which has been selected
-//    Cursor            int                           // the entry that is currently hovered while open
-//    Open              bool                          // if the list is open
-//    MaxExpandedHeight int                           // the max height of the entire dropdown list when expanded, -1 = no max
-//    DropdownArrow     yh.DrawCh                     // ▼
-//    CursorStyle       tcell.Style                   // style for the selected entry
-//    SelectionMadeFn   func(string) yh.EventResponse // function which executes when button moves from pressed -> unpressed
-
-//    Scrollbar: VerticalScrollbar
-//}
 
 #[derive(Clone)]
 pub struct DropdownList {
@@ -122,8 +103,6 @@ impl DropdownList {
         }));
         *sb.position_changed_hook.borrow_mut() = Some(hook);
 
-        // TRANSLATION NOTE there used to be a drawing() call before returning the list
-
         let d = DropdownList {
             base: wb,
             entries: Rc::new(RefCell::new(entries)),
@@ -139,7 +118,6 @@ impl DropdownList {
             scrollbar: sb,
         };
         d.base.set_attr_scl_width(d.get_scl_width());
-        //let _ = d.drawing(ctx);
         d
     }
 

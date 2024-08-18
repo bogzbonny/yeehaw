@@ -74,7 +74,7 @@
       widget_button.go                   │ DONE
       widget_checkbox.go                 │ DONE
       widget_col_sel.go                  │ DONE (DELETED)
-      widget_dropdownlist.go             │ TRANSLATED - SCROLLBAR BUGS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+      widget_dropdownlist.go             │ DONE
       widget_label.go                    │ DONE
       widget_listbox.go                  │  -> dependant on scrollbar + right click menu template
       widget_listbox_mono.go             │  -> dependant on listbox
