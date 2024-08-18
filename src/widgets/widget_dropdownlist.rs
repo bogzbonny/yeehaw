@@ -229,7 +229,7 @@ impl DropdownList {
         EventResponse::default().with_relocation(rr)
     }
 
-    pub fn perform_close(&self, ctx: &Context, escaped: bool) -> EventResponse {
+    pub fn perform_close(&self, ctx: &Context, escaped: bool) -> EventResponses {
         *self.open.borrow_mut() = false;
         *self.base.sp.content_view_offset_y.borrow_mut() = 0;
         self.scrollbar
@@ -245,7 +245,7 @@ impl DropdownList {
             EventResponse::default()
         };
         let rr = RelocationRequest::new_down(-(self.expanded_height() as i32 - 1));
-        resp.with_relocation(rr)
+        resp.with_relocation(rr).into()
     }
 
     pub fn cursor_up(&self, ctx: &Context) {
@@ -281,6 +281,16 @@ func (d *DropdownList) SetSelectability(s Selectability) yh.EventResponse {
 impl Widget for DropdownList {
     fn get_z_index(&self) -> ZIndex {
         Self::Z_INDEX // slightly lower than the rest of the widgets so that the dropdown list will sit above the other widgets
+    }
+
+    fn set_selectability_pre_hook(&self, ctx: &Context, s: Selectability) -> EventResponses {
+        if self.base.get_selectability() == Selectability::Selected
+            && s != Selectability::Selected
+            && *self.open.borrow()
+        {
+            return self.perform_close(ctx, true);
+        }
+        EventResponses::default()
     }
 }
 

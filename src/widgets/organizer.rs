@@ -59,19 +59,28 @@ impl WidgetOrganizer {
     }
 
     // deactivate all the Widgets
-    pub fn unselect_selected_widget(&mut self) -> ReceivableEventChanges {
+    pub fn unselect_selected_widget(&mut self, ctx: &Context) -> ReceivableEventChanges {
         if let Some(i) = self.active_widget_index {
-            let resp = self.widgets[i].0.set_selectability(Selectability::Ready);
-            // ignore all responses besides receiving event changes
-            let resp = resp.get_receivable_event_changes().unwrap_or_default();
+            let resps = self.widgets[i]
+                .0
+                .set_selectability(ctx, Selectability::Ready);
+
+            // ignore all responses besides receiving event changes // TODO maybe shouldn't
+            let mut out = ReceivableEventChanges::default();
+            for resp in resps.0.iter() {
+                let out_ = resp.get_receivable_event_changes().unwrap_or_default();
+                out.concat(out_);
+            }
             self.active_widget_index = None;
-            resp
+            out
         } else {
             ReceivableEventChanges::default()
         }
     }
 
-    pub fn process_widget_resp(&mut self, resp: &mut EventResponse, widget_index: usize) {
+    pub fn process_widget_resp(
+        &mut self, ctx: &Context, resp: &mut EventResponse, widget_index: usize,
+    ) {
         // adjust right click menu location to the widget
         // location which made the request
         if let Some(mut win) = resp.window.clone() {
@@ -87,48 +96,49 @@ impl WidgetOrganizer {
         }
 
         if resp.deactivate {
-            let rec = self.unselect_selected_widget();
+            let rec = self.unselect_selected_widget(ctx);
             resp.concat_receivable_event_changes(rec);
             resp.deactivate = false
         }
     }
 
     pub fn switch_between_widgets(
-        &mut self, old_index: Option<usize>, new_index: Option<usize>,
-    ) -> ReceivableEventChanges {
+        &mut self, ctx: &Context, old_index: Option<usize>, new_index: Option<usize>,
+    ) -> EventResponses {
         if old_index == new_index {
-            return ReceivableEventChanges::default();
+            return EventResponses::default();
         }
 
         if let Some(new_i) = new_index {
             if self.widgets[new_i].0.get_selectability() == Selectability::Unselectable {
-                return ReceivableEventChanges::default();
+                return EventResponses::default();
             }
         }
 
-        let mut rec = ReceivableEventChanges::default();
+        let mut resps = EventResponses::default();
         if let Some(old_i) = old_index {
-            let mut resp = self.widgets[old_i]
+            let mut resps_ = self.widgets[old_i]
                 .0
-                .set_selectability(Selectability::Ready);
-            // ignore all responses besides receiving event changes
-            self.process_widget_resp(&mut resp, old_i);
-            let resp = resp.get_receivable_event_changes().unwrap_or_default();
-            rec = resp;
+                .set_selectability(ctx, Selectability::Ready);
+
+            for mut resp in resps_.iter_mut() {
+                self.process_widget_resp(ctx, &mut resp, old_i);
+            }
+            resps.extend(resps_.0);
         }
 
         if let Some(new_i) = new_index {
-            let mut resp = self.widgets[new_i]
+            let mut resps_ = self.widgets[new_i]
                 .0
-                .set_selectability(Selectability::Selected);
+                .set_selectability(ctx, Selectability::Selected);
 
-            // ignore all responses besides receiving event changes
-            self.process_widget_resp(&mut resp, new_i);
-            let resp = resp.get_receivable_event_changes().unwrap_or_default();
-            rec.concat(resp);
+            for mut resp in resps_.iter_mut() {
+                self.process_widget_resp(ctx, &mut resp, new_i);
+            }
             self.active_widget_index = Some(new_i);
+            resps.extend(resps_.0);
         }
-        rec
+        resps
     }
 
     // gets the next ready widget index starting from the startingIndex provided
@@ -168,15 +178,17 @@ impl WidgetOrganizer {
         None
     }
 
-    pub fn switch_to_next_widget(&mut self) -> ReceivableEventChanges {
+    pub fn switch_to_next_widget(&mut self, ctx: &Context) -> EventResponses {
         self.switch_between_widgets(
+            ctx,
             self.active_widget_index,
             self.next_ready_widget_index(self.active_widget_index),
         )
     }
 
-    pub fn switch_to_prev_widget(&mut self) -> ReceivableEventChanges {
+    pub fn switch_to_prev_widget(&mut self, ctx: &Context) -> EventResponses {
         self.switch_between_widgets(
+            ctx,
             self.active_widget_index,
             self.prev_ready_widget_index(self.active_widget_index),
         )
@@ -199,7 +211,7 @@ impl WidgetOrganizer {
         }
         match true {
             _ if ev[0].matches(&KB::KEY_ESC) => {
-                let rec = self.unselect_selected_widget();
+                let rec = self.unselect_selected_widget(ctx);
                 return (
                     true,
                     EventResponse::default()
@@ -208,30 +220,20 @@ impl WidgetOrganizer {
                 );
             }
             _ if ev[0].matches(&KB::KEY_TAB) => {
-                let rec = self.switch_to_next_widget();
-                return (
-                    true,
-                    EventResponse::default()
-                        .with_receivable_event_changes(rec)
-                        .into(),
-                );
+                let resps = self.switch_to_next_widget(ctx);
+                return (true, resps);
             }
             _ if ev[0].matches(&KB::KEY_BACKTAB) => {
-                let rec = self.switch_to_prev_widget();
-                return (
-                    true,
-                    EventResponse::default()
-                        .with_receivable_event_changes(rec)
-                        .into(),
-                );
+                let resps = self.switch_to_prev_widget(ctx);
+                return (true, resps);
             }
             _ => {}
         }
 
         if let Some(i) = self.active_widget_index {
             let (captured, mut resps) = self.widgets[i].0.receive_event(ctx, Event::KeyCombo(ev));
-            for mut resp in resps.iter_mut() {
-                self.process_widget_resp(&mut resp, i);
+            for resp in resps.iter_mut() {
+                self.process_widget_resp(ctx, resp, i);
             }
             return (captured, resps);
         }
@@ -264,7 +266,7 @@ impl WidgetOrganizer {
 
         let Some(widget_index) = widget_index else {
             if clicked {
-                let rec = self.unselect_selected_widget();
+                let rec = self.unselect_selected_widget(ctx);
                 return (
                     false,
                     EventResponse::default()
@@ -275,21 +277,21 @@ impl WidgetOrganizer {
             return (false, EventResponses::default());
         };
 
-        let rec = if clicked {
-            self.switch_between_widgets(self.active_widget_index, Some(widget_index))
+        let resps = if clicked {
+            self.switch_between_widgets(ctx, self.active_widget_index, Some(widget_index))
         } else {
-            ReceivableEventChanges::default()
+            EventResponses::default()
         };
         let ev_adj = widget_loc.l.adjust_mouse_event(&ev);
-        let (captured, mut resps) = self.widgets[widget_index]
+        let (captured, mut resps2) = self.widgets[widget_index]
             .0
             .receive_event(ctx, Event::Mouse(ev_adj));
 
-        for mut resp in resps.iter_mut() {
-            self.process_widget_resp(&mut resp, widget_index);
+        for resp in resps2.iter_mut() {
+            self.process_widget_resp(ctx, resp, widget_index);
         }
-        resps.push(EventResponse::default().with_receivable_event_changes(rec));
-        (captured, resps)
+        resps2.extend(resps.0);
+        (captured, resps2)
     }
 
     pub fn resize_event(&mut self, ctx: &Context) {

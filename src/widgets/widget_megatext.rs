@@ -17,7 +17,7 @@ pub struct Megatext {
 impl Megatext {
     const KIND: &'static str = "widget_megatext";
 
-    pub fn new(hat: &SortingHat, text: String, font: Megafont) -> Self {
+    pub fn new(hat: &SortingHat, ctx: &Context, text: String, font: Megafont) -> Self {
         let mega_text = font.get_mega_text(&text);
         let size = mega_text.size();
 
@@ -30,7 +30,7 @@ impl Megatext {
             vec![],
         );
         wb.set_content(mega_text);
-        _ = wb.set_selectability(Selectability::Unselectable);
+        _ = wb.set_selectability(ctx, Selectability::Unselectable);
         Megatext { base: wb }
     }
 

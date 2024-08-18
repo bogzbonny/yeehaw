@@ -68,6 +68,7 @@ async fn main() -> Result<(), Error> {
 
     let mtext = Megatext::new(
         &hat,
+        &ctx,
         "HELLO, WERLD!".to_string(),
         megafonts::ansi_regular_ex(),
     )

@@ -1,9 +1,9 @@
 use {
     super::{SclVal, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Context, DrawChPos, Element, ElementID, Event, EventResponse, EventResponses,
-        KeyPossibility, Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SortingHat,
-        Style, UpwardPropagator,
+        Context, DrawChPos, Element, ElementID, Event, EventResponses, KeyPossibility,
+        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SortingHat, Style,
+        UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
     std::ops::{Deref, DerefMut},
@@ -391,11 +391,6 @@ impl Scrollbar {
             as usize
     }
 
-    pub fn set_selectability(&self, s: Selectability) -> EventResponse {
-        *self.currently_dragging.borrow_mut() = false;
-        self.base.set_selectability(s)
-    }
-
     // Get an array of half-increments of the scrollbar domain area
     fn scroll_bar_domain_array_of_half_increments(&self, p_size: usize) -> Vec<bool> {
         let domain_incr = self.scrollbar_domain_in_half_increments(p_size);
@@ -534,19 +529,23 @@ impl Scrollbar {
     // Call this when the position has been changed external to the scrollbar
     // new_view_offset is the new position of the view in full characters
     // new_view_domain is the number of full characters of the full scrollable domain
-    pub fn external_change(&self, p_size: usize, new_view_offset: usize, new_domain_chs: usize) {
+    pub fn external_change(
+        &self, ctx: &Context, p_size: usize, new_view_offset: usize, new_domain_chs: usize,
+    ) {
         *self.scrollable_position.borrow_mut() = new_view_offset;
         *self.scrollable_domain_chs.borrow_mut() = new_domain_chs;
-        self.update_selectibility(p_size);
+        self.update_selectibility(ctx, p_size);
     }
 
     // process for the selectibility of the scrollbar
-    pub fn update_selectibility(&self, p_size: usize) {
+    pub fn update_selectibility(&self, ctx: &Context, p_size: usize) {
+        *self.currently_dragging.borrow_mut() = false;
         if self.is_currently_unnecessary(p_size) {
-            *self.currently_dragging.borrow_mut() = false;
-            let _ = self.set_selectability(Selectability::Unselectable);
+            let _ = self
+                .base
+                .set_selectability(ctx, Selectability::Unselectable);
         } else {
-            let _ = self.set_selectability(Selectability::Ready);
+            let _ = self.base.set_selectability(ctx, Selectability::Ready);
         }
     }
 
@@ -623,14 +622,14 @@ impl VerticalScrollbar {
     pub fn external_change(&self, ctx: &Context, new_view_offset: usize, new_domain_chs: usize) {
         *self.scrollable_position.borrow_mut() = new_view_offset;
         *self.scrollable_domain_chs.borrow_mut() = new_domain_chs;
-        self.update_selectibility(ctx.get_height().into());
+        self.update_selectibility(ctx, ctx.get_height().into());
     }
 }
 impl HorizontalScrollbar {
     pub fn external_change(&self, ctx: &Context, new_view_offset: usize, new_domain_chs: usize) {
         *self.scrollable_position.borrow_mut() = new_view_offset;
         *self.scrollable_domain_chs.borrow_mut() = new_domain_chs;
-        self.update_selectibility(ctx.get_width().into());
+        self.update_selectibility(ctx, ctx.get_width().into());
     }
 }
 
@@ -663,13 +662,13 @@ impl HorizontalScrollbar {
 
 impl VerticalScrollbar {
     pub fn resize_event(&self, ctx: &Context) -> (bool, EventResponses) {
-        self.update_selectibility(ctx.get_height().into());
+        self.update_selectibility(ctx, ctx.get_height().into());
         (false, EventResponses::default())
     }
 }
 impl HorizontalScrollbar {
     pub fn resize_event(&self, ctx: &Context) -> (bool, EventResponses) {
-        self.update_selectibility(ctx.get_width().into());
+        self.update_selectibility(ctx, ctx.get_width().into());
         (false, EventResponses::default())
     }
 }
@@ -940,8 +939,24 @@ impl HorizontalScrollbar {
     }
 }
 
-impl Widget for VerticalScrollbar {}
-impl Widget for HorizontalScrollbar {}
+// TRANSLATION NOTE, used to be implemented on the scrollbar
+//pub fn set_selectability(&self, ctx: &Context,  s: Selectability) -> EventResponses {
+//    *self.currently_dragging.borrow_mut() = false;
+//    self.base.set_selectability(&ctx, s)
+//}
+impl Widget for VerticalScrollbar {
+    fn set_selectability_pre_hook(&self, _: &Context, _: Selectability) -> EventResponses {
+        *self.currently_dragging.borrow_mut() = false;
+        EventResponses::default()
+    }
+}
+
+impl Widget for HorizontalScrollbar {
+    fn set_selectability_pre_hook(&self, _: &Context, _: Selectability) -> EventResponses {
+        *self.currently_dragging.borrow_mut() = false;
+        EventResponses::default()
+    }
+}
 
 impl Element for VerticalScrollbar {
     fn kind(&self) -> &'static str {

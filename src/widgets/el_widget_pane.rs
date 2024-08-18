@@ -96,7 +96,7 @@ impl Element for WidgetPane {
 
     fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
         let mut rec = if p == Priority::UNFOCUSED {
-            self.org.borrow_mut().unselect_selected_widget()
+            self.org.borrow_mut().unselect_selected_widget(ctx)
         } else {
             ReceivableEventChanges::default()
         };

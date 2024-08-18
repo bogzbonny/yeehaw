@@ -160,10 +160,12 @@ pub trait Widget: Element {
     }
 
     // NOTE window creation in response to SetSelectability is currently not supported
-    fn set_selectability(&self, s: Selectability) -> EventResponse {
+    fn set_selectability(&self, ctx: &Context, s: Selectability) -> EventResponses {
+        let mut resps = self.set_selectability_pre_hook(ctx, s);
+
         let attr_sel = self.get_attr_selectability();
         if attr_sel == s {
-            return EventResponse::default();
+            return resps;
         }
 
         let mut rec = ReceivableEventChanges::default();
@@ -181,10 +183,15 @@ pub trait Widget: Element {
                                                 // receivable will return the wrong value
             }
         }
-        EventResponse::default().with_receivable_event_changes(rec)
+
+        resps.push(EventResponse::default().with_receivable_event_changes(rec));
+        resps
     }
 
-    fn set_selectability_pre(&self, _s: Selectability) {}
+    // executed before the selectability is set
+    fn set_selectability_pre_hook(&self, _ctx: &Context, _s: Selectability) -> EventResponses {
+        EventResponses::default()
+    }
 
     // get the scalable location of the widget
     fn get_scl_location(&self) -> SclLocation {
@@ -587,12 +594,12 @@ impl WidgetBase {
         }
     }
 
-    pub fn disable(&self) -> EventResponse {
-        self.set_selectability(Selectability::Unselectable)
+    pub fn disable(&self, ctx: &Context) -> EventResponses {
+        self.set_selectability(ctx, Selectability::Unselectable)
     }
 
-    pub fn enable(&self) -> EventResponse {
-        self.set_selectability(Selectability::Ready)
+    pub fn enable(&self, ctx: &Context) -> EventResponses {
+        self.set_selectability(ctx, Selectability::Ready)
     }
 
     pub fn get_current_style(&self) -> Style {

@@ -62,7 +62,7 @@ impl Button {
             Self::STYLE,
             Self::default_receivable_events(),
         );
-        _ = wb.set_selectability(Selectability::Unselectable);
+        _ = wb.set_selectability(ctx, Selectability::Unselectable);
         let b = Button {
             base: wb,
             text: Rc::new(RefCell::new(text)),

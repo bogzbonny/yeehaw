@@ -44,7 +44,7 @@ impl Label {
             LABEL_STYLE,
             LABEL_EV_COMBOS.clone(),
         );
-        _ = wb.set_selectability(Selectability::Unselectable);
+        _ = wb.set_selectability(ctx, Selectability::Unselectable);
         wb.set_content_from_string(ctx, text);
         Label {
             base: wb,
