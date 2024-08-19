@@ -58,7 +58,7 @@ pub trait Element {
 
     // Assign a reference to the element's parent through the UpwardPropagator trait. This is used
     // to pass ReceivableEventChanges to the parent. (see UpwardPropogator for more context)
-    fn set_upward_propagator(&self, up: Rc<RefCell<dyn UpwardPropagator>>);
+    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>);
 
     // -------------------------------------------------------
     // Freebies

@@ -150,7 +150,7 @@ impl Element for Checkbox {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.base.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Rc<RefCell<dyn UpwardPropagator>>) {
+    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.base.set_upward_propagator(up)
     }
 }

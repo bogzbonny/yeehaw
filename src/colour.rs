@@ -55,6 +55,8 @@ impl RgbColour {
     pub const GREY9:         RgbColour = RgbColour::new(90, 90, 95);
     pub const GREY11:        RgbColour = RgbColour::new(110, 110, 115);
     pub const GREY13:        RgbColour = RgbColour::new(130, 130, 135);
+    pub const GREY14:        RgbColour = RgbColour::new(140, 140, 145);
+    pub const GREY15:        RgbColour = RgbColour::new(150, 150, 155);
 
     // TODO remove these colours only use the css ones
     pub const DIM_YELLOW:    RgbColour = RgbColour::new(200, 200, 100);

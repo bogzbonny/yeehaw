@@ -34,7 +34,7 @@ pub struct StandardPane {
     element_priority: Rc<RefCell<Priority>>,
 
     #[allow(clippy::type_complexity)]
-    up: Rc<RefCell<Option<Rc<RefCell<dyn UpwardPropagator>>>>>, // TODO ugly, is there a better way
+    up: Rc<RefCell<Option<Box<dyn UpwardPropagator>>>>, // TODO ugly, is there a better way
 
     view_height: Rc<RefCell<u16>>,
     view_width: Rc<RefCell<u16>>,
@@ -188,7 +188,7 @@ impl Element for StandardPane {
         self.attributes.borrow_mut().insert(key.to_string(), value);
     }
 
-    fn set_upward_propagator(&self, up: Rc<RefCell<dyn UpwardPropagator>>) {
+    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         *self.up.borrow_mut() = Some(up);
     }
 }

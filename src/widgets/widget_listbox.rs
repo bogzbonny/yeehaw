@@ -228,9 +228,7 @@ impl ListBox {
 
         // wire the scrollbar to the text box
         let wb_ = self.base.clone();
-        let hook = Rc::new(RefCell::new(move |ctx, y| {
-            wb_.set_content_y_offset(&ctx, y)
-        }));
+        let hook = Box::new(move |ctx, y| wb_.set_content_y_offset(&ctx, y));
         *sb.position_changed_hook.borrow_mut() = Some(hook);
         *self.scrollbar.borrow_mut() = Some(sb.clone());
 
@@ -589,7 +587,7 @@ impl Element for ListBox {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.base.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Rc<RefCell<dyn UpwardPropagator>>) {
+    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.base.set_upward_propagator(up)
     }
 }

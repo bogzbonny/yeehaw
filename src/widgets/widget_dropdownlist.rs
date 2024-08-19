@@ -98,9 +98,7 @@ impl DropdownList {
 
         //wire the scrollbar to the dropdown list
         let wb_ = wb.clone();
-        let hook = Rc::new(RefCell::new(move |ctx, y| {
-            wb_.set_content_y_offset(&ctx, y)
-        }));
+        let hook = Box::new(move |ctx, y| wb_.set_content_y_offset(&ctx, y));
         *sb.position_changed_hook.borrow_mut() = Some(hook);
 
         let d = DropdownList {
@@ -490,7 +488,7 @@ impl Element for DropdownList {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.base.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Rc<RefCell<dyn UpwardPropagator>>) {
+    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.base.set_upward_propagator(up)
     }
 }

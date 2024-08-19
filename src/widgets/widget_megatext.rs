@@ -4,7 +4,6 @@ use {
         Context, DrawChPos, Element, ElementID, Event, EventResponses, Priority,
         ReceivableEventChanges, SortingHat, UpwardPropagator,
     },
-    std::{cell::RefCell, rc::Rc},
 };
 
 // TODO click function
@@ -79,7 +78,7 @@ impl Element for Megatext {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.base.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Rc<RefCell<dyn UpwardPropagator>>) {
+    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.base.set_upward_propagator(up)
     }
 }

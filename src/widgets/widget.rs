@@ -683,7 +683,7 @@ impl Element for WidgetBase {
         self.sp.set_attribute(key, value)
     }
 
-    fn set_upward_propagator(&self, up: Rc<RefCell<dyn UpwardPropagator>>) {
+    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.sp.set_upward_propagator(up)
     }
 }

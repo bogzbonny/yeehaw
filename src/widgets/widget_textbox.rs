@@ -1,8 +1,8 @@
 /*
 use {
     super::{
-        HorizontalSBPositions, HorizontalScrollbar, SclVal, Selectability, VerticalSBPositions,
-        VerticalScrollbar, WBStyles, Widget, WidgetBase, Widgets,
+        common, HorizontalSBPositions, HorizontalScrollbar, SclVal, Selectability,
+        VerticalSBPositions, VerticalScrollbar, WBStyles, Widget, WidgetBase, Widgets,
     },
     crate::{
         Context, DrawCh, DrawChPos, Element, ElementID, Event, EventResponse, EventResponses,
@@ -62,13 +62,13 @@ impl TextBox {
 
     const STYLE: WBStyles = WBStyles {
         selected_style: Style::new()
-            .with_bg(RgbColour::YELLOW)
-            .with_fg(RgbColour::BLACK),
-        ready_style: Style::new()
             .with_bg(RgbColour::WHITE)
             .with_fg(RgbColour::BLACK),
-        unselectable_style: Style::new()
+        ready_style: Style::new()
             .with_bg(RgbColour::GREY13)
+            .with_fg(RgbColour::BLACK),
+        unselectable_style: Style::new()
+            .with_bg(RgbColour::GREY15)
             .with_fg(RgbColour::BLACK),
     };
 
@@ -83,6 +83,9 @@ impl TextBox {
             .with_bg(RgbColour::GREY13)
             .with_fg(RgbColour::WHITE),
     };
+
+    const DEFAULT_CURSOR_STYLE: Style = Style::new().with_bg(RgbColour::BLUE);
+    const DEFAULT_RIGHT_CLICK_MENU_STYLE: Style = Style::new().with_bg(RgbColour::LIME);
 
     // for textboxes which are editable
     pub fn editable_receivable_events() -> Vec<Event> {
@@ -114,22 +117,72 @@ impl TextBox {
             KB::KEY_L.into(),
         ]
     }
-}
-*/
 
+    pub fn new(hat: &SortingHat, ctx: &Context, text: String) -> Self {
+        let (width, height) = common::get_text_size(&text);
+        let wb = WidgetBase::new(
+            hat,
+            Self::KIND,
+            SclVal::new_fixed(width),
+            SclVal::new_fixed(height),
+            Self::STYLE,
+            Self::editable_receivable_events(),
+        );
+
+        let tb = TextBox {
+            base: wb,
+            text: Rc::new(RefCell::new(text.chars().collect())),
+            wordwrap: Rc::new(RefCell::new(true)),
+            line_numbered: Rc::new(RefCell::new(false)),
+            ch_cursor: Rc::new(RefCell::new(true)),
+            editable: Rc::new(RefCell::new(true)),
+            cursor_pos: Rc::new(RefCell::new(0)),
+            cursor_style: Rc::new(RefCell::new(Self::DEFAULT_CURSOR_STYLE)),
+            visual_mode: Rc::new(RefCell::new(false)),
+            mouse_dragging: Rc::new(RefCell::new(false)),
+            visual_mode_start_pos: Rc::new(RefCell::new(0)),
+            text_changed_hook: Rc::new(RefCell::new(None)),
+            position_style_hook: Rc::new(RefCell::new(None)),
+            cursor_changed_hook: Rc::new(RefCell::new(None)),
+            x_scrollbar_op: Rc::new(RefCell::new(HorizontalSBPositions::None)),
+            y_scrollbar_op: Rc::new(RefCell::new(VerticalSBPositions::None)),
+            x_scrollbar: Rc::new(RefCell::new(None)),
+            y_scrollbar: Rc::new(RefCell::new(None)),
+            corner_decor: Rc::new(RefCell::new(DrawCh::new('⁙', false, Style::default()))),
+        };
+
+        // XXX TODO
+        //rcm := els.NewRightClickMenuTemplate(DefaultRightClickMenuStyle)
+        //rcm.SetMenuItems([]*els.MenuItem{
+        //    els.NewMenuItem("Cut", true,
+        //        func(_ yh.Context) yh.EventResponse {
+        //            resp, _ := tb.CutToClipboard()
+        //            return resp
+        //        },
+        //    ),
+        //    els.NewMenuItem("Copy", true,
+        //        func(_ yh.Context) yh.EventResponse {
+        //            _ = tb.CopyToClipboard()
+        //            return yh.NewEventResponse()
+        //        },
+        //    ),
+        //    els.NewMenuItem("Paste", true,
+        //        func(_ yh.Context) yh.EventResponse {
+        //            resp, _ := tb.PasteFromClipboard()
+        //            return resp
+        //        },
+        //    ),
+        //})
+        //tb.RightClickMenu = rcm
+
+        let _ = tb.drawing(ctx); // to set the base content
+        tb
+    }
+}
+
+*/
 /*
 
-var TextboxStyle = WBStyles{
-    SelectedStyle: tcell.StyleDefault.
-        Background(tcell.ColorWhite).Foreground(tcell.ColorBlack),
-    ReadyStyle: tcell.StyleDefault.
-        Background(tcell.ColorLightGray).Foreground(tcell.ColorBlack),
-    UnselectableStyle: tcell.StyleDefault.
-        Background(tcell.ColorLightSlateGrey).Foreground(tcell.ColorBlack),
-}
-
-var DefaultCursorStyle = tcell.StyleDefault.Background(tcell.ColorBlue)
-var DefaultRightClickMenuStyle = tcell.StyleDefault.Background(tcell.ColorLime)
 
 func NewTextBox(pCtx yh.Context, text string) *TextBox {
 
@@ -156,33 +209,82 @@ func NewTextBox(pCtx yh.Context, text string) *TextBox {
         RightClickMenu:     nil,
     }
 
-    rcm := els.NewRightClickMenuTemplate(DefaultRightClickMenuStyle)
-    rcm.SetMenuItems([]*els.MenuItem{
-        els.NewMenuItem("Cut", true,
-            func(_ yh.Context) yh.EventResponse {
-                resp, _ := tb.CutToClipboard()
-                return resp
-            },
-        ),
-        els.NewMenuItem("Copy", true,
-            func(_ yh.Context) yh.EventResponse {
-                _ = tb.CopyToClipboard()
-                return yh.NewEventResponse()
-            },
-        ),
-        els.NewMenuItem("Paste", true,
-            func(_ yh.Context) yh.EventResponse {
-                resp, _ := tb.PasteFromClipboard()
-                return resp
-            },
-        ),
-    })
-
-    tb.RightClickMenu = rcm
 
     _ = tb.Drawing() // to set the base content
     return tb
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ---------------------------------------------------------
 // Decorators

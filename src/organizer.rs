@@ -22,7 +22,7 @@ pub struct ElementOrganizer {
 
 impl ElementOrganizer {
     pub fn add_element(
-        &mut self, el: Rc<RefCell<dyn Element>>, up: Option<Rc<RefCell<dyn UpwardPropagator>>>,
+        &mut self, el: Rc<RefCell<dyn Element>>, up: Option<Box<dyn UpwardPropagator>>,
         loc: LocationSet, vis: bool,
     ) {
         // assign the new element id

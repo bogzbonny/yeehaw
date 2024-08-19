@@ -51,7 +51,7 @@ impl Cui {
         let loc = Location::new(0, (ctx.s.width - 1).into(), 0, (ctx.s.height - 1).into());
         let loc = LocationSet::default().with_location(loc);
 
-        let cup = Rc::new(RefCell::new(CuiUpwardPropagator::new(eo)));
+        let cup = Box::new(CuiUpwardPropagator::new(eo));
 
         // when adding the main element, nil is passed in as the parent
         // this is because the top of the tree is the CUI's main EO and so no parent

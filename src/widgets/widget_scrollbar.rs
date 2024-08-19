@@ -245,7 +245,7 @@ pub struct Scrollbar {
 
     // function the scrollbar will call everytime there is a position change
     #[allow(clippy::type_complexity)]
-    pub position_changed_hook: Rc<RefCell<Option<Rc<RefCell<dyn FnMut(Context, usize)>>>>>,
+    pub position_changed_hook: Rc<RefCell<Option<Box<dyn FnMut(Context, usize)>>>>,
 
     // is the scrollbar currently being dragged?
     pub currently_dragging: Rc<RefCell<bool>>,
@@ -302,8 +302,8 @@ impl Scrollbar {
             position = sc_dom_len.saturating_sub(sc_view_len)
         }
         *self.scrollable_position.borrow_mut() = position;
-        if let Some(hook) = self.position_changed_hook.borrow().as_ref() {
-            hook.borrow_mut()(ctx.clone(), position);
+        if let Some(hook) = self.position_changed_hook.borrow_mut().as_mut() {
+            hook(ctx.clone(), position);
         }
     }
 
@@ -329,8 +329,8 @@ impl Scrollbar {
             return;
         }
         *self.scrollable_position.borrow_mut() -= 1;
-        if let Some(hook) = self.position_changed_hook.borrow().as_ref() {
-            hook.borrow_mut()(ctx.clone(), *self.scrollable_position.borrow());
+        if let Some(hook) = self.position_changed_hook.borrow_mut().as_mut() {
+            hook(ctx.clone(), *self.scrollable_position.borrow());
         }
     }
 
@@ -346,8 +346,11 @@ impl Scrollbar {
             return;
         }
         *self.scrollable_position.borrow_mut() += 1;
-        if let Some(hook) = self.position_changed_hook.borrow().as_ref() {
-            hook.borrow_mut()(ctx.clone(), *self.scrollable_position.borrow());
+        //if let Some(hook) = self.position_changed_hook.borrow().as_ref() {
+        //    hook.borrow_mut()(ctx.clone(), *self.scrollable_position.borrow());
+        //}
+        if let Some(hook) = self.position_changed_hook.borrow_mut().as_mut() {
+            hook(ctx.clone(), *self.scrollable_position.borrow());
         }
     }
 
@@ -425,9 +428,6 @@ impl Scrollbar {
         }
 
         let mut incr_filled = vec![false; domain_incr];
-        //for i in incr_above..incr_above + scrollbar_incr {
-        //    incr_filled[i] = true;
-        //}
         incr_filled
             .iter_mut()
             .skip(incr_above)
@@ -1009,7 +1009,7 @@ impl Element for VerticalScrollbar {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.base.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Rc<RefCell<dyn UpwardPropagator>>) {
+    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.base.set_upward_propagator(up)
     }
 }
@@ -1044,7 +1044,7 @@ impl Element for HorizontalScrollbar {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.base.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Rc<RefCell<dyn UpwardPropagator>>) {
+    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.base.set_upward_propagator(up)
     }
 }

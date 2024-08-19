@@ -76,7 +76,7 @@
       widget_col_sel.go                  │ DONE (DELETED)
       widget_dropdownlist.go             │ DONE
       widget_label.go                    │ DONE
-      widget_listbox.go                  │ DONE
+      widget_listbox.go                  │ DONE ** BESIDES right click menu
       widget_listbox_mono.go             │ DONE (integrated into listbox)
       widget_radio.go                    │ DONE
       widget_scrollbar.go                │ DONE 

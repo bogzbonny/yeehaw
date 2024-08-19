@@ -151,7 +151,7 @@ impl Widget for Label {}
 //fn drawing(&self, ctx: &Context) -> Vec<DrawChPos>;
 //fn get_attribute(&self, key: &str) -> Option<&[u8]>;
 //fn set_attribute(&mut self, key: &str, value: Vec<u8>);
-//fn set_upward_propagator(&mut self, up: Rc<RefCell<dyn UpwardPropagator>>);
+//fn set_upward_propagator(&mut self, up: Box<dyn UpwardPropagator>);
 
 impl Element for Label {
     fn kind(&self) -> &'static str {
@@ -178,7 +178,7 @@ impl Element for Label {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.base.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Rc<RefCell<dyn UpwardPropagator>>) {
+    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.base.set_upward_propagator(up)
     }
 }
