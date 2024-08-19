@@ -51,6 +51,7 @@ impl DerefMut for HorizontalScrollbar {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
 pub enum ScrollbarPositions {
     None,
     Left,
