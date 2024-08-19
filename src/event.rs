@@ -25,6 +25,12 @@ pub enum Event {
     Command(CommandEvent),
 }
 
+impl From<KeyPossibility> for Event {
+    fn from(key: KeyPossibility) -> Self {
+        Event::KeyCombo(vec![key])
+    }
+}
+
 impl From<crossterm::event::KeyEvent> for Event {
     fn from(key: crossterm::event::KeyEvent) -> Self {
         Event::KeyCombo(vec![KeyPossibility::Key(key)])
@@ -74,7 +80,7 @@ pub struct CommandEvent {
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum KeyPossibility {
     Key(crossterm::event::KeyEvent),
-    Chars,  // any char
+    Runes,  // any rune
     Digits, // any digit
 }
 
@@ -88,7 +94,7 @@ impl KeyPossibility {
     pub fn matches(&self, ct_key: &crossterm::event::KeyEvent) -> bool {
         match self {
             KeyPossibility::Key(k) => k == ct_key,
-            KeyPossibility::Chars => {
+            KeyPossibility::Runes => {
                 matches!(ct_key.code, crossterm::event::KeyCode::Char(_))
             }
             KeyPossibility::Digits => {

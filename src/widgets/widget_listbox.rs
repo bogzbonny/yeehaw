@@ -1,7 +1,7 @@
 use {
     super::{
-        SclVal, ScrollbarPositions, Selectability, VerticalScrollbar, WBStyles, Widget, WidgetBase,
-        Widgets,
+        SclVal, Selectability, VerticalSBPositions, VerticalScrollbar, WBStyles, Widget,
+        WidgetBase, Widgets,
     },
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponses, Keyboard as KB, Priority,
@@ -32,7 +32,7 @@ pub struct ListBox {
     pub cursor_over_unselected_style: Rc<RefCell<Style>>,
     pub cursor_over_selected_style: Rc<RefCell<Style>>,
 
-    pub scrollbar_options: Rc<RefCell<ScrollbarPositions>>,
+    pub scrollbar_options: Rc<RefCell<VerticalSBPositions>>,
     pub scrollbar: Rc<RefCell<Option<VerticalScrollbar>>>,
     // XXX TODO
     //pub right_click_menu: Option<RightClickMenuTemplate>, // right click menu for the list
@@ -129,7 +129,7 @@ impl ListBox {
             cursor_over_unselected_style: Rc::new(RefCell::new(Self::STYLE_CURSOR_OVER_UNSELECTED)),
             cursor_over_selected_style: Rc::new(RefCell::new(Self::STYLE_CURSOR_OVER_SELECTED)),
 
-            scrollbar_options: Rc::new(RefCell::new(ScrollbarPositions::None)),
+            scrollbar_options: Rc::new(RefCell::new(VerticalSBPositions::None)),
             scrollbar: Rc::new(RefCell::new(None)),
             selection_made_fn: Rc::new(RefCell::new(selection_made_fn)),
         };
@@ -141,17 +141,17 @@ impl ListBox {
     // decorators
 
     pub fn with_left_scrollbar(self) -> Self {
-        *self.scrollbar_options.borrow_mut() = ScrollbarPositions::Left;
+        *self.scrollbar_options.borrow_mut() = VerticalSBPositions::ToTheLeft;
         self
     }
 
     pub fn with_right_scrollbar(self) -> Self {
-        *self.scrollbar_options.borrow_mut() = ScrollbarPositions::Right;
+        *self.scrollbar_options.borrow_mut() = VerticalSBPositions::ToTheRight;
         self
     }
 
     pub fn with_scrollbar(self) -> Self {
-        *self.scrollbar_options.borrow_mut() = ScrollbarPositions::Right;
+        *self.scrollbar_options.borrow_mut() = VerticalSBPositions::ToTheRight;
         self
     }
 
@@ -205,19 +205,19 @@ impl ListBox {
 
     pub fn to_widgets(self, hat: &SortingHat) -> Widgets {
         let position = *self.scrollbar_options.borrow();
-        if let ScrollbarPositions::None = position {
+        if let VerticalSBPositions::None = position {
             return Widgets(vec![Box::new(self)]);
         }
         let height = self.base.get_attr_scl_height().clone();
         let content_height = self.base.content_height();
         let mut sb =
             VerticalScrollbar::new(hat, height, content_height).with_styles(Self::STYLE_SCROLLBAR);
-        if let ScrollbarPositions::Left = position {
+        if let VerticalSBPositions::ToTheLeft = position {
             sb = sb.at(
                 self.base.get_attr_scl_loc_x().minus_fixed(1),
                 self.base.get_attr_scl_loc_y().clone(),
             );
-        } else if let ScrollbarPositions::Right = position {
+        } else if let VerticalSBPositions::ToTheRight = position {
             sb = sb.at(
                 self.base
                     .get_attr_scl_loc_x()

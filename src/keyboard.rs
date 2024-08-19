@@ -201,6 +201,7 @@ impl Keyboard {
 
     pub const KEY_ESC: KeyEvent = KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE);
     pub const KEY_ENTER: KeyEvent = KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE);
+    pub const KEY_SHIFT_ENTER: KeyEvent = KeyEvent::new(KeyCode::Enter, KeyModifiers::SHIFT);
     pub const KEY_ALT_ENTER: KeyEvent = KeyEvent::new(KeyCode::Enter, KeyModifiers::ALT);
     pub const KEY_BACKSPACE: KeyEvent = KeyEvent::new(KeyCode::Backspace, KeyModifiers::NONE);
     pub const KEY_DELETE: KeyEvent = KeyEvent::new(KeyCode::Delete, KeyModifiers::NONE);

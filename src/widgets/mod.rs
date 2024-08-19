@@ -30,6 +30,8 @@ pub use {
     widget_listbox::ListBox,
     widget_megatext::Megatext,
     widget_radio::RadioButtons,
-    widget_scrollbar::{HorizontalScrollbar, ScrollbarPositions, VerticalScrollbar},
+    widget_scrollbar::{
+        HorizontalSBPositions, HorizontalScrollbar, VerticalSBPositions, VerticalScrollbar,
+    },
     widget_toggle::Toggle,
 };

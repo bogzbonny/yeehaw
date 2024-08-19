@@ -56,7 +56,6 @@ impl StandardPane {
     // NOTE kind is a name for the kind of pane, typically a different kind will be applied
     // to the standard pane, as the standard pane is only boilerplate.
     pub const KIND: &'static str = "standard_pane";
-    pub const ATTR_DESCRIPTION: &'static str = "standard_pane";
 
     pub fn new(hat: &SortingHat, kind: &'static str) -> StandardPane {
         StandardPane {
@@ -74,13 +73,6 @@ impl StandardPane {
             content_view_offset_x: Rc::new(RefCell::new(0)),
             content_view_offset_y: Rc::new(RefCell::new(0)),
         }
-    }
-
-    pub fn with_description(self, desc: String) -> StandardPane {
-        self.attributes
-            .borrow_mut()
-            .insert(Self::ATTR_DESCRIPTION.to_string(), desc.into_bytes());
-        self
     }
 
     pub fn with_content(self, content: DrawChs2D) -> StandardPane {

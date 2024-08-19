@@ -52,12 +52,17 @@ impl DerefMut for HorizontalScrollbar {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub enum ScrollbarPositions {
+pub enum VerticalSBPositions {
     None,
-    Left,
-    Right,
-    Top,
-    Bottom,
+    ToTheLeft,
+    ToTheRight,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum HorizontalSBPositions {
+    None,
+    Above,
+    Below,
 }
 
 impl VerticalScrollbar {

@@ -59,13 +59,38 @@ pub trait Element {
     // Assign a reference to the element's parent through the UpwardPropagator trait. This is used
     // to pass ReceivableEventChanges to the parent. (see UpwardPropogator for more context)
     fn set_upward_propagator(&self, up: Rc<RefCell<dyn UpwardPropagator>>);
-}
 
-impl PartialEq for dyn Element {
-    fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self, other)
+    // -------------------------------------------------------
+    // Freebies
+
+    fn with_description(self, desc: String) -> Self
+    where
+        Self: Sized,
+    {
+        self.set_description(desc);
+        self
+    }
+
+    fn get_description(&self) -> Option<String> {
+        let bz = self.get_attribute(ATTR_DESCRIPTION)?;
+        match serde_json::from_slice(&bz) {
+            Ok(v) => v,
+            Err(_e) => None,
+        }
+    }
+
+    fn set_description(&self, desc: String) {
+        let bz = match serde_json::to_vec(&desc) {
+            Ok(v) => v,
+            Err(_e) => {
+                return; // TODO log error
+            }
+        };
+        self.set_attribute(ATTR_DESCRIPTION, bz)
     }
 }
+
+pub const ATTR_DESCRIPTION: &str = "standard_pane";
 
 // ----------------------------------------
 

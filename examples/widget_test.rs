@@ -6,7 +6,7 @@ use {
             megafonts, Button, Checkbox, DropdownList, Label, ListBox, Megatext, RadioButtons,
             SclVal, Toggle,
         },
-        Context, Cui, Error, EventResponses, SortingHat, WidgetPane,
+        Context, Cui, Element, Error, EventResponses, SortingHat, WidgetPane,
     },
 };
 
@@ -35,6 +35,7 @@ async fn main() -> Result<(), Error> {
         EventResponses::default()
     });
     let button = Button::new(&hat, &ctx, "click me".to_string(), button_click_fn)
+        .with_description("a button!".to_string())
         .at(SclVal::new_frac(0.25), SclVal::new_frac(0.25))
         .to_widgets()
         .with_label(&hat, &ctx, "button-label");
