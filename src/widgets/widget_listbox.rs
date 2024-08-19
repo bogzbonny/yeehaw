@@ -11,10 +11,6 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-// issues
-// - space bar doesn't translate to the scrollbar
-// - scrollbar doesn't move with up/down view changes
-
 #[derive(Clone)]
 pub struct ListBox {
     pub base: WidgetBase,
@@ -24,7 +20,7 @@ pub struct ListBox {
 
     pub lines_per_item: Rc<RefCell<usize>>, // how many lines each item is to take up
 
-    pub selection_mode: SelectionMode,
+    pub selection_mode: Rc<RefCell<SelectionMode>>,
 
     #[allow(clippy::type_complexity)]
     // function which executes when the selection changes. NOTE multiple items may be selected
@@ -37,7 +33,7 @@ pub struct ListBox {
     pub cursor_over_selected_style: Rc<RefCell<Style>>,
 
     pub scrollbar_options: Rc<RefCell<ScrollbarPositions>>,
-    pub scrollbar: Option<VerticalScrollbar>,
+    pub scrollbar: Rc<RefCell<Option<VerticalScrollbar>>>,
     // XXX TODO
     //pub right_click_menu: Option<RightClickMenuTemplate>, // right click menu for the list
 }
@@ -127,14 +123,14 @@ impl ListBox {
             lines_per_item: Rc::new(RefCell::new(max_lines_per_entry)),
             selected: Rc::new(RefCell::new(Vec::new())),
             cursor: Rc::new(RefCell::new(None)),
-            selection_mode: SelectionMode::NoLimit,
+            selection_mode: Rc::new(RefCell::new(SelectionMode::NoLimit)),
 
             item_selected_style: Rc::new(RefCell::new(Self::STYLE_ITEM_SELECTED)),
             cursor_over_unselected_style: Rc::new(RefCell::new(Self::STYLE_CURSOR_OVER_UNSELECTED)),
             cursor_over_selected_style: Rc::new(RefCell::new(Self::STYLE_CURSOR_OVER_SELECTED)),
 
             scrollbar_options: Rc::new(RefCell::new(ScrollbarPositions::None)),
-            scrollbar: None,
+            scrollbar: Rc::new(RefCell::new(None)),
             selection_made_fn: Rc::new(RefCell::new(selection_made_fn)),
         };
         lb.update_content(ctx);
@@ -173,8 +169,8 @@ impl ListBox {
         self
     }
 
-    pub fn with_selection_mode(mut self, ctx: &Context, mode: SelectionMode) -> Self {
-        self.selection_mode = mode;
+    pub fn with_selection_mode(self, ctx: &Context, mode: SelectionMode) -> Self {
+        *self.selection_mode.borrow_mut() = mode;
         self.update_content(ctx);
         self
     }
@@ -236,6 +232,7 @@ impl ListBox {
             wb_.set_content_y_offset(&ctx, y)
         }));
         *sb.position_changed_hook.borrow_mut() = Some(hook);
+        *self.scrollbar.borrow_mut() = Some(sb.clone());
 
         Widgets(vec![Box::new(self), Box::new(sb)])
     }
@@ -299,7 +296,7 @@ impl ListBox {
         let y_offset = *self.base.sp.content_view_offset_y.borrow();
 
         // call the scrollbar external change hook if it exists
-        if let Some(ref sb) = self.scrollbar {
+        if let Some(sb) = self.scrollbar.borrow().as_ref() {
             sb.external_change(ctx, y_offset, self.base.content_height());
         }
     }
@@ -416,7 +413,7 @@ impl ListBox {
     pub fn toggle_entry_selected_at_i(&self, ctx: &Context, i: usize) -> EventResponses {
         let already_selected = self.selected.borrow().contains(&i);
 
-        match self.selection_mode {
+        match *self.selection_mode.borrow() {
             SelectionMode::Single => {
                 if already_selected {
                     self.selected.borrow_mut().retain(|&r| r != i);
@@ -482,7 +479,7 @@ impl Element for ListBox {
                 }
                 return match true {
                     _ if ke[0].matches(&KB::KEY_SPACE) => {
-                        if let Some(sb) = &self.scrollbar {
+                        if let Some(sb) = self.scrollbar.borrow().as_ref() {
                             if sb.get_selectability() != Selectability::Selected {
                                 sb.set_selectability(ctx, Selectability::Selected);
                             }
@@ -546,7 +543,7 @@ impl Element for ListBox {
                         let (x, y) = (me.column as usize, me.row as usize);
 
                         // check if this should be a scrollbar event
-                        if let Some(sb) = &self.scrollbar {
+                        if let Some(sb) = self.scrollbar.borrow().as_ref() {
                             if y > 0 && x == self.base.get_width(ctx).saturating_sub(1) {
                                 if dragging {
                                     if sb.get_selectability() != Selectability::Selected {

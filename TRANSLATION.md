@@ -5,7 +5,7 @@
     cui.go                               │ DONE
     cui_ch.go                            │ DONE
     cui_ch_test.go                       │ DONE
-    cui_keyboard.go                      │ COPIED (PROBABLY DONE)
+    cui_keyboard.go                      │ DONE
     cui_location.go                      │ DONE
     debug.go                             │ DONE
     element.go                           │ DONE
@@ -76,8 +76,8 @@
       widget_col_sel.go                  │ DONE (DELETED)
       widget_dropdownlist.go             │ DONE
       widget_label.go                    │ DONE
-      widget_listbox.go                  │  -> dependant on scrollbar + right click menu template
-      widget_listbox_mono.go             │  -> dependant on listbox
+      widget_listbox.go                  │ DONE
+      widget_listbox_mono.go             │ DONE (integrated into listbox)
       widget_radio.go                    │ DONE
       widget_scrollbar.go                │ DONE 
       widget_textbox.go                  │  -> dependant on scrollbar + right click menu template
