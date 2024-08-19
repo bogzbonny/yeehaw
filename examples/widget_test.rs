@@ -3,8 +3,8 @@ use {
     std::{cell::RefCell, rc::Rc},
     yeehaw::{
         widgets::{
-            megafonts, Button, Checkbox, DropdownList, Label, Megatext, RadioButtons, SclVal,
-            Toggle,
+            megafonts, Button, Checkbox, DropdownList, Label, ListBox, Megatext, RadioButtons,
+            SclVal, Toggle,
         },
         Context, Cui, Error, EventResponses, SortingHat, WidgetPane,
     },
@@ -108,6 +108,25 @@ async fn main() -> Result<(), Error> {
     .at(SclVal::new_frac(0.1), SclVal::new_frac(0.8))
     .to_widgets();
     el.add_widgets(&ctx, dropdown);
+
+    let ld_entries = (1..=10)
+        .map(|i| format!("entry {}", i))
+        .collect::<Vec<String>>();
+
+    use yeehaw::widgets::widget_listbox::SelectionMode;
+    let listbox = ListBox::new(
+        &hat,
+        &ctx,
+        ld_entries,
+        Box::new(|_, _| EventResponses::default()),
+    )
+    .with_selection_mode(&ctx, SelectionMode::UpTo(3))
+    .with_width(&ctx, SclVal::new_fixed(10))
+    .with_height(&ctx, SclVal::new_fixed(5))
+    .with_scrollbar()
+    .at(SclVal::new_frac(0.5), SclVal::new_frac(0.1))
+    .to_widgets(&hat);
+    el.add_widgets(&ctx, listbox);
 
     Cui::new(Rc::new(RefCell::new(el)))?.run().await
 }

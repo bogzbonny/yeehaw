@@ -4,13 +4,16 @@ use {
         Widgets,
     },
     crate::{
-        element::RelocationRequest, Context, DrawCh, DrawChPos, Element, ElementID, Event,
-        EventResponse, EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, RgbColour,
-        SortingHat, Style, UpwardPropagator, ZIndex,
+        Context, DrawChPos, Element, ElementID, Event, EventResponses, Keyboard as KB, Priority,
+        ReceivableEventChanges, RgbColour, SortingHat, Style, UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
 };
+
+// issues
+// - space bar doesn't translate to the scrollbar
+// - scrollbar doesn't move with up/down view changes
 
 #[derive(Clone)]
 pub struct ListBox {
@@ -93,7 +96,7 @@ impl ListBox {
             KB::KEY_UP.into(),
             KB::KEY_K.into(),
             KB::KEY_J.into(),
-            KB::KEY_SPACE.into(), // XXX ensure accounted for
+            KB::KEY_SPACE.into(),
         ]
     }
 
@@ -147,6 +150,11 @@ impl ListBox {
     }
 
     pub fn with_right_scrollbar(self) -> Self {
+        *self.scrollbar_options.borrow_mut() = ScrollbarPositions::Right;
+        self
+    }
+
+    pub fn with_scrollbar(self) -> Self {
         *self.scrollbar_options.borrow_mut() = ScrollbarPositions::Right;
         self
     }
@@ -206,7 +214,8 @@ impl ListBox {
         }
         let height = self.base.get_attr_scl_height().clone();
         let content_height = self.base.content_height();
-        let mut sb = VerticalScrollbar::new(hat, height, content_height);
+        let mut sb =
+            VerticalScrollbar::new(hat, height, content_height).with_styles(Self::STYLE_SCROLLBAR);
         if let ScrollbarPositions::Left = position {
             sb = sb.at(
                 self.base.get_attr_scl_loc_x().minus_fixed(1),
@@ -228,7 +237,7 @@ impl ListBox {
         }));
         *sb.position_changed_hook.borrow_mut() = Some(hook);
 
-        return Widgets(vec![Box::new(self), Box::new(sb)]);
+        Widgets(vec![Box::new(self), Box::new(sb)])
     }
 
     // ----------------------------------------------
@@ -239,6 +248,7 @@ impl ListBox {
         // pad the text to the width and height
         let mut text: Vec<String> = entry.lines().map(|r| r.to_string()).collect();
         let text_len = text.len();
+        #[allow(clippy::comparison_chain)]
         if text_len > entry_height {
             text.truncate(entry_height);
         } else if text_len < entry_height {
@@ -261,6 +271,17 @@ impl ListBox {
         text.join("\n")
     }
 
+    //pub fn correct_offsets(&self, ctx: &Context) {
+    //    let cursor_pos = *self.cursor.borrow();
+    //    self.base
+    //        .correct_offsets_to_view_position(ctx, 0, cursor_pos);
+    //    self.scrollbar.external_change(
+    //        ctx,
+    //        *self.base.sp.content_view_offset_y.borrow(),
+    //        self.base.content_height(),
+    //    );
+    //}
+
     pub fn correct_offsets(&self, ctx: &Context) {
         let Some(cursor) = *self.cursor.borrow() else {
             return;
@@ -275,19 +296,18 @@ impl ListBox {
             self.base.correct_offsets_to_view_position(ctx, 0, start_y);
         }
 
+        let y_offset = *self.base.sp.content_view_offset_y.borrow();
+
         // call the scrollbar external change hook if it exists
         if let Some(ref sb) = self.scrollbar {
             sb.external_change(ctx, y_offset, self.base.content_height());
         }
     }
 
-    pub fn get_item_index_for_view_y(&self, y: usize) -> Option<usize> {
+    pub fn get_item_index_for_view_y(&self, y: usize) -> usize {
         let y_offset = *self.base.sp.content_view_offset_y.borrow();
         let offset = y + y_offset;
-        if offset < 0 {
-            return None;
-        }
-        Some(offset / *self.lines_per_item.borrow())
+        offset / *self.lines_per_item.borrow()
     }
 
     pub fn get_content_y_range_for_item_index(&self, index: usize) -> (usize, usize) {
@@ -366,7 +386,8 @@ impl ListBox {
     }
 
     pub fn cursor_up(&self, ctx: &Context) {
-        match *self.cursor.borrow() {
+        let cursor = *self.cursor.borrow();
+        match cursor {
             Some(cursor) if cursor > 0 => {
                 *self.cursor.borrow_mut() = Some(cursor - 1);
             }
@@ -379,7 +400,8 @@ impl ListBox {
     }
 
     pub fn cursor_down(&self, ctx: &Context) {
-        match *self.cursor.borrow() {
+        let cursor = *self.cursor.borrow();
+        match cursor {
             Some(cursor) if cursor < self.entries.borrow().len() - 1 => {
                 *self.cursor.borrow_mut() = Some(cursor + 1);
             }
@@ -390,92 +412,45 @@ impl ListBox {
         }
         self.correct_offsets(ctx);
     }
-}
 
-/*
+    pub fn toggle_entry_selected_at_i(&self, ctx: &Context, i: usize) -> EventResponses {
+        let already_selected = self.selected.borrow().contains(&i);
 
-func (lb *ListBox) Drawing() (chs []yh.DrawChPos) {
-    lb.UpdateHighlighting() // XXX this can probably happen in a more targeted way
-    return lb.WidgetBase.Drawing()
-}
-
-func (lb *ListBox) ReceiveKeyEventCombo(evs []*tcell.EventKey) (
-    captured bool, resp yh.EventResponse) {
-
-    resp = yh.NewEventResponse()
-
-    if lb.Selectedness != Selected {
-        return false, yh.NewEventResponse()
-    }
-
-    captured = false
-    switch {
-    case yh.DownEKC.Matches(evs) || yh.JLowerEKC.Matches(evs):
-        lb.CursorDown()
-        captured = true
-
-    case yh.UpEKC.Matches(evs) || yh.KLowerEKC.Matches(evs):
-        lb.CursorUp()
-        captured = true
-
-    case yh.EnterEKC.Matches(evs):
-        if lb.Cursor >= 0 && lb.Cursor < len(lb.Items) {
-            lb.Items[lb.Cursor].IsSelected = !lb.Items[lb.Cursor].IsSelected
-            captured = true
-            if lb.SelectionChangedFn != nil {
-                resp = lb.SelectionChangedFn(lb.Items)
+        match self.selection_mode {
+            SelectionMode::Single => {
+                if already_selected {
+                    self.selected.borrow_mut().retain(|&r| r != i);
+                } else {
+                    self.selected.borrow_mut().clear();
+                    self.selected.borrow_mut().push(i);
+                }
+            }
+            SelectionMode::NoLimit => {
+                if already_selected {
+                    self.selected.borrow_mut().retain(|&r| r != i);
+                } else {
+                    self.selected.borrow_mut().push(i);
+                }
+            }
+            SelectionMode::UpTo(n) => {
+                if already_selected {
+                    self.selected.borrow_mut().retain(|&r| r != i);
+                } else if self.selected.borrow().len() < n {
+                    self.selected.borrow_mut().push(i);
+                }
             }
         }
+
+        let entries = self.entries.borrow().clone();
+        let selected_entries = self
+            .selected
+            .borrow()
+            .iter()
+            .map(|i| entries[*i].clone())
+            .collect();
+        (self.selection_made_fn.borrow_mut())(ctx.clone(), selected_entries)
     }
-    return captured, resp
 }
-
-func (lb *ListBox) ReceiveMouseEvent(ev *tcell.EventMouse) (captured bool, resp yh.EventResponse) {
-
-    resp = yh.NewEventResponse()
-
-    if ev.Buttons() == tcell.WheelDown {
-        lb.CursorDown()
-        return true, resp
-    }
-    if ev.Buttons() == tcell.WheelUp {
-        lb.CursorUp()
-        return true, resp
-    }
-
-    // if not primary/secondary click, do nothing
-    if ev.Buttons() != tcell.Button1 && ev.Buttons() != tcell.Button2 {
-        return false, resp
-    }
-
-    _, y := ev.Position()                   // get click position
-    itemIndex := lb.GetItemIndexForViewY(y) // get item index at click position
-
-    if itemIndex < 0 || itemIndex >= len(lb.Items) { // invalid item index
-        return false, resp
-    }
-
-    // toggle selection
-    if ev.Buttons() == tcell.Button1 {
-        lb.Items[itemIndex].IsSelected = !lb.Items[itemIndex].IsSelected
-        if lb.SelectionChangedFn != nil {
-            resp = lb.SelectionChangedFn(lb.Items)
-        }
-        return true, resp
-    }
-
-    // handle secondary click
-    if lb.RightClickMenu != nil {
-        // send the event to the right click menu to check for right click
-        createRCM := lb.RightClickMenu.CreateMenuIfRightClick(ev)
-        if createRCM.HasWindow() {
-            return true, yh.NewEventResponse().WithWindow(createRCM)
-        }
-    }
-
-    return false, resp
-}
-*/
 
 impl Widget for ListBox {
     fn set_selectability_pre_hook(&self, _: &Context, s: Selectability) -> EventResponses {
@@ -484,5 +459,140 @@ impl Widget for ListBox {
             *self.cursor.borrow_mut() = None;
         }
         EventResponses::default()
+    }
+}
+
+impl Element for ListBox {
+    fn kind(&self) -> &'static str {
+        self.base.kind()
+    }
+    fn id(&self) -> ElementID {
+        self.base.id()
+    }
+    fn receivable(&self) -> Vec<(Event, Priority)> {
+        self.base.receivable()
+    }
+
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        let _ = self.base.receive_event(ctx, ev.clone());
+        match ev {
+            Event::KeyCombo(ke) => {
+                if self.base.get_selectability() != Selectability::Selected || ke.is_empty() {
+                    return (false, EventResponses::default());
+                }
+                return match true {
+                    _ if ke[0].matches(&KB::KEY_SPACE) => {
+                        if let Some(sb) = &self.scrollbar {
+                            if sb.get_selectability() != Selectability::Selected {
+                                sb.set_selectability(ctx, Selectability::Selected);
+                            }
+                            sb.receive_event(ctx, Event::KeyCombo(ke))
+                        } else {
+                            (true, EventResponses::default())
+                        }
+                    }
+                    _ if ke[0].matches(&KB::KEY_DOWN) || ke[0].matches(&KB::KEY_J) => {
+                        self.cursor_down(ctx);
+                        (true, EventResponses::default())
+                    }
+                    _ if ke[0].matches(&KB::KEY_UP) || ke[0].matches(&KB::KEY_K) => {
+                        self.cursor_up(ctx);
+                        (true, EventResponses::default())
+                    }
+                    _ if ke[0].matches(&KB::KEY_ENTER) => {
+                        let Some(cursor) = *self.cursor.borrow() else {
+                            return (true, EventResponses::default());
+                        };
+                        let entries_len = self.entries.borrow().len();
+                        if cursor >= entries_len {
+                            return (true, EventResponses::default());
+                        }
+                        return (true, self.toggle_entry_selected_at_i(ctx, cursor));
+                    }
+
+                    _ => (false, EventResponses::default()),
+                };
+            }
+            Event::Mouse(me) => {
+                let (mut clicked, mut dragging, mut scroll_up, mut scroll_down) =
+                    (false, false, false, false);
+                match me.kind {
+                    MouseEventKind::Up(MouseButton::Left) => clicked = true,
+                    MouseEventKind::Drag(MouseButton::Left) => dragging = true,
+                    MouseEventKind::ScrollUp => scroll_up = true,
+                    MouseEventKind::ScrollDown => scroll_down = true,
+                    _ => {}
+                }
+
+                return match true {
+                    _ if scroll_up => {
+                        self.cursor_up(ctx);
+                        (true, EventResponses::default())
+                    }
+                    _ if scroll_down => {
+                        self.cursor_down(ctx);
+                        (true, EventResponses::default())
+                    }
+                    // XXX TODO
+                    //// handle right click
+                    //if lb.RightClickMenu != nil {
+                    //    // send the event to the right click menu to check for right click
+                    //    createRCM := lb.RightClickMenu.CreateMenuIfRightClick(ev)
+                    //    if createRCM.HasWindow() {
+                    //        return true, yh.NewEventResponse().WithWindow(createRCM)
+                    //    }
+                    //}
+                    _ if (clicked || dragging) => {
+                        let (x, y) = (me.column as usize, me.row as usize);
+
+                        // check if this should be a scrollbar event
+                        if let Some(sb) = &self.scrollbar {
+                            if y > 0 && x == self.base.get_width(ctx).saturating_sub(1) {
+                                if dragging {
+                                    if sb.get_selectability() != Selectability::Selected {
+                                        let _ = sb.set_selectability(ctx, Selectability::Selected);
+                                    }
+                                    // send the the event to the scrollbar (x adjusted to 0)
+                                    let mut me_ = me;
+                                    me_.column = 0;
+                                    me_.row = y.saturating_sub(1) as u16;
+                                    return sb.receive_event(ctx, Event::Mouse(me_));
+                                }
+                                return (true, EventResponses::default());
+                            }
+                        }
+
+                        // get item index at click position
+                        let item_i = self.get_item_index_for_view_y(y);
+                        if item_i >= self.entries.borrow().len() {
+                            return (false, EventResponses::default());
+                        }
+
+                        // toggle selection
+                        (true, self.toggle_entry_selected_at_i(ctx, item_i))
+                    }
+                    _ => (false, EventResponses::default()),
+                };
+            }
+            _ => {}
+        }
+        (false, EventResponses::default())
+    }
+
+    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
+        self.base.change_priority(ctx, p)
+    }
+    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        self.update_highlighting(ctx); // this can probably happen in a more targeted way
+        self.base.drawing(ctx)
+    }
+    fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
+        self.base.get_attribute(key)
+    }
+    fn set_attribute(&self, key: &str, value: Vec<u8>) {
+        self.base.set_attribute(key, value)
+    }
+    fn set_upward_propagator(&self, up: Rc<RefCell<dyn UpwardPropagator>>) {
+        self.base.set_upward_propagator(up)
     }
 }

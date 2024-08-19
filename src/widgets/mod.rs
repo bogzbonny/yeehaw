@@ -27,6 +27,7 @@ pub use {
     widget_checkbox::Checkbox,
     widget_dropdownlist::DropdownList,
     widget_label::Label,
+    widget_listbox::ListBox,
     widget_megatext::Megatext,
     widget_radio::RadioButtons,
     widget_scrollbar::{HorizontalScrollbar, ScrollbarPositions, VerticalScrollbar},
