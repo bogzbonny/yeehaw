@@ -274,6 +274,10 @@ impl EventResponse {
         self
     }
 
+    pub fn set_relocation(&mut self, r: RelocationRequest) {
+        self.relocation = Some(r);
+    }
+
     pub fn with_extra_locations(mut self, elr: ExtraLocationsRequest) -> EventResponse {
         self.extra_locations = Some(elr);
         self

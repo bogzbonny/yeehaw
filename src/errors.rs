@@ -28,6 +28,12 @@ pub enum Error {
         source: std::io::Error,
         backtrace: Backtrace,
     },
+
+    #[snafu(context(false))]
+    ArboardError {
+        source: arboard::Error,
+        backtrace: Backtrace,
+    },
 }
 
 //impl Error {

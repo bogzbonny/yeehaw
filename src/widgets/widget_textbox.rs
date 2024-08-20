@@ -4,9 +4,9 @@ use {
         VerticalSBPositions, VerticalScrollbar, WBStyles, Widget, WidgetBase, Widgets,
     },
     crate::{
-        Context, DrawCh, DrawChPos, Element, ElementID, Event, EventResponse, EventResponses,
-        KeyPossibility, Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SortingHat,
-        Style, UpwardPropagator,
+        element::RelocationRequest, Context, DrawCh, DrawChPos, Element, ElementID, Error, Event,
+        EventResponse, EventResponses, KeyPossibility, Keyboard as KB, Priority,
+        ReceivableEventChanges, RgbColour, SortingHat, Style, UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -149,6 +149,7 @@ impl TextBox {
             y_scrollbar_op: Rc::new(RefCell::new(VerticalSBPositions::None)),
             x_scrollbar: Rc::new(RefCell::new(None)),
             y_scrollbar: Rc::new(RefCell::new(None)),
+            line_number_tb: Rc::new(RefCell::new(None)),
             corner_decor: Rc::new(RefCell::new(DrawCh::new('⁙', false, Style::default()))),
         };
 
@@ -348,7 +349,7 @@ impl TextBox {
             // determine the width of the line numbers textbox
 
             // create the line numbers textbox
-            let (lns, lnw) = self.get_line_numbers();
+            let (lns, lnw) = self.get_line_numbers(ctx);
             let mut ln_tb = TextBox::new(hat, ctx, lns)
                 .at(x, y)
                 .with_width(SclVal::new_fixed(lnw))
@@ -447,6 +448,14 @@ impl TextBox {
         Widgets(out)
     }
 
+    pub fn get_text(&self) -> String {
+        self.text.borrow().iter().collect()
+    }
+
+    pub fn set_text(&self, text: String) {
+        *self.text.borrow_mut() = text.chars().collect();
+    }
+
     // ---------------------------------------------------------
 
     pub fn get_cursor_pos(&self) -> usize {
@@ -456,191 +465,361 @@ impl TextBox {
     pub fn set_cursor_pos(&self, ctx: &Context, new_abs_pos: usize) -> EventResponses {
         *self.cursor_pos.borrow_mut() = new_abs_pos;
         if let Some(hook) = &mut *self.cursor_changed_hook.borrow_mut() {
-            hook(ctx, new_abs_pos)
+            hook(ctx.clone(), new_abs_pos)
         } else {
-            EventResponses::new()
+            EventResponses::default()
         }
+    }
+
+    pub fn incr_cursor_pos(&self, ctx: &Context, pos_change: isize) -> EventResponses {
+        let new_pos = (*self.cursor_pos.borrow() as isize + pos_change).max(0) as usize;
+        self.set_cursor_pos(ctx, new_pos)
+    }
+
+    // returns the wrapped characters of the text
+    pub fn get_wrapped(&self, ctx: &Context) -> WrChs {
+        let mut rs = self.text.borrow().clone();
+        rs.push(' '); // add the space for the final possible position
+        let mut chs = vec![];
+        let mut max_x = 0;
+        let (mut x, mut y) = (0, 0); // working x and y position in the textbox
+        for (abs_pos, r) in rs.iter().enumerate() {
+            if *self.wordwrap.borrow() && x == self.base.get_width(ctx) {
+                y += 1;
+                x = 0;
+                if x > max_x {
+                    max_x = x;
+                }
+                chs.push(WrCh::new('\n', None, x, y));
+            }
+
+            if *r == '\n' {
+                // If ch_cursor without wordwrap, add an extra space to the end of
+                // the line so that the cursor can be placed there. Without this
+                // extra space, placing the cursor at the end of the largest line
+                // will panic.
+                if *self.ch_cursor.borrow() && !*self.wordwrap.borrow() {
+                    if x > max_x {
+                        max_x = x;
+                    }
+                    chs.push(WrCh::new(' ', None, x, y));
+                }
+
+                // the "newline character" exists as an extra space at
+                // the end of the line
+                if x > max_x {
+                    max_x = x;
+                }
+                chs.push(WrCh::new('\n', Some(abs_pos), x, y));
+
+                // move the working position to the beginning of the next line
+                y += 1;
+                x = 0;
+            } else {
+                if x > max_x {
+                    max_x = x;
+                }
+                chs.push(WrCh::new(*r, Some(abs_pos), x, y));
+                x += 1;
+            }
+        }
+        WrChs { chs, max_x }
+    }
+
+    // returns the formatted line numbers of the textbox
+    // line numbers are right justified
+    pub fn get_line_numbers(&self, ctx: &Context) -> (String, usize) {
+        let wr_chs = self.get_wrapped(ctx);
+
+        // get the max line number
+        let mut max_line_num = 0;
+        for (i, wr_ch) in wr_chs.chs.iter().enumerate() {
+            if (wr_ch.ch == '\n' && wr_ch.abs_pos.is_some()) || i == 0 {
+                max_line_num += 1;
+            }
+        }
+
+        // get the largest amount of digits in the line numbers from the string
+        let line_num_width = max_line_num.to_string().chars().count();
+
+        let mut s = String::new();
+        let mut true_line_num = 1;
+        for (i, wr_ch) in wr_chs.chs.iter().enumerate() {
+            if wr_ch.ch == '\n' || i == 0 {
+                if wr_ch.abs_pos.is_some() || i == 0 {
+                    s += &format!("{:line_num_width$} ", true_line_num);
+                    true_line_num += 1;
+                }
+                s += "\n";
+            }
+        }
+        (s, line_num_width + 1) // +1 for the extra space after the digits
+    }
+
+    // NOTE the resp is sent in to potentially modify the offsets from numbers tb
+    pub fn correct_offsets(&self, ctx: &Context, w: WrChs) -> EventResponse {
+        let (x, y) = w.cursor_x_and_y(*self.cursor_pos.borrow());
+        let (x, y) = (x.unwrap_or(0), y.unwrap_or(0));
+        self.base.correct_offsets_to_view_position(ctx, x, y);
+
+        let y_offset = *self.base.sp.content_view_offset_y.borrow();
+        let x_offset = *self.base.sp.content_view_offset_x.borrow();
+
+        // update the scrollbars/line numbers textbox
+        if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
+            sb.external_change(&ctx, y_offset, self.base.content_height());
+        }
+        let mut resp = EventResponse::default();
+        if let Some(ln_tb) = self.line_number_tb.borrow().as_ref() {
+            let (lns, lnw) = self.get_line_numbers(ctx);
+            let last_lnw = ln_tb.base.get_width(ctx);
+            if lnw != last_lnw {
+                let diff_lnw = lnw - last_lnw;
+                let new_tb_width = self.base.get_attr_scl_width().minus_fixed(diff_lnw);
+                self.base.set_attr_scl_width(new_tb_width);
+                resp.set_relocation(RelocationRequest::new_left(diff_lnw as i32));
+            }
+            ln_tb.set_text(lns);
+            ln_tb.base.set_attr_scl_width(SclVal::new_fixed(lnw));
+            ln_tb.base.set_content_y_offset(ctx, y_offset);
+        }
+        if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
+            sb.external_change(&ctx, x_offset, self.base.content_width());
+        }
+        resp
+    }
+
+    pub fn visual_selected_text(&self) -> String {
+        let text = self.text.borrow();
+        if !*self.visual_mode.borrow() {
+            return text[*self.cursor_pos.borrow()].to_string();
+        }
+        let start_pos = *self.visual_mode_start_pos.borrow();
+        let cur_pos = *self.cursor_pos.borrow();
+        if start_pos < cur_pos {
+            return text[start_pos..cur_pos + 1].iter().collect();
+        }
+        self.text.borrow()[cur_pos..start_pos + 1].iter().collect()
+    }
+
+    pub fn delete_visual_selection(&self, ctx: &Context) -> EventResponses {
+        if !*self.visual_mode.borrow() {
+            return EventResponses::default();
+        }
+
+        // delete everything in the visual selection
+        let mut rs = self.text.borrow().clone();
+        if *self.visual_mode_start_pos.borrow() < *self.cursor_pos.borrow() {
+            rs.drain(*self.visual_mode_start_pos.borrow()..*self.cursor_pos.borrow() + 1);
+            self.set_cursor_pos(ctx, *self.visual_mode_start_pos.borrow());
+        } else {
+            rs.drain(*self.cursor_pos.borrow()..*self.visual_mode_start_pos.borrow() + 1);
+            // (leave the cursor at the start of the visual selection)
+        }
+        *self.text.borrow_mut() = rs;
+        *self.visual_mode.borrow_mut() = false;
+        let w = self.get_wrapped(ctx);
+        self.base.set_content_from_string(ctx, &w.wrapped_string());
+        let resp = self.correct_offsets(ctx, w);
+        let mut resps = if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
+            hook(ctx.clone(), self.get_text())
+        } else {
+            EventResponses::default()
+        };
+        resps.push(resp);
+        resps
+    }
+
+    pub fn copy_to_clipboard(&self) -> Result<(), Error> {
+        let text = self.visual_selected_text();
+        if text.is_empty() {
+            return Ok(());
+        }
+        arboard::Clipboard::new()?.set_text(text)?;
+        Ok(())
+    }
+
+    pub fn cut_to_clipboard(&self, ctx: &Context) -> Result<EventResponses, Error> {
+        self.copy_to_clipboard()?;
+        Ok(self.delete_visual_selection(ctx))
+    }
+
+    pub fn paste_from_clipboard(&self, ctx: &Context) -> Result<EventResponses, Error> {
+        let mut resps = self.delete_visual_selection(ctx);
+
+        let cliptext = arboard::Clipboard::new()?.get_text()?;
+        if cliptext.is_empty() {
+            return Ok(resps);
+        }
+        let cliprunes = cliptext.chars().collect::<Vec<char>>();
+        let mut rs = self.text.borrow().clone();
+        rs.splice(
+            *self.cursor_pos.borrow()..*self.cursor_pos.borrow(),
+            cliprunes.iter().cloned(),
+        );
+        *self.text.borrow_mut() = rs;
+
+        self.incr_cursor_pos(ctx, cliprunes.len() as isize);
+        let w = self.get_wrapped(ctx);
+        self.base.set_content_from_string(ctx, &w.wrapped_string()); // See NOTE-1
+
+        let resp = self.correct_offsets(ctx, w);
+        resps.push(resp);
+
+        if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
+            resps.extend(hook(ctx.clone(), self.get_text()).0);
+        }
+        Ok(resps)
+    }
+}
+
+impl Widget for TextBox {
+    fn set_selectability_pre_hook(&self, _: &Context, s: Selectability) -> EventResponses {
+        if self.base.get_selectability() == Selectability::Selected && s != Selectability::Selected
+        {
+            *self.visual_mode.borrow_mut() = false;
+        }
+        EventResponses::default()
+    }
+}
+
+impl Element for TextBox {
+    fn kind(&self) -> &'static str {
+        self.base.kind()
+    }
+    fn id(&self) -> ElementID {
+        self.base.id()
+    }
+    fn receivable(&self) -> Vec<(Event, Priority)> {
+        self.base.receivable()
+    }
+
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        let _ = self.base.receive_event(ctx, ev.clone());
+        match ev {
+            Event::KeyCombo(ke) => {
+                if self.base.get_selectability() != Selectability::Selected || ke.is_empty() {
+                    return (false, EventResponses::default());
+                }
+                return match true {
+                    //_ if ke[0].matches(&KB::KEY_SPACE) => {
+                    //    if let Some(sb) = self.scrollbar.borrow().as_ref() {
+                    //        if sb.get_selectability() != Selectability::Selected {
+                    //            sb.set_selectability(ctx, Selectability::Selected);
+                    //        }
+                    //        sb.receive_event(ctx, Event::KeyCombo(ke))
+                    //    } else {
+                    //        (true, EventResponses::default())
+                    //    }
+                    //}
+                    //_ if ke[0].matches(&KB::KEY_DOWN) || ke[0].matches(&KB::KEY_J) => {
+                    //    self.cursor_down(ctx);
+                    //    (true, EventResponses::default())
+                    //}
+                    //_ if ke[0].matches(&KB::KEY_UP) || ke[0].matches(&KB::KEY_K) => {
+                    //    self.cursor_up(ctx);
+                    //    (true, EventResponses::default())
+                    //}
+                    //_ if ke[0].matches(&KB::KEY_ENTER) => {
+                    //    let Some(cursor) = *self.cursor.borrow() else {
+                    //        return (true, EventResponses::default());
+                    //    };
+                    //    let entries_len = self.entries.borrow().len();
+                    //    if cursor >= entries_len {
+                    //        return (true, EventResponses::default());
+                    //    }
+                    //    return (true, self.toggle_entry_selected_at_i(ctx, cursor));
+                    //}
+                    _ => (false, EventResponses::default()),
+                };
+            }
+            Event::Mouse(me) => {
+                //let (mut clicked, mut dragging, mut scroll_up, mut scroll_down) =
+                //    (false, false, false, false);
+                //match me.kind {
+                //    MouseEventKind::Up(MouseButton::Left) => clicked = true,
+                //    MouseEventKind::Drag(MouseButton::Left) => dragging = true,
+                //    MouseEventKind::ScrollUp => scroll_up = true,
+                //    MouseEventKind::ScrollDown => scroll_down = true,
+                //    _ => {}
+                //}
+
+                return match true {
+                    _ => (false, EventResponses::default()),
+                };
+            }
+            _ => {}
+        }
+        (false, EventResponses::default())
+    }
+
+    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
+        self.base.change_priority(ctx, p)
+    }
+    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        let w = self.get_wrapped(ctx);
+        let wrapped = w.wrapped_string();
+        self.base.set_content_from_string(ctx, &wrapped);
+
+        // set styles from hooks
+        if let Some(hook) = &mut *self.position_style_hook.borrow_mut() {
+            for wr_ch in w.chs.iter() {
+                let existing_sty = self.base.get_current_style();
+                if wr_ch.abs_pos.is_none() {
+                    continue;
+                }
+                let sty = hook(ctx.clone(), wr_ch.abs_pos.unwrap(), existing_sty);
+                self.base
+                    .sp
+                    .content
+                    .borrow_mut()
+                    .change_style_at_xy(wr_ch.x_pos, wr_ch.y_pos, sty);
+            }
+        }
+
+        // set cursor style
+        if self.base.get_selectability() == Selectability::Selected && *self.ch_cursor.borrow() {
+            let (cur_x, cur_y) = w.cursor_x_and_y(*self.cursor_pos.borrow());
+            if let (Some(cur_x), Some(cur_y)) = (cur_x, cur_y) {
+                self.base.sp.content.borrow_mut().change_style_at_xy(
+                    cur_x,
+                    cur_y,
+                    *self.cursor_style.borrow(),
+                );
+            }
+        }
+        if *self.visual_mode.borrow() {
+            let start_pos = *self.visual_mode_start_pos.borrow();
+            let cur_pos = *self.cursor_pos.borrow();
+
+            let start = if start_pos < cur_pos { start_pos } else { cur_pos };
+            let end = if start_pos < cur_pos { cur_pos } else { start_pos };
+
+            for i in start..=end {
+                if let (Some(cur_x), Some(cur_y)) = w.cursor_x_and_y(i) {
+                    self.base.sp.content.borrow_mut().change_style_at_xy(
+                        cur_x,
+                        cur_y,
+                        *self.cursor_style.borrow(),
+                    );
+                }
+            }
+        }
+
+        self.base.drawing(ctx)
+    }
+    fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
+        self.base.get_attribute(key)
+    }
+    fn set_attribute(&self, key: &str, value: Vec<u8>) {
+        self.base.set_attribute(key, value)
+    }
+    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
+        self.base.set_upward_propagator(up)
     }
 }
 
 /*
-
-
-
-func (tb *TextBox) GetCursorPos() int {
-    return tb.cursorPos
-}
-
-func (tb *TextBox) SetCursorPos(newAbsPos int) {
-    tb.cursorPos = newAbsPos
-    if tb.CursorChangedHook != nil {
-        tb.CursorChangedHook(tb.cursorPos)
-    }
-}
-
-func (tb *TextBox) IncrCursorPos(posChange int) {
-    tb.cursorPos += posChange
-    if tb.CursorChangedHook != nil {
-        tb.CursorChangedHook(tb.cursorPos)
-    }
-}
-
-// ---------------------------------------------------------
-
-func (tb *TextBox) SetSelectability(s Selectability) yh.EventResponse {
-    if tb.Selectedness == Selected && s != Selected {
-        tb.visualMode = false
-    }
-    return tb.WidgetBase.SetSelectability(s)
-}
-
-func (tb *TextBox) Drawing() (chs []yh.DrawChPos) {
-
-    w := tb.GetWrapped()
-    wrapped := w.WrappedStr()
-    tb.SetContentFromString(wrapped)
-
-    if tb.PositionStyleHook != nil {
-        for _, wrCh := range w.chs {
-            existingsty := tb.GetCurrentStyle()
-            sty := tb.PositionStyleHook(wrCh.absPos, existingsty)
-            tb.Content.ChangeStyleAtXY(wrCh.xPos, wrCh.yPos, sty)
-        }
-    }
-
-    if tb.Selectedness == Selected && tb.chCursor {
-        curX, curY := w.CursorXAndY(tb.cursorPos)
-        tb.Content[curY][curX].Style = tb.cursorStyle
-    }
-
-    if tb.visualMode {
-        if tb.visualModeStartPos < tb.cursorPos {
-            for i := tb.visualModeStartPos; i <= tb.cursorPos; i++ {
-                curX, curY := w.CursorXAndY(i)
-                tb.Content[curY][curX].Style = tb.cursorStyle
-            }
-        }
-        if tb.visualModeStartPos > tb.cursorPos {
-            for i := tb.cursorPos; i <= tb.visualModeStartPos; i++ {
-                curX, curY := w.CursorXAndY(i)
-                tb.Content[curY][curX].Style = tb.cursorStyle
-            }
-        }
-    }
-
-    return tb.WidgetBase.Drawing()
-}
-
-// NOTE the resp is sent in to potentially modify the offsets from numbers tb
-func (tb *TextBox) CorrectOffsets(w wrChs, resp *yh.EventResponse) {
-    x, y := w.CursorXAndY(tb.cursorPos)
-    yh.Debug("CorrectOffsets: pos: %v, x: %v, y: %v\n", tb.cursorPos, x, y)
-    tb.CorrectOffsetsToViewPosition(x, y)
-
-    // call the changed hooks
-    if tb.YChangedHook != nil {
-        tb.YChangedHook(tb.ContentYOffset, tb.ContentHeight())
-    }
-
-    if tb.YChangedHook2 != nil {
-        tb.YChangedHook2(tb.ContentYOffset, tb.ContentHeight(), resp)
-    }
-
-    // NOTE this is what the wiring looks like. now just call the line numbers textbox directly
-        //// wire the line numbers textbox to the main textbox
-        //tb.YChangedHook2 = func(newYPosition, newHeight int, resp *yh.EventResponse) {
-        //    lns, lnw := tb.GetLineNumbers()
-        //    if lnw != lastLnw {
-        //        diffLnw := lnw - lastLnw
-        //        tb.Width = tb.Width.MinusStatic(diffLnw)
-        //        resp.SetRelocation(yh.NewRelocationRequestLeft(diffLnw))
-        //        lastLnw = lnw
-        //    }
-        //    lnTB.SetText(lns)
-        //    lnTB.Width = NewStatic(lnw)
-        //    lnTB.SetContentYOffset(newYPosition)
-        //}
-
-
-    if tb.XChangedHook != nil {
-        tb.XChangedHook(tb.ContentXOffset, tb.ContentWidth())
-    }
-}
-
-func (tb *TextBox) VisualSelectedText() string {
-    if !tb.visualMode {
-        return string(tb.text[tb.cursorPos])
-    }
-    if tb.visualModeStartPos < tb.cursorPos {
-        return string(tb.text[tb.visualModeStartPos : tb.cursorPos+1])
-    }
-    return string(tb.text[tb.cursorPos : tb.visualModeStartPos+1])
-}
-
-func (tb *TextBox) DeleteVisualSelection() yh.EventResponse {
-    resp := yh.NewEventResponse()
-    if !tb.visualMode {
-        return resp
-    }
-
-    // delete everything in the visual selection
-    rs := tb.text
-    if tb.visualModeStartPos < tb.cursorPos {
-        rs = append(rs[:tb.visualModeStartPos], rs[tb.cursorPos+1:]...)
-        tb.SetCursorPos(tb.visualModeStartPos)
-    } else {
-        rs = append(rs[:tb.cursorPos], rs[tb.visualModeStartPos+1:]...)
-        // (leave the cursor at the start of the visual selection)
-    }
-    tb.text = rs
-    tb.visualMode = false
-    w := tb.GetWrapped()
-    tb.SetContentFromString(w.WrappedStr()) // See NOTE-1
-    tb.CorrectOffsets(w, &resp)
-    if tb.TextChangedHook != nil {
-        resp = tb.TextChangedHook(string(tb.text))
-    }
-    return resp
-}
-
-func (tb *TextBox) CopyToClipboard() error {
-    return clipboard.WriteAll(tb.VisualSelectedText())
-}
-
-func (tb *TextBox) CutToClipboard() (yh.EventResponse, error) {
-    resp := yh.NewEventResponse()
-    err := tb.CopyToClipboard()
-    if err != nil {
-        return resp, err
-    }
-    resp = tb.DeleteVisualSelection()
-    return resp, nil
-}
-
-func (tb *TextBox) PasteFromClipboard() (yh.EventResponse, error) {
-    resp := tb.DeleteVisualSelection()
-
-    // paste from the clipboard
-    cliptext, err := clipboard.ReadAll()
-    if err != nil {
-        return resp, err
-    }
-    if len(cliptext) == 0 {
-        return resp, nil
-    }
-    cliprunes := []rune(cliptext)
-    rs := tb.text
-    rs = append(rs[:tb.cursorPos], append(cliprunes, rs[tb.cursorPos:]...)...)
-    tb.text = rs
-    tb.IncrCursorPos(len(cliprunes))
-    w := tb.GetWrapped()
-    tb.SetContentFromString(w.WrappedStr()) // See NOTE-1
-    tb.CorrectOffsets(w, &resp)
-    if tb.TextChangedHook != nil {
-        resp = tb.TextChangedHook(string(tb.text))
-    }
-    return resp, nil
-}
 
 func (tb *TextBox) ReceiveKeyEventCombo(evs []*tcell.EventKey) (captured bool, resp yh.EventResponse) {
     resp = yh.NewEventResponse()
@@ -880,274 +1059,206 @@ func (tb *TextBox) ReceiveMouseEvent(ev *tcell.EventMouse) (captured bool, resp 
     return tb.WidgetBase.ReceiveMouseEvent(ev)
 }
 
-func (tb *TextBox) GetText() string {
-    return string(tb.text)
-}
-
-func (tb *TextBox) SetText(text string) {
-    tb.text = []rune(text)
-}
-
-// returns the wrapped characters of the text
-func (tb *TextBox) GetWrapped() wrChs {
-    rs := append(tb.text, ' ') // add the space for the final possible position
-    chs := []wrCh{}
-    maxX := 0
-    x, y := 0, 0 // working x and y position in the textbox
-    for absPos, r := range rs {
-        if tb.wordwrap && x == tb.GetWidth() {
-            y++
-            x = 0
-            if x > maxX {
-                maxX = x
-            }
-            chs = append(chs, newWrCh('\n', -1, x, y))
-        }
-        if r == '\n' {
-
-            // If chCursor without wordwrap, add an extra space to the end of
-            // the line so that the cursor can be placed there. Without this
-            // extra space, placing the cursor at the end of the largest line
-            // will panic.
-            if tb.chCursor && !tb.wordwrap {
-                if x > maxX {
-                    maxX = x
-                }
-                chs = append(chs, newWrCh(' ', -1, x, y))
-            }
-
-            // the "newline character" exists as an extra space at
-            // the end of the line
-            if x > maxX {
-                maxX = x
-            }
-            chs = append(chs, newWrCh('\n', absPos, x, y))
-
-            // move the working position to the beginning of the next line
-            y++
-            x = 0
-        } else {
-            if x > maxX {
-                maxX = x
-            }
-            chs = append(chs, newWrCh(r, absPos, x, y))
-            x++
-        }
-    }
-    return wrChs{
-        chs:  chs,
-        maxX: maxX,
-    }
-}
-
-// ------------------------------------------------
-
-// returns the formatted line numbers of the textbox
-// line numbers are right justified
-func (tb *TextBox) GetLineNumbers() (content string, contentWidth int) {
-    wrChs := tb.GetWrapped()
-
-    // get the max line number
-    maxLineNum := 0
-    for i, wrCh := range wrChs.chs {
-        if wrCh.ch == '\n' || i == 0 {
-            if wrCh.absPos != -1 || i == 0 {
-                maxLineNum++
-            }
-        }
-    }
-
-    // get the largest amount of digits in the line numbers from the string
-    lineNumWidth := len(fmt.Sprintf("%d", maxLineNum))
-
-    s := ""
-    trueLineNum := 1
-    for i, wrCh := range wrChs.chs {
-        if wrCh.ch == '\n' || i == 0 {
-            if wrCh.absPos != -1 || i == 0 {
-                s += fmt.Sprintf("%*d ", lineNumWidth, trueLineNum)
-                trueLineNum++
-            }
-            s += "\n"
-        }
-    }
-
-    return s, lineNumWidth + 1 // +1 for the extra space after the digits
-}
-
-// ------------------------------------------------
+*/
 
 // wrapped character
-type wrCh struct {
-    ch rune // the character
+#[derive(Clone, Default)]
+pub struct WrCh {
+    ch: char, // the character
 
     // absolute position in the text
     // If this character is a NOT a part of the text and only introduced
-    // due to line wrapping, the absPos will be -1 (and ch='\n')
-    absPos int
+    // due to line wrapping, the absPos will be None (and ch='\n')
+    abs_pos: Option<usize>,
 
-    xPos int // x position in the line
-    yPos int // y position of the line
+    x_pos: usize, // x position in the line
+    y_pos: usize, // y position of the line
 }
 
-func newWrCh(ch rune, absPos, xPos, yPos int) wrCh {
-    return wrCh{ch: ch, absPos: absPos, xPos: xPos, yPos: yPos}
+impl WrCh {
+    pub fn new(ch: char, abs_pos: Option<usize>, x_pos: usize, y_pos: usize) -> Self {
+        WrCh {
+            ch,
+            abs_pos,
+            x_pos,
+            y_pos,
+        }
+    }
 }
 
 // wrapped characters
-type wrChs struct {
-    chs  []wrCh
-    maxX int // the maximum x position within the wrapped characters
+#[derive(Clone, Default)]
+pub struct WrChs {
+    chs: Vec<WrCh>,
+    max_x: usize, // the maximum x position within the wrapped characters
 }
 
-func (w wrChs) WrappedStr() string {
-    s := ""
-    for _, wrCh := range w.chs {
-        s += string(wrCh.ch)
+impl WrChs {
+    pub fn wrapped_string(&self) -> String {
+        self.chs.iter().map(|wr_ch| wr_ch.ch).collect()
     }
-    return s
-}
 
-// gets the cursor x and y position in the wrapped text
-// from the absolute cursor position provided.
-func (w wrChs) CursorXAndY(curAbs int) (x int, y int) {
-    for _, wrCh := range w.chs {
-        if wrCh.absPos == curAbs {
-            return wrCh.xPos, wrCh.yPos
+    // gets the cursor x and y position in the wrapped text
+    // from the absolute cursor position provided.
+    pub fn cursor_x_and_y(&self, cur_abs: usize) -> (Option<usize>, Option<usize>) {
+        self.chs
+            .iter()
+            .find(|wr_ch| wr_ch.abs_pos == Some(cur_abs))
+            .map(|wr_ch| (Some(wr_ch.x_pos), Some(wr_ch.y_pos)))
+            .unwrap_or_default()
+    }
+
+    // gets the line at the given y position
+    pub fn get_line(&self, y: usize) -> Vec<char> {
+        self.chs
+            .iter()
+            .filter(|wr_ch| wr_ch.y_pos == y)
+            .map(|wr_ch| wr_ch.ch)
+            .collect()
+    }
+
+    // maximum y position in the wrapped text
+    pub fn max_y(&self) -> usize {
+        self.chs.last().cloned().unwrap_or_default().y_pos
+    }
+
+    pub fn max_x(&self) -> usize {
+        self.max_x
+    }
+
+    // determine the cursor position above the current cursor position
+    //                                                         cur_abs
+    pub fn get_cursor_above_position(&self, cur_abs: usize) -> Option<usize> {
+        let Some((cur_i, cur_x, cur_y)) = self
+            .chs
+            .iter()
+            .enumerate()
+            .find(|(_, wr_ch)| wr_ch.abs_pos == Some(cur_abs))
+            .map(|(i, wr_ch)| (i, wr_ch.x_pos, wr_ch.y_pos))
+        else {
+            return None;
+        };
+
+        if cur_y == 0 {
+            return None;
         }
+        self.chs
+            .iter()
+            .take(cur_i)
+            .rev()
+            .find(|wr_ch| wr_ch.y_pos == cur_y - 1 && wr_ch.x_pos <= cur_x)
+            .map(|wr_ch| wr_ch.abs_pos)
+            .unwrap_or(None)
     }
-    return -1, -1
-}
 
-// gets the line at the given y position
-func (w wrChs) GetLine(y int) []rune {
-    s := []rune{}
-    for _, wrCh := range w.chs {
-        if wrCh.yPos == y {
-            s = append(s, wrCh.ch)
+    // determine the cursor position below the current cursor position.
+    //                                                         cur_abs
+    pub fn get_cursor_below_position(&self, cur_abs: usize) -> Option<usize> {
+        let Some((cur_i, cur_x, cur_y)) = self
+            .chs
+            .iter()
+            .enumerate()
+            .find(|(_, wr_ch)| wr_ch.abs_pos == Some(cur_abs))
+            .map(|(i, wr_ch)| (i, wr_ch.x_pos, wr_ch.y_pos))
+        else {
+            return None;
+        };
+
+        if cur_y == self.max_y() {
+            return None;
         }
+
+        // move forwards in the wrapped text until we find the character with a y position one
+        // greater than the current cursor position and with the maximum x position less than or
+        // equal to the current cursor x position.
+        self.chs
+            .iter()
+            .skip(cur_i)
+            .take_while(|wr_ch| wr_ch.y_pos <= cur_y + 1) // optimization 
+            .filter(|wr_ch| wr_ch.y_pos == cur_y + 1 && wr_ch.x_pos <= cur_x)
+            .last()
+            .map(|wr_ch| wr_ch.abs_pos)
+            .unwrap_or(None)
     }
-    return s
-}
 
-// maximum y position in the wrapped text
-func (w wrChs) MaxY() int {
-    return w.chs[len(w.chs)-1].yPos
-}
-
-func (w wrChs) MaxX() int {
-    return w.maxX
-}
-
-// Determine the cursor position above the current cursor position.
-func (w wrChs) GetCursorAbovePosition(curAbs int) (newCurAbs int) {
-
-    // first get the current cursor position and the index of the current
-    // cursor position in the wrapped text
-    curX, curY := -1, -1
-    cursorIndex := -1
-    for i, wrCh := range w.chs {
-        if wrCh.absPos == curAbs {
-            curX, curY = wrCh.xPos, wrCh.yPos
-            cursorIndex = i
+    //                                                        cur_abs
+    pub fn get_cursor_left_position(&self, cur_abs: usize) -> Option<usize> {
+        let Some((cur_i, cur_x, cur_y)) = self
+            .chs
+            .iter()
+            .enumerate()
+            .find(|(_, wr_ch)| wr_ch.abs_pos == Some(cur_abs))
+            .map(|(i, wr_ch)| (i, wr_ch.x_pos, wr_ch.y_pos))
+        else {
+            return None;
+        };
+        if cur_x == 0 {
+            return None;
         }
+        self.chs
+            .iter()
+            .take(cur_i)
+            .rev()
+            .find(|wr_ch| wr_ch.y_pos == cur_y && wr_ch.x_pos < cur_x)
+            .map(|wr_ch| wr_ch.abs_pos)
+            .unwrap_or(None)
     }
-    if curY > 0 {
-        // move backwards in the wrapped text until we find the first
-        // character with the same x position as the current cursor position
-        for i := cursorIndex - 1; i >= 0; i-- {
-            if w.chs[i].yPos == curY-1 && w.chs[i].xPos <= curX {
-                return w.chs[i].absPos
+
+    pub fn get_cursor_right_position(&self, cur_abs: usize) -> Option<usize> {
+        let Some((cur_i, cur_x, cur_y)) = self
+            .chs
+            .iter()
+            .enumerate()
+            .find(|(_, wr_ch)| wr_ch.abs_pos == Some(cur_abs))
+            .map(|(i, wr_ch)| (i, wr_ch.x_pos, wr_ch.y_pos))
+        else {
+            return None;
+        };
+        if cur_x >= self.max_x {
+            return None;
+        }
+        self.chs
+            .iter()
+            .skip(cur_i)
+            .find(|wr_ch| wr_ch.y_pos == cur_y && wr_ch.x_pos > cur_x)
+            .map(|wr_ch| wr_ch.abs_pos)
+            .unwrap_or(None)
+    }
+
+    pub fn get_nearest_valid_cursor_from_position(&self, x: usize, y: usize) -> Option<usize> {
+        let mut nearest_abs = None; // nearest absolute position with the same y position
+        let mut nearest_abs_y_pos = None; // Y position of the nearest absolute position
+        let mut nearest_abs_x_pos = None; // X position of the nearest absolute position
+        for wr_ch in &self.chs {
+            if wr_ch.abs_pos.is_none() {
+                continue;
+            }
+            if wr_ch.y_pos == y && wr_ch.x_pos == x {
+                return wr_ch.abs_pos;
+            }
+
+            let y_diff = (wr_ch.y_pos as isize - y as isize).abs();
+            let nearest_y_diff = match nearest_abs_y_pos {
+                Some(nearest_abs_y_pos) => (nearest_abs_y_pos as isize - y as isize).abs(),
+                None => y_diff,
+            };
+
+            let x_diff = (wr_ch.x_pos as isize - x as isize).abs();
+            let nearest_x_diff = match nearest_abs_x_pos {
+                Some(nearest_abs_x_pos) => (nearest_abs_x_pos as isize - x as isize).abs(),
+                None => x_diff,
+            };
+
+            if y_diff < nearest_y_diff {
+                nearest_abs_y_pos = Some(wr_ch.y_pos);
+                nearest_abs_x_pos = Some(wr_ch.x_pos);
+                nearest_abs = wr_ch.abs_pos;
+            } else if y_diff == nearest_y_diff && x_diff < nearest_x_diff {
+                nearest_abs_y_pos = Some(wr_ch.y_pos);
+                nearest_abs_x_pos = Some(wr_ch.x_pos);
+                nearest_abs = wr_ch.abs_pos;
             }
         }
+        nearest_abs
     }
-    return curAbs // no change
 }
-
-// Determine the cursor position below the current cursor position.
-func (w wrChs) GetCursorBelowPosition(curAbs int) (newCurAbs int) {
-
-    // first get the current cursor position and the index of the current
-    // cursor position in the wrapped text
-    curX, curY := -1, -1
-    cursorIndex := -1
-    for i, wrCh := range w.chs {
-        if wrCh.absPos == curAbs {
-            curX, curY = wrCh.xPos, wrCh.yPos
-            cursorIndex = i
-        }
-    }
-    if curY < w.MaxY() {
-        // move backwards in the wrapped text until we find the first
-        // character with a y position one greater than the current cursor
-        // position and with an x position less than or equal to the current
-        // cursor position.
-        for i := len(w.chs) - 1; i > cursorIndex; i-- {
-            if w.chs[i].yPos == curY+1 && w.chs[i].xPos <= curX {
-                return w.chs[i].absPos
-            }
-        }
-    }
-    return curAbs // no change
-}
-
-func (w wrChs) GetCursorLeftPosition(curAbs int) (newCurAbs int) {
-
-    // first get the current cursor position
-    curX := -1
-    for _, wrCh := range w.chs {
-        if wrCh.absPos == curAbs {
-            curX = wrCh.xPos
-        }
-    }
-    if curX > 0 {
-        return curAbs - 1
-    }
-    return curAbs // no change
-}
-
-func (w wrChs) GetCursorRightPosition(curAbs int) (newCurAbs int) {
-
-    // first get the current cursor position
-    curX, curY := -1, -1
-    for _, wrCh := range w.chs {
-        if wrCh.absPos == curAbs {
-            curX, curY = wrCh.xPos, wrCh.yPos
-        }
-    }
-    l := w.GetLine(curY)
-    if curX < len(l)-2 {
-        return curAbs + 1
-    }
-    return curAbs // no change
-}
-
-func (w wrChs) GetNearestValidCursorFromPosition(x, y int) (newCurAbs int) {
-
-    nearestAbs := -1     // nearest absolute position with the same y position
-    nearestAbsYPos := -1 // Y position of the nearest absolute position
-    nearestAbsXPos := -1 // X position of the nearest absolute position
-    for _, wrCh := range w.chs {
-        if wrCh.absPos == -1 {
-            continue
-        }
-        if wrCh.yPos == y && wrCh.xPos == x {
-            return wrCh.absPos
-        }
-
-        // TODO make my own abs function to avoid float casting
-        if math.Abs(float64(wrCh.yPos-y)) < math.Abs(float64(nearestAbsYPos-y)) {
-            nearestAbsYPos = wrCh.yPos
-            nearestAbsXPos = wrCh.xPos
-            nearestAbs = wrCh.absPos
-        } else if math.Abs(float64(wrCh.yPos-y)) == math.Abs(float64(nearestAbsYPos-y)) &&
-            math.Abs(float64(wrCh.xPos-x)) < math.Abs(float64(nearestAbsXPos-x)) {
-            nearestAbsYPos = wrCh.yPos
-            nearestAbsXPos = wrCh.xPos
-            nearestAbs = wrCh.absPos
-        }
-    }
-
-    return nearestAbs
-}
-*/
