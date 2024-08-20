@@ -1,7 +1,6 @@
-/*
 use {
     super::{
-        common, HorizontalSBPositions, HorizontalScrollbar, SclVal, Selectability,
+        common, HorizontalSBPositions, HorizontalScrollbar, Label, SclVal, Selectability,
         VerticalSBPositions, VerticalScrollbar, WBStyles, Widget, WidgetBase, Widgets,
     },
     crate::{
@@ -50,6 +49,8 @@ pub struct TextBox {
     pub y_scrollbar_op: Rc<RefCell<VerticalSBPositions>>,
     pub x_scrollbar: Rc<RefCell<Option<HorizontalScrollbar>>>,
     pub y_scrollbar: Rc<RefCell<Option<VerticalScrollbar>>>,
+
+    pub line_number_tb: Rc<RefCell<Option<TextBox>>>,
 
     // for when there are two scrollbars
     pub corner_decor: Rc<RefCell<DrawCh>>,
@@ -178,340 +179,293 @@ impl TextBox {
         let _ = tb.drawing(ctx); // to set the base content
         tb
     }
+
+    // ---------------------------------------------------------
+    // Decorators
+
+    pub fn with_left_scrollbar(self) -> Self {
+        *self.y_scrollbar_op.borrow_mut() = VerticalSBPositions::ToTheLeft;
+        self
+    }
+
+    pub fn with_right_scrollbar(self) -> Self {
+        *self.y_scrollbar_op.borrow_mut() = VerticalSBPositions::ToTheRight;
+        self
+    }
+
+    pub fn with_top_scrollbar(self) -> Self {
+        *self.x_scrollbar_op.borrow_mut() = HorizontalSBPositions::Above;
+        self
+    }
+
+    pub fn with_lower_scrollbar(self) -> Self {
+        *self.x_scrollbar_op.borrow_mut() = HorizontalSBPositions::Below;
+        self
+    }
+
+    // XXX TODO
+    //pub fn with_right_click_menu(mut self) -> Self {
+    //self.right_click_menu = rcm;
+    //    self
+    //}
+
+    pub fn with_styles(self, styles: WBStyles) -> Self {
+        self.base.set_styles(styles);
+        self
+    }
+
+    pub fn with_width(self, width: SclVal) -> Self {
+        self.base.set_attr_scl_width(width);
+        self
+    }
+    pub fn with_height(self, height: SclVal) -> Self {
+        self.base.set_attr_scl_height(height);
+        self
+    }
+    pub fn with_size(self, width: SclVal, height: SclVal) -> Self {
+        self.base.set_attr_scl_width(width);
+        self.base.set_attr_scl_height(height);
+        self
+    }
+
+    pub fn at(mut self, loc_x: SclVal, loc_y: SclVal) -> Self {
+        self.base.at(loc_x, loc_y);
+        self
+    }
+
+    pub fn with_ch_cursor(self) -> Self {
+        *self.ch_cursor.borrow_mut() = true;
+        self
+    }
+
+    pub fn with_no_ch_cursor(self) -> Self {
+        *self.ch_cursor.borrow_mut() = false;
+        self
+    }
+
+    pub fn editable(self) -> Self {
+        *self.editable.borrow_mut() = true;
+
+        let evs = Self::editable_receivable_events()
+            .drain(..)
+            .map(|ev| (ev, Priority::FOCUSED))
+            .collect();
+        self.base.set_receivable_events(evs);
+        self
+    }
+
+    pub fn non_editable(self) -> Self {
+        *self.editable.borrow_mut() = false;
+        let evs = Self::non_editable_receivable_events()
+            .drain(..)
+            .map(|ev| (ev, Priority::FOCUSED))
+            .collect();
+        self.base.set_receivable_events(evs);
+        self
+    }
+
+    pub fn with_wordwrap(self) -> Self {
+        *self.wordwrap.borrow_mut() = true;
+        self
+    }
+
+    pub fn with_no_wordwrap(self) -> Self {
+        *self.wordwrap.borrow_mut() = false;
+        self
+    }
+
+    pub fn with_line_numbers(self) -> Self {
+        *self.line_numbered.borrow_mut() = true;
+        self
+    }
+
+    pub fn with_no_line_numbers(self) -> Self {
+        *self.line_numbered.borrow_mut() = false;
+        self
+    }
+
+    pub fn with_position_style_hook(
+        self, hook: Box<dyn FnMut(Context, usize, Style) -> Style>,
+    ) -> Self {
+        *self.position_style_hook.borrow_mut() = Some(hook);
+        self
+    }
+
+    pub fn set_position_style_hook(
+        &mut self, hook: Box<dyn FnMut(Context, usize, Style) -> Style>,
+    ) {
+        *self.position_style_hook.borrow_mut() = Some(hook);
+    }
+
+    pub fn with_cursor_changed_hook(
+        self, hook: Box<dyn FnMut(Context, usize) -> EventResponses>,
+    ) -> Self {
+        *self.cursor_changed_hook.borrow_mut() = Some(hook);
+        self
+    }
+
+    pub fn set_cursor_changed_hook(
+        &mut self, hook: Box<dyn FnMut(Context, usize) -> EventResponses>,
+    ) {
+        *self.cursor_changed_hook.borrow_mut() = Some(hook);
+    }
+
+    pub fn with_text_changed_hook(
+        self, hook: Box<dyn FnMut(Context, String) -> EventResponses>,
+    ) -> Self {
+        *self.text_changed_hook.borrow_mut() = Some(hook);
+        self
+    }
+
+    pub fn set_text_changed_hook(
+        &mut self, hook: Box<dyn FnMut(Context, String) -> EventResponses>,
+    ) {
+        *self.text_changed_hook.borrow_mut() = Some(hook);
+    }
+
+    pub fn with_cursor_style(self, style: Style) -> Self {
+        *self.cursor_style.borrow_mut() = style;
+        self
+    }
+
+    pub fn with_corner_decor(self, decor: DrawCh) -> Self {
+        *self.corner_decor.borrow_mut() = decor;
+        self
+    }
+
+    pub fn to_widgets(self, hat: &SortingHat, ctx: &Context) -> Widgets {
+        let (x, y) = (
+            self.base.get_attr_scl_loc_x(),
+            self.base.get_attr_scl_loc_y(),
+        );
+        let (h, w) = (
+            self.base.get_attr_scl_height(),
+            self.base.get_attr_scl_width(),
+        );
+        let mut out = vec![];
+
+        let mut ln_tb = if *self.line_numbered.borrow() {
+            // determine the width of the line numbers textbox
+
+            // create the line numbers textbox
+            let (lns, lnw) = self.get_line_numbers();
+            let mut ln_tb = TextBox::new(hat, ctx, lns)
+                .at(x, y)
+                .with_width(SclVal::new_fixed(lnw))
+                .with_height(h)
+                .with_no_wordwrap()
+                .non_editable()
+                .with_selectability(Selectability::Unselectable);
+            out.push(ln_tb.clone());
+
+            // reduce the width of the main textbox
+            self.base.set_attr_scl_width(w.minus_fixed(lnw));
+            self.base.set_attr_scl_loc_x(x.plus_fixed(lnw));
+
+            self.line_number_tb = Rc::new(RefCell::new(Some(ln_tb.clone())));
+            ln_tb
+        };
+        out.push(self.clone());
+
+        // add corner decor
+        let y_sb_op = *self.y_scrollbar_op.borrow();
+        let x_sb_op = *self.x_scrollbar_op.borrow();
+        let no_y_sb = matches!(y_sb_op, VerticalSBPositions::None);
+        let no_x_sb = matches!(x_sb_op, HorizontalSBPositions::None);
+        if !no_y_sb && !no_x_sb {
+            let cd = Label::new(hat, ctx, &(self.corner_decor.borrow().ch.to_string()))
+                .with_style(ctx, self.corner_decor.borrow().style);
+            let (cd_x, cd_y) = match (y_sb_op, x_sb_op) {
+                (VerticalSBPositions::ToTheLeft, HorizontalSBPositions::Above) => {
+                    (x.minus_fixed(1), y.minus_fixed(1))
+                }
+                (VerticalSBPositions::ToTheLeft, HorizontalSBPositions::Below) => {
+                    (x.minus_fixed(1), y.plus(h))
+                }
+                (VerticalSBPositions::ToTheRight, HorizontalSBPositions::Above) => {
+                    (x.plus(w), y.minus_fixed(1))
+                }
+                (VerticalSBPositions::ToTheRight, HorizontalSBPositions::Below) => {
+                    (x.plus(w), y.plus(h))
+                }
+                _ => panic!("impossible"),
+            };
+            cd.at(cd_x, cd_y);
+            out.push(cd);
+        }
+
+        if !no_y_sb {
+            let x2 = match y_sb_op {
+                VerticalSBPositions::ToTheLeft => x.minus_fixed(1),
+                VerticalSBPositions::ToTheRight => x.plus(w),
+                _ => panic!("impossible"),
+            };
+            let vsb = VerticalScrollbar::new(hat, h, self.base.content_height())
+                .at(x2, y)
+                .with_styles(Self::STYLE_SCROLLBAR);
+
+            match ln_tb {
+                Some(ln_tb) => {
+                    let wb_ = self.base.clone();
+                    let ln_tb_wb = ln_tb.base.clone();
+                    let hook = Box::new(move |ctx, y| {
+                        wb_.set_content_y_offset(&ctx, y);
+                        ln_tb_wb.set_content_y_offset(&ctx, y);
+                    });
+                    *vsb.position_changed_hook.borrow_mut() = Some(hook);
+                }
+                None => {
+                    let wb_ = self.base.clone();
+                    let hook = Box::new(move |ctx, y| wb_.set_content_y_offset(&ctx, y));
+                    *vsb.position_changed_hook.borrow_mut() = Some(hook);
+                }
+            }
+
+            *self.y_scrollbar.borrow_mut() = Some(vsb);
+            out.push(vsb);
+        }
+
+        if !no_x_sb {
+            let y2 = match x_sb_op {
+                HorizontalSBPositions::Above => y.minus_fixed(1),
+                HorizontalSBPositions::Below => y.plus(h),
+                _ => panic!("impossible"),
+            };
+
+            let hsb = HorizontalScrollbar::new(hat, w, self.base.content_width())
+                .at(x, y2)
+                .with_styles(Self::STYLE_SCROLLBAR);
+
+            let wb_ = self.base.clone();
+            let hook = Box::new(move |ctx, x| wb_.set_content_x_offset(&ctx, x));
+            *hsb.position_changed_hook.borrow_mut() = Some(hook);
+
+            out.push(hsb);
+        }
+
+        let _ = drawing(ctx); // to set the base content
+        Widgets(out)
+    }
+
+    // ---------------------------------------------------------
+
+    pub fn get_cursor_pos(&self) -> usize {
+        *self.cursor_pos.borrow()
+    }
+
+    pub fn set_cursor_pos(&self, ctx: &Context, new_abs_pos: usize) -> EventResponses {
+        *self.cursor_pos.borrow_mut() = new_abs_pos;
+        if let Some(hook) = &mut *self.cursor_changed_hook.borrow_mut() {
+            hook(ctx, new_abs_pos)
+        } else {
+            EventResponses::new()
+        }
+    }
 }
 
-*/
 /*
 
 
-func NewTextBox(pCtx yh.Context, text string) *TextBox {
-
-    width, height := TextSize(text)
-    wb := NewWidgetBase(pCtx, NewStatic(width), NewStatic(height), TextboxStyle, TextboxEditableEvCombos)
-
-    tb := &TextBox{
-        WidgetBase:         wb,
-        text:               []rune(text),
-        wordwrap:           true,
-        chCursor:           true,
-        editable:           true,
-        cursorPos:          0,
-        cursorStyle:        DefaultCursorStyle,
-        visualMode:         false,
-        mouseDragging:      false,
-        visualModeStartPos: 0,
-        TextChangedHook:    nil,
-        XChangedHook:       nil,
-        YChangedHook:       nil,
-        XScrollbar:         NoScrollbar,
-        YScrollbar:         NoScrollbar,
-        CornerDecor:        yh.NewDrawCh('⁙', false, tcell.StyleDefault),
-        RightClickMenu:     nil,
-    }
-
-
-    _ = tb.Drawing() // to set the base content
-    return tb
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ---------------------------------------------------------
-// Decorators
-
-func (tb *TextBox) WithSize(width, height SclVal) *TextBox {
-    tb.Width, tb.Height = width, height
-    return tb
-}
-
-func (tb *TextBox) At(locX, locY SclVal) *TextBox {
-    tb.WidgetBase.At(locX, locY)
-    return tb
-}
-
-func (tb *TextBox) WithChCursor() *TextBox {
-    tb.chCursor = true
-    return tb
-}
-
-func (tb *TextBox) NoChCursor() *TextBox {
-    tb.chCursor = false
-    return tb
-}
-
-func (tb *TextBox) Editable() *TextBox {
-    tb.editable = true
-    return tb
-}
-
-func (tb *TextBox) NonEditable() *TextBox {
-    tb.editable = false
-    tb.ReceivableEvs = TextboxNonEditableEvCombos
-    return tb
-}
-
-func (tb *TextBox) WordWrap() *TextBox {
-    tb.wordwrap = true
-    return tb
-}
-
-func (tb *TextBox) NoWordWrap() *TextBox {
-    tb.wordwrap = false
-    return tb
-}
-
-func (tb *TextBox) LineNumbered() *TextBox {
-    tb.lineNumbered = true
-    return tb
-}
-
-func (tb *TextBox) NoLineNumbered() *TextBox {
-    tb.lineNumbered = false
-    return tb
-}
-
-func (tb *TextBox) WithPositionStyleHook(hook func(absPos int, existingSty tcell.Style) tcell.Style) *TextBox {
-    tb.PositionStyleHook = hook
-    return tb
-}
-
-func (tb *TextBox) SetPositionStyleHook(hook func(absPos int, existingSty tcell.Style) tcell.Style) {
-    tb.PositionStyleHook = hook
-}
-
-func (tb *TextBox) WithCursorChangedHook(hook func(absPos int)) *TextBox {
-    tb.CursorChangedHook = hook
-    return tb
-}
-
-func (tb *TextBox) SetCursorChangedHook(hook func(absPos int)) {
-    tb.CursorChangedHook = hook
-}
-
-func (tb *TextBox) WithTextChangedHook(hook func(newText string) yh.EventResponse) *TextBox {
-    tb.TextChangedHook = hook
-    return tb
-}
-
-func (tb *TextBox) WithCursorStyle(style tcell.Style) *TextBox {
-    tb.cursorStyle = style
-    return tb
-}
-
-func (tb *TextBox) WithStyles(styles WBStyles) *TextBox {
-    tb.Styles = styles
-    return tb
-}
-
-func (tb *TextBox) WithLeftScrollbar() *TextBox {
-    tb.YScrollbar = LeftScrollbar
-    return tb
-}
-
-func (tb *TextBox) WithRightScrollbar() *TextBox {
-    tb.YScrollbar = RightScrollbar
-    return tb
-}
-
-func (tb *TextBox) WithTopScrollbar() *TextBox {
-    tb.XScrollbar = TopScrollbar
-    return tb
-}
-
-func (tb *TextBox) WithBottomScrollbar() *TextBox {
-    tb.XScrollbar = BottomScrollbar
-    return tb
-}
-
-func (tb *TextBox) WithCornerDecor(decor yh.DrawCh) *TextBox {
-    tb.CornerDecor = decor
-    return tb
-}
-
-func (tb *TextBox) ToWidgets() Widgets {
-
-    x, y := tb.LocX, tb.LocY
-
-    var out []Widget
-    h, w := tb.Height, tb.Width
-
-    out = []Widget{}
-
-    var lnTB *TextBox = nil
-
-    if tb.lineNumbered {
-        // determine the width of the line numbers textbox
-
-        // create the line numbers textbox
-        lns, lnw := tb.GetLineNumbers()
-        lnTB = NewTextBox(tb.GetParentCtx(), lns)
-        lnTB.At(x, y)
-        lnTB.Width = NewStatic(lnw)
-        lnTB.Height = h
-        lnTB.NoWordWrap()
-        lnTB.NonEditable()
-        lnTB.SetSelectability(Unselectable)
-        out = append(out, lnTB)
-
-        // reduce the width of the main textbox
-        tb.Width = tb.Width.MinusStatic(lnw)
-        tb.LocX = tb.LocX.PlusStatic(lnw)
-
-        lastLnw := lnw
-
-        // wire the line numbers textbox to the main textbox
-        tb.YChangedHook2 = func(newYPosition, newHeight int, resp *yh.EventResponse) {
-            lns, lnw := tb.GetLineNumbers()
-            if lnw != lastLnw {
-                diffLnw := lnw - lastLnw
-                tb.Width = tb.Width.MinusStatic(diffLnw)
-                resp.SetRelocation(yh.NewRelocationRequestLeft(diffLnw))
-                lastLnw = lnw
-            }
-            lnTB.SetText(lns)
-            lnTB.Width = NewStatic(lnw)
-            lnTB.SetContentYOffset(newYPosition)
-        }
-    }
-
-    out = append(out, tb)
-
-    // add corner decor
-    if tb.YScrollbar != NoScrollbar && tb.XScrollbar != NoScrollbar {
-        cd := NewLabel(tb.GetParentCtx(), string(tb.CornerDecor.Ch)).WithStyle(tb.CornerDecor.Style)
-        var cdX, cdY SclVal
-        switch {
-        case tb.YScrollbar == LeftScrollbar && tb.XScrollbar == TopScrollbar:
-            cdX, cdY = x.MinusStatic(1), y.MinusStatic(1)
-        case tb.YScrollbar == LeftScrollbar && tb.XScrollbar == BottomScrollbar:
-            cdX, cdY = x.MinusStatic(1), y.Plus(h)
-        case tb.YScrollbar == RightScrollbar && tb.XScrollbar == TopScrollbar:
-            cdX, cdY = x.Plus(w), y.MinusStatic(1)
-        case tb.YScrollbar == RightScrollbar && tb.XScrollbar == BottomScrollbar:
-            cdX, cdY = x.Plus(w), y.Plus(h)
-        }
-        cd.At(cdX, cdY)
-        out = append(out, cd)
-    }
-
-    if tb.YScrollbar != NoScrollbar {
-        var x2 SclVal
-        if tb.YScrollbar == LeftScrollbar {
-            x2 = x.MinusStatic(1)
-        } else { // right scrollbar
-            x2 = x.Plus(w)
-        }
-
-        vsb := NewVerticalScrollbar(tb.GetParentCtx(), h, tb.ContentHeight())
-        vsb.At(x2, y)
-
-        // wire the scrollbar to the text box
-        if tb.lineNumbered {
-            vsb.PositionChangedHook = func(newYPosition int) {
-                tb.SetContentYOffset(newYPosition)
-                lnTB.SetContentYOffset(newYPosition)
-            }
-        } else {
-            vsb.PositionChangedHook = tb.SetContentYOffset
-        }
-        tb.YChangedHook = vsb.ExternalChange
-
-        out = append(out, vsb)
-    }
-
-    if tb.XScrollbar != NoScrollbar {
-        var y2 SclVal
-        if tb.XScrollbar == TopScrollbar {
-            y2 = y.MinusStatic(1)
-        } else { // bottom scrollbar
-            y2 = y.Plus(h)
-        }
-
-        hsb := NewHorizontalScrollbar(tb.GetParentCtx(), w, tb.ContentWidth())
-        hsb.At(x, y2)
-
-        // wire the scrollbar to the text box
-        hsb.PositionChangedHook = tb.SetContentXOffset
-        tb.XChangedHook = hsb.ExternalChange
-
-        out = append(out, hsb)
-    }
-
-    _ = tb.Drawing() // to set the base content
-    return out
-}
-
-// ---------------------------------------------------------
 
 func (tb *TextBox) GetCursorPos() int {
     return tb.cursorPos
@@ -591,6 +545,22 @@ func (tb *TextBox) CorrectOffsets(w wrChs, resp *yh.EventResponse) {
     if tb.YChangedHook2 != nil {
         tb.YChangedHook2(tb.ContentYOffset, tb.ContentHeight(), resp)
     }
+
+    // NOTE this is what the wiring looks like. now just call the line numbers textbox directly
+        //// wire the line numbers textbox to the main textbox
+        //tb.YChangedHook2 = func(newYPosition, newHeight int, resp *yh.EventResponse) {
+        //    lns, lnw := tb.GetLineNumbers()
+        //    if lnw != lastLnw {
+        //        diffLnw := lnw - lastLnw
+        //        tb.Width = tb.Width.MinusStatic(diffLnw)
+        //        resp.SetRelocation(yh.NewRelocationRequestLeft(diffLnw))
+        //        lastLnw = lnw
+        //    }
+        //    lnTB.SetText(lns)
+        //    lnTB.Width = NewStatic(lnw)
+        //    lnTB.SetContentYOffset(newYPosition)
+        //}
+
 
     if tb.XChangedHook != nil {
         tb.XChangedHook(tb.ContentXOffset, tb.ContentWidth())

@@ -465,6 +465,10 @@ impl WidgetBase {
 
     //-------------------------
 
+    pub fn set_receivable_events(&self, evs: Vec<(Event, Priority)>) {
+        self.sp.set_self_receivable_events(evs)
+    }
+
     pub fn get_width(&self, ctx: &Context) -> usize {
         let scl_width = self.get_attr_scl_width();
         scl_width.get_val(ctx.get_width().into())

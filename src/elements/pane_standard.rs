@@ -100,6 +100,10 @@ impl StandardPane {
         *self.self_evs.borrow_mut() = SelfReceivableEvents(evs);
         self
     }
+
+    pub fn set_self_receivable_events(&self, evs: Vec<(Event, Priority)>) {
+        *self.self_evs.borrow_mut() = SelfReceivableEvents(evs);
+    }
 }
 impl Element for StandardPane {
     fn kind(&self) -> &'static str {
