@@ -4,7 +4,7 @@ use {
     yeehaw::{
         widgets::{
             megafonts, Button, Checkbox, DropdownList, Label, ListBox, Megatext, RadioButtons,
-            SclVal, Toggle,
+            SclVal, TextBox, Toggle,
         },
         Context, Cui, Element, Error, EventResponses, SortingHat, WidgetPane,
     },
@@ -128,6 +128,18 @@ async fn main() -> Result<(), Error> {
     .at(SclVal::new_frac(0.5), SclVal::new_frac(0.1))
     .to_widgets(&hat);
     el.add_widgets(&ctx, listbox);
+
+    let tb = TextBox::new(&hat, &ctx, "hello\nworld".to_string())
+        .with_width(SclVal::new_fixed(10))
+        .with_height(SclVal::new_fixed(5))
+        .with_line_numbers()
+        .with_right_scrollbar()
+        .with_lower_scrollbar()
+        .editable()
+        .at(SclVal::new_frac(0.8), SclVal::new_frac(0.1))
+        .to_widgets(&hat, &ctx);
+
+    el.add_widgets(&ctx, tb);
 
     Cui::new(Rc::new(RefCell::new(el)))?.run().await
 }

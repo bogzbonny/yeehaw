@@ -80,7 +80,7 @@
       widget_listbox_mono.go             │ DONE (integrated into listbox)
       widget_radio.go                    │ DONE
       widget_scrollbar.go                │ DONE 
-      widget_textbox.go                  │  -> dependant on scrollbar + right click menu template
+      widget_textbox.go                  │ TRANSLATED WITH BUGS ** BESIDES right click menu
       widget_textbox_numbers.go          │  -> dependant on textbox
       widget_title.go                    │ DONE (megatext)
       widget_toggle.go                   │ DONE 
