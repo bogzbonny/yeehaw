@@ -479,22 +479,22 @@ impl WidgetBase {
         scl_height.get_val(ctx.get_height().into())
     }
 
-    pub fn scroll_up(&mut self, ctx: &Context) {
+    pub fn scroll_up(&self, ctx: &Context) {
         let view_offset_y = *self.sp.content_view_offset_y.borrow();
         self.set_content_y_offset(ctx, view_offset_y - 1);
     }
 
-    pub fn scroll_down(&mut self, ctx: &Context) {
+    pub fn scroll_down(&self, ctx: &Context) {
         let view_offset_y = *self.sp.content_view_offset_y.borrow();
         self.set_content_y_offset(ctx, view_offset_y + 1);
     }
 
-    pub fn scroll_left(&mut self, ctx: &Context) {
+    pub fn scroll_left(&self, ctx: &Context) {
         let view_offset_x = *self.sp.content_view_offset_x.borrow();
         self.set_content_x_offset(ctx, view_offset_x - 1);
     }
 
-    pub fn scroll_right(&mut self, ctx: &Context) {
+    pub fn scroll_right(&self, ctx: &Context) {
         let view_offset_x = *self.sp.content_view_offset_x.borrow();
         self.set_content_x_offset(ctx, view_offset_x + 1);
     }

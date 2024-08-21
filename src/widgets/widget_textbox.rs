@@ -8,7 +8,7 @@ use {
         EventResponse, EventResponses, KeyPossibility, Keyboard as KB, Priority,
         ReceivableEventChanges, RgbColour, SortingHat, Style, UpwardPropagator,
     },
-    crossterm::event::{MouseButton, MouseEventKind},
+    crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
 };
 
@@ -86,12 +86,12 @@ impl TextBox {
     };
 
     const DEFAULT_CURSOR_STYLE: Style = Style::new().with_bg(RgbColour::BLUE);
-    const DEFAULT_RIGHT_CLICK_MENU_STYLE: Style = Style::new().with_bg(RgbColour::LIME);
+    //const DEFAULT_RIGHT_CLICK_MENU_STYLE: Style = Style::new().with_bg(RgbColour::LIME);
 
     // for textboxes which are editable
     pub fn editable_receivable_events() -> Vec<Event> {
         vec![
-            KeyPossibility::Runes.into(),
+            KeyPossibility::Chars.into(),
             KB::KEY_ENTER.into(),
             KB::KEY_SHIFT_ENTER.into(),
             KB::KEY_LEFT.into(),
@@ -334,7 +334,7 @@ impl TextBox {
         self
     }
 
-    pub fn to_widgets(self, hat: &SortingHat, ctx: &Context) -> Widgets {
+    pub fn to_widgets(mut self, hat: &SortingHat, ctx: &Context) -> Widgets {
         let (x, y) = (
             self.base.get_attr_scl_loc_x(),
             self.base.get_attr_scl_loc_y(),
@@ -343,30 +343,33 @@ impl TextBox {
             self.base.get_attr_scl_height(),
             self.base.get_attr_scl_width(),
         );
-        let mut out = vec![];
+        let mut out: Vec<Box<dyn Widget>> = vec![];
 
-        let mut ln_tb = if *self.line_numbered.borrow() {
+        let ln_tb = if *self.line_numbered.borrow() {
             // determine the width of the line numbers textbox
 
             // create the line numbers textbox
             let (lns, lnw) = self.get_line_numbers(ctx);
-            let mut ln_tb = TextBox::new(hat, ctx, lns)
-                .at(x, y)
+            let ln_tb = TextBox::new(hat, ctx, lns)
+                .at(x.clone(), y.clone())
                 .with_width(SclVal::new_fixed(lnw))
-                .with_height(h)
+                .with_height(h.clone())
                 .with_no_wordwrap()
-                .non_editable()
-                .with_selectability(Selectability::Unselectable);
-            out.push(ln_tb.clone());
+                .non_editable();
+            ln_tb.set_selectability(ctx, Selectability::Unselectable);
+            //.with_selectability(Selectability::Unselectable);
+            out.push(Box::new(ln_tb.clone()));
 
             // reduce the width of the main textbox
-            self.base.set_attr_scl_width(w.minus_fixed(lnw));
-            self.base.set_attr_scl_loc_x(x.plus_fixed(lnw));
+            self.base.set_attr_scl_width(w.clone().minus_fixed(lnw));
+            self.base.set_attr_scl_loc_x(x.clone().plus_fixed(lnw));
 
             self.line_number_tb = Rc::new(RefCell::new(Some(ln_tb.clone())));
-            ln_tb
+            Some(ln_tb)
+        } else {
+            None
         };
-        out.push(self.clone());
+        out.push(Box::new(self.clone()));
 
         // add corner decor
         let y_sb_op = *self.y_scrollbar_op.borrow();
@@ -378,31 +381,31 @@ impl TextBox {
                 .with_style(ctx, self.corner_decor.borrow().style);
             let (cd_x, cd_y) = match (y_sb_op, x_sb_op) {
                 (VerticalSBPositions::ToTheLeft, HorizontalSBPositions::Above) => {
-                    (x.minus_fixed(1), y.minus_fixed(1))
+                    (x.clone().minus_fixed(1), y.clone().minus_fixed(1))
                 }
                 (VerticalSBPositions::ToTheLeft, HorizontalSBPositions::Below) => {
-                    (x.minus_fixed(1), y.plus(h))
+                    (x.clone().minus_fixed(1), y.clone().plus(h.clone()))
                 }
                 (VerticalSBPositions::ToTheRight, HorizontalSBPositions::Above) => {
-                    (x.plus(w), y.minus_fixed(1))
+                    (x.clone().plus(w.clone()), y.clone().minus_fixed(1))
                 }
                 (VerticalSBPositions::ToTheRight, HorizontalSBPositions::Below) => {
-                    (x.plus(w), y.plus(h))
+                    (x.clone().plus(w.clone()), y.clone().plus(h.clone()))
                 }
                 _ => panic!("impossible"),
             };
-            cd.at(cd_x, cd_y);
-            out.push(cd);
+            let cd = cd.at(cd_x, cd_y);
+            out.push(Box::new(cd));
         }
 
         if !no_y_sb {
             let x2 = match y_sb_op {
-                VerticalSBPositions::ToTheLeft => x.minus_fixed(1),
-                VerticalSBPositions::ToTheRight => x.plus(w),
+                VerticalSBPositions::ToTheLeft => x.clone().minus_fixed(1),
+                VerticalSBPositions::ToTheRight => x.clone().plus(w.clone()),
                 _ => panic!("impossible"),
             };
-            let vsb = VerticalScrollbar::new(hat, h, self.base.content_height())
-                .at(x2, y)
+            let vsb = VerticalScrollbar::new(hat, h.clone(), self.base.content_height())
+                .at(x2, y.clone())
                 .with_styles(Self::STYLE_SCROLLBAR);
 
             match ln_tb {
@@ -422,8 +425,8 @@ impl TextBox {
                 }
             }
 
-            *self.y_scrollbar.borrow_mut() = Some(vsb);
-            out.push(vsb);
+            *self.y_scrollbar.borrow_mut() = Some(vsb.clone());
+            out.push(Box::new(vsb));
         }
 
         if !no_x_sb {
@@ -441,10 +444,10 @@ impl TextBox {
             let hook = Box::new(move |ctx, x| wb_.set_content_x_offset(&ctx, x));
             *hsb.position_changed_hook.borrow_mut() = Some(hook);
 
-            out.push(hsb);
+            out.push(Box::new(hsb));
         }
 
-        let _ = drawing(ctx); // to set the base content
+        let _ = self.drawing(ctx); // to set the base content
         Widgets(out)
     }
 
@@ -567,7 +570,7 @@ impl TextBox {
 
         // update the scrollbars/line numbers textbox
         if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
-            sb.external_change(&ctx, y_offset, self.base.content_height());
+            sb.external_change(ctx, y_offset, self.base.content_height());
         }
         let mut resp = EventResponse::default();
         if let Some(ln_tb) = self.line_number_tb.borrow().as_ref() {
@@ -584,7 +587,7 @@ impl TextBox {
             ln_tb.base.set_content_y_offset(ctx, y_offset);
         }
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
-            sb.external_change(&ctx, x_offset, self.base.content_width());
+            sb.external_change(ctx, x_offset, self.base.content_width());
         }
         resp
     }
@@ -671,6 +674,292 @@ impl TextBox {
         }
         Ok(resps)
     }
+
+    pub fn receive_key_event(
+        &self, ev: Vec<KeyPossibility>, ctx: &Context,
+    ) -> (bool, EventResponses) {
+        if self.base.get_selectability() != Selectability::Selected || ev.is_empty() {
+            return (false, EventResponses::default());
+        }
+
+        if !*self.ch_cursor.borrow() {
+            match true {
+                _ if ev[0].matches(&KB::KEY_LEFT) || ev[0].matches(&KB::KEY_H) => {
+                    self.base.scroll_left(ctx);
+                }
+                _ if ev[0].matches(&KB::KEY_RIGHT) || ev[0].matches(&KB::KEY_L) => {
+                    self.base.scroll_right(ctx);
+                }
+                _ if ev[0].matches(&KB::KEY_DOWN) || ev[0].matches(&KB::KEY_J) => {
+                    self.base.scroll_down(ctx);
+                }
+                _ if ev[0].matches(&KB::KEY_UP) || ev[0].matches(&KB::KEY_K) => {
+                    self.base.scroll_up(ctx);
+                }
+                _ => {}
+            }
+
+            // update the scrollbars
+            let y_offset = *self.base.sp.content_view_offset_y.borrow();
+            let x_offset = *self.base.sp.content_view_offset_x.borrow();
+            if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
+                sb.external_change(ctx, y_offset, self.base.content_height());
+            }
+            if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
+                sb.external_change(ctx, x_offset, self.base.content_width());
+            }
+            return (true, EventResponses::default());
+        }
+
+        let mut visual_mode_event = false;
+        let visual_mode = *self.visual_mode.borrow();
+        let cursor_pos = *self.cursor_pos.borrow();
+
+        let mut resps = EventResponses::default();
+        match true {
+            _ if ev[0].matches(&KB::KEY_SHIFT_LEFT) => {
+                visual_mode_event = true;
+                if !visual_mode {
+                    *self.visual_mode.borrow_mut() = true;
+                    *self.visual_mode_start_pos.borrow_mut() = cursor_pos;
+                }
+                if cursor_pos > 0 {
+                    self.incr_cursor_pos(ctx, -1);
+                    let w = self.get_wrapped(ctx);
+                    resps = self.correct_offsets(ctx, w).into();
+                }
+            }
+
+            _ if ev[0].matches(&KB::KEY_SHIFT_RIGHT) => {
+                visual_mode_event = true;
+                if !visual_mode {
+                    *self.visual_mode.borrow_mut() = true;
+                    *self.visual_mode_start_pos.borrow_mut() = cursor_pos;
+                }
+                if cursor_pos < self.text.borrow().len() {
+                    self.incr_cursor_pos(ctx, 1);
+                    let w = self.get_wrapped(ctx);
+                    resps = self.correct_offsets(ctx, w).into();
+                }
+            }
+
+            _ if ev[0].matches(&KB::KEY_SHIFT_UP) => {
+                visual_mode_event = true;
+                if !visual_mode {
+                    *self.visual_mode.borrow_mut() = true;
+                    *self.visual_mode_start_pos.borrow_mut() = cursor_pos;
+                }
+                let w = self.get_wrapped(ctx);
+                if let Some(new_pos) = w.get_cursor_above_position(cursor_pos) {
+                    self.set_cursor_pos(ctx, new_pos);
+                    resps = self.correct_offsets(ctx, w).into();
+                }
+            }
+
+            _ if ev[0].matches(&KB::KEY_SHIFT_DOWN) => {
+                visual_mode_event = true;
+                if !visual_mode {
+                    *self.visual_mode.borrow_mut() = true;
+                    *self.visual_mode_start_pos.borrow_mut() = cursor_pos
+                }
+                let w = self.get_wrapped(ctx);
+                if let Some(new_pos) = w.get_cursor_below_position(cursor_pos) {
+                    self.set_cursor_pos(ctx, new_pos);
+                    resps = self.correct_offsets(ctx, w).into();
+                }
+            }
+
+            _ if ev[0].matches(&KB::KEY_LEFT) => {
+                if cursor_pos > 0 {
+                    // do not move left if at the beginning of a line
+                    if self.text.borrow()[cursor_pos - 1] != '\n' {
+                        self.incr_cursor_pos(ctx, -1);
+                        let w = self.get_wrapped(ctx);
+                        resps = self.correct_offsets(ctx, w).into();
+                    }
+                }
+            }
+
+            // if wordwrap is disable do not move to the next line
+            // when at the end of the line
+            _ if ev[0].matches(&KB::KEY_RIGHT) && *self.wordwrap.borrow() => {
+                if cursor_pos < self.text.borrow().len() {
+                    self.incr_cursor_pos(ctx, 1);
+                    let w = self.get_wrapped(ctx);
+                    resps = self.correct_offsets(ctx, w).into();
+                }
+            }
+
+            _ if ev[0].matches(&KB::KEY_RIGHT) && !*self.wordwrap.borrow() => {
+                let w = self.get_wrapped(ctx);
+                let (cur_x, cur_y) = w.cursor_x_and_y(cursor_pos);
+                let cur_x = cur_x.unwrap_or(0);
+                let cur_y = cur_y.unwrap_or(0);
+                let l = w.get_line(cur_y);
+                if cur_x < l.len().saturating_sub(2) {
+                    self.incr_cursor_pos(ctx, 1);
+                    resps = self.correct_offsets(ctx, w).into();
+                }
+            }
+
+            _ if ev[0].matches(&KB::KEY_UP) => {
+                let w = self.get_wrapped(ctx);
+                if let Some(new_pos) = w.get_cursor_above_position(cursor_pos) {
+                    self.set_cursor_pos(ctx, new_pos);
+                    resps = self.correct_offsets(ctx, w).into();
+                }
+            }
+
+            _ if ev[0].matches(&KB::KEY_DOWN) => {
+                let w = self.get_wrapped(ctx);
+                if let Some(new_pos) = w.get_cursor_below_position(cursor_pos) {
+                    self.set_cursor_pos(ctx, new_pos);
+                    resps = self.correct_offsets(ctx, w).into();
+                }
+            }
+
+            _ if *self.editable.borrow() && ev[0].matches_kp(&KeyPossibility::Chars) => {
+                if let Some(r) = ev[0].get_char() {
+                    let mut rs = self.text.borrow().clone();
+                    rs.splice(cursor_pos..cursor_pos, std::iter::once(r));
+                    *self.text.borrow_mut() = rs;
+                    self.incr_cursor_pos(ctx, 1);
+                    let w = self.get_wrapped(ctx);
+
+                    // NOTE-1: must call SetContentFromString to update the content
+                    // before updating the offset or else the offset amount may not
+                    // exist in the content and the widget base will reject the new
+                    // offset
+                    self.base.set_content_from_string(ctx, &w.wrapped_string());
+                    let resp = self.correct_offsets(ctx, w);
+
+                    if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
+                        resps = hook(ctx.clone(), self.get_text());
+                    }
+                    resps.push(resp);
+                }
+            }
+
+            _ if ev[0].matches(&KB::KEY_META_C) => {
+                _ = self.copy_to_clipboard(); // TODO log error
+            }
+
+            _ if *self.editable.borrow() && ev[0].matches(&KB::KEY_META_V) => {
+                // TODO log error case
+                if let Ok(r) = self.paste_from_clipboard(ctx) {
+                    resps = r
+                }
+            }
+
+            _ if *self.editable.borrow() && (ev[0].matches(&KB::KEY_BACKSPACE)) => {
+                if visual_mode {
+                    resps = self.delete_visual_selection(ctx);
+                } else if cursor_pos > 0 {
+                    let mut rs = self.text.borrow().clone();
+                    rs.remove(cursor_pos - 1);
+                    self.incr_cursor_pos(ctx, -1);
+                    *self.text.borrow_mut() = rs;
+                    let w = self.get_wrapped(ctx);
+                    self.base.set_content_from_string(ctx, &w.wrapped_string()); // See NOTE-1
+                    let resp = self.correct_offsets(ctx, w);
+                    if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
+                        resps = hook(ctx.clone(), self.get_text());
+                    }
+                    resps.push(resp);
+                }
+            }
+
+            _ if *self.editable.borrow() && ev[0].matches(&KB::KEY_ENTER) => {
+                let mut rs = self.text.borrow().clone();
+                rs.splice(cursor_pos..cursor_pos, std::iter::once('\n'));
+                *self.text.borrow_mut() = rs;
+                self.incr_cursor_pos(ctx, 1);
+                let w = self.get_wrapped(ctx);
+                self.base.set_content_from_string(ctx, &w.wrapped_string()); // See NOTE-1
+                let resp = self.correct_offsets(ctx, w);
+                if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
+                    resps = hook(ctx.clone(), self.get_text());
+                }
+                resps.push(resp);
+            }
+
+            _ => {}
+        }
+
+        if *self.visual_mode.borrow() && !visual_mode_event {
+            *self.visual_mode.borrow_mut() = false;
+        }
+
+        (true, resps)
+    }
+
+    pub fn receive_mouse_event(&self, ctx: &Context, _ev: MouseEvent) -> (bool, EventResponses) {
+        //resp = yh.NewEventResponse()
+
+        //// handle secondary click
+        //if tb.RightClickMenu != nil {
+        //    // send the event to the right click menu to check for right click
+        //    createRCM := tb.RightClickMenu.CreateMenuIfRightClick(ev)
+        //    if createRCM.HasWindow() {
+        //        return true, yh.NewEventResponse().WithWindow(createRCM)
+        //    }
+        //}
+
+        //if ev.Buttons() == tcell.WheelDown && ev.Modifiers() == tcell.ModNone && tb.Selectedness == Selected {
+        //    w := tb.GetWrapped()
+        //    tb.SetCursorPos(w.GetCursorBelowPosition(tb.cursorPos))
+        //    tb.CorrectOffsets(w, &resp)
+        //    return true, yh.NewEventResponse()
+        //}
+
+        //if ev.Buttons() == tcell.WheelUp && ev.Modifiers() == tcell.ModNone && tb.Selectedness == Selected {
+        //    w := tb.GetWrapped()
+        //    tb.SetCursorPos(w.GetCursorAbovePosition(tb.cursorPos))
+        //    tb.CorrectOffsets(w, &resp)
+        //    return true, yh.NewEventResponse()
+        //}
+        //if ev.Buttons() == tcell.WheelDown && ev.Modifiers() == tcell.ModShift && tb.Selectedness == Selected {
+        //    w := tb.GetWrapped()
+        //    tb.SetCursorPos(w.GetCursorLeftPosition(tb.cursorPos))
+        //    tb.CorrectOffsets(w, &resp)
+        //    return true, yh.NewEventResponse()
+        //}
+
+        //if ev.Buttons() == tcell.WheelUp && ev.Modifiers() == tcell.ModShift && tb.Selectedness == Selected {
+        //    w := tb.GetWrapped()
+        //    tb.SetCursorPos(w.GetCursorRightPosition(tb.cursorPos))
+        //    tb.CorrectOffsets(w, &resp)
+        //    return true, yh.NewEventResponse()
+        //}
+
+        //if ev.Buttons() == tcell.ButtonNone && tb.Selectedness == Selected {
+        //    tb.mouseDragging = false
+        //}
+
+        //// set the cursor to the mouse position on primary click
+        //if ev.Buttons() == tcell.Button1 && tb.Selectedness == Selected { //left click
+        //    x, y := ev.Position()
+        //    x += tb.ContentXOffset
+        //    y += tb.ContentYOffset
+        //    w := tb.GetWrapped()
+
+        //    if tb.mouseDragging && !tb.visualMode {
+        //        tb.visualMode = true
+        //        tb.visualModeStartPos = tb.cursorPos
+        //    }
+        //    if !tb.mouseDragging && tb.visualMode {
+        //        tb.visualMode = false
+        //    }
+        //    tb.mouseDragging = true
+
+        //    tb.SetCursorPos(w.GetNearestValidCursorFromPosition(x, y))
+        //    tb.CorrectOffsets(tb.GetWrapped(), &resp)
+        //    return true, yh.NewEventResponse()
+        //}
+        //return tb.WidgetBase.ReceiveMouseEvent(ev)
+
+        (false, EventResponses::default())
+    }
 }
 
 impl Widget for TextBox {
@@ -695,62 +984,11 @@ impl Element for TextBox {
     }
 
     fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        let _ = self.base.receive_event(ctx, ev.clone());
         match ev {
-            Event::KeyCombo(ke) => {
-                if self.base.get_selectability() != Selectability::Selected || ke.is_empty() {
-                    return (false, EventResponses::default());
-                }
-                return match true {
-                    //_ if ke[0].matches(&KB::KEY_SPACE) => {
-                    //    if let Some(sb) = self.scrollbar.borrow().as_ref() {
-                    //        if sb.get_selectability() != Selectability::Selected {
-                    //            sb.set_selectability(ctx, Selectability::Selected);
-                    //        }
-                    //        sb.receive_event(ctx, Event::KeyCombo(ke))
-                    //    } else {
-                    //        (true, EventResponses::default())
-                    //    }
-                    //}
-                    //_ if ke[0].matches(&KB::KEY_DOWN) || ke[0].matches(&KB::KEY_J) => {
-                    //    self.cursor_down(ctx);
-                    //    (true, EventResponses::default())
-                    //}
-                    //_ if ke[0].matches(&KB::KEY_UP) || ke[0].matches(&KB::KEY_K) => {
-                    //    self.cursor_up(ctx);
-                    //    (true, EventResponses::default())
-                    //}
-                    //_ if ke[0].matches(&KB::KEY_ENTER) => {
-                    //    let Some(cursor) = *self.cursor.borrow() else {
-                    //        return (true, EventResponses::default());
-                    //    };
-                    //    let entries_len = self.entries.borrow().len();
-                    //    if cursor >= entries_len {
-                    //        return (true, EventResponses::default());
-                    //    }
-                    //    return (true, self.toggle_entry_selected_at_i(ctx, cursor));
-                    //}
-                    _ => (false, EventResponses::default()),
-                };
-            }
-            Event::Mouse(me) => {
-                //let (mut clicked, mut dragging, mut scroll_up, mut scroll_down) =
-                //    (false, false, false, false);
-                //match me.kind {
-                //    MouseEventKind::Up(MouseButton::Left) => clicked = true,
-                //    MouseEventKind::Drag(MouseButton::Left) => dragging = true,
-                //    MouseEventKind::ScrollUp => scroll_up = true,
-                //    MouseEventKind::ScrollDown => scroll_down = true,
-                //    _ => {}
-                //}
-
-                return match true {
-                    _ => (false, EventResponses::default()),
-                };
-            }
-            _ => {}
+            Event::KeyCombo(ke) => self.receive_key_event(ke, ctx),
+            Event::Mouse(me) => self.receive_mouse_event(ctx, me),
+            _ => (false, EventResponses::default()),
         }
-        (false, EventResponses::default())
     }
 
     fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
@@ -818,248 +1056,6 @@ impl Element for TextBox {
         self.base.set_upward_propagator(up)
     }
 }
-
-/*
-
-func (tb *TextBox) ReceiveKeyEventCombo(evs []*tcell.EventKey) (captured bool, resp yh.EventResponse) {
-    resp = yh.NewEventResponse()
-
-    if tb.Selectedness != Selected {
-        return false, yh.NewEventResponse()
-    }
-
-    if !tb.chCursor {
-        switch {
-        case (yh.LeftEKC.Matches(evs) || yh.HLowerEKC.Matches(evs)):
-            tb.ScrollLeft()
-        case (yh.RightEKC.Matches(evs) || yh.LLowerEKC.Matches(evs)):
-            tb.ScrollRight()
-        case (yh.DownEKC.Matches(evs) || yh.JLowerEKC.Matches(evs)):
-            tb.ScrollDown()
-        case (yh.UpEKC.Matches(evs) || yh.KLowerEKC.Matches(evs)):
-            tb.ScrollUp()
-        }
-
-        // call the offset hook
-        if tb.YChangedHook != nil {
-            tb.YChangedHook(tb.ContentYOffset, tb.ContentHeight())
-        }
-
-        return true, resp
-    }
-
-    visualModeEvent := false
-    switch {
-    case yh.ShiftLeftEKC.Matches(evs):
-        visualModeEvent = true
-        if !tb.visualMode {
-            tb.visualMode = true
-            tb.visualModeStartPos = tb.cursorPos
-        }
-        if tb.cursorPos > 0 {
-            tb.IncrCursorPos(-1)
-            w := tb.GetWrapped()
-            tb.CorrectOffsets(w, &resp)
-        }
-    case yh.ShiftRightEKC.Matches(evs):
-        visualModeEvent = true
-        if !tb.visualMode {
-            tb.visualMode = true
-            tb.visualModeStartPos = tb.cursorPos
-        }
-        if tb.cursorPos < len(tb.text) {
-            tb.IncrCursorPos(1)
-
-            w := tb.GetWrapped()
-            tb.CorrectOffsets(w, &resp)
-        }
-
-    case yh.ShiftUpEKC.Matches(evs):
-        visualModeEvent = true
-        if !tb.visualMode {
-            tb.visualMode = true
-            tb.visualModeStartPos = tb.cursorPos
-        }
-        w := tb.GetWrapped()
-        tb.SetCursorPos(w.GetCursorAbovePosition(tb.cursorPos))
-        tb.CorrectOffsets(w, &resp)
-
-    case yh.ShiftDownEKC.Matches(evs):
-        visualModeEvent = true
-        if !tb.visualMode {
-            tb.visualMode = true
-            tb.visualModeStartPos = tb.cursorPos
-        }
-        w := tb.GetWrapped()
-        tb.SetCursorPos(w.GetCursorBelowPosition(tb.cursorPos))
-
-        tb.CorrectOffsets(w, &resp)
-
-    case yh.LeftEKC.Matches(evs):
-
-        if tb.cursorPos > 0 {
-            // do not move left if at the beginning of a line
-            if tb.text[tb.cursorPos-1] != '\n' {
-                tb.IncrCursorPos(-1)
-
-                w := tb.GetWrapped()
-                tb.CorrectOffsets(w, &resp)
-            }
-        }
-    case yh.RightEKC.Matches(evs) && tb.wordwrap:
-        if tb.cursorPos < len(tb.text) {
-            tb.IncrCursorPos(1)
-
-            w := tb.GetWrapped()
-            tb.CorrectOffsets(w, &resp)
-        }
-
-    // if wordwrap is disable do not move to the next line
-    // when at the end of the line
-    case yh.RightEKC.Matches(evs) && !tb.wordwrap:
-        w := tb.GetWrapped()
-        curX, curY := w.CursorXAndY(tb.cursorPos)
-        l := w.GetLine(curY)
-        if curX < len(l)-2 {
-            tb.IncrCursorPos(1)
-            tb.CorrectOffsets(w, &resp)
-        }
-
-    case yh.UpEKC.Matches(evs):
-        w := tb.GetWrapped()
-        tb.SetCursorPos(w.GetCursorAbovePosition(tb.cursorPos))
-        tb.CorrectOffsets(w, &resp)
-    case yh.DownEKC.Matches(evs):
-        w := tb.GetWrapped()
-        tb.SetCursorPos(w.GetCursorBelowPosition(tb.cursorPos))
-        tb.CorrectOffsets(w, &resp)
-
-    case tb.editable && yh.RunesEKC.Matches(evs):
-        if len(evs) > 0 {
-            rs := tb.text
-            rs = append(rs[:tb.cursorPos], append([]rune{evs[0].Rune()},
-                rs[tb.cursorPos:]...)...)
-            tb.text = rs
-            tb.IncrCursorPos(1)
-            w := tb.GetWrapped()
-
-            // NOTE-1: must call SetContentFromString to update the content
-            // before updating the offset or else the offset amount may not
-            // exist in the content and the widget base will reject the new
-            // offset
-            tb.SetContentFromString(w.WrappedStr())
-            tb.CorrectOffsets(w, &resp)
-
-            if tb.TextChangedHook != nil {
-                resp = tb.TextChangedHook(string(tb.text))
-            }
-        }
-
-    case yh.MetaCLowerEKC.Matches(evs):
-        _ = tb.CopyToClipboard() // ignore err
-
-    case tb.editable && yh.MetaVLowerEKC.Matches(evs): // TODO fix
-        resp, _ = tb.PasteFromClipboard() // ignore err
-
-    case tb.editable && (yh.BackspaceEKC.Matches(evs) || yh.Backspace2EKC.Matches(evs)):
-        if tb.visualMode {
-            resp = tb.DeleteVisualSelection()
-        } else if tb.cursorPos > 0 {
-            rs := tb.text
-            rs = append(rs[:tb.cursorPos-1], rs[tb.cursorPos:]...)
-            tb.text = rs
-            tb.IncrCursorPos(-1)
-            w := tb.GetWrapped()
-            tb.SetContentFromString(w.WrappedStr()) // See NOTE-1
-            tb.CorrectOffsets(w, &resp)
-            if tb.TextChangedHook != nil {
-                resp = tb.TextChangedHook(string(tb.text))
-            }
-        }
-    case tb.editable && yh.EnterEKC.Matches(evs):
-        rs := tb.text
-        rs = append(rs[:tb.cursorPos], append([]rune{'\n'}, rs[tb.cursorPos:]...)...)
-        tb.text = rs
-        tb.IncrCursorPos(1)
-        w := tb.GetWrapped()
-        tb.SetContentFromString(w.WrappedStr()) // See NOTE-1
-        tb.CorrectOffsets(w, &resp)
-    }
-
-    if tb.visualMode && !visualModeEvent {
-        tb.visualMode = false
-    }
-
-    return true, resp
-}
-
-func (tb *TextBox) ReceiveMouseEvent(ev *tcell.EventMouse) (captured bool, resp yh.EventResponse) {
-    resp = yh.NewEventResponse()
-
-    // handle secondary click
-    if tb.RightClickMenu != nil {
-        // send the event to the right click menu to check for right click
-        createRCM := tb.RightClickMenu.CreateMenuIfRightClick(ev)
-        if createRCM.HasWindow() {
-            return true, yh.NewEventResponse().WithWindow(createRCM)
-        }
-    }
-
-    if ev.Buttons() == tcell.WheelDown && ev.Modifiers() == tcell.ModNone && tb.Selectedness == Selected {
-        w := tb.GetWrapped()
-        tb.SetCursorPos(w.GetCursorBelowPosition(tb.cursorPos))
-        tb.CorrectOffsets(w, &resp)
-        return true, yh.NewEventResponse()
-    }
-
-    if ev.Buttons() == tcell.WheelUp && ev.Modifiers() == tcell.ModNone && tb.Selectedness == Selected {
-        w := tb.GetWrapped()
-        tb.SetCursorPos(w.GetCursorAbovePosition(tb.cursorPos))
-        tb.CorrectOffsets(w, &resp)
-        return true, yh.NewEventResponse()
-    }
-    if ev.Buttons() == tcell.WheelDown && ev.Modifiers() == tcell.ModShift && tb.Selectedness == Selected {
-        w := tb.GetWrapped()
-        tb.SetCursorPos(w.GetCursorLeftPosition(tb.cursorPos))
-        tb.CorrectOffsets(w, &resp)
-        return true, yh.NewEventResponse()
-    }
-
-    if ev.Buttons() == tcell.WheelUp && ev.Modifiers() == tcell.ModShift && tb.Selectedness == Selected {
-        w := tb.GetWrapped()
-        tb.SetCursorPos(w.GetCursorRightPosition(tb.cursorPos))
-        tb.CorrectOffsets(w, &resp)
-        return true, yh.NewEventResponse()
-    }
-
-    if ev.Buttons() == tcell.ButtonNone && tb.Selectedness == Selected {
-        tb.mouseDragging = false
-    }
-
-    // set the cursor to the mouse position on primary click
-    if ev.Buttons() == tcell.Button1 && tb.Selectedness == Selected { //left click
-        x, y := ev.Position()
-        x += tb.ContentXOffset
-        y += tb.ContentYOffset
-        w := tb.GetWrapped()
-
-        if tb.mouseDragging && !tb.visualMode {
-            tb.visualMode = true
-            tb.visualModeStartPos = tb.cursorPos
-        }
-        if !tb.mouseDragging && tb.visualMode {
-            tb.visualMode = false
-        }
-        tb.mouseDragging = true
-
-        tb.SetCursorPos(w.GetNearestValidCursorFromPosition(x, y))
-        tb.CorrectOffsets(tb.GetWrapped(), &resp)
-        return true, yh.NewEventResponse()
-    }
-    return tb.WidgetBase.ReceiveMouseEvent(ev)
-}
-
-*/
 
 // wrapped character
 #[derive(Clone, Default)]
@@ -1129,15 +1125,12 @@ impl WrChs {
     // determine the cursor position above the current cursor position
     //                                                         cur_abs
     pub fn get_cursor_above_position(&self, cur_abs: usize) -> Option<usize> {
-        let Some((cur_i, cur_x, cur_y)) = self
+        let (cur_i, cur_x, cur_y) = self
             .chs
             .iter()
             .enumerate()
             .find(|(_, wr_ch)| wr_ch.abs_pos == Some(cur_abs))
-            .map(|(i, wr_ch)| (i, wr_ch.x_pos, wr_ch.y_pos))
-        else {
-            return None;
-        };
+            .map(|(i, wr_ch)| (i, wr_ch.x_pos, wr_ch.y_pos))?;
 
         if cur_y == 0 {
             return None;
@@ -1154,15 +1147,12 @@ impl WrChs {
     // determine the cursor position below the current cursor position.
     //                                                         cur_abs
     pub fn get_cursor_below_position(&self, cur_abs: usize) -> Option<usize> {
-        let Some((cur_i, cur_x, cur_y)) = self
+        let (cur_i, cur_x, cur_y) = self
             .chs
             .iter()
             .enumerate()
             .find(|(_, wr_ch)| wr_ch.abs_pos == Some(cur_abs))
-            .map(|(i, wr_ch)| (i, wr_ch.x_pos, wr_ch.y_pos))
-        else {
-            return None;
-        };
+            .map(|(i, wr_ch)| (i, wr_ch.x_pos, wr_ch.y_pos))?;
 
         if cur_y == self.max_y() {
             return None;
@@ -1183,15 +1173,13 @@ impl WrChs {
 
     //                                                        cur_abs
     pub fn get_cursor_left_position(&self, cur_abs: usize) -> Option<usize> {
-        let Some((cur_i, cur_x, cur_y)) = self
+        let (cur_i, cur_x, cur_y) = self
             .chs
             .iter()
             .enumerate()
             .find(|(_, wr_ch)| wr_ch.abs_pos == Some(cur_abs))
-            .map(|(i, wr_ch)| (i, wr_ch.x_pos, wr_ch.y_pos))
-        else {
-            return None;
-        };
+            .map(|(i, wr_ch)| (i, wr_ch.x_pos, wr_ch.y_pos))?;
+
         if cur_x == 0 {
             return None;
         }
@@ -1205,15 +1193,13 @@ impl WrChs {
     }
 
     pub fn get_cursor_right_position(&self, cur_abs: usize) -> Option<usize> {
-        let Some((cur_i, cur_x, cur_y)) = self
+        let (cur_i, cur_x, cur_y) = self
             .chs
             .iter()
             .enumerate()
             .find(|(_, wr_ch)| wr_ch.abs_pos == Some(cur_abs))
-            .map(|(i, wr_ch)| (i, wr_ch.x_pos, wr_ch.y_pos))
-        else {
-            return None;
-        };
+            .map(|(i, wr_ch)| (i, wr_ch.x_pos, wr_ch.y_pos))?;
+
         if cur_x >= self.max_x {
             return None;
         }
@@ -1249,11 +1235,7 @@ impl WrChs {
                 None => x_diff,
             };
 
-            if y_diff < nearest_y_diff {
-                nearest_abs_y_pos = Some(wr_ch.y_pos);
-                nearest_abs_x_pos = Some(wr_ch.x_pos);
-                nearest_abs = wr_ch.abs_pos;
-            } else if y_diff == nearest_y_diff && x_diff < nearest_x_diff {
+            if y_diff < nearest_y_diff || (y_diff == nearest_y_diff && x_diff < nearest_x_diff) {
                 nearest_abs_y_pos = Some(wr_ch.y_pos);
                 nearest_abs_x_pos = Some(wr_ch.x_pos);
                 nearest_abs = wr_ch.abs_pos;

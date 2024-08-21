@@ -80,7 +80,7 @@ pub struct CommandEvent {
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum KeyPossibility {
     Key(crossterm::event::KeyEvent),
-    Runes,  // any rune
+    Chars,  // any char
     Digits, // any digit
 }
 
@@ -94,7 +94,7 @@ impl KeyPossibility {
     pub fn matches(&self, ct_key: &crossterm::event::KeyEvent) -> bool {
         match self {
             KeyPossibility::Key(k) => k == ct_key,
-            KeyPossibility::Runes => {
+            KeyPossibility::Chars => {
                 matches!(ct_key.code, crossterm::event::KeyCode::Char(_))
             }
             KeyPossibility::Digits => {
@@ -103,6 +103,28 @@ impl KeyPossibility {
                 };
                 c.is_ascii_digit()
             }
+        }
+    }
+
+    pub fn matches_kp(&self, key_p: &KeyPossibility) -> bool {
+        match self {
+            KeyPossibility::Key(k) => key_p.matches(k),
+            KeyPossibility::Chars => matches!(key_p, KeyPossibility::Chars),
+            KeyPossibility::Digits => matches!(key_p, KeyPossibility::Digits),
+        }
+    }
+
+    pub fn get_char(&self) -> Option<char> {
+        match self {
+            KeyPossibility::Key(k) => {
+                if let crossterm::event::KeyCode::Char(c) = k.code {
+                    Some(c)
+                } else {
+                    None
+                }
+            }
+            KeyPossibility::Chars => None,
+            KeyPossibility::Digits => None,
         }
     }
 }

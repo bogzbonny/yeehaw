@@ -387,6 +387,33 @@ impl Keyboard {
     pub const KEY_ALT_Y: KeyEvent = KeyEvent::new(KeyCode::Char('y'), KeyModifiers::ALT);
     pub const KEY_ALT_Z: KeyEvent = KeyEvent::new(KeyCode::Char('z'), KeyModifiers::ALT);
 
+    pub const KEY_META_A: KeyEvent = KeyEvent::new(KeyCode::Char('a'), KeyModifiers::META);
+    pub const KEY_META_B: KeyEvent = KeyEvent::new(KeyCode::Char('b'), KeyModifiers::META);
+    pub const KEY_META_C: KeyEvent = KeyEvent::new(KeyCode::Char('c'), KeyModifiers::META);
+    pub const KEY_META_D: KeyEvent = KeyEvent::new(KeyCode::Char('d'), KeyModifiers::META);
+    pub const KEY_META_E: KeyEvent = KeyEvent::new(KeyCode::Char('e'), KeyModifiers::META);
+    pub const KEY_META_F: KeyEvent = KeyEvent::new(KeyCode::Char('f'), KeyModifiers::META);
+    pub const KEY_META_G: KeyEvent = KeyEvent::new(KeyCode::Char('g'), KeyModifiers::META);
+    pub const KEY_META_H: KeyEvent = KeyEvent::new(KeyCode::Char('h'), KeyModifiers::META);
+    pub const KEY_META_I: KeyEvent = KeyEvent::new(KeyCode::Char('i'), KeyModifiers::META);
+    pub const KEY_META_J: KeyEvent = KeyEvent::new(KeyCode::Char('j'), KeyModifiers::META);
+    pub const KEY_META_K: KeyEvent = KeyEvent::new(KeyCode::Char('k'), KeyModifiers::META);
+    pub const KEY_META_L: KeyEvent = KeyEvent::new(KeyCode::Char('l'), KeyModifiers::META);
+    pub const KEY_META_M: KeyEvent = KeyEvent::new(KeyCode::Char('m'), KeyModifiers::META);
+    pub const KEY_META_N: KeyEvent = KeyEvent::new(KeyCode::Char('n'), KeyModifiers::META);
+    pub const KEY_META_O: KeyEvent = KeyEvent::new(KeyCode::Char('o'), KeyModifiers::META);
+    pub const KEY_META_P: KeyEvent = KeyEvent::new(KeyCode::Char('p'), KeyModifiers::META);
+    pub const KEY_META_Q: KeyEvent = KeyEvent::new(KeyCode::Char('q'), KeyModifiers::META);
+    pub const KEY_META_R: KeyEvent = KeyEvent::new(KeyCode::Char('r'), KeyModifiers::META);
+    pub const KEY_META_S: KeyEvent = KeyEvent::new(KeyCode::Char('s'), KeyModifiers::META);
+    pub const KEY_META_T: KeyEvent = KeyEvent::new(KeyCode::Char('t'), KeyModifiers::META);
+    pub const KEY_META_U: KeyEvent = KeyEvent::new(KeyCode::Char('u'), KeyModifiers::META);
+    pub const KEY_META_V: KeyEvent = KeyEvent::new(KeyCode::Char('v'), KeyModifiers::META);
+    pub const KEY_META_W: KeyEvent = KeyEvent::new(KeyCode::Char('w'), KeyModifiers::META);
+    pub const KEY_META_X: KeyEvent = KeyEvent::new(KeyCode::Char('x'), KeyModifiers::META);
+    pub const KEY_META_Y: KeyEvent = KeyEvent::new(KeyCode::Char('y'), KeyModifiers::META);
+    pub const KEY_META_Z: KeyEvent = KeyEvent::new(KeyCode::Char('z'), KeyModifiers::META);
+
     // option keys, useful on mac
     pub const KEY_OPT_A: KeyEvent = KeyEvent::new(KeyCode::Char('å'), KeyModifiers::NONE);
     pub const KEY_OPT_B: KeyEvent = KeyEvent::new(KeyCode::Char('∫'), KeyModifiers::NONE);
