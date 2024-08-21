@@ -92,6 +92,7 @@ impl TextBox {
     pub fn editable_receivable_events() -> Vec<Event> {
         vec![
             KeyPossibility::Chars.into(),
+            KB::KEY_BACKSPACE.into(),
             KB::KEY_ENTER.into(),
             KB::KEY_SHIFT_ENTER.into(),
             KB::KEY_LEFT.into(),
@@ -678,6 +679,8 @@ impl TextBox {
     pub fn receive_key_event(
         &self, ev: Vec<KeyPossibility>, ctx: &Context,
     ) -> (bool, EventResponses) {
+        debug!("TextBox::receive_key_event: {:?}", ev);
+
         if self.base.get_selectability() != Selectability::Selected || ev.is_empty() {
             return (false, EventResponses::default());
         }

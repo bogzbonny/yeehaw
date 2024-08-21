@@ -109,7 +109,16 @@ impl KeyPossibility {
     pub fn matches_kp(&self, key_p: &KeyPossibility) -> bool {
         match self {
             KeyPossibility::Key(k) => key_p.matches(k),
-            KeyPossibility::Chars => matches!(key_p, KeyPossibility::Chars),
+            KeyPossibility::Chars => {
+                if matches!(key_p, KeyPossibility::Chars) {
+                    return true;
+                }
+                if let KeyPossibility::Key(k) = key_p {
+                    matches!(k.code, crossterm::event::KeyCode::Char(_))
+                } else {
+                    false
+                }
+            }
             KeyPossibility::Digits => matches!(key_p, KeyPossibility::Digits),
         }
     }

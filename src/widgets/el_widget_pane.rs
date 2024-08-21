@@ -81,6 +81,8 @@ impl Element for WidgetPane {
                 return self.org.borrow_mut().capture_mouse_event(ctx, me);
             }
             Event::KeyCombo(ke) => {
+                debug!("WidgetPane::receive_key_event: {:?}", ke);
+                debug!("widget el rec evs: {:?}", self.receivable());
                 return self.org.borrow_mut().capture_key_event(ctx, ke);
             }
             Event::Resize => {
