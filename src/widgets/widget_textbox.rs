@@ -8,7 +8,7 @@ use {
         EventResponse, EventResponses, KeyPossibility, Keyboard as KB, Priority,
         ReceivableEventChanges, RgbColour, SortingHat, Style, UpwardPropagator,
     },
-    crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
+    crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
 };
 
@@ -893,10 +893,8 @@ impl TextBox {
         (true, resps)
     }
 
-    pub fn receive_mouse_event(&self, ctx: &Context, _ev: MouseEvent) -> (bool, EventResponses) {
-        //resp = yh.NewEventResponse()
-
-        //// handle secondary click
+    pub fn receive_mouse_event(&self, ctx: &Context, ev: MouseEvent) -> (bool, EventResponses) {
+        // handle right click XXX TODO
         //if tb.RightClickMenu != nil {
         //    // send the event to the right click menu to check for right click
         //    createRCM := tb.RightClickMenu.CreateMenuIfRightClick(ev)
@@ -905,58 +903,88 @@ impl TextBox {
         //    }
         //}
 
-        //if ev.Buttons() == tcell.WheelDown && ev.Modifiers() == tcell.ModNone && tb.Selectedness == Selected {
-        //    w := tb.GetWrapped()
-        //    tb.SetCursorPos(w.GetCursorBelowPosition(tb.cursorPos))
-        //    tb.CorrectOffsets(w, &resp)
-        //    return true, yh.NewEventResponse()
-        //}
+        let selectedness = self.base.get_selectability();
+        let cursor_pos = *self.cursor_pos.borrow();
+        match ev.kind {
+            MouseEventKind::ScrollDown
+                if ev.modifiers == KeyModifiers::NONE
+                    && selectedness == Selectability::Selected =>
+            {
+                let w = self.get_wrapped(ctx);
+                let Some(new_pos) = w.get_cursor_below_position(cursor_pos) else {
+                    return (true, EventResponses::default());
+                };
+                self.set_cursor_pos(ctx, new_pos);
+                let resp = self.correct_offsets(ctx, w);
+                return (true, resp.into());
+            }
+            MouseEventKind::ScrollUp
+                if ev.modifiers == KeyModifiers::NONE
+                    && selectedness == Selectability::Selected =>
+            {
+                let w = self.get_wrapped(ctx);
+                let Some(new_pos) = w.get_cursor_above_position(cursor_pos) else {
+                    return (true, EventResponses::default());
+                };
+                self.set_cursor_pos(ctx, new_pos);
+                let resp = self.correct_offsets(ctx, w);
+                return (true, resp.into());
+            }
+            MouseEventKind::ScrollDown
+                if ev.modifiers == KeyModifiers::SHIFT
+                    && selectedness == Selectability::Selected =>
+            {
+                let w = self.get_wrapped(ctx);
+                let Some(new_pos) = w.get_cursor_left_position(cursor_pos) else {
+                    return (true, EventResponses::default());
+                };
+                self.set_cursor_pos(ctx, new_pos);
+                let resp = self.correct_offsets(ctx, w);
+                return (true, resp.into());
+            }
+            MouseEventKind::ScrollUp
+                if ev.modifiers == KeyModifiers::SHIFT
+                    && selectedness == Selectability::Selected =>
+            {
+                let w = self.get_wrapped(ctx);
+                let Some(new_pos) = w.get_cursor_right_position(cursor_pos) else {
+                    return (true, EventResponses::default());
+                };
+                self.set_cursor_pos(ctx, new_pos);
+                let resp = self.correct_offsets(ctx, w);
+                return (true, resp.into());
+            }
+            MouseEventKind::Moved | MouseEventKind::Up(_) => {
+                *self.mouse_dragging.borrow_mut() = false;
+            }
 
-        //if ev.Buttons() == tcell.WheelUp && ev.Modifiers() == tcell.ModNone && tb.Selectedness == Selected {
-        //    w := tb.GetWrapped()
-        //    tb.SetCursorPos(w.GetCursorAbovePosition(tb.cursorPos))
-        //    tb.CorrectOffsets(w, &resp)
-        //    return true, yh.NewEventResponse()
-        //}
-        //if ev.Buttons() == tcell.WheelDown && ev.Modifiers() == tcell.ModShift && tb.Selectedness == Selected {
-        //    w := tb.GetWrapped()
-        //    tb.SetCursorPos(w.GetCursorLeftPosition(tb.cursorPos))
-        //    tb.CorrectOffsets(w, &resp)
-        //    return true, yh.NewEventResponse()
-        //}
+            // set the cursor to the mouse position on primary click
+            MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Drag(MouseButton::Left)
+                if selectedness == Selectability::Selected =>
+            {
+                let x = ev.column as usize + *self.base.sp.content_view_offset_x.borrow();
+                let y = ev.row as usize + *self.base.sp.content_view_offset_y.borrow();
+                let w = self.get_wrapped(ctx);
 
-        //if ev.Buttons() == tcell.WheelUp && ev.Modifiers() == tcell.ModShift && tb.Selectedness == Selected {
-        //    w := tb.GetWrapped()
-        //    tb.SetCursorPos(w.GetCursorRightPosition(tb.cursorPos))
-        //    tb.CorrectOffsets(w, &resp)
-        //    return true, yh.NewEventResponse()
-        //}
-
-        //if ev.Buttons() == tcell.ButtonNone && tb.Selectedness == Selected {
-        //    tb.mouseDragging = false
-        //}
-
-        //// set the cursor to the mouse position on primary click
-        //if ev.Buttons() == tcell.Button1 && tb.Selectedness == Selected { //left click
-        //    x, y := ev.Position()
-        //    x += tb.ContentXOffset
-        //    y += tb.ContentYOffset
-        //    w := tb.GetWrapped()
-
-        //    if tb.mouseDragging && !tb.visualMode {
-        //        tb.visualMode = true
-        //        tb.visualModeStartPos = tb.cursorPos
-        //    }
-        //    if !tb.mouseDragging && tb.visualMode {
-        //        tb.visualMode = false
-        //    }
-        //    tb.mouseDragging = true
-
-        //    tb.SetCursorPos(w.GetNearestValidCursorFromPosition(x, y))
-        //    tb.CorrectOffsets(tb.GetWrapped(), &resp)
-        //    return true, yh.NewEventResponse()
-        //}
-        //return tb.WidgetBase.ReceiveMouseEvent(ev)
+                let mouse_dragging = *self.mouse_dragging.borrow();
+                let visual_mode = *self.visual_mode.borrow();
+                if mouse_dragging && !visual_mode {
+                    *self.visual_mode.borrow_mut() = true;
+                    *self.visual_mode_start_pos.borrow_mut() = cursor_pos;
+                }
+                if !mouse_dragging && visual_mode {
+                    *self.visual_mode.borrow_mut() = false;
+                }
+                *self.mouse_dragging.borrow_mut() = true;
+                if let Some(new_pos) = w.get_nearest_valid_cursor_from_position(x, y) {
+                    self.set_cursor_pos(ctx, new_pos);
+                    let resp = self.correct_offsets(ctx, w);
+                    return (true, resp.into());
+                }
+                return (true, EventResponses::default());
+            }
+            _ => {}
+        }
 
         (false, EventResponses::default())
     }
