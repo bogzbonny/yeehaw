@@ -794,24 +794,11 @@ impl TextBox {
                 }
             }
 
-            // if wordwrap is disable do not move to the next line
-            // when at the end of the line
-            _ if ev[0].matches_key(&KB::KEY_RIGHT) && *self.wordwrap.borrow() => {
-                if cursor_pos < self.text.borrow().len() {
+            _ if ev[0].matches_key(&KB::KEY_RIGHT) => {
+                // don't allow moving to the next line
+                if cursor_pos < self.text.borrow().len() && self.text.borrow()[cursor_pos] != '\n' {
                     self.incr_cursor_pos(ctx, 1);
                     let w = self.get_wrapped(ctx);
-                    resps = self.correct_offsets(ctx, w).into();
-                }
-            }
-
-            _ if ev[0].matches_key(&KB::KEY_RIGHT) && !*self.wordwrap.borrow() => {
-                let w = self.get_wrapped(ctx);
-                let (cur_x, cur_y) = w.cursor_x_and_y(cursor_pos);
-                let cur_x = cur_x.unwrap_or(0);
-                let cur_y = cur_y.unwrap_or(0);
-                let l = w.get_line(cur_y);
-                if cur_x < l.len().saturating_sub(2) {
-                    self.incr_cursor_pos(ctx, 1);
                     resps = self.correct_offsets(ctx, w).into();
                 }
             }
@@ -854,17 +841,17 @@ impl TextBox {
                 }
             }
 
-            _ if ev[0].matches_key(&KB::KEY_META_C) => {
-                _ = self.copy_to_clipboard(); // TODO log error
-            }
-
-            _ if *self.editable.borrow() && ev[0].matches_key(&KB::KEY_META_V) => {
-                // TODO log error case
-                if let Ok(r) = self.paste_from_clipboard(ctx) {
-                    resps = r
-                }
-            }
-
+            // NOTE useless for now keeping for future reference
+            // (META not logged by many terminals)
+            //_ if ev[0].matches_key(&KB::KEY_META_C) => {
+            //    _ = self.copy_to_clipboard(); // TODO log error
+            //}
+            //_ if *self.editable.borrow() && ev[0].matches_key(&KB::KEY_META_V) => {
+            //    // TODO log error case
+            //    if let Ok(r) = self.paste_from_clipboard(ctx) {
+            //        resps = r
+            //    }
+            //}
             _ if *self.editable.borrow() && (ev[0].matches_key(&KB::KEY_BACKSPACE)) => {
                 if visual_mode {
                     resps = self.delete_visual_selection(ctx);

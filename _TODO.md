@@ -15,10 +15,10 @@
     itself)
 01. horizontal scrollbar dragging not working (vertical is though) 
      - clicking still working
+01. textbox  right-arrow wont get you to the last FINAL extra cursor position of the text. 
+    - however the down arrow can get you there
 
 ^^^^^^^^^^^^^^  DONE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-01. textbox  right-arrow wont get you to the last FINAL extra cursor position of the text. 
-    - however the down arrow can get you there
 
 

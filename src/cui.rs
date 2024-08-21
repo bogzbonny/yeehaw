@@ -87,6 +87,7 @@ impl Cui {
                         Some(Ok(ev)) => {
                             match ev {
                                 CTEvent::Key(key_ev) => {
+                                    debug!("cui Key event: {:?}", key_ev);
                                     if self.process_event_key(key_ev) {
                                         break;
                                     }
@@ -277,7 +278,6 @@ pub fn sc_startup() -> Result<(), Error> {
         EnableMouseCapture
     )?;
     terminal::enable_raw_mode()?;
-    //execute!(stdout, EnableMouseCapture)?;
     Ok(())
 }
 
