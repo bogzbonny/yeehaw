@@ -31,6 +31,8 @@ pub struct Cui {
     main_el_id: ElementID,
     kb: Keyboard,
 
+    pub kill_on_ctrl_c: bool,
+
     // last flushed internal screen, used to determine what needs to be flushed next
     //                            y  , x
     pub sc_last_flushed: HashMap<(u16, u16), (char, Style)>,
@@ -43,6 +45,7 @@ impl Cui {
             eo: eo.clone(),
             main_el_id: main_el.borrow().id().clone(),
             kb: Keyboard::default(),
+            kill_on_ctrl_c: true,
             sc_last_flushed: HashMap::new(),
         };
 
@@ -128,7 +131,7 @@ impl Cui {
     pub fn process_event_key(&mut self, key_ev: ct_event::KeyEvent) -> bool {
         self.kb.add_ev(key_ev);
 
-        if key_ev == Keyboard::KEY_CTRL_C {
+        if key_ev == Keyboard::KEY_CTRL_C && self.kill_on_ctrl_c {
             return true;
         }
 

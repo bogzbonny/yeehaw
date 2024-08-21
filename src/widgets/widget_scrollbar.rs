@@ -683,15 +683,15 @@ impl VerticalScrollbar {
         }
 
         match true {
-            _ if ev[0].matches(&KB::KEY_UP) => {
+            _ if ev[0].matches_key(&KB::KEY_UP) => {
                 self.scroll_backwards(ctx);
                 (true, EventResponses::default())
             }
-            _ if ev[0].matches(&KB::KEY_DOWN) => {
+            _ if ev[0].matches_key(&KB::KEY_DOWN) => {
                 self.scroll_forwards(ctx, ctx.get_height().into());
                 (true, EventResponses::default())
             }
-            _ if ev[0].matches(&KB::KEY_SPACE) => {
+            _ if ev[0].matches_key(&KB::KEY_SPACE) => {
                 self.jump_scroll_forwards(ctx, ctx.get_height().into());
                 (true, EventResponses::default())
             }
@@ -709,11 +709,11 @@ impl HorizontalScrollbar {
         }
 
         match true {
-            _ if ev[0].matches(&KB::KEY_LEFT) => {
+            _ if ev[0].matches_key(&KB::KEY_LEFT) => {
                 self.scroll_backwards(ctx);
                 (true, EventResponses::default())
             }
-            _ if ev[0].matches(&KB::KEY_RIGHT) => {
+            _ if ev[0].matches_key(&KB::KEY_RIGHT) => {
                 self.scroll_forwards(ctx, ctx.get_width().into());
                 (true, EventResponses::default())
             }

@@ -322,26 +322,26 @@ impl Element for DropdownList {
                 let open = *self.open.borrow();
                 return match true {
                     _ if !open
-                        && (ke[0].matches(&KB::KEY_ENTER)
-                            || ke[0].matches(&KB::KEY_DOWN)
-                            || ke[0].matches(&KB::KEY_J)
-                            || ke[0].matches(&KB::KEY_UP)
-                            || ke[0].matches(&KB::KEY_K)) =>
+                        && (ke[0].matches_key(&KB::KEY_ENTER)
+                            || ke[0].matches_key(&KB::KEY_DOWN)
+                            || ke[0].matches_key(&KB::KEY_J)
+                            || ke[0].matches_key(&KB::KEY_UP)
+                            || ke[0].matches_key(&KB::KEY_K)) =>
                     {
                         (true, self.perform_open(ctx).into())
                     }
-                    _ if open && ke[0].matches(&KB::KEY_ENTER) => {
+                    _ if open && ke[0].matches_key(&KB::KEY_ENTER) => {
                         (true, self.perform_close(ctx, false))
                     }
-                    _ if open && ke[0].matches(&KB::KEY_DOWN) || ke[0].matches(&KB::KEY_J) => {
+                    _ if open && ke[0].matches_key(&KB::KEY_DOWN) || ke[0].matches_key(&KB::KEY_J) => {
                         self.cursor_down(ctx);
                         (true, EventResponses::default())
                     }
-                    _ if open && ke[0].matches(&KB::KEY_UP) || ke[0].matches(&KB::KEY_K) => {
+                    _ if open && ke[0].matches_key(&KB::KEY_UP) || ke[0].matches_key(&KB::KEY_K) => {
                         self.cursor_up(ctx);
                         (true, EventResponses::default())
                     }
-                    _ if open && ke[0].matches(&KB::KEY_SPACE) => {
+                    _ if open && ke[0].matches_key(&KB::KEY_SPACE) => {
                         if self.scrollbar.get_selectability() != Selectability::Selected {
                             self.scrollbar
                                 .set_selectability(ctx, Selectability::Selected);

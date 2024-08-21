@@ -117,7 +117,7 @@ impl Element for RadioButtons {
                 }
 
                 match true {
-                    _ if ke[0].matches(&KB::KEY_DOWN) || ke[0].matches(&KB::KEY_J) => {
+                    _ if ke[0].matches_key(&KB::KEY_DOWN) || ke[0].matches_key(&KB::KEY_J) => {
                         if *self.selected.borrow() < self.radios.borrow().len() - 1 {
                             *self.selected.borrow_mut() += 1;
                             let sel_i = *self.selected.borrow();
@@ -127,7 +127,7 @@ impl Element for RadioButtons {
                             return (true, resp);
                         }
                     }
-                    _ if ke[0].matches(&KB::KEY_UP) || ke[0].matches(&KB::KEY_K) => {
+                    _ if ke[0].matches_key(&KB::KEY_UP) || ke[0].matches_key(&KB::KEY_K) => {
                         if *self.selected.borrow() > 0 {
                             *self.selected.borrow_mut() -= 1;
                             let sel_i = *self.selected.borrow();

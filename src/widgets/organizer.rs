@@ -210,7 +210,7 @@ impl WidgetOrganizer {
             return (false, EventResponses::default());
         }
         match true {
-            _ if ev[0].matches(&KB::KEY_ESC) => {
+            _ if ev[0].matches_key(&KB::KEY_ESC) => {
                 let rec = self.unselect_selected_widget(ctx);
                 return (
                     true,
@@ -219,11 +219,11 @@ impl WidgetOrganizer {
                         .into(),
                 );
             }
-            _ if ev[0].matches(&KB::KEY_TAB) => {
+            _ if ev[0].matches_key(&KB::KEY_TAB) => {
                 let resps = self.switch_to_next_widget(ctx);
                 return (true, resps);
             }
-            _ if ev[0].matches(&KB::KEY_BACKTAB) => {
+            _ if ev[0].matches_key(&KB::KEY_BACKTAB) => {
                 let resps = self.switch_to_prev_widget(ctx);
                 return (true, resps);
             }

@@ -122,7 +122,7 @@ impl Element for Checkbox {
                 if self.base.get_selectability() != Selectability::Selected || ke.is_empty() {
                     return (false, EventResponses::default());
                 }
-                if ke[0].matches(&KB::KEY_ENTER) {
+                if ke[0].matches_key(&KB::KEY_ENTER) {
                     return (true, self.click(ctx));
                 }
             }

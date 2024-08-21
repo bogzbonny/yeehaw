@@ -66,6 +66,28 @@ impl Event {
             Event::Command(ev) => "COMMAND=".to_string() + &ev.cmd,
         }
     }
+
+    pub fn matches(&self, other: &Event) -> bool {
+        match (self, other) {
+            (Event::Mouse(me1), Event::Mouse(me2)) => me1 == me2,
+            (Event::KeyCombo(k1), Event::KeyCombo(k2)) => {
+                if k1.len() != k2.len() {
+                    return false;
+                }
+                for (i, k) in k1.iter().enumerate() {
+                    if !k.matches(&k2[i]) {
+                        return false;
+                    }
+                }
+                true
+            }
+            (Event::ExternalMouse(eme1), Event::ExternalMouse(eme2)) => eme1 == eme2,
+            (Event::Resize, Event::Resize) => true,
+            (Event::Refresh, Event::Refresh) => true,
+            (Event::Command(ev1), Event::Command(ev2)) => ev1 == ev2,
+            _ => false,
+        }
+    }
 }
 
 // Event for triggering a command execution for an element
@@ -91,24 +113,9 @@ impl From<crossterm::event::KeyEvent> for KeyPossibility {
 }
 
 impl KeyPossibility {
-    pub fn matches(&self, ct_key: &crossterm::event::KeyEvent) -> bool {
+    pub fn matches(&self, key_p: &KeyPossibility) -> bool {
         match self {
-            KeyPossibility::Key(k) => k == ct_key,
-            KeyPossibility::Chars => {
-                matches!(ct_key.code, crossterm::event::KeyCode::Char(_))
-            }
-            KeyPossibility::Digits => {
-                let crossterm::event::KeyCode::Char(c) = ct_key.code else {
-                    return false;
-                };
-                c.is_ascii_digit()
-            }
-        }
-    }
-
-    pub fn matches_kp(&self, key_p: &KeyPossibility) -> bool {
-        match self {
-            KeyPossibility::Key(k) => key_p.matches(k),
+            KeyPossibility::Key(k) => key_p.matches_key(k),
             KeyPossibility::Chars => {
                 if matches!(key_p, KeyPossibility::Chars) {
                     return true;
@@ -120,6 +127,21 @@ impl KeyPossibility {
                 }
             }
             KeyPossibility::Digits => matches!(key_p, KeyPossibility::Digits),
+        }
+    }
+
+    pub fn matches_key(&self, ct_key: &crossterm::event::KeyEvent) -> bool {
+        match self {
+            KeyPossibility::Key(k) => k == ct_key,
+            KeyPossibility::Chars => {
+                matches!(ct_key.code, crossterm::event::KeyCode::Char(_))
+            }
+            KeyPossibility::Digits => {
+                let crossterm::event::KeyCode::Char(c) = ct_key.code else {
+                    return false;
+                };
+                c.is_ascii_digit()
+            }
         }
     }
 

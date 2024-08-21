@@ -126,16 +126,16 @@ impl Element for Toggle {
                     return (false, EventResponses::default());
                 }
                 match true {
-                    _ if ke[0].matches(&KB::KEY_ENTER) => {
+                    _ if ke[0].matches_key(&KB::KEY_ENTER) => {
                         return (true, self.perform_toggle(ctx));
                     }
-                    _ if ke[0].matches(&KB::KEY_LEFT) || ke[0].matches(&KB::KEY_H) => {
+                    _ if ke[0].matches_key(&KB::KEY_LEFT) || ke[0].matches_key(&KB::KEY_H) => {
                         if !*self.left_selected.borrow() {
                             return (true, self.perform_toggle(ctx));
                         }
                         return (true, EventResponses::default());
                     }
-                    _ if ke[0].matches(&KB::KEY_RIGHT) || ke[0].matches(&KB::KEY_L) => {
+                    _ if ke[0].matches_key(&KB::KEY_RIGHT) || ke[0].matches_key(&KB::KEY_L) => {
                         if *self.left_selected.borrow() {
                             return (true, self.perform_toggle(ctx));
                         }

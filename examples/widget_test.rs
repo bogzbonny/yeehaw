@@ -2,7 +2,6 @@ use {
     //std::env,
     std::{cell::RefCell, rc::Rc},
     yeehaw::{
-        debug,
         widgets::{
             megafonts, Button, Checkbox, DropdownList, Label, ListBox, Megatext, RadioButtons,
             SclVal, TextBox, Toggle,
@@ -13,8 +12,8 @@ use {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    yeehaw::debug::set_log_file("./widget_test.log".to_string());
-    yeehaw::debug::clear();
+    //yeehaw::debug::set_log_file("./widget_test.log".to_string());
+    //yeehaw::debug::clear();
     let hat = SortingHat::default();
 
     let mut el = WidgetPane::new(&hat);
@@ -130,7 +129,6 @@ async fn main() -> Result<(), Error> {
     .to_widgets(&hat);
     el.add_widgets(&ctx, listbox);
 
-    debug!("el rec evs 1: {:?}", el.receivable());
     let tb = TextBox::new(&hat, &ctx, "hello\nworld".to_string())
         .with_width(SclVal::new_fixed(10))
         .with_height(SclVal::new_fixed(5))
@@ -138,11 +136,11 @@ async fn main() -> Result<(), Error> {
         .with_right_scrollbar()
         .with_lower_scrollbar()
         .editable()
+        .with_no_wordwrap()
         .at(SclVal::new_frac(0.8), SclVal::new_frac(0.1))
         .to_widgets(&hat, &ctx);
 
     el.add_widgets(&ctx, tb);
-    debug!("el rec evs 2: {:?}", el.receivable());
 
     Cui::new(Rc::new(RefCell::new(el)))?.run().await
 }

@@ -142,7 +142,7 @@ impl Keyboard {
                 return None;
             }
 
-            if !ec[i].matches(&ev) {
+            if !ec[i].matches_key(&ev) {
                 return None;
             }
 

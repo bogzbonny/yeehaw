@@ -322,7 +322,9 @@ impl ElementOrganizer {
     ) -> Option<(ElementID, EventResponses)> {
         // determine elementID to send events to
         let evs: Event = evs.into();
+        //debug!("key_events_process pre el_id");
         let el_id = self.prioritizer.get_destination_el(&evs)?;
+        //debug!("key_events_process: el_id: {:?}", el_id);
 
         // get element
         let el = self

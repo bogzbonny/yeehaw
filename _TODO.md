@@ -14,3 +14,6 @@
 
 ^^^^^^^^^^^^^^  DONE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+
+01. textbox horizontal bar not working when wordwrap disabled (doesn't enable
+    itself)

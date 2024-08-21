@@ -160,7 +160,7 @@ impl EventPrioritizer {
             }
 
             // check if event registered w/ element matches the input_ev
-            if priority_id_event.event == *input_ev {
+            if priority_id_event.event.matches(input_ev) {
                 return Some(priority_id_event.id.clone());
             }
         }
