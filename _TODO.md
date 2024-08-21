@@ -11,9 +11,14 @@
      - likely has to do with that all drawCh (even hidden ones) are sent during
        render, so it IS forced to render all hidden elements, then rerender the
        upper layer, rather than just rendering the highest layer.
+01. textbox horizontal bar not working when wordwrap disabled (doesn't enable
+    itself)
+01. horizontal scrollbar dragging not working (vertical is though) 
+     - clicking still working
 
 ^^^^^^^^^^^^^^  DONE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+01. textbox  right-arrow wont get you to the last FINAL extra cursor position of the text. 
+    - however the down arrow can get you there
 
-01. textbox horizontal bar not working when wordwrap disabled (doesn't enable
-    itself)
+

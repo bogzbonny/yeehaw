@@ -729,8 +729,6 @@ impl VerticalScrollbar {
         }
 
         let curr_dragging = *self.currently_dragging.borrow();
-        //debug!("sb rec ev, curr_dragging: {}", curr_dragging);
-
         let h = ctx.get_height();
         match ev.kind {
             MouseEventKind::ScrollDown => {
@@ -861,8 +859,8 @@ impl HorizontalScrollbar {
             return (false, EventResponses::default());
         }
 
+        let curr_dragging = *self.currently_dragging.borrow();
         let w = ctx.get_width();
-
         match ev.kind {
             MouseEventKind::ScrollUp | MouseEventKind::ScrollLeft => {
                 self.scroll_backwards(ctx);
@@ -877,7 +875,9 @@ impl HorizontalScrollbar {
                 (true, EventResponses::default())
             }
 
-            MouseEventKind::Down(MouseButton::Left) if *self.currently_dragging.borrow() => {
+            MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Drag(MouseButton::Left)
+                if curr_dragging =>
+            {
                 let x = ev.column as usize;
                 let start_drag_pos = *self.start_drag_position.borrow();
                 if x == start_drag_pos {
@@ -913,7 +913,9 @@ impl HorizontalScrollbar {
 
                 (true, EventResponses::default())
             }
-            MouseEventKind::Down(MouseButton::Left) if !*self.currently_dragging.borrow() => {
+            MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Drag(MouseButton::Left)
+                if !curr_dragging =>
+            {
                 let x = ev.column as usize;
                 let has_arrows = *self.has_arrows.borrow();
                 match true {

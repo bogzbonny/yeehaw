@@ -446,6 +446,7 @@ impl TextBox {
             let wb_ = self.base.clone();
             let hook = Box::new(move |ctx, x| wb_.set_content_x_offset(&ctx, x));
             *hsb.position_changed_hook.borrow_mut() = Some(hook);
+            *self.x_scrollbar.borrow_mut() = Some(hsb.clone());
 
             out.push(Box::new(hsb));
         }

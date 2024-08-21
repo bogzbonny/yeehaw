@@ -130,14 +130,14 @@ async fn main() -> Result<(), Error> {
     el.add_widgets(&ctx, listbox);
 
     let tb = TextBox::new(&hat, &ctx, "hello\nworld".to_string())
-        .with_width(SclVal::new_fixed(10))
-        .with_height(SclVal::new_fixed(5))
+        .with_width(SclVal::new_fixed(20))
+        .with_height(SclVal::new_fixed(10))
         .with_line_numbers()
         .with_right_scrollbar()
         .with_lower_scrollbar()
         .editable()
         .with_no_wordwrap()
-        .at(SclVal::new_frac(0.8), SclVal::new_frac(0.1))
+        .at(SclVal::new_frac(0.75), SclVal::new_frac(0.1))
         .to_widgets(&hat, &ctx);
 
     el.add_widgets(&ctx, tb);

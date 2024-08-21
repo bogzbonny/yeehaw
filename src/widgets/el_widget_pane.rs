@@ -88,9 +88,7 @@ impl Element for WidgetPane {
             Event::Resize => {
                 self.org.borrow_mut().resize_event(ctx);
             }
-            Event::Refresh => {
-                self.org.borrow_mut().refresh();
-            }
+            Event::Refresh => {}
             _ => {}
         }
         self.sp.receive_event(ctx, ev)

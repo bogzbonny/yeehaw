@@ -22,24 +22,6 @@ impl WidgetOrganizer {
         ]
     }
 
-    pub fn refresh(&mut self) {
-        /*
-            // get number of selectable Widgets
-            readyWidgetCount := 0
-            for _, w := range wo.Widgets {
-                if w.GetSelectability() != Unselectable {
-                    readyWidgetCount++
-                }
-            }
-
-            // TODO: this doesn't lock the widget as active. Pressing tab still deactivates it
-            // if only one selectable widget, select it
-            if readyWidgetCount == 1 {
-                wo.switchToNextWidget()
-            }
-        */
-    }
-
     pub fn add_widget(&mut self, w: Box<dyn Widget>, loc: LocationSet) {
         self.widgets.push((w, loc));
     }
