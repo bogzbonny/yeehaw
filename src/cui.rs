@@ -101,6 +101,7 @@ impl Cui {
                                     // There should only be one element at index 0 in the upper level EO
                                     self.eo.borrow_mut().update_el_locations_by_id(self.main_el_id.clone(), loc);
                                     self.eo.borrow().get_element_by_id(&self.main_el_id).unwrap().borrow_mut().receive_event(&ctx, Event::Resize{});
+                                    self.clear_screen();
                                     self.render()
                                 }
                                 _ => {}
@@ -176,11 +177,21 @@ impl Cui {
         false
     }
 
+    pub fn clear_screen(&mut self) {
+        self.sc_last_flushed.clear();
+        let mut sc = stdout();
+        execute!(
+            sc,
+            crossterm::terminal::Clear(crossterm::terminal::ClearType::All)
+        )
+        .unwrap();
+    }
+
     // Render all elements, draws the screen using the DrawChPos array passed to it
     // by the element organizers.
     //
-    // NOTE: when the cui calls AllDrawing on the top level ElementOrganizer,
-    // AllDrawing gets recursively called on every element organizer in the tree.
+    // NOTE: when the cui calls all_drawing on the top level ElementOrganizer,
+    // all_drawing gets recursively called on every element organizer in the tree.
     // Each one returns a DrawChPos array which is then passed to the next level up
     // in the tree, with that level appending its own DrawChPos array to the end.
     // Render then iterates through the DrawChPos array and sets the content
@@ -190,13 +201,18 @@ impl Cui {
     //
     // TODO see ISSUE 2302-2203. Could optimize for elements not requiring updates by
     // sending in a timestamp. Would then need a force-render option (for startup)
-
     pub fn render(&mut self) {
         let mut sc = stdout();
         let chs = self.eo.borrow().all_drawing();
 
-        let mut do_flush = false;
+        let mut dedup_chs = HashMap::new();
         for c in chs {
+            dedup_chs.insert((c.x, c.y), c);
+        }
+
+        let mut do_flush = false;
+        //for c in chs {
+        for (_, c) in dedup_chs {
             if c.ch.transparent {
                 // TODO see ISSUE 2206-1000
             } else if self.is_ch_style_at_position_dirty(c.x, c.y, c.ch.ch, c.ch.style) {
@@ -207,6 +223,7 @@ impl Cui {
                 do_flush = true;
             }
         }
+
         if do_flush {
             sc.flush().unwrap();
         }
