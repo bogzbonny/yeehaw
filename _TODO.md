@@ -20,5 +20,21 @@
 
 ^^^^^^^^^^^^^^  DONE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+01. Add another cargo repo like AssertCmd for tui
+     name: TuiTester?
+     - https://github.com/aschey/tui-tester
+     - what about https://github.com/microsoft/tui-test is this necessary?
+     - open and record mouse and keystroke events
+     - save only the final cui output
+     - test for the final cui output being the same from
+       the provided binary.
+     - view what the output should look like
+     - if a test is failing, but the output is correct but just changed
+        there should be an option to quickly rerecord what the test should look
+        like now.
 
-
+01. create builder types for each widget. 
+     - annoying to send in the ctx and hat objects each time.
+     - sometimes there are fields in the widget that are only 
+       used for the creation of the widget, and not for the widget itself.
+     - combine hat and ctx objects for widget creation. 

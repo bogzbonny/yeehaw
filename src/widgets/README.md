@@ -19,8 +19,7 @@
 ## Planned Features
  - widget: colour selector
  - widget: table (see ratatui)
- - textbox vim line numbers and ~ endlines 
- - textbox custom colouring per character 
+ - button: visualize button being clicked
  - TGIF
  - widget: vim-style textbox
    - with two scrollbars the mode can be placed in 
@@ -29,6 +28,7 @@
  - feature: hover comments
  - progress bar
     - optionally with an embedded word
+    - gradients
  - slider bars / track bars
    ██████████████████━━━━━━━━━━━━━━   ╋   ╋ 1
                                       ┃   ┃
@@ -43,7 +43,6 @@
    ══════════╪██████████████╪══════   ╋   ╋ 6 
                                       ┃   ┃
    ══════════╪▓▓▓▓▓▓▓▓▓▓▓▓▓▓╪══════   ╋   ╋ 7 
- - button: visualize button being clicked
 
 
 ## Known Bugs

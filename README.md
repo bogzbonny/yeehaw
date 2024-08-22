@@ -57,9 +57,11 @@ slightly different, it's a more mature TUI framework which you should consider.
 ## Planned Elements
  - accordion stack container
  - hover comments
+ - vertical tabs
  - widgets:
    - colour selector
    - pixel art viewer
+   - image viewer
    - table 
    - vim-style text editor
 
@@ -70,6 +72,7 @@ slightly different, it's a more mature TUI framework which you should consider.
  - Wimp
    - Text based image editor (Think 'GIMP') 
    - Text-GIFs = TGIF
+ - TUI Tester
 
 _________________________________________________
 

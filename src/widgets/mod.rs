@@ -34,5 +34,6 @@ pub use {
         HorizontalSBPositions, HorizontalScrollbar, VerticalSBPositions, VerticalScrollbar,
     },
     widget_textbox::TextBox,
+    widget_textbox_numbers::NumbersTextBox,
     widget_toggle::Toggle,
 };

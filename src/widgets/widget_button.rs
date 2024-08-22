@@ -20,7 +20,7 @@ use {
 pub struct Button {
     pub base: WidgetBase,
     pub text: Rc<RefCell<String>>,
-    pub sides: Rc<RefCell<(char, char)>>, // left right
+    pub sides: Rc<RefCell<(String, String)>>, // left right
     // function which executes when button moves from pressed -> unpressed
     #[allow(clippy::type_complexity)]
     pub clicked_fn: Rc<RefCell<dyn FnMut(Context) -> EventResponses>>,
@@ -46,7 +46,7 @@ impl Button {
     }
 
     pub fn button_text(&self) -> String {
-        let (left, right) = *self.sides.borrow();
+        let (left, right) = &*self.sides.borrow();
         format!("{}{}{}", left, *self.text.borrow(), right)
     }
 
@@ -57,7 +57,7 @@ impl Button {
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
-            SclVal::new_fixed(text.chars().count() + 2),
+            SclVal::new_fixed(text.chars().count() + 2), // + 2 for sides
             SclVal::new_fixed(1),
             Self::STYLE,
             Self::default_receivable_events(),
@@ -66,7 +66,7 @@ impl Button {
         let b = Button {
             base: wb,
             text: Rc::new(RefCell::new(text)),
-            sides: Rc::new(RefCell::new((']', '['))),
+            sides: Rc::new(RefCell::new((']'.to_string(), '['.to_string()))),
             clicked_fn: Rc::new(RefCell::new(clicked_fn)),
         };
         b.base.set_content_from_string(ctx, &b.button_text());
@@ -81,9 +81,17 @@ impl Button {
         self
     }
 
-    pub fn with_sides(self, sides: (char, char)) -> Self {
+    pub fn with_sides(self, ctx: &Context, sides: (String, String)) -> Self {
         *self.sides.borrow_mut() = sides;
+        let text = self.button_text();
+        self.base
+            .set_attr_scl_width(SclVal::new_fixed(text.chars().count()));
+        self.base.set_content_from_string(ctx, &text);
         self
+    }
+
+    pub fn without_sides(self, ctx: &Context) -> Self {
+        self.with_sides(ctx, ("".to_string(), "".to_string()))
     }
 
     pub fn at(mut self, loc_x: SclVal, loc_y: SclVal) -> Self {

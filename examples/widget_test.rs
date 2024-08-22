@@ -3,8 +3,8 @@ use {
     std::{cell::RefCell, rc::Rc},
     yeehaw::{
         widgets::{
-            megafonts, Button, Checkbox, DropdownList, Label, ListBox, Megatext, RadioButtons,
-            SclVal, TextBox, Toggle,
+            megafonts, Button, Checkbox, DropdownList, Label, ListBox, Megatext, NumbersTextBox,
+            RadioButtons, SclVal, TextBox, Toggle,
         },
         Context, Cui, Element, Error, EventResponses, SortingHat, WidgetPane,
     },
@@ -14,6 +14,9 @@ use {
 async fn main() -> Result<(), Error> {
     //yeehaw::debug::set_log_file("./widget_test.log".to_string());
     //yeehaw::debug::clear();
+
+    std::env::set_var("RUST_BACKTRACE", "1");
+
     let hat = SortingHat::default();
 
     let mut el = WidgetPane::new(&hat);
@@ -145,6 +148,13 @@ async fn main() -> Result<(), Error> {
     .to_widgets(&hat, &ctx);
 
     el.add_widgets(&ctx, tb);
+
+    let ntb = NumbersTextBox::new(&hat, &ctx, 0)
+        .with_min(-10)
+        .with_max(10)
+        .at(SclVal::new_frac(0.75), SclVal::new_frac(0.5))
+        .to_widgets(&hat, &ctx);
+    el.add_widgets(&ctx, ntb);
 
     Cui::new(Rc::new(RefCell::new(el)))?.run().await
 }

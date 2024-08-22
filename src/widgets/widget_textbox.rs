@@ -690,8 +690,6 @@ impl TextBox {
     pub fn receive_key_event(
         &self, ev: Vec<KeyPossibility>, ctx: &Context,
     ) -> (bool, EventResponses) {
-        //debug!("TextBox::receive_key_event: {:?}", ev);
-
         if self.base.get_selectability() != Selectability::Selected || ev.is_empty() {
             return (false, EventResponses::default());
         }
@@ -784,7 +782,7 @@ impl TextBox {
             }
 
             _ if ev[0].matches_key(&KB::KEY_LEFT) => {
-                if cursor_pos > 0 {
+                if cursor_pos > 0 && cursor_pos < self.text.borrow().len() {
                     // do not move left if at the beginning of a line
                     if self.text.borrow()[cursor_pos - 1] != '\n' {
                         self.incr_cursor_pos(ctx, -1);
@@ -992,6 +990,8 @@ impl TextBox {
 }
 
 impl Widget for TextBox {
+    // NOTE any changes in here should also be mirrored in NumbersTextBox
+
     fn set_selectability_pre_hook(&self, _: &Context, s: Selectability) -> EventResponses {
         if self.base.get_selectability() == Selectability::Selected && s != Selectability::Selected
         {
