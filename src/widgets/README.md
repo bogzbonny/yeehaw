@@ -44,6 +44,8 @@
                                       ┃   ┃
    ══════════╪▓▓▓▓▓▓▓▓▓▓▓▓▓▓╪══════   ╋   ╋ 7 
 
+   ━━━━━━━━━● 
+      ●━━━━━━━━━━━━━━━━━━━━● 
 
 ## Known Bugs
  - Scrollbar: when dragging scrollbar with mouse, will drag good for a bit then close to
