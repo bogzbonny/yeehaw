@@ -13,7 +13,7 @@ use {
 #[derive(Default)]
 pub struct ElementOrganizer {
     // XXX TODO combine into one hashmap
-    elements: HashMap<ElementID, Rc<RefCell<dyn Element>>>,
+    pub elements: HashMap<ElementID, Rc<RefCell<dyn Element>>>,
     locations: HashMap<ElementID, LocationSet>, // LocationSet of all of the elements contained
     visibility: HashMap<ElementID, bool>,       // whether the element is set to display
 

@@ -33,8 +33,7 @@ pub struct StandardPane {
     // else ever uses it.
     element_priority: Rc<RefCell<Priority>>,
 
-    #[allow(clippy::type_complexity)]
-    up: Rc<RefCell<Option<Box<dyn UpwardPropagator>>>>, // TODO ugly, is there a better way
+    pub up: Rc<RefCell<Option<Box<dyn UpwardPropagator>>>>,
 
     view_height: Rc<RefCell<u16>>,
     view_width: Rc<RefCell<u16>>,
@@ -103,6 +102,12 @@ impl StandardPane {
 
     pub fn set_self_receivable_events(&self, evs: Vec<(Event, Priority)>) {
         *self.self_evs.borrow_mut() = SelfReceivableEvents(evs);
+    }
+
+    // -----------------------
+
+    pub fn get_element_priority(&self) -> Priority {
+        *self.element_priority.borrow()
     }
 }
 impl Element for StandardPane {

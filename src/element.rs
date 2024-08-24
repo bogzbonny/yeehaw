@@ -116,7 +116,7 @@ pub trait UpwardPropagator {
     //
     // TRANSLATION NOTE PropagateUpwardChangesToInputability propagate_upward_changes_to_inputability
     fn propagate_receivable_event_changes_upward(
-        &mut self, child_el_id: &ElementID, rec: ReceivableEventChanges,
+        &self, child_el_id: &ElementID, rec: ReceivableEventChanges,
     );
 }
 

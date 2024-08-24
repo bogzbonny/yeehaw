@@ -260,7 +260,7 @@ impl UpwardPropagator for CuiUpwardPropagator {
     // the CUI and  be able to call this function (as opposed to calling it on an
     // Element, as a child normally would in the rest of the tree).
     fn propagate_receivable_event_changes_upward(
-        &mut self, child_el_id: &ElementID, rec: ReceivableEventChanges,
+        &self, child_el_id: &ElementID, rec: ReceivableEventChanges,
     ) {
         // process changes in element organizer
         self.eo
