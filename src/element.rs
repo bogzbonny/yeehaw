@@ -8,7 +8,9 @@ use {
 // Element is the base interface which all viewable elements are
 // expected to fulfill
 pub trait Element {
+    // TODO consider removing kind
     fn kind(&self) -> &'static str; // a name for the kind of the element
+
     fn id(&self) -> ElementID; // the element id as assigned by the SortingHat
 
     // Returns all event kinds (key events and commands, etc.) which are receivable by the element.
@@ -123,15 +125,15 @@ pub trait UpwardPropagator {
 // Context is a struct which contains information about the current context of a
 // given element.
 // The context of an element is passed to the element during key function calls
-// where the element may need to know its size and Visibility.
+// where the element may need to know its size and visibility.
 //
-// Additionally, Metadata may be addended to the context to pass additional
+// Additionally, metadata may be addended to the context to pass additional
 // arbitrary information.
 #[derive(Default, Clone, Debug)]
 pub struct Context {
     pub s: Size,
     pub visible: bool,
-    pub metadata: Option<String>, // should be in json
+    pub metadata: Option<Vec<u8>>,
 }
 
 impl Context {
@@ -153,7 +155,7 @@ impl Context {
         }
     }
 
-    pub fn with_metadata(self, md: String) -> Context {
+    pub fn with_metadata(self, md: Vec<u8>) -> Context {
         Context {
             s: self.s,
             visible: self.visible,

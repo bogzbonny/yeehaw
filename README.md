@@ -26,11 +26,14 @@ have been assigned to them from parent elements.
 [ratatui](https://ratatui.rs/) rocks! Check it out. Their design goals are
 slightly different, it's a more mature TUI framework which you should consider.
 
-[dioxus](https://github.com/dioxuslabs/dioxus) seems lit (non-TUI)
+[dioxus](https://github.com/dioxuslabs/dioxus) seems lit - they have a goal of
+TUI support in the future.
+
+[rooibos](https://github.com/aschey/rooibos) similar project
 
 ## Examples
 
-[TODO gifs]
+[TODO gifs] NOTE use VHS to produce gifs
 
 ## Existing Elements:
  - tabs 
@@ -77,4 +80,3 @@ slightly different, it's a more mature TUI framework which you should consider.
 _________________________________________________
 
 general purpose complexity.
-
