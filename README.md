@@ -1,6 +1,6 @@
 # YEEHAW
 
-The Text Based Application Framework. 
+~ Batteries Included Text Based Application Framework ~
 
 'yeehaw' was born out of a need for an adaptable design for sophisticated text
 based applications, with the goal of presenting as much information as cleanly
@@ -29,7 +29,7 @@ slightly different, it's a more mature TUI framework which you should consider.
 [dioxus](https://github.com/dioxuslabs/dioxus) seems lit - they have a goal of
 TUI support in the future.
 
-[rooibos](https://github.com/aschey/rooibos) similar project
+[rooibos](https://github.com/aschey/rooibos) similar project, different approach
 
 ## Examples
 
@@ -77,6 +77,3 @@ TUI support in the future.
    - Text-GIFs = TGIF
  - TUI Tester
 
-_________________________________________________
-
-general purpose complexity.

@@ -27,7 +27,7 @@ const ANIMATION_SPEED: Duration = Duration::from_micros(100);
 
 // configuration of a cui zelt instance
 pub struct Cui {
-    eo: Rc<RefCell<ElementOrganizer>>,
+    eo: ElementOrganizer,
     main_el_id: ElementID,
     kb: Keyboard,
 
@@ -40,7 +40,7 @@ pub struct Cui {
 
 impl Cui {
     pub fn new(main_el: Rc<RefCell<dyn Element>>) -> Result<Cui, Error> {
-        let eo = Rc::new(RefCell::new(ElementOrganizer::default()));
+        let eo = ElementOrganizer::default();
         let cui = Cui {
             eo: eo.clone(),
             main_el_id: main_el.borrow().id().clone(),
@@ -59,9 +59,7 @@ impl Cui {
         // when adding the main element, nil is passed in as the parent
         // this is because the top of the tree is the CUI's main EO and so no parent
         // is necessary
-        cui.eo
-            .borrow_mut()
-            .add_element(main_el, Some(cup), loc, true);
+        cui.eo.add_element(main_el, Some(cup), loc, true);
 
         set_panic_hook_with_closedown();
         Ok(cui)
@@ -103,8 +101,8 @@ impl Cui {
                                     let loc = Location::new(0, (ctx.s.width - 1).into(), 0, (ctx.s.height - 1).into());
                                     let loc = LocationSet::default().with_location(loc);
                                     // There should only be one element at index 0 in the upper level EO
-                                    self.eo.borrow_mut().update_el_locations_by_id(self.main_el_id.clone(), loc);
-                                    self.eo.borrow().get_element_by_id(&self.main_el_id).unwrap().borrow_mut().receive_event(&ctx, Event::Resize{});
+                                    self.eo.update_el_location_set(self.main_el_id.clone(), loc);
+                                    self.eo.get_element(&self.main_el_id).unwrap().borrow_mut().receive_event(&ctx, Event::Resize{});
                                     self.clear_screen();
                                     self.render()
                                 }
@@ -146,13 +144,13 @@ impl Cui {
 
         let Some((_, evs)) = self
             .eo
-            .borrow()
             .prioritizer
+            .borrow()
             .get_destination_el_from_kb(&mut self.kb)
         else {
             return false;
         };
-        let Some((_, resps)) = self.eo.borrow_mut().key_events_process(evs) else {
+        let Some((_, resps)) = self.eo.key_events_process(evs) else {
             return false;
         };
 
@@ -168,7 +166,7 @@ impl Cui {
     // process_event_mouse handles mouse events
     //                                                                       exit-cui
     pub fn process_event_mouse(&mut self, mouse_ev: ct_event::MouseEvent) -> bool {
-        let Some((_, resps)) = self.eo.borrow_mut().mouse_event_process(&mouse_ev) else {
+        let Some((_, resps)) = self.eo.mouse_event_process(&mouse_ev) else {
             return false;
         };
 
@@ -207,7 +205,7 @@ impl Cui {
     // sending in a timestamp. Would then need a force-render option (for startup)
     pub fn render(&mut self) {
         let mut sc = stdout();
-        let chs = self.eo.borrow().all_drawing();
+        let chs = self.eo.all_drawing();
 
         let mut dedup_chs = HashMap::new();
         for c in chs {
@@ -242,11 +240,11 @@ impl Cui {
 }
 
 pub struct CuiUpwardPropagator {
-    eo: Rc<RefCell<ElementOrganizer>>,
+    eo: ElementOrganizer,
 }
 
 impl CuiUpwardPropagator {
-    pub fn new(eo: Rc<RefCell<ElementOrganizer>>) -> CuiUpwardPropagator {
+    pub fn new(eo: ElementOrganizer) -> CuiUpwardPropagator {
         CuiUpwardPropagator { eo }
     }
 }
@@ -263,9 +261,7 @@ impl UpwardPropagator for CuiUpwardPropagator {
         &self, child_el_id: &ElementID, rec: ReceivableEventChanges,
     ) {
         // process changes in element organizer
-        self.eo
-            .borrow_mut()
-            .process_receivable_event_changes(child_el_id, &rec);
+        self.eo.process_receivable_event_changes(child_el_id, &rec);
     }
 }
 

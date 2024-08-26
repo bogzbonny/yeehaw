@@ -17,7 +17,7 @@ use {
 #[derive(Clone)]
 pub struct ParentPane {
     pub pane: StandardPane,
-    pub eo: Rc<RefCell<ElementOrganizer>>,
+    pub eo: ElementOrganizer,
 }
 
 impl ParentPane {
@@ -25,7 +25,7 @@ impl ParentPane {
         let pane = StandardPane::new(hat, kind);
         ParentPane {
             pane,
-            eo: Rc::new(RefCell::new(ElementOrganizer::default())),
+            eo: ElementOrganizer::default(),
         }
     }
 
@@ -99,12 +99,12 @@ impl ParentPane {
 
     pub fn perceived_priorities_of_eo(&self) -> Vec<(Event, Priority)> {
         let pr = self.pane.get_element_priority();
-        let pes = self.eo.borrow().receivable(); // registered receivable events
+        let pes = self.eo.receivable(); // registered receivable events
         self.generate_perceived_priorities(pr, pes)
     }
 
     pub fn change_priority_for_el(&self, el_id: ElementID, p: Priority) -> ReceivableEventChanges {
-        let mut ic = self.eo.borrow_mut().change_priority_for_el(el_id, p);
+        let mut ic = self.eo.change_priority_for_el(el_id, p);
         let mut to_add = vec![];
 
         // Check if any of the ic.remove match pane.self_evs. If so, add those events to
@@ -148,13 +148,14 @@ impl ParentPane {
     // -------------------------------------
     // Element functions
 
-    pub fn get_element_by_id(&self, el_id: &ElementID) -> Option<Rc<RefCell<dyn Element>>> {
-        self.eo.borrow().get_element_by_id(el_id)
+    //pub fn get_element_by_id(&self, el_id: &ElementID) -> Option<Rc<RefCell<dyn Element>>> {
+    pub fn get_element(&self, el_id: &ElementID) -> Option<Rc<RefCell<dyn Element>>> {
+        self.eo.get_element(el_id)
     }
 
     // TRANSLATION: SetZIndexForElement set_z_index_for_element
     pub fn update_el_z_index(&self, el_id: &ElementID, z: i32) {
-        self.eo.borrow_mut().update_el_z_index(el_id, z);
+        self.eo.update_el_z_index(el_id, z);
     }
 
     // Passes changes to inputability to this element's parent element. If
@@ -181,9 +182,7 @@ impl ParentPane {
         &self, child_el: Rc<RefCell<dyn Element>>, ic: ReceivableEventChanges,
     ) {
         let child_el_id = child_el.borrow().id();
-        self.eo
-            .borrow_mut()
-            .process_receivable_event_changes(&child_el_id, &ic);
+        self.eo.process_receivable_event_changes(&child_el_id, &ic);
         if let Some(up) = self.pane.up.borrow_mut().deref() {
             up.propagate_receivable_event_changes_upward(&child_el_id, ic);
         }
@@ -212,7 +211,7 @@ impl Element for ParentPane {
     fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
             Event::Refresh => {
-                self.eo.borrow_mut().refresh();
+                self.eo.refresh();
                 (false, EventResponses::default())
             }
             _ => self.pane.receive_event(ctx, ev),
@@ -239,8 +238,8 @@ impl Element for ParentPane {
         let mut ic = self.pane.change_priority(ctx, pr);
 
         // update the perceived priorities of the children
-        for (_, el) in self.eo.borrow().elements.clone() {
-            let pes = el.borrow().receivable(); // self evs (and child eo's evs)
+        for (_, el_details) in self.eo.els.borrow().iter() {
+            let pes = el_details.el.borrow().receivable(); // self evs (and child eo's evs)
             for pe in self.generate_perceived_priorities(pr, pes) {
                 ic.update_priority_for_ev(pe.0, pe.1);
             }

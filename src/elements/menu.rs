@@ -142,13 +142,7 @@ impl MenuBar {
         let mut max_x = None;
         for item in self.menu_items_order.borrow().iter() {
             if item.is_primary() {
-                let loc = self
-                    .pane
-                    .eo
-                    .borrow()
-                    .must_get_locations(item.id())
-                    .l
-                    .clone();
+                let loc = self.pane.eo.get_location(&item.id()).expect("missing el").l;
                 if let Some(mx) = max_x {
                     if loc.end_x > mx {
                         max_x = Some(loc.end_x);
@@ -164,13 +158,7 @@ impl MenuBar {
         let mut max_y = None;
         for item in self.menu_items_order.borrow().iter() {
             if item.is_primary() {
-                let loc = self
-                    .pane
-                    .eo
-                    .borrow()
-                    .must_get_locations(item.id())
-                    .l
-                    .clone();
+                let loc = self.pane.eo.get_location(&item.id()).expect("missing el").l;
                 if let Some(my) = max_y {
                     if loc.end_y > my {
                         max_y = Some(loc.end_y);
@@ -212,7 +200,6 @@ impl MenuBar {
         };
         self.pane
             .eo
-            .borrow_mut()
             .add_element(Rc::new(RefCell::new(item.clone())), None, loc, vis);
         self.menu_items.borrow_mut().insert(item.id(), item.clone());
         self.menu_items_order.borrow_mut().push(item);
@@ -238,10 +225,9 @@ impl MenuBar {
 
             // adjust all the widths in the element organizer
             for it in primary_items {
-                let mut loc = self.pane.eo.borrow().must_get_locations(it.id()).l.clone();
+                let mut loc = self.pane.eo.get_location(&it.id()).expect("missing item").l;
                 loc.set_width(max_width);
-                let mut eo = self.pane.eo.borrow_mut();
-                (*eo).update_el_primary_location(it.id(), loc);
+                self.pane.eo.update_el_primary_location(it.id(), loc);
             }
         }
     }
@@ -272,7 +258,7 @@ impl MenuBar {
             return (true, EventResponses::default());
         }
 
-        let mep = self.pane.eo.borrow_mut().mouse_event_process(&ev);
+        let mep = self.pane.eo.mouse_event_process(&ev);
         let Some((el_id, mut resps)) = mep else {
             if clicked {
                 self.closedown();
@@ -314,15 +300,14 @@ impl MenuBar {
         *self.activated.borrow_mut() = false;
 
         // close all non-primary menus
-        let mut eo = self.pane.eo.borrow_mut();
         let menu_items = self.menu_items.borrow();
         for (id, item) in menu_items.iter() {
             if !item.is_primary() {
-                (*eo).update_el_visibility(id.clone(), false);
+                self.pane.eo.update_el_visibility(id.clone(), false);
             }
         }
 
-        // update extra locations for parent eo.Locations
+        // update extra locations for parent eo
         let resps: EventResponses = EventResponse::default()
             .with_extra_locations(ExtraLocationsRequest::new(self.extra_locations()))
             .into();
@@ -338,9 +323,8 @@ impl MenuBar {
 
     pub fn extra_locations(&self) -> Vec<Location> {
         let mut locs = vec![];
-        let eo = self.pane.eo.borrow();
-        for (_, loc) in eo.locations.iter() {
-            locs.push(loc.l.clone());
+        for details in self.pane.eo.els.borrow().values() {
+            locs.push(details.loc.l.clone());
         }
         locs
     }
@@ -368,13 +352,7 @@ impl MenuBar {
         // set all the locations in the element organizer
 
         // TODO adjust the open direction if there isn't enough space.
-        let mut loc = self
-            .pane
-            .eo
-            .borrow()
-            .must_get_locations(item.id())
-            .l
-            .clone();
+        let mut loc = self.pane.eo.get_location(&item.id()).expect("missing el").l;
         let item_width = loc.get_size().width;
         for it in sub_items {
             // adjust for the next location
@@ -393,9 +371,10 @@ impl MenuBar {
                 }
             };
             loc.set_width(max_width);
-            let mut eo = self.pane.eo.borrow_mut();
-            (*eo).update_el_primary_location(it.id(), loc.clone());
-            (*eo).update_el_visibility(it.id(), true);
+            self.pane
+                .eo
+                .update_el_primary_location(it.id(), loc.clone());
+            self.pane.eo.update_el_visibility(it.id(), true);
         }
     }
 }
@@ -536,17 +515,14 @@ impl Element for MenuBar {
         let mut out = vec![];
 
         // draw each menu item
-        let eo = self.pane.eo.borrow();
-        for (id, el) in eo.elements.iter() {
+        for el_details in self.pane.eo.els.borrow().values() {
             // offset pos to location
-            let loc = eo.must_get_locations(id.to_string());
-
-            let s = loc.l.get_size();
-            let c = Context::new(s, eo.visibility[id]).with_metadata(menu_style_bz.clone());
-            let dcps = el.borrow().drawing(&c);
+            let s = el_details.loc.l.get_size();
+            let c = Context::new(s, el_details.vis).with_metadata(menu_style_bz.clone());
+            let dcps = el_details.el.borrow().drawing(&c);
 
             for mut dcp in dcps {
-                dcp.adjust_by_location(&loc.l);
+                dcp.adjust_by_location(&el_details.loc.l);
                 out.push(dcp);
             }
         }
