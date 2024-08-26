@@ -71,7 +71,7 @@ impl MenuBar {
     pub fn add_decor(&self, hat: &SortingHat, menu_path: String) {
         let mp = MenuPath(menu_path);
         self.ensure_folders(hat, mp.clone());
-        let item = MenuItem::new(hat).with_unselectable();
+        let item = MenuItem::new(hat, mp).with_unselectable();
         self.add_item_inner(item);
     }
 
@@ -81,15 +81,17 @@ impl MenuBar {
     ) {
         let mp = MenuPath(menu_path);
         self.ensure_folders(hat, mp.clone());
-        let item = MenuItem::new(hat).with_click_fn(click_fn);
+        let item = MenuItem::new(hat, mp).with_click_fn(click_fn);
         self.add_item_inner(item);
     }
 
     // ensure or create all folders leading to the final menu path
     pub fn ensure_folders(&self, hat: &SortingHat, menu_path: MenuPath) {
         let folders = menu_path.folders();
+        debug!("folders {:?}", folders);
         for i in 0..folders.len() {
-            let folder_path = folders[..i].join("/");
+            let folder_path = folders[..=i].join("/");
+            debug!("folder_path {:?}", folder_path);
             if !self.contains_menu_item(MenuPath(folder_path.clone())) {
                 let path = MenuPath(folder_path);
                 let item = MenuItem::new_folder(hat, path);
@@ -99,8 +101,8 @@ impl MenuBar {
     }
 
     // the furthest location of the primary menu element
-    pub fn max_primary_x(&self) -> i32 {
-        let mut max_x = 0;
+    pub fn max_primary_x(&self) -> Option<i32> {
+        let mut max_x = None;
         for item in self.menu_items_order.borrow().iter() {
             if item.is_primary() {
                 let loc = self
@@ -110,15 +112,19 @@ impl MenuBar {
                     .must_get_locations(item.id())
                     .l
                     .clone();
-                if loc.end_x > max_x {
-                    max_x = loc.end_x;
+                if let Some(mx) = max_x {
+                    if loc.end_x > mx {
+                        max_x = Some(loc.end_x);
+                    }
+                } else {
+                    max_x = Some(loc.end_x);
                 }
             }
         }
         max_x
     }
-    pub fn max_primary_y(&self) -> i32 {
-        let mut max_y = 0;
+    pub fn max_primary_y(&self) -> Option<i32> {
+        let mut max_y = None;
         for item in self.menu_items_order.borrow().iter() {
             if item.is_primary() {
                 let loc = self
@@ -128,8 +134,12 @@ impl MenuBar {
                     .must_get_locations(item.id())
                     .l
                     .clone();
-                if loc.end_y > max_y {
-                    max_y = loc.end_y;
+                if let Some(my) = max_y {
+                    if loc.end_y > my {
+                        max_y = Some(loc.end_y);
+                    }
+                } else {
+                    max_y = Some(loc.end_y);
                 }
             }
         }
@@ -138,18 +148,29 @@ impl MenuBar {
 
     fn add_item_inner(&self, item: MenuItem) {
         let is_primary = item.is_primary();
+        if is_primary && !*self.primary_hover_open.borrow() {
+            *item.select_on_hover.borrow_mut() = false;
+        }
+        if is_primary && !*self.primary_has_show_arrow.borrow() {
+            *item.show_folder_arrow.borrow_mut() = false;
+        }
         let (loc, vis) = if is_primary {
             let item_width = item.min_width(
                 &self.menu_style.borrow(),
                 *self.primary_has_show_arrow.borrow(),
             ) as i32;
+            debug!("item_width {:?}", item_width);
             let loc = if *self.horizontal_bar.borrow() {
                 let x = self.max_primary_x();
-                Location::new(x, x + item_width, 0, 1)
+                let x = if let Some(x) = x { x + 1 } else { 0 };
+                debug!("x {:?}", x);
+                Location::new(x, x + item_width - 1, 0, 0)
             } else {
                 let y = self.max_primary_y();
-                Location::new(0, item_width, y + 1, y + 1)
+                let y = if let Some(y) = y { y + 1 } else { 0 };
+                Location::new(0, item_width - 1, y + 1, y + 1)
             };
+            debug!("loc {:?}", loc);
             let ls = LocationSet::new(loc, vec![], Self::Z_INDEX);
             (ls, true)
         } else {
@@ -345,9 +366,13 @@ impl Default for MenuStyle {
             folder_arrow: " ❯".to_string(),
             left_padding: 1,
             right_padding: 1,
-            unselected_style: Style::default(),
-            selected_style: Style::default().with_bg(RgbColour::BLUE),
-            disabled_style: Style::default().with_bg(RgbColour::GREY13),
+            unselected_style: Style::default().with_fg(RgbColour::WHITE),
+            selected_style: Style::default()
+                .with_bg(RgbColour::BLUE)
+                .with_fg(RgbColour::WHITE),
+            disabled_style: Style::default()
+                .with_bg(RgbColour::GREY13)
+                .with_fg(RgbColour::WHITE),
         }
     }
 }
@@ -369,6 +394,8 @@ pub struct MenuItem {
     selectable: Rc<RefCell<bool>>,
     is_selected: Rc<RefCell<bool>>, // is the item currently selected
     is_folder: Rc<RefCell<bool>>,   // is the item a folder
+    select_on_hover: Rc<RefCell<bool>>, // select the item when the mouse hovers over it
+    show_folder_arrow: Rc<RefCell<bool>>, // show the folder arrow, false for primary horizontal bar
     #[allow(clippy::type_complexity)]
     click_fn: Rc<RefCell<Option<Box<dyn FnMut(Context) -> EventResponses>>>>,
 }
@@ -376,21 +403,22 @@ pub struct MenuItem {
 impl MenuItem {
     pub const KIND: &'static str = "menu_item";
 
-    pub fn new(hat: &SortingHat) -> Self {
+    pub fn new(hat: &SortingHat, path: MenuPath) -> Self {
         MenuItem {
             pane: StandardPane::new(hat, MenuItem::KIND),
-            path: Rc::new(RefCell::new(MenuPath("".to_string()))),
+            path: Rc::new(RefCell::new(path)),
             selectable: Rc::new(RefCell::new(true)),
             is_selected: Rc::new(RefCell::new(false)),
             is_folder: Rc::new(RefCell::new(false)),
+            select_on_hover: Rc::new(RefCell::new(true)),
+            show_folder_arrow: Rc::new(RefCell::new(true)),
             click_fn: Rc::new(RefCell::new(None)),
         }
     }
 
     pub fn new_folder(hat: &SortingHat, path: MenuPath) -> Self {
-        let item = MenuItem::new(hat);
+        let item = MenuItem::new(hat, path);
         *item.is_folder.borrow_mut() = true;
-        *item.path.borrow_mut() = path;
         item
     }
 
@@ -408,6 +436,16 @@ impl MenuItem {
 
     pub fn with_selectable(self) -> Self {
         *self.selectable.borrow_mut() = true;
+        self
+    }
+
+    pub fn with_select_on_hover(self) -> Self {
+        *self.select_on_hover.borrow_mut() = true;
+        self
+    }
+
+    pub fn with_no_select_on_hover(self) -> Self {
+        *self.select_on_hover.borrow_mut() = false;
         self
     }
 
@@ -432,6 +470,9 @@ impl MenuItem {
         } else {
             0
         };
+        debug!("folder_len: {:?}", folder_len);
+        debug!("self.path: {:?}", self.path.borrow());
+        debug!("self.path.borrow().name(): {:?}", self.path.borrow().name());
         self.path.borrow().name().chars().count()
             + sty.left_padding
             + sty.right_padding
@@ -534,7 +575,14 @@ impl Element for MenuItem {
         let _ = self.pane.receive_event(ctx, ev.clone());
         match ev {
             Event::Mouse(me) => {
-                self.select();
+                if *self.select_on_hover.borrow()
+                    || matches!(
+                        me.kind,
+                        MouseEventKind::Up(_) | MouseEventKind::Down(_) | MouseEventKind::Drag(_)
+                    )
+                {
+                    self.select();
+                }
                 if let MouseEventKind::Up(MouseButton::Left) = me.kind {
                     if let Some(ref mut click_fn) = *self.click_fn.borrow_mut() {
                         return (true, click_fn(ctx.clone()));
@@ -584,8 +632,13 @@ impl Element for MenuItem {
         x += name_chs.len();
         out.extend(name_chs);
 
-        let arrow_text =
-            if *self.is_folder.borrow() { m_sty.folder_arrow.clone() } else { "".to_string() };
+        let arrow_text = if *self.is_folder.borrow()
+            && (!self.is_primary() || (self.is_primary() && *self.show_folder_arrow.borrow()))
+        {
+            m_sty.folder_arrow
+        } else {
+            "".to_string()
+        };
 
         // add filler space
         while x < ctx.s.width as usize - m_sty.right_padding - arrow_text.chars().count() {
@@ -621,7 +674,7 @@ impl Element for MenuItem {
 //
 // represents a menu item which lives in the top-level menu "nwmod" within the
 // sub-menu "cool_stuff" with the name "blaze".
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct MenuPath(String);
 
 impl MenuPath {

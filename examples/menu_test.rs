@@ -5,8 +5,8 @@ use {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    //yeehaw::debug::set_log_file("./widget_test.log".to_string());
-    //yeehaw::debug::clear();
+    yeehaw::debug::set_log_file("./widget_test.log".to_string());
+    yeehaw::debug::clear();
 
     std::env::set_var("RUST_BACKTRACE", "1");
 
@@ -14,9 +14,9 @@ async fn main() -> Result<(), Error> {
     let mb = MenuBar::top_bar(&hat);
     let _ctx = Context::new_context_for_screen();
     mb.add_item(&hat, "hello".to_string(), None);
-    mb.add_item(&hat, "world".to_string(), None);
+    //mb.add_item(&hat, "world".to_string(), None);
     mb.add_item(&hat, "world/yo".to_string(), None);
-    mb.add_item(&hat, "dine/yo".to_string(), None);
+    //mb.add_item(&hat, "diner/yoyo/hi".to_string(), None);
 
     Cui::new(Rc::new(RefCell::new(mb)))?.run().await
 }

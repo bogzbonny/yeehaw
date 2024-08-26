@@ -7,7 +7,7 @@ pub type ZIndex = i32;
 
 // Location holds the primary location of an element in the context of
 // its parent element
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct Location {
     pub start_x: i32,
     pub end_x: i32,

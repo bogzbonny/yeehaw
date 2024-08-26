@@ -474,7 +474,9 @@ impl ElementOrganizer {
             if *el_id2 == el_id {
                 continue;
             }
-            let (_, r) = el.borrow_mut().receive_event(&ctx, Event::Mouse(*ev));
+            let (_, r) = el
+                .borrow_mut()
+                .receive_event(&ctx, Event::ExternalMouse(*ev));
             el_resps.push((el_id2.clone(), r));
         }
 
