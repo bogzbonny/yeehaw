@@ -14,8 +14,8 @@ use {
 pub struct ElementOrganizer {
     // XXX TODO combine into one hashmap
     pub elements: HashMap<ElementID, Rc<RefCell<dyn Element>>>,
-    locations: HashMap<ElementID, LocationSet>, // LocationSet of all of the elements contained
-    visibility: HashMap<ElementID, bool>,       // whether the element is set to display
+    pub locations: HashMap<ElementID, LocationSet>, // LocationSet of all of the elements contained
+    pub visibility: HashMap<ElementID, bool>,       // whether the element is set to display
 
     pub prioritizer: EventPrioritizer,
 }
@@ -114,6 +114,10 @@ impl ElementOrganizer {
     // update_el_primary_location updates the primary location of the element with the given id
     pub fn update_el_location(&mut self, el_id: ElementID, loc: LocationSet) {
         self.locations.entry(el_id).and_modify(|l| (*l) = loc);
+    }
+
+    pub fn update_el_visibility(&mut self, el_id: ElementID, vis: bool) {
+        self.visibility.insert(el_id, vis);
     }
 
     // TODO rename to consisten with above

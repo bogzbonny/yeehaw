@@ -1,4 +1,4 @@
-pub mod menu_item;
+pub mod menu;
 pub mod pane_parent;
 pub mod pane_standard;
 

@@ -60,6 +60,10 @@ impl DrawChPos {
         self.x += loc.start_x as u16; // TODO check for overflow
         self.y += loc.start_y as u16;
     }
+
+    pub fn new_from_string(s: String, start_x: u16, start_y: u16, sty: Style) -> Vec<DrawChPos> {
+        DrawChs2D::from_string(s.to_string(), sty).to_draw_ch_pos(start_x, start_y)
+    }
 }
 
 // ----------------------------------------------------
@@ -99,6 +103,19 @@ impl DrawChs2D {
         DrawChs2D(chs)
     }
 
+    // filles a new empty DrawChs2D to the provided size
+    pub fn new_empty_of_size(width: usize, height: usize, sty: Style) -> DrawChs2D {
+        let mut out = Vec::new();
+        for _ in 0..height {
+            let mut line = Vec::new();
+            for _ in 0..width {
+                line.push(DrawCh::new(' ', false, sty));
+            }
+            out.push(line);
+        }
+        DrawChs2D(out)
+    }
+
     pub fn from_string(text: String, sty: Style) -> DrawChs2D {
         let lines = text.split('\n');
         let mut chs = Vec::new();
@@ -120,17 +137,18 @@ impl DrawChs2D {
         DrawChs2D(out)
     }
 
-    // filles a new empty DrawChs2D to the provided size
-    pub fn new_empty_of_size(width: usize, height: usize, sty: Style) -> DrawChs2D {
+    pub fn to_draw_ch_pos(&self, start_x: u16, start_y: u16) -> Vec<DrawChPos> {
         let mut out = Vec::new();
-        for _ in 0..height {
-            let mut line = Vec::new();
-            for _ in 0..width {
-                line.push(DrawCh::new(' ', false, sty));
+        for (y, line) in self.0.iter().enumerate() {
+            for (x, ch) in line.iter().enumerate() {
+                out.push(DrawChPos::new(
+                    ch.clone(),
+                    start_x + x as u16,
+                    start_y + y as u16,
+                ));
             }
-            out.push(line);
         }
-        DrawChs2D(out)
+        out
     }
 
     pub fn width(&self) -> usize {

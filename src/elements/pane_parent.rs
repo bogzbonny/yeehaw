@@ -1,7 +1,7 @@
 use {
     crate::{
-        element::ReceivableEventChanges, Context, Element, ElementID, ElementOrganizer, Event,
-        EventResponses, Priority, SortingHat, StandardPane,
+        element::ReceivableEventChanges, Context, DrawChPos, Element, ElementID, ElementOrganizer,
+        Event, EventResponses, Priority, SortingHat, StandardPane, UpwardPropagator,
     },
     std::{
         ops::Deref,
@@ -148,34 +148,6 @@ impl ParentPane {
     // -------------------------------------
     // Element functions
 
-    pub fn kind(&self) -> &'static str {
-        self.pane.kind()
-    }
-
-    pub fn id(&self) -> ElementID {
-        self.pane.id()
-    }
-
-    pub fn receivable(&self) -> Vec<(Event, Priority)> {
-        let mut pes = self.perceived_priorities_of_eo();
-        pes.extend(self.pane.receivable());
-        pes
-    }
-
-    // primarily a placeholder function. An element using the parent pane should
-    // write their own receive_event function.
-    // TODO verify that this code is or isn't used anywhere
-    //                                               (captured, resp         )
-    pub fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        match ev {
-            Event::Refresh => {
-                self.eo.borrow_mut().refresh();
-                (false, EventResponses::default())
-            }
-            _ => self.pane.receive_event(ctx, ev),
-        }
-    }
-
     pub fn get_element_by_id(&self, el_id: &ElementID) -> Option<Rc<RefCell<dyn Element>>> {
         self.eo.borrow().get_element_by_id(el_id)
     }
@@ -183,36 +155,6 @@ impl ParentPane {
     // TRANSLATION: SetZIndexForElement set_z_index_for_element
     pub fn update_el_z_index(&self, el_id: &ElementID, z: i32) {
         self.eo.borrow_mut().update_el_z_index(el_id, z);
-    }
-
-    // ChangePriority returns a priority change (InputabilityChanges) to its
-    // parent organizer so as to update the priority of all events registered to
-    // this element.
-    //
-    // NOTE: The priority changes (ic) that this parent pane sends up is the
-    // combination of:
-    //   - this element's priority changes (the SelfEvs, aka the
-    //     Self Receivable Events)
-    //   - the "perceived priorities" of the childens' Receivable Events
-    //     (aka the results of the child's Receivable() function) The "perceived
-    //     priorities" are the effective priority FROM the perspective of the
-    //     element ABOVE this element in the tree.
-
-    pub fn change_priority(&self, ctx: &Context, pr: Priority) -> ReceivableEventChanges {
-        // first change the priority of the self evs. These are "this elements
-        // priority changes". NO changes should be made to the childen,
-        // the perceived priorities of the children should be interpreted.
-        let mut ic = self.pane.change_priority(ctx, pr);
-
-        // update the perceived priorities of the children
-        for (_, el) in self.eo.borrow().elements.clone() {
-            let pes = el.borrow().receivable(); // self evs (and child eo's evs)
-            for pe in self.generate_perceived_priorities(pr, pes) {
-                ic.update_priority_for_ev(pe.0, pe.1);
-            }
-        }
-
-        ic
     }
 
     // Passes changes to inputability to this element's parent element. If
@@ -245,5 +187,78 @@ impl ParentPane {
         if let Some(up) = self.pane.up.borrow_mut().deref() {
             up.propagate_receivable_event_changes_upward(&child_el_id, ic);
         }
+    }
+}
+
+impl Element for ParentPane {
+    fn kind(&self) -> &'static str {
+        self.pane.kind()
+    }
+
+    fn id(&self) -> ElementID {
+        self.pane.id()
+    }
+
+    fn receivable(&self) -> Vec<(Event, Priority)> {
+        let mut pes = self.perceived_priorities_of_eo();
+        pes.extend(self.pane.receivable());
+        pes
+    }
+
+    // primarily a placeholder function. An element using the parent pane should
+    // write their own receive_event function.
+    // TODO verify that this code is or isn't used anywhere
+    //                                               (captured, resp         )
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        match ev {
+            Event::Refresh => {
+                self.eo.borrow_mut().refresh();
+                (false, EventResponses::default())
+            }
+            _ => self.pane.receive_event(ctx, ev),
+        }
+    }
+
+    // ChangePriority returns a priority change (InputabilityChanges) to its
+    // parent organizer so as to update the priority of all events registered to
+    // this element.
+    //
+    // NOTE: The priority changes (ic) that this parent pane sends up is the
+    // combination of:
+    //   - this element's priority changes (the SelfEvs, aka the
+    //     Self Receivable Events)
+    //   - the "perceived priorities" of the childens' Receivable Events
+    //     (aka the results of the child's Receivable() function) The "perceived
+    //     priorities" are the effective priority FROM the perspective of the
+    //     element ABOVE this element in the tree.
+
+    fn change_priority(&self, ctx: &Context, pr: Priority) -> ReceivableEventChanges {
+        // first change the priority of the self evs. These are "this elements
+        // priority changes". NO changes should be made to the childen,
+        // the perceived priorities of the children should be interpreted.
+        let mut ic = self.pane.change_priority(ctx, pr);
+
+        // update the perceived priorities of the children
+        for (_, el) in self.eo.borrow().elements.clone() {
+            let pes = el.borrow().receivable(); // self evs (and child eo's evs)
+            for pe in self.generate_perceived_priorities(pr, pes) {
+                ic.update_priority_for_ev(pe.0, pe.1);
+            }
+        }
+
+        ic
+    }
+
+    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        self.pane.drawing(ctx)
+    }
+    fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
+        self.pane.get_attribute(key)
+    }
+    fn set_attribute(&self, key: &str, value: Vec<u8>) {
+        self.pane.set_attribute(key, value)
+    }
+    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
+        self.pane.set_upward_propagator(up)
     }
 }

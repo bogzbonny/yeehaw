@@ -413,25 +413,7 @@ impl Widgets {
 #[derive(Clone)]
 pub struct WidgetBase {
     pub sp: StandardPane,
-
-    //pub last_ctx: Rc<RefCell<Context>>, // last parent context
-
-    //pub selectedness: Selectability, // lol
-
-    // size of the widget (NOT the content space)
-    // These are scaling values and are used to generate the
-    // exact location (when get_location is called).
-    //pub width: SclVal,
-    //pub height: SclVal,
-    //pub loc_x: SclVal,
-    //pub loc_y: SclVal,
     pub styles: Rc<RefCell<WBStyles>>,
-    // the receivableEvents when this widget is active
-    //pub receivable_events: Vec<Event>,
-    //pub cmontent: DrawChs2D,      // [Y][X]DrawCh
-    //pub content_max_width: usize, // max width of the content
-    //pub content_x_offset: usize,
-    //pub content_y_offset: usize,
 }
 
 impl WidgetBase {

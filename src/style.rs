@@ -1,10 +1,9 @@
 use {
     crate::RgbColour,
-    
     crossterm::style::{Attribute, Attributes, ContentStyle},
 };
 
-#[derive(Clone, Copy, PartialEq, Debug, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Debug, Eq, Default)]
 pub struct Style {
     pub fg: Option<RgbColour>,
     pub bg: Option<RgbColour>,
@@ -127,7 +126,7 @@ impl Justification {
 }
 
 // mirroring the crossterm Attributes
-#[derive(Clone, Copy, PartialEq, Debug, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Debug, Eq, Default)]
 pub struct YHAttributes {
     pub bold: bool,
     pub faded: bool,

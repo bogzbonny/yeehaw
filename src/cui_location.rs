@@ -41,6 +41,10 @@ impl Location {
         self.end_x - self.start_x + 1
     }
 
+    pub fn set_width(&mut self, width: usize) {
+        self.end_x = self.start_x + width as i32 - 1;
+    }
+
     // X returns the start and end x values of the Location
     pub fn x(&self) -> (i32, i32) {
         (self.start_x, self.end_x)
@@ -109,7 +113,7 @@ impl Location {
 // LocationSet holds the primary location as well as the extra
 // locations of an element. In addition it holds a ZIndex which all
 // locations are said to exist at.
-#[derive(Default, Clone)]
+#[derive(Clone)]
 pub struct LocationSet {
     pub l: Location,
 
@@ -120,6 +124,16 @@ pub struct LocationSet {
     pub extra: Vec<Location>,
 
     pub z: ZIndex,
+}
+
+impl Default for LocationSet {
+    fn default() -> LocationSet {
+        LocationSet {
+            l: Location::default(),
+            extra: Vec::new(),
+            z: 255, // far back
+        }
+    }
 }
 
 impl LocationSet {
