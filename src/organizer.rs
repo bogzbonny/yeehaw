@@ -13,11 +13,18 @@ use {
 #[derive(Default)]
 pub struct ElementOrganizer {
     // XXX TODO combine into one hashmap
-    pub elements: HashMap<ElementID, Rc<RefCell<dyn Element>>>,
-    pub locations: HashMap<ElementID, LocationSet>, // LocationSet of all of the elements contained
-    pub visibility: HashMap<ElementID, bool>,       // whether the element is set to display
+    #[allow(clippy::type_complexity)]
+    pub elements: Rc<RefCell<HashMap<ElementID, ElDetails>>>>,
+    pub locations: Rc<RefCell<HashMap<ElementID, LocationSet>>>, // LocationSet of all of the elements contained
+    pub visibility: Rc<RefCell<HashMap<ElementID, bool>>>, // whether the element is set to display
 
-    pub prioritizer: EventPrioritizer,
+    pub prioritizer: Rc<RefCell<EventPrioritizer>>,
+}
+
+pub struct ElDetails {
+    pub el: Rc<RefCell<dyn Element>>,
+    pub loc: LocationSet, // LocationSet of the element
+    pub vis: bool,  // whether the element is set to display
 }
 
 impl ElementOrganizer {

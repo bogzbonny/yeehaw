@@ -20,12 +20,49 @@ pub struct MenuBar {
     horizontal_bar: Rc<RefCell<bool>>, // is the bar horizontal or vertical
     menu_items: Rc<RefCell<HashMap<ElementID, MenuItem>>>,
     menu_items_order: Rc<RefCell<Vec<MenuItem>>>, // order of each menu item
-    primary_hover_open: Rc<RefCell<bool>>,        // hover open for first level of menu items
+    activated: Rc<RefCell<bool>>, // the bar must first be activated with a click before any expansion
     primary_has_show_arrow: Rc<RefCell<bool>>, // whether or not primary menu items show the expand arrow
     primary_open_dir: Rc<RefCell<OpenDirection>>, // used only for the first level of menu items
     secondary_open_dir: Rc<RefCell<OpenDirection>>, // used for all other levels of menu items
     menu_style: Rc<RefCell<MenuStyle>>,
     self_destruct_on_external_click: Rc<RefCell<bool>>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+pub struct MenuStyle {
+    folder_arrow: String, // also including any left padding between the arrow and the menu item
+    left_padding: usize,
+    right_padding: usize,
+    unselected_style: Style,
+    selected_style: Style,
+    disabled_style: Style,
+}
+
+impl Default for MenuStyle {
+    fn default() -> Self {
+        MenuStyle {
+            folder_arrow: " ❯".to_string(),
+            left_padding: 1,
+            right_padding: 1,
+            unselected_style: Style::default().with_fg(RgbColour::WHITE),
+            selected_style: Style::default()
+                .with_bg(RgbColour::BLUE)
+                .with_fg(RgbColour::WHITE),
+            disabled_style: Style::default()
+                .with_bg(RgbColour::GREY13)
+                .with_fg(RgbColour::WHITE),
+        }
+    }
+}
+
+// direction which menu items prefer to open. If there is not enough space
+// in the preferred direction, the menu will open in the opposite direction
+#[derive(Clone, Copy)]
+pub enum OpenDirection {
+    Up,
+    Down,
+    Left,
+    Right,
 }
 
 impl MenuBar {
@@ -38,7 +75,7 @@ impl MenuBar {
             horizontal_bar: Rc::new(RefCell::new(true)),
             menu_items: Rc::new(RefCell::new(HashMap::new())),
             menu_items_order: Rc::new(RefCell::new(vec![])),
-            primary_hover_open: Rc::new(RefCell::new(false)),
+            activated: Rc::new(RefCell::new(false)),
             primary_has_show_arrow: Rc::new(RefCell::new(false)),
             primary_open_dir: Rc::new(RefCell::new(OpenDirection::Down)),
             secondary_open_dir: Rc::new(RefCell::new(OpenDirection::Right)),
@@ -53,7 +90,7 @@ impl MenuBar {
             horizontal_bar: Rc::new(RefCell::new(false)),
             menu_items: Rc::new(RefCell::new(HashMap::new())),
             menu_items_order: Rc::new(RefCell::new(vec![])),
-            primary_hover_open: Rc::new(RefCell::new(true)),
+            activated: Rc::new(RefCell::new(true)), // right click menus are always activated
             primary_has_show_arrow: Rc::new(RefCell::new(true)),
             primary_open_dir: Rc::new(RefCell::new(OpenDirection::Right)),
             secondary_open_dir: Rc::new(RefCell::new(OpenDirection::Right)),
@@ -148,9 +185,6 @@ impl MenuBar {
 
     fn add_item_inner(&self, item: MenuItem) {
         let is_primary = item.is_primary();
-        if is_primary && !*self.primary_hover_open.borrow() {
-            *item.select_on_hover.borrow_mut() = false;
-        }
         if is_primary && !*self.primary_has_show_arrow.borrow() {
             *item.show_folder_arrow.borrow_mut() = false;
         }
@@ -225,8 +259,24 @@ impl MenuBar {
     pub fn receive_mouse_event(
         &self, ctx: &Context, ev: crossterm::event::MouseEvent,
     ) -> (bool, EventResponses) {
-        //let (click_x, click_y) = (ev.column, ev.row);
-        let Some((el_id, mut resps)) = self.pane.eo.borrow_mut().mouse_event_process(&ev) else {
+        // must check if bar is activated
+        let clicked = matches!(
+            ev.kind,
+            MouseEventKind::Up(_) | MouseEventKind::Down(_) | MouseEventKind::Drag(_)
+        );
+        if clicked {
+            *self.activated.borrow_mut() = true;
+        }
+
+        if !*self.activated.borrow() {
+            return (true, EventResponses::default());
+        }
+
+        let mep = self.pane.eo.borrow_mut().mouse_event_process(&ev);
+        let Some((el_id, mut resps)) = mep else {
+            if clicked {
+                self.closedown();
+            }
             return (true, EventResponses::default());
         };
 
@@ -236,24 +286,14 @@ impl MenuBar {
             return (true, resps);
         };
 
-        if *item.is_folder.borrow() {
-            let (open_dir, hover_open) = if item.is_primary() {
-                (
-                    *self.primary_open_dir.borrow(),
-                    *self.primary_hover_open.borrow(),
-                )
-            } else {
-                (*self.secondary_open_dir.borrow(), true)
-            };
+        // XXX closedown everything expanded, then reopen back to this item
 
-            if !hover_open
-                && !matches!(
-                    ev.kind,
-                    MouseEventKind::Up(_) | MouseEventKind::Down(_) | MouseEventKind::Drag(_)
-                )
-            {
-                return (true, resps);
-            }
+        if *item.is_folder.borrow() {
+            let open_dir = if item.is_primary() {
+                *self.primary_open_dir.borrow()
+            } else {
+                *self.secondary_open_dir.borrow()
+            };
 
             self.expand_folder(ctx, item, open_dir);
 
@@ -266,9 +306,13 @@ impl MenuBar {
         (true, resps)
     }
 
-    pub fn receive_external_mouse_event(
-        &self, _ctx: &Context, _ev: crossterm::event::MouseEvent,
-    ) -> (bool, EventResponses) {
+    // closedown routine
+    pub fn closedown(&self) -> (bool, EventResponses) {
+        if *self.self_destruct_on_external_click.borrow() {
+            return (true, EventResponse::default().with_destruct().into());
+        }
+        *self.activated.borrow_mut() = false;
+
         // close all non-primary menus
         let mut eo = self.pane.eo.borrow_mut();
         let menu_items = self.menu_items.borrow();
@@ -278,18 +322,24 @@ impl MenuBar {
             }
         }
 
-        let resp = if *self.self_destruct_on_external_click.borrow() {
-            EventResponse::default().with_destruct()
-        } else {
-            EventResponse::default()
-        };
+        // update extra locations for parent eo.Locations
+        let resps: EventResponses = EventResponse::default()
+            .with_extra_locations(ExtraLocationsRequest::new(self.extra_locations()))
+            .into();
+        (true, resps)
+    }
 
-        (true, resp.into())
+    pub fn receive_external_mouse_event(
+        &self, _ctx: &Context, _ev: crossterm::event::MouseEvent,
+    ) -> (bool, EventResponses) {
+        debug!("menu bar external mouse event");
+        self.closedown()
     }
 
     pub fn extra_locations(&self) -> Vec<Location> {
         let mut locs = vec![];
-        for (_, loc) in self.pane.eo.borrow().locations.iter() {
+        let eo = self.pane.eo.borrow();
+        for (_, loc) in eo.locations.iter() {
             locs.push(loc.l.clone());
         }
         locs
@@ -350,42 +400,7 @@ impl MenuBar {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone)]
-pub struct MenuStyle {
-    folder_arrow: String, // also including any left padding between the arrow and the menu item
-    left_padding: usize,
-    right_padding: usize,
-    unselected_style: Style,
-    selected_style: Style,
-    disabled_style: Style,
-}
-
-impl Default for MenuStyle {
-    fn default() -> Self {
-        MenuStyle {
-            folder_arrow: " ❯".to_string(),
-            left_padding: 1,
-            right_padding: 1,
-            unselected_style: Style::default().with_fg(RgbColour::WHITE),
-            selected_style: Style::default()
-                .with_bg(RgbColour::BLUE)
-                .with_fg(RgbColour::WHITE),
-            disabled_style: Style::default()
-                .with_bg(RgbColour::GREY13)
-                .with_fg(RgbColour::WHITE),
-        }
-    }
-}
-
-// direction which menu items prefer to open. If there is not enough space
-// in the preferred direction, the menu will open in the opposite direction
-#[derive(Clone, Copy)]
-pub enum OpenDirection {
-    Up,
-    Down,
-    Left,
-    Right,
-}
+// ---------------------
 
 #[derive(Clone)]
 pub struct MenuItem {
@@ -394,7 +409,6 @@ pub struct MenuItem {
     selectable: Rc<RefCell<bool>>,
     is_selected: Rc<RefCell<bool>>, // is the item currently selected
     is_folder: Rc<RefCell<bool>>,   // is the item a folder
-    select_on_hover: Rc<RefCell<bool>>, // select the item when the mouse hovers over it
     show_folder_arrow: Rc<RefCell<bool>>, // show the folder arrow, false for primary horizontal bar
     #[allow(clippy::type_complexity)]
     click_fn: Rc<RefCell<Option<Box<dyn FnMut(Context) -> EventResponses>>>>,
@@ -410,7 +424,6 @@ impl MenuItem {
             selectable: Rc::new(RefCell::new(true)),
             is_selected: Rc::new(RefCell::new(false)),
             is_folder: Rc::new(RefCell::new(false)),
-            select_on_hover: Rc::new(RefCell::new(true)),
             show_folder_arrow: Rc::new(RefCell::new(true)),
             click_fn: Rc::new(RefCell::new(None)),
         }
@@ -436,16 +449,6 @@ impl MenuItem {
 
     pub fn with_selectable(self) -> Self {
         *self.selectable.borrow_mut() = true;
-        self
-    }
-
-    pub fn with_select_on_hover(self) -> Self {
-        *self.select_on_hover.borrow_mut() = true;
-        self
-    }
-
-    pub fn with_no_select_on_hover(self) -> Self {
-        *self.select_on_hover.borrow_mut() = false;
         self
     }
 
@@ -575,14 +578,7 @@ impl Element for MenuItem {
         let _ = self.pane.receive_event(ctx, ev.clone());
         match ev {
             Event::Mouse(me) => {
-                if *self.select_on_hover.borrow()
-                    || matches!(
-                        me.kind,
-                        MouseEventKind::Up(_) | MouseEventKind::Down(_) | MouseEventKind::Drag(_)
-                    )
-                {
-                    self.select();
-                }
+                self.select();
                 if let MouseEventKind::Up(MouseButton::Left) = me.kind {
                     if let Some(ref mut click_fn) = *self.click_fn.borrow_mut() {
                         return (true, click_fn(ctx.clone()));
@@ -651,6 +647,7 @@ impl Element for MenuItem {
         // draw folder arrow
         let arrow_chs = DrawChPos::new_from_string(arrow_text, x as u16, 0, sty);
         x += arrow_chs.len();
+        out.extend(arrow_chs);
 
         // add right padding
         let (_, out) = MenuItem::draw_padding(m_sty.right_padding, x, sty, out);
@@ -667,6 +664,7 @@ impl Element for MenuItem {
     }
 }
 
+// -----------------------------------------------------------------------
 // MenuPath is a path of menu items within a menu tree.
 // For example:
 //

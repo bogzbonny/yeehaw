@@ -16,6 +16,7 @@ async fn main() -> Result<(), Error> {
     mb.add_item(&hat, "hello".to_string(), None);
     //mb.add_item(&hat, "world".to_string(), None);
     mb.add_item(&hat, "world/yo".to_string(), None);
+    mb.add_item(&hat, "world/yosdfjldsf/asdkjl".to_string(), None);
     //mb.add_item(&hat, "diner/yoyo/hi".to_string(), None);
 
     Cui::new(Rc::new(RefCell::new(mb)))?.run().await
