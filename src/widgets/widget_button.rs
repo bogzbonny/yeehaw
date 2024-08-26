@@ -9,7 +9,7 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-// TODO simulate button press with down click
+// TODO simulate button press with down click, time based event
 
 // button sides inspiration:
 //	]button[  ⡇button⢸

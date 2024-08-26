@@ -517,23 +517,6 @@ impl ElementOrganizer {
             }
             ev_resps.extend(resps.0);
         }
-
-        // combine the event responses from the elements that receive the event
-        // and all the elements that receive an external event
-        //for (el_id2, r) in resps {
-        //    if let Some(changes) = r.get_receivable_event_changes() {
-        //        self.process_receivable_event_changes(&el_id2, &changes);
-        //    }
-        //    let r = self.partially_process_ev_resp(&el_id2, r);
-
-        //    // combine the receivable-event changes, all other external responses are
-        //    // ignored. TODO explain why.
-
-        //    if let Some(re) = r.get_receivable_event_changes() {
-        //        ev_resp.concat_receivable_event_changes(re);
-        //    }
-        //}
-
         Some((el_id, ev_resps))
     }
 

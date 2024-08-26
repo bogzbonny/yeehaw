@@ -156,7 +156,7 @@ impl Cui {
 
         // only check for response for quit
         for resp in resps.iter() {
-            if resp.quit {
+            if resp.quit || resp.destruct {
                 return true;
             }
         }
@@ -172,7 +172,7 @@ impl Cui {
 
         // only check for response for quit
         for resp in resps.iter() {
-            if resp.quit {
+            if resp.quit || resp.destruct {
                 return true;
             }
         }

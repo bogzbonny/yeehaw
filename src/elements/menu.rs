@@ -61,15 +61,17 @@ impl Default for MenuStyle {
 pub enum OpenDirection {
     Up,
     Down,
-    Left,
-    Right,
+    LeftThenDown,
+    RightThenDown,
+    LeftThenUp,
+    RightThenUp,
 }
 
 impl MenuBar {
     const KIND: &'static str = "menu_bar";
     const Z_INDEX: ZIndex = -100; // very front
 
-    pub fn top_bar(hat: &SortingHat) -> Self {
+    pub fn top_menu_bar(hat: &SortingHat) -> Self {
         MenuBar {
             pane: ParentPane::new(hat, MenuBar::KIND),
             horizontal_bar: Rc::new(RefCell::new(true)),
@@ -78,7 +80,7 @@ impl MenuBar {
             activated: Rc::new(RefCell::new(false)),
             primary_has_show_arrow: Rc::new(RefCell::new(false)),
             primary_open_dir: Rc::new(RefCell::new(OpenDirection::Down)),
-            secondary_open_dir: Rc::new(RefCell::new(OpenDirection::Right)),
+            secondary_open_dir: Rc::new(RefCell::new(OpenDirection::RightThenDown)),
             menu_style: Rc::new(RefCell::new(MenuStyle::default())),
             self_destruct_on_external_click: Rc::new(RefCell::new(false)),
         }
@@ -92,8 +94,8 @@ impl MenuBar {
             menu_items_order: Rc::new(RefCell::new(vec![])),
             activated: Rc::new(RefCell::new(true)), // right click menus are always activated
             primary_has_show_arrow: Rc::new(RefCell::new(true)),
-            primary_open_dir: Rc::new(RefCell::new(OpenDirection::Right)),
-            secondary_open_dir: Rc::new(RefCell::new(OpenDirection::Right)),
+            primary_open_dir: Rc::new(RefCell::new(OpenDirection::RightThenDown)),
+            secondary_open_dir: Rc::new(RefCell::new(OpenDirection::RightThenDown)),
             menu_style: Rc::new(RefCell::new(MenuStyle::default())),
             self_destruct_on_external_click: Rc::new(RefCell::new(true)),
         }
@@ -125,10 +127,8 @@ impl MenuBar {
     // ensure or create all folders leading to the final menu path
     pub fn ensure_folders(&self, hat: &SortingHat, menu_path: MenuPath) {
         let folders = menu_path.folders();
-        debug!("folders {:?}", folders);
         for i in 0..folders.len() {
             let folder_path = folders[..=i].join("/");
-            debug!("folder_path {:?}", folder_path);
             if !self.contains_menu_item(MenuPath(folder_path.clone())) {
                 let path = MenuPath(folder_path);
                 let item = MenuItem::new_folder(hat, path);
@@ -181,18 +181,15 @@ impl MenuBar {
                 &self.menu_style.borrow(),
                 *self.primary_has_show_arrow.borrow(),
             ) as i32;
-            debug!("item_width {:?}", item_width);
             let loc = if *self.horizontal_bar.borrow() {
                 let x = self.max_primary_x();
                 let x = if let Some(x) = x { x + 1 } else { 0 };
-                debug!("x {:?}", x);
                 Location::new(x, x + item_width - 1, 0, 0)
             } else {
                 let y = self.max_primary_y();
                 let y = if let Some(y) = y { y + 1 } else { 0 };
-                Location::new(0, item_width - 1, y + 1, y + 1)
+                Location::new(0, item_width - 1, y, y)
             };
-            debug!("loc {:?}", loc);
             let ls = LocationSet::new(loc, vec![], Self::Z_INDEX);
             (ls, true)
         } else {
@@ -242,6 +239,16 @@ impl MenuBar {
         false
     }
 
+    pub fn get_menu_item_from_path(&self, path: MenuPath) -> Option<MenuItem> {
+        let mi = self.menu_items_order.borrow();
+        for item in mi.iter() {
+            if *item.path.borrow() == path {
+                return Some(item.clone());
+            }
+        }
+        None
+    }
+
     pub fn receive_mouse_event(
         &self, ctx: &Context, ev: crossterm::event::MouseEvent,
     ) -> (bool, EventResponses) {
@@ -261,7 +268,7 @@ impl MenuBar {
         let mep = self.pane.eo.mouse_event_process(&ev);
         let Some((el_id, mut resps)) = mep else {
             if clicked {
-                self.closedown();
+                return self.closedown();
             }
             return (true, EventResponses::default());
         };
@@ -272,7 +279,8 @@ impl MenuBar {
             return (true, resps);
         };
 
-        // XXX closedown everything expanded, then reopen back to this item
+        self.collapse_non_primary();
+        self.expand_up_to_item(ctx, item);
 
         if *item.is_folder.borrow() {
             let open_dir = if item.is_primary() {
@@ -284,26 +292,36 @@ impl MenuBar {
             self.expand_folder(ctx, item, open_dir);
 
             // update extra locations for parent eo.Locations
-            resps.push(
-                EventResponse::default()
-                    .with_extra_locations(ExtraLocationsRequest::new(self.extra_locations())),
-            );
         }
+        resps.push(
+            EventResponse::default()
+                .with_extra_locations(ExtraLocationsRequest::new(self.extra_locations())),
+        );
         (true, resps)
+    }
+
+    pub fn receive_external_mouse_event(
+        &self, _ctx: &Context, _ev: crossterm::event::MouseEvent,
+    ) -> (bool, EventResponses) {
+        self.closedown()
     }
 
     // closedown routine
     pub fn closedown(&self) -> (bool, EventResponses) {
         if *self.self_destruct_on_external_click.borrow() {
             return (true, EventResponse::default().with_destruct().into());
+            //debug!("sending back quit");
+            //return (true, EventResponse::default().with_quit().into());
         }
         *self.activated.borrow_mut() = false;
 
-        // close all non-primary menus
         let menu_items = self.menu_items.borrow();
         for (id, item) in menu_items.iter() {
+            // close all non-primary menus
             if !item.is_primary() {
                 self.pane.eo.update_el_visibility(id.clone(), false);
+            } else {
+                item.unselect();
             }
         }
 
@@ -314,19 +332,40 @@ impl MenuBar {
         (true, resps)
     }
 
-    pub fn receive_external_mouse_event(
-        &self, _ctx: &Context, _ev: crossterm::event::MouseEvent,
-    ) -> (bool, EventResponses) {
-        debug!("menu bar external mouse event");
-        self.closedown()
-    }
-
     pub fn extra_locations(&self) -> Vec<Location> {
         let mut locs = vec![];
         for details in self.pane.eo.els.borrow().values() {
             locs.push(details.loc.l.clone());
         }
         locs
+    }
+
+    pub fn collapse_non_primary(&self) {
+        let menu_items = self.menu_items.borrow();
+        for (id, item) in menu_items.iter() {
+            // close all non-primary menus
+            if !item.is_primary() {
+                self.pane.eo.update_el_visibility(id.clone(), false);
+            }
+        }
+    }
+
+    // expands all folders required to make the item visible
+    pub fn expand_up_to_item(&self, ctx: &Context, item: &MenuItem) {
+        let path = item.path.borrow();
+        let folders = path.folders();
+        for i in 0..folders.len() {
+            let folder_path = folders[..=i].join("/");
+            let folder_mp = MenuPath(folder_path);
+            if let Some(item) = self.get_menu_item_from_path(folder_mp) {
+                let open_dir = if item.is_primary() {
+                    *self.primary_open_dir.borrow()
+                } else {
+                    *self.secondary_open_dir.borrow()
+                };
+                self.expand_folder(ctx, &item, open_dir);
+            };
+        }
     }
 
     // expands all the sub-items of the provided item
@@ -354,7 +393,7 @@ impl MenuBar {
         // TODO adjust the open direction if there isn't enough space.
         let mut loc = self.pane.eo.get_location(&item.id()).expect("missing el").l;
         let item_width = loc.get_size().width;
-        for it in sub_items {
+        for (i, it) in sub_items.iter().enumerate() {
             // adjust for the next location
             match dir {
                 OpenDirection::Up => {
@@ -363,11 +402,33 @@ impl MenuBar {
                 OpenDirection::Down => {
                     loc.adjust_location_by(0, 1);
                 }
-                OpenDirection::Left => {
-                    loc.adjust_location_by(-(max_width as i32), 0);
+                OpenDirection::LeftThenDown => {
+                    if i == 0 {
+                        loc.adjust_location_by(-(max_width as i32), 0);
+                    } else {
+                        loc.adjust_location_by(0, 1);
+                    }
                 }
-                OpenDirection::Right => {
-                    loc.adjust_location_by(item_width as i32, 0);
+                OpenDirection::RightThenDown => {
+                    if i == 0 {
+                        loc.adjust_location_by(item_width as i32, 0);
+                    } else {
+                        loc.adjust_location_by(0, 1);
+                    }
+                }
+                OpenDirection::LeftThenUp => {
+                    if i == 0 {
+                        loc.adjust_location_by(-(max_width as i32), 0);
+                    } else {
+                        loc.adjust_location_by(0, -1);
+                    }
+                }
+                OpenDirection::RightThenUp => {
+                    if i == 0 {
+                        loc.adjust_location_by(item_width as i32, 0);
+                    } else {
+                        loc.adjust_location_by(0, -1);
+                    }
                 }
             };
             loc.set_width(max_width);
@@ -452,9 +513,6 @@ impl MenuItem {
         } else {
             0
         };
-        debug!("folder_len: {:?}", folder_len);
-        debug!("self.path: {:?}", self.path.borrow());
-        debug!("self.path.borrow().name(): {:?}", self.path.borrow().name());
         self.path.borrow().name().chars().count()
             + sty.left_padding
             + sty.right_padding
@@ -512,7 +570,7 @@ impl Element for MenuBar {
             }
         };
 
-        let mut out = vec![];
+        let mut out = self.pane.drawing(ctx);
 
         // draw each menu item
         for el_details in self.pane.eo.els.borrow().values() {
