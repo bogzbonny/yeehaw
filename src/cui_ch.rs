@@ -141,11 +141,7 @@ impl DrawChs2D {
         let mut out = Vec::new();
         for (y, line) in self.0.iter().enumerate() {
             for (x, ch) in line.iter().enumerate() {
-                out.push(DrawChPos::new(
-                    ch.clone(),
-                    start_x + x as u16,
-                    start_y + y as u16,
-                ));
+                out.push(DrawChPos::new(*ch, start_x + x as u16, start_y + y as u16));
             }
         }
         out

@@ -137,8 +137,6 @@ impl MenuBar {
     }
 
     fn add_item_inner(&self, item: MenuItem) {
-        self.menu_items.borrow_mut().insert(item.id(), item.clone());
-        self.menu_items_order.borrow_mut().push(item.clone());
         let is_primary = item.is_primary();
         let (loc, vis) = if is_primary {
             let item_width = item.min_width(
@@ -160,7 +158,9 @@ impl MenuBar {
         self.pane
             .eo
             .borrow_mut()
-            .add_element(Rc::new(RefCell::new(item)), None, loc, vis);
+            .add_element(Rc::new(RefCell::new(item.clone())), None, loc, vis);
+        self.menu_items.borrow_mut().insert(item.id(), item.clone());
+        self.menu_items_order.borrow_mut().push(item);
 
         // correct widths if non-horizontal if this was a new primary being added
         if is_primary && !*self.horizontal_bar.borrow() {

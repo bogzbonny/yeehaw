@@ -80,6 +80,10 @@ impl ElementOrganizer {
             .expect("must get locations which doesn't exist")
     }
 
+    pub fn get_locations(&self, el_id: ElementID) -> Option<&LocationSet> {
+        self.locations.get(&el_id)
+    }
+
     // get_el_at_pos returns the element at the given position
     pub fn get_el_at_pos(&self, x: i32, y: i32) -> Option<Rc<RefCell<dyn Element>>> {
         for (id, locs) in &self.locations {

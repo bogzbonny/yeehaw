@@ -2,4 +2,4 @@ pub mod menu;
 pub mod pane_parent;
 pub mod pane_standard;
 
-pub use {pane_parent::ParentPane, pane_standard::StandardPane};
+pub use {menu::MenuBar, pane_parent::ParentPane, pane_standard::StandardPane};
