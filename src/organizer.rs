@@ -49,7 +49,7 @@ impl ElementOrganizer {
         let el_id = el.borrow().id().clone();
 
         // put it at the top of the z-dim (pushing everything else down))
-        self.update_el_z_index(&el_id, 0);
+        self.update_el_z_index(&el_id, loc.z);
 
         let el_details = ElDetails::new(el.clone(), loc, vis);
         self.els.borrow_mut().insert(el_id.clone(), el_details);
@@ -308,6 +308,10 @@ impl ElementOrganizer {
             self.add_element(window.el, None, window.loc, true);
         }
 
+        if let Some(ref vis) = r.visibility {
+            self.update_el_visibility(el_id.clone(), *vis);
+        }
+
         if r.destruct {
             let ic = self.remove_element(el_id);
 
@@ -431,14 +435,9 @@ impl ElementOrganizer {
                 continue;
             }
 
-            let Some(z) = details
-                .loc
-                .get_z_index_for_point(ev.column.into(), ev.row.into())
-            else {
-                continue;
-            };
-
-            ezo.push((el_id.clone(), z));
+            if details.loc.contains(ev.column.into(), ev.row.into()) {
+                ezo.push((el_id.clone(), details.loc.z));
+            }
         }
         ezo
     }
@@ -455,11 +454,9 @@ impl ElementOrganizer {
             return None;
         }
 
-        // get highest z element that falls under mouse event
-
-        // sort z index from high to low
-        eoz.sort_by(|a, b| b.1.cmp(&a.1));
-        let el_id = eoz[0].0.clone();
+        // get the lowest-z element that falls under mouse event
+        eoz.sort_by(|a, b| a.1.cmp(&b.1)); // sort z index from low to high
+        let el_id = eoz[0].0.clone(); // first element will be the lowest z-index ("on top")
         let details = self
             .get_element_details(&el_id)
             .expect("no element for destination id");
@@ -478,18 +475,6 @@ impl ElementOrganizer {
                 self.process_receivable_event_changes(&el_id, &changes);
             }
             self.partially_process_ev_resp(&el_id, ev_resp);
-        }
-        //if let Some(changes) = ev_resp.get_receivable_event_changes() {
-        //    self.process_receivable_event_changes(&el_id, &changes);
-        //}
-        //let mut ev_resp = self.partially_process_ev_resp(&el_id, ev_resp);
-
-        // move element to top of z-dim if primary click
-        // TODO why... why do we do this here?!
-        if let crossterm::event::MouseEventKind::Up(button) = ev_adj.kind {
-            if button == crossterm::event::MouseButton::Left {
-                self.update_el_z_index(&el_id, 0);
-            }
         }
 
         // send the mouse event as an external event to all other elements

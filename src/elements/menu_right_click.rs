@@ -51,80 +51,6 @@ impl RightClickMenu {
         *self.pos.borrow_mut() = pos;
     }
 
-    /*
-    func (rcmt *RightClickMenuTemplate) CreateMenuIfRightClick(
-        ev *tcell.EventMouse) yh.CreateWindow {
-
-        if ev.Buttons() != tcell.Button2 {
-            return yh.CreateWindow{}
-        }
-
-        // create a clone of the right click menu template to be sent to the
-        // parent of the element that was right clicked
-        // NOTE: this is necessary as the right click menu is a pointer.
-        // In the case of a right click being performed on an element that
-        // already has a right click menu open, to ensure the initial right
-        // click menu is destroyed instead of the new one, the two menus cannot
-        // both be references to the same pointer.
-        rcm := rcmt.RightClickMenu.Clone()
-
-        // the location size doesn't matter as the top level element will be
-        // empty, only the sub-elements will be take up space
-        loc := yh.NewLocation(0, 0, 0, 0, RightClickMenuZIndex).ToLocations()
-
-        // adjust locations
-        evX, evY := ev.Position()
-        x, y := evX+1, evY // offset the menu by 1 to the right of the cursor
-
-        // make array of first generation of menu items
-        var firstGenMIs MenuItems
-        for _, mi := range rcm.MenuItems {
-            gen := strings.Count(string(mi.MenuPath), "/")
-            if gen > 1 {
-                continue
-            }
-            firstGenMIs = append(firstGenMIs, mi)
-        }
-
-        // get the largest first generation menu item
-        largestFirstGen := firstGenMIs.LargestMenuItemNameAndPaddingLen()
-
-        // config the locations, Visibility and selection status of the menu items
-        for _, mi := range rcm.MenuItems {
-
-            mi.Unselect()                // unselect each menu item
-            id := rcm.EO.GetIDFromEl(mi) // get mi id
-
-            // only configure the direct children of the root menu item
-            // (menuPaths with a single slash)
-            // NOTE: menu items that are children of other menu items
-            // will be configured when the parent menu item is selected
-            gen := strings.Count(string(mi.MenuPath), "/")
-
-            // update locations and Visibility
-            var miLoc yh.Location
-            if gen == 1 {
-                rcm.EO.SetVisibilityForEl(id, true)
-
-                // NOTE: only the first generation of menu items need to have their
-                // location specified as the locations of the sub menu items will
-                // be configured when a first gen w/ sub menu items is selected
-                miLoc = yh.NewLocation(x, x+largestFirstGen, y, y, RightClickMenuZIndex)
-                rcm.EO.UpdateElPrimaryLocation(id, miLoc)
-                loc.AddExtraLocation(miLoc)
-            } else {
-                rcm.EO.SetVisibilityForEl(id, false)
-            }
-
-            y++ // increase y position for next sub item
-        }
-
-        rcm.justCreated = true
-
-        return yh.NewCreateWindow(rcm, loc)
-    }
-    */
-
     // Output Some if a right click menu should be created
     pub fn create_menu_if_right_click(&self, me: MouseEvent) -> Option<EventResponses> {
         if me.kind != MouseEventKind::Up(MouseButton::Right) {
@@ -135,16 +61,19 @@ impl RightClickMenu {
         let (ev_x, ev_y) = (me.column, me.row);
         *self.pos.borrow_mut() = Point::new(ev_x.into(), ev_y.into());
 
-        //let (x, y): (i32, i32) = ((ev_x + 1).into(), ev_y.into()); // offset the menu by 1 to the right of the cursor
-        let (x, y): (i32, i32) = ((ev_x).into(), ev_y.into()); // offset the menu by 1 to the right of the cursor
+        let (x, y): (i32, i32) = ((ev_x + 1).into(), ev_y.into()); // offset the menu by 1 to the right of the cursor
 
+        self.menu.activate();
+        self.menu.deselect_all();
         self.menu.collapse_non_primary();
-        let _ = self.menu.make_primary_visible(); // TODO ensure it's okay to ignore the resps
+        let _ = self.menu.make_primary_visible();
+        let extra_locs = self.menu.extra_locations();
 
         // the location size doesn't matter as the top level element will be
         // empty, only the sub-elements will be take up space
         let loc = LocationSet::default()
-            .with_location(Location::new(x, x, y, y)) // XXX disappearing
+            .with_location(Location::new(x, x, y, y)) // placeholder
+            .with_extra(extra_locs)
             .with_z(Self::Z_INDEX);
 
         *self.just_created.borrow_mut() = true;
@@ -188,8 +117,6 @@ impl Element for RightClickMenu {
                     .clone()
                     .with_metadata(Self::MENU_POSITION_MD_KEY.to_string(), pos_bz);
 
-                // destroy the right click menu if a menu item was clicked
-                // TODO XXX verify this already happens
                 self.menu.receive_event(&ctx, ev)
             }
 
@@ -198,21 +125,7 @@ impl Element for RightClickMenu {
                     *self.just_created.borrow_mut() = false;
                     return (true, EventResponses::default());
                 }
-                self.menu.receive_event(ctx, ev);
-
-                // TODO XXX verify this already happens
-                // something external clicked, destroy the right click menu
-                //if ev.Buttons() != tcell.ButtonNone {
-                //    return yh.NewEventResponse().WithDestruct()
-                //}
-
-                //if !m.justCreated {
-                //    for _, mi := range m.MenuItems {
-                //        mi.Unselect()
-                //    }
-                //}
-
-                (true, EventResponses::default())
+                self.menu.receive_event(ctx, ev)
             }
             _ => (true, EventResponses::default()),
         }

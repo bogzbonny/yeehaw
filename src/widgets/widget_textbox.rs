@@ -14,8 +14,6 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-// TODO horizontal bar not working when wordwrap disabled
-
 // TODO better multiline cursor movement
 // retain greater cursor position between lines, ex:
 //    123456789<cursor, starting position>
@@ -464,7 +462,23 @@ impl TextBox {
     // ---------------------------------------------------------
 
     pub fn get_cursor_pos(&self) -> usize {
-        *self.cursor_pos.borrow()
+        let cur_pos = *self.cursor_pos.borrow();
+        // NOTE the cursor can be placed at the end of the text
+        // hence the position is the length
+        if cur_pos > self.text.borrow().len() {
+            self.text.borrow().len()
+        } else {
+            cur_pos
+        }
+    }
+
+    pub fn get_visual_mode_start_pos(&self) -> usize {
+        let pos = *self.visual_mode_start_pos.borrow();
+        if pos >= self.text.borrow().len() {
+            self.text.borrow().len() - 1
+        } else {
+            pos
+        }
     }
 
     pub fn set_cursor_pos(&self, ctx: &Context, new_abs_pos: usize) -> EventResponses {
@@ -477,7 +491,7 @@ impl TextBox {
     }
 
     pub fn incr_cursor_pos(&self, ctx: &Context, pos_change: isize) -> EventResponses {
-        let new_pos = (*self.cursor_pos.borrow() as isize + pos_change).max(0) as usize;
+        let new_pos = (self.get_cursor_pos() as isize + pos_change).max(0) as usize;
         self.set_cursor_pos(ctx, new_pos)
     }
 
@@ -563,7 +577,7 @@ impl TextBox {
 
     // NOTE the resp is sent in to potentially modify the offsets from numbers tb
     pub fn correct_offsets(&self, ctx: &Context, w: WrChs) -> EventResponse {
-        let (x, y) = w.cursor_x_and_y(*self.cursor_pos.borrow());
+        let (x, y) = w.cursor_x_and_y(self.get_cursor_pos());
         let (x, y) = (x.unwrap_or(0), y.unwrap_or(0));
         self.base.correct_offsets_to_view_position(ctx, x, y);
 
@@ -602,17 +616,36 @@ impl TextBox {
         resp
     }
 
+    // get the start and end position of the visually selected text
+    pub fn visual_selection_pos(&self) -> Option<(usize, usize)> {
+        let mut cur_pos = self.get_cursor_pos();
+        if *self.visual_mode.borrow() {
+            let start_pos = self.get_visual_mode_start_pos();
+            if cur_pos >= self.text.borrow().len() {
+                cur_pos = self.text.borrow().len() - 1;
+            }
+            if start_pos < cur_pos {
+                Some((start_pos, cur_pos))
+            } else {
+                Some((cur_pos, start_pos))
+            }
+        } else {
+            if cur_pos >= self.text.borrow().len() {
+                return None;
+            }
+            Some((cur_pos, cur_pos))
+        }
+    }
+
     pub fn visual_selected_text(&self) -> String {
         let text = self.text.borrow();
+        let Some((start_pos, end_pos)) = self.visual_selection_pos() else {
+            return String::new();
+        };
         if !*self.visual_mode.borrow() {
-            return text[*self.cursor_pos.borrow()].to_string();
+            return text[start_pos].to_string();
         }
-        let start_pos = *self.visual_mode_start_pos.borrow();
-        let cur_pos = *self.cursor_pos.borrow();
-        if start_pos < cur_pos {
-            return text[start_pos..cur_pos + 1].iter().collect();
-        }
-        self.text.borrow()[cur_pos..start_pos + 1].iter().collect()
+        text[start_pos..=end_pos].iter().collect()
     }
 
     pub fn delete_visual_selection(&self, ctx: &Context) -> EventResponses {
@@ -622,13 +655,13 @@ impl TextBox {
 
         // delete everything in the visual selection
         let mut rs = self.text.borrow().clone();
-        if *self.visual_mode_start_pos.borrow() < *self.cursor_pos.borrow() {
-            rs.drain(*self.visual_mode_start_pos.borrow()..*self.cursor_pos.borrow() + 1);
-            self.set_cursor_pos(ctx, *self.visual_mode_start_pos.borrow());
-        } else {
-            rs.drain(*self.cursor_pos.borrow()..*self.visual_mode_start_pos.borrow() + 1);
-            // (leave the cursor at the start of the visual selection)
-        }
+
+        let Some((start_pos, end_pos)) = self.visual_selection_pos() else {
+            return EventResponses::default();
+        };
+        rs.drain(start_pos..=end_pos);
+        self.set_cursor_pos(ctx, start_pos);
+
         *self.text.borrow_mut() = rs;
         *self.visual_mode.borrow_mut() = false;
         let w = self.get_wrapped(ctx);
@@ -645,9 +678,6 @@ impl TextBox {
 
     pub fn copy_to_clipboard(&self) -> Result<(), Error> {
         let text = self.visual_selected_text();
-        if text.is_empty() {
-            return Ok(());
-        }
         arboard::Clipboard::new()?.set_text(text)?;
         Ok(())
     }
@@ -666,10 +696,8 @@ impl TextBox {
         }
         let cliprunes = cliptext.chars().collect::<Vec<char>>();
         let mut rs = self.text.borrow().clone();
-        rs.splice(
-            *self.cursor_pos.borrow()..*self.cursor_pos.borrow(),
-            cliprunes.iter().cloned(),
-        );
+        let cur_pos = self.get_cursor_pos();
+        rs.splice(cur_pos..cur_pos, cliprunes.iter().cloned());
         *self.text.borrow_mut() = rs;
 
         self.incr_cursor_pos(ctx, cliprunes.len() as isize);
@@ -723,7 +751,7 @@ impl TextBox {
 
         let mut visual_mode_event = false;
         let visual_mode = *self.visual_mode.borrow();
-        let cursor_pos = *self.cursor_pos.borrow();
+        let cursor_pos = self.get_cursor_pos();
 
         let mut resps = EventResponses::default();
         match true {
@@ -770,7 +798,7 @@ impl TextBox {
                 visual_mode_event = true;
                 if !visual_mode {
                     *self.visual_mode.borrow_mut() = true;
-                    *self.visual_mode_start_pos.borrow_mut() = cursor_pos
+                    *self.visual_mode_start_pos.borrow_mut() = cursor_pos;
                 }
                 let w = self.get_wrapped(ctx);
                 if let Some(new_pos) = w.get_cursor_below_position(cursor_pos) {
@@ -780,7 +808,7 @@ impl TextBox {
             }
 
             _ if ev[0].matches_key(&KB::KEY_LEFT) => {
-                if cursor_pos > 0 && cursor_pos < self.text.borrow().len() {
+                if cursor_pos > 0 && cursor_pos <= self.text.borrow().len() {
                     // do not move left if at the beginning of a line
                     if self.text.borrow()[cursor_pos - 1] != '\n' {
                         self.incr_cursor_pos(ctx, -1);
@@ -837,7 +865,7 @@ impl TextBox {
                 }
             }
 
-            // NOTE useless for now keeping for future reference
+            // NOTE useless for now keeping for future reference for vim keybindings
             // (META not logged by many terminals)
             //_ if ev[0].matches_key(&KB::KEY_META_C) => {
             //    _ = self.copy_to_clipboard(); // TODO log error
@@ -899,7 +927,7 @@ impl TextBox {
         }
 
         let selectedness = self.base.get_selectability();
-        let cursor_pos = *self.cursor_pos.borrow();
+        let cursor_pos = self.get_cursor_pos();
         match ev.kind {
             MouseEventKind::ScrollDown
                 if ev.modifiers == KeyModifiers::NONE
@@ -1042,7 +1070,7 @@ impl Element for TextBox {
 
         // set cursor style
         if self.base.get_selectability() == Selectability::Selected && *self.ch_cursor.borrow() {
-            let (cur_x, cur_y) = w.cursor_x_and_y(*self.cursor_pos.borrow());
+            let (cur_x, cur_y) = w.cursor_x_and_y(self.get_cursor_pos());
             if let (Some(cur_x), Some(cur_y)) = (cur_x, cur_y) {
                 self.base.sp.content.borrow_mut().change_style_at_xy(
                     cur_x,
@@ -1052,12 +1080,11 @@ impl Element for TextBox {
             }
         }
         if *self.visual_mode.borrow() {
-            let start_pos = *self.visual_mode_start_pos.borrow();
-            let cur_pos = *self.cursor_pos.borrow();
+            let start_pos = self.get_visual_mode_start_pos();
+            let cur_pos = self.get_cursor_pos();
 
             let start = if start_pos < cur_pos { start_pos } else { cur_pos };
             let end = if start_pos < cur_pos { cur_pos } else { start_pos };
-
             for i in start..=end {
                 if let (Some(cur_x), Some(cur_y)) = w.cursor_x_and_y(i) {
                     self.base.sp.content.borrow_mut().change_style_at_xy(

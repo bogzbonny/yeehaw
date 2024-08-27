@@ -230,6 +230,8 @@ pub struct EventResponse {
     // sends a request to the parent to change the extra locations
     // of the element
     pub extra_locations: Option<ExtraLocationsRequest>,
+    // set the visibility of the element
+    pub visibility: Option<bool>,
     // contains priority updates that should be made to the receiver's prioritizer
     pub inputability_changes: Option<ReceivableEventChanges>,
     // for use with scrollbars
@@ -286,9 +288,12 @@ impl EventResponse {
     pub fn set_relocation(&mut self, r: RelocationRequest) {
         self.relocation = Some(r);
     }
-
     pub fn with_extra_locations(mut self, elr: ExtraLocationsRequest) -> EventResponse {
         self.extra_locations = Some(elr);
+        self
+    }
+    pub fn with_visibility(mut self, v: bool) -> EventResponse {
+        self.visibility = Some(v);
         self
     }
 

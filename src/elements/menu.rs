@@ -295,6 +295,15 @@ impl MenuBar {
             return (true, resps);
         };
 
+        // close the menu if there was a click on a non-folder item
+        if matches!(ev.kind, MouseEventKind::Up(_))
+            && !*item.is_folder.borrow()
+            && *item.selectable.borrow()
+        {
+            return self.closedown();
+        }
+
+        // reopen everything to the item and its sub-folder
         self.collapse_non_primary();
         self.expand_up_to_item(ctx, item);
 
@@ -317,9 +326,16 @@ impl MenuBar {
     }
 
     pub fn receive_external_mouse_event(
-        &self, _ctx: &Context, _ev: crossterm::event::MouseEvent,
+        &self, _ctx: &Context, ev: crossterm::event::MouseEvent,
     ) -> (bool, EventResponses) {
-        self.closedown()
+        let clicked = matches!(
+            ev.kind,
+            MouseEventKind::Up(_) | MouseEventKind::Down(_) | MouseEventKind::Drag(_)
+        );
+        if clicked {
+            return self.closedown();
+        }
+        (false, EventResponses::default())
     }
 
     // closedown routine
@@ -338,10 +354,16 @@ impl MenuBar {
         }
 
         // update extra locations for parent eo
-        let resps: EventResponses = EventResponse::default()
-            .with_extra_locations(ExtraLocationsRequest::new(self.extra_locations()))
-            .into();
-        (true, resps)
+        let mut resp: EventResponse = EventResponse::default()
+            .with_extra_locations(ExtraLocationsRequest::new(self.extra_locations()));
+
+        if make_invis {
+            // make the actual menu bar element invisible in the parent eo
+            resp = resp.with_visibility(false);
+            //resp = resp.with_destruct();
+        }
+
+        (true, resp.into())
     }
 
     // useful for right click menu
@@ -357,6 +379,18 @@ impl MenuBar {
         EventResponse::default()
             .with_extra_locations(ExtraLocationsRequest::new(self.extra_locations()))
             .into()
+    }
+
+    // useful for right click menu
+    pub fn deselect_all(&self) {
+        let menu_items = self.menu_items.borrow();
+        for item in menu_items.values() {
+            item.unselect();
+        }
+    }
+
+    pub fn activate(&self) {
+        *self.activated.borrow_mut() = true;
     }
 
     pub fn extra_locations(&self) -> Vec<Location> {
