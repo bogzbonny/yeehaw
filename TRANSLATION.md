@@ -26,12 +26,12 @@
         pane_scrollable.go               │
         pane_stack_std.go                │
       command.go                         │
-      menu.go                            │
-      menu_item.go                       │
-      menu_rightclick.go                 │
-      pane_parent.go                     │
-      pane_size.go                       │
-      pane_stack.go                      │
+      menu.go                            │ DONE
+      menu_item.go                       │ DONE (integrated into menu)
+      menu_rightclick.go                 │ 
+      pane_parent.go                     │ DONE
+      pane_size.go                       │ 
+      pane_stack.go                      │ 
       pane_standard.go                   │ DONE
       tab.go                             │
   ▾ examples/                            │

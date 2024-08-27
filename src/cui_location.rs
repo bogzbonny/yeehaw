@@ -229,6 +229,7 @@ impl Size {
     }
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Default, Debug, PartialEq)]
 pub struct Point {
     pub x: i32,
     pub y: i32,

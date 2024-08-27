@@ -4,9 +4,11 @@ use {
         VerticalSBPositions, VerticalScrollbar, WBStyles, Widget, WidgetBase, Widgets,
     },
     crate::{
-        element::RelocationRequest, Context, DrawCh, DrawChPos, Element, ElementID, Error, Event,
-        EventResponse, EventResponses, KeyPossibility, Keyboard as KB, Priority,
-        ReceivableEventChanges, RgbColour, SortingHat, Style, UpwardPropagator,
+        element::RelocationRequest,
+        elements::menu::{MenuItem, MenuPath, MenuStyle},
+        Context, DrawCh, DrawChPos, Element, ElementID, Error, Event, EventResponse,
+        EventResponses, KeyPossibility, Keyboard as KB, Priority, ReceivableEventChanges,
+        RgbColour, RightClickMenu, SortingHat, Style, UpwardPropagator,
     },
     crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -56,8 +58,7 @@ pub struct TextBox {
 
     // for when there are two scrollbars
     pub corner_decor: Rc<RefCell<DrawCh>>,
-    // XXX TODO
-    //pub right_click_menu: Rc<RefCell<Option<RightClickMenuTemplate>>>,
+    pub right_click_menu: Rc<RefCell<Option<RightClickMenu>>>,
 }
 
 impl TextBox {
@@ -88,7 +89,6 @@ impl TextBox {
     };
 
     const DEFAULT_CURSOR_STYLE: Style = Style::new().with_bg(RgbColour::BLUE);
-    //const DEFAULT_RIGHT_CLICK_MENU_STYLE: Style = Style::new().with_bg(RgbColour::LIME);
 
     // for textboxes which are editable
     pub fn editable_receivable_events() -> Vec<Event> {
@@ -154,31 +154,30 @@ impl TextBox {
             y_scrollbar: Rc::new(RefCell::new(None)),
             line_number_tb: Rc::new(RefCell::new(None)),
             corner_decor: Rc::new(RefCell::new(DrawCh::new('⁙', false, Style::default()))),
+            right_click_menu: Rc::new(RefCell::new(None)),
         };
 
-        // XXX TODO
-        //rcm := els.NewRightClickMenuTemplate(DefaultRightClickMenuStyle)
-        //rcm.SetMenuItems([]*els.MenuItem{
-        //    els.NewMenuItem("Cut", true,
-        //        func(_ yh.Context) yh.EventResponse {
-        //            resp, _ := tb.CutToClipboard()
-        //            return resp
-        //        },
-        //    ),
-        //    els.NewMenuItem("Copy", true,
-        //        func(_ yh.Context) yh.EventResponse {
-        //            _ = tb.CopyToClipboard()
-        //            return yh.NewEventResponse()
-        //        },
-        //    ),
-        //    els.NewMenuItem("Paste", true,
-        //        func(_ yh.Context) yh.EventResponse {
-        //            resp, _ := tb.PasteFromClipboard()
-        //            return resp
-        //        },
-        //    ),
-        //})
-        //tb.RightClickMenu = rcm
+        let tb1 = tb.clone();
+        let tb2 = tb.clone();
+        let tb3 = tb.clone();
+        let rcm = RightClickMenu::new(hat, MenuStyle::default()).with_menu_items(
+            hat,
+            vec![
+                MenuItem::new(hat, MenuPath("Cut".to_string())).with_click_fn(Some(Box::new(
+                    move |ctx| tb1.cut_to_clipboard(&ctx).unwrap(),
+                ))),
+                MenuItem::new(hat, MenuPath("Copy".to_string())).with_click_fn(Some(Box::new(
+                    move |_ctx| {
+                        tb2.copy_to_clipboard().unwrap();
+                        EventResponses::default()
+                    },
+                ))),
+                MenuItem::new(hat, MenuPath("Paste".to_string())).with_click_fn(Some(Box::new(
+                    move |ctx| tb3.paste_from_clipboard(&ctx).unwrap(),
+                ))),
+            ],
+        );
+        *tb.right_click_menu.borrow_mut() = Some(rcm);
 
         let _ = tb.drawing(ctx); // to set the base content
         tb
@@ -207,11 +206,10 @@ impl TextBox {
         self
     }
 
-    // XXX TODO
-    //pub fn with_right_click_menu(mut self) -> Self {
-    //self.right_click_menu = rcm;
-    //    self
-    //}
+    pub fn with_right_click_menu(self, rcm: RightClickMenu) -> Self {
+        *self.right_click_menu.borrow_mut() = Some(rcm);
+        self
+    }
 
     pub fn with_styles(self, styles: WBStyles) -> Self {
         self.base.set_styles(styles);
@@ -581,7 +579,7 @@ impl TextBox {
             let (lns, lnw) = self.get_line_numbers(ctx);
             let last_lnw = ln_tb.base.get_width(ctx);
             if lnw != last_lnw {
-                let diff_lnw = lnw as isize - last_lnw as isize; // XXX causes panic when moving down need isize??
+                let diff_lnw = lnw as isize - last_lnw as isize;
                 let new_tb_width = if diff_lnw > 0 {
                     self.base
                         .get_attr_scl_width()
@@ -893,14 +891,12 @@ impl TextBox {
     }
 
     pub fn receive_mouse_event(&self, ctx: &Context, ev: MouseEvent) -> (bool, EventResponses) {
-        // handle right click XXX TODO
-        //if tb.RightClickMenu != nil {
-        //    // send the event to the right click menu to check for right click
-        //    createRCM := tb.RightClickMenu.CreateMenuIfRightClick(ev)
-        //    if createRCM.HasWindow() {
-        //        return true, yh.NewEventResponse().WithWindow(createRCM)
-        //    }
-        //}
+        // handle right click
+        if let Some(rcm) = &*self.right_click_menu.borrow() {
+            if let Some(resp) = rcm.create_menu_if_right_click(ev) {
+                return (true, resp);
+            }
+        }
 
         let selectedness = self.base.get_selectability();
         let cursor_pos = *self.cursor_pos.borrow();

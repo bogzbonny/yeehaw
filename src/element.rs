@@ -1,6 +1,7 @@
 use {
     crate::{prioritizer::Priority, DrawChPos, ElementID, Event, Location, LocationSet, Size},
     std::any::Any,
+    std::collections::HashMap,
     std::ops::{Deref, DerefMut},
     std::{cell::RefCell, rc::Rc},
 };
@@ -133,7 +134,8 @@ pub trait UpwardPropagator {
 pub struct Context {
     pub s: Size,
     pub visible: bool,
-    pub metadata: Option<Vec<u8>>,
+    //                      key , value
+    pub metadata: HashMap<String, Vec<u8>>,
 }
 
 impl Context {
@@ -141,7 +143,7 @@ impl Context {
         Context {
             s,
             visible,
-            metadata: None,
+            metadata: HashMap::new(),
         }
     }
 
@@ -151,16 +153,21 @@ impl Context {
         Context {
             s: Size::new(xmax, ymax),
             visible: true,
-            metadata: None,
+            metadata: HashMap::new(),
         }
     }
 
-    pub fn with_metadata(self, md: Vec<u8>) -> Context {
-        Context {
-            s: self.s,
-            visible: self.visible,
-            metadata: Some(md),
-        }
+    pub fn with_metadata(mut self, key: String, md: Vec<u8>) -> Self {
+        self.metadata.insert(key, md);
+        self
+    }
+
+    pub fn clear_metadata(&mut self) {
+        self.metadata.clear();
+    }
+
+    pub fn get_metadata(&self, key: &str) -> Option<Vec<u8>> {
+        self.metadata.get(key).cloned()
     }
 
     pub fn get_width(&self) -> u16 {

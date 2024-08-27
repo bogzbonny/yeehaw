@@ -1,0 +1,236 @@
+use {
+    crate::{
+        element::CreateWindow,
+        element::ReceivableEventChanges,
+        elements::menu::{MenuItem, MenuStyle},
+        Context, DrawChPos, Element, ElementID, Event, EventResponse, EventResponses, Location,
+        LocationSet, MenuBar, Point, Priority, SortingHat, UpwardPropagator, ZIndex,
+    },
+    crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
+    std::{cell::RefCell, rc::Rc},
+};
+
+//pub struct RightClickMenuTemplate(pub MenuBar);
+
+// ---------------------------------------------------
+// The menu destroys itself when it is closed.
+#[derive(Clone)]
+pub struct RightClickMenu {
+    pub menu: MenuBar,
+
+    // the position of the inital right click which
+    // opened the menu. This information is passed
+    // into the menuItem function events through the
+    // context
+    pub pos: Rc<RefCell<Point>>,
+
+    // used to prevent the first external mouse event
+    // from closing the right click menu
+    pub just_created: Rc<RefCell<bool>>,
+}
+
+impl RightClickMenu {
+    pub const MENU_POSITION_MD_KEY: &'static str = "menu_position";
+    pub const Z_INDEX: ZIndex = -100;
+
+    pub fn new(hat: &SortingHat, sty: MenuStyle) -> Self {
+        let menu = MenuBar::right_click_menu(hat).with_menu_style(sty);
+        Self {
+            menu,
+            pos: Rc::new(RefCell::new(Point::default())),
+            just_created: Rc::new(RefCell::new(true)),
+        }
+    }
+
+    pub fn with_menu_items(self, hat: &SortingHat, items: Vec<MenuItem>) -> Self {
+        self.menu.set_items(hat, items);
+        self
+    }
+
+    pub fn set_menu_pos(&mut self, pos: Point) {
+        *self.pos.borrow_mut() = pos;
+    }
+
+    /*
+    func (rcmt *RightClickMenuTemplate) CreateMenuIfRightClick(
+        ev *tcell.EventMouse) yh.CreateWindow {
+
+        if ev.Buttons() != tcell.Button2 {
+            return yh.CreateWindow{}
+        }
+
+        // create a clone of the right click menu template to be sent to the
+        // parent of the element that was right clicked
+        // NOTE: this is necessary as the right click menu is a pointer.
+        // In the case of a right click being performed on an element that
+        // already has a right click menu open, to ensure the initial right
+        // click menu is destroyed instead of the new one, the two menus cannot
+        // both be references to the same pointer.
+        rcm := rcmt.RightClickMenu.Clone()
+
+        // the location size doesn't matter as the top level element will be
+        // empty, only the sub-elements will be take up space
+        loc := yh.NewLocation(0, 0, 0, 0, RightClickMenuZIndex).ToLocations()
+
+        // adjust locations
+        evX, evY := ev.Position()
+        x, y := evX+1, evY // offset the menu by 1 to the right of the cursor
+
+        // make array of first generation of menu items
+        var firstGenMIs MenuItems
+        for _, mi := range rcm.MenuItems {
+            gen := strings.Count(string(mi.MenuPath), "/")
+            if gen > 1 {
+                continue
+            }
+            firstGenMIs = append(firstGenMIs, mi)
+        }
+
+        // get the largest first generation menu item
+        largestFirstGen := firstGenMIs.LargestMenuItemNameAndPaddingLen()
+
+        // config the locations, Visibility and selection status of the menu items
+        for _, mi := range rcm.MenuItems {
+
+            mi.Unselect()                // unselect each menu item
+            id := rcm.EO.GetIDFromEl(mi) // get mi id
+
+            // only configure the direct children of the root menu item
+            // (menuPaths with a single slash)
+            // NOTE: menu items that are children of other menu items
+            // will be configured when the parent menu item is selected
+            gen := strings.Count(string(mi.MenuPath), "/")
+
+            // update locations and Visibility
+            var miLoc yh.Location
+            if gen == 1 {
+                rcm.EO.SetVisibilityForEl(id, true)
+
+                // NOTE: only the first generation of menu items need to have their
+                // location specified as the locations of the sub menu items will
+                // be configured when a first gen w/ sub menu items is selected
+                miLoc = yh.NewLocation(x, x+largestFirstGen, y, y, RightClickMenuZIndex)
+                rcm.EO.UpdateElPrimaryLocation(id, miLoc)
+                loc.AddExtraLocation(miLoc)
+            } else {
+                rcm.EO.SetVisibilityForEl(id, false)
+            }
+
+            y++ // increase y position for next sub item
+        }
+
+        rcm.justCreated = true
+
+        return yh.NewCreateWindow(rcm, loc)
+    }
+    */
+
+    // Output Some if a right click menu should be created
+    pub fn create_menu_if_right_click(&self, me: MouseEvent) -> Option<EventResponses> {
+        if me.kind != MouseEventKind::Up(MouseButton::Right) {
+            return None;
+        }
+
+        // adjust locations
+        let (ev_x, ev_y) = (me.column, me.row);
+        *self.pos.borrow_mut() = Point::new(ev_x.into(), ev_y.into());
+
+        //let (x, y): (i32, i32) = ((ev_x + 1).into(), ev_y.into()); // offset the menu by 1 to the right of the cursor
+        let (x, y): (i32, i32) = ((ev_x).into(), ev_y.into()); // offset the menu by 1 to the right of the cursor
+
+        self.menu.collapse_non_primary();
+        let _ = self.menu.make_primary_visible(); // TODO ensure it's okay to ignore the resps
+
+        // the location size doesn't matter as the top level element will be
+        // empty, only the sub-elements will be take up space
+        let loc = LocationSet::default()
+            .with_location(Location::new(x, x, y, y)) // XXX disappearing
+            .with_z(Self::Z_INDEX);
+
+        *self.just_created.borrow_mut() = true;
+
+        Some(
+            EventResponse::default()
+                .with_window(CreateWindow::new(
+                    Rc::new(RefCell::new((*self).clone())),
+                    loc,
+                ))
+                .into(),
+        )
+    }
+}
+
+impl Element for RightClickMenu {
+    fn kind(&self) -> &'static str {
+        self.menu.kind()
+    }
+    fn id(&self) -> ElementID {
+        self.menu.id()
+    }
+    fn receivable(&self) -> Vec<(Event, Priority)> {
+        self.menu.receivable()
+    }
+
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        match ev {
+            Event::Mouse(_) => {
+                // addend the mouse position to the context metadata
+                // so that the menu items may know the overall position
+                // of the right click.
+                let pos_bz = match serde_json::to_vec(&*self.pos.borrow()) {
+                    Ok(v) => v,
+                    Err(_e) => {
+                        // TODO log error
+                        return (true, EventResponses::default());
+                    }
+                };
+                let ctx = ctx
+                    .clone()
+                    .with_metadata(Self::MENU_POSITION_MD_KEY.to_string(), pos_bz);
+
+                // destroy the right click menu if a menu item was clicked
+                // TODO XXX verify this already happens
+                self.menu.receive_event(&ctx, ev)
+            }
+
+            Event::ExternalMouse(_) => {
+                if *self.just_created.borrow() {
+                    *self.just_created.borrow_mut() = false;
+                    return (true, EventResponses::default());
+                }
+                self.menu.receive_event(ctx, ev);
+
+                // TODO XXX verify this already happens
+                // something external clicked, destroy the right click menu
+                //if ev.Buttons() != tcell.ButtonNone {
+                //    return yh.NewEventResponse().WithDestruct()
+                //}
+
+                //if !m.justCreated {
+                //    for _, mi := range m.MenuItems {
+                //        mi.Unselect()
+                //    }
+                //}
+
+                (true, EventResponses::default())
+            }
+            _ => (true, EventResponses::default()),
+        }
+    }
+
+    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
+        self.menu.change_priority(ctx, p)
+    }
+    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        self.menu.drawing(ctx)
+    }
+    fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
+        self.menu.get_attribute(key)
+    }
+    fn set_attribute(&self, key: &str, value: Vec<u8>) {
+        self.menu.set_attribute(key, value)
+    }
+    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
+        self.menu.set_upward_propagator(up)
+    }
+}

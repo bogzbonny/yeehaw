@@ -25,7 +25,7 @@ pub struct MenuBar {
     primary_open_dir: Rc<RefCell<OpenDirection>>, // used only for the first level of menu items
     secondary_open_dir: Rc<RefCell<OpenDirection>>, // used for all other levels of menu items
     menu_style: Rc<RefCell<MenuStyle>>,
-    self_destruct_on_external_click: Rc<RefCell<bool>>,
+    make_invisible_on_closedown: Rc<RefCell<bool>>, // useful for right click menu
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
@@ -70,6 +70,7 @@ pub enum OpenDirection {
 impl MenuBar {
     const KIND: &'static str = "menu_bar";
     const Z_INDEX: ZIndex = -100; // very front
+    const MENU_STYLE_MD_KEY: &'static str = "menu_style";
 
     pub fn top_menu_bar(hat: &SortingHat) -> Self {
         MenuBar {
@@ -82,7 +83,7 @@ impl MenuBar {
             primary_open_dir: Rc::new(RefCell::new(OpenDirection::Down)),
             secondary_open_dir: Rc::new(RefCell::new(OpenDirection::RightThenDown)),
             menu_style: Rc::new(RefCell::new(MenuStyle::default())),
-            self_destruct_on_external_click: Rc::new(RefCell::new(false)),
+            make_invisible_on_closedown: Rc::new(RefCell::new(false)),
         }
     }
 
@@ -97,7 +98,7 @@ impl MenuBar {
             primary_open_dir: Rc::new(RefCell::new(OpenDirection::RightThenDown)),
             secondary_open_dir: Rc::new(RefCell::new(OpenDirection::RightThenDown)),
             menu_style: Rc::new(RefCell::new(MenuStyle::default())),
-            self_destruct_on_external_click: Rc::new(RefCell::new(true)),
+            make_invisible_on_closedown: Rc::new(RefCell::new(true)),
         }
     }
 
@@ -122,6 +123,21 @@ impl MenuBar {
         self.ensure_folders(hat, mp.clone());
         let item = MenuItem::new(hat, mp).with_click_fn(click_fn);
         self.add_item_inner(item);
+    }
+
+    pub fn with_item(
+        self, hat: &SortingHat, menu_path: String,
+        click_fn: Option<Box<dyn FnMut(Context) -> EventResponses>>,
+    ) -> Self {
+        self.add_item(hat, menu_path, click_fn);
+        self
+    }
+
+    pub fn set_items(&self, hat: &SortingHat, items: Vec<MenuItem>) {
+        for item in items {
+            self.ensure_folders(hat, item.path.borrow().clone());
+            self.add_item_inner(item);
+        }
     }
 
     // ensure or create all folders leading to the final menu path
@@ -308,17 +324,13 @@ impl MenuBar {
 
     // closedown routine
     pub fn closedown(&self) -> (bool, EventResponses) {
-        if *self.self_destruct_on_external_click.borrow() {
-            return (true, EventResponse::default().with_destruct().into());
-            //debug!("sending back quit");
-            //return (true, EventResponse::default().with_quit().into());
-        }
         *self.activated.borrow_mut() = false;
+        let make_invis = *self.make_invisible_on_closedown.borrow();
 
         let menu_items = self.menu_items.borrow();
         for (id, item) in menu_items.iter() {
             // close all non-primary menus
-            if !item.is_primary() {
+            if !item.is_primary() || make_invis {
                 self.pane.eo.update_el_visibility(id.clone(), false);
             } else {
                 item.unselect();
@@ -330,6 +342,21 @@ impl MenuBar {
             .with_extra_locations(ExtraLocationsRequest::new(self.extra_locations()))
             .into();
         (true, resps)
+    }
+
+    // useful for right click menu
+    pub fn make_primary_visible(&self) -> EventResponses {
+        let menu_items = self.menu_items.borrow();
+        for (id, item) in menu_items.iter() {
+            if item.is_primary() {
+                self.pane.eo.update_el_visibility(id.clone(), true);
+            }
+        }
+
+        // update extra locations for parent eo
+        EventResponse::default()
+            .with_extra_locations(ExtraLocationsRequest::new(self.extra_locations()))
+            .into()
     }
 
     pub fn extra_locations(&self) -> Vec<Location> {
@@ -576,7 +603,8 @@ impl Element for MenuBar {
         for el_details in self.pane.eo.els.borrow().values() {
             // offset pos to location
             let s = el_details.loc.l.get_size();
-            let c = Context::new(s, el_details.vis).with_metadata(menu_style_bz.clone());
+            let c = Context::new(s, el_details.vis)
+                .with_metadata(Self::MENU_STYLE_MD_KEY.to_string(), menu_style_bz.clone());
             let dcps = el_details.el.borrow().drawing(&c);
 
             for mut dcp in dcps {
@@ -636,7 +664,7 @@ impl Element for MenuItem {
             return vec![];
         }
 
-        let Some(ref md) = ctx.metadata else {
+        let Some(ref md) = ctx.get_metadata(MenuBar::MENU_STYLE_MD_KEY) else {
             return vec![];
         };
 
@@ -707,7 +735,7 @@ impl Element for MenuItem {
 // represents a menu item which lives in the top-level menu "nwmod" within the
 // sub-menu "cool_stuff" with the name "blaze".
 #[derive(Clone, PartialEq, Debug)]
-pub struct MenuPath(String);
+pub struct MenuPath(pub String);
 
 impl MenuPath {
     // Name returns the name of the menu item at the end of the menu path
