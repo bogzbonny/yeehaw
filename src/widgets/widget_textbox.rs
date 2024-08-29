@@ -1,6 +1,6 @@
 use {
     super::{
-        common, HorizontalSBPositions, HorizontalScrollbar, Label, SclVal, Selectability,
+        common, HorizontalSBPositions, HorizontalScrollbar, Label, Selectability,
         VerticalSBPositions, VerticalScrollbar, WBStyles, Widget, WidgetBase, Widgets,
     },
     crate::{
@@ -8,7 +8,7 @@ use {
         elements::menu::{MenuItem, MenuPath, MenuStyle},
         Context, DrawCh, DrawChPos, Element, ElementID, Error, Event, EventResponse,
         EventResponses, KeyPossibility, Keyboard as KB, Priority, ReceivableEventChanges,
-        RgbColour, RightClickMenu, SortingHat, Style, UpwardPropagator,
+        RgbColour, RightClickMenu, SclVal, SortingHat, Style, UpwardPropagator,
     },
     crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},

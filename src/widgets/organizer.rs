@@ -233,7 +233,7 @@ impl WidgetOrganizer {
             clicked = true;
         }
 
-        let mut most_front_z_index = 1000; // lowest value is the most front
+        let mut most_front_z_index = i32::MAX; // lowest value is the most front
         let mut widget_index = None; // index of widget with most front z index
         let mut widget_loc = LocationSet::default();
 

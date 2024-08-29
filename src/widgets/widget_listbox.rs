@@ -1,11 +1,11 @@
 use {
     super::{
-        SclVal, Selectability, VerticalSBPositions, VerticalScrollbar, WBStyles, Widget,
-        WidgetBase, Widgets,
+        Selectability, VerticalSBPositions, VerticalScrollbar, WBStyles, Widget, WidgetBase,
+        Widgets,
     },
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponses, Keyboard as KB, Priority,
-        ReceivableEventChanges, RgbColour, SortingHat, Style, UpwardPropagator,
+        ReceivableEventChanges, RgbColour, SclVal, SortingHat, Style, UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},

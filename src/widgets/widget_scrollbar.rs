@@ -1,8 +1,8 @@
 use {
-    super::{SclVal, Selectability, WBStyles, Widget, WidgetBase, Widgets},
+    super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponses, KeyPossibility,
-        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SortingHat, Style,
+        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SclVal, SortingHat, Style,
         UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEvent, MouseEventKind},

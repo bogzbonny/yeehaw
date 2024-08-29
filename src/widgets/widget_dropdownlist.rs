@@ -1,9 +1,9 @@
 use {
-    super::{SclVal, Selectability, VerticalScrollbar, WBStyles, Widget, WidgetBase, Widgets},
+    super::{Selectability, VerticalScrollbar, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         element::RelocationRequest, Context, DrawCh, DrawChPos, Element, ElementID, Event,
         EventResponse, EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, RgbColour,
-        SortingHat, Style, UpwardPropagator, ZIndex,
+        SclVal, SortingHat, Style, UpwardPropagator, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -333,11 +333,15 @@ impl Element for DropdownList {
                     _ if open && ke[0].matches_key(&KB::KEY_ENTER) => {
                         (true, self.perform_close(ctx, false))
                     }
-                    _ if open && ke[0].matches_key(&KB::KEY_DOWN) || ke[0].matches_key(&KB::KEY_J) => {
+                    _ if open && ke[0].matches_key(&KB::KEY_DOWN)
+                        || ke[0].matches_key(&KB::KEY_J) =>
+                    {
                         self.cursor_down(ctx);
                         (true, EventResponses::default())
                     }
-                    _ if open && ke[0].matches_key(&KB::KEY_UP) || ke[0].matches_key(&KB::KEY_K) => {
+                    _ if open && ke[0].matches_key(&KB::KEY_UP)
+                        || ke[0].matches_key(&KB::KEY_K) =>
+                    {
                         self.cursor_up(ctx);
                         (true, EventResponses::default())
                     }

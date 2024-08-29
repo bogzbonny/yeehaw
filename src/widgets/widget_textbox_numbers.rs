@@ -1,8 +1,9 @@
 use {
-    super::{Button, SclVal, Selectability, TextBox, WBStyles, Widget, Widgets},
+    super::{Button, Selectability, TextBox, WBStyles, Widget, Widgets},
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponses, KeyPossibility,
-        Keyboard as KB, Priority, ReceivableEventChanges, SortingHat, Style, UpwardPropagator,
+        Keyboard as KB, Priority, ReceivableEventChanges, SclVal, SortingHat, Style,
+        UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
 };

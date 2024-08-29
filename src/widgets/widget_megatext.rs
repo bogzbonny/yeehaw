@@ -1,8 +1,8 @@
 use {
-    super::{Megafont, SclVal, Selectability, WBStyles, Widget, WidgetBase, Widgets},
+    super::{Megafont, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponses, Priority,
-        ReceivableEventChanges, SortingHat, UpwardPropagator,
+        ReceivableEventChanges, SclVal, SortingHat, UpwardPropagator,
     },
 };
 

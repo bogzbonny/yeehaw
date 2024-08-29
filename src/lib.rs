@@ -12,6 +12,7 @@ pub mod event;
 pub mod keyboard;
 pub mod organizer;
 pub mod prioritizer;
+pub mod scaled_value;
 pub mod sorting_hat;
 pub mod style;
 pub mod widgets;
@@ -31,6 +32,7 @@ pub use {
     keyboard::Keyboard,
     organizer::ElementOrganizer,
     prioritizer::Priority,
+    scaled_value::{SclLocation, SclVal},
     sorting_hat::{ElementID, SortingHat},
     style::{Style, YHAttributes},
     widgets::WidgetPane,

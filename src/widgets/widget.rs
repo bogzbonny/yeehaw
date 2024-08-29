@@ -1,9 +1,9 @@
 use {
-    super::{Label, SclLocation, SclVal},
+    super::Label,
     crate::{
         event::Event, Context, DrawCh, DrawChPos, DrawChs2D, Element, ElementID, EventResponse,
-        EventResponses, Priority, ReceivableEventChanges, SortingHat, StandardPane, Style,
-        UpwardPropagator, ZIndex,
+        EventResponses, Priority, ReceivableEventChanges, SclLocation, SclVal, SortingHat,
+        StandardPane, Style, UpwardPropagator, ZIndex,
     },
     std::{cell::RefCell, rc::Rc},
 };
