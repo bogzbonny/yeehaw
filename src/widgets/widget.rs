@@ -3,7 +3,7 @@ use {
     crate::{
         event::Event, Context, DrawCh, DrawChPos, DrawChs2D, Element, ElementID, EventResponse,
         EventResponses, Priority, ReceivableEventChanges, SclLocation, SclVal, SortingHat,
-        StandardPane, Style, UpwardPropagator, ZIndex,
+        Pane, Style, UpwardPropagator, ZIndex,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -312,7 +312,7 @@ impl Widgets {
 
 #[derive(Clone)]
 pub struct WidgetBase {
-    pub pane: StandardPane,
+    pub pane: Pane,
     pub styles: Rc<RefCell<WBStyles>>,
 }
 
@@ -325,7 +325,7 @@ impl WidgetBase {
             .drain(..)
             .map(|ev| (ev, Priority::FOCUSED))
             .collect();
-        let pane = StandardPane::new(hat, kind).with_self_receivable_events(evs);
+        let pane = Pane::new(hat, kind).with_self_receivable_events(evs);
 
         let wb = Self {
             pane,

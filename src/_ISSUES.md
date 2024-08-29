@@ -205,9 +205,9 @@ ParentPane could look through the IC returned by EO.ChangePriorityForEl, check
 the RmRecEvs for matches to ParentPane.SelfEvs and update the IC.AddRecEvs
 accordingly.
 
-##[2211-2202] - Think about Adding OverallPriority to StandardPane
+##[2211-2202] - Think about Adding OverallPriority to Pane
 DON'T IMPLEMENT
-AFFECTED FILES: StandardPane.go
+AFFECTED FILES: pane.rs
 
 - SEPARATE from priorities of keystrokes and commands
 - wouldn't affect prioritizers

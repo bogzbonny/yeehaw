@@ -2,14 +2,14 @@ use {
     super::{Widget, WidgetOrganizer, Widgets},
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponses, LocationSet, Priority,
-        ReceivableEventChanges, SclLocation, SortingHat, StandardPane, UpwardPropagator,
+        ReceivableEventChanges, SclLocation, SortingHat, Pane, UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
 };
 
 #[derive(Clone)]
 pub struct WidgetPane {
-    pub pane: StandardPane,
+    pub pane: Pane,
     pub org: Rc<RefCell<WidgetOrganizer>>,
 }
 
@@ -18,7 +18,7 @@ impl WidgetPane {
 
     pub fn new(hat: &SortingHat) -> Self {
         let wp = WidgetPane {
-            pane: StandardPane::new(hat, Self::KIND),
+            pane: Pane::new(hat, Self::KIND),
             org: Rc::new(RefCell::new(WidgetOrganizer::default())),
         };
         wp.pane.self_evs.borrow_mut().push_many_at_priority(

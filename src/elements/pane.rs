@@ -10,10 +10,10 @@ use {
     },
 };
 
-// StandardPane is a pane element which other objects can embed and build off
+// Pane is a pane element which other objects can embed and build off
 // of. It defines the basic draw functionality of a pane.
 #[derive(Clone)]
-pub struct StandardPane {
+pub struct Pane {
     kind: Rc<RefCell<&'static str>>,
 
     id: Rc<RefCell<String>>, // element-id as assigned by the sorting-hat
@@ -54,13 +54,13 @@ pub struct StandardPane {
     pub height: Rc<RefCell<SclVal>>,
 }
 
-impl StandardPane {
+impl Pane {
     // NOTE kind is a name for the kind of pane, typically a different kind will be applied
     // to the standard pane, as the standard pane is only boilerplate.
     pub const KIND: &'static str = "standard_pane";
 
-    pub fn new(hat: &SortingHat, kind: &'static str) -> StandardPane {
-        StandardPane {
+    pub fn new(hat: &SortingHat, kind: &'static str) -> Pane {
+        Pane {
             kind: Rc::new(RefCell::new(kind)),
             id: Rc::new(RefCell::new(hat.create_element_id(kind))),
             attributes: Rc::new(RefCell::new(HashMap::new())),
@@ -79,27 +79,27 @@ impl StandardPane {
         }
     }
 
-    pub fn with_pos_x(self, x: SclVal) -> StandardPane {
+    pub fn with_pos_x(self, x: SclVal) -> Pane {
         *self.pos_x.borrow_mut() = x;
         self
     }
 
-    pub fn with_pos_y(self, y: SclVal) -> StandardPane {
+    pub fn with_pos_y(self, y: SclVal) -> Pane {
         *self.pos_y.borrow_mut() = y;
         self
     }
 
-    pub fn with_width(self, w: SclVal) -> StandardPane {
+    pub fn with_width(self, w: SclVal) -> Pane {
         *self.width.borrow_mut() = w;
         self
     }
 
-    pub fn with_height(self, h: SclVal) -> StandardPane {
+    pub fn with_height(self, h: SclVal) -> Pane {
         *self.height.borrow_mut() = h;
         self
     }
 
-    pub fn with_scl_location(self, l: SclLocation) -> StandardPane {
+    pub fn with_scl_location(self, l: SclLocation) -> Pane {
         *self.pos_x.borrow_mut() = l.start_x.clone();
         *self.pos_y.borrow_mut() = l.start_y.clone();
         *self.width.borrow_mut() = l.end_x.minus(l.start_x).plus_fixed(1);
@@ -107,28 +107,28 @@ impl StandardPane {
         self
     }
 
-    pub fn with_content(self, content: DrawChs2D) -> StandardPane {
+    pub fn with_content(self, content: DrawChs2D) -> Pane {
         *self.content.borrow_mut() = content;
         self
     }
 
-    pub fn with_default_ch(self, ch: DrawCh) -> StandardPane {
+    pub fn with_default_ch(self, ch: DrawCh) -> Pane {
         *self.default_ch.borrow_mut() = ch;
         self
     }
 
-    pub fn with_default_line(self, line: Vec<DrawCh>) -> StandardPane {
+    pub fn with_default_line(self, line: Vec<DrawCh>) -> Pane {
         *self.default_line.borrow_mut() = line;
         self
     }
 
-    pub fn with_content_view_offset(self, x: usize, y: usize) -> StandardPane {
+    pub fn with_content_view_offset(self, x: usize, y: usize) -> Pane {
         *self.content_view_offset_x.borrow_mut() = x;
         *self.content_view_offset_y.borrow_mut() = y;
         self
     }
 
-    pub fn with_self_receivable_events(self, evs: Vec<(Event, Priority)>) -> StandardPane {
+    pub fn with_self_receivable_events(self, evs: Vec<(Event, Priority)>) -> Pane {
         *self.self_evs.borrow_mut() = SelfReceivableEvents(evs);
         self
     }
@@ -143,7 +143,7 @@ impl StandardPane {
         *self.element_priority.borrow()
     }
 }
-impl Element for StandardPane {
+impl Element for Pane {
     fn kind(&self) -> &'static str {
         *self.kind.borrow()
     }

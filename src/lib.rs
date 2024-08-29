@@ -26,7 +26,7 @@ pub use {
         Context, CreateWindow, Element, EventResponse, EventResponses, ReceivableEventChanges,
         UpwardPropagator,
     },
-    elements::{MenuBar, ParentPane, RightClickMenu, StandardPane},
+    elements::{MenuBar, ParentPane, RightClickMenu, Pane},
     errors::Error,
     event::{CommandEvent, Event, KeyPossibility},
     keyboard::Keyboard,

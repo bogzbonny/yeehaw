@@ -1,7 +1,7 @@
 use {
     crate::{
         element::ReceivableEventChanges, Context, DrawChPos, Element, ElementID, ElementOrganizer,
-        Event, EventResponses, Priority, SclLocation, SortingHat, StandardPane, UpwardPropagator,
+        Event, EventResponses, Priority, SclLocation, SortingHat, Pane, UpwardPropagator,
     },
     std::{
         ops::Deref,
@@ -16,13 +16,13 @@ use {
 // it provides much of the boilerplate required to do so.
 #[derive(Clone)]
 pub struct ParentPane {
-    pub pane: StandardPane,
+    pub pane: Pane,
     pub eo: ElementOrganizer,
 }
 
 impl ParentPane {
     pub fn new(hat: &SortingHat, kind: &'static str) -> Self {
-        let pane = StandardPane::new(hat, kind);
+        let pane = Pane::new(hat, kind);
         ParentPane {
             pane,
             eo: ElementOrganizer::default(),

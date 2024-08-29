@@ -2,7 +2,7 @@ use {
     crate::{
         element::ExtraLocationsRequest, element::ReceivableEventChanges, Context, DrawCh,
         DrawChPos, Element, ElementID, Event, EventResponse, EventResponses, Location, LocationSet,
-        ParentPane, Priority, RgbColour, SclLocation, SortingHat, StandardPane, Style,
+        ParentPane, Priority, RgbColour, SclLocation, SortingHat, Pane, Style,
         UpwardPropagator, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -506,7 +506,7 @@ impl MenuBar {
 
 #[derive(Clone)]
 pub struct MenuItem {
-    pane: StandardPane,
+    pane: Pane,
     path: Rc<RefCell<MenuPath>>, // name displayed in the menu
     selectable: Rc<RefCell<bool>>,
     is_selected: Rc<RefCell<bool>>, // is the item currently selected
@@ -521,7 +521,7 @@ impl MenuItem {
 
     pub fn new(hat: &SortingHat, path: MenuPath) -> Self {
         MenuItem {
-            pane: StandardPane::new(hat, MenuItem::KIND),
+            pane: Pane::new(hat, MenuItem::KIND),
             path: Rc::new(RefCell::new(path)),
             selectable: Rc::new(RefCell::new(true)),
             is_selected: Rc::new(RefCell::new(false)),
