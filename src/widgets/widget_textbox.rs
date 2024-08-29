@@ -8,7 +8,7 @@ use {
         elements::menu::{MenuItem, MenuPath, MenuStyle},
         Context, DrawCh, DrawChPos, Element, ElementID, Error, Event, EventResponse,
         EventResponses, KeyPossibility, Keyboard as KB, Priority, ReceivableEventChanges,
-        RgbColour, RightClickMenu, SclVal, SortingHat, Style, UpwardPropagator,
+        RgbColour, RightClickMenu, SclLocation, SclVal, SortingHat, Style, UpwardPropagator,
     },
     crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -215,16 +215,16 @@ impl TextBox {
     }
 
     pub fn with_width(self, width: SclVal) -> Self {
-        self.base.set_attr_scl_width(width);
+        *self.base.pane.width.borrow_mut() = width;
         self
     }
     pub fn with_height(self, height: SclVal) -> Self {
-        self.base.set_attr_scl_height(height);
+        *self.base.pane.height.borrow_mut() = height;
         self
     }
     pub fn with_size(self, width: SclVal, height: SclVal) -> Self {
-        self.base.set_attr_scl_width(width);
-        self.base.set_attr_scl_height(height);
+        *self.base.pane.width.borrow_mut() = width;
+        *self.base.pane.height.borrow_mut() = height;
         self
     }
 
@@ -335,12 +335,12 @@ impl TextBox {
 
     pub fn to_widgets(mut self, hat: &SortingHat, ctx: &Context) -> Widgets {
         let (x, y) = (
-            self.base.get_attr_scl_loc_x(),
-            self.base.get_attr_scl_loc_y(),
+            self.base.pane.pos_x.borrow().clone(),
+            self.base.pane.pos_y.borrow().clone(),
         );
         let (h, w) = (
-            self.base.get_attr_scl_height(),
-            self.base.get_attr_scl_width(),
+            self.base.pane.height.borrow().clone(),
+            self.base.pane.width.borrow().clone(),
         );
         let mut out: Vec<Box<dyn Widget>> = vec![];
 
@@ -360,8 +360,8 @@ impl TextBox {
             out.push(Box::new(ln_tb.clone()));
 
             // reduce the width of the main textbox
-            self.base.set_attr_scl_width(w.clone().minus_fixed(lnw));
-            self.base.set_attr_scl_loc_x(x.clone().plus_fixed(lnw));
+            *self.base.pane.width.borrow_mut() = w.clone().minus_fixed(lnw);
+            *self.base.pane.pos_x.borrow_mut() = x.clone().plus_fixed(lnw);
 
             self.line_number_tb = Rc::new(RefCell::new(Some(ln_tb.clone())));
             Some(ln_tb)
@@ -581,8 +581,8 @@ impl TextBox {
         let (x, y) = (x.unwrap_or(0), y.unwrap_or(0));
         self.base.correct_offsets_to_view_position(ctx, x, y);
 
-        let y_offset = *self.base.sp.content_view_offset_y.borrow();
-        let x_offset = *self.base.sp.content_view_offset_x.borrow();
+        let y_offset = *self.base.pane.content_view_offset_y.borrow();
+        let x_offset = *self.base.pane.content_view_offset_x.borrow();
 
         // update the scrollbars/line numbers textbox
         if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
@@ -596,18 +596,24 @@ impl TextBox {
                 let diff_lnw = lnw as isize - last_lnw as isize;
                 let new_tb_width = if diff_lnw > 0 {
                     self.base
-                        .get_attr_scl_width()
+                        .pane
+                        .width
+                        .borrow()
+                        .clone()
                         .minus_fixed(diff_lnw as usize)
                 } else {
                     self.base
-                        .get_attr_scl_width()
+                        .pane
+                        .width
+                        .borrow()
+                        .clone()
                         .plus_fixed(diff_lnw.unsigned_abs())
                 };
-                self.base.set_attr_scl_width(new_tb_width);
+                *self.base.pane.width.borrow_mut() = new_tb_width;
                 resp.set_relocation(RelocationRequest::new_left(diff_lnw as i32));
             }
             ln_tb.set_text(lns);
-            ln_tb.base.set_attr_scl_width(SclVal::new_fixed(lnw));
+            *ln_tb.base.pane.width.borrow_mut() = SclVal::new_fixed(lnw);
             ln_tb.base.set_content_y_offset(ctx, y_offset);
         }
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
@@ -738,8 +744,8 @@ impl TextBox {
             }
 
             // update the scrollbars
-            let y_offset = *self.base.sp.content_view_offset_y.borrow();
-            let x_offset = *self.base.sp.content_view_offset_x.borrow();
+            let y_offset = *self.base.pane.content_view_offset_y.borrow();
+            let x_offset = *self.base.pane.content_view_offset_x.borrow();
             if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
                 sb.external_change(ctx, y_offset, self.base.content_height());
             }
@@ -985,8 +991,8 @@ impl TextBox {
             MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Drag(MouseButton::Left)
                 if selectedness == Selectability::Selected =>
             {
-                let x = ev.column as usize + *self.base.sp.content_view_offset_x.borrow();
-                let y = ev.row as usize + *self.base.sp.content_view_offset_y.borrow();
+                let x = ev.column as usize + *self.base.pane.content_view_offset_x.borrow();
+                let y = ev.row as usize + *self.base.pane.content_view_offset_y.borrow();
                 let w = self.get_wrapped(ctx);
 
                 let mouse_dragging = *self.mouse_dragging.borrow();
@@ -1060,11 +1066,11 @@ impl Element for TextBox {
                     continue;
                 }
                 let sty = hook(ctx.clone(), wr_ch.abs_pos.unwrap(), existing_sty);
-                self.base
-                    .sp
-                    .content
-                    .borrow_mut()
-                    .change_style_at_xy(wr_ch.x_pos, wr_ch.y_pos, sty);
+                self.base.pane.content.borrow_mut().change_style_at_xy(
+                    wr_ch.x_pos,
+                    wr_ch.y_pos,
+                    sty,
+                );
             }
         }
 
@@ -1072,7 +1078,7 @@ impl Element for TextBox {
         if self.base.get_selectability() == Selectability::Selected && *self.ch_cursor.borrow() {
             let (cur_x, cur_y) = w.cursor_x_and_y(self.get_cursor_pos());
             if let (Some(cur_x), Some(cur_y)) = (cur_x, cur_y) {
-                self.base.sp.content.borrow_mut().change_style_at_xy(
+                self.base.pane.content.borrow_mut().change_style_at_xy(
                     cur_x,
                     cur_y,
                     *self.cursor_style.borrow(),
@@ -1087,7 +1093,7 @@ impl Element for TextBox {
             let end = if start_pos < cur_pos { cur_pos } else { start_pos };
             for i in start..=end {
                 if let (Some(cur_x), Some(cur_y)) = w.cursor_x_and_y(i) {
-                    self.base.sp.content.borrow_mut().change_style_at_xy(
+                    self.base.pane.content.borrow_mut().change_style_at_xy(
                         cur_x,
                         cur_y,
                         *self.cursor_style.borrow(),
@@ -1106,6 +1112,9 @@ impl Element for TextBox {
     }
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.base.set_upward_propagator(up)
+    }
+    fn get_scl_location(&self) -> SclLocation {
+        self.base.get_scl_location()
     }
 }
 

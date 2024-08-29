@@ -2,7 +2,7 @@ use {
     super::{Megafont, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponses, Priority,
-        ReceivableEventChanges, SclVal, SortingHat, UpwardPropagator,
+        ReceivableEventChanges, SclLocation, SclVal, SortingHat, UpwardPropagator,
     },
 };
 
@@ -80,5 +80,9 @@ impl Element for Megatext {
     }
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.base.set_upward_propagator(up)
+    }
+
+    fn get_scl_location(&self) -> SclLocation {
+        self.base.get_scl_location()
     }
 }

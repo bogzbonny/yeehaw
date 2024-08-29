@@ -2,7 +2,8 @@ use {
     crate::{
         element::ExtraLocationsRequest, element::ReceivableEventChanges, Context, DrawCh,
         DrawChPos, Element, ElementID, Event, EventResponse, EventResponses, Location, LocationSet,
-        ParentPane, Priority, RgbColour, SortingHat, StandardPane, Style, UpwardPropagator, ZIndex,
+        ParentPane, Priority, RgbColour, SclLocation, SortingHat, StandardPane, Style,
+        UpwardPropagator, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::collections::HashMap,
@@ -649,13 +650,16 @@ impl Element for MenuBar {
         out
     }
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
-        self.pane.pane.get_attribute(key)
+        self.pane.get_attribute(key)
     }
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
-        self.pane.pane.set_attribute(key, value)
+        self.pane.set_attribute(key, value)
     }
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
-        self.pane.pane.set_upward_propagator(up)
+        self.pane.set_upward_propagator(up)
+    }
+    fn get_scl_location(&self) -> SclLocation {
+        self.pane.get_scl_location()
     }
 }
 
@@ -757,6 +761,9 @@ impl Element for MenuItem {
     }
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.pane.set_upward_propagator(up)
+    }
+    fn get_scl_location(&self) -> SclLocation {
+        self.pane.get_scl_location()
     }
 }
 

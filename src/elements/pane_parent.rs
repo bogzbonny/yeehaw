@@ -1,7 +1,7 @@
 use {
     crate::{
         element::ReceivableEventChanges, Context, DrawChPos, Element, ElementID, ElementOrganizer,
-        Event, EventResponses, Priority, SortingHat, StandardPane, UpwardPropagator,
+        Event, EventResponses, Priority, SclLocation, SortingHat, StandardPane, UpwardPropagator,
     },
     std::{
         ops::Deref,
@@ -259,5 +259,8 @@ impl Element for ParentPane {
     }
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.pane.set_upward_propagator(up)
+    }
+    fn get_scl_location(&self) -> SclLocation {
+        self.pane.get_scl_location()
     }
 }

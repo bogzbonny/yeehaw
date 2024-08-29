@@ -4,7 +4,7 @@ use {
         element::ReceivableEventChanges,
         elements::menu::{MenuItem, MenuStyle},
         Context, DrawChPos, Element, ElementID, Event, EventResponse, EventResponses, Location,
-        LocationSet, MenuBar, Point, Priority, SortingHat, UpwardPropagator, ZIndex,
+        LocationSet, MenuBar, Point, Priority, SclLocation, SortingHat, UpwardPropagator, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -145,5 +145,8 @@ impl Element for RightClickMenu {
     }
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.menu.set_upward_propagator(up)
+    }
+    fn get_scl_location(&self) -> SclLocation {
+        self.menu.get_scl_location()
     }
 }

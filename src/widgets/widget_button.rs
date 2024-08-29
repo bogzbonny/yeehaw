@@ -2,8 +2,8 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponse, EventResponses,
-        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SclVal, SortingHat, Style,
-        UpwardPropagator,
+        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SclLocation, SclVal,
+        SortingHat, Style, UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -84,8 +84,7 @@ impl Button {
     pub fn with_sides(self, ctx: &Context, sides: (String, String)) -> Self {
         *self.sides.borrow_mut() = sides;
         let text = self.button_text();
-        self.base
-            .set_attr_scl_width(SclVal::new_fixed(text.chars().count()));
+        *self.base.pane.width.borrow_mut() = SclVal::new_fixed(text.chars().count());
         self.base.set_content_from_string(ctx, &text);
         self
     }
@@ -160,5 +159,8 @@ impl Element for Button {
     }
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.base.set_upward_propagator(up)
+    }
+    fn get_scl_location(&self) -> SclLocation {
+        self.base.get_scl_location()
     }
 }

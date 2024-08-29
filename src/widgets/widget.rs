@@ -40,95 +40,6 @@ pub const ATTR_SELECTABILITY: &str = "widget_selectability";
 pub const WIDGET_Z_INDEX: ZIndex = 10;
 
 pub trait Widget: Element {
-    fn get_attr_scl_width(&self) -> SclVal {
-        let Some(bz) = self.get_attribute(ATTR_SCL_WIDTH) else {
-            return SclVal::default();
-        };
-        match serde_json::from_slice(&bz) {
-            Ok(v) => v,
-            Err(_e) => {
-                // TODO log error
-                SclVal::default()
-            }
-        }
-    }
-    fn set_attr_scl_width(&self, width: SclVal) {
-        let bz = match serde_json::to_vec(&width) {
-            Ok(v) => v,
-            Err(_e) => {
-                // TODO log error
-                return;
-            }
-        };
-        self.set_attribute(ATTR_SCL_WIDTH, bz)
-    }
-    fn get_attr_scl_height(&self) -> SclVal {
-        let Some(bz) = self.get_attribute(ATTR_SCL_HEIGHT) else {
-            return SclVal::default();
-        };
-        match serde_json::from_slice(&bz) {
-            Ok(v) => v,
-            Err(_e) => {
-                // TODO log error
-                SclVal::default()
-            }
-        }
-    }
-    fn set_attr_scl_height(&self, height: SclVal) {
-        let bz = match serde_json::to_vec(&height) {
-            Ok(v) => v,
-            Err(_e) => {
-                // TODO log error
-                return;
-            }
-        };
-        self.set_attribute(ATTR_SCL_HEIGHT, bz)
-    }
-    fn get_attr_scl_loc_x(&self) -> SclVal {
-        let Some(bz) = self.get_attribute(ATTR_SCL_LOC_X) else {
-            return SclVal::default();
-        };
-        match serde_json::from_slice(&bz) {
-            Ok(v) => v,
-            Err(_e) => {
-                // TODO log error
-                SclVal::default()
-            }
-        }
-    }
-    fn set_attr_scl_loc_x(&self, loc_x: SclVal) {
-        let bz = match serde_json::to_vec(&loc_x) {
-            Ok(v) => v,
-            Err(_e) => {
-                // TODO log error
-                return;
-            }
-        };
-        self.set_attribute(ATTR_SCL_LOC_X, bz)
-    }
-    fn get_attr_scl_loc_y(&self) -> SclVal {
-        let Some(bz) = self.get_attribute(ATTR_SCL_LOC_Y) else {
-            return SclVal::default();
-        };
-        match serde_json::from_slice(&bz) {
-            Ok(v) => v,
-            Err(_e) => {
-                // TODO log error
-                SclVal::default()
-            }
-        }
-    }
-    fn set_attr_scl_loc_y(&self, loc_y: SclVal) {
-        let bz = match serde_json::to_vec(&loc_y) {
-            Ok(v) => v,
-            Err(_e) => {
-                // TODO log error
-                return;
-            }
-        };
-        self.set_attribute(ATTR_SCL_LOC_Y, bz)
-    }
-
     fn get_attr_selectability(&self) -> Selectability {
         let Some(bz) = self.get_attribute(ATTR_SELECTABILITY) else {
             return Selectability::Ready;
@@ -191,17 +102,6 @@ pub trait Widget: Element {
     // executed before the selectability is set
     fn set_selectability_pre_hook(&self, _ctx: &Context, _s: Selectability) -> EventResponses {
         EventResponses::default()
-    }
-
-    // get the scalable location of the widget
-    fn get_scl_location(&self) -> SclLocation {
-        let x1 = self.get_attr_scl_loc_x();
-        let y1 = self.get_attr_scl_loc_y();
-        let w = self.get_attr_scl_width();
-        let h = self.get_attr_scl_height();
-        let x2 = x1.clone().plus(w).minus_fixed(1);
-        let y2 = y1.clone().plus(h).minus_fixed(1);
-        SclLocation::new(x1, x2, y1, y2)
     }
 
     fn get_z_index(&self) -> ZIndex {
@@ -412,7 +312,7 @@ impl Widgets {
 
 #[derive(Clone)]
 pub struct WidgetBase {
-    pub sp: StandardPane,
+    pub pane: StandardPane,
     pub styles: Rc<RefCell<WBStyles>>,
 }
 
@@ -425,72 +325,72 @@ impl WidgetBase {
             .drain(..)
             .map(|ev| (ev, Priority::FOCUSED))
             .collect();
-        let sp = StandardPane::new(hat, kind).with_self_receivable_events(evs);
+        let pane = StandardPane::new(hat, kind).with_self_receivable_events(evs);
 
         let wb = Self {
-            sp,
+            pane,
             styles: Rc::new(RefCell::new(sty)),
         };
-        wb.set_attr_scl_width(width);
-        wb.set_attr_scl_height(height);
-        wb.set_attr_scl_loc_x(SclVal::new_fixed(0));
-        wb.set_attr_scl_loc_y(SclVal::new_fixed(0));
+        *wb.pane.width.borrow_mut() = width;
+        *wb.pane.height.borrow_mut() = height;
+        *wb.pane.pos_x.borrow_mut() = SclVal::new_fixed(0);
+        *wb.pane.pos_y.borrow_mut() = SclVal::new_fixed(0);
         wb.set_attr_selectability(Selectability::Ready);
 
         wb
     }
 
-    pub fn at(&mut self, loc_x: SclVal, loc_y: SclVal) {
-        self.set_attr_scl_loc_x(loc_x);
-        self.set_attr_scl_loc_y(loc_y);
+    pub fn at(&mut self, pos_x: SclVal, pos_y: SclVal) {
+        *self.pane.pos_x.borrow_mut() = pos_x;
+        *self.pane.pos_y.borrow_mut() = pos_y;
     }
 
     //-------------------------
 
     pub fn set_receivable_events(&self, evs: Vec<(Event, Priority)>) {
-        self.sp.set_self_receivable_events(evs)
+        self.pane.set_self_receivable_events(evs)
     }
 
     pub fn get_width(&self, ctx: &Context) -> usize {
-        let scl_width = self.get_attr_scl_width();
+        let scl_width = self.pane.width.borrow();
         scl_width.get_val(ctx.get_width().into())
     }
 
     pub fn get_height(&self, ctx: &Context) -> usize {
-        let scl_height = self.get_attr_scl_height();
+        let scl_height = self.pane.height.borrow();
         scl_height.get_val(ctx.get_height().into())
     }
 
     pub fn scroll_up(&self, ctx: &Context) {
-        let view_offset_y = *self.sp.content_view_offset_y.borrow();
+        let view_offset_y = *self.pane.content_view_offset_y.borrow();
         self.set_content_y_offset(ctx, view_offset_y - 1);
     }
 
     pub fn scroll_down(&self, ctx: &Context) {
-        let view_offset_y = *self.sp.content_view_offset_y.borrow();
+        let view_offset_y = *self.pane.content_view_offset_y.borrow();
         self.set_content_y_offset(ctx, view_offset_y + 1);
     }
 
     pub fn scroll_left(&self, ctx: &Context) {
-        let view_offset_x = *self.sp.content_view_offset_x.borrow();
+        let view_offset_x = *self.pane.content_view_offset_x.borrow();
         self.set_content_x_offset(ctx, view_offset_x - 1);
     }
 
     pub fn scroll_right(&self, ctx: &Context) {
-        let view_offset_x = *self.sp.content_view_offset_x.borrow();
+        let view_offset_x = *self.pane.content_view_offset_x.borrow();
         self.set_content_x_offset(ctx, view_offset_x + 1);
     }
 
     pub fn content_width(&self) -> usize {
-        self.sp.content.borrow().width()
+        self.pane.content.borrow().width()
     }
 
     pub fn content_height(&self) -> usize {
-        self.sp.content.borrow().height()
+        self.pane.content.borrow().height()
     }
 
     pub fn set_content_x_offset(&self, ctx: &Context, x: usize) {
-        *self.sp.content_view_offset_x.borrow_mut() =
+        *self.pane.content_view_offset_x.borrow_mut() =
             if x > self.content_width() - self.get_width(ctx) {
                 self.content_width() - self.get_width(ctx)
             } else {
@@ -499,7 +399,7 @@ impl WidgetBase {
     }
 
     pub fn set_content_y_offset(&self, ctx: &Context, y: usize) {
-        *self.sp.content_view_offset_y.borrow_mut() =
+        *self.pane.content_view_offset_y.borrow_mut() =
             if y > self.content_height() - self.get_height(ctx) {
                 self.content_height() - self.get_height(ctx)
             } else {
@@ -527,7 +427,7 @@ impl WidgetBase {
 
         // initialize the content with blank characters
         // of the height and width of the widget
-        *self.sp.content.borrow_mut() = DrawChs2D::new_empty_of_size(width, height, sty);
+        *self.pane.content.borrow_mut() = DrawChs2D::new_empty_of_size(width, height, sty);
 
         // now fill in with actual content
         for y in 0..height {
@@ -538,20 +438,20 @@ impl WidgetBase {
                     continue;
                 };
                 let dch = DrawCh::new(r, false, sty);
-                self.sp.content.borrow_mut().0[y][x] = dch;
+                self.pane.content.borrow_mut().0[y][x] = dch;
             }
         }
     }
 
     pub fn set_content(&self, content: DrawChs2D) {
-        *self.sp.content.borrow_mut() = content;
+        *self.pane.content.borrow_mut() = content;
     }
 
     // correct_offsets_to_view_position changes the content offsets within the
     // WidgetBase in order to bring the given view position into view.
     pub fn correct_offsets_to_view_position(&self, ctx: &Context, x: usize, y: usize) {
-        let view_offset_y = *self.sp.content_view_offset_y.borrow();
-        let view_offset_x = *self.sp.content_view_offset_x.borrow();
+        let view_offset_y = *self.pane.content_view_offset_y.borrow();
+        let view_offset_x = *self.pane.content_view_offset_x.borrow();
 
         // set y offset if cursor out of bounds
         if y >= view_offset_y + self.get_height(ctx) {
@@ -610,17 +510,17 @@ impl Widget for WidgetBase {}
 
 impl Element for WidgetBase {
     fn kind(&self) -> &'static str {
-        self.sp.kind()
+        self.pane.kind()
     }
     fn id(&self) -> ElementID {
-        self.sp.id()
+        self.pane.id()
     }
 
     // default implementation of Receivable, only receive when widget is active
     fn receivable(&self) -> Vec<(Event, Priority)> {
         let attr_sel = self.get_attr_selectability();
         if let Selectability::Selected = attr_sel {
-            self.sp.receivable()
+            self.pane.receivable()
         } else {
             Vec::new()
         }
@@ -631,23 +531,23 @@ impl Element for WidgetBase {
     }
 
     fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
-        self.sp.change_priority(ctx, p)
+        self.pane.change_priority(ctx, p)
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let sty = self.get_current_style(); // XXX this is different than standard_pane draw... unless this should be set somewhere else
         let h = self.get_height(ctx);
         let w = self.get_width(ctx);
-        let view_offset_y = *self.sp.content_view_offset_y.borrow();
-        let view_offset_x = *self.sp.content_view_offset_x.borrow();
-        let content_height = self.sp.content.borrow().height();
-        let content_width = self.sp.content.borrow().width();
+        let view_offset_y = *self.pane.content_view_offset_y.borrow();
+        let view_offset_x = *self.pane.content_view_offset_x.borrow();
+        let content_height = self.pane.content.borrow().height();
+        let content_width = self.pane.content.borrow().width();
 
         let mut chs = Vec::new();
         for y in view_offset_y..view_offset_y + h {
             for x in view_offset_x..view_offset_x + w {
                 let ch = if y < content_height && x < content_width {
-                    self.sp.content.borrow().0[y][x]
+                    self.pane.content.borrow().0[y][x]
                 } else {
                     DrawCh::new(' ', false, sty)
                 };
@@ -662,15 +562,16 @@ impl Element for WidgetBase {
     }
 
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
-        self.sp.get_attribute(key)
+        self.pane.get_attribute(key)
     }
-
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
-        self.sp.set_attribute(key, value)
+        self.pane.set_attribute(key, value)
     }
-
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
-        self.sp.set_upward_propagator(up)
+        self.pane.set_upward_propagator(up)
+    }
+    fn get_scl_location(&self) -> SclLocation {
+        self.pane.get_scl_location()
     }
 }
 

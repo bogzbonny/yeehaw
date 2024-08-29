@@ -2,7 +2,7 @@ use {
     super::{Button, Selectability, TextBox, WBStyles, Widget, Widgets},
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponses, KeyPossibility,
-        Keyboard as KB, Priority, ReceivableEventChanges, SclVal, SortingHat, Style,
+        Keyboard as KB, Priority, ReceivableEventChanges, SclLocation, SclVal, SortingHat, Style,
         UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
@@ -114,8 +114,8 @@ impl NumbersTextBox {
 
     pub fn to_widgets(&self, hat: &SortingHat, ctx: &Context) -> Widgets {
         let (x, y) = (
-            self.tb.base.get_attr_scl_loc_x(),
-            self.tb.base.get_attr_scl_loc_y(),
+            self.tb.base.pane.pos_x.borrow().clone(),
+            self.tb.base.pane.pos_y.borrow().clone(),
         );
 
         let mut out: Vec<Box<dyn Widget>> = vec![];
@@ -146,7 +146,7 @@ impl NumbersTextBox {
             )
             .without_sides(ctx);
 
-            let up_btn_x = x.clone().plus(self.tb.base.get_attr_scl_width());
+            let up_btn_x = x.clone().plus(self.tb.base.pane.width.borrow().clone());
             let down_btn_x = up_btn_x.clone().plus_fixed(1);
             out.push(Box::new(up_btn.at(up_btn_x, y.clone())));
             out.push(Box::new(down_btn.at(down_btn_x, y.clone())));
@@ -261,6 +261,9 @@ impl Element for NumbersTextBox {
     }
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.tb.set_upward_propagator(up)
+    }
+    fn get_scl_location(&self) -> SclLocation {
+        self.tb.get_scl_location()
     }
 }
 

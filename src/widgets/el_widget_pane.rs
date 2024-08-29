@@ -2,14 +2,14 @@ use {
     super::{Widget, WidgetOrganizer, Widgets},
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponses, LocationSet, Priority,
-        ReceivableEventChanges, SortingHat, StandardPane, UpwardPropagator,
+        ReceivableEventChanges, SclLocation, SortingHat, StandardPane, UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
 };
 
 #[derive(Clone)]
 pub struct WidgetPane {
-    pub sp: StandardPane,
+    pub pane: StandardPane,
     pub org: Rc<RefCell<WidgetOrganizer>>,
 }
 
@@ -18,10 +18,10 @@ impl WidgetPane {
 
     pub fn new(hat: &SortingHat) -> Self {
         let wp = WidgetPane {
-            sp: StandardPane::new(hat, Self::KIND),
+            pane: StandardPane::new(hat, Self::KIND),
             org: Rc::new(RefCell::new(WidgetOrganizer::default())),
         };
-        wp.sp.self_evs.borrow_mut().push_many_at_priority(
+        wp.pane.self_evs.borrow_mut().push_many_at_priority(
             WidgetOrganizer::default_receivable_events(),
             Priority::FOCUSED,
         );
@@ -29,7 +29,7 @@ impl WidgetPane {
     }
 
     pub fn add_widget(&mut self, ctx: &Context, w: Box<dyn Widget>) {
-        self.sp.self_evs.borrow_mut().extend(w.receivable());
+        self.pane.self_evs.borrow_mut().extend(w.receivable());
         let l = w.get_scl_location().get_location_for_context(ctx);
         let l = LocationSet::default()
             .with_location(l)
@@ -58,7 +58,7 @@ impl Element for WidgetPane {
     }
 
     fn id(&self) -> ElementID {
-        self.sp.id()
+        self.pane.id()
     }
 
     // Returns the widget organizer's receivable events along
@@ -70,7 +70,7 @@ impl Element for WidgetPane {
         let wpes = self.org.borrow_mut().receivable();
         // Add the widget pane's self events. These are default receivable events of the widget
         // organizer
-        let mut rec = self.sp.receivable();
+        let mut rec = self.pane.receivable();
         rec.extend(wpes);
         rec
     }
@@ -91,7 +91,7 @@ impl Element for WidgetPane {
             Event::Refresh => {}
             _ => {}
         }
-        self.sp.receive_event(ctx, ev)
+        self.pane.receive_event(ctx, ev)
     }
 
     fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
@@ -100,25 +100,29 @@ impl Element for WidgetPane {
         } else {
             ReceivableEventChanges::default()
         };
-        rec.concat(self.sp.change_priority(ctx, p));
+        rec.concat(self.pane.change_priority(ctx, p));
         rec
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        let mut chs = self.sp.drawing(ctx);
+        let mut chs = self.pane.drawing(ctx);
         chs.extend(self.org.borrow_mut().drawing(ctx));
         chs
     }
 
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
-        self.sp.get_attribute(key)
+        self.pane.get_attribute(key)
     }
 
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
-        self.sp.set_attribute(key, value)
+        self.pane.set_attribute(key, value)
     }
 
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
-        self.sp.set_upward_propagator(up)
+        self.pane.set_upward_propagator(up)
+    }
+
+    fn get_scl_location(&self) -> SclLocation {
+        self.pane.get_scl_location()
     }
 }

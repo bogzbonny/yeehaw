@@ -2,7 +2,8 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponses, Keyboard as KB, Priority,
-        ReceivableEventChanges, RgbColour, SclVal, SortingHat, Style, UpwardPropagator,
+        ReceivableEventChanges, RgbColour, SclLocation, SclVal, SortingHat, Style,
+        UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -175,11 +176,11 @@ impl Element for Toggle {
             .set_content_from_string(ctx, &(left.clone() + &right));
         if *self.left_selected.borrow() {
             for i in 0..left_len {
-                self.base.sp.content.borrow_mut()[0][i].style = *self.selected_sty.borrow();
+                self.base.pane.content.borrow_mut()[0][i].style = *self.selected_sty.borrow();
             }
         } else {
             for i in left_len..left_len + right_len {
-                self.base.sp.content.borrow_mut()[0][i].style = *self.selected_sty.borrow();
+                self.base.pane.content.borrow_mut()[0][i].style = *self.selected_sty.borrow();
             }
         }
         self.base.drawing(ctx)
@@ -192,5 +193,8 @@ impl Element for Toggle {
     }
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.base.set_upward_propagator(up)
+    }
+    fn get_scl_location(&self) -> SclLocation {
+        self.base.get_scl_location()
     }
 }

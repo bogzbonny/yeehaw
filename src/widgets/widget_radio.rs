@@ -2,7 +2,8 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponses, Keyboard as KB, Priority,
-        ReceivableEventChanges, RgbColour, SclVal, SortingHat, Style, UpwardPropagator,
+        ReceivableEventChanges, RgbColour, SclLocation, SclVal, SortingHat, Style,
+        UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -198,5 +199,8 @@ impl Element for RadioButtons {
     }
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.base.set_upward_propagator(up)
+    }
+    fn get_scl_location(&self) -> SclLocation {
+        self.base.get_scl_location()
     }
 }

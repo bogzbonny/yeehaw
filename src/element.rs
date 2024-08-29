@@ -1,5 +1,8 @@
 use {
-    crate::{prioritizer::Priority, DrawChPos, ElementID, Event, Location, LocationSet, Size},
+    crate::{
+        prioritizer::Priority, DrawChPos, ElementID, Event, Location, LocationSet, SclLocation,
+        Size,
+    },
     std::any::Any,
     std::collections::HashMap,
     std::ops::{Deref, DerefMut},
@@ -62,6 +65,9 @@ pub trait Element {
     // Assign a reference to the element's parent through the UpwardPropagator trait. This is used
     // to pass ReceivableEventChanges to the parent. (see UpwardPropogator for more context)
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>);
+
+    // get the scalable location of the widget
+    fn get_scl_location(&self) -> SclLocation;
 
     // -------------------------------------------------------
     // Freebies

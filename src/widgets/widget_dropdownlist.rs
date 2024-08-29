@@ -3,7 +3,7 @@ use {
     crate::{
         element::RelocationRequest, Context, DrawCh, DrawChPos, Element, ElementID, Event,
         EventResponse, EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, RgbColour,
-        SclVal, SortingHat, Style, UpwardPropagator, ZIndex,
+        SclLocation, SclVal, SortingHat, Style, UpwardPropagator, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -115,7 +115,7 @@ impl DropdownList {
             selection_made_fn: Rc::new(RefCell::new(selection_made_fn)),
             scrollbar: sb,
         };
-        d.base.set_attr_scl_width(d.get_scl_width());
+        *d.base.pane.width.borrow_mut() = d.get_scl_width();
         d
     }
 
@@ -134,13 +134,13 @@ impl DropdownList {
 
     pub fn with_width(self, width: SclVal) -> Self {
         *self.specified_width.borrow_mut() = Some(width);
-        self.base.set_attr_scl_width(self.get_scl_width());
+        *self.base.pane.width.borrow_mut() = self.get_scl_width();
         self
     }
 
     pub fn with_left_padding(self, padding: usize) -> Self {
         *self.left_padding.borrow_mut() = padding;
-        self.base.set_attr_scl_width(self.get_scl_width());
+        *self.base.pane.width.borrow_mut() = self.get_scl_width();
         self
     }
 
@@ -171,7 +171,7 @@ impl DropdownList {
             .correct_offsets_to_view_position(ctx, 0, cursor_pos);
         self.scrollbar.external_change(
             ctx,
-            *self.base.sp.content_view_offset_y.borrow(),
+            *self.base.pane.content_view_offset_y.borrow(),
             self.base.content_height(),
         );
     }
@@ -238,7 +238,7 @@ impl DropdownList {
         *self.open.borrow_mut() = true;
         *self.cursor.borrow_mut() = *self.selected.borrow();
         let h = self.expanded_height();
-        self.base.set_attr_scl_height(SclVal::new_fixed(h));
+        *self.base.pane.height.borrow_mut() = SclVal::new_fixed(h);
 
         // must set the content for the offsets to be correct
         self.base.set_content_from_string(ctx, &self.text(ctx));
@@ -250,10 +250,10 @@ impl DropdownList {
 
     pub fn perform_close(&self, ctx: &Context, escaped: bool) -> EventResponses {
         *self.open.borrow_mut() = false;
-        *self.base.sp.content_view_offset_y.borrow_mut() = 0;
+        *self.base.pane.content_view_offset_y.borrow_mut() = 0;
         self.scrollbar
             .external_change(ctx, 0, self.base.content_height());
-        self.base.set_attr_scl_height(SclVal::new_fixed(1));
+        *self.base.pane.height.borrow_mut() = SclVal::new_fixed(1);
         let mut resps = if !escaped && *self.selected.borrow() != *self.cursor.borrow() {
             *self.selected.borrow_mut() = *self.cursor.borrow();
             (self.selection_made_fn.borrow_mut())(
@@ -406,7 +406,7 @@ impl Element for DropdownList {
                             return (true, EventResponses::default());
                         } else {
                             *self.cursor.borrow_mut() =
-                                y + *self.base.sp.content_view_offset_y.borrow();
+                                y + *self.base.pane.content_view_offset_y.borrow();
                         }
                         let _ = self.scrollbar.set_selectability(ctx, Selectability::Ready);
                         (true, EventResponses::default())
@@ -435,7 +435,7 @@ impl Element for DropdownList {
                         }
                         let _ = self.scrollbar.set_selectability(ctx, Selectability::Ready);
                         *self.cursor.borrow_mut() =
-                            y + *self.base.sp.content_view_offset_y.borrow();
+                            y + *self.base.pane.content_view_offset_y.borrow();
                         (true, self.perform_close(ctx, false))
                     }
                     _ => (false, EventResponses::default()),
@@ -457,7 +457,7 @@ impl Element for DropdownList {
         // highlight the hovering entry
         if open {
             self.base
-                .sp
+                .pane
                 .content
                 .borrow_mut()
                 .change_style_along_y(*self.cursor.borrow(), *self.cursor_style.borrow());
@@ -494,5 +494,8 @@ impl Element for DropdownList {
     }
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.base.set_upward_propagator(up)
+    }
+    fn get_scl_location(&self) -> SclLocation {
+        self.base.get_scl_location()
     }
 }

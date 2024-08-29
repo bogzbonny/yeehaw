@@ -1,7 +1,7 @@
 use {
     crate::{
         element::ReceivableEventChanges, Context, DrawCh, DrawChPos, DrawChs2D, Element, ElementID,
-        Event, EventResponses, Priority, SortingHat, UpwardPropagator,
+        Event, EventResponses, Priority, SclLocation, SclVal, SortingHat, UpwardPropagator,
     },
     std::{
         collections::HashMap,
@@ -35,9 +35,6 @@ pub struct StandardPane {
 
     pub up: Rc<RefCell<Option<Box<dyn UpwardPropagator>>>>,
 
-    view_height: Rc<RefCell<u16>>,
-    view_width: Rc<RefCell<u16>>,
-
     // The pane's Content need not be the dimensions provided within
     // the Location, however the Content will simply be cut off if it exceeds
     // any dimension of the Location. If the Content is less than the dimensions
@@ -49,6 +46,12 @@ pub struct StandardPane {
     pub default_line: Rc<RefCell<Vec<DrawCh>>>,
     pub content_view_offset_x: Rc<RefCell<usize>>,
     pub content_view_offset_y: Rc<RefCell<usize>>,
+
+    // scaleable values of x, y, width, and height in the parent context
+    pub pos_x: Rc<RefCell<SclVal>>,
+    pub pos_y: Rc<RefCell<SclVal>>,
+    pub width: Rc<RefCell<SclVal>>,
+    pub height: Rc<RefCell<SclVal>>,
 }
 
 impl StandardPane {
@@ -64,14 +67,44 @@ impl StandardPane {
             self_evs: Rc::new(RefCell::new(SelfReceivableEvents::default())),
             element_priority: Rc::new(RefCell::new(Priority::UNFOCUSED)),
             up: Rc::new(RefCell::new(None)),
-            view_height: Rc::new(RefCell::new(0)),
-            view_width: Rc::new(RefCell::new(0)),
             content: Rc::new(RefCell::new(DrawChs2D::default())),
             default_ch: Rc::new(RefCell::new(DrawCh::default())),
             default_line: Rc::new(RefCell::new(vec![])),
             content_view_offset_x: Rc::new(RefCell::new(0)),
             content_view_offset_y: Rc::new(RefCell::new(0)),
+            pos_x: Rc::new(RefCell::new(SclVal::new_fixed(0))),
+            pos_y: Rc::new(RefCell::new(SclVal::new_fixed(0))),
+            width: Rc::new(RefCell::new(SclVal::new_fixed(0))),
+            height: Rc::new(RefCell::new(SclVal::new_fixed(0))),
         }
+    }
+
+    pub fn with_pos_x(self, x: SclVal) -> StandardPane {
+        *self.pos_x.borrow_mut() = x;
+        self
+    }
+
+    pub fn with_pos_y(self, y: SclVal) -> StandardPane {
+        *self.pos_y.borrow_mut() = y;
+        self
+    }
+
+    pub fn with_width(self, w: SclVal) -> StandardPane {
+        *self.width.borrow_mut() = w;
+        self
+    }
+
+    pub fn with_height(self, h: SclVal) -> StandardPane {
+        *self.height.borrow_mut() = h;
+        self
+    }
+
+    pub fn with_scl_location(self, l: SclLocation) -> StandardPane {
+        *self.pos_x.borrow_mut() = l.start_x.clone();
+        *self.pos_y.borrow_mut() = l.start_y.clone();
+        *self.width.borrow_mut() = l.end_x.minus(l.start_x).plus_fixed(1);
+        *self.height.borrow_mut() = l.end_y.minus(l.start_y).plus_fixed(1);
+        self
     }
 
     pub fn with_content(self, content: DrawChs2D) -> StandardPane {
@@ -126,9 +159,7 @@ impl Element for StandardPane {
     }
 
     //                                               (captured, resp         )
-    fn receive_event(&self, ctx: &Context, _ev: Event) -> (bool, EventResponses) {
-        *self.view_height.borrow_mut() = ctx.get_height();
-        *self.view_width.borrow_mut() = ctx.get_width();
+    fn receive_event(&self, _ctx: &Context, _ev: Event) -> (bool, EventResponses) {
         (false, EventResponses::default())
     }
 
@@ -199,6 +230,17 @@ impl Element for StandardPane {
 
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         *self.up.borrow_mut() = Some(up);
+    }
+
+    // get the scalable location of the widget
+    fn get_scl_location(&self) -> SclLocation {
+        let x1 = self.pos_x.borrow().clone();
+        let y1 = self.pos_y.borrow().clone();
+        let w = self.width.borrow().clone();
+        let h = self.height.borrow().clone();
+        let x2 = x1.clone().plus(w).minus_fixed(1);
+        let y2 = y1.clone().plus(h).minus_fixed(1);
+        SclLocation::new(x1, x2, y1, y2)
     }
 }
 

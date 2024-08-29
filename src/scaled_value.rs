@@ -1,4 +1,7 @@
-use crate::{Context, Location};
+use {
+    crate::{Context, Location},
+    std::rc::Rc,
+};
 
 // SclVal represents a X or Y screen position value which scales based on the
 // size of the parent widget. The value is a static number of characters
@@ -8,15 +11,15 @@ use crate::{Context, Location};
 // SclVals. This is useful or Labels which depend on the size of a number of
 // other elements.
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct SclVal {
     fixed: usize,  // fixed number of characters
     fraction: f64, // fraction of the parent widget size number of characters
 
-    plus: Vec<SclVal>,        // The SclVal Adds all the provided SclVals
-    minus: Vec<SclVal>,       // The SclVal Subtracts all the provided SclVals
-    plus_min_of: Vec<SclVal>, // The SclVal Adds the minimum value of these provided SclVals
-    plus_max_of: Vec<SclVal>, // The SclVal Adds the maximum value of these provided SclVals
+    plus: Vec<Rc<SclVal>>,        // The SclVal Adds all the provided SclVals
+    minus: Vec<Rc<SclVal>>,       // The SclVal Subtracts all the provided SclVals
+    plus_min_of: Vec<Rc<SclVal>>, // The SclVal Adds the minimum value of these provided SclVals
+    plus_max_of: Vec<Rc<SclVal>>, // The SclVal Adds the maximum value of these provided SclVals
 }
 
 impl SclVal {
@@ -55,43 +58,43 @@ impl SclVal {
         .saturating_sub(self.sum_of_minuses(max_size))
     }
 
-    pub fn plus(mut self, sv: SclVal) -> SclVal {
-        self.plus.push(sv);
+    pub fn plus<S: Into<Rc<SclVal>>>(mut self, sv: S) -> SclVal {
+        self.plus.push(sv.into());
         self
     }
 
-    pub fn minus(mut self, sv: SclVal) -> SclVal {
-        self.minus.push(sv);
+    pub fn minus<S: Into<Rc<SclVal>>>(mut self, sv: S) -> SclVal {
+        self.minus.push(sv.into());
         self
     }
 
     pub fn plus_fixed(mut self, fixed: usize) -> SclVal {
-        self.plus.push(SclVal::new_fixed(fixed));
+        self.plus.push(Rc::new(SclVal::new_fixed(fixed)));
         self
     }
 
     pub fn minus_fixed(mut self, fixed: usize) -> SclVal {
-        self.minus.push(SclVal::new_fixed(fixed));
+        self.minus.push(Rc::new(SclVal::new_fixed(fixed)));
         self
     }
 
     pub fn plus_frac(mut self, fraction: f64) -> SclVal {
-        self.plus.push(SclVal::new_frac(fraction));
+        self.plus.push(Rc::new(SclVal::new_frac(fraction)));
         self
     }
 
     pub fn minus_frac(mut self, fraction: f64) -> SclVal {
-        self.minus.push(SclVal::new_frac(fraction));
+        self.minus.push(Rc::new(SclVal::new_frac(fraction)));
         self
     }
 
-    pub fn plus_min_of(mut self, sv: SclVal) -> SclVal {
-        self.plus_min_of.push(sv);
+    pub fn plus_min_of<S: Into<Rc<SclVal>>>(mut self, sv: S) -> SclVal {
+        self.plus_min_of.push(sv.into());
         self
     }
 
-    pub fn plus_max_of(mut self, sv: SclVal) -> SclVal {
-        self.plus_max_of.push(sv);
+    pub fn plus_max_of<S: Into<Rc<SclVal>>>(mut self, sv: S) -> SclVal {
+        self.plus_max_of.push(sv.into());
         self
     }
 
@@ -201,7 +204,7 @@ pub mod scl_val_tests {
         let sv = SclVal::new_frac(0.5);
         assert_eq!(5, sv.get_val(10));
 
-        let sv = SclVal::new_frac(0.5).plus(SclVal::new_fixed(1));
+        let sv = SclVal::new_frac(0.5).plus(Rc::new(SclVal::new_fixed(1)));
         assert_eq!(6, sv.get_val(10));
     }
 }
