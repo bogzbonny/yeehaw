@@ -4,9 +4,9 @@ use {
     yeehaw::{
         widgets::{
             megafonts, Button, Checkbox, DropdownList, Label, ListBox, Megatext, NumbersTextBox,
-            RadioButtons, SclVal, TextBox, Toggle,
+            RadioButtons, TextBox, Toggle,
         },
-        Context, Cui, Element, Error, EventResponses, SortingHat, WidgetPane,
+        Context, Cui, Element, Error, EventResponses, SclVal, SortingHat, WidgetPane,
     },
 };
 

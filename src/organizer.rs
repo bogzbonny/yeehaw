@@ -12,9 +12,7 @@ use {
 // within it
 #[derive(Clone, Default)]
 pub struct ElementOrganizer {
-    //#[allow(clippy::type_complexity)]
     pub els: Rc<RefCell<HashMap<ElementID, ElDetails>>>,
-
     pub prioritizer: Rc<RefCell<EventPrioritizer>>,
 }
 
@@ -338,14 +336,16 @@ impl ElementOrganizer {
             .collect();
         self.prioritizer.borrow_mut().remove(el_id, &evs);
         ic = ic.with_remove_evs(evs);
+
+        let new_el_id = new_el.borrow().id().clone();
         self.els.borrow_mut().insert(
-            el_id.clone(),
+            new_el_id.clone(),
             ElDetails::new(new_el.clone(), old_details.loc, old_details.vis),
         );
 
         // register all events of new element to the prioritizers
         let new_evs = new_el.borrow().receivable();
-        self.prioritizer.borrow_mut().include(el_id, &new_evs);
+        self.prioritizer.borrow_mut().include(&new_el_id, &new_evs);
         ic.add_evs(new_evs);
         ic
     }
