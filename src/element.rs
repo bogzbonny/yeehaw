@@ -1,7 +1,7 @@
 use {
     crate::{
         prioritizer::Priority, DrawChPos, ElementID, Event, Location, LocationSet, SclLocation,
-        Size,
+        SclVal, Size,
     },
     std::any::Any,
     std::collections::HashMap,
@@ -68,6 +68,9 @@ pub trait Element {
 
     // get the scalable location of the widget
     fn get_scl_location(&self) -> SclLocation;
+
+    //fn visible(&self) -> bool;
+    //fn set_visible(&self, v: bool);
 
     // -------------------------------------------------------
     // Freebies
@@ -481,61 +484,61 @@ impl ReceivableEventChanges {
 // RESPONSE REQUESTS
 
 // RelocationRequest contains info for moving an element within its context
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Default)]
 pub struct RelocationRequest {
-    pub up: i32,
-    pub down: i32,
-    pub left: i32,
-    pub right: i32,
+    pub up: SclVal,
+    pub down: SclVal,
+    pub left: SclVal,
+    pub right: SclVal,
 }
 
 impl RelocationRequest {
     pub fn new_up(up: i32) -> RelocationRequest {
         RelocationRequest {
-            up,
+            up: SclVal::new_fixed(up),
             ..Default::default()
         }
     }
     pub fn new_down(down: i32) -> RelocationRequest {
         RelocationRequest {
-            down,
+            down: SclVal::new_fixed(down),
             ..Default::default()
         }
     }
     pub fn new_left(left: i32) -> RelocationRequest {
         RelocationRequest {
-            left,
+            left: SclVal::new_fixed(left),
             ..Default::default()
         }
     }
     pub fn new_right(right: i32) -> RelocationRequest {
         RelocationRequest {
-            right,
+            right: SclVal::new_fixed(right),
             ..Default::default()
         }
     }
 
     pub fn new_shift(move_right: i32, move_down: i32) -> RelocationRequest {
         RelocationRequest {
-            up: move_down,
-            down: move_down,
-            left: move_right,
-            right: move_right,
+            up: SclVal::new_fixed(move_down),
+            down: SclVal::new_fixed(move_down),
+            left: SclVal::new_fixed(move_right),
+            right: SclVal::new_fixed(move_right),
         }
     }
 
     pub fn new_shift_right(move_right: i32) -> RelocationRequest {
         RelocationRequest {
-            right: move_right,
-            left: move_right,
+            right: SclVal::new_fixed(move_right),
+            left: SclVal::new_fixed(move_right),
             ..Default::default()
         }
     }
 
     pub fn new_shift_down(move_down: i32) -> RelocationRequest {
         RelocationRequest {
-            down: move_down,
-            up: move_down,
+            down: SclVal::new_fixed(move_down),
+            up: SclVal::new_fixed(move_down),
             ..Default::default()
         }
     }

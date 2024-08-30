@@ -1,4 +1,4 @@
-use crate::element::RelocationRequest;
+use crate::{element::RelocationRequest, Size};
 
 // ZIndex is the z-index or position in the z-dimension of the element
 // The lower the z-index, further toward the front the element is
@@ -213,30 +213,5 @@ impl LocationSet {
         for loc in self.extra.iter_mut() {
             loc.adjust_location_by(x, y);
         }
-    }
-}
-
-// Size holds the width and height of an element
-#[derive(Clone, Copy, Default, Debug, PartialEq)]
-pub struct Size {
-    pub width: u16,
-    pub height: u16,
-}
-
-impl Size {
-    pub fn new(width: u16, height: u16) -> Size {
-        Size { width, height }
-    }
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Default, Debug, PartialEq)]
-pub struct Point {
-    pub x: i32,
-    pub y: i32,
-}
-
-impl Point {
-    pub fn new(x: i32, y: i32) -> Point {
-        Point { x, y }
     }
 }

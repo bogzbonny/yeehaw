@@ -52,6 +52,7 @@ pub struct Pane {
     pub pos_y: Rc<RefCell<SclVal>>,
     pub width: Rc<RefCell<SclVal>>,
     pub height: Rc<RefCell<SclVal>>,
+    //pub visible: Rc<RefCell<bool>>,
 }
 
 impl Pane {
@@ -242,6 +243,13 @@ impl Element for Pane {
         let y2 = y1.clone().plus(h).minus_fixed(1);
         SclLocation::new(x1, x2, y1, y2)
     }
+
+    //fn visible(&self) -> bool {
+    //    *self.visible.borrow()
+    //}
+    //fn set_visible(&self, v: bool) {
+    //    *self.visible.borrow_mut() = v;
+    //}
 }
 
 // ---------------------------------------------------------------------------

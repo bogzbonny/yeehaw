@@ -17,10 +17,21 @@
      - clicking still working
 01. textbox  right-arrow wont get you to the last FINAL extra cursor position of the text. 
     - however the down arrow can get you there
+01. refactors
+     - create SclLocationSet type
 
 ^^^^^^^^^^^^^^  DONE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-01. Add another cargo repo like AssertCmd for tui
+01. refactors
+     - modify EO to use SclLocationSet instead of LocationSet (everything
+       dynamic on context) 
+     - move 'SclLocation' to the element from the EO  
+        - will need to remove pos_x, pos_y, width, height from Pane
+     - move 'visible' to the element from the EO
+     - refactor the Element hashmap to just be a vec (no element id stored) 
+        - effectivly moving the element ID back to the element.
+
+20. Add another cargo repo like AssertCmd for tui
      name: TuiTester?
      - https://github.com/aschey/tui-tester
      - what about https://github.com/microsoft/tui-test is this necessary?
@@ -38,3 +49,4 @@
      - sometimes there are fields in the widget that are only 
        used for the creation of the widget, and not for the widget itself.
      - combine hat and ctx objects for widget creation. 
+

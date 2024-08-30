@@ -1,7 +1,4 @@
-use {
-    crate::{Context, Location},
-    std::rc::Rc,
-};
+use std::rc::Rc;
 
 // SclVal represents a X or Y screen position value which scales based on the
 // size of the parent widget. The value is a static number of characters
@@ -13,17 +10,18 @@ use {
 
 #[derive(Clone, Debug, Default)]
 pub struct SclVal {
-    fixed: usize,  // fixed number of characters
-    fraction: f64, // fraction of the parent widget size number of characters
+    pub fixed: i32,    // fixed number of characters
+    pub fraction: f64, // fraction of the size number of characters (1 = 100)
 
-    plus: Vec<Rc<SclVal>>,        // The SclVal Adds all the provided SclVals
-    minus: Vec<Rc<SclVal>>,       // The SclVal Subtracts all the provided SclVals
-    plus_min_of: Vec<Rc<SclVal>>, // The SclVal Adds the minimum value of these provided SclVals
-    plus_max_of: Vec<Rc<SclVal>>, // The SclVal Adds the maximum value of these provided SclVals
+    // NOTE Rc is used such that locations can dynamicly reference each other
+    plus: Vec<Rc<SclVal>>,        // the SclVal adds all the provided SclVals
+    minus: Vec<Rc<SclVal>>,       // the SclVal subtracts all the provided SclVals
+    plus_min_of: Vec<Rc<SclVal>>, // the SclVal adds the minimum value of these provided SclVals
+    plus_max_of: Vec<Rc<SclVal>>, // the SclVal adds the maximum value of these provided SclVals
 }
 
 impl SclVal {
-    pub fn new_fixed(fixed: usize) -> SclVal {
+    pub fn new_fixed(fixed: i32) -> SclVal {
         SclVal {
             fixed,
             ..SclVal::default()
@@ -37,7 +35,7 @@ impl SclVal {
         }
     }
 
-    pub fn new_abs_and_rel(abs: usize, rel: f64) -> SclVal {
+    pub fn new_abs_and_rel(abs: i32, rel: f64) -> SclVal {
         SclVal {
             fixed: abs,
             fraction: rel,
@@ -46,9 +44,9 @@ impl SclVal {
     }
 
     // Get the value from the absolute and relative psvts
-    pub fn get_val(&self, max_size: usize) -> usize {
+    pub fn get_val(&self, max_size: u16) -> i32 {
         let f = max_size as f64 * self.fraction;
-        let rounded = (f + 0.5) as usize; // round the float to the nearest int
+        let rounded = (f + 0.5) as i32; // round the float to the nearest int
 
         (self.fixed
             + rounded
@@ -56,6 +54,14 @@ impl SclVal {
             + self.max_from_plus_max_of(max_size)
             + self.sum_of_plusses(max_size))
         .saturating_sub(self.sum_of_minuses(max_size))
+    }
+
+    pub fn plus_in_place<S: Into<Rc<SclVal>>>(&mut self, sv: S) {
+        self.plus.push(sv.into());
+    }
+
+    pub fn minus_in_place<S: Into<Rc<SclVal>>>(&mut self, sv: S) {
+        self.minus.push(sv.into());
     }
 
     pub fn plus<S: Into<Rc<SclVal>>>(mut self, sv: S) -> SclVal {
@@ -68,12 +74,12 @@ impl SclVal {
         self
     }
 
-    pub fn plus_fixed(mut self, fixed: usize) -> SclVal {
+    pub fn plus_fixed(mut self, fixed: i32) -> SclVal {
         self.plus.push(Rc::new(SclVal::new_fixed(fixed)));
         self
     }
 
-    pub fn minus_fixed(mut self, fixed: usize) -> SclVal {
+    pub fn minus_fixed(mut self, fixed: i32) -> SclVal {
         self.minus.push(Rc::new(SclVal::new_fixed(fixed)));
         self
     }
@@ -99,11 +105,11 @@ impl SclVal {
     }
 
     // gets the min SclVal of the plusMinOF SclVals
-    pub fn sum_of_plusses(&self, max_size: usize) -> usize {
+    pub fn sum_of_plusses(&self, max_size: u16) -> i32 {
         self.plus.iter().fold(0, |acc, v| acc + v.get_val(max_size))
     }
 
-    pub fn sum_of_minuses(&self, max_size: usize) -> usize {
+    pub fn sum_of_minuses(&self, max_size: u16) -> i32 {
         self.minus
             .iter()
             .fold(0, |acc, v| acc + v.get_val(max_size))
@@ -111,7 +117,7 @@ impl SclVal {
 
     // gets the min value of the plus_min_of SclVals, if there are no
     // plus_min_of it returns 0
-    pub fn min_from_plus_min_of(&self, max_size: usize) -> usize {
+    pub fn min_from_plus_min_of(&self, max_size: u16) -> i32 {
         let mut out = None;
         for k in self.plus_min_of.iter() {
             let v = k.get_val(max_size);
@@ -131,7 +137,7 @@ impl SclVal {
 
     // gets the max value of the plus_max_of SclVals, if there are no
     // plus_max_of it returns 0
-    pub fn max_from_plus_max_of(&self, max_size: usize) -> usize {
+    pub fn max_from_plus_max_of(&self, max_size: u16) -> i32 {
         let mut out = 0;
         for k in self.plus_max_of.iter() {
             let v = k.get_val(max_size);
@@ -140,55 +146,6 @@ impl SclVal {
             }
         }
         out
-    }
-}
-
-// ------------------------------------
-
-#[derive(Default, Debug)]
-pub struct SclLocation {
-    pub start_x: SclVal,
-    pub end_x: SclVal,
-    pub start_y: SclVal,
-    pub end_y: SclVal,
-}
-
-impl SclLocation {
-    pub fn new(start_x: SclVal, end_x: SclVal, start_y: SclVal, end_y: SclVal) -> SclLocation {
-        SclLocation {
-            start_x,
-            end_x,
-            start_y,
-            end_y,
-        }
-    }
-
-    pub fn height(&self, p_ctx: &Context) -> usize {
-        (1 + self.end_y.get_val(p_ctx.get_height() as usize))
-            .saturating_sub(self.start_y.get_val(p_ctx.get_height() as usize))
-    }
-
-    pub fn width(&self, p_ctx: &Context) -> usize {
-        (1 + self.end_x.get_val(p_ctx.get_width() as usize))
-            .saturating_sub(self.start_x.get_val(p_ctx.get_width() as usize))
-    }
-
-    //pub fn get_location(&self) -> Location {
-    //    let w = self.get_width() as i32;
-    //    let h = self.get_height() as i32;
-    //    let x1 = self.loc_x.get_val(self.p_ctx.get_width().into()) as i32;
-    //    let y1 = self.loc_y.get_val(self.p_ctx.get_height().into()) as i32;
-    //    let x2 = x1 + w - 1;
-    //    let y2 = y1 + h - 1;
-    //    Location::new(x1, x2, y1, y2)
-    //}
-    pub fn get_location_for_context(&self, p_ctx: &Context) -> Location {
-        Location::new(
-            self.start_x.get_val(p_ctx.get_width() as usize) as i32,
-            self.end_x.get_val(p_ctx.get_width() as usize) as i32,
-            self.start_y.get_val(p_ctx.get_height() as usize) as i32,
-            self.end_y.get_val(p_ctx.get_height() as usize) as i32,
-        )
     }
 }
 
