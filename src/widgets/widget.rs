@@ -338,8 +338,12 @@ impl WidgetBase {
     }
 
     pub fn at(&mut self, pos_x: SclVal, pos_y: SclVal) {
+        let width = self.get_scl_width();
+        let height = self.get_scl_height();
         self.set_scl_start_x(pos_x);
         self.set_scl_start_y(pos_y);
+        self.set_scl_width(width);
+        self.set_scl_height(height);
     }
 
     //-------------------------

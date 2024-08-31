@@ -172,7 +172,7 @@ impl SclLocation {
 // SclLocationSet holds the primary location as well as the extra
 // locations of an element. In addition it holds a ZIndex which all
 // locations are said to exist at.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SclLocationSet {
     pub l: SclLocation,
 
