@@ -27,9 +27,11 @@
 01. refactors
      - move 'SclLocation' to the element from the EO  
         - will need to remove pos_x, pos_y, width, height from Pane
+     - remove unnecessary element event response items now that the location 
+       and visibility are a part of the element
      - move 'visible' to the element from the EO
      - refactor the Element hashmap to just be a vec (no element id stored) 
-        - effectivly moving the element ID back to the element.
+        - effectively moving the element ID back to the element.
 
 20. Add another cargo repo like AssertCmd for tui
      name: TuiTester?
