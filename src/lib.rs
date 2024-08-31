@@ -9,7 +9,6 @@ pub mod elements;
 pub mod errors;
 pub mod event;
 pub mod keyboard;
-pub mod location;
 pub mod organizer;
 pub mod prioritizer;
 pub mod scl_location;
@@ -30,7 +29,6 @@ pub use {
     errors::Error,
     event::{CommandEvent, Event, KeyPossibility},
     keyboard::Keyboard,
-    location::{Location, LocationSet},
     organizer::ElementOrganizer,
     prioritizer::Priority,
     scl_location::{Point, SclLocation, SclLocationSet, Size, ZIndex},

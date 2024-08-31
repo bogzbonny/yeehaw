@@ -19,12 +19,12 @@
     - however the down arrow can get you there
 01. refactors
      - create SclLocationSet type
+     - modify EO to use SclLocationSet instead of LocationSet (everything
+       dynamic on context) 
 
 ^^^^^^^^^^^^^^  DONE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 01. refactors
-     - modify EO to use SclLocationSet instead of LocationSet (everything
-       dynamic on context) 
      - move 'SclLocation' to the element from the EO  
         - will need to remove pos_x, pos_y, width, height from Pane
      - move 'visible' to the element from the EO

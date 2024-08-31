@@ -14,8 +14,7 @@ use {
 async fn main() -> Result<(), Error> {
     //yeehaw::debug::set_log_file("./widget_test.log".to_string());
     //yeehaw::debug::clear();
-
-    std::env::set_var("RUST_BACKTRACE", "1");
+    //std::env::set_var("RUST_BACKTRACE", "1");
 
     let hat = SortingHat::default();
 
@@ -29,7 +28,7 @@ async fn main() -> Result<(), Error> {
         .at(SclVal::new_frac(0.5), SclVal::new_frac(0.5))
         .to_widgets();
 
-    el.add_widgets(&ctx, l);
+    el.add_widgets(l);
 
     let button_click_fn = Box::new(move |ctx_| {
         let t = l1.get_text();
@@ -42,19 +41,19 @@ async fn main() -> Result<(), Error> {
         .at(SclVal::new_frac(0.25), SclVal::new_frac(0.25))
         .to_widgets()
         .with_label(&hat, &ctx, "button-label");
-    el.add_widgets(&ctx, button);
+    el.add_widgets(button);
 
     let cb = Checkbox::new(&hat)
         .at(SclVal::new_frac(0.1), SclVal::new_frac(0.1))
         .to_widgets()
         .with_label(&hat, &ctx, "check me");
-    el.add_widgets(&ctx, cb);
+    el.add_widgets(cb);
 
     let cb2 = Checkbox::new(&hat)
         .at(SclVal::new_frac(0.1), SclVal::new_frac(0.1).plus_fixed(1))
         .to_widgets()
         .with_label(&hat, &ctx, "check me2");
-    el.add_widgets(&ctx, cb2);
+    el.add_widgets(cb2);
 
     let rbs = RadioButtons::new(
         &hat,
@@ -66,7 +65,7 @@ async fn main() -> Result<(), Error> {
     )
     .at(SclVal::new_frac(0.1), SclVal::new_frac(0.1).plus_fixed(10))
     .to_widgets();
-    el.add_widgets(&ctx, rbs);
+    el.add_widgets(rbs);
 
     let mtext = Megatext::new(
         &hat,
@@ -76,7 +75,7 @@ async fn main() -> Result<(), Error> {
     )
     .at(SclVal::new_frac(0.1), SclVal::new_frac(0.6))
     .to_widgets();
-    el.add_widgets(&ctx, mtext);
+    el.add_widgets(mtext);
 
     // moon runes: ⏾
     // sun runes: ★
@@ -90,7 +89,7 @@ async fn main() -> Result<(), Error> {
     )
     .at(SclVal::new_frac(0.1), SclVal::new_frac(0.4))
     .to_widgets();
-    el.add_widgets(&ctx, toggle);
+    el.add_widgets(toggle);
 
     // fill dd entries with 20 items
     let dd_entries = (1..=20)
@@ -111,7 +110,7 @@ async fn main() -> Result<(), Error> {
     )
     .at(SclVal::new_frac(0.1), SclVal::new_frac(0.8))
     .to_widgets();
-    el.add_widgets(&ctx, dropdown);
+    el.add_widgets(dropdown);
 
     let ld_entries = (1..=10)
         .map(|i| format!("entry {}", i))
@@ -130,7 +129,7 @@ async fn main() -> Result<(), Error> {
     .with_scrollbar()
     .at(SclVal::new_frac(0.5), SclVal::new_frac(0.1))
     .to_widgets(&hat);
-    el.add_widgets(&ctx, listbox);
+    el.add_widgets(listbox);
 
     let tb = TextBox::new(
         &hat,
@@ -147,14 +146,14 @@ async fn main() -> Result<(), Error> {
     .at(SclVal::new_frac(0.75), SclVal::new_frac(0.1))
     .to_widgets(&hat, &ctx);
 
-    el.add_widgets(&ctx, tb);
+    el.add_widgets(tb);
 
     let ntb = NumbersTextBox::new(&hat, &ctx, 0)
         .with_min(-10)
         .with_max(10)
         .at(SclVal::new_frac(0.75), SclVal::new_frac(0.5))
         .to_widgets(&hat, &ctx);
-    el.add_widgets(&ctx, ntb);
+    el.add_widgets(ntb);
 
     Cui::new(Rc::new(RefCell::new(el)))?.run().await
 }

@@ -1,4 +1,4 @@
-use crate::{element::RelocationRequest, Context, Location, SclVal};
+use crate::{element::RelocationRequest, Context, SclVal};
 
 // ZIndex is the z-index or position in the z-dimension of the element
 // The lower the z-index, further toward the front the element is
@@ -30,15 +30,6 @@ impl SclLocation {
             start_y: SclVal::new_fixed(start_y),
             end_y: SclVal::new_fixed(end_y),
         }
-    }
-
-    pub fn get_location_for_context(&self, ctx: &Context) -> Location {
-        Location::new(
-            self.start_x.get_val(ctx.get_width()),
-            self.end_x.get_val(ctx.get_width()),
-            self.start_y.get_val(ctx.get_height()),
-            self.end_y.get_val(ctx.get_height()),
-        )
     }
 
     pub fn height(&self, ctx: &Context) -> usize {
