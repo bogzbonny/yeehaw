@@ -1,7 +1,7 @@
 use {
     crate::{
         element::ReceivableEventChanges, Context, DrawChPos, Element, ElementID, ElementOrganizer,
-        Event, EventResponses, Priority, SclLocation, SortingHat, Pane, UpwardPropagator,
+        Event, EventResponses, Pane, Priority, SclLocation, SortingHat, UpwardPropagator,
     },
     std::{
         ops::Deref,
@@ -103,8 +103,10 @@ impl ParentPane {
         self.generate_perceived_priorities(pr, pes)
     }
 
-    pub fn change_priority_for_el(&self, el_id: ElementID, p: Priority) -> ReceivableEventChanges {
-        let mut ic = self.eo.change_priority_for_el(el_id, p);
+    pub fn change_priority_for_el(
+        &self, ctx: &Context, el_id: ElementID, p: Priority,
+    ) -> ReceivableEventChanges {
+        let mut ic = self.eo.change_priority_for_el(ctx, el_id, p);
         let mut to_add = vec![];
 
         // Check if any of the ic.remove match pane.self_evs. If so, add those events to
@@ -211,7 +213,7 @@ impl Element for ParentPane {
     fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
             Event::Refresh => {
-                self.eo.refresh();
+                self.eo.refresh(ctx);
                 (false, EventResponses::default())
             }
             _ => self.pane.receive_event(ctx, ev),

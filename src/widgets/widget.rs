@@ -2,8 +2,8 @@ use {
     super::Label,
     crate::{
         event::Event, Context, DrawCh, DrawChPos, DrawChs2D, Element, ElementID, EventResponse,
-        EventResponses, Priority, ReceivableEventChanges, SclLocation, SclVal, SortingHat,
-        Pane, Style, UpwardPropagator, ZIndex,
+        EventResponses, Pane, Priority, ReceivableEventChanges, SclLocation, SclVal, SortingHat,
+        Style, UpwardPropagator, ZIndex,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -178,12 +178,12 @@ impl Widgets {
     ) -> (SclVal, SclVal) {
         let l = self.overall_loc();
         match p {
-            LabelPosition::AboveThenLeft => (l.start_x, l.start_y.minus_fixed(label_height)),
-            LabelPosition::AboveThenRight => (l.end_x, l.start_y.minus_fixed(label_height)),
+            LabelPosition::AboveThenLeft => (l.start_x, l.start_y.minus_fixed(label_height as i32)),
+            LabelPosition::AboveThenRight => (l.end_x, l.start_y.minus_fixed(label_height as i32)),
             LabelPosition::BelowThenLeft => (l.start_x, l.end_y.plus_fixed(1)),
             LabelPosition::BelowThenRight => (l.end_x, l.end_y.plus_fixed(1)),
-            LabelPosition::LeftThenTop => (l.start_x.minus_fixed(label_width), l.start_y),
-            LabelPosition::LeftThenBottom => (l.start_x.minus_fixed(label_width), l.end_y),
+            LabelPosition::LeftThenTop => (l.start_x.minus_fixed(label_width as i32), l.start_y),
+            LabelPosition::LeftThenBottom => (l.start_x.minus_fixed(label_width as i32), l.end_y),
             LabelPosition::RightThenTop => (l.end_x.plus_fixed(1), l.start_y),
             LabelPosition::RightThenBottom => (l.end_x.plus_fixed(1), l.end_y),
         }
@@ -353,12 +353,12 @@ impl WidgetBase {
 
     pub fn get_width(&self, ctx: &Context) -> usize {
         let scl_width = self.pane.width.borrow();
-        scl_width.get_val(ctx.get_width().into())
+        scl_width.get_val(ctx.get_width()) as usize
     }
 
     pub fn get_height(&self, ctx: &Context) -> usize {
         let scl_height = self.pane.height.borrow();
-        scl_height.get_val(ctx.get_height().into())
+        scl_height.get_val(ctx.get_height()) as usize
     }
 
     pub fn scroll_up(&self, ctx: &Context) {

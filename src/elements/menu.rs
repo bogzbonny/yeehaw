@@ -1,8 +1,8 @@
 use {
     crate::{
         element::ExtraLocationsRequest, element::ReceivableEventChanges, Context, DrawCh,
-        DrawChPos, Element, ElementID, Event, EventResponse, EventResponses, Location, LocationSet,
-        ParentPane, Priority, RgbColour, SclLocation, SortingHat, Pane, Style,
+        DrawChPos, Element, ElementID, Event, EventResponse, EventResponses, Pane, ParentPane,
+        Priority, RgbColour, SclLocation, SclLocationSet, SclVal, SortingHat, Style,
         UpwardPropagator, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -109,86 +109,88 @@ impl MenuBar {
     }
 
     // unselectable item as decoration
-    pub fn add_decor(&self, hat: &SortingHat, menu_path: String) {
+    pub fn add_decor(&self, hat: &SortingHat, ctx: &Context, menu_path: String) {
         let mp = MenuPath(menu_path);
-        self.ensure_folders(hat, mp.clone());
+        self.ensure_folders(hat, ctx, mp.clone());
         let item = MenuItem::new(hat, mp).with_unselectable();
-        self.add_item_inner(item);
+        self.add_item_inner(ctx, item);
     }
 
     pub fn add_item(
-        &self, hat: &SortingHat, menu_path: String,
+        &self, hat: &SortingHat, ctx: &Context, menu_path: String,
         click_fn: Option<Box<dyn FnMut(Context) -> EventResponses>>,
     ) {
         let mp = MenuPath(menu_path);
-        self.ensure_folders(hat, mp.clone());
+        self.ensure_folders(hat, ctx, mp.clone());
         let item = MenuItem::new(hat, mp).with_click_fn(click_fn);
-        self.add_item_inner(item);
+        self.add_item_inner(ctx, item);
     }
 
     pub fn with_item(
-        self, hat: &SortingHat, menu_path: String,
+        self, hat: &SortingHat, ctx: &Context, menu_path: String,
         click_fn: Option<Box<dyn FnMut(Context) -> EventResponses>>,
     ) -> Self {
-        self.add_item(hat, menu_path, click_fn);
+        self.add_item(hat, ctx, menu_path, click_fn);
         self
     }
 
-    pub fn set_items(&self, hat: &SortingHat, items: Vec<MenuItem>) {
+    pub fn set_items(&self, hat: &SortingHat, ctx: &Context, items: Vec<MenuItem>) {
         for item in items {
-            self.ensure_folders(hat, item.path.borrow().clone());
-            self.add_item_inner(item);
+            self.ensure_folders(hat, ctx, item.path.borrow().clone());
+            self.add_item_inner(ctx, item);
         }
     }
 
     // ensure or create all folders leading to the final menu path
-    pub fn ensure_folders(&self, hat: &SortingHat, menu_path: MenuPath) {
+    pub fn ensure_folders(&self, hat: &SortingHat, ctx: &Context, menu_path: MenuPath) {
         let folders = menu_path.folders();
         for i in 0..folders.len() {
             let folder_path = folders[..=i].join("/");
             if !self.contains_menu_item(MenuPath(folder_path.clone())) {
                 let path = MenuPath(folder_path);
                 let item = MenuItem::new_folder(hat, path);
-                self.add_item_inner(item);
+                self.add_item_inner(ctx, item);
             }
         }
     }
 
     // the furthest location of the primary menu element
-    pub fn max_primary_x(&self) -> Option<i32> {
+    pub fn max_primary_x(&self, ctx: &Context) -> Option<i32> {
         let mut max_x = None;
         for item in self.menu_items_order.borrow().iter() {
             if item.is_primary() {
                 let loc = self.pane.eo.get_location(&item.id()).expect("missing el").l;
+                let end_x = loc.get_end_x(ctx);
                 if let Some(mx) = max_x {
-                    if loc.end_x > mx {
-                        max_x = Some(loc.end_x);
+                    if end_x > mx {
+                        max_x = Some(end_x);
                     }
                 } else {
-                    max_x = Some(loc.end_x);
+                    max_x = Some(end_x);
                 }
             }
         }
         max_x
     }
-    pub fn max_primary_y(&self) -> Option<i32> {
+    pub fn max_primary_y(&self, ctx: &Context) -> Option<i32> {
         let mut max_y = None;
         for item in self.menu_items_order.borrow().iter() {
             if item.is_primary() {
                 let loc = self.pane.eo.get_location(&item.id()).expect("missing el").l;
+                let end_y = loc.get_end_y(ctx);
                 if let Some(my) = max_y {
-                    if loc.end_y > my {
-                        max_y = Some(loc.end_y);
+                    if end_y > my {
+                        max_y = Some(end_y);
                     }
                 } else {
-                    max_y = Some(loc.end_y);
+                    max_y = Some(end_y);
                 }
             }
         }
         max_y
     }
 
-    fn add_item_inner(&self, item: MenuItem) {
+    fn add_item_inner(&self, ctx: &Context, item: MenuItem) {
         let is_primary = item.is_primary();
         if is_primary && !*self.primary_has_show_arrow.borrow() {
             *item.show_folder_arrow.borrow_mut() = false;
@@ -199,18 +201,24 @@ impl MenuBar {
                 *self.primary_has_show_arrow.borrow(),
             ) as i32;
             let loc = if *self.horizontal_bar.borrow() {
-                let x = self.max_primary_x();
+                let x = self.max_primary_x(ctx);
                 let x = if let Some(x) = x { x + 1 } else { 0 };
-                Location::new(x, x + item_width - 1, 0, 0)
+                let x1 = SclVal::new_fixed(x);
+                let x2 = SclVal::new_fixed(x + item_width - 1);
+                let y = SclVal::new_fixed(0);
+                SclLocation::new(x1, x2, y.clone(), y)
             } else {
-                let y = self.max_primary_y();
+                let y = self.max_primary_y(ctx);
                 let y = if let Some(y) = y { y + 1 } else { 0 };
-                Location::new(0, item_width - 1, y, y)
+                let y = SclVal::new_fixed(y);
+                let x1 = SclVal::new_fixed(0);
+                let x2 = SclVal::new_fixed(item_width - 1);
+                SclLocation::new(x1, x2, y.clone(), y)
             };
-            let ls = LocationSet::new(loc, vec![], Self::Z_INDEX);
+            let ls = SclLocationSet::new(loc, vec![], Self::Z_INDEX);
             (ls, true)
         } else {
-            (LocationSet::default(), false)
+            (SclLocationSet::default(), false)
         };
         self.pane
             .eo
@@ -236,11 +244,12 @@ impl MenuBar {
                 .map(|it| it.min_width(&m_sty, primary_arrow))
                 .max()
                 .unwrap_or(0);
+            let max_width = SclVal::new_fixed(max_width as i32);
 
             // adjust all the widths in the element organizer
             for it in primary_items {
                 let mut loc = self.pane.eo.get_location(&it.id()).expect("missing item").l;
-                loc.set_width(max_width);
+                loc.set_width(max_width.clone());
                 self.pane.eo.update_el_primary_location(it.id(), loc);
             }
         }
@@ -282,7 +291,7 @@ impl MenuBar {
             return (true, EventResponses::default());
         }
 
-        let mep = self.pane.eo.mouse_event_process(&ev);
+        let mep = self.pane.eo.mouse_event_process(ctx, &ev);
         let Some((el_id, mut resps)) = mep else {
             if clicked {
                 return self.closedown();
@@ -394,7 +403,7 @@ impl MenuBar {
         *self.activated.borrow_mut() = true;
     }
 
-    pub fn extra_locations(&self) -> Vec<Location> {
+    pub fn extra_locations(&self) -> Vec<SclLocation> {
         let mut locs = vec![];
         for details in self.pane.eo.els.borrow().values() {
             locs.push(details.loc.l.clone());
@@ -431,7 +440,7 @@ impl MenuBar {
     }
 
     // expands all the sub-items of the provided item
-    pub fn expand_folder(&self, _ctx: &Context, item: &MenuItem, dir: OpenDirection) {
+    pub fn expand_folder(&self, ctx: &Context, item: &MenuItem, dir: OpenDirection) {
         // get the immediate sub items of item
         let mut sub_items = vec![];
         let item_mp = (*item.path.borrow()).clone();
@@ -449,51 +458,53 @@ impl MenuBar {
             .map(|it| it.min_width(&m_sty, primary_arrow))
             .max()
             .unwrap_or(0);
+        let neg_max_width = SclVal::new_fixed(-(max_width as i32));
+        let max_width = SclVal::new_fixed(max_width as i32);
 
         // set all the locations in the element organizer
 
         // TODO adjust the open direction if there isn't enough space.
         let mut loc = self.pane.eo.get_location(&item.id()).expect("missing el").l;
-        let item_width = loc.get_size().width;
+        let item_width = SclVal::new_fixed(loc.width(ctx) as i32); // XXX this should just be loc width (post refactor of scl_location to element)
         for (i, it) in sub_items.iter().enumerate() {
             // adjust for the next location
             match dir {
                 OpenDirection::Up => {
-                    loc.adjust_location_by(0, -1);
+                    loc.adjust_location_by_y(SclVal::new_fixed(-(i as i32)));
                 }
                 OpenDirection::Down => {
-                    loc.adjust_location_by(0, 1);
+                    loc.adjust_location_by_y(SclVal::new_fixed(1));
                 }
                 OpenDirection::LeftThenDown => {
                     if i == 0 {
-                        loc.adjust_location_by(-(max_width as i32), 0);
+                        loc.adjust_location_by_x(neg_max_width.clone());
                     } else {
-                        loc.adjust_location_by(0, 1);
+                        loc.adjust_location_by_y(SclVal::new_fixed(1));
                     }
                 }
                 OpenDirection::RightThenDown => {
                     if i == 0 {
-                        loc.adjust_location_by(item_width as i32, 0);
+                        loc.adjust_location_by_x(item_width.clone());
                     } else {
-                        loc.adjust_location_by(0, 1);
+                        loc.adjust_location_by_y(SclVal::new_fixed(1));
                     }
                 }
                 OpenDirection::LeftThenUp => {
                     if i == 0 {
-                        loc.adjust_location_by(-(max_width as i32), 0);
+                        loc.adjust_location_by_x(neg_max_width.clone());
                     } else {
-                        loc.adjust_location_by(0, -1);
+                        loc.adjust_location_by_y(SclVal::new_fixed(-1));
                     }
                 }
                 OpenDirection::RightThenUp => {
                     if i == 0 {
-                        loc.adjust_location_by(item_width as i32, 0);
+                        loc.adjust_location_by_x(item_width.clone());
                     } else {
-                        loc.adjust_location_by(0, -1);
+                        loc.adjust_location_by_y(SclVal::new_fixed(-1));
                     }
                 }
             };
-            loc.set_width(max_width);
+            loc.set_width(max_width.clone());
             self.pane
                 .eo
                 .update_el_primary_location(it.id(), loc.clone());
@@ -637,13 +648,13 @@ impl Element for MenuBar {
         // draw each menu item
         for el_details in self.pane.eo.els.borrow().values() {
             // offset pos to location
-            let s = el_details.loc.l.get_size();
+            let s = el_details.loc.l.get_size(ctx);
             let c = Context::new(s, el_details.vis)
                 .with_metadata(Self::MENU_STYLE_MD_KEY.to_string(), menu_style_bz.clone());
             let dcps = el_details.el.borrow().drawing(&c);
 
             for mut dcp in dcps {
-                dcp.adjust_by_location(&el_details.loc.l);
+                dcp.adjust_by_scl_location(ctx, &el_details.loc.l);
                 out.push(dcp);
             }
         }

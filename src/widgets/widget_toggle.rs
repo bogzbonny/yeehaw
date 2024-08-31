@@ -57,7 +57,7 @@ impl Toggle {
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
-            SclVal::new_fixed(left.chars().count() + right.chars().count()),
+            SclVal::new_fixed(left.chars().count() as i32 + right.chars().count() as i32),
             SclVal::new_fixed(1),
             Self::STYLE,
             Self::default_receivable_events(),

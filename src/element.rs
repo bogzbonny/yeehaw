@@ -1,7 +1,7 @@
 use {
     crate::{
-        prioritizer::Priority, DrawChPos, ElementID, Event, Location, LocationSet, SclLocation,
-        SclVal, Size,
+        prioritizer::Priority, DrawChPos, ElementID, Event, SclLocation, SclLocationSet, SclVal,
+        Size,
     },
     std::any::Any,
     std::collections::HashMap,
@@ -390,11 +390,11 @@ impl EventResponse {
 #[derive(Clone)]
 pub struct CreateWindow {
     pub el: Rc<RefCell<dyn Element>>,
-    pub loc: LocationSet,
+    pub loc: SclLocationSet,
 }
 
 impl CreateWindow {
-    pub fn new(el: Rc<RefCell<dyn Element>>, loc: LocationSet) -> CreateWindow {
+    pub fn new(el: Rc<RefCell<dyn Element>>, loc: SclLocationSet) -> CreateWindow {
         CreateWindow { el, loc }
     }
 }
@@ -547,12 +547,12 @@ impl RelocationRequest {
 // ExtraLocationRequest contains info for adding or removing extra locations for
 // the given element
 pub struct ExtraLocationRequest {
-    pub add: Vec<Location>,
-    pub rm: Vec<Location>,
+    pub add: Vec<SclLocation>,
+    pub rm: Vec<SclLocation>,
 }
 
 impl ExtraLocationRequest {
-    pub fn new(add: Vec<Location>, rm: Vec<Location>) -> ExtraLocationRequest {
+    pub fn new(add: Vec<SclLocation>, rm: Vec<SclLocation>) -> ExtraLocationRequest {
         ExtraLocationRequest { add, rm }
     }
 }
@@ -561,11 +561,11 @@ impl ExtraLocationRequest {
 // of the element
 pub struct ExtraLocationsRequest {
     pub requested: bool,
-    pub extra_locs: Vec<Location>,
+    pub extra_locs: Vec<SclLocation>,
 }
 
 impl ExtraLocationsRequest {
-    pub fn new(extra_locs: Vec<Location>) -> ExtraLocationsRequest {
+    pub fn new(extra_locs: Vec<SclLocation>) -> ExtraLocationsRequest {
         ExtraLocationsRequest {
             requested: true,
             extra_locs,

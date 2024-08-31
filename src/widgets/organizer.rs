@@ -2,14 +2,14 @@ use {
     super::{Selectability, Widget},
     crate::{
         Context, DrawChPos, Event, EventResponse, EventResponses, KeyPossibility, Keyboard as KB,
-        LocationSet, Priority, ReceivableEventChanges,
+        Priority, ReceivableEventChanges, SclLocationSet,
     },
     crossterm::event::{MouseButton, MouseEventKind},
 };
 
 #[derive(Default)]
 pub struct WidgetOrganizer {
-    pub widgets: Vec<(Box<dyn Widget>, LocationSet)>,
+    pub widgets: Vec<(Box<dyn Widget>, SclLocationSet)>,
     active_widget_index: Option<usize>, // None means no widget active
 }
 
@@ -22,7 +22,7 @@ impl WidgetOrganizer {
         ]
     }
 
-    pub fn add_widget(&mut self, w: Box<dyn Widget>, loc: LocationSet) {
+    pub fn add_widget(&mut self, w: Box<dyn Widget>, loc: SclLocationSet) {
         self.widgets.push((w, loc));
     }
 
@@ -72,9 +72,8 @@ impl WidgetOrganizer {
         }
 
         // resize the widget
-        if let Some(reloc) = resp.relocation {
+        if let Some(reloc) = resp.relocation.take() {
             self.widgets[widget_index].1.relocate(reloc);
-            resp.relocation = None;
         }
 
         if resp.deactivate {
@@ -235,11 +234,11 @@ impl WidgetOrganizer {
 
         let mut most_front_z_index = i32::MAX; // lowest value is the most front
         let mut widget_index = None; // index of widget with most front z index
-        let mut widget_loc = LocationSet::default();
+        let mut widget_loc = SclLocationSet::default();
 
         // find the widget with the most front z index
         for (i, (_, loc)) in self.widgets.iter().enumerate() {
-            if loc.contains(ev.column.into(), ev.row.into()) && loc.z < most_front_z_index {
+            if loc.contains(ctx, ev.column.into(), ev.row.into()) && loc.z < most_front_z_index {
                 most_front_z_index = loc.z;
                 widget_index = Some(i);
                 widget_loc = loc.clone();
@@ -264,7 +263,7 @@ impl WidgetOrganizer {
         } else {
             EventResponses::default()
         };
-        let ev_adj = widget_loc.l.adjust_mouse_event(&ev);
+        let ev_adj = widget_loc.l.adjust_mouse_event(ctx, &ev);
         let (captured, mut resps2) = self.widgets[widget_index]
             .0
             .receive_event(ctx, Event::Mouse(ev_adj));
@@ -279,7 +278,7 @@ impl WidgetOrganizer {
     pub fn resize_event(&mut self, ctx: &Context) {
         for (w, loc) in &mut self.widgets {
             w.receive_event(ctx, Event::Resize);
-            loc.l = w.get_scl_location().get_location_for_context(ctx);
+            loc.l = w.get_scl_location();
         }
     }
 
@@ -296,7 +295,7 @@ impl WidgetOrganizer {
             let ds = w.drawing(ctx);
             for mut d in ds {
                 // adjust the location of the drawChPos relative to the WidgetPane
-                d.adjust_by_location(&loc.l);
+                d.adjust_by_scl_location(ctx, &loc.l);
                 // filter out chs that are outside of the WidgetPane bounds
                 if d.y < ctx.s.height && d.x < ctx.s.width {
                     out.push(d);
@@ -311,7 +310,7 @@ impl WidgetOrganizer {
 
             for mut d in ds {
                 // adjust the location of the drawChPos relative to the WidgetPane
-                d.adjust_by_location(&locs.l);
+                d.adjust_by_scl_location(ctx, &locs.l);
 
                 // filter out chs that are outside of the WidgetPane bounds
                 if d.y < ctx.s.height && d.x < ctx.s.width {

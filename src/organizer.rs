@@ -1,8 +1,8 @@
 use {
     crate::{
         element::ReceivableEventChanges, prioritizer::EventPrioritizer, CommandEvent, Context,
-        DrawChPos, Element, ElementID, Event, EventResponse, EventResponses, Location, LocationSet,
-        Priority, UpwardPropagator, ZIndex,
+        DrawChPos, Element, ElementID, Event, EventResponse, EventResponses, Priority, SclLocation,
+        SclLocationSet, UpwardPropagator, ZIndex,
     },
     std::collections::HashMap,
     std::{cell::RefCell, rc::Rc},
@@ -20,12 +20,12 @@ pub struct ElementOrganizer {
 #[derive(Clone)]
 pub struct ElDetails {
     pub el: Rc<RefCell<dyn Element>>,
-    pub loc: LocationSet, // LocationSet of the element
-    pub vis: bool,        // whether the element is set to display
+    pub loc: SclLocationSet, // LocationSet of the element
+    pub vis: bool,           // whether the element is set to display
 }
 
 impl ElDetails {
-    pub fn new(el: Rc<RefCell<dyn Element>>, loc: LocationSet, vis: bool) -> Self {
+    pub fn new(el: Rc<RefCell<dyn Element>>, loc: SclLocationSet, vis: bool) -> Self {
         Self { el, loc, vis }
     }
 
@@ -33,7 +33,7 @@ impl ElDetails {
         self.vis = vis;
     }
 
-    pub fn set_location_set(&mut self, loc: LocationSet) {
+    pub fn set_location_set(&mut self, loc: SclLocationSet) {
         self.loc = loc;
     }
 }
@@ -41,7 +41,7 @@ impl ElDetails {
 impl ElementOrganizer {
     pub fn add_element(
         &self, el: Rc<RefCell<dyn Element>>, up: Option<Box<dyn UpwardPropagator>>,
-        loc: LocationSet, vis: bool,
+        loc: SclLocationSet, vis: bool,
     ) {
         // assign the new element id
         let el_id = el.borrow().id().clone();
@@ -94,14 +94,14 @@ impl ElementOrganizer {
         self.els.borrow().get(el_id).map(|ed| ed.el.clone())
     }
 
-    pub fn get_location(&self, el_id: &ElementID) -> Option<LocationSet> {
+    pub fn get_location(&self, el_id: &ElementID) -> Option<SclLocationSet> {
         self.els.borrow().get(el_id).map(|ed| ed.loc.clone())
     }
 
     // get_el_at_pos returns the element at the given position
-    pub fn get_element_details_at_pos(&self, x: i32, y: i32) -> Option<ElDetails> {
+    pub fn get_element_details_at_pos(&self, ctx: &Context, x: i32, y: i32) -> Option<ElDetails> {
         for (_, details) in self.els.borrow().iter() {
-            if details.loc.contains(x, y) {
+            if details.loc.contains(ctx, x, y) {
                 return Some(details.clone());
             }
         }
@@ -109,9 +109,9 @@ impl ElementOrganizer {
     }
 
     // get_el_id_at_pos returns the element id at the given position
-    pub fn get_el_id_at_pos(&self, x: i32, y: i32) -> Option<ElementID> {
+    pub fn get_el_id_at_pos(&self, ctx: &Context, x: i32, y: i32) -> Option<ElementID> {
         for (el_id, details) in self.els.borrow().iter() {
-            if details.loc.contains(x, y) {
+            if details.loc.contains(ctx, x, y) {
                 return Some(el_id.clone());
             }
         }
@@ -127,7 +127,7 @@ impl ElementOrganizer {
 
     // update_el_primary_location updates the primary location of the element with the given id
     //pub fn update_el_locations_by_id(&mut self, el_id: ElementID, locs: LocationSet) {
-    pub fn update_el_location_set(&self, el_id: ElementID, loc: LocationSet) {
+    pub fn update_el_location_set(&self, el_id: ElementID, loc: SclLocationSet) {
         //self.locations.entry(el_id).and_modify(|l| (*l) = loc);
         self.els
             .borrow_mut()
@@ -136,7 +136,7 @@ impl ElementOrganizer {
     }
 
     // update_el_primary_location updates the primary location of the element with the given id
-    pub fn update_el_primary_location(&self, el_id: ElementID, loc: Location) {
+    pub fn update_el_primary_location(&self, el_id: ElementID, loc: SclLocation) {
         //self.locations.entry(el_id).and_modify(|l| l.l = loc);
         self.els
             .borrow_mut()
@@ -146,7 +146,7 @@ impl ElementOrganizer {
 
     // updates the extra locations for the given element
     //pub fn update_extra_locations_for_el(
-    pub fn update_el_extra_locations(&self, el_id: ElementID, extra_locations: Vec<Location>) {
+    pub fn update_el_extra_locations(&self, el_id: ElementID, extra_locations: Vec<SclLocation>) {
         self.els
             .borrow_mut()
             .entry(el_id)
@@ -181,8 +181,8 @@ impl ElementOrganizer {
     //}
 
     // get_context_for_el_id returns the context for the element registered under the given id
-    pub fn get_context_for_el(&self, el_details: &ElDetails) -> Context {
-        let size = el_details.loc.l.get_size();
+    pub fn get_context_for_el(&self, higher_ctx: &Context, el_details: &ElDetails) -> Context {
+        let size = el_details.loc.l.get_size(higher_ctx);
         Context::new(size, el_details.vis)
     }
 
@@ -229,7 +229,7 @@ impl ElementOrganizer {
     // back to furthest forward) and then drawn in that order, such that the element
     // with the lowest z-index is drawn last and thus is on top of all others in the
     // DrawChPos slice
-    pub fn all_drawing(&self) -> Vec<DrawChPos> {
+    pub fn all_drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let mut out = Vec::new();
         let mut eoz: Vec<(ElementID, ElDetails)> = Vec::new();
 
@@ -243,11 +243,11 @@ impl ElementOrganizer {
 
         // draw elements in order from highest z-index to lowest
         for el_id_z in eoz {
-            let ctx = self.get_context_for_el(&el_id_z.1);
+            let child_ctx = self.get_context_for_el(ctx, &el_id_z.1);
             let details = self.get_element_details(&el_id_z.0).expect("impossible");
-            let dcps = details.el.borrow().drawing(&ctx);
+            let dcps = details.el.borrow().drawing(&child_ctx);
             for mut dcp in dcps {
-                dcp.adjust_by_location(&details.loc.l);
+                dcp.adjust_by_scl_location(ctx, &details.loc.l);
                 out.push(dcp);
             }
         }
@@ -266,7 +266,9 @@ impl ElementOrganizer {
     // Partially process the event response for whatever is possible to be processed
     // in the element organizer. Further processing may be required by the element
     // which owns this element organizer.
-    pub fn partially_process_ev_resp(&self, el_id: &ElementID, r: &mut EventResponse) {
+    pub fn partially_process_ev_resp(
+        &self, ctx: &Context, el_id: &ElementID, r: &mut EventResponse,
+    ) {
         let Some(details) = self.get_element_details(el_id) else {
             // TODO log error
             return;
@@ -274,20 +276,23 @@ impl ElementOrganizer {
 
         // replace this entire element
         if let Some(repl) = r.replacement.clone() {
-            let ctx = self.get_context_for_el(&details);
+            let child_ctx = self.get_context_for_el(ctx, &details);
             self.replace_el(el_id, repl);
             r.replacement = None;
 
             // resize replacement
             // TODO may not be neccessary. Explore further w/ fixes to resizing
-            details.el.borrow_mut().receive_event(&ctx, Event::Resize);
+            details
+                .el
+                .borrow_mut()
+                .receive_event(&child_ctx, Event::Resize);
         }
 
         if let Some(ref elr) = r.extra_locations {
             // adjust extra locations to be relative to the given element
             let mut adj_extra_locs = Vec::new();
             for mut l in elr.extra_locs.clone() {
-                l.adjust_location_by(details.loc.l.start_x, details.loc.l.start_y);
+                l.adjust_location_by(details.loc.l.start_x.clone(), details.loc.l.start_y.clone());
                 adj_extra_locs.push(l.clone());
             }
 
@@ -355,7 +360,7 @@ impl ElementOrganizer {
     // - sends the event combo to the element
     // - processes changes to the elements receivable events
     pub fn key_events_process(
-        &self, evs: Vec<crossterm::event::KeyEvent>,
+        &self, ctx: &Context, evs: Vec<crossterm::event::KeyEvent>,
     ) -> Option<(ElementID, EventResponses)> {
         // determine elementID to send events to
         let evs: Event = evs.into();
@@ -367,11 +372,11 @@ impl ElementOrganizer {
             .expect("no element for destination id");
 
         // send EventKeys to element w/ context
-        let ctx = self.get_context_for_el(&el_details);
-        let (_, mut resps) = el_details.el.borrow_mut().receive_event(&ctx, evs);
+        let child_ctx = self.get_context_for_el(ctx, &el_details);
+        let (_, mut resps) = el_details.el.borrow_mut().receive_event(&child_ctx, evs);
 
         for r in resps.iter_mut() {
-            self.partially_process_ev_resp(&el_id, r);
+            self.partially_process_ev_resp(ctx, &el_id, r);
             if let Some(changes) = r.get_receivable_event_changes() {
                 self.process_receivable_event_changes(&el_id, &changes);
             }
@@ -387,13 +392,13 @@ impl ElementOrganizer {
     // NOTE: the refresh allows for less meticulous construction of the
     // main.go file. Elements can be added in whatever order, so long as
     // your_main_el.refresh() is called after all elements are added.
-    pub fn refresh(&self) {
+    pub fn refresh(&self, ctx: &Context) {
         // reset prioritizers
         *self.prioritizer.borrow_mut() = EventPrioritizer::default();
 
         // refresh all children
         for (_, details) in self.els.borrow().iter() {
-            let el_ctx = self.get_context_for_el(details);
+            let el_ctx = self.get_context_for_el(ctx, details);
             details
                 .el
                 .borrow_mut()
@@ -408,16 +413,18 @@ impl ElementOrganizer {
     // change_priority_for_el updates a child element (el_id) to a new priority. It does
     // this by asking the child element to return its registered events w/
     // priorities updated to a given priority.
-    pub fn change_priority_for_el(&self, el_id: ElementID, pr: Priority) -> ReceivableEventChanges {
+    pub fn change_priority_for_el(
+        &self, ctx: &Context, el_id: ElementID, pr: Priority,
+    ) -> ReceivableEventChanges {
         let details = self
             .get_element_details(&el_id)
             .expect("no element for destination id"); // XXX something else
 
-        let ctx = self.get_context_for_el(&details);
+        let child_ctx = self.get_context_for_el(ctx, &details);
 
         // NOTE these changes are the changes for
         // THIS element organizer (not the child element)
-        let changes = details.el.borrow_mut().change_priority(&ctx, pr);
+        let changes = details.el.borrow_mut().change_priority(&child_ctx, pr);
         self.process_receivable_event_changes(&el_id, &changes);
         changes
     }
@@ -425,17 +432,17 @@ impl ElementOrganizer {
     // get_el_id_z_order_under_mouse returns a list of all Elements whose locations
     // include the position of the mouse event
     pub fn get_el_id_z_order_under_mouse(
-        &self, ev: &crossterm::event::MouseEvent,
+        &self, ctx: &Context, ev: &crossterm::event::MouseEvent,
     ) -> Vec<(ElementID, ZIndex)> {
         let mut ezo: Vec<(ElementID, ZIndex)> = Vec::new();
 
         for (el_id, details) in self.els.borrow().iter() {
-            let ctx = self.get_context_for_el(details);
-            if !ctx.visible {
+            let child_ctx = self.get_context_for_el(ctx, details);
+            if !child_ctx.visible {
                 continue;
             }
 
-            if details.loc.contains(ev.column.into(), ev.row.into()) {
+            if details.loc.contains(ctx, ev.column.into(), ev.row.into()) {
                 ezo.push((el_id.clone(), details.loc.z));
             }
         }
@@ -447,9 +454,9 @@ impl ElementOrganizer {
     // - sends the event to the element
     // - processes changes to the element's receivable events
     pub fn mouse_event_process(
-        &self, ev: &crossterm::event::MouseEvent,
+        &self, ctx: &Context, ev: &crossterm::event::MouseEvent,
     ) -> Option<(ElementID, EventResponses)> {
-        let mut eoz = self.get_el_id_z_order_under_mouse(ev);
+        let mut eoz = self.get_el_id_z_order_under_mouse(ctx, ev);
         if eoz.is_empty() {
             return None;
         }
@@ -460,21 +467,21 @@ impl ElementOrganizer {
         let details = self
             .get_element_details(&el_id)
             .expect("no element for destination id");
-        let ctx = self.get_context_for_el(&details);
+        let child_ctx = self.get_context_for_el(ctx, &details);
 
         // adjust event to the relative position of the element
-        let ev_adj = details.loc.l.adjust_mouse_event(ev);
+        let ev_adj = details.loc.l.adjust_mouse_event(ctx, ev);
 
         // send mouse event to element
         let (_, mut ev_resps) = details
             .el
             .borrow_mut()
-            .receive_event(&ctx, Event::Mouse(ev_adj));
+            .receive_event(&child_ctx, Event::Mouse(ev_adj));
         for ev_resp in ev_resps.iter_mut() {
             if let Some(changes) = ev_resp.get_receivable_event_changes() {
                 self.process_receivable_event_changes(&el_id, &changes);
             }
-            self.partially_process_ev_resp(&el_id, ev_resp);
+            self.partially_process_ev_resp(ctx, &el_id, ev_resp);
         }
 
         // send the mouse event as an external event to all other elements
@@ -487,7 +494,7 @@ impl ElementOrganizer {
             let (_, r) = details2
                 .el
                 .borrow_mut()
-                .receive_event(&ctx, Event::ExternalMouse(*ev));
+                .receive_event(&child_ctx, Event::ExternalMouse(*ev));
             el_resps.push((el_id2.clone(), r));
         }
 
@@ -498,7 +505,7 @@ impl ElementOrganizer {
                 if let Some(changes) = resp.get_receivable_event_changes() {
                     self.process_receivable_event_changes(&el_id2, &changes);
                 }
-                self.partially_process_ev_resp(&el_id2, resp);
+                self.partially_process_ev_resp(ctx, &el_id2, resp);
             }
             ev_resps.extend(resps.0);
         }
@@ -557,7 +564,7 @@ impl ElementOrganizer {
 
     // receive_command_event attempts to execute the given command
     //                                                       (captured, resp         )
-    pub fn receive_command_event(&self, ev: CommandEvent) -> (bool, EventResponses) {
+    pub fn receive_command_event(&self, ctx: &Context, ev: CommandEvent) -> (bool, EventResponses) {
         let ev = Event::Command(ev);
         let Some(el_id) = self.prioritizer.borrow().get_destination_el(&ev) else {
             return (false, EventResponses::default());
@@ -567,15 +574,14 @@ impl ElementOrganizer {
             // XXX TODO return error
             return (false, EventResponses::default());
         };
-        let ctx = self.get_context_for_el(&details);
-
-        let (captured, mut resps) = details.el.borrow_mut().receive_event(&ctx, ev);
+        let child_ctx = self.get_context_for_el(ctx, &details);
+        let (captured, mut resps) = details.el.borrow_mut().receive_event(&child_ctx, ev);
 
         for resp in resps.iter_mut() {
             if let Some(changes) = resp.get_receivable_event_changes() {
                 self.process_receivable_event_changes(&el_id, &changes);
             }
-            self.partially_process_ev_resp(&el_id, resp);
+            self.partially_process_ev_resp(ctx, &el_id, resp);
         }
 
         (captured, resps)

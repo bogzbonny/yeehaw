@@ -1,4 +1,4 @@
-use crate::{element::RelocationRequest, Size};
+use crate::Size;
 
 // ZIndex is the z-index or position in the z-dimension of the element
 // The lower the z-index, further toward the front the element is
@@ -76,12 +76,12 @@ impl Location {
     }
 
     // Relocate increments the Location by the given values
-    pub fn relocate(&mut self, rr: RelocationRequest) {
-        self.start_x += rr.left;
-        self.end_x += rr.right;
-        self.start_y += rr.up;
-        self.end_y += rr.down;
-    }
+    //pub fn relocate(&mut self, rr: RelocationRequest) {
+    //    self.start_x += rr.left;
+    //    self.end_x += rr.right;
+    //    self.start_y += rr.up;
+    //    self.end_y += rr.down;
+    //}
 
     // GetSize returns the size of the Location
     pub fn get_size(&self) -> Size {
@@ -178,13 +178,13 @@ impl LocationSet {
         false
     }
 
-    // Relocate increments the Location by the given values
-    pub fn relocate(&mut self, rr: RelocationRequest) {
-        self.l.relocate(rr);
-        for loc in self.extra.iter_mut() {
-            loc.relocate(rr);
-        }
-    }
+    //// Relocate increments the Location by the given values
+    //pub fn relocate(&mut self, rr: RelocationRequest) {
+    //    self.l.relocate(rr);
+    //    for loc in self.extra.iter_mut() {
+    //        loc.relocate(rr);
+    //    }
+    //}
 
     // returns None is the point is not contained by the LocationSet
     pub fn get_z_index_for_point(&self, x: i32, y: i32) -> Option<ZIndex> {

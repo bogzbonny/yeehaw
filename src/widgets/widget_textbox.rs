@@ -125,8 +125,8 @@ impl TextBox {
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
-            SclVal::new_fixed(width),
-            SclVal::new_fixed(height),
+            SclVal::new_fixed(width as i32),
+            SclVal::new_fixed(height as i32),
             Self::STYLE,
             Self::editable_receivable_events(),
         );
@@ -160,6 +160,7 @@ impl TextBox {
         let tb3 = tb.clone();
         let rcm = RightClickMenu::new(hat, MenuStyle::default()).with_menu_items(
             hat,
+            ctx,
             vec![
                 MenuItem::new(hat, MenuPath("Cut".to_string())).with_click_fn(Some(Box::new(
                     move |ctx| tb1.cut_to_clipboard(&ctx).unwrap(),
@@ -351,7 +352,7 @@ impl TextBox {
             let (lns, lnw) = self.get_line_numbers(ctx);
             let ln_tb = TextBox::new(hat, ctx, lns)
                 .at(x.clone(), y.clone())
-                .with_width(SclVal::new_fixed(lnw))
+                .with_width(SclVal::new_fixed(lnw as i32))
                 .with_height(h.clone())
                 .with_no_wordwrap()
                 .non_editable();
@@ -360,8 +361,8 @@ impl TextBox {
             out.push(Box::new(ln_tb.clone()));
 
             // reduce the width of the main textbox
-            *self.base.pane.width.borrow_mut() = w.clone().minus_fixed(lnw);
-            *self.base.pane.pos_x.borrow_mut() = x.clone().plus_fixed(lnw);
+            *self.base.pane.width.borrow_mut() = w.clone().minus_fixed(lnw as i32);
+            *self.base.pane.pos_x.borrow_mut() = x.clone().plus_fixed(lnw as i32);
 
             self.line_number_tb = Rc::new(RefCell::new(Some(ln_tb.clone())));
             Some(ln_tb)
@@ -593,27 +594,18 @@ impl TextBox {
             let (lns, lnw) = self.get_line_numbers(ctx);
             let last_lnw = ln_tb.base.get_width(ctx);
             if lnw != last_lnw {
-                let diff_lnw = lnw as isize - last_lnw as isize;
+                let diff_lnw = lnw as i32 - last_lnw as i32;
+                // TODO can we combine this if statement?
                 let new_tb_width = if diff_lnw > 0 {
-                    self.base
-                        .pane
-                        .width
-                        .borrow()
-                        .clone()
-                        .minus_fixed(diff_lnw as usize)
+                    self.base.pane.width.borrow().clone().minus_fixed(diff_lnw)
                 } else {
-                    self.base
-                        .pane
-                        .width
-                        .borrow()
-                        .clone()
-                        .plus_fixed(diff_lnw.unsigned_abs())
+                    self.base.pane.width.borrow().clone().plus_fixed(-diff_lnw)
                 };
                 *self.base.pane.width.borrow_mut() = new_tb_width;
-                resp.set_relocation(RelocationRequest::new_left(diff_lnw as i32));
+                resp.set_relocation(RelocationRequest::new_left(diff_lnw));
             }
             ln_tb.set_text(lns);
-            *ln_tb.base.pane.width.borrow_mut() = SclVal::new_fixed(lnw);
+            *ln_tb.base.pane.width.borrow_mut() = SclVal::new_fixed(lnw as i32);
             ln_tb.base.set_content_y_offset(ctx, y_offset);
         }
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {

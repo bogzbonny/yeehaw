@@ -57,7 +57,7 @@ impl Button {
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
-            SclVal::new_fixed(text.chars().count() + 2), // + 2 for sides
+            SclVal::new_fixed(text.chars().count() as i32 + 2), // + 2 for sides
             SclVal::new_fixed(1),
             Self::STYLE,
             Self::default_receivable_events(),
@@ -84,7 +84,7 @@ impl Button {
     pub fn with_sides(self, ctx: &Context, sides: (String, String)) -> Self {
         *self.sides.borrow_mut() = sides;
         let text = self.button_text();
-        *self.base.pane.width.borrow_mut() = SclVal::new_fixed(text.chars().count());
+        *self.base.pane.width.borrow_mut() = SclVal::new_fixed(text.chars().count() as i32);
         self.base.set_content_from_string(ctx, &text);
         self
     }

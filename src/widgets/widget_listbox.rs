@@ -106,13 +106,13 @@ impl ListBox {
             .map(|r| r.lines().map(|l| l.chars().count()).max().unwrap_or(0))
             .max()
             .unwrap_or(0);
-        let line_count = entries.iter().map(|r| r.lines().count()).sum();
+        let line_count = entries.iter().map(|r| r.lines().count()).sum::<usize>() as i32;
         let max_lines_per_entry = entries.iter().map(|r| r.lines().count()).max().unwrap_or(0);
 
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
-            SclVal::new_fixed(max_entry_width),
+            SclVal::new_fixed(max_entry_width as i32),
             SclVal::new_fixed(line_count),
             Self::STYLE,
             Self::default_receivable_events(),
@@ -165,7 +165,7 @@ impl ListBox {
     pub fn with_lines_per_item(self, ctx: &Context, lines: usize) -> Self {
         *self.lines_per_item.borrow_mut() = lines;
         *self.base.pane.height.borrow_mut() =
-            SclVal::new_fixed(self.entries.borrow().len() * lines);
+            SclVal::new_fixed(self.entries.borrow().len() as i32 * lines as i32);
         self.update_content(ctx);
         self
     }

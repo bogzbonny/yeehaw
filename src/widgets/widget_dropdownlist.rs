@@ -147,9 +147,9 @@ impl DropdownList {
     pub fn with_max_expanded_height(self, height: usize) -> Self {
         *self.max_expanded_height.borrow_mut() = height;
         self.scrollbar.set_height(
-            SclVal::new_fixed(height), // view height (same as the dropdown list height)
-            SclVal::new_fixed(height.saturating_sub(1)), // scrollbar height (1 less, b/c scrollbar's below the drop-arrow)
-            self.entries.borrow().len(),                 // scrollable domain
+            SclVal::new_fixed(height as i32), // view height (same as the dropdown list height)
+            SclVal::new_fixed(height.saturating_sub(1) as i32), // scrollbar height (1 less, b/c scrollbar's below the drop-arrow)
+            self.entries.borrow().len(),                        // scrollable domain
         );
         self
     }
@@ -180,14 +180,14 @@ impl DropdownList {
         if let Some(ref w) = *self.specified_width.borrow() {
             return w.clone();
         }
-        let left_padding = *self.left_padding.borrow();
+        let left_padding = *self.left_padding.borrow() as i32;
         let max_entry_width = self
             .entries
             .borrow()
             .iter()
             .map(|r| r.chars().count())
             .max()
-            .unwrap_or(0);
+            .unwrap_or(0) as i32;
         let arrow_width = 1;
         SclVal::new_fixed(left_padding + max_entry_width + arrow_width)
     }
@@ -196,11 +196,11 @@ impl DropdownList {
         let entry = self.entries.borrow()[i].clone();
         let entry_len = entry.chars().count();
         //let width = self.base.get_width(ctx);
-        let width = self.get_scl_width().get_val(ctx.get_width().into());
+        let width = self.get_scl_width().get_val(ctx.get_width());
         let left_padding = *self.left_padding.borrow();
-        let right_padding = width.saturating_sub(entry_len + left_padding);
+        let right_padding = width.saturating_sub(entry_len as i32 + left_padding as i32);
         let pad_left = " ".repeat(left_padding);
-        let pad_right = " ".repeat(right_padding);
+        let pad_right = " ".repeat(right_padding as usize);
         format!("{}{}{}", pad_left, entry, pad_right)
     }
 
@@ -237,14 +237,14 @@ impl DropdownList {
     pub fn perform_open(&self, ctx: &Context) -> EventResponse {
         *self.open.borrow_mut() = true;
         *self.cursor.borrow_mut() = *self.selected.borrow();
-        let h = self.expanded_height();
+        let h = self.expanded_height() as i32;
         *self.base.pane.height.borrow_mut() = SclVal::new_fixed(h);
 
         // must set the content for the offsets to be correct
         self.base.set_content_from_string(ctx, &self.text(ctx));
         self.correct_offsets(ctx);
 
-        let rr = RelocationRequest::new_down(h as i32 - 1);
+        let rr = RelocationRequest::new_down(h - 1);
         EventResponse::default().with_relocation(rr)
     }
 

@@ -1,7 +1,7 @@
 use {
     crate::{
         element::ReceivableEventChanges, keyboard::Keyboard, Context, Element, ElementID,
-        ElementOrganizer, Error, Event, Location, LocationSet, Style, UpwardPropagator,
+        ElementOrganizer, Error, Event, SclLocation, SclLocationSet, Style, UpwardPropagator,
     },
     crossterm::{
         cursor,
@@ -51,8 +51,8 @@ impl Cui {
 
         // add the element here after the location has been created
         let ctx = Context::new_context_for_screen();
-        let loc = Location::new(0, (ctx.s.width - 1).into(), 0, (ctx.s.height - 1).into());
-        let loc = LocationSet::default().with_location(loc);
+        let loc = SclLocation::new_fixed(0, (ctx.s.width - 1).into(), 0, (ctx.s.height - 1).into());
+        let loc = SclLocationSet::default().with_location(loc);
 
         let cup = Box::new(CuiUpwardPropagator::new(eo));
 
@@ -98,8 +98,8 @@ impl Cui {
 
                                 CTEvent::Resize(_, _) => {
                                     let ctx = Context::new_context_for_screen();
-                                    let loc = Location::new(0, (ctx.s.width - 1).into(), 0, (ctx.s.height - 1).into());
-                                    let loc = LocationSet::default().with_location(loc);
+                                    let loc = SclLocation::new_fixed(0, (ctx.s.width - 1).into(), 0, (ctx.s.height - 1).into());
+                                    let loc = SclLocationSet::default().with_location(loc);
                                     // There should only be one element at index 0 in the upper level EO
                                     self.eo.update_el_location_set(self.main_el_id.clone(), loc);
                                     self.eo.get_element(&self.main_el_id).unwrap().borrow_mut().receive_event(&ctx, Event::Resize{});
@@ -150,7 +150,9 @@ impl Cui {
         else {
             return false;
         };
-        let Some((_, resps)) = self.eo.key_events_process(evs) else {
+        let ctx = Context::new_context_for_screen();
+
+        let Some((_, resps)) = self.eo.key_events_process(&ctx, evs) else {
             return false;
         };
 
@@ -166,7 +168,8 @@ impl Cui {
     // process_event_mouse handles mouse events
     //                                                                       exit-cui
     pub fn process_event_mouse(&mut self, mouse_ev: ct_event::MouseEvent) -> bool {
-        let Some((_, resps)) = self.eo.mouse_event_process(&mouse_ev) else {
+        let ctx = Context::new_context_for_screen();
+        let Some((_, resps)) = self.eo.mouse_event_process(&ctx, &mouse_ev) else {
             return false;
         };
 
@@ -205,7 +208,8 @@ impl Cui {
     // sending in a timestamp. Would then need a force-render option (for startup)
     pub fn render(&mut self) {
         let mut sc = stdout();
-        let chs = self.eo.all_drawing();
+        let ctx = Context::new_context_for_screen();
+        let chs = self.eo.all_drawing(&ctx);
 
         let mut dedup_chs = HashMap::new();
         for c in chs {

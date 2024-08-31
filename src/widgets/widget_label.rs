@@ -40,8 +40,8 @@ impl Label {
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
-            SclVal::new_fixed(w),
-            SclVal::new_fixed(h),
+            SclVal::new_fixed(w as i32),
+            SclVal::new_fixed(h as i32),
             LABEL_STYLE,
             LABEL_EV_COMBOS.clone(),
         );
@@ -113,8 +113,8 @@ impl Label {
     pub fn set_text(&self, ctx: &Context, text: String) {
         self.base.set_content_from_string(ctx, &text);
         let (w, h) = common::get_text_size(&text);
-        *self.base.pane.width.borrow_mut() = SclVal::new_fixed(w);
-        *self.base.pane.height.borrow_mut() = SclVal::new_fixed(h);
+        *self.base.pane.width.borrow_mut() = SclVal::new_fixed(w as i32);
+        *self.base.pane.height.borrow_mut() = SclVal::new_fixed(h as i32);
         *self.text.borrow_mut() = text;
     }
 

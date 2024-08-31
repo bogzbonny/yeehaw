@@ -1,8 +1,8 @@
 use {
     super::{Widget, WidgetOrganizer, Widgets},
     crate::{
-        Context, DrawChPos, Element, ElementID, Event, EventResponses, LocationSet, Priority,
-        ReceivableEventChanges, SclLocation, SortingHat, Pane, UpwardPropagator,
+        Context, DrawChPos, Element, ElementID, Event, EventResponses, Pane, Priority,
+        ReceivableEventChanges, SclLocation, SclLocationSet, SortingHat, UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -28,18 +28,18 @@ impl WidgetPane {
         wp
     }
 
-    pub fn add_widget(&mut self, ctx: &Context, w: Box<dyn Widget>) {
+    pub fn add_widget(&mut self, w: Box<dyn Widget>) {
         self.pane.self_evs.borrow_mut().extend(w.receivable());
-        let l = w.get_scl_location().get_location_for_context(ctx);
-        let l = LocationSet::default()
+        let l = w.get_scl_location();
+        let l = SclLocationSet::default()
             .with_location(l)
             .with_z(w.get_z_index());
         self.org.borrow_mut().add_widget(w, l);
     }
 
-    pub fn add_widgets(&mut self, ctx: &Context, ws: Widgets) {
+    pub fn add_widgets(&mut self, ws: Widgets) {
         for w in ws.0 {
-            self.add_widget(ctx, w);
+            self.add_widget(w);
         }
     }
 

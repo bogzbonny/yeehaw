@@ -3,8 +3,8 @@ use {
         element::CreateWindow,
         element::ReceivableEventChanges,
         elements::menu::{MenuItem, MenuStyle},
-        Context, DrawChPos, Element, ElementID, Event, EventResponse, EventResponses, Location,
-        LocationSet, MenuBar, Point, Priority, SclLocation, SortingHat, UpwardPropagator, ZIndex,
+        Context, DrawChPos, Element, ElementID, Event, EventResponse, EventResponses, MenuBar,
+        Point, Priority, SclLocation, SclLocationSet, SclVal, SortingHat, UpwardPropagator, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -42,8 +42,8 @@ impl RightClickMenu {
         }
     }
 
-    pub fn with_menu_items(self, hat: &SortingHat, items: Vec<MenuItem>) -> Self {
-        self.menu.set_items(hat, items);
+    pub fn with_menu_items(self, hat: &SortingHat, ctx: &Context, items: Vec<MenuItem>) -> Self {
+        self.menu.set_items(hat, ctx, items);
         self
     }
 
@@ -62,6 +62,7 @@ impl RightClickMenu {
         *self.pos.borrow_mut() = Point::new(ev_x.into(), ev_y.into());
 
         let (x, y): (i32, i32) = ((ev_x + 1).into(), ev_y.into()); // offset the menu by 1 to the right of the cursor
+        let (x, y) = (SclVal::new_fixed(x), SclVal::new_fixed(y));
 
         self.menu.activate();
         self.menu.deselect_all();
@@ -71,8 +72,8 @@ impl RightClickMenu {
 
         // the location size doesn't matter as the top level element will be
         // empty, only the sub-elements will be take up space
-        let loc = LocationSet::default()
-            .with_location(Location::new(x, x, y, y)) // placeholder
+        let loc = SclLocationSet::default()
+            .with_location(SclLocation::new(x.clone(), x, y.clone(), y)) // placeholder
             .with_extra(extra_locs)
             .with_z(Self::Z_INDEX);
 

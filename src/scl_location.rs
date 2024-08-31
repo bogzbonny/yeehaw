@@ -23,12 +23,21 @@ impl SclLocation {
         }
     }
 
+    pub fn new_fixed(start_x: i32, end_x: i32, start_y: i32, end_y: i32) -> SclLocation {
+        SclLocation {
+            start_x: SclVal::new_fixed(start_x),
+            end_x: SclVal::new_fixed(end_x),
+            start_y: SclVal::new_fixed(start_y),
+            end_y: SclVal::new_fixed(end_y),
+        }
+    }
+
     pub fn get_location_for_context(&self, ctx: &Context) -> Location {
         Location::new(
-            self.start_x.get_val(ctx.get_width()) as i32,
-            self.end_x.get_val(ctx.get_width()) as i32,
-            self.start_y.get_val(ctx.get_height()) as i32,
-            self.end_y.get_val(ctx.get_height()) as i32,
+            self.start_x.get_val(ctx.get_width()),
+            self.end_x.get_val(ctx.get_width()),
+            self.start_y.get_val(ctx.get_height()),
+            self.end_y.get_val(ctx.get_height()),
         )
     }
 
@@ -61,6 +70,19 @@ impl SclLocation {
     }
 
     // X returns the start and end x values of the Location
+    pub fn get_start_x(&self, ctx: &Context) -> i32 {
+        self.start_x.get_val(ctx.get_width())
+    }
+    pub fn get_start_y(&self, ctx: &Context) -> i32 {
+        self.start_y.get_val(ctx.get_height())
+    }
+    // X returns the start and end x values of the Location
+    pub fn get_end_x(&self, ctx: &Context) -> i32 {
+        self.end_x.get_val(ctx.get_width())
+    }
+    pub fn get_end_y(&self, ctx: &Context) -> i32 {
+        self.end_y.get_val(ctx.get_height())
+    }
     pub fn x(&self, ctx: &Context) -> (i32, i32) {
         (
             self.start_x.get_val(ctx.get_width()),
@@ -102,8 +124,8 @@ impl SclLocation {
         &self, ctx: &Context, ev: &crossterm::event::MouseEvent,
     ) -> crossterm::event::MouseEvent {
         let (x_adj, y_adj) = (ev.column, ev.row);
-        let (start_x, _) = self.x(ctx);
-        let (start_y, _) = self.y(ctx);
+        let start_x = self.get_start_x(ctx);
+        let start_y = self.get_start_y(ctx);
         let start_x = if start_x < 0 { 0 } else { start_x as u16 };
         let start_y = if start_y < 0 { 0 } else { start_y as u16 };
         let x_adj = x_adj.saturating_sub(start_x);
@@ -114,11 +136,21 @@ impl SclLocation {
         ev
     }
 
-    pub fn adjust_location_by(&mut self, x: i32, y: i32) {
-        self.start_x.fixed += x;
-        self.end_x.fixed += x;
-        self.start_y.fixed += y;
-        self.end_y.fixed += y;
+    pub fn adjust_location_by(&mut self, x: SclVal, y: SclVal) {
+        self.start_x.plus_in_place(x.clone());
+        self.end_x.plus_in_place(x);
+        self.start_y.plus_in_place(y.clone());
+        self.end_y.plus_in_place(y);
+    }
+
+    pub fn adjust_location_by_x(&mut self, x: SclVal) {
+        self.start_x.plus_in_place(x.clone());
+        self.end_x.plus_in_place(x);
+    }
+
+    pub fn adjust_location_by_y(&mut self, y: SclVal) {
+        self.start_y.plus_in_place(y.clone());
+        self.end_y.plus_in_place(y);
     }
 }
 
@@ -220,11 +252,11 @@ impl SclLocationSet {
         self.extra.push(extra);
     }
 
-    pub fn adjust_locations_by(&mut self, x: i32, y: i32) {
-        self.l.adjust_location_by(x, y);
+    pub fn adjust_locations_by(&mut self, x: SclVal, y: SclVal) {
         for loc in self.extra.iter_mut() {
-            loc.adjust_location_by(x, y);
+            loc.adjust_location_by(x.clone(), y.clone());
         }
+        self.l.adjust_location_by(x, y);
     }
 }
 
