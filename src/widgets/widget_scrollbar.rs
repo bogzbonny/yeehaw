@@ -362,7 +362,8 @@ impl Scrollbar {
     pub fn scrollbar_domain_in_half_increments(&self, p_size: usize) -> usize {
         // minus 2 for the backwards and forwards arrows
         let arrows = if *self.has_arrows.borrow() { 2 } else { 0 };
-        let sc_len_chs = self.scrollbar_length_chs.borrow().get_val(p_size as u16) as usize;
+        let sc_len_chs = self.scrollbar_length_chs.borrow().get_val(p_size as u16);
+        let sc_len_chs = if sc_len_chs < 0 { 0 } else { sc_len_chs as usize };
         // times 2 for half characters
         2 * (sc_len_chs.saturating_sub(arrows))
     }
