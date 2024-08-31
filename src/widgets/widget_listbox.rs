@@ -5,7 +5,7 @@ use {
     },
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponses, Keyboard as KB, Priority,
-        ReceivableEventChanges, RgbColour, SclLocation, SclVal, SortingHat, Style,
+        ReceivableEventChanges, RgbColour, SclLocationSet, SclVal, SortingHat, Style,
         UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -164,8 +164,9 @@ impl ListBox {
 
     pub fn with_lines_per_item(self, ctx: &Context, lines: usize) -> Self {
         *self.lines_per_item.borrow_mut() = lines;
-        *self.base.pane.height.borrow_mut() =
-            SclVal::new_fixed(self.entries.borrow().len() as i32 * lines as i32);
+        self.base.set_scl_height(SclVal::new_fixed(
+            self.entries.borrow().len() as i32 * lines as i32,
+        ));
         self.update_content(ctx);
         self
     }
@@ -183,18 +184,18 @@ impl ListBox {
     }
 
     pub fn with_width(self, ctx: &Context, width: SclVal) -> Self {
-        *self.base.pane.width.borrow_mut() = width;
+        self.base.set_scl_width(width);
         self.update_content(ctx);
         self
     }
     pub fn with_height(self, ctx: &Context, height: SclVal) -> Self {
-        *self.base.pane.height.borrow_mut() = height;
+        self.base.set_scl_height(height);
         self.update_content(ctx);
         self
     }
     pub fn with_size(self, ctx: &Context, width: SclVal, height: SclVal) -> Self {
-        *self.base.pane.width.borrow_mut() = width;
-        *self.base.pane.height.borrow_mut() = height;
+        self.base.set_scl_width(width);
+        self.base.set_scl_height(height);
         self.update_content(ctx);
         self
     }
@@ -209,24 +210,19 @@ impl ListBox {
         if let VerticalSBPositions::None = position {
             return Widgets(vec![Box::new(self)]);
         }
-        let height = self.base.pane.height.borrow().clone();
+        let height = self.base.get_scl_height();
         let content_height = self.base.content_height();
         let mut sb =
             VerticalScrollbar::new(hat, height, content_height).with_styles(Self::STYLE_SCROLLBAR);
         if let VerticalSBPositions::ToTheLeft = position {
             sb = sb.at(
-                self.base.pane.pos_x.borrow().clone().minus_fixed(1),
-                self.base.pane.pos_y.borrow().clone(),
+                self.base.get_scl_start_x().minus_fixed(1),
+                self.base.get_scl_start_y().clone(),
             );
         } else if let VerticalSBPositions::ToTheRight = position {
             sb = sb.at(
-                self.base
-                    .pane
-                    .pos_x
-                    .borrow()
-                    .clone()
-                    .plus(self.base.pane.width.borrow().clone()),
-                self.base.pane.pos_y.borrow().clone(),
+                self.base.get_scl_start_x().plus(self.base.get_scl_width()),
+                self.base.get_scl_start_y(),
             );
         }
 
@@ -595,7 +591,16 @@ impl Element for ListBox {
         self.base.set_upward_propagator(up)
     }
 
-    fn get_scl_location(&self) -> SclLocation {
-        self.base.get_scl_location()
+    fn get_scl_location_set(&self) -> SclLocationSet {
+        self.base.get_scl_location_set()
+    }
+    fn set_scl_location_set(&self, loc: SclLocationSet) {
+        self.base.set_scl_location_set(loc)
+    }
+    fn visible(&self) -> bool {
+        self.base.visible()
+    }
+    fn set_visible(&self, v: bool) {
+        self.base.set_visible(v)
     }
 }

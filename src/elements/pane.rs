@@ -1,7 +1,8 @@
 use {
     crate::{
         element::ReceivableEventChanges, Context, DrawCh, DrawChPos, DrawChs2D, Element, ElementID,
-        Event, EventResponses, Priority, SclLocation, SclVal, SortingHat, UpwardPropagator,
+        Event, EventResponses, Priority, SclLocation, SclLocationSet, SclVal, SortingHat,
+        UpwardPropagator,
     },
     std::{
         collections::HashMap,
@@ -48,11 +49,12 @@ pub struct Pane {
     pub content_view_offset_y: Rc<RefCell<usize>>,
 
     // scaleable values of x, y, width, and height in the parent context
-    pub pos_x: Rc<RefCell<SclVal>>,
-    pub pos_y: Rc<RefCell<SclVal>>,
-    pub width: Rc<RefCell<SclVal>>,
-    pub height: Rc<RefCell<SclVal>>,
-    //pub visible: Rc<RefCell<bool>>,
+    //pub pos_x: Rc<RefCell<SclVal>>,
+    //pub pos_y: Rc<RefCell<SclVal>>,
+    //pub width: Rc<RefCell<SclVal>>,
+    //pub height: Rc<RefCell<SclVal>>,
+    pub loc: Rc<RefCell<SclLocationSet>>,
+    pub visible: Rc<RefCell<bool>>,
 }
 
 impl Pane {
@@ -73,38 +75,33 @@ impl Pane {
             default_line: Rc::new(RefCell::new(vec![])),
             content_view_offset_x: Rc::new(RefCell::new(0)),
             content_view_offset_y: Rc::new(RefCell::new(0)),
-            pos_x: Rc::new(RefCell::new(SclVal::new_fixed(0))),
-            pos_y: Rc::new(RefCell::new(SclVal::new_fixed(0))),
-            width: Rc::new(RefCell::new(SclVal::new_fixed(0))),
-            height: Rc::new(RefCell::new(SclVal::new_fixed(0))),
+            loc: Rc::new(RefCell::new(SclLocationSet::default())),
+            visible: Rc::new(RefCell::new(true)),
         }
     }
 
-    pub fn with_pos_x(self, x: SclVal) -> Pane {
-        *self.pos_x.borrow_mut() = x;
+    pub fn with_start_x(self, x: SclVal) -> Pane {
+        self.loc.borrow_mut().l.set_start_x(x);
         self
     }
 
-    pub fn with_pos_y(self, y: SclVal) -> Pane {
-        *self.pos_y.borrow_mut() = y;
+    pub fn with_start_y(self, y: SclVal) -> Pane {
+        self.loc.borrow_mut().l.set_start_y(y);
         self
     }
 
     pub fn with_width(self, w: SclVal) -> Pane {
-        *self.width.borrow_mut() = w;
+        self.loc.borrow_mut().l.set_width(w);
         self
     }
 
     pub fn with_height(self, h: SclVal) -> Pane {
-        *self.height.borrow_mut() = h;
+        self.loc.borrow_mut().l.set_height(h);
         self
     }
 
     pub fn with_scl_location(self, l: SclLocation) -> Pane {
-        *self.pos_x.borrow_mut() = l.start_x.clone();
-        *self.pos_y.borrow_mut() = l.start_y.clone();
-        *self.width.borrow_mut() = l.end_x.minus(l.start_x).plus_fixed(1);
-        *self.height.borrow_mut() = l.end_y.minus(l.start_y).plus_fixed(1);
+        self.loc.borrow_mut().l = l;
         self
     }
 
@@ -233,23 +230,18 @@ impl Element for Pane {
         *self.up.borrow_mut() = Some(up);
     }
 
-    // get the scalable location of the widget
-    fn get_scl_location(&self) -> SclLocation {
-        let x1 = self.pos_x.borrow().clone();
-        let y1 = self.pos_y.borrow().clone();
-        let w = self.width.borrow().clone();
-        let h = self.height.borrow().clone();
-        let x2 = x1.clone().plus(w).minus_fixed(1);
-        let y2 = y1.clone().plus(h).minus_fixed(1);
-        SclLocation::new(x1, x2, y1, y2)
+    fn get_scl_location_set(&self) -> SclLocationSet {
+        self.loc.borrow().clone()
     }
-
-    //fn visible(&self) -> bool {
-    //    *self.visible.borrow()
-    //}
-    //fn set_visible(&self, v: bool) {
-    //    *self.visible.borrow_mut() = v;
-    //}
+    fn set_scl_location_set(&self, loc: SclLocationSet) {
+        *self.loc.borrow_mut() = loc;
+    }
+    fn visible(&self) -> bool {
+        *self.visible.borrow()
+    }
+    fn set_visible(&self, v: bool) {
+        *self.visible.borrow_mut() = v;
+    }
 }
 
 // ---------------------------------------------------------------------------

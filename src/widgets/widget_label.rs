@@ -2,7 +2,7 @@ use {
     super::{common, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponses, Priority,
-        ReceivableEventChanges, RgbColour, SclLocation, SclVal, SortingHat, Style,
+        ReceivableEventChanges, RgbColour, SclLocationSet, SclVal, SortingHat, Style,
         UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
@@ -87,10 +87,10 @@ impl Label {
     pub fn with_rotated_text(self) -> Self {
         let rotated = self.base.pane.content.borrow().rotate_90_deg();
         *self.base.pane.content.borrow_mut() = rotated;
-        let old_height = self.base.pane.height.borrow().clone();
-        let old_width = self.base.pane.width.borrow().clone();
-        *self.base.pane.width.borrow_mut() = old_height;
-        *self.base.pane.height.borrow_mut() = old_width;
+        let old_height = self.base.pane.loc.borrow().get_scl_height();
+        let old_width = self.base.pane.loc.borrow().get_scl_width();
+        self.base.set_scl_width(old_height);
+        self.base.set_scl_height(old_width);
         self
     }
 
@@ -113,8 +113,8 @@ impl Label {
     pub fn set_text(&self, ctx: &Context, text: String) {
         self.base.set_content_from_string(ctx, &text);
         let (w, h) = common::get_text_size(&text);
-        *self.base.pane.width.borrow_mut() = SclVal::new_fixed(w as i32);
-        *self.base.pane.height.borrow_mut() = SclVal::new_fixed(h as i32);
+        self.base.set_scl_width(SclVal::new_fixed(w as i32));
+        self.base.set_scl_height(SclVal::new_fixed(h as i32));
         *self.text.borrow_mut() = text;
     }
 
@@ -124,10 +124,10 @@ impl Label {
     }
 
     pub fn to_widgets(mut self) -> Widgets {
-        let mut x = self.base.pane.pos_x.borrow().clone();
-        let mut y = self.base.pane.pos_y.borrow().clone();
-        let w = self.base.pane.width.borrow().clone();
-        let h = self.base.pane.height.borrow().clone();
+        let mut x = self.base.get_scl_start_x();
+        let mut y = self.base.get_scl_start_y();
+        let w = self.base.get_scl_width();
+        let h = self.base.get_scl_height();
         match *self.justification.borrow() {
             LabelJustification::Left => {}
             LabelJustification::Right => {
@@ -172,7 +172,16 @@ impl Element for Label {
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.base.set_upward_propagator(up)
     }
-    fn get_scl_location(&self) -> SclLocation {
-        self.base.get_scl_location()
+    fn get_scl_location_set(&self) -> SclLocationSet {
+        self.base.get_scl_location_set()
+    }
+    fn set_scl_location_set(&self, loc: SclLocationSet) {
+        self.base.set_scl_location_set(loc)
+    }
+    fn visible(&self) -> bool {
+        self.base.visible()
+    }
+    fn set_visible(&self, v: bool) {
+        self.base.set_visible(v)
     }
 }

@@ -8,7 +8,7 @@ use {
         elements::menu::{MenuItem, MenuPath, MenuStyle},
         Context, DrawCh, DrawChPos, Element, ElementID, Error, Event, EventResponse,
         EventResponses, KeyPossibility, Keyboard as KB, Priority, ReceivableEventChanges,
-        RgbColour, RightClickMenu, SclLocation, SclVal, SortingHat, Style, UpwardPropagator,
+        RgbColour, RightClickMenu, SclLocationSet, SclVal, SortingHat, Style, UpwardPropagator,
     },
     crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -216,16 +216,16 @@ impl TextBox {
     }
 
     pub fn with_width(self, width: SclVal) -> Self {
-        *self.base.pane.width.borrow_mut() = width;
+        self.base.set_scl_width(width);
         self
     }
     pub fn with_height(self, height: SclVal) -> Self {
-        *self.base.pane.height.borrow_mut() = height;
+        self.base.set_scl_height(height);
         self
     }
     pub fn with_size(self, width: SclVal, height: SclVal) -> Self {
-        *self.base.pane.width.borrow_mut() = width;
-        *self.base.pane.height.borrow_mut() = height;
+        self.base.set_scl_width(width);
+        self.base.set_scl_height(height);
         self
     }
 
@@ -335,14 +335,8 @@ impl TextBox {
     }
 
     pub fn to_widgets(mut self, hat: &SortingHat, ctx: &Context) -> Widgets {
-        let (x, y) = (
-            self.base.pane.pos_x.borrow().clone(),
-            self.base.pane.pos_y.borrow().clone(),
-        );
-        let (h, w) = (
-            self.base.pane.height.borrow().clone(),
-            self.base.pane.width.borrow().clone(),
-        );
+        let (x, y) = (self.base.get_scl_start_x(), self.base.get_scl_start_y());
+        let (h, w) = (self.base.get_scl_height(), self.base.get_scl_width());
         let mut out: Vec<Box<dyn Widget>> = vec![];
 
         let ln_tb = if *self.line_numbered.borrow() {
@@ -361,8 +355,8 @@ impl TextBox {
             out.push(Box::new(ln_tb.clone()));
 
             // reduce the width of the main textbox
-            *self.base.pane.width.borrow_mut() = w.clone().minus_fixed(lnw as i32);
-            *self.base.pane.pos_x.borrow_mut() = x.clone().plus_fixed(lnw as i32);
+            self.base.set_scl_start_x(x.clone().plus_fixed(lnw as i32));
+            self.base.set_scl_width(w.clone().minus_fixed(lnw as i32));
 
             self.line_number_tb = Rc::new(RefCell::new(Some(ln_tb.clone())));
             Some(ln_tb)
@@ -597,15 +591,15 @@ impl TextBox {
                 let diff_lnw = lnw as i32 - last_lnw as i32;
                 // TODO can we combine this if statement?
                 let new_tb_width = if diff_lnw > 0 {
-                    self.base.pane.width.borrow().clone().minus_fixed(diff_lnw)
+                    self.base.get_scl_width().minus_fixed(diff_lnw)
                 } else {
-                    self.base.pane.width.borrow().clone().plus_fixed(-diff_lnw)
+                    self.base.get_scl_width().plus_fixed(-diff_lnw)
                 };
-                *self.base.pane.width.borrow_mut() = new_tb_width;
+                self.base.set_scl_width(new_tb_width);
                 resp.set_relocation(RelocationRequest::new_left(diff_lnw));
             }
             ln_tb.set_text(lns);
-            *ln_tb.base.pane.width.borrow_mut() = SclVal::new_fixed(lnw as i32);
+            ln_tb.base.set_scl_width(SclVal::new_fixed(lnw as i32));
             ln_tb.base.set_content_y_offset(ctx, y_offset);
         }
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
@@ -1105,8 +1099,17 @@ impl Element for TextBox {
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.base.set_upward_propagator(up)
     }
-    fn get_scl_location(&self) -> SclLocation {
-        self.base.get_scl_location()
+    fn get_scl_location_set(&self) -> SclLocationSet {
+        self.base.get_scl_location_set()
+    }
+    fn set_scl_location_set(&self, loc: SclLocationSet) {
+        self.base.set_scl_location_set(loc)
+    }
+    fn visible(&self) -> bool {
+        self.base.visible()
+    }
+    fn set_visible(&self, v: bool) {
+        self.base.set_visible(v)
     }
 }
 

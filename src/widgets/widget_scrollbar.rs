@@ -2,7 +2,7 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponses, KeyPossibility,
-        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SclLocation, SclVal,
+        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SclLocationSet, SclVal,
         SortingHat, Style, UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
@@ -105,7 +105,7 @@ impl VerticalScrollbar {
         &self, view_height: SclVal, scrollbar_length: SclVal, scrollable_height: usize,
     ) {
         *self.scrollable_view_chs.borrow_mut() = view_height;
-        *self.base.pane.height.borrow_mut() = scrollbar_length.clone();
+        self.base.set_scl_height(scrollbar_length.clone());
         *self.scrollbar_length_chs.borrow_mut() = scrollbar_length;
         *self.scrollable_domain_chs.borrow_mut() = scrollable_height;
     }
@@ -171,7 +171,7 @@ impl HorizontalScrollbar {
 
     pub fn set_width(&self, view_width: SclVal, scrollbar_length: SclVal, scrollable_width: usize) {
         *self.scrollable_view_chs.borrow_mut() = view_width;
-        *self.base.pane.width.borrow_mut() = scrollbar_length.clone();
+        self.base.set_scl_width(scrollbar_length.clone());
         *self.scrollbar_length_chs.borrow_mut() = scrollbar_length;
         *self.scrollable_domain_chs.borrow_mut() = scrollable_width;
     }
@@ -1006,8 +1006,17 @@ impl Element for VerticalScrollbar {
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.base.set_upward_propagator(up)
     }
-    fn get_scl_location(&self) -> SclLocation {
-        self.base.get_scl_location()
+    fn get_scl_location_set(&self) -> SclLocationSet {
+        self.base.get_scl_location_set()
+    }
+    fn set_scl_location_set(&self, loc: SclLocationSet) {
+        self.base.set_scl_location_set(loc)
+    }
+    fn visible(&self) -> bool {
+        self.base.visible()
+    }
+    fn set_visible(&self, v: bool) {
+        self.base.set_visible(v)
     }
 }
 impl Element for HorizontalScrollbar {
@@ -1044,7 +1053,16 @@ impl Element for HorizontalScrollbar {
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.base.set_upward_propagator(up)
     }
-    fn get_scl_location(&self) -> SclLocation {
-        self.base.get_scl_location()
+    fn get_scl_location_set(&self) -> SclLocationSet {
+        self.base.get_scl_location_set()
+    }
+    fn set_scl_location_set(&self, loc: SclLocationSet) {
+        self.base.set_scl_location_set(loc)
+    }
+    fn visible(&self) -> bool {
+        self.base.visible()
+    }
+    fn set_visible(&self, v: bool) {
+        self.base.set_visible(v)
     }
 }

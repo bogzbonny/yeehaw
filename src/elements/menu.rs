@@ -669,8 +669,17 @@ impl Element for MenuBar {
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.pane.set_upward_propagator(up)
     }
-    fn get_scl_location(&self) -> SclLocation {
-        self.pane.get_scl_location()
+    fn get_scl_location_set(&self) -> SclLocationSet {
+        self.pane.get_scl_location_set()
+    }
+    fn set_scl_location_set(&self, loc: SclLocationSet) {
+        self.pane.set_scl_location_set(loc)
+    }
+    fn visible(&self) -> bool {
+        self.pane.visible()
+    }
+    fn set_visible(&self, v: bool) {
+        self.pane.set_visible(v)
     }
 }
 
@@ -773,8 +782,17 @@ impl Element for MenuItem {
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.pane.set_upward_propagator(up)
     }
-    fn get_scl_location(&self) -> SclLocation {
-        self.pane.get_scl_location()
+    fn get_scl_location_set(&self) -> SclLocationSet {
+        self.pane.get_scl_location_set()
+    }
+    fn set_scl_location_set(&self, loc: SclLocationSet) {
+        self.pane.set_scl_location_set(loc)
+    }
+    fn visible(&self) -> bool {
+        self.pane.visible()
+    }
+    fn set_visible(&self, v: bool) {
+        self.pane.set_visible(v)
     }
 }
 

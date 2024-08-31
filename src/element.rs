@@ -66,11 +66,12 @@ pub trait Element {
     // to pass ReceivableEventChanges to the parent. (see UpwardPropogator for more context)
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>);
 
-    // get the scalable location of the widget
-    fn get_scl_location(&self) -> SclLocation;
+    // get/set the scalable location of the widget
+    fn get_scl_location_set(&self) -> SclLocationSet;
+    fn set_scl_location_set(&self, loc: SclLocationSet);
 
-    //fn visible(&self) -> bool;
-    //fn set_visible(&self, v: bool);
+    fn visible(&self) -> bool;
+    fn set_visible(&self, v: bool);
 
     // -------------------------------------------------------
     // Freebies

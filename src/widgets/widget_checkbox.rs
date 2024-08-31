@@ -2,7 +2,7 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponses, Keyboard as KB, Priority,
-        ReceivableEventChanges, RgbColour, SclLocation, SclVal, SortingHat, Style,
+        ReceivableEventChanges, RgbColour, SclLocationSet, SclVal, SortingHat, Style,
         UpwardPropagator, YHAttributes,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -155,7 +155,16 @@ impl Element for Checkbox {
         self.base.set_upward_propagator(up)
     }
 
-    fn get_scl_location(&self) -> SclLocation {
-        self.base.get_scl_location()
+    fn get_scl_location_set(&self) -> SclLocationSet {
+        self.base.get_scl_location_set()
+    }
+    fn set_scl_location_set(&self, loc: SclLocationSet) {
+        self.base.set_scl_location_set(loc)
+    }
+    fn visible(&self) -> bool {
+        self.base.visible()
+    }
+    fn set_visible(&self, v: bool) {
+        self.base.set_visible(v)
     }
 }

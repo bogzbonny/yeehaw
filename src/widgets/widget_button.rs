@@ -2,7 +2,7 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponse, EventResponses,
-        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SclLocation, SclVal,
+        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SclLocationSet, SclVal,
         SortingHat, Style, UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -84,7 +84,8 @@ impl Button {
     pub fn with_sides(self, ctx: &Context, sides: (String, String)) -> Self {
         *self.sides.borrow_mut() = sides;
         let text = self.button_text();
-        *self.base.pane.width.borrow_mut() = SclVal::new_fixed(text.chars().count() as i32);
+        self.base
+            .set_scl_width(SclVal::new_fixed(text.chars().count() as i32));
         self.base.set_content_from_string(ctx, &text);
         self
     }
@@ -160,7 +161,16 @@ impl Element for Button {
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.base.set_upward_propagator(up)
     }
-    fn get_scl_location(&self) -> SclLocation {
-        self.base.get_scl_location()
+    fn get_scl_location_set(&self) -> SclLocationSet {
+        self.base.get_scl_location_set()
+    }
+    fn set_scl_location_set(&self, loc: SclLocationSet) {
+        self.base.set_scl_location_set(loc)
+    }
+    fn visible(&self) -> bool {
+        self.base.visible()
+    }
+    fn set_visible(&self, v: bool) {
+        self.base.set_visible(v)
     }
 }

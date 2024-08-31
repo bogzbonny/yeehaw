@@ -278,7 +278,7 @@ impl WidgetOrganizer {
     pub fn resize_event(&mut self, ctx: &Context) {
         for (w, loc) in &mut self.widgets {
             w.receive_event(ctx, Event::Resize);
-            loc.l = w.get_scl_location();
+            *loc = w.get_scl_location_set();
         }
     }
 

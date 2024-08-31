@@ -52,12 +52,36 @@ impl SclLocation {
         }
     }
 
+    pub fn get_scl_height(&self) -> SclVal {
+        self.end_y.clone().minus(self.start_y.clone()).plus_fixed(1)
+    }
+
+    pub fn get_scl_width(&self) -> SclVal {
+        self.end_x.clone().minus(self.start_x.clone()).plus_fixed(1)
+    }
+
     pub fn set_width(&mut self, width: SclVal) {
         self.end_x = self.start_x.clone().plus(width.minus_fixed(1));
     }
 
     pub fn set_height(&mut self, height: SclVal) {
         self.end_y = self.start_y.clone().plus(height.minus_fixed(1));
+    }
+
+    pub fn set_start_x(&mut self, start_x: SclVal) {
+        self.start_x = start_x;
+    }
+
+    pub fn set_start_y(&mut self, start_y: SclVal) {
+        self.start_y = start_y;
+    }
+
+    pub fn set_end_x(&mut self, end_x: SclVal) {
+        self.end_x = end_x;
+    }
+
+    pub fn set_end_y(&mut self, end_y: SclVal) {
+        self.end_y = end_y;
     }
 
     // X returns the start and end x values of the Location
@@ -189,6 +213,92 @@ impl SclLocationSet {
     pub fn with_z(mut self, z: ZIndex) -> SclLocationSet {
         self.z = z;
         self
+    }
+
+    // convenience function to set the width of the primary location
+    pub fn set_width(&mut self, width: SclVal) {
+        self.l.set_width(width);
+    }
+
+    // convenience function to set the height of the primary location
+    pub fn set_height(&mut self, height: SclVal) {
+        self.l.set_height(height);
+    }
+
+    // convenience function to set the start x of the primary location
+    pub fn set_start_x(&mut self, start_x: SclVal) {
+        self.l.set_start_x(start_x);
+    }
+
+    // convenience function to set the start y of the primary location
+    pub fn set_start_y(&mut self, start_y: SclVal) {
+        self.l.set_start_y(start_y);
+    }
+
+    // convenience function to set the end x of the primary location
+    pub fn set_end_x(&mut self, end_x: SclVal) {
+        self.l.set_end_x(end_x);
+    }
+
+    // convenience function to set the end y of the primary location
+    pub fn set_end_y(&mut self, end_y: SclVal) {
+        self.l.set_end_y(end_y);
+    }
+
+    // convenience function to get the start x of the primary location
+    pub fn get_start_x(&self, ctx: &Context) -> i32 {
+        self.l.get_start_x(ctx)
+    }
+
+    // convenience function to get the start y of the primary location
+    pub fn get_start_y(&self, ctx: &Context) -> i32 {
+        self.l.get_start_y(ctx)
+    }
+
+    // convenience function to get the end x of the primary location
+    pub fn get_end_x(&self, ctx: &Context) -> i32 {
+        self.l.get_end_x(ctx)
+    }
+
+    // convenience function to get the end y of the primary location
+    pub fn get_end_y(&self, ctx: &Context) -> i32 {
+        self.l.get_end_y(ctx)
+    }
+
+    // convenience function to get the width of the primary location
+    pub fn get_width(&self, ctx: &Context) -> usize {
+        self.l.width(ctx)
+    }
+
+    // convenience function to get the height of the primary location
+    pub fn get_height(&self, ctx: &Context) -> usize {
+        self.l.height(ctx)
+    }
+
+    pub fn get_scl_start_x(&self) -> SclVal {
+        self.l.start_x.clone()
+    }
+
+    pub fn get_scl_start_y(&self) -> SclVal {
+        self.l.start_y.clone()
+    }
+
+    pub fn get_scl_end_x(&self) -> SclVal {
+        self.l.end_x.clone()
+    }
+
+    pub fn get_scl_end_y(&self) -> SclVal {
+        self.l.end_y.clone()
+    }
+
+    // convenience function to get the height of the primary location
+    pub fn get_scl_height(&self) -> SclVal {
+        self.l.get_scl_height()
+    }
+
+    // convenience function to get the width of the primary location
+    pub fn get_scl_width(&self) -> SclVal {
+        self.l.get_scl_width()
     }
 
     // Contains checks if the given location falls in the primary

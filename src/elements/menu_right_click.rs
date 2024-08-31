@@ -147,7 +147,16 @@ impl Element for RightClickMenu {
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.menu.set_upward_propagator(up)
     }
-    fn get_scl_location(&self) -> SclLocation {
-        self.menu.get_scl_location()
+    fn get_scl_location_set(&self) -> SclLocationSet {
+        self.menu.get_scl_location_set()
+    }
+    fn set_scl_location_set(&self, loc: SclLocationSet) {
+        self.menu.set_scl_location_set(loc)
+    }
+    fn visible(&self) -> bool {
+        self.menu.visible()
+    }
+    fn set_visible(&self, v: bool) {
+        self.menu.set_visible(v)
     }
 }
