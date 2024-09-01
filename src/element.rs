@@ -224,8 +224,9 @@ pub struct EventResponse {
     // create a window element, its location will be adjusted
     pub window: Option<Rc<RefCell<dyn Element>>>,
     // sends a request to the parent to change the extra locations
-    // of the element
-    pub extra_locations: Option<ExtraLocationsRequest>,
+    // of the element. TODO refactor to remove this, it should just be taking
+    // place on the element itself, ensure the text box right click menu will work.
+    pub extra_locations: Option<Vec<SclLocation>>,
     // contains priority updates that should be made to the receiver's prioritizer
     pub inputability_changes: Option<ReceivableEventChanges>,
 }
@@ -256,8 +257,8 @@ impl EventResponse {
         self
     }
 
-    pub fn with_extra_locations(mut self, elr: ExtraLocationsRequest) -> EventResponse {
-        self.extra_locations = Some(elr);
+    pub fn with_extra_locations(mut self, extra: Vec<SclLocation>) -> EventResponse {
+        self.extra_locations = Some(extra);
         self
     }
 
@@ -399,24 +400,5 @@ impl ReceivableEventChanges {
     pub fn concat(&mut self, rec: ReceivableEventChanges) {
         self.remove.extend(rec.remove);
         self.add.extend(rec.add);
-    }
-}
-
-// ---------------------------------------------------------------------
-// RESPONSE REQUESTS
-
-// sends a request to the parent to change the extra locations
-// of the element
-pub struct ExtraLocationsRequest {
-    pub requested: bool,
-    pub extra_locs: Vec<SclLocation>,
-}
-
-impl ExtraLocationsRequest {
-    pub fn new(extra_locs: Vec<SclLocation>) -> ExtraLocationsRequest {
-        ExtraLocationsRequest {
-            requested: true,
-            extra_locs,
-        }
     }
 }

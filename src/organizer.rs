@@ -285,7 +285,7 @@ impl ElementOrganizer {
         if let Some(ref elr) = r.extra_locations {
             // adjust extra locations to be relative to the given element
             let mut adj_extra_locs = Vec::new();
-            for mut l in elr.extra_locs.clone() {
+            for mut l in elr.clone() {
                 l.adjust_location_by(
                     details.loc.borrow().l.start_x.clone(),
                     details.loc.borrow().l.start_y.clone(),

@@ -24,12 +24,10 @@
      - move 'SclLocation' to the element from the EO  
         - will need to remove pos_x, pos_y, width, height from Pane
      - move 'visible' to the element from the EO
-
-^^^^^^^^^^^^^^  DONE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-01. refactors
      - remove unnecessary element event response items now that the location 
        and visibility are a part of the element
+
+^^^^^^^^^^^^^^  DONE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 20. Add another cargo repo like AssertCmd for tui
      name: TuiTester?
