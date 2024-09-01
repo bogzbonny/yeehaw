@@ -264,8 +264,9 @@ impl DropdownList {
             EventResponses::default()
         };
 
-        let rr = RelocationRequest::new_down(-(self.expanded_height() as i32 - 1));
-        let resp = EventResponse::default().with_relocation(rr);
+        //let rr = RelocationRequest::new_down(-(self.expanded_height() as i32 - 1));
+        //let resp = EventResponse::default().with_relocation(rr);
+        let resp = EventResponse::default();
         resps.push(resp);
         resps
     }
