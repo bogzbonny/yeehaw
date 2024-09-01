@@ -265,14 +265,8 @@ impl Element for NumbersTextBox {
     fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
         self.tb.get_scl_location_set()
     }
-    fn set_scl_location_set(&self, loc: SclLocationSet) {
-        self.tb.set_scl_location_set(loc)
-    }
-    fn visible(&self) -> Rc<RefCell<bool>> {
-        self.tb.visible()
-    }
-    fn set_visible(&self, v: bool) {
-        self.tb.set_visible(v)
+    fn get_visible(&self) -> Rc<RefCell<bool>> {
+        self.tb.get_visible()
     }
 }
 

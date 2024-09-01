@@ -150,13 +150,7 @@ impl Element for RightClickMenu {
     fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
         self.menu.get_scl_location_set()
     }
-    fn set_scl_location_set(&self, loc: SclLocationSet) {
-        self.menu.set_scl_location_set(loc)
-    }
-    fn visible(&self) -> Rc<RefCell<bool>> {
-        self.menu.visible()
-    }
-    fn set_visible(&self, v: bool) {
-        self.menu.set_visible(v)
+    fn get_visible(&self) -> Rc<RefCell<bool>> {
+        self.menu.get_visible()
     }
 }

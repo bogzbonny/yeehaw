@@ -672,14 +672,8 @@ impl Element for MenuBar {
     fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
         self.pane.get_scl_location_set()
     }
-    fn set_scl_location_set(&self, loc: SclLocationSet) {
-        self.pane.set_scl_location_set(loc)
-    }
-    fn visible(&self) -> Rc<RefCell<bool>> {
-        self.pane.visible()
-    }
-    fn set_visible(&self, v: bool) {
-        self.pane.set_visible(v)
+    fn get_visible(&self) -> Rc<RefCell<bool>> {
+        self.pane.get_visible()
     }
 }
 
@@ -785,14 +779,8 @@ impl Element for MenuItem {
     fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
         self.pane.get_scl_location_set()
     }
-    fn set_scl_location_set(&self, loc: SclLocationSet) {
-        self.pane.set_scl_location_set(loc)
-    }
-    fn visible(&self) -> Rc<RefCell<bool>> {
-        self.pane.visible()
-    }
-    fn set_visible(&self, v: bool) {
-        self.pane.set_visible(v)
+    fn get_visible(&self) -> Rc<RefCell<bool>> {
+        self.pane.get_visible()
     }
 }
 

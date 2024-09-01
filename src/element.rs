@@ -68,10 +68,7 @@ pub trait Element {
 
     // get/set the scalable location of the widget
     fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>>;
-    fn set_scl_location_set(&self, loc: SclLocationSet);
-
-    fn visible(&self) -> Rc<RefCell<bool>>;
-    fn set_visible(&self, v: bool);
+    fn get_visible(&self) -> Rc<RefCell<bool>>;
 
     // -------------------------------------------------------
     // Freebies

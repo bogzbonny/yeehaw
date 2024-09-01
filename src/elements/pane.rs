@@ -233,14 +233,8 @@ impl Element for Pane {
     fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
         self.loc.clone()
     }
-    fn set_scl_location_set(&self, loc: SclLocationSet) {
-        *self.loc.borrow_mut() = loc;
-    }
-    fn visible(&self) -> Rc<RefCell<bool>> {
+    fn get_visible(&self) -> Rc<RefCell<bool>> {
         self.visible.clone()
-    }
-    fn set_visible(&self, v: bool) {
-        *self.visible.borrow_mut() = v;
     }
 }
 

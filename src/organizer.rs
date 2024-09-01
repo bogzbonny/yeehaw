@@ -21,7 +21,7 @@ pub struct ElementOrganizer {
 pub struct ElDetails {
     pub el: Rc<RefCell<dyn Element>>,
 
-    // NOTE we keep references to the location and visibility of the element
+    // NOTE we keep references to the location and visibility within the element
     // rather than just calling into tht element each time to reduce locking.
     pub loc: Rc<RefCell<SclLocationSet>>, // LocationSet of the element
     pub vis: Rc<RefCell<bool>>,           // whether the element is set to display
@@ -30,7 +30,7 @@ pub struct ElDetails {
 impl ElDetails {
     pub fn new(el: Rc<RefCell<dyn Element>>) -> Self {
         let loc = el.borrow().get_scl_location_set().clone();
-        let vis = el.borrow().visible().clone();
+        let vis = el.borrow().get_visible().clone();
         Self { el, loc, vis }
     }
 
@@ -178,16 +178,6 @@ impl ElementOrganizer {
             .entry(el_id.clone())
             .and_modify(|ed| ed.loc.borrow_mut().z = z);
     }
-
-    //// get_context_for_el_id returns the context for the element registered under the given id
-    //pub fn get_context_for_el_id(&self, el_id: &ElementID) -> Context {
-    //    let els = self.els.borrow();
-    //    let Some(details) = els.get(el_id) else {
-    //        return Context::default();
-    //    };
-    //    let size = details.loc.borrow().l.get_size();
-    //    Context::new(size, details.vis)
-    //}
 
     // get_context_for_el_id returns the context for the element registered under the given id
     pub fn get_context_for_el(&self, higher_ctx: &Context, el_details: &ElDetails) -> Context {

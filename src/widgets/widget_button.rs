@@ -164,13 +164,7 @@ impl Element for Button {
     fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
         self.base.get_scl_location_set()
     }
-    fn set_scl_location_set(&self, loc: SclLocationSet) {
-        self.base.set_scl_location_set(loc)
-    }
-    fn visible(&self) -> Rc<RefCell<bool>> {
-        self.base.visible()
-    }
-    fn set_visible(&self, v: bool) {
-        self.base.set_visible(v)
+    fn get_visible(&self) -> Rc<RefCell<bool>> {
+        self.base.get_visible()
     }
 }
