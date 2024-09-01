@@ -81,7 +81,7 @@ impl RightClickMenu {
 
         Some(
             EventResponse::default()
-                .with_window(Rc::new(RefCell::new(self.clone())))
+                .with_new_element(Rc::new(RefCell::new(self.clone())))
                 .into(),
         )
     }

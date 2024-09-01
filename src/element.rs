@@ -217,10 +217,13 @@ pub struct EventResponse {
     pub quit: bool,
     // destroy the current element
     pub destruct: bool,
-    // replace the current element with the provided element
-    pub replacement: Option<Rc<RefCell<dyn Element>>>,
-    // create a window element, its location will be adjusted
-    pub window: Option<Rc<RefCell<dyn Element>>>,
+    // create an element, its location will be adjusted
+    // by the elements current location.
+    //
+    // this response can be used to create a window
+    // or when used in conjunction with destruct, it can be used to replace
+    // the current element with another.
+    pub new_element: Option<Rc<RefCell<dyn Element>>>,
 
     // arbitrary custom metadatas which can be passed back to the parent
     pub metadata: HashMap<String, Vec<u8>>,
@@ -244,13 +247,8 @@ impl EventResponse {
         self
     }
 
-    pub fn with_replacement(mut self, el: Rc<RefCell<dyn Element>>) -> EventResponse {
-        self.replacement = Some(el);
-        self
-    }
-
-    pub fn with_window(mut self, w: Rc<RefCell<dyn Element>>) -> EventResponse {
-        self.window = Some(w);
+    pub fn with_new_element(mut self, el: Rc<RefCell<dyn Element>>) -> EventResponse {
+        self.new_element = Some(el);
         self
     }
 

@@ -261,26 +261,26 @@ impl ElementOrganizer {
     // in the element organizer. Further processing may be required by the element
     // which owns this element organizer.
     pub fn partially_process_ev_resp(
-        &self, ctx: &Context, el_id: &ElementID, r: &mut EventResponse,
+        &self, _ctx: &Context, el_id: &ElementID, r: &mut EventResponse,
     ) {
         let Some(details) = self.get_element_details(el_id) else {
             // TODO log error
             return;
         };
 
-        // replace this entire element
-        if let Some(repl) = r.replacement.clone() {
-            let child_ctx = self.get_context_for_el(ctx, &details);
-            self.replace_el(el_id, repl);
-            r.replacement = None;
+        //// replace this entire element
+        //if let Some(repl) = r.replacement.clone() {
+        //    let child_ctx = self.get_context_for_el(ctx, &details);
+        //    self.replace_el(el_id, repl);
+        //    r.replacement = None;
 
-            // resize replacement
-            // TODO may not be neccessary. Explore further w/ fixes to resizing
-            details
-                .el
-                .borrow_mut()
-                .receive_event(&child_ctx, Event::Resize);
-        }
+        //    // resize replacement
+        //    // TODO may not be neccessary. Explore further w/ fixes to resizing
+        //    details
+        //        .el
+        //        .borrow_mut()
+        //        .receive_event(&child_ctx, Event::Resize);
+        //}
 
         if let Some(ref elr) = r.extra_locations {
             // adjust extra locations to be relative to the given element
@@ -297,11 +297,10 @@ impl ElementOrganizer {
             self.update_el_extra_locations(el_id.clone(), adj_extra_locs);
         }
 
-        let window = r.window.take();
-        if let Some(window) = window {
+        if let Some(new_el) = r.new_element.take() {
             // adjust the location of the window to be relative to the given element and adds the element
             // to the element organizer
-            window
+            new_el
                 .borrow()
                 .get_scl_location_set()
                 .borrow_mut()
@@ -310,49 +309,48 @@ impl ElementOrganizer {
                     details.loc.borrow().l.start_x.clone(),
                     details.loc.borrow().l.start_y.clone(),
                 );
-            let loc = window.borrow().get_scl_location_set().borrow().clone();
-            self.add_element(window, None, loc, true);
+            let loc = new_el.borrow().get_scl_location_set().borrow().clone();
+            self.add_element(new_el, None, loc, true);
         }
 
         if r.destruct {
             let ic = self.remove_element(el_id);
-
             r.concat_receivable_event_changes(ic);
             r.destruct = false;
         }
     }
 
     // Replaces the element at the given ID with a new element
-    pub fn replace_el(
-        &self, el_id: &ElementID, new_el: Rc<RefCell<dyn Element>>,
-    ) -> ReceivableEventChanges {
-        let mut ic = ReceivableEventChanges::default();
+    //pub fn replace_el(
+    //    &self, el_id: &ElementID, new_el: Rc<RefCell<dyn Element>>,
+    //) -> ReceivableEventChanges {
+    //    let mut ic = ReceivableEventChanges::default();
 
-        let Some(old_details) = self.els.borrow_mut().remove(el_id) else {
-            return ic;
-        };
-        let evs: Vec<Event> = old_details
-            .el
-            .borrow()
-            .receivable()
-            .drain(..)
-            .map(|(e, _)| e)
-            .collect();
-        self.prioritizer.borrow_mut().remove(el_id, &evs);
-        ic = ic.with_remove_evs(evs);
+    //    let Some(old_details) = self.els.borrow_mut().remove(el_id) else {
+    //        return ic;
+    //    };
+    //    let evs: Vec<Event> = old_details
+    //        .el
+    //        .borrow()
+    //        .receivable()
+    //        .drain(..)
+    //        .map(|(e, _)| e)
+    //        .collect();
+    //    self.prioritizer.borrow_mut().remove(el_id, &evs);
+    //    ic = ic.with_remove_evs(evs);
 
-        let new_el_id = new_el.borrow().id().clone();
-        let new_details = ElDetails::new(new_el.clone());
-        new_details.set_location_set(old_details.loc.borrow().clone());
-        new_details.set_visibility(*old_details.vis.borrow());
-        self.els.borrow_mut().insert(new_el_id.clone(), new_details);
+    //    let new_el_id = new_el.borrow().id().clone();
+    //    let new_details = ElDetails::new(new_el.clone());
+    //    new_details.set_location_set(old_details.loc.borrow().clone());
+    //    new_details.set_visibility(*old_details.vis.borrow());
+    //    self.els.borrow_mut().insert(new_el_id.clone(), new_details);
 
-        // register all events of new element to the prioritizers
-        let new_evs = new_el.borrow().receivable();
-        self.prioritizer.borrow_mut().include(&new_el_id, &new_evs);
-        ic.add_evs(new_evs);
-        ic
-    }
+    //    // register all events of new element to the prioritizers
+    //    let new_evs = new_el.borrow().receivable();
+    //    self.prioritizer.borrow_mut().include(&new_el_id, &new_evs);
+    //    ic.add_evs(new_evs);
+    //    ic
+    //}
 
     // key_events_process:
     // - determines the appropriate element to send key events to
