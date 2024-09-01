@@ -1,9 +1,9 @@
 use {
     super::{Selectability, VerticalScrollbar, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        element::RelocationRequest, Context, DrawCh, DrawChPos, Element, ElementID, Event,
-        EventResponse, EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, RgbColour,
-        SclLocationSet, SclVal, SortingHat, Style, UpwardPropagator, ZIndex,
+        Context, DrawCh, DrawChPos, Element, ElementID, Event, EventResponses, Keyboard as KB,
+        Priority, ReceivableEventChanges, RgbColour, SclLocationSet, SclVal, SortingHat, Style,
+        UpwardPropagator, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -234,7 +234,7 @@ impl DropdownList {
         self.entries.borrow().len() > self.expanded_height()
     }
 
-    pub fn perform_open(&self, ctx: &Context) -> EventResponse {
+    pub fn perform_open(&self, ctx: &Context) {
         *self.open.borrow_mut() = true;
         *self.cursor.borrow_mut() = *self.selected.borrow();
         let h = self.expanded_height() as i32;
@@ -243,9 +243,6 @@ impl DropdownList {
         // must set the content for the offsets to be correct
         self.base.set_content_from_string(ctx, &self.text(ctx));
         self.correct_offsets(ctx);
-
-        let rr = RelocationRequest::new_down(h - 1);
-        EventResponse::default().with_relocation(rr)
     }
 
     pub fn perform_close(&self, ctx: &Context, escaped: bool) -> EventResponses {
@@ -254,7 +251,7 @@ impl DropdownList {
         self.scrollbar
             .external_change(ctx, 0, self.base.content_height());
         self.base.set_scl_height(SclVal::new_fixed(1));
-        let mut resps = if !escaped && *self.selected.borrow() != *self.cursor.borrow() {
+        if !escaped && *self.selected.borrow() != *self.cursor.borrow() {
             *self.selected.borrow_mut() = *self.cursor.borrow();
             (self.selection_made_fn.borrow_mut())(
                 ctx.clone(),
@@ -262,13 +259,7 @@ impl DropdownList {
             )
         } else {
             EventResponses::default()
-        };
-
-        //let rr = RelocationRequest::new_down(-(self.expanded_height() as i32 - 1));
-        //let resp = EventResponse::default().with_relocation(rr);
-        let resp = EventResponse::default();
-        resps.push(resp);
-        resps
+        }
     }
 
     pub fn cursor_up(&self, ctx: &Context) {
@@ -329,7 +320,8 @@ impl Element for DropdownList {
                             || ke[0].matches_key(&KB::KEY_UP)
                             || ke[0].matches_key(&KB::KEY_K)) =>
                     {
-                        (true, self.perform_open(ctx).into())
+                        self.perform_open(ctx);
+                        (true, EventResponses::default())
                     }
                     _ if open && ke[0].matches_key(&KB::KEY_ENTER) => {
                         (true, self.perform_close(ctx, false))
@@ -369,7 +361,10 @@ impl Element for DropdownList {
                 let open = *self.open.borrow();
 
                 return match true {
-                    _ if !open && clicked => (true, self.perform_open(ctx).into()),
+                    _ if !open && clicked => {
+                        self.perform_open(ctx);
+                        (true, EventResponses::default())
+                    }
                     _ if open && scroll_up => {
                         self.cursor_up(ctx);
                         (true, EventResponses::default())
