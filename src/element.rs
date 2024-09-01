@@ -1,7 +1,6 @@
 use {
     crate::{
-        prioritizer::Priority, DrawChPos, ElementID, Event, SclLocation, SclLocationSet, SclVal,
-        Size,
+        prioritizer::Priority, DrawChPos, ElementID, Event, SclLocation, SclLocationSet, Size,
     },
     std::any::Any,
     std::collections::HashMap,
@@ -232,13 +231,9 @@ pub struct EventResponse {
     pub window: Option<CreateWindow>,
     // sends a request to the parent to change the size of the element
     pub resize: Option<Size>,
-    // send a request to the parent to change the position of the element
-    pub relocation: Option<RelocationRequest>,
     // sends a request to the parent to change the extra locations
     // of the element
     pub extra_locations: Option<ExtraLocationsRequest>,
-    // set the visibility of the element
-    pub visibility: Option<bool>,
     // contains priority updates that should be made to the receiver's prioritizer
     pub inputability_changes: Option<ReceivableEventChanges>,
     // for use with scrollbars
@@ -287,20 +282,8 @@ impl EventResponse {
         self
     }
 
-    pub fn with_relocation(mut self, r: RelocationRequest) -> EventResponse {
-        self.relocation = Some(r);
-        self
-    }
-
-    pub fn set_relocation(&mut self, r: RelocationRequest) {
-        self.relocation = Some(r);
-    }
     pub fn with_extra_locations(mut self, elr: ExtraLocationsRequest) -> EventResponse {
         self.extra_locations = Some(elr);
-        self
-    }
-    pub fn with_visibility(mut self, v: bool) -> EventResponse {
-        self.visibility = Some(v);
         self
     }
 
@@ -480,80 +463,6 @@ impl ReceivableEventChanges {
 
 // ---------------------------------------------------------------------
 // RESPONSE REQUESTS
-
-// RelocationRequest contains info for moving an element within its context
-#[derive(Clone, Default)]
-pub struct RelocationRequest {
-    pub up: SclVal,
-    pub down: SclVal,
-    pub left: SclVal,
-    pub right: SclVal,
-}
-
-impl RelocationRequest {
-    pub fn new_up(up: i32) -> RelocationRequest {
-        RelocationRequest {
-            up: SclVal::new_fixed(up),
-            ..Default::default()
-        }
-    }
-    pub fn new_down(down: i32) -> RelocationRequest {
-        RelocationRequest {
-            down: SclVal::new_fixed(down),
-            ..Default::default()
-        }
-    }
-    pub fn new_left(left: i32) -> RelocationRequest {
-        RelocationRequest {
-            left: SclVal::new_fixed(left),
-            ..Default::default()
-        }
-    }
-    pub fn new_right(right: i32) -> RelocationRequest {
-        RelocationRequest {
-            right: SclVal::new_fixed(right),
-            ..Default::default()
-        }
-    }
-
-    pub fn new_shift(move_right: i32, move_down: i32) -> RelocationRequest {
-        RelocationRequest {
-            up: SclVal::new_fixed(move_down),
-            down: SclVal::new_fixed(move_down),
-            left: SclVal::new_fixed(move_right),
-            right: SclVal::new_fixed(move_right),
-        }
-    }
-
-    pub fn new_shift_right(move_right: i32) -> RelocationRequest {
-        RelocationRequest {
-            right: SclVal::new_fixed(move_right),
-            left: SclVal::new_fixed(move_right),
-            ..Default::default()
-        }
-    }
-
-    pub fn new_shift_down(move_down: i32) -> RelocationRequest {
-        RelocationRequest {
-            down: SclVal::new_fixed(move_down),
-            up: SclVal::new_fixed(move_down),
-            ..Default::default()
-        }
-    }
-}
-
-// ExtraLocationRequest contains info for adding or removing extra locations for
-// the given element
-pub struct ExtraLocationRequest {
-    pub add: Vec<SclLocation>,
-    pub rm: Vec<SclLocation>,
-}
-
-impl ExtraLocationRequest {
-    pub fn new(add: Vec<SclLocation>, rm: Vec<SclLocation>) -> ExtraLocationRequest {
-        ExtraLocationRequest { add, rm }
-    }
-}
 
 // sends a request to the parent to change the extra locations
 // of the element

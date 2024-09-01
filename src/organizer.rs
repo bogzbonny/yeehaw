@@ -128,13 +128,6 @@ impl ElementOrganizer {
         None
     }
 
-    pub fn update_el_visibility(&self, el_id: ElementID, vis: bool) {
-        self.els
-            .borrow_mut()
-            .entry(el_id)
-            .and_modify(|ed| *ed.vis.borrow_mut() = vis);
-    }
-
     // update_el_primary_location updates the primary location of the element with the given id
     pub fn update_el_location_set(&self, el_id: ElementID, loc: SclLocationSet) {
         //self.locations.entry(el_id).and_modify(|l| (*l) = loc);
@@ -313,10 +306,6 @@ impl ElementOrganizer {
                 details.loc.borrow().l.start_y.clone(),
             );
             self.add_element(window.el, None, window.loc, true);
-        }
-
-        if let Some(ref vis) = r.visibility {
-            self.update_el_visibility(el_id.clone(), *vis);
         }
 
         if r.destruct {

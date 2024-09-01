@@ -354,22 +354,23 @@ impl MenuBar {
         let make_invis = *self.make_invisible_on_closedown.borrow();
 
         let menu_items = self.menu_items.borrow();
-        for (id, item) in menu_items.iter() {
+        for (_, item) in menu_items.iter() {
             // close all non-primary menus
             if !item.is_primary() || make_invis {
-                self.pane.eo.update_el_visibility(id.clone(), false);
+                item.get_visible().replace(false);
             } else {
                 item.unselect();
             }
         }
 
         // update extra locations for parent eo
-        let mut resp: EventResponse = EventResponse::default()
+        let resp: EventResponse = EventResponse::default()
             .with_extra_locations(ExtraLocationsRequest::new(self.extra_locations()));
 
         if make_invis {
             // make the actual menu bar element invisible in the parent eo
-            resp = resp.with_visibility(false);
+            *self.get_visible().borrow_mut() = false;
+            //resp = resp.with_visibility(false);
             //resp = resp.with_destruct();
         }
 
@@ -379,9 +380,9 @@ impl MenuBar {
     // useful for right click menu
     pub fn make_primary_visible(&self) -> EventResponses {
         let menu_items = self.menu_items.borrow();
-        for (id, item) in menu_items.iter() {
+        for (_, item) in menu_items.iter() {
             if item.is_primary() {
-                self.pane.eo.update_el_visibility(id.clone(), true);
+                item.get_visible().replace(true);
             }
         }
 
@@ -413,10 +414,10 @@ impl MenuBar {
 
     pub fn collapse_non_primary(&self) {
         let menu_items = self.menu_items.borrow();
-        for (id, item) in menu_items.iter() {
+        for (_, item) in menu_items.iter() {
             // close all non-primary menus
             if !item.is_primary() {
-                self.pane.eo.update_el_visibility(id.clone(), false);
+                item.get_visible().replace(false);
             }
         }
     }
@@ -508,7 +509,7 @@ impl MenuBar {
             self.pane
                 .eo
                 .update_el_primary_location(it.id(), loc.clone());
-            self.pane.eo.update_el_visibility(it.id(), true);
+            it.get_visible().replace(true);
         }
     }
 }

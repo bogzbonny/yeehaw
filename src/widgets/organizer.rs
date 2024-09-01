@@ -75,11 +75,6 @@ impl WidgetOrganizer {
             resp.window = Some(win);
         }
 
-        // resize the widget
-        if let Some(reloc) = resp.relocation.take() {
-            self.widgets[widget_index].1.borrow_mut().relocate(reloc);
-        }
-
         if resp.deactivate {
             let rec = self.unselect_selected_widget(ctx);
             resp.concat_receivable_event_changes(rec);

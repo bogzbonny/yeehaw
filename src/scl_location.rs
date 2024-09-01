@@ -1,4 +1,4 @@
-use crate::{element::RelocationRequest, Context, SclVal};
+use crate::{Context, SclVal};
 
 // ZIndex is the z-index or position in the z-dimension of the element
 // The lower the z-index, further toward the front the element is
@@ -120,14 +120,6 @@ impl SclLocation {
             return true;
         }
         false
-    }
-
-    // Relocate increments the Location by the given values
-    pub fn relocate(&mut self, rr: RelocationRequest) {
-        self.start_x.plus_in_place(rr.left);
-        self.end_x.plus_in_place(rr.right);
-        self.start_y.plus_in_place(rr.up);
-        self.end_y.plus_in_place(rr.down);
     }
 
     // GetSize returns the size of the Location
@@ -325,14 +317,6 @@ impl SclLocationSet {
             }
         }
         false
-    }
-
-    // Relocate increments the Location by the given values
-    pub fn relocate(&mut self, rr: RelocationRequest) {
-        for loc in self.extra.iter_mut() {
-            loc.relocate(rr.clone());
-        }
-        self.l.relocate(rr);
     }
 
     // returns None is the point is not contained by the SclLocationSet

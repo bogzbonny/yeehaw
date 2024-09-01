@@ -4,7 +4,6 @@ use {
         VerticalSBPositions, VerticalScrollbar, WBStyles, Widget, WidgetBase, Widgets,
     },
     crate::{
-        element::RelocationRequest,
         elements::menu::{MenuItem, MenuPath, MenuStyle},
         Context, DrawCh, DrawChPos, Element, ElementID, Error, Event, EventResponse,
         EventResponses, KeyPossibility, Keyboard as KB, Priority, ReceivableEventChanges,
@@ -583,7 +582,7 @@ impl TextBox {
         if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
             sb.external_change(ctx, y_offset, self.base.content_height());
         }
-        let mut resp = EventResponse::default();
+        let resp = EventResponse::default();
         if let Some(ln_tb) = self.line_number_tb.borrow().as_ref() {
             let (lns, lnw) = self.get_line_numbers(ctx);
             let last_lnw = ln_tb.base.get_width(ctx);
@@ -595,8 +594,9 @@ impl TextBox {
                 } else {
                     self.base.get_scl_width().plus_fixed(-diff_lnw)
                 };
+                self.base
+                    .set_scl_start_x(self.base.get_scl_start_x().plus_fixed(diff_lnw));
                 self.base.set_scl_width(new_tb_width);
-                resp.set_relocation(RelocationRequest::new_left(diff_lnw));
             }
             ln_tb.set_text(lns);
             ln_tb.base.set_scl_width(SclVal::new_fixed(lnw as i32));

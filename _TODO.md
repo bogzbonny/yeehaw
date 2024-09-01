@@ -30,8 +30,6 @@
 01. refactors
      - remove unnecessary element event response items now that the location 
        and visibility are a part of the element
-     - refactor the Element hashmap to just be a vec (no element id stored) 
-        - effectively moving the element ID back to the element.
 
 20. Add another cargo repo like AssertCmd for tui
      name: TuiTester?
