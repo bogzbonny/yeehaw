@@ -298,14 +298,20 @@ impl ElementOrganizer {
         }
 
         let window = r.window.take();
-        if let Some(mut window) = window {
+        if let Some(window) = window {
             // adjust the location of the window to be relative to the given element and adds the element
             // to the element organizer
-            window.loc.l.adjust_location_by(
-                details.loc.borrow().l.start_x.clone(),
-                details.loc.borrow().l.start_y.clone(),
-            );
-            self.add_element(window.el, None, window.loc, true);
+            window
+                .borrow()
+                .get_scl_location_set()
+                .borrow_mut()
+                .l
+                .adjust_location_by(
+                    details.loc.borrow().l.start_x.clone(),
+                    details.loc.borrow().l.start_y.clone(),
+                );
+            let loc = window.borrow().get_scl_location_set().borrow().clone();
+            self.add_element(window, None, loc, true);
         }
 
         if r.destruct {

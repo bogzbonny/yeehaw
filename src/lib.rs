@@ -22,8 +22,7 @@ pub use {
     colour::RgbColour,
     cui::Cui,
     element::{
-        Context, CreateWindow, Element, EventResponse, EventResponses, ReceivableEventChanges,
-        UpwardPropagator,
+        Context, Element, EventResponse, EventResponses, ReceivableEventChanges, UpwardPropagator,
     },
     elements::{MenuBar, Pane, ParentPane, RightClickMenu},
     errors::Error,

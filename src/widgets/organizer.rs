@@ -68,9 +68,11 @@ impl WidgetOrganizer {
     ) {
         // adjust right click menu location to the widget
         // location which made the request
-        if let Some(mut win) = resp.window.clone() {
+        if let Some(win) = resp.window.clone() {
             let loc = self.widgets[widget_index].1.borrow();
-            win.loc
+            win.borrow()
+                .get_scl_location_set()
+                .borrow_mut()
                 .adjust_locations_by(loc.l.start_x.clone(), loc.l.start_y.clone());
             resp.window = Some(win);
         }

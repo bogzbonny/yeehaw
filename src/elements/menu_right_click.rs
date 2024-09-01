@@ -1,6 +1,5 @@
 use {
     crate::{
-        element::CreateWindow,
         element::ReceivableEventChanges,
         elements::menu::{MenuItem, MenuStyle},
         Context, DrawChPos, Element, ElementID, Event, EventResponse, EventResponses, MenuBar,
@@ -78,13 +77,11 @@ impl RightClickMenu {
             .with_z(Self::Z_INDEX);
 
         *self.just_created.borrow_mut() = true;
+        *self.get_scl_location_set().borrow_mut() = loc;
 
         Some(
             EventResponse::default()
-                .with_window(CreateWindow::new(
-                    Rc::new(RefCell::new((*self).clone())),
-                    loc,
-                ))
+                .with_window(Rc::new(RefCell::new(self.clone())))
                 .into(),
         )
     }

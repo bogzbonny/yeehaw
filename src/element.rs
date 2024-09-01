@@ -221,8 +221,8 @@ pub struct EventResponse {
     pub destruct: bool,
     // replace the current element with the provided element
     pub replacement: Option<Rc<RefCell<dyn Element>>>,
-    // request that the provided window element be created at the location
-    pub window: Option<CreateWindow>,
+    // create a window element, its location will be adjusted
+    pub window: Option<Rc<RefCell<dyn Element>>>,
     // sends a request to the parent to change the extra locations
     // of the element
     pub extra_locations: Option<ExtraLocationsRequest>,
@@ -251,7 +251,7 @@ impl EventResponse {
         self
     }
 
-    pub fn with_window(mut self, w: CreateWindow) -> EventResponse {
+    pub fn with_window(mut self, w: Rc<RefCell<dyn Element>>) -> EventResponse {
         self.window = Some(w);
         self
     }
@@ -318,21 +318,6 @@ impl EventResponse {
         } else {
             self.inputability_changes = Some(ic);
         }
-    }
-}
-
-// ----------------------------------------------------------------------------
-
-// response type for creating a window
-#[derive(Clone)]
-pub struct CreateWindow {
-    pub el: Rc<RefCell<dyn Element>>,
-    pub loc: SclLocationSet,
-}
-
-impl CreateWindow {
-    pub fn new(el: Rc<RefCell<dyn Element>>, loc: SclLocationSet) -> CreateWindow {
-        CreateWindow { el, loc }
     }
 }
 
