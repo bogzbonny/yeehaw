@@ -2,7 +2,6 @@ use {
     crate::{
         prioritizer::Priority, DrawChPos, ElementID, Event, SclLocation, SclLocationSet, Size,
     },
-    std::any::Any,
     std::collections::HashMap,
     std::ops::{Deref, DerefMut},
     std::{cell::RefCell, rc::Rc},
@@ -216,29 +215,19 @@ impl DerefMut for EventResponses {
 pub struct EventResponse {
     // quit the application
     pub quit: bool,
-    // deactivate (used with widgets
+    // deactivate (used with widgets)
     pub deactivate: bool,
     // destroy the current element
     pub destruct: bool,
-    // character updates to the element's drawing
-    pub ch_updates: Option<Vec<DrawChPos>>,
-    // metadata can be used to send back any arbitrary information
-    // it is up to the parent to interpret the metadata
-    pub metadata: Option<Box<dyn Any>>,
     // replace the current element with the provided element
     pub replacement: Option<Rc<RefCell<dyn Element>>>,
     // request that the provided window element be created at the location
     pub window: Option<CreateWindow>,
-    // sends a request to the parent to change the size of the element
-    pub resize: Option<Size>,
     // sends a request to the parent to change the extra locations
     // of the element
     pub extra_locations: Option<ExtraLocationsRequest>,
     // contains priority updates that should be made to the receiver's prioritizer
     pub inputability_changes: Option<ReceivableEventChanges>,
-    // for use with scrollbars
-    pub scroll_x_static: Option<i32>,
-    pub scroll_y_static: Option<i32>,
 }
 
 impl EventResponse {
@@ -257,16 +246,6 @@ impl EventResponse {
         self
     }
 
-    pub fn with_ch_updates(mut self, chs: Vec<DrawChPos>) -> EventResponse {
-        self.ch_updates = Some(chs);
-        self
-    }
-
-    pub fn with_metadata(mut self, md: Box<dyn Any>) -> EventResponse {
-        self.metadata = Some(md);
-        self
-    }
-
     pub fn with_replacement(mut self, el: Rc<RefCell<dyn Element>>) -> EventResponse {
         self.replacement = Some(el);
         self
@@ -274,11 +253,6 @@ impl EventResponse {
 
     pub fn with_window(mut self, w: CreateWindow) -> EventResponse {
         self.window = Some(w);
-        self
-    }
-
-    pub fn with_resize(mut self, s: Size) -> EventResponse {
-        self.resize = Some(s);
         self
     }
 
@@ -295,16 +269,6 @@ impl EventResponse {
 
     pub fn get_receivable_event_changes(&self) -> Option<ReceivableEventChanges> {
         self.inputability_changes.clone()
-    }
-
-    pub fn with_scroll_x_static(mut self, x: i32) -> EventResponse {
-        self.scroll_x_static = Some(x);
-        self
-    }
-
-    pub fn with_scroll_y_static(mut self, y: i32) -> EventResponse {
-        self.scroll_y_static = Some(y);
-        self
     }
 
     // --------------------------------------
@@ -346,14 +310,6 @@ impl EventResponse {
     }
 
     // ----------------------------------------------------------------------------
-
-    pub fn append_chs(&mut self, chs: Vec<DrawChPos>) {
-        if let Some(existing_chs) = &mut self.ch_updates {
-            existing_chs.extend(chs);
-        } else {
-            self.ch_updates = Some(chs);
-        }
-    }
 
     //pub fn concat_inputability_changes(&mut self, ic: ReceivableEventChanges) {
     pub fn concat_receivable_event_changes(&mut self, ic: ReceivableEventChanges) {
