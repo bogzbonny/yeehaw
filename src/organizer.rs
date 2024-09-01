@@ -20,21 +20,23 @@ pub struct ElementOrganizer {
 #[derive(Clone)]
 pub struct ElDetails {
     pub el: Rc<RefCell<dyn Element>>,
-    pub loc: SclLocationSet, // LocationSet of the element
-    pub vis: bool,           // whether the element is set to display
+    pub loc: Rc<RefCell<SclLocationSet>>, // LocationSet of the element
+    pub vis: Rc<RefCell<bool>>,           // whether the element is set to display
 }
 
 impl ElDetails {
-    pub fn new(el: Rc<RefCell<dyn Element>>, loc: SclLocationSet, vis: bool) -> Self {
+    pub fn new(el: Rc<RefCell<dyn Element>>) -> Self {
+        let loc = el.borrow().get_scl_location_set().clone();
+        let vis = el.borrow().visible().clone();
         Self { el, loc, vis }
     }
 
-    pub fn set_visibility(&mut self, vis: bool) {
-        self.vis = vis;
+    pub fn set_visibility(&self, vis: bool) {
+        *self.vis.borrow_mut() = vis;
     }
 
-    pub fn set_location_set(&mut self, loc: SclLocationSet) {
-        self.loc = loc;
+    pub fn set_location_set(&self, loc: SclLocationSet) {
+        *self.loc.borrow_mut() = loc;
     }
 }
 
@@ -49,7 +51,9 @@ impl ElementOrganizer {
         // put it at the top of the z-dim (pushing everything else down))
         self.update_el_z_index(&el_id, loc.z);
 
-        let el_details = ElDetails::new(el.clone(), loc, vis);
+        let el_details = ElDetails::new(el.clone());
+        el_details.set_location_set(loc);
+        el_details.set_visibility(vis);
         self.els.borrow_mut().insert(el_id.clone(), el_details);
 
         // add the elements recievable events and commands to the prioritizer
@@ -95,13 +99,16 @@ impl ElementOrganizer {
     }
 
     pub fn get_location(&self, el_id: &ElementID) -> Option<SclLocationSet> {
-        self.els.borrow().get(el_id).map(|ed| ed.loc.clone())
+        self.els
+            .borrow()
+            .get(el_id)
+            .map(|ed| ed.loc.borrow().clone())
     }
 
     // get_el_at_pos returns the element at the given position
     pub fn get_element_details_at_pos(&self, ctx: &Context, x: i32, y: i32) -> Option<ElDetails> {
         for (_, details) in self.els.borrow().iter() {
-            if details.loc.contains(ctx, x, y) {
+            if details.loc.borrow().contains(ctx, x, y) {
                 return Some(details.clone());
             }
         }
@@ -111,7 +118,7 @@ impl ElementOrganizer {
     // get_el_id_at_pos returns the element id at the given position
     pub fn get_el_id_at_pos(&self, ctx: &Context, x: i32, y: i32) -> Option<ElementID> {
         for (el_id, details) in self.els.borrow().iter() {
-            if details.loc.contains(ctx, x, y) {
+            if details.loc.borrow().contains(ctx, x, y) {
                 return Some(el_id.clone());
             }
         }
@@ -122,7 +129,7 @@ impl ElementOrganizer {
         self.els
             .borrow_mut()
             .entry(el_id)
-            .and_modify(|ed| ed.vis = vis);
+            .and_modify(|ed| *ed.vis.borrow_mut() = vis);
     }
 
     // update_el_primary_location updates the primary location of the element with the given id
@@ -131,7 +138,7 @@ impl ElementOrganizer {
         self.els
             .borrow_mut()
             .entry(el_id)
-            .and_modify(|ed| ed.loc = loc);
+            .and_modify(|ed| *ed.loc.borrow_mut() = loc);
     }
 
     // update_el_primary_location updates the primary location of the element with the given id
@@ -140,7 +147,7 @@ impl ElementOrganizer {
         self.els
             .borrow_mut()
             .entry(el_id)
-            .and_modify(|ed| ed.loc.l = loc);
+            .and_modify(|ed| ed.loc.borrow_mut().l = loc);
     }
 
     // updates the extra locations for the given element
@@ -149,7 +156,7 @@ impl ElementOrganizer {
         self.els
             .borrow_mut()
             .entry(el_id)
-            .and_modify(|ed| ed.loc.extra = extra_locations);
+            .and_modify(|ed| ed.loc.borrow_mut().extra = extra_locations);
     }
 
     // update_el_z_index updates the z-index of the element with the given id
@@ -166,7 +173,7 @@ impl ElementOrganizer {
         self.els
             .borrow_mut()
             .entry(el_id.clone())
-            .and_modify(|ed| ed.loc.z = z);
+            .and_modify(|ed| ed.loc.borrow_mut().z = z);
     }
 
     //// get_context_for_el_id returns the context for the element registered under the given id
@@ -175,14 +182,14 @@ impl ElementOrganizer {
     //    let Some(details) = els.get(el_id) else {
     //        return Context::default();
     //    };
-    //    let size = details.loc.l.get_size();
+    //    let size = details.loc.borrow().l.get_size();
     //    Context::new(size, details.vis)
     //}
 
     // get_context_for_el_id returns the context for the element registered under the given id
     pub fn get_context_for_el(&self, higher_ctx: &Context, el_details: &ElDetails) -> Context {
-        let size = el_details.loc.l.get_size(higher_ctx);
-        Context::new(size, el_details.vis)
+        let size = el_details.loc.borrow().l.get_size(higher_ctx);
+        Context::new(size, *el_details.vis.borrow())
     }
 
     // GetHighestZIndex returns the highest z-index of all elements
@@ -190,8 +197,9 @@ impl ElementOrganizer {
     pub fn get_highest_z_index(&self) -> i32 {
         let mut highest = i32::MIN;
         for detail in self.els.borrow().values() {
-            if detail.loc.z > highest {
-                highest = detail.loc.z;
+            let z = detail.loc.borrow().z;
+            if z > highest {
+                highest = z;
             }
         }
         highest
@@ -202,8 +210,9 @@ impl ElementOrganizer {
     pub fn get_lowest_z_index(&self) -> i32 {
         let mut lowest = i32::MAX;
         for detail in self.els.borrow().values() {
-            if detail.loc.z < lowest {
-                lowest = detail.loc.z;
+            let z = detail.loc.borrow().z;
+            if z < lowest {
+                lowest = z;
             }
         }
         lowest
@@ -233,12 +242,12 @@ impl ElementOrganizer {
         let mut eoz: Vec<(ElementID, ElDetails)> = Vec::new();
 
         for (el_id, details) in self.els.borrow().iter() {
-            //let z = details.loc.z;
+            //let z = details.loc.borrow().z;
             eoz.push((el_id.clone(), details.clone()));
         }
 
         // sort z index from high to low
-        eoz.sort_by(|a, b| b.1.loc.z.cmp(&a.1.loc.z));
+        eoz.sort_by(|a, b| b.1.loc.borrow().z.cmp(&a.1.loc.borrow().z));
 
         // draw elements in order from highest z-index to lowest
         for el_id_z in eoz {
@@ -246,7 +255,7 @@ impl ElementOrganizer {
             let details = self.get_element_details(&el_id_z.0).expect("impossible");
             let dcps = details.el.borrow().drawing(&child_ctx);
             for mut dcp in dcps {
-                dcp.adjust_by_scl_location(ctx, &details.loc.l);
+                dcp.adjust_by_scl_location(ctx, &details.loc.borrow().l);
                 out.push(dcp);
             }
         }
@@ -291,7 +300,10 @@ impl ElementOrganizer {
             // adjust extra locations to be relative to the given element
             let mut adj_extra_locs = Vec::new();
             for mut l in elr.extra_locs.clone() {
-                l.adjust_location_by(details.loc.l.start_x.clone(), details.loc.l.start_y.clone());
+                l.adjust_location_by(
+                    details.loc.borrow().l.start_x.clone(),
+                    details.loc.borrow().l.start_y.clone(),
+                );
                 adj_extra_locs.push(l.clone());
             }
 
@@ -303,10 +315,10 @@ impl ElementOrganizer {
         if let Some(mut window) = window {
             // adjust the location of the window to be relative to the given element and adds the element
             // to the element organizer
-            window
-                .loc
-                .l
-                .adjust_location_by(details.loc.l.start_x, details.loc.l.start_y);
+            window.loc.l.adjust_location_by(
+                details.loc.borrow().l.start_x.clone(),
+                details.loc.borrow().l.start_y.clone(),
+            );
             self.add_element(window.el, None, window.loc, true);
         }
 
@@ -342,10 +354,10 @@ impl ElementOrganizer {
         ic = ic.with_remove_evs(evs);
 
         let new_el_id = new_el.borrow().id().clone();
-        self.els.borrow_mut().insert(
-            new_el_id.clone(),
-            ElDetails::new(new_el.clone(), old_details.loc, old_details.vis),
-        );
+        let new_details = ElDetails::new(new_el.clone());
+        new_details.set_location_set(old_details.loc.borrow().clone());
+        new_details.set_visibility(*old_details.vis.borrow());
+        self.els.borrow_mut().insert(new_el_id.clone(), new_details);
 
         // register all events of new element to the prioritizers
         let new_evs = new_el.borrow().receivable();
@@ -441,8 +453,12 @@ impl ElementOrganizer {
                 continue;
             }
 
-            if details.loc.contains(ctx, ev.column.into(), ev.row.into()) {
-                ezo.push((el_id.clone(), details.loc.z));
+            if details
+                .loc
+                .borrow()
+                .contains(ctx, ev.column.into(), ev.row.into())
+            {
+                ezo.push((el_id.clone(), details.loc.borrow().z));
             }
         }
         ezo
@@ -469,7 +485,7 @@ impl ElementOrganizer {
         let child_ctx = self.get_context_for_el(ctx, &details);
 
         // adjust event to the relative position of the element
-        let ev_adj = details.loc.l.adjust_mouse_event(ctx, ev);
+        let ev_adj = details.loc.borrow().l.adjust_mouse_event(ctx, ev);
 
         // send mouse event to element
         let (_, mut ev_resps) = details
@@ -515,7 +531,7 @@ impl ElementOrganizer {
     // no element exists at the given z index
     pub fn get_el_at_z_index(&self, z: ZIndex) -> Option<ElDetails> {
         for (_, details) in self.els.borrow().iter() {
-            if details.loc.z == z {
+            if details.loc.borrow().z == z {
                 return Some(details.clone());
             }
         }
@@ -532,7 +548,7 @@ impl ElementOrganizer {
     // To move an element in the z-dimension, relative to other elements, use
     // UpdateZIndexForElID
     pub fn increment_z_index_for_el(&self, el_details: ElDetails) {
-        let z = el_details.loc.z; // current z of element
+        let z = el_details.loc.borrow().z; // current z of element
 
         // check if element exists at next z-index
         if self.is_z_index_occupied(z + 1) {
@@ -545,12 +561,15 @@ impl ElementOrganizer {
         self.els
             .borrow_mut()
             .entry(el_details.el.borrow().id().clone())
-            .and_modify(|ed| ed.loc.z = z + 1);
+            .and_modify(|ed| ed.loc.borrow_mut().z = z + 1);
     }
 
     // is_z_index_occupied returns true if an element exists at the given z-index
     pub fn is_z_index_occupied(&self, z: ZIndex) -> bool {
-        self.els.borrow().values().any(|details| details.loc.z == z)
+        self.els
+            .borrow()
+            .values()
+            .any(|details| details.loc.borrow().z == z)
     }
 
     // set_visibility_for_el sets the Visibility of the given element ID
@@ -558,7 +577,7 @@ impl ElementOrganizer {
         self.els
             .borrow_mut()
             .entry(el_id)
-            .and_modify(|ed| ed.vis = visible);
+            .and_modify(|ed| *ed.vis.borrow_mut() = visible);
     }
 
     // receive_command_event attempts to execute the given command

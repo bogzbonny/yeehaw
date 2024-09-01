@@ -67,10 +67,10 @@ pub trait Element {
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>);
 
     // get/set the scalable location of the widget
-    fn get_scl_location_set(&self) -> SclLocationSet;
+    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>>;
     fn set_scl_location_set(&self, loc: SclLocationSet);
 
-    fn visible(&self) -> bool;
+    fn visible(&self) -> Rc<RefCell<bool>>;
     fn set_visible(&self, v: bool);
 
     // -------------------------------------------------------

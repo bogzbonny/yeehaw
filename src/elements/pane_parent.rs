@@ -262,13 +262,13 @@ impl Element for ParentPane {
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.pane.set_upward_propagator(up)
     }
-    fn get_scl_location_set(&self) -> SclLocationSet {
+    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
         self.pane.get_scl_location_set()
     }
     fn set_scl_location_set(&self, loc: SclLocationSet) {
         self.pane.set_scl_location_set(loc)
     }
-    fn visible(&self) -> bool {
+    fn visible(&self) -> Rc<RefCell<bool>> {
         self.pane.visible()
     }
     fn set_visible(&self, v: bool) {

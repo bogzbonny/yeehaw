@@ -406,7 +406,7 @@ impl MenuBar {
     pub fn extra_locations(&self) -> Vec<SclLocation> {
         let mut locs = vec![];
         for details in self.pane.eo.els.borrow().values() {
-            locs.push(details.loc.l.clone());
+            locs.push(details.loc.borrow().l.clone());
         }
         locs
     }
@@ -648,13 +648,13 @@ impl Element for MenuBar {
         // draw each menu item
         for el_details in self.pane.eo.els.borrow().values() {
             // offset pos to location
-            let s = el_details.loc.l.get_size(ctx);
-            let c = Context::new(s, el_details.vis)
+            let s = el_details.loc.borrow().l.get_size(ctx);
+            let c = Context::new(s, *el_details.vis.borrow())
                 .with_metadata(Self::MENU_STYLE_MD_KEY.to_string(), menu_style_bz.clone());
             let dcps = el_details.el.borrow().drawing(&c);
 
             for mut dcp in dcps {
-                dcp.adjust_by_scl_location(ctx, &el_details.loc.l);
+                dcp.adjust_by_scl_location(ctx, &el_details.loc.borrow().l);
                 out.push(dcp);
             }
         }
@@ -669,13 +669,13 @@ impl Element for MenuBar {
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.pane.set_upward_propagator(up)
     }
-    fn get_scl_location_set(&self) -> SclLocationSet {
+    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
         self.pane.get_scl_location_set()
     }
     fn set_scl_location_set(&self, loc: SclLocationSet) {
         self.pane.set_scl_location_set(loc)
     }
-    fn visible(&self) -> bool {
+    fn visible(&self) -> Rc<RefCell<bool>> {
         self.pane.visible()
     }
     fn set_visible(&self, v: bool) {
@@ -782,13 +782,13 @@ impl Element for MenuItem {
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.pane.set_upward_propagator(up)
     }
-    fn get_scl_location_set(&self) -> SclLocationSet {
+    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
         self.pane.get_scl_location_set()
     }
     fn set_scl_location_set(&self, loc: SclLocationSet) {
         self.pane.set_scl_location_set(loc)
     }
-    fn visible(&self) -> bool {
+    fn visible(&self) -> Rc<RefCell<bool>> {
         self.pane.visible()
     }
     fn set_visible(&self, v: bool) {

@@ -159,11 +159,11 @@ impl Widgets {
 
         let mut l = SclLocation::default();
         for w in &self.0 {
-            let wl_loc = w.get_scl_location_set();
-            l.start_x = l.start_x.plus_min_of(wl_loc.l.start_x);
-            l.end_x = l.end_x.plus_max_of(wl_loc.l.end_x);
-            l.start_y = l.start_y.plus_min_of(wl_loc.l.start_y);
-            l.end_y = l.end_y.plus_max_of(wl_loc.l.end_y);
+            let wl_loc = w.get_scl_location_set().borrow().l.clone();
+            l.start_x = l.start_x.plus_min_of(wl_loc.start_x);
+            l.end_x = l.end_x.plus_max_of(wl_loc.end_x);
+            l.start_y = l.start_y.plus_min_of(wl_loc.start_y);
+            l.end_y = l.end_y.plus_max_of(wl_loc.end_y);
         }
         l
     }
@@ -617,13 +617,13 @@ impl Element for WidgetBase {
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.pane.set_upward_propagator(up)
     }
-    fn get_scl_location_set(&self) -> SclLocationSet {
+    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
         self.pane.get_scl_location_set()
     }
     fn set_scl_location_set(&self, loc: SclLocationSet) {
         self.pane.set_scl_location_set(loc)
     }
-    fn visible(&self) -> bool {
+    fn visible(&self) -> Rc<RefCell<bool>> {
         self.pane.visible()
     }
     fn set_visible(&self, v: bool) {

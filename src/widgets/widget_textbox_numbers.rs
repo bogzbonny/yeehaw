@@ -262,13 +262,13 @@ impl Element for NumbersTextBox {
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.tb.set_upward_propagator(up)
     }
-    fn get_scl_location_set(&self) -> SclLocationSet {
+    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
         self.tb.get_scl_location_set()
     }
     fn set_scl_location_set(&self, loc: SclLocationSet) {
         self.tb.set_scl_location_set(loc)
     }
-    fn visible(&self) -> bool {
+    fn visible(&self) -> Rc<RefCell<bool>> {
         self.tb.visible()
     }
     fn set_visible(&self, v: bool) {
