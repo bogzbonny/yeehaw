@@ -215,6 +215,10 @@ impl SclLocationSet {
         self
     }
 
+    pub fn set_z(&mut self, z: ZIndex) {
+        self.z = z;
+    }
+
     // convenience function to set the width of the primary location
     pub fn set_width(&mut self, width: SclVal) {
         self.l.set_width(width);

@@ -5,11 +5,13 @@ use {
         Priority, ReceivableEventChanges, SclLocationSet,
     },
     crossterm::event::{MouseButton, MouseEventKind},
+    std::{cell::RefCell, rc::Rc},
 };
 
 #[derive(Default)]
 pub struct WidgetOrganizer {
-    pub widgets: Vec<(Box<dyn Widget>, SclLocationSet)>,
+    #[allow(clippy::type_complexity)]
+    pub widgets: Vec<(Box<dyn Widget>, Rc<RefCell<SclLocationSet>>)>,
     active_widget_index: Option<usize>, // None means no widget active
 }
 
@@ -22,7 +24,8 @@ impl WidgetOrganizer {
         ]
     }
 
-    pub fn add_widget(&mut self, w: Box<dyn Widget>, loc: SclLocationSet) {
+    pub fn add_widget(&mut self, w: Box<dyn Widget>) {
+        let loc = w.get_scl_location_set();
         self.widgets.push((w, loc));
     }
 
@@ -66,14 +69,15 @@ impl WidgetOrganizer {
         // adjust right click menu location to the widget
         // location which made the request
         if let Some(mut win) = resp.window.clone() {
-            let loc = self.widgets[widget_index].1.clone();
-            win.loc.adjust_locations_by(loc.l.start_x, loc.l.start_y);
+            let loc = self.widgets[widget_index].1.borrow();
+            win.loc
+                .adjust_locations_by(loc.l.start_x.clone(), loc.l.start_y.clone());
             resp.window = Some(win);
         }
 
         // resize the widget
         if let Some(reloc) = resp.relocation.take() {
-            self.widgets[widget_index].1.relocate(reloc);
+            self.widgets[widget_index].1.borrow_mut().relocate(reloc);
         }
 
         if resp.deactivate {
@@ -238,6 +242,7 @@ impl WidgetOrganizer {
 
         // find the widget with the most front z index
         for (i, (_, loc)) in self.widgets.iter().enumerate() {
+            let loc = loc.borrow();
             if loc.contains(ctx, ev.column.into(), ev.row.into()) && loc.z < most_front_z_index {
                 most_front_z_index = loc.z;
                 widget_index = Some(i);
@@ -276,9 +281,9 @@ impl WidgetOrganizer {
     }
 
     pub fn resize_event(&mut self, ctx: &Context) {
-        for (w, loc) in &mut self.widgets {
+        for (w, _loc) in &mut self.widgets {
             w.receive_event(ctx, Event::Resize);
-            *loc = w.get_scl_location_set().borrow().clone();
+            //*loc.borrow_mut() = w.get_scl_location_set().borrow().clone();
         }
     }
 
@@ -295,7 +300,7 @@ impl WidgetOrganizer {
             let ds = w.drawing(ctx);
             for mut d in ds {
                 // adjust the location of the drawChPos relative to the WidgetPane
-                d.adjust_by_scl_location(ctx, &loc.l);
+                d.adjust_by_scl_location(ctx, &loc.borrow().l);
                 // filter out chs that are outside of the WidgetPane bounds
                 if d.y < ctx.s.height && d.x < ctx.s.width {
                     out.push(d);
@@ -310,7 +315,7 @@ impl WidgetOrganizer {
 
             for mut d in ds {
                 // adjust the location of the drawChPos relative to the WidgetPane
-                d.adjust_by_scl_location(ctx, &locs.l);
+                d.adjust_by_scl_location(ctx, &locs.borrow().l);
 
                 // filter out chs that are outside of the WidgetPane bounds
                 if d.y < ctx.s.height && d.x < ctx.s.width {

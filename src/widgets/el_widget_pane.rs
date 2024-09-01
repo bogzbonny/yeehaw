@@ -30,12 +30,8 @@ impl WidgetPane {
 
     pub fn add_widget(&mut self, w: Box<dyn Widget>) {
         self.pane.self_evs.borrow_mut().extend(w.receivable());
-        let l = w
-            .get_scl_location_set()
-            .borrow()
-            .clone()
-            .with_z(w.get_z_index());
-        self.org.borrow_mut().add_widget(w, l);
+        w.get_scl_location_set().borrow_mut().set_z(w.get_z_index());
+        self.org.borrow_mut().add_widget(w);
     }
 
     pub fn add_widgets(&mut self, ws: Widgets) {

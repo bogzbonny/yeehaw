@@ -20,6 +20,9 @@ pub struct ElementOrganizer {
 #[derive(Clone)]
 pub struct ElDetails {
     pub el: Rc<RefCell<dyn Element>>,
+
+    // NOTE we keep references to the location and visibility of the element
+    // rather than just calling into tht element each time to reduce locking.
     pub loc: Rc<RefCell<SclLocationSet>>, // LocationSet of the element
     pub vis: Rc<RefCell<bool>>,           // whether the element is set to display
 }
