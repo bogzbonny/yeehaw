@@ -1,5 +1,5 @@
 use {
-    super::{Selectability, Widget},
+    super::{widget::RESP_DEACTIVATE, Selectability, Widget},
     crate::{
         Context, DrawChPos, Event, EventResponse, EventResponses, KeyPossibility, Keyboard as KB,
         Priority, ReceivableEventChanges, SclLocationSet,
@@ -77,10 +77,10 @@ impl WidgetOrganizer {
             resp.window = Some(win);
         }
 
-        if resp.deactivate {
+        if resp.has_metadata(RESP_DEACTIVATE) {
             let rec = self.unselect_selected_widget(ctx);
             resp.concat_receivable_event_changes(rec);
-            resp.deactivate = false
+            resp.remove_metadata(RESP_DEACTIVATE);
         }
     }
 

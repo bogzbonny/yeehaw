@@ -215,14 +215,16 @@ impl DerefMut for EventResponses {
 pub struct EventResponse {
     // quit the application
     pub quit: bool,
-    // deactivate (used with widgets)
-    pub deactivate: bool,
     // destroy the current element
     pub destruct: bool,
     // replace the current element with the provided element
     pub replacement: Option<Rc<RefCell<dyn Element>>>,
     // create a window element, its location will be adjusted
     pub window: Option<Rc<RefCell<dyn Element>>>,
+
+    // arbitrary custom metadatas which can be passed back to the parent
+    pub metadata: HashMap<String, Vec<u8>>,
+
     // sends a request to the parent to change the extra locations
     // of the element. TODO refactor to remove this, it should just be taking
     // place on the element itself, ensure the text box right click menu will work.
@@ -234,11 +236,6 @@ pub struct EventResponse {
 impl EventResponse {
     pub fn with_quit(mut self) -> EventResponse {
         self.quit = true;
-        self
-    }
-
-    pub fn with_deactivate(mut self) -> EventResponse {
-        self.deactivate = true;
         self
     }
 
@@ -255,6 +252,23 @@ impl EventResponse {
     pub fn with_window(mut self, w: Rc<RefCell<dyn Element>>) -> EventResponse {
         self.window = Some(w);
         self
+    }
+
+    pub fn with_metadata<S: Into<String>>(mut self, key: S, md: Vec<u8>) -> EventResponse {
+        self.metadata.insert(key.into(), md);
+        self
+    }
+
+    pub fn get_metadata(&self, key: &str) -> Option<Vec<u8>> {
+        self.metadata.get(key).cloned()
+    }
+
+    pub fn has_metadata(&self, key: &str) -> bool {
+        self.metadata.contains_key(key)
+    }
+
+    pub fn remove_metadata(&mut self, key: &str) {
+        self.metadata.remove(key);
     }
 
     pub fn with_extra_locations(mut self, extra: Vec<SclLocation>) -> EventResponse {

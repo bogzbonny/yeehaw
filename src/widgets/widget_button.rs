@@ -1,5 +1,5 @@
 use {
-    super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
+    super::{widget::RESP_DEACTIVATE, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponse, EventResponses,
         Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SclLocationSet, SclVal,
@@ -107,7 +107,7 @@ impl Button {
     pub fn click(&self, ctx: &Context) -> EventResponses {
         let mut resps = (self.clicked_fn.borrow_mut())(ctx.clone());
         //resp.with_deactivate()
-        resps.push(EventResponse::default().with_deactivate());
+        resps.push(EventResponse::default().with_metadata(RESP_DEACTIVATE, vec![]));
         resps
     }
 }

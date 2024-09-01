@@ -38,6 +38,7 @@ pub const ATTR_SCL_LOC_Y: &str = "widget_scl_loc_y";
 pub const ATTR_SELECTABILITY: &str = "widget_selectability";
 
 pub const WIDGET_Z_INDEX: ZIndex = 10;
+pub const RESP_DEACTIVATE: &str = "deactivate_widget";
 
 pub trait Widget: Element {
     fn get_attr_selectability(&self) -> Selectability {
