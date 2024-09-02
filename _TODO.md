@@ -6,7 +6,8 @@
 01. rewrite horizontal/vertical stack panes
 01. translate tabs NOTE do this after stack so the tabs can be a stack
      - just use buttons as the tabs?!
-01. translate scrollable pane (or work into the standard pane? as an option) 
+01. translate scrollable pane 
+     - scrollbars should be optional (can scroll with mouse otherwise)
 01. translate file_navigator
 
 05. Time Base Events. add a "future event" to a part of the EventResponse. In

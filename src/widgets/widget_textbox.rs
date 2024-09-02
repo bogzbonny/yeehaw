@@ -588,12 +588,7 @@ impl TextBox {
             let last_lnw = ln_tb.base.get_width(ctx);
             if lnw != last_lnw {
                 let diff_lnw = lnw as i32 - last_lnw as i32;
-                // TODO can we combine this if statement?
-                let new_tb_width = if diff_lnw > 0 {
-                    self.base.get_scl_width().minus_fixed(diff_lnw)
-                } else {
-                    self.base.get_scl_width().plus_fixed(-diff_lnw)
-                };
+                let new_tb_width = self.base.get_scl_width().minus_fixed(diff_lnw);
                 self.base
                     .set_scl_start_x(self.base.get_scl_start_x().plus_fixed(diff_lnw));
                 self.base.set_scl_width(new_tb_width);
