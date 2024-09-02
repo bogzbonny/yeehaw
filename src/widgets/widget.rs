@@ -96,7 +96,7 @@ pub trait Widget: Element {
             }
         }
 
-        resps.push(EventResponse::default().with_receivable_event_changes(rec));
+        resps.push(EventResponse::ReceivableEventChanges(rec));
         resps
     }
 

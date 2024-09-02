@@ -1,8 +1,8 @@
 use {
     crate::{
-        element::ReceivableEventChanges, Context, DrawCh, DrawChPos, Element, ElementID, Event,
-        EventResponse, EventResponses, Pane, ParentPane, Priority, RgbColour, SclLocation,
-        SclLocationSet, SclVal, SortingHat, Style, UpwardPropagator, ZIndex,
+        Context, DrawCh, DrawChPos, Element, ElementID, Event, EventResponse, EventResponses, Pane,
+        ParentPane, Priority, ReceivableEventChanges, RgbColour, SclLocation, SclLocationSet,
+        SclVal, SortingHat, Style, UpwardPropagator, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::collections::HashMap,
@@ -327,7 +327,7 @@ impl MenuBar {
 
             // update extra locations for parent eo.Locations
         }
-        resps.push(EventResponse::default().with_extra_locations(self.extra_locations()));
+        resps.push(EventResponse::ExtraLocations(self.extra_locations()));
         (true, resps)
     }
 
@@ -360,8 +360,7 @@ impl MenuBar {
         }
 
         // update extra locations for parent eo
-        let resp: EventResponse =
-            EventResponse::default().with_extra_locations(self.extra_locations());
+        let resp: EventResponse = EventResponse::ExtraLocations(self.extra_locations());
 
         if make_invis {
             // make the actual menu bar element invisible in the parent eo
@@ -383,9 +382,7 @@ impl MenuBar {
         }
 
         // update extra locations for parent eo
-        EventResponse::default()
-            .with_extra_locations(self.extra_locations())
-            .into()
+        EventResponse::ExtraLocations(self.extra_locations()).into()
     }
 
     // useful for right click menu

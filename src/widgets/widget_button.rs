@@ -107,7 +107,10 @@ impl Button {
     pub fn click(&self, ctx: &Context) -> EventResponses {
         let mut resps = (self.clicked_fn.borrow_mut())(ctx.clone());
         //resp.with_deactivate()
-        resps.push(EventResponse::default().with_metadata(RESP_DEACTIVATE, vec![]));
+        resps.push(EventResponse::Metadata((
+            RESP_DEACTIVATE.to_string(),
+            vec![],
+        )));
         resps
     }
 }

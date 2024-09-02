@@ -1,7 +1,8 @@
 use {
     crate::{
         element::ReceivableEventChanges, keyboard::Keyboard, Context, Element, ElementID,
-        ElementOrganizer, Error, Event, SclLocation, SclLocationSet, Style, UpwardPropagator,
+        ElementOrganizer, Error, Event, EventResponse, SclLocation, SclLocationSet, Style,
+        UpwardPropagator,
     },
     crossterm::{
         cursor,
@@ -158,7 +159,7 @@ impl Cui {
 
         // only check for response for quit
         for resp in resps.iter() {
-            if resp.quit || resp.destruct {
+            if matches!(resp, EventResponse::Quit | EventResponse::Destruct) {
                 return true;
             }
         }
@@ -175,7 +176,7 @@ impl Cui {
 
         // only check for response for quit
         for resp in resps.iter() {
-            if resp.quit || resp.destruct {
+            if matches!(resp, EventResponse::Quit | EventResponse::Destruct) {
                 return true;
             }
         }

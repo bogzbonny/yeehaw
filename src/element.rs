@@ -209,129 +209,103 @@ impl DerefMut for EventResponses {
     }
 }
 
+impl EventResponses {
+    // retrieves only the ReceivableEventChanges from the EventResponses
+    // and concats them together
+    pub fn get_receivable_event_changes(&self) -> ReceivableEventChanges {
+        let mut rec = ReceivableEventChanges::default();
+        for er in &self.0 {
+            if let EventResponse::ReceivableEventChanges(r) = er {
+                rec.concat(r.clone());
+            }
+        }
+        rec
+    }
+}
+
 // EventResponse is used to send information back to the parent that delivered
 // the event to the element
 #[derive(Default)]
-pub struct EventResponse {
+pub enum EventResponse {
+    #[default]
+    None,
     // quit the application
-    pub quit: bool,
+    Quit,
     // destroy the current element
-    pub destruct: bool,
+    Destruct,
     // create an element, its location will be adjusted
     // by the elements current location.
     //
     // this response can be used to create a window
     // or when used in conjunction with destruct, it can be used to replace
     // the current element with another.
-    pub new_element: Option<Rc<RefCell<dyn Element>>>,
+    NewElement(Rc<RefCell<dyn Element>>),
 
     // arbitrary custom metadatas which can be passed back to the parent
-    pub metadata: HashMap<String, Vec<u8>>,
+    //       key,   , value
+    Metadata((String, Vec<u8>)),
 
     // sends a request to the parent to change the extra locations
     // of the element. TODO refactor to remove this, it should just be taking
     // place on the element itself, ensure the text box right click menu will work.
-    pub extra_locations: Option<Vec<SclLocation>>,
+    ExtraLocations(Vec<SclLocation>),
     // contains priority updates that should be made to the receiver's prioritizer
-    pub inputability_changes: Option<ReceivableEventChanges>,
+    ReceivableEventChanges(ReceivableEventChanges),
 }
 
 impl EventResponse {
-    pub fn with_quit(mut self) -> EventResponse {
-        self.quit = true;
-        self
-    }
-
-    pub fn with_destruct(mut self) -> EventResponse {
-        self.destruct = true;
-        self
-    }
-
-    pub fn with_new_element(mut self, el: Rc<RefCell<dyn Element>>) -> EventResponse {
-        self.new_element = Some(el);
-        self
-    }
-
-    pub fn with_metadata<S: Into<String>>(mut self, key: S, md: Vec<u8>) -> EventResponse {
-        self.metadata.insert(key.into(), md);
-        self
-    }
-
-    pub fn get_metadata(&self, key: &str) -> Option<Vec<u8>> {
-        self.metadata.get(key).cloned()
-    }
-
     pub fn has_metadata(&self, key: &str) -> bool {
-        self.metadata.contains_key(key)
-    }
-
-    pub fn remove_metadata(&mut self, key: &str) {
-        self.metadata.remove(key);
-    }
-
-    pub fn with_extra_locations(mut self, extra: Vec<SclLocation>) -> EventResponse {
-        self.extra_locations = Some(extra);
-        self
-    }
-
-    //pub fn with_inputability_changes(mut self, ic: ReceivableEventChanges) -> EventResponse {
-    pub fn with_receivable_event_changes(mut self, ic: ReceivableEventChanges) -> EventResponse {
-        self.inputability_changes = Some(ic);
-        self
-    }
-
-    pub fn get_receivable_event_changes(&self) -> Option<ReceivableEventChanges> {
-        self.inputability_changes.clone()
+        matches!(self, EventResponse::Metadata((k, _)) if k == key)
     }
 
     // --------------------------------------
     // ReceivableEventChanges
 
-    // TRANSLATION NOTE, used to be called remove_evs
-    pub fn remove(&mut self, evs: Vec<Event>) {
-        if let Some(ic) = &mut self.inputability_changes {
-            ic.remove_evs(evs);
-        } else {
-            self.inputability_changes =
-                Some(ReceivableEventChanges::default().with_remove_evs(evs));
-        }
-    }
+    //// TRANSLATION NOTE, used to be called remove_evs
+    //pub fn remove(&mut self, evs: Vec<Event>) {
+    //    if let Some(ic) = &mut self.inputability_changes {
+    //        ic.remove_evs(evs);
+    //    } else {
+    //        self.inputability_changes =
+    //            Some(ReceivableEventChanges::default().with_remove_evs(evs));
+    //    }
+    //}
 
-    pub fn add(&mut self, evs: Vec<(Event, Priority)>) {
-        if let Some(ic) = &mut self.inputability_changes {
-            ic.add_evs(evs);
-        } else {
-            self.inputability_changes = Some(ReceivableEventChanges::default().with_evs(evs));
-        }
-    }
+    //pub fn add(&mut self, evs: Vec<(Event, Priority)>) {
+    //    if let Some(ic) = &mut self.inputability_changes {
+    //        ic.add_evs(evs);
+    //    } else {
+    //        self.inputability_changes = Some(ReceivableEventChanges::default().with_evs(evs));
+    //    }
+    //}
 
-    pub fn set_rm_receivable_evs(&mut self, evs: Vec<Event>) {
-        if let Some(ic) = &mut self.inputability_changes {
-            ic.remove = evs;
-        } else {
-            self.inputability_changes =
-                Some(ReceivableEventChanges::default().with_remove_evs(evs));
-        }
-    }
+    //pub fn set_rm_receivable_evs(&mut self, evs: Vec<Event>) {
+    //    if let Some(ic) = &mut self.inputability_changes {
+    //        ic.remove = evs;
+    //    } else {
+    //        self.inputability_changes =
+    //            Some(ReceivableEventChanges::default().with_remove_evs(evs));
+    //    }
+    //}
 
-    pub fn set_add_receivable_evs(&mut self, evs: Vec<(Event, Priority)>) {
-        if let Some(ic) = &mut self.inputability_changes {
-            ic.add = evs;
-        } else {
-            self.inputability_changes = Some(ReceivableEventChanges::default().with_evs(evs));
-        }
-    }
+    //pub fn set_add_receivable_evs(&mut self, evs: Vec<(Event, Priority)>) {
+    //    if let Some(ic) = &mut self.inputability_changes {
+    //        ic.add = evs;
+    //    } else {
+    //        self.inputability_changes = Some(ReceivableEventChanges::default().with_evs(evs));
+    //    }
+    //}
 
-    // ----------------------------------------------------------------------------
+    //// ----------------------------------------------------------------------------
 
-    //pub fn concat_inputability_changes(&mut self, ic: ReceivableEventChanges) {
-    pub fn concat_receivable_event_changes(&mut self, ic: ReceivableEventChanges) {
-        if let Some(existing_ic) = &mut self.inputability_changes {
-            existing_ic.concat(ic);
-        } else {
-            self.inputability_changes = Some(ic);
-        }
-    }
+    ////pub fn concat_inputability_changes(&mut self, ic: ReceivableEventChanges) {
+    //pub fn concat_receivable_event_changes(&mut self, ic: ReceivableEventChanges) {
+    //    if let Some(existing_ic) = &mut self.inputability_changes {
+    //        existing_ic.concat(ic);
+    //    } else {
+    //        self.inputability_changes = Some(ic);
+    //    }
+    //}
 }
 
 // ----------------------------------------------------------------------------

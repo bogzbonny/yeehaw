@@ -109,17 +109,17 @@ impl EventPrioritizer {
         });
     }
 
-    // removes all the registered events for the given id, returning them
+    // removes all the registered events for the given id, returns the removed events
     pub fn remove_entire_element(&mut self, id: &ElementID) -> Vec<Event> {
-        let mut out = vec![];
+        let mut removed = vec![];
         self.0.retain(|priority_id_event| {
             if id != &priority_id_event.id {
                 return true;
             }
-            out.push(priority_id_event.event.clone());
+            removed.push(priority_id_event.event.clone());
             false
         });
-        out
+        removed
     }
 
     // SPECIALTY FUNCTION

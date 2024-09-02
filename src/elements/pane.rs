@@ -171,7 +171,8 @@ impl Element for Pane {
             pef.1 = p;
         }
         *self.element_priority.borrow_mut() = p;
-        ReceivableEventChanges::default().with_evs(self.self_evs.borrow().0.clone())
+        let rec = ReceivableEventChanges::default().with_evs(self.self_evs.borrow().0.clone());
+        rec
     }
 
     // Drawing compiles all of the DrawChPos necessary to draw this element

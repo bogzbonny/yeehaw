@@ -44,45 +44,84 @@ impl WidgetOrganizer {
     }
 
     // deactivate all the Widgets
-    pub fn unselect_selected_widget(&mut self, ctx: &Context) -> ReceivableEventChanges {
+    pub fn unselect_selected_widget(&mut self, ctx: &Context) -> EventResponses {
         if let Some(i) = self.active_widget_index {
             let resps = self.widgets[i]
                 .0
                 .set_selectability(ctx, Selectability::Ready);
-
-            // ignore all responses besides receiving event changes // TODO maybe shouldn't
-            let mut out = ReceivableEventChanges::default();
-            for resp in resps.0.iter() {
-                let out_ = resp.get_receivable_event_changes().unwrap_or_default();
-                out.concat(out_);
-            }
             self.active_widget_index = None;
-            out
+            resps
+        } else {
+            EventResponses::default()
+        }
+    }
+
+    // deactivate all the Widgets and process the responses returning only the receivable event
+    // changes. we need this for change_priority
+    pub fn unselect_selected_widget_process_resp(
+        &mut self, ctx: &Context,
+    ) -> ReceivableEventChanges {
+        if let Some(i) = self.active_widget_index {
+            let mut resps = self.widgets[i]
+                .0
+                .set_selectability(ctx, Selectability::Ready);
+            self.active_widget_index = None;
+            self.process_widget_resps(ctx, &mut resps, i);
+            // ignore all unprocessed responses besides receivable event changes
+            resps.get_receivable_event_changes()
         } else {
             ReceivableEventChanges::default()
         }
     }
 
-    pub fn process_widget_resp(
-        &mut self, ctx: &Context, resp: &mut EventResponse, widget_index: usize,
+    pub fn process_widget_resps(
+        &mut self, ctx: &Context, resps: &mut EventResponses, widget_index: usize,
     ) {
-        // adjust right click menu location to the widget
-        // location which made the request
-        if let Some(new_el) = resp.new_element.clone() {
-            let loc = self.widgets[widget_index].1.borrow();
-            new_el
-                .borrow()
-                .get_scl_location_set()
-                .borrow_mut()
-                .adjust_locations_by(loc.l.start_x.clone(), loc.l.start_y.clone());
-            resp.new_element = Some(new_el);
-        }
+        let mut extend_resps = vec![];
+        for resp in resps.0.iter_mut() {
+            let mut modified_resp = None;
+            match resp {
+                EventResponse::NewElement(new_el) => {
+                    // adjust right click menu location to the widget
+                    // location which made the request
+                    let loc = self.widgets[widget_index].1.borrow();
+                    new_el
+                        .borrow()
+                        .get_scl_location_set()
+                        .borrow_mut()
+                        .adjust_locations_by(loc.l.start_x.clone(), loc.l.start_y.clone());
+                    //*new_el = Some(new_el);
+                }
+                EventResponse::Metadata((k, _)) => {
+                    if k == RESP_DEACTIVATE {
+                        let resps_ = self.unselect_selected_widget(ctx);
+                        extend_resps.extend(resps_.0);
+                        modified_resp = Some(EventResponse::None);
+                    }
+                }
 
-        if resp.has_metadata(RESP_DEACTIVATE) {
-            let rec = self.unselect_selected_widget(ctx);
-            resp.concat_receivable_event_changes(rec);
-            resp.remove_metadata(RESP_DEACTIVATE);
+                _ => {}
+            }
+            if let Some(mr) = modified_resp {
+                *resp = mr;
+            }
         }
+        resps.0.extend(extend_resps);
+
+        //if let Some(new_el) = resp.new_element.clone() {
+        //    let loc = self.widgets[widget_index].1.borrow();
+        //    new_el
+        //        .borrow()
+        //        .get_scl_location_set()
+        //        .borrow_mut()
+        //        .adjust_locations_by(loc.l.start_x.clone(), loc.l.start_y.clone());
+        //    resp.new_element = Some(new_el);
+        //}
+        //if resp.has_metadata(RESP_DEACTIVATE) {
+        //    let rec = self.unselect_selected_widget(ctx);
+        //    resp.concat_receivable_event_changes(rec);
+        //    resp.remove_metadata(RESP_DEACTIVATE);
+        //}
     }
 
     pub fn switch_between_widgets(
@@ -104,9 +143,7 @@ impl WidgetOrganizer {
                 .0
                 .set_selectability(ctx, Selectability::Ready);
 
-            for resp in resps_.iter_mut() {
-                self.process_widget_resp(ctx, resp, old_i);
-            }
+            self.process_widget_resps(ctx, &mut resps_, old_i);
             resps.extend(resps_.0);
         }
 
@@ -115,9 +152,7 @@ impl WidgetOrganizer {
                 .0
                 .set_selectability(ctx, Selectability::Selected);
 
-            for resp in resps_.iter_mut() {
-                self.process_widget_resp(ctx, resp, new_i);
-            }
+            self.process_widget_resps(ctx, &mut resps_, new_i);
             self.active_widget_index = Some(new_i);
             resps.extend(resps_.0);
         }
@@ -194,13 +229,8 @@ impl WidgetOrganizer {
         }
         match true {
             _ if ev[0].matches_key(&KB::KEY_ESC) => {
-                let rec = self.unselect_selected_widget(ctx);
-                return (
-                    true,
-                    EventResponse::default()
-                        .with_receivable_event_changes(rec)
-                        .into(),
-                );
+                let resps = self.unselect_selected_widget(ctx);
+                return (true, resps);
             }
             _ if ev[0].matches_key(&KB::KEY_TAB) => {
                 let resps = self.switch_to_next_widget(ctx);
@@ -215,9 +245,7 @@ impl WidgetOrganizer {
 
         if let Some(i) = self.active_widget_index {
             let (captured, mut resps) = self.widgets[i].0.receive_event(ctx, Event::KeyCombo(ev));
-            for resp in resps.iter_mut() {
-                self.process_widget_resp(ctx, resp, i);
-            }
+            self.process_widget_resps(ctx, &mut resps, i);
             return (captured, resps);
         }
         (false, EventResponse::default().into())
@@ -250,13 +278,8 @@ impl WidgetOrganizer {
 
         let Some(widget_index) = widget_index else {
             if clicked {
-                let rec = self.unselect_selected_widget(ctx);
-                return (
-                    false,
-                    EventResponse::default()
-                        .with_receivable_event_changes(rec)
-                        .into(),
-                );
+                let resps = self.unselect_selected_widget(ctx);
+                return (false, resps);
             }
             return (false, EventResponses::default());
         };
@@ -271,9 +294,7 @@ impl WidgetOrganizer {
             .0
             .receive_event(ctx, Event::Mouse(ev_adj));
 
-        for resp in resps2.iter_mut() {
-            self.process_widget_resp(ctx, resp, widget_index);
-        }
+        self.process_widget_resps(ctx, &mut resps2, widget_index);
         resps2.extend(resps.0);
         (captured, resps2)
     }

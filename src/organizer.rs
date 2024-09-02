@@ -260,8 +260,8 @@ impl ElementOrganizer {
     // Partially process the event response for whatever is possible to be processed
     // in the element organizer. Further processing may be required by the element
     // which owns this element organizer.
-    pub fn partially_process_ev_resp(
-        &self, _ctx: &Context, el_id: &ElementID, r: &mut EventResponse,
+    pub fn partially_process_ev_resps(
+        &self, _ctx: &Context, el_id: &ElementID, resps: &mut EventResponses,
     ) {
         let Some(details) = self.get_element_details(el_id) else {
             // TODO log error
@@ -282,41 +282,53 @@ impl ElementOrganizer {
         //        .receive_event(&child_ctx, Event::Resize);
         //}
 
-        if let Some(ref elr) = r.extra_locations {
-            // adjust extra locations to be relative to the given element
-            let mut adj_extra_locs = Vec::new();
-            for mut l in elr.clone() {
-                l.adjust_location_by(
-                    details.loc.borrow().l.start_x.clone(),
-                    details.loc.borrow().l.start_y.clone(),
-                );
-                adj_extra_locs.push(l.clone());
+        for r in resps.0.iter_mut() {
+            let mut modified_resp: Option<EventResponse> = None;
+            match r {
+                EventResponse::ExtraLocations(extra) => {
+                    // adjust extra locations to be relative to the given element
+                    let mut adj_extra_locs = Vec::new();
+                    for mut l in extra.clone() {
+                        l.adjust_location_by(
+                            details.loc.borrow().l.start_x.clone(),
+                            details.loc.borrow().l.start_y.clone(),
+                        );
+                        adj_extra_locs.push(l.clone());
+                    }
+
+                    // update extra locations
+                    self.update_el_extra_locations(el_id.clone(), adj_extra_locs);
+                }
+                EventResponse::NewElement(new_el) => {
+                    // adjust the location of the window to be relative to the given element and adds the element
+                    // to the element organizer
+                    new_el
+                        .borrow()
+                        .get_scl_location_set()
+                        .borrow_mut()
+                        .l
+                        .adjust_location_by(
+                            details.loc.borrow().l.start_x.clone(),
+                            details.loc.borrow().l.start_y.clone(),
+                        );
+                    let loc = new_el.borrow().get_scl_location_set().borrow().clone();
+                    self.add_element(new_el.clone(), None, loc, true);
+                    modified_resp = Some(EventResponse::None);
+                }
+                EventResponse::Destruct => {
+                    let ic = self.remove_element(el_id);
+                    // NOTE no need to process the receivable event changes here,
+                    // they've already been removed in the above call
+                    modified_resp = Some(EventResponse::ReceivableEventChanges(ic));
+                }
+                EventResponse::ReceivableEventChanges(rec) => {
+                    self.process_receivable_event_changes(el_id, rec);
+                }
+                _ => {}
             }
-
-            // update extra locations
-            self.update_el_extra_locations(el_id.clone(), adj_extra_locs);
-        }
-
-        if let Some(new_el) = r.new_element.take() {
-            // adjust the location of the window to be relative to the given element and adds the element
-            // to the element organizer
-            new_el
-                .borrow()
-                .get_scl_location_set()
-                .borrow_mut()
-                .l
-                .adjust_location_by(
-                    details.loc.borrow().l.start_x.clone(),
-                    details.loc.borrow().l.start_y.clone(),
-                );
-            let loc = new_el.borrow().get_scl_location_set().borrow().clone();
-            self.add_element(new_el, None, loc, true);
-        }
-
-        if r.destruct {
-            let ic = self.remove_element(el_id);
-            r.concat_receivable_event_changes(ic);
-            r.destruct = false;
+            if let Some(mr) = modified_resp {
+                *r = mr;
+            }
         }
     }
 
@@ -372,12 +384,13 @@ impl ElementOrganizer {
         let child_ctx = self.get_context_for_el(ctx, &el_details);
         let (_, mut resps) = el_details.el.borrow_mut().receive_event(&child_ctx, evs);
 
-        for r in resps.iter_mut() {
-            self.partially_process_ev_resp(ctx, &el_id, r);
-            if let Some(changes) = r.get_receivable_event_changes() {
-                self.process_receivable_event_changes(&el_id, &changes);
-            }
-        }
+        self.partially_process_ev_resps(ctx, &el_id, &mut resps);
+        //for r in resps.iter_mut() {
+        //    self.partially_process_ev_resp(ctx, &el_id, r);
+        //    if let Some(changes) = r.get_receivable_event_changes() {
+        //        self.process_receivable_event_changes(&el_id, &changes);
+        //    }
+        //}
         Some((el_id, resps))
     }
 
@@ -478,12 +491,7 @@ impl ElementOrganizer {
             .el
             .borrow_mut()
             .receive_event(&child_ctx, Event::Mouse(ev_adj));
-        for ev_resp in ev_resps.iter_mut() {
-            if let Some(changes) = ev_resp.get_receivable_event_changes() {
-                self.process_receivable_event_changes(&el_id, &changes);
-            }
-            self.partially_process_ev_resp(ctx, &el_id, ev_resp);
-        }
+        self.partially_process_ev_resps(ctx, &el_id, &mut ev_resps);
 
         // send the mouse event as an external event to all other elements
         // capture the responses
@@ -502,12 +510,7 @@ impl ElementOrganizer {
         // combine the event responses from the elements that receive the event
         // and all the elements that receive an external event
         for (el_id2, mut resps) in el_resps {
-            for resp in resps.iter_mut() {
-                if let Some(changes) = resp.get_receivable_event_changes() {
-                    self.process_receivable_event_changes(&el_id2, &changes);
-                }
-                self.partially_process_ev_resp(ctx, &el_id2, resp);
-            }
+            self.partially_process_ev_resps(ctx, &el_id2, &mut resps);
             ev_resps.extend(resps.0);
         }
         Some((el_id, ev_resps))
@@ -581,13 +584,7 @@ impl ElementOrganizer {
         let child_ctx = self.get_context_for_el(ctx, &details);
         let (captured, mut resps) = details.el.borrow_mut().receive_event(&child_ctx, ev);
 
-        for resp in resps.iter_mut() {
-            if let Some(changes) = resp.get_receivable_event_changes() {
-                self.process_receivable_event_changes(&el_id, &changes);
-            }
-            self.partially_process_ev_resp(ctx, &el_id, resp);
-        }
-
+        self.partially_process_ev_resps(ctx, &el_id, &mut resps);
         (captured, resps)
     }
 }

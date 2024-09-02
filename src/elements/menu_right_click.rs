@@ -1,9 +1,9 @@
 use {
     crate::{
-        element::ReceivableEventChanges,
         elements::menu::{MenuItem, MenuStyle},
         Context, DrawChPos, Element, ElementID, Event, EventResponse, EventResponses, MenuBar,
-        Point, Priority, SclLocation, SclLocationSet, SclVal, SortingHat, UpwardPropagator, ZIndex,
+        Point, Priority, ReceivableEventChanges, SclLocation, SclLocationSet, SclVal, SortingHat,
+        UpwardPropagator, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -79,11 +79,7 @@ impl RightClickMenu {
         *self.just_created.borrow_mut() = true;
         *self.get_scl_location_set().borrow_mut() = loc;
 
-        Some(
-            EventResponse::default()
-                .with_new_element(Rc::new(RefCell::new(self.clone())))
-                .into(),
-        )
+        Some(EventResponse::NewElement(Rc::new(RefCell::new(self.clone()))).into())
     }
 }
 
