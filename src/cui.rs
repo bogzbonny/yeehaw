@@ -52,7 +52,7 @@ impl Cui {
 
         // add the element here after the location has been created
         let ctx = Context::new_context_for_screen();
-        let loc = SclLocation::new_fixed(0, (ctx.s.width - 1).into(), 0, (ctx.s.height - 1).into());
+        let loc = SclLocation::new_fixed(0, ctx.s.width.into(), 0, ctx.s.height.into());
         let loc = SclLocationSet::default().with_location(loc);
 
         let cup = Box::new(CuiUpwardPropagator::new(eo));
@@ -99,7 +99,7 @@ impl Cui {
 
                                 CTEvent::Resize(_, _) => {
                                     let ctx = Context::new_context_for_screen();
-                                    let loc = SclLocation::new_fixed(0, (ctx.s.width - 1).into(), 0, (ctx.s.height - 1).into());
+                                    let loc = SclLocation::new_fixed(0, ctx.s.width.into(), 0, ctx.s.height.into());
                                     let loc = SclLocationSet::default().with_location(loc);
                                     // There should only be one element at index 0 in the upper level EO
                                     self.eo.update_el_location_set(self.main_el_id.clone(), loc);

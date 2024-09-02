@@ -7,10 +7,10 @@ pub type ZIndex = i32;
 
 #[derive(Default, Debug, Clone)]
 pub struct SclLocation {
-    pub start_x: SclVal,
-    pub end_x: SclVal,
-    pub start_y: SclVal, // inclusive end y value
-    pub end_y: SclVal,   // inclusive end y value
+    pub start_x: SclVal, // inclusive
+    pub end_x: SclVal,   // exclusive
+    pub start_y: SclVal, // inclusive
+    pub end_y: SclVal,   // exclusive
 }
 
 impl SclLocation {
@@ -33,9 +33,7 @@ impl SclLocation {
     }
 
     pub fn height(&self, ctx: &Context) -> usize {
-        // NOTE: 1 must be added to get the proper height as the end and start
-        // values are inclusive.
-        let out = 1 + self.end_y.get_val(ctx.get_height()) - self.start_y.get_val(ctx.get_height());
+        let out = self.end_y.get_val(ctx.get_height()) - self.start_y.get_val(ctx.get_height());
         if out < 0 {
             0
         } else {
@@ -44,7 +42,7 @@ impl SclLocation {
     }
 
     pub fn width(&self, ctx: &Context) -> usize {
-        let out = 1 + self.end_x.get_val(ctx.get_width()) - self.start_x.get_val(ctx.get_width());
+        let out = self.end_x.get_val(ctx.get_width()) - self.start_x.get_val(ctx.get_width());
         if out < 0 {
             0
         } else {
@@ -53,19 +51,19 @@ impl SclLocation {
     }
 
     pub fn get_scl_height(&self) -> SclVal {
-        self.end_y.clone().minus(self.start_y.clone()).plus_fixed(1)
+        self.end_y.clone().minus(self.start_y.clone())
     }
 
     pub fn get_scl_width(&self) -> SclVal {
-        self.end_x.clone().minus(self.start_x.clone()).plus_fixed(1)
+        self.end_x.clone().minus(self.start_x.clone())
     }
 
     pub fn set_width(&mut self, width: SclVal) {
-        self.end_x = self.start_x.clone().plus(width.minus_fixed(1));
+        self.end_x = self.start_x.clone().plus(width);
     }
 
     pub fn set_height(&mut self, height: SclVal) {
-        self.end_y = self.start_y.clone().plus(height.minus_fixed(1));
+        self.end_y = self.start_y.clone().plus(height);
     }
 
     pub fn set_start_x(&mut self, start_x: SclVal) {
@@ -116,7 +114,7 @@ impl SclLocation {
     pub fn contains_point(&self, ctx: &Context, x: i32, y: i32) -> bool {
         let (start_x, end_x) = self.x(ctx);
         let (start_y, end_y) = self.y(ctx);
-        if x >= start_x && x <= end_x && y >= start_y && y <= end_y {
+        if x >= start_x && x < end_x && y >= start_y && y < end_y {
             return true;
         }
         false

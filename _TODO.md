@@ -9,7 +9,6 @@
 01. translate scrollable pane (or work into the standard pane? as an option) 
 01. translate file_navigator
 
-
 05. Time Base Events. add a "future event" to a part of the EventResponse. In
     the future event there is a timestamp which says when this event should be
     activated. This can be triggered in the render loop and the event will then
@@ -27,7 +26,8 @@
      - option for each of up/down/right/left
      - custom up/down/right/left DrawChs AND corner pieces
      - single/double/bold lines
-05. drag resizer??
+     - built in scrollbar
+     - drag-resizing - drag while on the edge to resize the location
 
 10. gradient colour types, don't ask me how exactly however this is basically
     what we should do.

@@ -200,19 +200,19 @@ impl MenuBar {
                 *self.primary_has_show_arrow.borrow(),
             ) as i32;
             let loc = if *self.horizontal_bar.borrow() {
-                let x = self.max_primary_x(ctx);
-                let x = if let Some(x) = x { x + 1 } else { 0 };
+                let x = self.max_primary_x(ctx).unwrap_or(0); // returns max end_x which is exclusive (so don't +1)
                 let x1 = SclVal::new_fixed(x);
-                let x2 = SclVal::new_fixed(x + item_width - 1);
-                let y = SclVal::new_fixed(0);
-                SclLocation::new(x1, x2, y.clone(), y)
+                let x2 = SclVal::new_fixed(x + item_width);
+                let y1 = SclVal::new_fixed(0);
+                let y2 = SclVal::new_fixed(1);
+                SclLocation::new(x1, x2, y1, y2)
             } else {
-                let y = self.max_primary_y(ctx);
-                let y = if let Some(y) = y { y + 1 } else { 0 };
-                let y = SclVal::new_fixed(y);
+                let y = self.max_primary_y(ctx).unwrap_or(0); // returns max end_y which is exclusive (so don't +1)
+                let y1 = SclVal::new_fixed(y);
+                let y2 = SclVal::new_fixed(y + 1);
                 let x1 = SclVal::new_fixed(0);
-                let x2 = SclVal::new_fixed(item_width - 1);
-                SclLocation::new(x1, x2, y.clone(), y)
+                let x2 = SclVal::new_fixed(item_width);
+                SclLocation::new(x1, x2, y1, y2)
             };
             let ls = SclLocationSet::new(loc, vec![], Self::Z_INDEX);
             (ls, true)
