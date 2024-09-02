@@ -113,6 +113,13 @@ impl From<crossterm::event::KeyEvent> for KeyPossibility {
 }
 
 impl KeyPossibility {
+    pub fn get_key(&self) -> Option<crossterm::event::KeyEvent> {
+        match self {
+            KeyPossibility::Key(k) => Some(*k),
+            _ => None,
+        }
+    }
+
     pub fn matches(&self, key_p: &KeyPossibility) -> bool {
         match self {
             KeyPossibility::Key(k) => key_p.matches_key(k),

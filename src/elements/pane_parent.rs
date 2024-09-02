@@ -216,6 +216,26 @@ impl Element for ParentPane {
                 self.eo.refresh(ctx);
                 (false, EventResponses::default())
             }
+            Event::Mouse(me) => {
+                let mep = self.eo.mouse_event_process(ctx, &me);
+                let Some((_, resps)) = mep else {
+                    return (true, EventResponses::default());
+                };
+                (true, resps)
+            }
+            Event::ExternalMouse(me) => {
+                // send the mouse event to all the children
+                (false, self.eo.external_mouse_event_process(ctx, &me))
+            }
+            Event::KeyCombo(ke) => {
+                // convert ke to Vec<crossterm::event::KeyEvent>
+                let ke = ke.into_iter().filter_map(|kp| kp.get_key()).collect();
+                let mep = self.eo.key_events_process(ctx, ke);
+                let Some((_, resps)) = mep else {
+                    return (true, EventResponses::default());
+                };
+                (true, resps)
+            }
             _ => self.pane.receive_event(ctx, ev),
         }
     }
@@ -251,7 +271,23 @@ impl Element for ParentPane {
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        self.pane.drawing(ctx)
+        if !ctx.visible {
+            return vec![];
+        }
+        let mut out = self.pane.drawing(ctx);
+
+        // draw each sub-element
+        for el_details in self.eo.els.borrow().values() {
+            // offset pos to location
+            let s = el_details.loc.borrow().l.get_size(ctx);
+            let c = Context::new(s, *el_details.vis.borrow());
+            let dcps = el_details.el.borrow().drawing(&c);
+            for mut dcp in dcps {
+                dcp.adjust_by_scl_location(ctx, &el_details.loc.borrow().l);
+                out.push(dcp);
+            }
+        }
+        out
     }
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
         self.pane.get_attribute(key)

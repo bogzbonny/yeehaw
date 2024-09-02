@@ -385,12 +385,6 @@ impl ElementOrganizer {
         let (_, mut resps) = el_details.el.borrow_mut().receive_event(&child_ctx, evs);
 
         self.partially_process_ev_resps(ctx, &el_id, &mut resps);
-        //for r in resps.iter_mut() {
-        //    self.partially_process_ev_resp(ctx, &el_id, r);
-        //    if let Some(changes) = r.get_receivable_event_changes() {
-        //        self.process_receivable_event_changes(&el_id, &changes);
-        //    }
-        //}
         Some((el_id, resps))
     }
 
@@ -497,6 +491,7 @@ impl ElementOrganizer {
         // capture the responses
         let mut el_resps = Vec::new();
         for (el_id2, details2) in self.els.borrow().iter() {
+            let child_ctx = self.get_context_for_el(ctx, details2); // XXX this is new make sure this doesn't mess stuff up (test menu)
             if *el_id2 == el_id {
                 continue;
             }
@@ -514,6 +509,23 @@ impl ElementOrganizer {
             ev_resps.extend(resps.0);
         }
         Some((el_id, ev_resps))
+    }
+
+    // sends the external mouse command to all elements in the organizer
+    pub fn external_mouse_event_process(
+        &self, ctx: &Context, ev: &crossterm::event::MouseEvent,
+    ) -> EventResponses {
+        let mut ev_resps = EventResponses::default();
+        for (el_id, details) in self.els.borrow().iter() {
+            let child_ctx = self.get_context_for_el(ctx, details);
+            let (_, mut r) = details
+                .el
+                .borrow_mut()
+                .receive_event(&child_ctx, Event::ExternalMouse(*ev));
+            self.partially_process_ev_resps(ctx, el_id, &mut r);
+            ev_resps.extend(r.0);
+        }
+        ev_resps
     }
 
     // get_el_id_at_z_index returns the element-id at the given z index, or None if
