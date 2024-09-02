@@ -29,6 +29,11 @@ impl ParentPane {
         }
     }
 
+    pub fn add_element(&self, el: Rc<RefCell<dyn Element>>) {
+        let loc = el.borrow().get_scl_location_set().borrow().clone();
+        self.eo.add_element(el.clone(), None, loc, true);
+    }
+
     // generate_perceived_priorities generates the "perceived priorities" of the
     // provided events. It receives a function which can then use each perceived
     // priority however it needs to.

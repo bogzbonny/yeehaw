@@ -5,4 +5,7 @@ pub mod pane;
 pub mod pane_parent;
 pub mod tabs;
 
-pub use {menu::MenuBar, menu_right_click::RightClickMenu, pane::Pane, pane_parent::ParentPane};
+pub use {
+    debug_pane::DebugSizePane, menu::MenuBar, menu_right_click::RightClickMenu, pane::Pane,
+    pane_parent::ParentPane,
+};

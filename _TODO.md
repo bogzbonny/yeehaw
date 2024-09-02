@@ -1,14 +1,14 @@
 
 01. write debug_pane
 
-^^^^^^^^^^^^^^  DONE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 01. rewrite horizontal/vertical stack panes
 01. translate tabs NOTE do this after stack so the tabs can be a stack
      - just use buttons as the tabs?!
 01. translate scrollable pane (or work into the standard pane? as an option) 
 01. translate file_navigator
+
 
 05. Time Base Events. add a "future event" to a part of the EventResponse. In
     the future event there is a timestamp which says when this event should be
@@ -27,6 +27,7 @@
      - option for each of up/down/right/left
      - custom up/down/right/left DrawChs AND corner pieces
      - single/double/bold lines
+05. drag resizer??
 
 10. gradient colour types, don't ask me how exactly however this is basically
     what we should do.

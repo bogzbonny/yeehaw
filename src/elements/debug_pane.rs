@@ -1,17 +1,26 @@
 use {
     crate::{
         element::ReceivableEventChanges, Context, DrawChPos, Element, ElementID, Event,
-        EventResponses, Pane, Priority, RgbColour, SclLocationSet, Style, UpwardPropagator,
+        EventResponses, Pane, Priority, RgbColour, SclLocationSet, SortingHat, Style,
+        UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
 };
 
 // displays the size
-pub struct SizePane {
+pub struct DebugSizePane {
     pub pane: Pane,
 }
 
-impl Element for SizePane {
+impl DebugSizePane {
+    pub fn new(hat: &SortingHat) -> DebugSizePane {
+        DebugSizePane {
+            pane: Pane::new(hat, "debug_size_pane"),
+        }
+    }
+}
+
+impl Element for DebugSizePane {
     fn kind(&self) -> &'static str {
         self.pane.kind()
     }
