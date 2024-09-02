@@ -324,9 +324,8 @@ impl MenuBar {
             };
 
             self.expand_folder(ctx, item, open_dir);
-
-            // update extra locations for parent eo.Locations
         }
+        // update extra locations for parent eo.Locations
         resps.push(EventResponse::ExtraLocations(self.extra_locations()));
         (true, resps)
     }
@@ -365,10 +364,7 @@ impl MenuBar {
         if make_invis {
             // make the actual menu bar element invisible in the parent eo
             *self.get_visible().borrow_mut() = false;
-            //resp = resp.with_visibility(false);
-            //resp = resp.with_destruct();
         }
-
         (true, resp.into())
     }
 

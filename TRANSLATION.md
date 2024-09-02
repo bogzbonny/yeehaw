@@ -17,9 +17,9 @@
 ▾ yeehaw/                                │ DONE
   ▾ docs/                                │ DONE
       architecture.md                    │ DONE
-  ▾ elements/                            │
-    ▾ adv/                               │
-        _ISSUES.md                       │
+  ▾ elements/                            │ - 
+    ▾ adv/                               │ - 
+        _ISSUES.md                       │ DONE (moved into _TODO.md)
         file_navigator.go                │
         file_view.go                     │
         pane_horiz_vert_std.go           │
@@ -33,31 +33,31 @@
       pane_size.go                       │ 
       pane_stack.go                      │ 
       pane_standard.go                   │ DONE
-      tab.go                             │
+      tab.go                             │ 
   ▾ examples/                            │
-    ▾ comment2/                          │
-        main.go                          │
-    ▾ complex_panes/                     │
-        main.go                          │
-    ▾ complex_panes2/                    │
-        main.go                          │
-    ▾ complex_panes3/                    │
-        main.go                          │
-    ▾ complex_panes4/                    │
-        main.go                          │
-    ▾ filenav-ex/                        │
-        main.go                          │
-    ▾ priority_panic/                    │
-        main.go                          │
-    ▾ resize_test/                       │
-        main.go                          │
+    ▾ comment2/                          │ WONT DO
+        main.go                          │ WONT DO 
+    ▾ complex_panes/                     │ WONT DO
+        main.go                          │ WONT DO
+    ▾ complex_panes2/                    │ WONT DO
+        main.go                          │ WONT DO
+    ▾ complex_panes3/                    │ WONT DO
+        main.go                          │ WONT DO
+    ▾ complex_panes4/                    │ WONT DO
+        main.go                          │ WONT DO
+    ▾ filenav-ex/                        │ WONT DO
+        main.go                          │ WONT DO
+    ▾ priority_panic/                    │ WONT DO
+        main.go                          │ WONT DO
+    ▾ resize_test/                       │ WONT DO
+        main.go                          │ WONT DO
     ▾ scroll_pane/                       │
         main.go                          │
     ▾ widget_ex/                         │
         main.go                          │
-      README.md                          │
-  ▾ widgets/                             │
-    ▾ megafonts/                         │
+      README.md                          │ WONT DO
+  ▾ widgets/                             │ DONE
+    ▾ megafonts/                         │ DONE
         font_ansi_reg.go                 │ DONE
         font_ansi_shadow.go              │ DONE
         font_pagga.go                    │ DONE
