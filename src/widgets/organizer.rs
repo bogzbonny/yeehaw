@@ -85,12 +85,22 @@ impl WidgetOrganizer {
                     // adjust right click menu location to the widget
                     // location which made the request
                     let loc = self.widgets[widget_index].1.borrow();
+                    let og_loc = new_el.borrow().get_scl_location_set();
+
+                    debug!("og x: {:?}", og_loc.borrow().get_start_x(ctx));
+                    debug!("og y: {:?}", og_loc.borrow().get_start_y(ctx));
+                    debug!("adj x: {:?}", loc.get_start_x(ctx));
+                    debug!("adj y: {:?}", loc.get_start_y(ctx));
+
                     new_el
                         .borrow()
                         .get_scl_location_set()
                         .borrow_mut()
                         .adjust_locations_by(loc.l.start_x.clone(), loc.l.start_y.clone());
-                    //*new_el = Some(new_el);
+
+                    let final_loc = new_el.borrow().get_scl_location_set();
+                    debug!("final x: {:?}", final_loc.borrow().get_start_x(ctx));
+                    debug!("final y: {:?}", final_loc.borrow().get_start_y(ctx));
                 }
                 EventResponse::Metadata((k, _)) => {
                     if k == RESP_DEACTIVATE {
@@ -107,21 +117,6 @@ impl WidgetOrganizer {
             }
         }
         resps.0.extend(extend_resps);
-
-        //if let Some(new_el) = resp.new_element.clone() {
-        //    let loc = self.widgets[widget_index].1.borrow();
-        //    new_el
-        //        .borrow()
-        //        .get_scl_location_set()
-        //        .borrow_mut()
-        //        .adjust_locations_by(loc.l.start_x.clone(), loc.l.start_y.clone());
-        //    resp.new_element = Some(new_el);
-        //}
-        //if resp.has_metadata(RESP_DEACTIVATE) {
-        //    let rec = self.unselect_selected_widget(ctx);
-        //    resp.concat_receivable_event_changes(rec);
-        //    resp.remove_metadata(RESP_DEACTIVATE);
-        //}
     }
 
     pub fn switch_between_widgets(

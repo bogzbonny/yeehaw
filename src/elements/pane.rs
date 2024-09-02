@@ -180,9 +180,8 @@ impl Element for Pane {
         let mut chs = vec![];
 
         // convert the Content to DrawChPos
-        // NOTE: width/height values must subtract 1 to get final cell locations
-        for y in 0..=ctx.s.height as usize - 1 {
-            for x in 0..=ctx.s.width as usize - 1 {
+        for y in 0..ctx.s.height as usize {
+            for x in 0..ctx.s.width as usize {
                 // default ch being added next is the DefaultCh
                 let mut ch_out = *self.default_ch.borrow();
 

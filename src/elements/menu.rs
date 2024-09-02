@@ -455,9 +455,11 @@ impl MenuBar {
 
         // TODO adjust the open direction if there isn't enough space.
         let mut loc = self.pane.eo.get_location(&item.id()).expect("missing el").l;
-        let item_width = SclVal::new_fixed(loc.width(ctx) as i32); // XXX this should just be loc width (post refactor of scl_location to element)
+        // XXX this should just be loc width (post refactor of scl_location to element)
+        let item_width = SclVal::new_fixed(loc.width(ctx) as i32);
         for (i, it) in sub_items.iter().enumerate() {
             // adjust for the next location
+            loc = loc.clone();
             match dir {
                 OpenDirection::Up => {
                     loc.adjust_location_by_y(SclVal::new_fixed(-(i as i32)));
@@ -609,11 +611,10 @@ impl Element for MenuBar {
     }
 
     fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        let _ = self.pane.receive_event(ctx, ev.clone());
         match ev {
             Event::Mouse(me) => self.receive_mouse_event(ctx, me),
             Event::ExternalMouse(me) => self.receive_external_mouse_event(ctx, me),
-            _ => (false, EventResponses::default()),
+            _ => self.pane.receive_event(ctx, ev.clone()),
         }
     }
 
@@ -741,7 +742,10 @@ impl Element for MenuItem {
         };
 
         // add filler space
-        while x < ctx.s.width as usize - m_sty.right_padding - arrow_text.chars().count() {
+        while x
+            < (ctx.s.width as usize)
+                .saturating_sub(m_sty.right_padding + arrow_text.chars().count())
+        {
             let dc = DrawCh::new(' ', false, sty);
             let dcp = DrawChPos::new(dc, x as u16, 0);
             out.push(dcp);

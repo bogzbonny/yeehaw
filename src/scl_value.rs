@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 // SclVal represents a X or Y screen position value which scales based on the
 // size of the parent widget. The value is a static number of characters
 // (static) plus the fraction of the parent widget size (fraction x size).
@@ -11,34 +9,34 @@ use std::rc::Rc;
 #[derive(Clone, Debug, Default)]
 pub struct SclVal {
     pub fixed: i32,    // fixed number of characters
-    pub fraction: f64, // fraction of the size number of characters (1 = 100)
+    pub fraction: f64, // fraction of the total number of characters (1.0 = 100%)
 
     // NOTE Rc is used such that locations can dynamicly reference each other
-    plus: Vec<Rc<SclVal>>,        // the SclVal adds all the provided SclVals
-    minus: Vec<Rc<SclVal>>,       // the SclVal subtracts all the provided SclVals
-    plus_min_of: Vec<Rc<SclVal>>, // the SclVal adds the minimum value of these provided SclVals
-    plus_max_of: Vec<Rc<SclVal>>, // the SclVal adds the maximum value of these provided SclVals
+    plus: Vec<SclVal>,        // the SclVal adds all the provided SclVals
+    minus: Vec<SclVal>,       // the SclVal subtracts all the provided SclVals
+    plus_min_of: Vec<SclVal>, // the SclVal adds the minimum value of these provided SclVals
+    plus_max_of: Vec<SclVal>, // the SclVal adds the maximum value of these provided SclVals
 }
 
 impl SclVal {
-    pub fn new_fixed(fixed: i32) -> SclVal {
+    pub fn new_fixed(fixed: i32) -> Self {
         SclVal {
             fixed,
             ..SclVal::default()
         }
     }
 
-    pub fn new_frac(fraction: f64) -> SclVal {
+    pub fn new_frac(fraction: f64) -> Self {
         SclVal {
             fraction,
             ..SclVal::default()
         }
     }
 
-    pub fn new_abs_and_rel(abs: i32, rel: f64) -> SclVal {
+    // Create a new SclVal with a fraction but which bounds at a minimum static value
+    pub fn new_frac_with_min(fraction: f64, min: i32) -> Self {
         SclVal {
-            fixed: abs,
-            fraction: rel,
+            plus_max_of: vec![SclVal::new_fixed(min), SclVal::new_frac(fraction)],
             ..SclVal::default()
         }
     }
@@ -56,52 +54,54 @@ impl SclVal {
         .saturating_sub(self.sum_of_minuses(max_size))
     }
 
-    pub fn plus_in_place<S: Into<Rc<SclVal>>>(&mut self, sv: S) {
-        self.plus.push(sv.into());
+    pub fn plus_in_place(&mut self, sv: SclVal) {
+        self.plus.push(sv);
     }
 
-    pub fn minus_in_place<S: Into<Rc<SclVal>>>(&mut self, sv: S) {
-        self.minus.push(sv.into());
+    pub fn minus_in_place(&mut self, sv: SclVal) {
+        self.minus.push(sv);
     }
 
-    pub fn plus<S: Into<Rc<SclVal>>>(mut self, sv: S) -> SclVal {
-        self.plus.push(sv.into());
-        self
+    // returns a new SclVal which is the sum of the two SclVals
+    // without modifying the original SclVal provided
+    pub fn plus(&self, sv: SclVal) -> SclVal {
+        let mut out = self.clone();
+        out.plus.push(sv);
+        out
     }
 
-    pub fn minus<S: Into<Rc<SclVal>>>(mut self, sv: S) -> SclVal {
-        self.minus.push(sv.into());
-        self
+    pub fn minus(&self, sv: SclVal) -> SclVal {
+        let mut out = self.clone();
+        out.minus.push(sv);
+        out
     }
 
-    pub fn plus_fixed(mut self, fixed: i32) -> SclVal {
-        self.plus.push(Rc::new(SclVal::new_fixed(fixed)));
-        self
+    pub fn plus_fixed(&self, fixed: i32) -> SclVal {
+        self.plus(SclVal::new_fixed(fixed))
     }
 
-    pub fn minus_fixed(mut self, fixed: i32) -> SclVal {
-        self.minus.push(Rc::new(SclVal::new_fixed(fixed)));
-        self
+    pub fn minus_fixed(&self, fixed: i32) -> SclVal {
+        self.minus(SclVal::new_fixed(fixed))
     }
 
-    pub fn plus_frac(mut self, fraction: f64) -> SclVal {
-        self.plus.push(Rc::new(SclVal::new_frac(fraction)));
-        self
+    pub fn plus_frac(&self, fraction: f64) -> SclVal {
+        self.plus(SclVal::new_frac(fraction))
     }
 
-    pub fn minus_frac(mut self, fraction: f64) -> SclVal {
-        self.minus.push(Rc::new(SclVal::new_frac(fraction)));
-        self
+    pub fn minus_frac(&self, fraction: f64) -> SclVal {
+        self.minus(SclVal::new_frac(fraction))
     }
 
-    pub fn plus_min_of<S: Into<Rc<SclVal>>>(mut self, sv: S) -> SclVal {
-        self.plus_min_of.push(sv.into());
-        self
+    pub fn plus_min_of(&self, sv: SclVal) -> SclVal {
+        let mut out = self.clone();
+        out.plus_min_of.push(sv);
+        out
     }
 
-    pub fn plus_max_of<S: Into<Rc<SclVal>>>(mut self, sv: S) -> SclVal {
-        self.plus_max_of.push(sv.into());
-        self
+    pub fn plus_max_of(&self, sv: SclVal) -> SclVal {
+        let mut out = self.clone();
+        out.plus_max_of.push(sv);
+        out
     }
 
     // gets the min SclVal of the plusMinOF SclVals
@@ -161,7 +161,7 @@ pub mod scl_val_tests {
         let sv = SclVal::new_frac(0.5);
         assert_eq!(5, sv.get_val(10));
 
-        let sv = SclVal::new_frac(0.5).plus(Rc::new(SclVal::new_fixed(1)));
+        let sv = SclVal::new_frac(0.5).plus(SclVal::new_fixed(1));
         assert_eq!(6, sv.get_val(10));
     }
 }

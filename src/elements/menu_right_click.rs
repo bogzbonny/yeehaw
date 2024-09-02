@@ -60,7 +60,7 @@ impl RightClickMenu {
         let (ev_x, ev_y) = (me.column, me.row);
         *self.pos.borrow_mut() = Point::new(ev_x.into(), ev_y.into());
 
-        let (x, y): (i32, i32) = ((ev_x + 1).into(), ev_y.into()); // offset the menu by 1 to the right of the cursor
+        let (x, y): (i32, i32) = (ev_x.into(), (ev_y + 1).into()); // offset the menu 1 below the cursor
         let (x, y) = (SclVal::new_fixed(x), SclVal::new_fixed(y));
 
         self.menu.activate();

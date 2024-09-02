@@ -424,8 +424,8 @@ impl TextBox {
 
         if !no_x_sb {
             let y2 = match x_sb_op {
-                HorizontalSBPositions::Above => y.minus_fixed(1),
-                HorizontalSBPositions::Below => y.plus(h),
+                HorizontalSBPositions::Above => y.clone().minus_fixed(1),
+                HorizontalSBPositions::Below => y.clone().plus(h),
                 _ => panic!("impossible"),
             };
 
@@ -670,6 +670,7 @@ impl TextBox {
 
     pub fn copy_to_clipboard(&self) -> Result<(), Error> {
         let text = self.visual_selected_text();
+        debug!("copying to clipboard: {}", text);
         arboard::Clipboard::new()?.set_text(text)?;
         Ok(())
     }

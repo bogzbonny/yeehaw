@@ -306,8 +306,9 @@ impl ElementOrganizer {
                         .borrow()
                         .get_scl_location_set()
                         .borrow_mut()
-                        .l
-                        .adjust_location_by(
+                        //.l
+                        //.adjust_location_by(
+                        .adjust_locations_by(
                             details.loc.borrow().l.start_x.clone(),
                             details.loc.borrow().l.start_y.clone(),
                         );
