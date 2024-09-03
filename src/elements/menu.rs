@@ -466,8 +466,7 @@ impl MenuBar {
 
         // TODO adjust the open direction if there isn't enough space.
         let mut loc = self.pane.eo.get_location(&item.id()).expect("missing el").l;
-        // XXX this should just be loc width (post refactor of scl_location to element)
-        let item_width = SclVal::new_fixed(loc.width(ctx) as i32);
+        let item_width = loc.get_scl_width();
         for (i, it) in sub_items.iter().enumerate() {
             // adjust for the next location
             loc = loc.clone();

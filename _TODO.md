@@ -3,6 +3,8 @@
 01. textbox rcm bug.. need to go to the upper right hand corner to first
     activate the rcm 
 30. refactor: remove ExtraLocations from EventResponse
+05. menu.rs: 
+        // XXX this should just be loc width (post refactor of scl_location to element)
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -40,9 +42,6 @@ THINKING
     routed through the standard event loop as normal. This can be used to
     replicate a heartbeat for a element, or to simulate a visual effect such as
     a button click.
-
-05. menu.rs: 
-        // XXX this should just be loc width (post refactor of scl_location to element)
 
 05. create builder types for each widget. 
      - annoying to send in the ctx and hat objects each time.
