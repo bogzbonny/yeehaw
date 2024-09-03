@@ -66,7 +66,7 @@ impl RightClickMenu {
         self.menu.activate();
         self.menu.deselect_all();
         self.menu.collapse_non_primary();
-        let _ = self.menu.make_primary_visible();
+        self.menu.make_primary_visible();
         let mut extra_locs = self.menu.extra_locations();
 
         for l in extra_locs.iter_mut() {

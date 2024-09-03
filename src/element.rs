@@ -1,7 +1,5 @@
 use {
-    crate::{
-        prioritizer::Priority, DrawChPos, ElementID, Event, SclLocation, SclLocationSet, Size,
-    },
+    crate::{prioritizer::Priority, DrawChPos, ElementID, Event, SclLocationSet, Size},
     std::collections::HashMap,
     std::ops::{Deref, DerefMut},
     std::{cell::RefCell, rc::Rc},
@@ -248,7 +246,8 @@ pub enum EventResponse {
     // sends a request to the parent to change the extra locations
     // of the element. TODO refactor to remove this, it should just be taking
     // place on the element itself, ensure the text box right click menu will work.
-    ExtraLocations(Vec<SclLocation>),
+    //ExtraLocations(Vec<SclLocation>),
+
     // contains priority updates that should be made to the receiver's prioritizer
     ReceivableEventChanges(ReceivableEventChanges),
 }

@@ -2,6 +2,7 @@
 01. write debug_pane
 01. textbox rcm bug.. need to go to the upper right hand corner to first
     activate the rcm 
+30. refactor: remove ExtraLocations from EventResponse
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -32,7 +33,6 @@ THINKING
      - button click should have the button as an input such that it can change
        colour when selected
 01. translate file_navigator
-
 
 05. Time Base Events. add a "future event" to a part of the EventResponse. In
     the future event there is a timestamp which says when this event should be
@@ -79,7 +79,6 @@ THINKING
         there should be an option to quickly rerecord what the test should look
         like now.
 
-30. refactor: remove ExtraLocations from EventResponse
 
 05. Remove Refresh logic from Elements. currently when an element is destroyed
     or replaced, the parents call some Refresh logic, this should be removed in

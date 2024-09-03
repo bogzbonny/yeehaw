@@ -200,6 +200,10 @@ impl SclLocationSet {
         self
     }
 
+    pub fn set_extra(&mut self, extra: Vec<SclLocation>) {
+        self.extra = extra;
+    }
+
     pub fn with_z(mut self, z: ZIndex) -> SclLocationSet {
         self.z = z;
         self

@@ -271,20 +271,20 @@ impl ElementOrganizer {
         for r in resps.0.iter_mut() {
             let mut modified_resp: Option<EventResponse> = None;
             match r {
-                EventResponse::ExtraLocations(extra) => {
-                    // adjust extra locations to be relative to the given element
-                    let mut adj_extra_locs = Vec::new();
-                    for mut l in extra.clone() {
-                        l.adjust_location_by(
-                            details.loc.borrow().l.start_x.clone(),
-                            details.loc.borrow().l.start_y.clone(),
-                        );
-                        adj_extra_locs.push(l.clone());
-                    }
+                //EventResponse::ExtraLocations(extra) => {
+                //    // adjust extra locations to be relative to the given element
+                //    let mut adj_extra_locs = Vec::new();
+                //    for mut l in extra.clone() {
+                //        l.adjust_location_by(
+                //            details.loc.borrow().l.start_x.clone(),
+                //            details.loc.borrow().l.start_y.clone(),
+                //        );
+                //        adj_extra_locs.push(l.clone());
+                //    }
 
-                    // update extra locations
-                    self.update_el_extra_locations(el_id.clone(), adj_extra_locs);
-                }
+                //    // update extra locations
+                //    self.update_el_extra_locations(el_id.clone(), adj_extra_locs);
+                //}
                 EventResponse::NewElement(new_el) => {
                     // adjust the location of the window to be relative to the given element and adds the element
                     // to the element organizer

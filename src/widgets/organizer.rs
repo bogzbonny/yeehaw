@@ -29,10 +29,6 @@ impl WidgetOrganizer {
         self.widgets.push((w, loc));
     }
 
-    pub fn get_widget(&self, index: usize) -> Option<&Box<dyn Widget>> {
-        self.widgets.get(index).map(|(w, _)| w)
-    }
-
     pub fn remove_widget(&mut self, w: Box<dyn Widget>) {
         for i in 0..self.widgets.len() {
             if self.widgets[i].0.id() == w.id() {
@@ -85,36 +81,15 @@ impl WidgetOrganizer {
         for resp in resps.0.iter_mut() {
             let mut modified_resp = None;
             match resp {
-                //EventResponse::ExtraLocations(extra) => {
-                //    // adjust extra locations to be relative to the given element
-                //    let mut adj_extra_locs = Vec::new();
-                //    let loc = self.widgets[widget_index].1.borrow();
-                //    for mut l in extra.clone() {
-                //        l.adjust_location_by(loc.l.start_x.clone(), loc.l.start_y.clone());
-                //        adj_extra_locs.push(l.clone());
-                //    }
-                //    self.widgets[widget_index].1.borrow_mut().extra = adj_extra_locs;
-                //}
                 EventResponse::NewElement(new_el) => {
                     // adjust right click menu location to the widget
                     // location which made the request
                     let loc = self.widgets[widget_index].1.borrow();
-                    let og_loc = new_el.borrow().get_scl_location_set();
-
-                    debug!("og x: {:?}", og_loc.borrow().get_start_x(ctx));
-                    debug!("og y: {:?}", og_loc.borrow().get_start_y(ctx));
-                    debug!("adj x: {:?}", loc.get_start_x(ctx));
-                    debug!("adj y: {:?}", loc.get_start_y(ctx));
-
                     new_el
                         .borrow()
                         .get_scl_location_set()
                         .borrow_mut()
                         .adjust_locations_by(loc.l.start_x.clone(), loc.l.start_y.clone());
-
-                    let final_loc = new_el.borrow().get_scl_location_set();
-                    debug!("final x: {:?}", final_loc.borrow().get_start_x(ctx));
-                    debug!("final y: {:?}", final_loc.borrow().get_start_y(ctx));
                 }
                 EventResponse::Metadata((k, _)) => {
                     if k == RESP_DEACTIVATE {

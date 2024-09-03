@@ -1,8 +1,8 @@
 use {
     crate::{
-        Context, DrawCh, DrawChPos, Element, ElementID, Event, EventResponse, EventResponses, Pane,
-        ParentPane, Priority, ReceivableEventChanges, RgbColour, SclLocation, SclLocationSet,
-        SclVal, SortingHat, Style, UpwardPropagator, ZIndex,
+        Context, DrawCh, DrawChPos, Element, ElementID, Event, EventResponses, Pane, ParentPane,
+        Priority, ReceivableEventChanges, RgbColour, SclLocation, SclLocationSet, SclVal,
+        SortingHat, Style, UpwardPropagator, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::collections::HashMap,
@@ -291,7 +291,7 @@ impl MenuBar {
         }
 
         let mep = self.pane.eo.mouse_event_process(ctx, &ev);
-        let Some((el_id, mut resps)) = mep else {
+        let Some((el_id, resps)) = mep else {
             if clicked {
                 return self.closedown();
             }
@@ -326,7 +326,10 @@ impl MenuBar {
             self.expand_folder(ctx, item, open_dir);
         }
         // update extra locations for parent eo.Locations
-        resps.push(EventResponse::ExtraLocations(self.extra_locations()));
+        //resps.push(EventResponse::ExtraLocations(self.extra_locations()));
+        //self.get_scl_location_set()
+        //    .borrow_mut()
+        //    .set_extra(self.extra_locations());
         (true, resps)
     }
 
@@ -344,6 +347,7 @@ impl MenuBar {
     }
 
     // closedown routine
+    // TODO cleanup, can remove EventResponses
     pub fn closedown(&self) -> (bool, EventResponses) {
         *self.activated.borrow_mut() = false;
         let make_invis = *self.make_invisible_on_closedown.borrow();
@@ -359,17 +363,20 @@ impl MenuBar {
         }
 
         // update extra locations for parent eo
-        let resp: EventResponse = EventResponse::ExtraLocations(self.extra_locations());
+        //let resp: EventResponse = EventResponse::ExtraLocations(self.extra_locations());
+        //self.get_scl_location_set()
+        //    .borrow_mut()
+        //    .set_extra(self.extra_locations());
 
         if make_invis {
             // make the actual menu bar element invisible in the parent eo
             *self.get_visible().borrow_mut() = false;
         }
-        (true, resp.into())
+        (true, EventResponses::default())
     }
 
     // useful for right click menu
-    pub fn make_primary_visible(&self) -> EventResponses {
+    pub fn make_primary_visible(&self) {
         let menu_items = self.menu_items.borrow();
         for (_, item) in menu_items.iter() {
             if item.is_primary() {
@@ -378,7 +385,11 @@ impl MenuBar {
         }
 
         // update extra locations for parent eo
-        EventResponse::ExtraLocations(self.extra_locations()).into()
+        //EventResponse::ExtraLocations(self.extra_locations()).into()
+
+        //self.get_scl_location_set()
+        //    .borrow_mut()
+        //    .set_extra(self.extra_locations());
     }
 
     // useful for right click menu
