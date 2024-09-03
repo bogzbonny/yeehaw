@@ -1,16 +1,18 @@
 
 01. write debug_pane
+01. textbox rcm bug.. need to go to the upper right hand corner to first
+    activate the rcm 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 THINKING
- - Partially Autonomous Element Model. 
+ - Partially Autonomous Element Model. (Suzerainty?)
    - The local loc/visibility is controlled by the element
      - this is not the abs location, only the location within the immediate
        context.
    - This introduces a bit of confusion with regards to mouse event positions. 
      - Mouse position events are local (upper right is 0, 0) 
-     - create a new position type and send that in with the crossterm mouse
+     - could create a new position type and send that in with the crossterm mouse
        event 
 
  - SclLocation change hooks?
@@ -30,6 +32,7 @@ THINKING
      - button click should have the button as an input such that it can change
        colour when selected
 01. translate file_navigator
+
 
 05. Time Base Events. add a "future event" to a part of the EventResponse. In
     the future event there is a timestamp which says when this event should be

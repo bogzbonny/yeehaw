@@ -268,20 +268,6 @@ impl ElementOrganizer {
             return;
         };
 
-        //// replace this entire element
-        //if let Some(repl) = r.replacement.clone() {
-        //    let child_ctx = self.get_context_for_el(ctx, &details);
-        //    self.replace_el(el_id, repl);
-        //    r.replacement = None;
-
-        //    // resize replacement
-        //    // TODO may not be neccessary. Explore further w/ fixes to resizing
-        //    details
-        //        .el
-        //        .borrow_mut()
-        //        .receive_event(&child_ctx, Event::Resize);
-        //}
-
         for r in resps.0.iter_mut() {
             let mut modified_resp: Option<EventResponse> = None;
             match r {
@@ -306,8 +292,6 @@ impl ElementOrganizer {
                         .borrow()
                         .get_scl_location_set()
                         .borrow_mut()
-                        //.l
-                        //.adjust_location_by(
                         .adjust_locations_by(
                             details.loc.borrow().l.start_x.clone(),
                             details.loc.borrow().l.start_y.clone(),

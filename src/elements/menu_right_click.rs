@@ -67,7 +67,11 @@ impl RightClickMenu {
         self.menu.deselect_all();
         self.menu.collapse_non_primary();
         let _ = self.menu.make_primary_visible();
-        let extra_locs = self.menu.extra_locations();
+        let mut extra_locs = self.menu.extra_locations();
+
+        for l in extra_locs.iter_mut() {
+            l.adjust_location_by(x.clone(), y.clone());
+        }
 
         // the location size doesn't matter as the top level element will be
         // empty, only the sub-elements will be take up space
