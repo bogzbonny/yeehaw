@@ -215,7 +215,7 @@ impl Element for ParentPane {
     // write their own receive_event function.
     // TODO verify that this code is or isn't used anywhere
     //                                               (captured, resp         )
-    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
             Event::Refresh => {
                 self.eo.refresh(ctx);

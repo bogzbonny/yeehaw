@@ -574,7 +574,7 @@ impl Element for WidgetBase {
         }
     }
 
-    fn receive_event(&self, _ctx: &Context, _ev: Event) -> (bool, EventResponses) {
+    fn receive_event_inner(&self, _ctx: &Context, _ev: Event) -> (bool, EventResponses) {
         (false, EventResponses::default())
     }
 

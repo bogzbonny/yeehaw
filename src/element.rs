@@ -5,9 +5,11 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
+dyn_clone::clone_trait_object!(Element);
+
 // Element is the base interface which all viewable elements are
 // expected to fulfill
-pub trait Element {
+pub trait Element: dyn_clone::DynClone {
     // TODO consider removing kind
     fn kind(&self) -> &'static str; // a name for the kind of the element
 
@@ -26,7 +28,14 @@ pub trait Element {
     // changes receivable events. When the event is captured, the element is expected to returns
     // captured=true.
     //                                                   (captured, response     )
-    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses);
+    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses);
+
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        self.call_hooks_of_kind(PRE_EVENT_HOOK_NAME);
+        let (captured, resp) = self.receive_event_inner(ctx, ev);
+        self.call_hooks_of_kind(POST_EVENT_HOOK_NAME);
+        (captured, resp)
+    }
 
     // change_priority is expected to change the priority of an element relative to its parents.
     // All receivable-events registered directly by the element should have their local priority
@@ -67,24 +76,72 @@ pub trait Element {
     //  - "pre-location-change": called before the element location changes
     //  - "post-location-change": called after the element location changes
     // NOTE use caution when setting hooks, they can be used to create circular references between elements
+    fn get_hooks(
+        &self,
+    ) -> Rc<RefCell<HashMap<String, Vec<(ElementID, Box<dyn FnMut(&str, Box<dyn Element>)>)>>>>;
+
     fn set_hook(
         &self,
         kind: &str,
         el_id: ElementID,
         //                  kind, hooked element
-        hook: Box<dyn FnMut(&str, Rc<RefCell<dyn Element>>)>,
-    );
+        hook: Box<dyn FnMut(&str, Box<dyn Element>)>,
+    ) {
+        self.get_hooks()
+            .borrow_mut()
+            .entry(kind.to_string())
+            .or_insert_with(Vec::new)
+            .push((el_id, hook));
+    }
 
-    fn remove_hook(&self, kind: &str, el_id: ElementID);
-    fn clear_hooks_by_id(&self, el_id: ElementID); // remove all hooks for the element with the given id
+    fn remove_hook(&self, kind: &str, el_id: ElementID) {
+        let hooks = self.get_hooks();
+        if let Some(hook) = hooks.borrow_mut().get_mut(kind) {
+            hook.retain(|(el_id_, _)| *el_id_ != el_id);
+        };
+    }
+
+    // remove all hooks for the element with the given id
+    fn clear_hooks_by_id(&self, el_id: ElementID) {
+        let hooks = self.get_hooks();
+        for (_, hook) in hooks.borrow_mut().iter_mut() {
+            hook.retain(|(el_id_, _)| *el_id_ != el_id);
+        }
+    }
+
+    // calls all the hooks of the provided kind
+    fn call_hooks_of_kind(&self, kind: &str) {
+        let mut hooks = self.get_hooks().borrow_mut();
+        for (kind_, v) in hooks.iter_mut() {
+            if kind == kind_ {
+                for (_, hook) in v.iter_mut() {
+                    hook(kind, self.clone_box());
+                }
+            }
+        }
+    }
 
     // Assign a reference to the element's parent through the UpwardPropagator trait. This is used
     // to pass ReceivableEventChanges to the parent. (see UpwardPropogator for more context)
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>);
 
     // get/set the scalable location of the widget
+    // NOTE these functions should NOT be used to set values, use the set functions below to ensure
+    // that hooks are called. TODO figure out some way of enforcing this
     fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>>;
     fn get_visible(&self) -> Rc<RefCell<bool>>;
+
+    fn set_scl_location_set(&self, l: SclLocationSet) {
+        self.call_hooks_of_kind(PRE_LOCATION_CHANGE_HOOK_NAME);
+        *self.get_scl_location_set().borrow_mut() = l;
+        self.call_hooks_of_kind(POST_LOCATION_CHANGE_HOOK_NAME);
+    }
+
+    fn set_visible(&self, v: bool) {
+        self.call_hooks_of_kind(PRE_VISIBLE_CHANGE_HOOK_NAME);
+        *self.get_visible().borrow_mut() = v;
+        self.call_hooks_of_kind(POST_VISIBLE_CHANGE_HOOK_NAME);
+    }
 
     // -------------------------------------------------------
     // Freebies
@@ -116,7 +173,16 @@ pub trait Element {
     }
 }
 
+pub type HookFn = Box<dyn FnMut(&str, Rc<RefCell<dyn Element>>)>;
+
 pub const ATTR_DESCRIPTION: &str = "standard_pane";
+
+pub const PRE_VISIBLE_CHANGE_HOOK_NAME: &str = "pre-visible-change";
+pub const POST_VISIBLE_CHANGE_HOOK_NAME: &str = "post-visible-change";
+pub const PRE_EVENT_HOOK_NAME: &str = "pre-event";
+pub const POST_EVENT_HOOK_NAME: &str = "post-event";
+pub const PRE_LOCATION_CHANGE_HOOK_NAME: &str = "pre-location-change";
+pub const POST_LOCATION_CHANGE_HOOK_NAME: &str = "post-location-change";
 
 // ----------------------------------------
 

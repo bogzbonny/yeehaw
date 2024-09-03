@@ -56,49 +56,10 @@ pub struct Pane {
     visible: Rc<RefCell<bool>>,
 }
 
-pub struct PaneLocation(Rc<RefCell<SclLocation>>);
-
-impl PaneLocation {
-    pub fn new(l: SclLocation) -> PaneLocation {
-        PaneLocation(Rc::new(RefCell::new(l)))
-    }
-    pub fn get(&self) -> SclLocation {
-        self.0.borrow().clone()
-    }
-    pub fn set(&self, l: SclLocation) {
-        self.call_hooks_of_kind(Pane::PRE_LOCATION_CHANGE_HOOK_NAME);
-        *self.0.borrow_mut() = l;
-        self.call_hooks_of_kind(Pane::POST_LOCATION_CHANGE_HOOK_NAME);
-    }
-}
-
-pub struct PaneVisible(Rc<RefCell<SclLocation>>);
-
-impl PaneVisible {
-    pub fn new(l: SclLocation) -> PaneVisible {
-        PaneVisible(Rc::new(RefCell::new(l)))
-    }
-    pub fn get(&self) -> SclLocation {
-        self.0.borrow().clone()
-    }
-    pub fn set(&self, l: SclLocation) {
-        self.call_hooks_of_kind(Pane::PRE_VISIBLE_CHANGE_HOOK_NAME);
-        *self.0.borrow_mut() = l;
-        self.call_hooks_of_kind(Pane::POST_VISIBLE_CHANGE_HOOK_NAME);
-    }
-}
-
 impl Pane {
     // NOTE kind is a name for the kind of pane, typically a different kind will be applied
     // to the standard pane, as the standard pane is only boilerplate.
     pub const KIND: &'static str = "standard_pane";
-
-    pub const PRE_VISIBLE_CHANGE_HOOK_NAME: &'static str = "pre-visible-change";
-    pub const POST_VISIBLE_CHANGE_HOOK_NAME: &'static str = "post-visible-change";
-    pub const PRE_EVENT_HOOK_NAME: &'static str = "pre-event";
-    pub const POST_EVENT_HOOK_NAME: &'static str = "post-event";
-    pub const PRE_LOCATION_CHANGE_HOOK_NAME: &'static str = "pre-location-change";
-    pub const POST_LOCATION_CHANGE_HOOK_NAME: &'static str = "post-location-change";
 
     pub fn new(hat: &SortingHat, kind: &'static str) -> Pane {
         Pane {
@@ -179,16 +140,6 @@ impl Pane {
     pub fn get_element_priority(&self) -> Priority {
         *self.element_priority.borrow()
     }
-
-    // calls all the hooks of the provided kind
-    pub fn call_hooks_of_kind(&self, kind: &str) {
-        let mut hooks = self.hooks.borrow_mut();
-        for (kind_, (_, hook)) in hooks.iter_mut() {
-            if kind == kind_ {
-                hook(kind, Box::new(self.clone()));
-            }
-        }
-    }
 }
 
 impl Element for Pane {
@@ -207,7 +158,7 @@ impl Element for Pane {
     }
 
     //                                               (captured, resp         )
-    fn receive_event(&self, _ctx: &Context, _ev: Event) -> (bool, EventResponses) {
+    fn receive_event_inner(&self, _ctx: &Context, _ev: Event) -> (bool, EventResponses) {
         (false, EventResponses::default())
     }
 

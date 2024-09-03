@@ -8,6 +8,7 @@ use {
 };
 
 // displays the size
+#[derive(Clone)]
 pub struct DebugSizePane {
     pub pane: Pane,
 }
@@ -30,7 +31,7 @@ impl Element for DebugSizePane {
     fn receivable(&self) -> Vec<(Event, Priority)> {
         self.pane.receivable()
     }
-    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         self.pane.receive_event(ctx, ev.clone())
     }
     fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {

@@ -78,7 +78,7 @@
     favour of specifically removing the priorities by the element id of the
     element being destroyed or replaced
 
-05. Proper overwrite when writting a transparent character. Build in
+05. Proper overwrite when writing a transparent character. Build in
     functionality to retrieve and draw what the content underneath should be
     even if it's not currently drawn will require new fn on Element
     "GetDrawingAtPos" as well as determining the layer order at a given
@@ -102,3 +102,5 @@
            problems.
     - fix the up-dir (..) button 
 
+30. figure out a nicer way of inheriting element functions from the above
+    element besides lots of boilerplate, probably though the use of a macro

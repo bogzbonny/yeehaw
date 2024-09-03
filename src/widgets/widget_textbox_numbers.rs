@@ -215,7 +215,7 @@ impl Element for NumbersTextBox {
         self.tb.receivable()
     }
 
-    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
             Event::KeyCombo(ref ke) => {
                 if self.tb.base.get_selectability() != Selectability::Selected || ke.is_empty() {

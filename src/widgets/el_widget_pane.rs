@@ -72,7 +72,7 @@ impl Element for WidgetPane {
         rec
     }
 
-    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
             Event::Mouse(me) => {
                 return self.org.borrow_mut().capture_mouse_event(ctx, me);
