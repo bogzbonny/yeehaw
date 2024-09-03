@@ -3,11 +3,32 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+THINKING
+ - Partially Autonomous Element Model. 
+   - The local loc/visibility is controlled by the element
+     - this is not the abs location, only the location within the immediate
+       context.
+   - This introduces a bit of confusion with regards to mouse event positions. 
+     - Mouse position events are local (upper right is 0, 0) 
+     - create a new position type and send that in with the crossterm mouse
+       event 
+
+ - SclLocation change hooks?
+   - elements could setup interdependancies around scaling
+   - how to deal with inf.recurrsion?? NOT AN ISSUE
+     - if two elements want to have a common edge.
+       - eg. element 1 shifts, triggering element 2 which shifts, which triggers
+         element 1 which doesn't change as it's already in the correct position. 
+ - DONT DO Move SclLocationSet back to the responses?
+   - would need to first create widget builders which actually need the location
+
+01. translate scrollable pane 
+     - scrollbars should be optional (can scroll with mouse otherwise)
 01. rewrite horizontal/vertical stack panes
 01. translate tabs NOTE do this after stack so the tabs can be a stack
      - just use buttons as the tabs?!
-01. translate scrollable pane 
-     - scrollbars should be optional (can scroll with mouse otherwise)
+     - button click should have the button as an input such that it can change
+       colour when selected
 01. translate file_navigator
 
 05. Time Base Events. add a "future event" to a part of the EventResponse. In
