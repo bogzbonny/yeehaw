@@ -314,7 +314,7 @@ impl MenuBar {
 
         // reopen everything to the item and its sub-folder
         self.collapse_non_primary();
-        self.expand_up_to_item(ctx, item);
+        self.expand_up_to_item(item);
 
         if *item.is_folder.borrow() {
             let open_dir = if item.is_primary() {
@@ -323,7 +323,7 @@ impl MenuBar {
                 *self.secondary_open_dir.borrow()
             };
 
-            self.expand_folder(ctx, item, open_dir);
+            self.expand_folder(item, open_dir);
         }
         // update extra locations for parent eo.Locations
         //resps.push(EventResponse::ExtraLocations(self.extra_locations()));
@@ -423,7 +423,7 @@ impl MenuBar {
     }
 
     // expands all folders required to make the item visible
-    pub fn expand_up_to_item(&self, ctx: &Context, item: &MenuItem) {
+    pub fn expand_up_to_item(&self, item: &MenuItem) {
         let path = item.path.borrow();
         let folders = path.folders();
         for i in 0..folders.len() {
@@ -435,13 +435,13 @@ impl MenuBar {
                 } else {
                     *self.secondary_open_dir.borrow()
                 };
-                self.expand_folder(ctx, &item, open_dir);
+                self.expand_folder(&item, open_dir);
             };
         }
     }
 
     // expands all the sub-items of the provided item
-    pub fn expand_folder(&self, ctx: &Context, item: &MenuItem, dir: OpenDirection) {
+    pub fn expand_folder(&self, item: &MenuItem, dir: OpenDirection) {
         // get the immediate sub items of item
         let mut sub_items = vec![];
         let item_mp = (*item.path.borrow()).clone();

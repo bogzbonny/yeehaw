@@ -34,7 +34,9 @@ pub struct Pane {
     // else ever uses it.
     element_priority: Rc<RefCell<Priority>>,
 
-    pub up: Rc<RefCell<Option<Box<dyn UpwardPropagator>>>>,
+    pub propagator: Rc<RefCell<Option<Box<dyn UpwardPropagator>>>>,
+
+    pub hooks: Rc<RefCell<HashMap<String, (ElementID, Box<dyn FnMut(&str, Box<dyn Element>)>)>>>,
 
     // The pane's Content need not be the dimensions provided within
     // the Location, however the Content will simply be cut off if it exceeds
@@ -49,18 +51,54 @@ pub struct Pane {
     pub content_view_offset_y: Rc<RefCell<usize>>,
 
     // scaleable values of x, y, width, and height in the parent context
-    //pub pos_x: Rc<RefCell<SclVal>>,
-    //pub pos_y: Rc<RefCell<SclVal>>,
-    //pub width: Rc<RefCell<SclVal>>,
-    //pub height: Rc<RefCell<SclVal>>,
-    pub loc: Rc<RefCell<SclLocationSet>>,
-    pub visible: Rc<RefCell<bool>>,
+    // NOTE use getters/setters to ensure hook calls
+    loc: Rc<RefCell<SclLocationSet>>,
+    visible: Rc<RefCell<bool>>,
+}
+
+pub struct PaneLocation(Rc<RefCell<SclLocation>>);
+
+impl PaneLocation {
+    pub fn new(l: SclLocation) -> PaneLocation {
+        PaneLocation(Rc::new(RefCell::new(l)))
+    }
+    pub fn get(&self) -> SclLocation {
+        self.0.borrow().clone()
+    }
+    pub fn set(&self, l: SclLocation) {
+        self.call_hooks_of_kind(Pane::PRE_LOCATION_CHANGE_HOOK_NAME);
+        *self.0.borrow_mut() = l;
+        self.call_hooks_of_kind(Pane::POST_LOCATION_CHANGE_HOOK_NAME);
+    }
+}
+
+pub struct PaneVisible(Rc<RefCell<SclLocation>>);
+
+impl PaneVisible {
+    pub fn new(l: SclLocation) -> PaneVisible {
+        PaneVisible(Rc::new(RefCell::new(l)))
+    }
+    pub fn get(&self) -> SclLocation {
+        self.0.borrow().clone()
+    }
+    pub fn set(&self, l: SclLocation) {
+        self.call_hooks_of_kind(Pane::PRE_VISIBLE_CHANGE_HOOK_NAME);
+        *self.0.borrow_mut() = l;
+        self.call_hooks_of_kind(Pane::POST_VISIBLE_CHANGE_HOOK_NAME);
+    }
 }
 
 impl Pane {
     // NOTE kind is a name for the kind of pane, typically a different kind will be applied
     // to the standard pane, as the standard pane is only boilerplate.
     pub const KIND: &'static str = "standard_pane";
+
+    pub const PRE_VISIBLE_CHANGE_HOOK_NAME: &'static str = "pre-visible-change";
+    pub const POST_VISIBLE_CHANGE_HOOK_NAME: &'static str = "post-visible-change";
+    pub const PRE_EVENT_HOOK_NAME: &'static str = "pre-event";
+    pub const POST_EVENT_HOOK_NAME: &'static str = "post-event";
+    pub const PRE_LOCATION_CHANGE_HOOK_NAME: &'static str = "pre-location-change";
+    pub const POST_LOCATION_CHANGE_HOOK_NAME: &'static str = "post-location-change";
 
     pub fn new(hat: &SortingHat, kind: &'static str) -> Pane {
         Pane {
@@ -69,7 +107,8 @@ impl Pane {
             attributes: Rc::new(RefCell::new(HashMap::new())),
             self_evs: Rc::new(RefCell::new(SelfReceivableEvents::default())),
             element_priority: Rc::new(RefCell::new(Priority::UNFOCUSED)),
-            up: Rc::new(RefCell::new(None)),
+            propagator: Rc::new(RefCell::new(None)),
+            hooks: Rc::new(RefCell::new(HashMap::new())),
             content: Rc::new(RefCell::new(DrawChs2D::default())),
             default_ch: Rc::new(RefCell::new(DrawCh::default())),
             default_line: Rc::new(RefCell::new(vec![])),
@@ -140,7 +179,18 @@ impl Pane {
     pub fn get_element_priority(&self) -> Priority {
         *self.element_priority.borrow()
     }
+
+    // calls all the hooks of the provided kind
+    pub fn call_hooks_of_kind(&self, kind: &str) {
+        let mut hooks = self.hooks.borrow_mut();
+        for (kind_, (_, hook)) in hooks.iter_mut() {
+            if kind == kind_ {
+                hook(kind, Box::new(self.clone()));
+            }
+        }
+    }
 }
+
 impl Element for Pane {
     fn kind(&self) -> &'static str {
         *self.kind.borrow()
@@ -226,8 +276,8 @@ impl Element for Pane {
         self.attributes.borrow_mut().insert(key.to_string(), value);
     }
 
-    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
-        *self.up.borrow_mut() = Some(up);
+    fn set_upward_propagator(&self, propagator: Box<dyn UpwardPropagator>) {
+        *self.propagator.borrow_mut() = Some(propagator);
     }
 
     fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {

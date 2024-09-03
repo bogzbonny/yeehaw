@@ -8,24 +8,16 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-THINKING
- - Partially Autonomous Element Model. (Suzerainty?)
-   - The local loc/visibility is controlled by the element
-     - this is not the abs location, only the location within the immediate
-       context.
-   - This introduces a bit of confusion with regards to mouse event positions. 
-     - Mouse position events are local (upper right is 0, 0) 
-     - could create a new position type and send that in with the crossterm mouse
-       event 
-
- - SclLocation change hooks?
-   - elements could setup interdependancies around scaling
-   - how to deal with inf.recurrsion?? NOT AN ISSUE
-     - if two elements want to have a common edge.
-       - eg. element 1 shifts, triggering element 2 which shifts, which triggers
-         element 1 which doesn't change as it's already in the correct position. 
- - DONT DO Move SclLocationSet back to the responses?
-   - would need to first create widget builders which actually need the location
+01. Hooks 
+     - HashMap(HookKind, Vec(ElementID, fn Hook))
+     - register_hook
+     - type HookKind = String
+        - use string to allow for totally custom widget hook kinds
+     - remove_hook(el_id, kind) 
+     - remove_all_hooks(el_id)
+     - pre/post event hook
+     - pre/post location change hook 
+     - pre/post visibility change hook
 
 01. translate scrollable pane 
      - scrollbars should be optional (can scroll with mouse otherwise)
@@ -35,6 +27,8 @@ THINKING
      - button click should have the button as an input such that it can change
        colour when selected
 01. translate file_navigator
+
+01. remove visibility from context
 
 05. Time Base Events. add a "future event" to a part of the EventResponse. In
     the future event there is a timestamp which says when this event should be

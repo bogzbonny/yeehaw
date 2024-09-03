@@ -58,6 +58,26 @@ pub trait Element {
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>>;
     fn set_attribute(&self, key: &str, value: Vec<u8>);
 
+    // sets the hook for the element, the hook is a function that is called when the element is
+    // although a developer may implement any custom hook kind, the default hooks are:
+    //  - "pre-visible-change": called before the element visibility changes
+    //  - "post-visible-change": called before the element visibility changes
+    //  - "pre-event": called before the element receives an event
+    //  - "post-event": called after the element receives an event
+    //  - "pre-location-change": called before the element location changes
+    //  - "post-location-change": called after the element location changes
+    // NOTE use caution when setting hooks, they can be used to create circular references between elements
+    fn set_hook(
+        &self,
+        kind: &str,
+        el_id: ElementID,
+        //                  kind, hooked element
+        hook: Box<dyn FnMut(&str, Rc<RefCell<dyn Element>>)>,
+    );
+
+    fn remove_hook(&self, kind: &str, el_id: ElementID);
+    fn clear_hooks_by_id(&self, el_id: ElementID); // remove all hooks for the element with the given id
+
     // Assign a reference to the element's parent through the UpwardPropagator trait. This is used
     // to pass ReceivableEventChanges to the parent. (see UpwardPropogator for more context)
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>);
