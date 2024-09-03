@@ -5,9 +5,6 @@
 30. refactor: remove ExtraLocations from EventResponse
 05. menu.rs: 
         // XXX this should just be loc width (post refactor of scl_location to element)
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 01. Hooks 
      - HashMap(HookKind, Vec(ElementID, fn Hook))
      - register_hook
@@ -19,9 +16,13 @@
      - pre/post location change hook 
      - pre/post visibility change hook
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+01. rewrite horizontal/vertical stack panes
 01. translate scrollable pane 
      - scrollbars should be optional (can scroll with mouse otherwise)
-01. rewrite horizontal/vertical stack panes
+     - interaction with border pane?
 01. translate tabs NOTE do this after stack so the tabs can be a stack
      - just use buttons as the tabs?!
      - button click should have the button as an input such that it can change
@@ -71,6 +72,9 @@
      - if a test is failing, but the output is correct but just changed
         there should be an option to quickly rerecord what the test should look
         like now.
+     - use the .ans format (such as
+       https://terminalroot.com/use-ms-paint-directly-in-terminal/) uses. 
+       this format can be viewed in the terminal with "cat my_ansi_image.ans"
 
 
 05. Remove Refresh logic from Elements. currently when an element is destroyed

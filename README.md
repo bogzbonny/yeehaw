@@ -73,7 +73,8 @@ TUI support in the future.
    - basically drag and drop style element builder
  - Interactive Debugging TUI 
  - Wimp
-   - Text based image editor (Think 'GIMP') 
-   - Text-GIFs = TGIF
+   - Text based image editor 
+     - Similar https://terminalroot.com/use-ms-paint-directly-in-terminal/
+   - ANSI-GIFs = ANSGIF
  - TUI Tester
 
