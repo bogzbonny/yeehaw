@@ -262,6 +262,18 @@ impl Element for NumbersTextBox {
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.tb.set_upward_propagator(up)
     }
+    fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {
+        self.tb.set_hook(kind, el_id, hook)
+    }
+    fn remove_hook(&self, kind: &str, el_id: ElementID) {
+        self.tb.remove_hook(kind, el_id)
+    }
+    fn clear_hooks_by_id(&self, el_id: ElementID) {
+        self.tb.clear_hooks_by_id(el_id)
+    }
+    fn call_hooks_of_kind(&self, kind: &str) {
+        self.tb.call_hooks_of_kind(kind)
+    }
     fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
         self.tb.get_scl_location_set()
     }

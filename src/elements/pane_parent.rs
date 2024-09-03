@@ -190,7 +190,7 @@ impl ParentPane {
     ) {
         let child_el_id = child_el.borrow().id();
         self.eo.process_receivable_event_changes(&child_el_id, &ic);
-        if let Some(up) = self.pane.up.borrow_mut().deref() {
+        if let Some(up) = self.pane.propagator.borrow_mut().deref() {
             up.propagate_receivable_event_changes_upward(&child_el_id, ic);
         }
     }
@@ -302,6 +302,18 @@ impl Element for ParentPane {
     }
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.pane.set_upward_propagator(up)
+    }
+    fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {
+        self.pane.set_hook(kind, el_id, hook)
+    }
+    fn remove_hook(&self, kind: &str, el_id: ElementID) {
+        self.pane.remove_hook(kind, el_id)
+    }
+    fn clear_hooks_by_id(&self, el_id: ElementID) {
+        self.pane.clear_hooks_by_id(el_id)
+    }
+    fn call_hooks_of_kind(&self, kind: &str) {
+        self.pane.call_hooks_of_kind(kind)
     }
     fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
         self.pane.get_scl_location_set()

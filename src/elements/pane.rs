@@ -36,7 +36,9 @@ pub struct Pane {
 
     pub propagator: Rc<RefCell<Option<Box<dyn UpwardPropagator>>>>,
 
-    pub hooks: Rc<RefCell<HashMap<String, (ElementID, Box<dyn FnMut(&str, Box<dyn Element>)>)>>>,
+    #[allow(clippy::type_complexity)]
+    pub hooks:
+        Rc<RefCell<HashMap<String, Vec<(ElementID, Box<dyn FnMut(&str, Box<dyn Element>)>)>>>>,
 
     // The pane's Content need not be the dimensions provided within
     // the Location, however the Content will simply be cut off if it exceeds
@@ -229,6 +231,44 @@ impl Element for Pane {
 
     fn set_upward_propagator(&self, propagator: Box<dyn UpwardPropagator>) {
         *self.propagator.borrow_mut() = Some(propagator);
+    }
+
+    fn set_hook(
+        &self,
+        kind: &str,
+        el_id: ElementID,
+        //                  kind, hooked element
+        hook: Box<dyn FnMut(&str, Box<dyn Element>)>,
+    ) {
+        self.hooks
+            .borrow_mut()
+            .entry(kind.to_string())
+            .or_default()
+            .push((el_id, hook));
+    }
+
+    fn remove_hook(&self, kind: &str, el_id: ElementID) {
+        if let Some(hook) = self.hooks.borrow_mut().get_mut(kind) {
+            hook.retain(|(el_id_, _)| *el_id_ != el_id);
+        };
+    }
+
+    // remove all hooks for the element with the given id
+    fn clear_hooks_by_id(&self, el_id: ElementID) {
+        for (_, hook) in self.hooks.borrow_mut().iter_mut() {
+            hook.retain(|(el_id_, _)| *el_id_ != el_id);
+        }
+    }
+
+    // calls all the hooks of the provided kind
+    fn call_hooks_of_kind(&self, kind: &str) {
+        for (kind_, v) in self.hooks.borrow_mut().iter_mut() {
+            if kind == kind_ {
+                for (_, hook) in v.iter_mut() {
+                    hook(kind, Box::new(self.clone()));
+                }
+            }
+        }
     }
 
     fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {

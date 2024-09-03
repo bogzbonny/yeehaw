@@ -87,8 +87,8 @@ impl Label {
     pub fn with_rotated_text(self) -> Self {
         let rotated = self.base.pane.content.borrow().rotate_90_deg();
         *self.base.pane.content.borrow_mut() = rotated;
-        let old_height = self.base.pane.loc.borrow().get_scl_height();
-        let old_width = self.base.pane.loc.borrow().get_scl_width();
+        let old_height = self.base.get_scl_height();
+        let old_width = self.base.get_scl_width();
         self.base.set_scl_width(old_height);
         self.base.set_scl_height(old_width);
         self
@@ -171,6 +171,18 @@ impl Element for Label {
     }
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.base.set_upward_propagator(up)
+    }
+    fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {
+        self.base.set_hook(kind, el_id, hook)
+    }
+    fn remove_hook(&self, kind: &str, el_id: ElementID) {
+        self.base.remove_hook(kind, el_id)
+    }
+    fn clear_hooks_by_id(&self, el_id: ElementID) {
+        self.base.clear_hooks_by_id(el_id)
+    }
+    fn call_hooks_of_kind(&self, kind: &str) {
+        self.base.call_hooks_of_kind(kind)
     }
     fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
         self.base.get_scl_location_set()

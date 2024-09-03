@@ -5,11 +5,9 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-dyn_clone::clone_trait_object!(Element);
-
 // Element is the base interface which all viewable elements are
 // expected to fulfill
-pub trait Element: dyn_clone::DynClone {
+pub trait Element {
     // TODO consider removing kind
     fn kind(&self) -> &'static str; // a name for the kind of the element
 
@@ -76,50 +74,22 @@ pub trait Element: dyn_clone::DynClone {
     //  - "pre-location-change": called before the element location changes
     //  - "post-location-change": called after the element location changes
     // NOTE use caution when setting hooks, they can be used to create circular references between elements
-    fn get_hooks(
-        &self,
-    ) -> Rc<RefCell<HashMap<String, Vec<(ElementID, Box<dyn FnMut(&str, Box<dyn Element>)>)>>>>;
-
+    #[allow(clippy::type_complexity)]
     fn set_hook(
         &self,
         kind: &str,
         el_id: ElementID,
         //                  kind, hooked element
         hook: Box<dyn FnMut(&str, Box<dyn Element>)>,
-    ) {
-        self.get_hooks()
-            .borrow_mut()
-            .entry(kind.to_string())
-            .or_insert_with(Vec::new)
-            .push((el_id, hook));
-    }
+    );
 
-    fn remove_hook(&self, kind: &str, el_id: ElementID) {
-        let hooks = self.get_hooks();
-        if let Some(hook) = hooks.borrow_mut().get_mut(kind) {
-            hook.retain(|(el_id_, _)| *el_id_ != el_id);
-        };
-    }
+    fn remove_hook(&self, kind: &str, el_id: ElementID);
 
     // remove all hooks for the element with the given id
-    fn clear_hooks_by_id(&self, el_id: ElementID) {
-        let hooks = self.get_hooks();
-        for (_, hook) in hooks.borrow_mut().iter_mut() {
-            hook.retain(|(el_id_, _)| *el_id_ != el_id);
-        }
-    }
+    fn clear_hooks_by_id(&self, el_id: ElementID);
 
     // calls all the hooks of the provided kind
-    fn call_hooks_of_kind(&self, kind: &str) {
-        let mut hooks = self.get_hooks().borrow_mut();
-        for (kind_, v) in hooks.iter_mut() {
-            if kind == kind_ {
-                for (_, hook) in v.iter_mut() {
-                    hook(kind, self.clone_box());
-                }
-            }
-        }
-    }
+    fn call_hooks_of_kind(&self, kind: &str);
 
     // Assign a reference to the element's parent through the UpwardPropagator trait. This is used
     // to pass ReceivableEventChanges to the parent. (see UpwardPropogator for more context)

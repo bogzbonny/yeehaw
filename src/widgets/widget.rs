@@ -354,59 +354,71 @@ impl WidgetBase {
     }
 
     pub fn set_scl_width(&self, w: SclVal) {
-        self.pane.loc.borrow_mut().set_width(w);
+        let mut loc = self.pane.get_scl_location_set().borrow().clone();
+        loc.set_width(w);
+        self.pane.set_scl_location_set(loc);
     }
 
     pub fn set_scl_height(&self, h: SclVal) {
-        self.pane.loc.borrow_mut().set_height(h);
+        let mut loc = self.pane.get_scl_location_set().borrow().clone();
+        loc.set_height(h);
+        self.pane.set_scl_location_set(loc);
     }
 
     pub fn set_scl_start_x(&self, x: SclVal) {
-        self.pane.loc.borrow_mut().set_start_x(x);
+        let mut loc = self.pane.get_scl_location_set().borrow().clone();
+        loc.set_start_x(x);
+        self.pane.set_scl_location_set(loc);
     }
 
     pub fn set_scl_start_y(&self, y: SclVal) {
-        self.pane.loc.borrow_mut().set_start_y(y);
+        let mut loc = self.pane.get_scl_location_set().borrow().clone();
+        loc.set_start_y(y);
+        self.pane.set_scl_location_set(loc);
     }
 
     pub fn set_scl_end_x(&self, x: SclVal) {
-        self.pane.loc.borrow_mut().set_end_x(x);
+        let mut loc = self.pane.get_scl_location_set().borrow().clone();
+        loc.set_end_x(x);
+        self.pane.set_scl_location_set(loc);
     }
 
     pub fn set_scl_end_y(&self, y: SclVal) {
-        self.pane.loc.borrow_mut().set_end_y(y);
+        let mut loc = self.pane.get_scl_location_set().borrow().clone();
+        loc.set_end_y(y);
+        self.pane.set_scl_location_set(loc);
     }
 
     pub fn get_scl_start_x(&self) -> SclVal {
-        self.pane.loc.borrow().get_scl_start_x()
+        self.pane.get_scl_location_set().borrow().get_scl_start_x()
     }
 
     pub fn get_scl_start_y(&self) -> SclVal {
-        self.pane.loc.borrow().get_scl_start_y()
+        self.pane.get_scl_location_set().borrow().get_scl_start_y()
     }
 
     pub fn get_scl_end_x(&self) -> SclVal {
-        self.pane.loc.borrow().get_scl_end_x()
+        self.pane.get_scl_location_set().borrow().get_scl_end_x()
     }
 
     pub fn get_scl_end_y(&self) -> SclVal {
-        self.pane.loc.borrow().get_scl_end_y()
+        self.pane.get_scl_location_set().borrow().get_scl_end_y()
     }
 
     pub fn get_width(&self, ctx: &Context) -> usize {
-        self.pane.loc.borrow().get_width(ctx)
+        self.pane.get_scl_location_set().borrow().get_width(ctx)
     }
 
     pub fn get_height(&self, ctx: &Context) -> usize {
-        self.pane.loc.borrow().get_height(ctx)
+        self.pane.get_scl_location_set().borrow().get_height(ctx)
     }
 
     pub fn get_scl_width(&self) -> SclVal {
-        self.pane.loc.borrow().get_scl_width()
+        self.pane.get_scl_location_set().borrow().get_scl_width()
     }
 
     pub fn get_scl_height(&self) -> SclVal {
-        self.pane.loc.borrow().get_scl_height()
+        self.pane.get_scl_location_set().borrow().get_scl_height()
     }
 
     pub fn scroll_up(&self, ctx: &Context) {
@@ -617,6 +629,18 @@ impl Element for WidgetBase {
     }
     fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
         self.pane.set_upward_propagator(up)
+    }
+    fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {
+        self.pane.set_hook(kind, el_id, hook)
+    }
+    fn remove_hook(&self, kind: &str, el_id: ElementID) {
+        self.pane.remove_hook(kind, el_id)
+    }
+    fn clear_hooks_by_id(&self, el_id: ElementID) {
+        self.pane.clear_hooks_by_id(el_id)
+    }
+    fn call_hooks_of_kind(&self, kind: &str) {
+        self.pane.call_hooks_of_kind(kind)
     }
     fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
         self.pane.get_scl_location_set()
