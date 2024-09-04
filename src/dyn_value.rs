@@ -74,17 +74,17 @@ impl DynVal {
 
     // Get the value from the absolute and relative psvts
     pub fn get_val(&self, max_size: u16) -> i32 {
-        let f = max_size as f64 * self.flex;
-        let rounded = (f + 0.5) as i32; // round the float to the nearest int
+        let flex = max_size as f64 * self.flex;
+        let flex = f64::round(flex) as i32;
 
-        let pre_mul = self.fixed
-            + rounded
+        let pre_multiplied = self.fixed
+            + flex
+            + self.sum_of_plusses(max_size)
             + self.min_from_plus_min_of(max_size)
-            + self.max_from_plus_max_of(max_size)
-            + self.sum_of_plusses(max_size);
+            + self.max_from_plus_max_of(max_size);
 
-        let mul = pre_mul as f64 * self.mul;
-        (mul + 0.5) as i32 // round
+        let multiplied = pre_multiplied as f64 * self.mul;
+        f64::round(multiplied) as i32
     }
 
     pub fn neg(&self) -> DynVal {
