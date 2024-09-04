@@ -44,11 +44,11 @@ THINKING
      - could create a new position type and send that in with the crossterm mouse
        event 
 
- - SclLocation change hooks?
+ - DynLocation change hooks?
    - elements could setup interdependancies around scaling
    - how to deal with inf.recurrsion?? NOT AN ISSUE
      - if two elements want to have a common edge.
        - eg. element 1 shifts, triggering element 2 which shifts, which triggers
          element 1 which doesn't change as it's already in the correct position. 
- - DONT DO Move SclLocationSet back to the responses?
+ - DONT DO Move DynLocationSet back to the responses?
    - would need to first create widget builders which actually need the location

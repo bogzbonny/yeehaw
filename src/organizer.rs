@@ -1,8 +1,8 @@
 use {
     crate::{
         element::ReceivableEventChanges, prioritizer::EventPrioritizer, CommandEvent, Context,
-        DrawChPos, Element, ElementID, Event, EventResponse, EventResponses, Priority, SclLocation,
-        SclLocationSet, UpwardPropagator, ZIndex,
+        DrawChPos, Element, ElementID, Event, EventResponse, EventResponses, Priority, DynLocation,
+        DynLocationSet, UpwardPropagator, ZIndex,
     },
     std::collections::HashMap,
     std::{cell::RefCell, rc::Rc},
@@ -23,13 +23,13 @@ pub struct ElDetails {
 
     // NOTE we keep references to the location and visibility within the element
     // rather than just calling into tht element each time to reduce locking.
-    pub loc: Rc<RefCell<SclLocationSet>>, // LocationSet of the element
+    pub loc: Rc<RefCell<DynLocationSet>>, // LocationSet of the element
     pub vis: Rc<RefCell<bool>>,           // whether the element is set to display
 }
 
 impl ElDetails {
     pub fn new(el: Rc<RefCell<dyn Element>>) -> Self {
-        let loc = el.borrow().get_scl_location_set().clone();
+        let loc = el.borrow().get_dyn_location_set().clone();
         let vis = el.borrow().get_visible().clone();
         Self { el, loc, vis }
     }
@@ -38,7 +38,7 @@ impl ElDetails {
         *self.vis.borrow_mut() = vis;
     }
 
-    pub fn set_location_set(&self, loc: SclLocationSet) {
+    pub fn set_location_set(&self, loc: DynLocationSet) {
         *self.loc.borrow_mut() = loc;
     }
 }
@@ -46,7 +46,7 @@ impl ElDetails {
 impl ElementOrganizer {
     pub fn add_element(
         &self, el: Rc<RefCell<dyn Element>>, up: Option<Box<dyn UpwardPropagator>>,
-        loc: SclLocationSet, vis: bool,
+        loc: DynLocationSet, vis: bool,
     ) {
         // assign the new element id
         let el_id = el.borrow().id().clone();
@@ -101,7 +101,7 @@ impl ElementOrganizer {
         self.els.borrow().get(el_id).map(|ed| ed.el.clone())
     }
 
-    pub fn get_location(&self, el_id: &ElementID) -> Option<SclLocationSet> {
+    pub fn get_location(&self, el_id: &ElementID) -> Option<DynLocationSet> {
         self.els
             .borrow()
             .get(el_id)
@@ -129,7 +129,7 @@ impl ElementOrganizer {
     }
 
     // update_el_primary_location updates the primary location of the element with the given id
-    pub fn update_el_location_set(&self, el_id: ElementID, loc: SclLocationSet) {
+    pub fn update_el_location_set(&self, el_id: ElementID, loc: DynLocationSet) {
         //self.locations.entry(el_id).and_modify(|l| (*l) = loc);
         self.els
             .borrow_mut()
@@ -138,7 +138,7 @@ impl ElementOrganizer {
     }
 
     // update_el_primary_location updates the primary location of the element with the given id
-    pub fn update_el_primary_location(&self, el_id: ElementID, loc: SclLocation) {
+    pub fn update_el_primary_location(&self, el_id: ElementID, loc: DynLocation) {
         //self.locations.entry(el_id).and_modify(|l| l.l = loc);
         self.els
             .borrow_mut()
@@ -148,7 +148,7 @@ impl ElementOrganizer {
 
     // updates the extra locations for the given element
     //pub fn update_extra_locations_for_el(
-    pub fn update_el_extra_locations(&self, el_id: ElementID, extra_locations: Vec<SclLocation>) {
+    pub fn update_el_extra_locations(&self, el_id: ElementID, extra_locations: Vec<DynLocation>) {
         self.els
             .borrow_mut()
             .entry(el_id)
@@ -241,7 +241,7 @@ impl ElementOrganizer {
             let details = self.get_element_details(&el_id_z.0).expect("impossible");
             let dcps = details.el.borrow().drawing(&child_ctx);
             for mut dcp in dcps {
-                dcp.adjust_by_scl_location(ctx, &details.loc.borrow().l);
+                dcp.adjust_by_dyn_location(ctx, &details.loc.borrow().l);
                 out.push(dcp);
             }
         }
@@ -290,13 +290,13 @@ impl ElementOrganizer {
                     // to the element organizer
                     new_el
                         .borrow()
-                        .get_scl_location_set()
+                        .get_dyn_location_set()
                         .borrow_mut()
                         .adjust_locations_by(
                             details.loc.borrow().l.start_x.clone(),
                             details.loc.borrow().l.start_y.clone(),
                         );
-                    let loc = new_el.borrow().get_scl_location_set().borrow().clone();
+                    let loc = new_el.borrow().get_dyn_location_set().borrow().clone();
                     self.add_element(new_el.clone(), None, loc, true);
                     modified_resp = Some(EventResponse::None);
                 }

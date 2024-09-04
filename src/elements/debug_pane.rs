@@ -1,7 +1,7 @@
 use {
     crate::{
         element::ReceivableEventChanges, Context, DrawChPos, Element, ElementID, Event,
-        EventResponses, Pane, Priority, RgbColour, SclLocationSet, SortingHat, Style,
+        EventResponses, Pane, Priority, RgbColour, DynLocationSet, SortingHat, Style,
         UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
@@ -70,8 +70,8 @@ impl Element for DebugSizePane {
     fn call_hooks_of_kind(&self, kind: &str) {
         self.pane.call_hooks_of_kind(kind)
     }
-    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
-        self.pane.get_scl_location_set()
+    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
+        self.pane.get_dyn_location_set()
     }
     fn get_visible(&self) -> Rc<RefCell<bool>> {
         self.pane.get_visible()

@@ -1,4 +1,4 @@
-use crate::{Context, SclVal};
+use crate::{Context, DynVal};
 
 // ZIndex is the z-index or position in the z-dimension of the element
 // The lower the z-index, further toward the front the element is
@@ -6,16 +6,16 @@ use crate::{Context, SclVal};
 pub type ZIndex = i32;
 
 #[derive(Default, Debug, Clone)]
-pub struct SclLocation {
-    pub start_x: SclVal, // inclusive
-    pub end_x: SclVal,   // exclusive
-    pub start_y: SclVal, // inclusive
-    pub end_y: SclVal,   // exclusive
+pub struct DynLocation {
+    pub start_x: DynVal, // inclusive
+    pub end_x: DynVal,   // exclusive
+    pub start_y: DynVal, // inclusive
+    pub end_y: DynVal,   // exclusive
 }
 
-impl SclLocation {
-    pub fn new(start_x: SclVal, end_x: SclVal, start_y: SclVal, end_y: SclVal) -> SclLocation {
-        SclLocation {
+impl DynLocation {
+    pub fn new(start_x: DynVal, end_x: DynVal, start_y: DynVal, end_y: DynVal) -> DynLocation {
+        DynLocation {
             start_x,
             end_x,
             start_y,
@@ -23,12 +23,12 @@ impl SclLocation {
         }
     }
 
-    pub fn new_fixed(start_x: i32, end_x: i32, start_y: i32, end_y: i32) -> SclLocation {
-        SclLocation {
-            start_x: SclVal::new_fixed(start_x),
-            end_x: SclVal::new_fixed(end_x),
-            start_y: SclVal::new_fixed(start_y),
-            end_y: SclVal::new_fixed(end_y),
+    pub fn new_fixed(start_x: i32, end_x: i32, start_y: i32, end_y: i32) -> DynLocation {
+        DynLocation {
+            start_x: DynVal::new_fixed(start_x),
+            end_x: DynVal::new_fixed(end_x),
+            start_y: DynVal::new_fixed(start_y),
+            end_y: DynVal::new_fixed(end_y),
         }
     }
 
@@ -50,35 +50,35 @@ impl SclLocation {
         }
     }
 
-    pub fn get_scl_height(&self) -> SclVal {
+    pub fn get_scl_height(&self) -> DynVal {
         self.end_y.clone().minus(self.start_y.clone())
     }
 
-    pub fn get_scl_width(&self) -> SclVal {
+    pub fn get_scl_width(&self) -> DynVal {
         self.end_x.clone().minus(self.start_x.clone())
     }
 
-    pub fn set_width(&mut self, width: SclVal) {
+    pub fn set_width(&mut self, width: DynVal) {
         self.end_x = self.start_x.clone().plus(width);
     }
 
-    pub fn set_height(&mut self, height: SclVal) {
+    pub fn set_height(&mut self, height: DynVal) {
         self.end_y = self.start_y.clone().plus(height);
     }
 
-    pub fn set_start_x(&mut self, start_x: SclVal) {
+    pub fn set_start_x(&mut self, start_x: DynVal) {
         self.start_x = start_x;
     }
 
-    pub fn set_start_y(&mut self, start_y: SclVal) {
+    pub fn set_start_y(&mut self, start_y: DynVal) {
         self.start_y = start_y;
     }
 
-    pub fn set_end_x(&mut self, end_x: SclVal) {
+    pub fn set_end_x(&mut self, end_x: DynVal) {
         self.end_x = end_x;
     }
 
-    pub fn set_end_y(&mut self, end_y: SclVal) {
+    pub fn set_end_y(&mut self, end_y: DynVal) {
         self.end_y = end_y;
     }
 
@@ -141,70 +141,70 @@ impl SclLocation {
         ev
     }
 
-    pub fn adjust_location_by(&mut self, x: SclVal, y: SclVal) {
+    pub fn adjust_location_by(&mut self, x: DynVal, y: DynVal) {
         self.start_x.plus_in_place(x.clone());
         self.end_x.plus_in_place(x);
         self.start_y.plus_in_place(y.clone());
         self.end_y.plus_in_place(y);
     }
 
-    pub fn adjust_location_by_x(&mut self, x: SclVal) {
+    pub fn adjust_location_by_x(&mut self, x: DynVal) {
         self.start_x.plus_in_place(x.clone());
         self.end_x.plus_in_place(x);
     }
 
-    pub fn adjust_location_by_y(&mut self, y: SclVal) {
+    pub fn adjust_location_by_y(&mut self, y: DynVal) {
         self.start_y.plus_in_place(y.clone());
         self.end_y.plus_in_place(y);
     }
 }
 
-// SclLocationSet holds the primary location as well as the extra
+// DynLocationSet holds the primary location as well as the extra
 // locations of an element. In addition it holds a ZIndex which all
 // locations are said to exist at.
 #[derive(Clone, Debug)]
-pub struct SclLocationSet {
-    pub l: SclLocation,
+pub struct DynLocationSet {
+    pub l: DynLocation,
 
     // Extra locations are locations that are not within the primary location
     // but are still considered to be part of the element.
     // This is useful for elements that do not have a rectangular shape (ie, the
     // menu element)
-    pub extra: Vec<SclLocation>,
+    pub extra: Vec<DynLocation>,
 
     pub z: ZIndex,
 }
 
-impl Default for SclLocationSet {
-    fn default() -> SclLocationSet {
-        SclLocationSet {
-            l: SclLocation::default(),
+impl Default for DynLocationSet {
+    fn default() -> DynLocationSet {
+        DynLocationSet {
+            l: DynLocation::default(),
             extra: Vec::new(),
             z: 255, // far back
         }
     }
 }
 
-impl SclLocationSet {
-    pub fn new(l: SclLocation, extra: Vec<SclLocation>, z: ZIndex) -> SclLocationSet {
-        SclLocationSet { l, extra, z }
+impl DynLocationSet {
+    pub fn new(l: DynLocation, extra: Vec<DynLocation>, z: ZIndex) -> DynLocationSet {
+        DynLocationSet { l, extra, z }
     }
 
-    pub fn with_location(mut self, l: SclLocation) -> SclLocationSet {
+    pub fn with_location(mut self, l: DynLocation) -> DynLocationSet {
         self.l = l;
         self
     }
 
-    pub fn with_extra(mut self, extra: Vec<SclLocation>) -> SclLocationSet {
+    pub fn with_extra(mut self, extra: Vec<DynLocation>) -> DynLocationSet {
         self.extra = extra;
         self
     }
 
-    pub fn set_extra(&mut self, extra: Vec<SclLocation>) {
+    pub fn set_extra(&mut self, extra: Vec<DynLocation>) {
         self.extra = extra;
     }
 
-    pub fn with_z(mut self, z: ZIndex) -> SclLocationSet {
+    pub fn with_z(mut self, z: ZIndex) -> DynLocationSet {
         self.z = z;
         self
     }
@@ -214,32 +214,32 @@ impl SclLocationSet {
     }
 
     // convenience function to set the width of the primary location
-    pub fn set_width(&mut self, width: SclVal) {
+    pub fn set_width(&mut self, width: DynVal) {
         self.l.set_width(width);
     }
 
     // convenience function to set the height of the primary location
-    pub fn set_height(&mut self, height: SclVal) {
+    pub fn set_height(&mut self, height: DynVal) {
         self.l.set_height(height);
     }
 
     // convenience function to set the start x of the primary location
-    pub fn set_start_x(&mut self, start_x: SclVal) {
+    pub fn set_start_x(&mut self, start_x: DynVal) {
         self.l.set_start_x(start_x);
     }
 
     // convenience function to set the start y of the primary location
-    pub fn set_start_y(&mut self, start_y: SclVal) {
+    pub fn set_start_y(&mut self, start_y: DynVal) {
         self.l.set_start_y(start_y);
     }
 
     // convenience function to set the end x of the primary location
-    pub fn set_end_x(&mut self, end_x: SclVal) {
+    pub fn set_end_x(&mut self, end_x: DynVal) {
         self.l.set_end_x(end_x);
     }
 
     // convenience function to set the end y of the primary location
-    pub fn set_end_y(&mut self, end_y: SclVal) {
+    pub fn set_end_y(&mut self, end_y: DynVal) {
         self.l.set_end_y(end_y);
     }
 
@@ -273,29 +273,29 @@ impl SclLocationSet {
         self.l.height(ctx)
     }
 
-    pub fn get_scl_start_x(&self) -> SclVal {
+    pub fn get_scl_start_x(&self) -> DynVal {
         self.l.start_x.clone()
     }
 
-    pub fn get_scl_start_y(&self) -> SclVal {
+    pub fn get_scl_start_y(&self) -> DynVal {
         self.l.start_y.clone()
     }
 
-    pub fn get_scl_end_x(&self) -> SclVal {
+    pub fn get_scl_end_x(&self) -> DynVal {
         self.l.end_x.clone()
     }
 
-    pub fn get_scl_end_y(&self) -> SclVal {
+    pub fn get_scl_end_y(&self) -> DynVal {
         self.l.end_y.clone()
     }
 
     // convenience function to get the height of the primary location
-    pub fn get_scl_height(&self) -> SclVal {
+    pub fn get_scl_height(&self) -> DynVal {
         self.l.get_scl_height()
     }
 
     // convenience function to get the width of the primary location
-    pub fn get_scl_width(&self) -> SclVal {
+    pub fn get_scl_width(&self) -> DynVal {
         self.l.get_scl_width()
     }
 
@@ -321,7 +321,7 @@ impl SclLocationSet {
         false
     }
 
-    // returns None is the point is not contained by the SclLocationSet
+    // returns None is the point is not contained by the DynLocationSet
     pub fn get_z_index_for_point(&self, ctx: &Context, x: i32, y: i32) -> Option<ZIndex> {
         if self.l.contains_point(ctx, x, y) {
             return Some(self.z);
@@ -335,15 +335,15 @@ impl SclLocationSet {
         None
     }
 
-    pub fn set_extra_locations(&mut self, extra: Vec<SclLocation>) {
+    pub fn set_extra_locations(&mut self, extra: Vec<DynLocation>) {
         self.extra = extra;
     }
 
-    pub fn push_extra_locations(&mut self, extra: SclLocation) {
+    pub fn push_extra_locations(&mut self, extra: DynLocation) {
         self.extra.push(extra);
     }
 
-    pub fn adjust_locations_by(&mut self, x: SclVal, y: SclVal) {
+    pub fn adjust_locations_by(&mut self, x: DynVal, y: DynVal) {
         for loc in self.extra.iter_mut() {
             loc.adjust_location_by(x.clone(), y.clone());
         }

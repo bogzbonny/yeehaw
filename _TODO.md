@@ -4,7 +4,7 @@
     activate the rcm 
 30. refactor: remove ExtraLocations from EventResponse
 05. menu.rs: 
-        // XXX this should just be loc width (post refactor of scl_location to element)
+        // XXX this should just be loc width (post refactor of dyn_location to element)
 01. Hooks 
      - HashMap(HookKind, Vec(ElementID, fn Hook))
      - register_hook
@@ -15,13 +15,21 @@
      - pre/post event hook
      - pre/post location change hook 
      - pre/post visibility change hook
+05. Proper overwrite when writing a transparent character. Build in
+    functionality to retrieve and draw what the content underneath should be
+    even if it's not currently drawn will require new fn on Element
+    "GetDrawingAtPos" as well as determining the layer order at a given
+    position.
+     - I don't think this is an issue now that drawing is contained to the
+       single draw function.
+
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
 01. rewrite horizontal/vertical stack panes
+
 01. translate scrollable pane 
-     - scrollbars should be optional (can scroll with mouse otherwise)
+     - scrollbars should be optional (can scroll with mouse wheel otherwise)
      - interaction with border pane?
 01. translate tabs NOTE do this after stack so the tabs can be a stack
      - just use buttons as the tabs?!
@@ -30,6 +38,9 @@
 01. translate file_navigator
 
 01. remove visibility from context
+
+05. use .flf (figlet font) format instead of custom megatext
+     - https://docs.rs/figlet-rs/latest/figlet_rs/
 
 05. Time Base Events. add a "future event" to a part of the EventResponse. In
     the future event there is a timestamp which says when this event should be
@@ -44,6 +55,10 @@
        used for the creation of the widget, and not for the widget itself.
      - combine hat and ctx objects for widget creation. 
 
+05. Into<Widgets> Trait which can be applied to each widget builder so that
+    .to_widgets() doesn't need to be manually called during construction
+    (applied in add_widget).
+
 05. borders-pane wrapper
      - option for each of up/down/right/left
      - custom up/down/right/left DrawChs AND corner pieces
@@ -57,36 +72,17 @@
        - maybe make colour an enum for serialization purposes. 
      - maybe the gradient moves based on the screen position.
      - keep it linear gradients for now
-     - gradient params: pos-offset x/y (as SclVal!), change-rate x/y,
-        grad-colours and positions(SclVal?!) (need multiple positions for rainbows). 
-
-20. Add another cargo repo like AssertCmd for tui
-     name: TuiTester?
-     - https://github.com/aschey/tui-tester
-     - what about https://github.com/microsoft/tui-test is this necessary?
-     - open and record mouse and keystroke events
-     - save only the final cui output
-     - test for the final cui output being the same from
-       the provided binary.
-     - view what the output should look like
-     - if a test is failing, but the output is correct but just changed
-        there should be an option to quickly rerecord what the test should look
-        like now.
-     - use the .ans format (such as
-       https://terminalroot.com/use-ms-paint-directly-in-terminal/) uses. 
-       this format can be viewed in the terminal with "cat my_ansi_image.ans"
+     - gradient params: pos-offset x/y (as DynVal!), 
+        grad-colours and positions(DynVal?!) (need multiple positions for rainbows). 
+     - after the final position is reached (and before the final position if
+       there is an offset) repeat the pattern
 
 
 05. Remove Refresh logic from Elements. currently when an element is destroyed
     or replaced, the parents call some Refresh logic, this should be removed in
     favour of specifically removing the priorities by the element id of the
     element being destroyed or replaced
-
-05. Proper overwrite when writing a transparent character. Build in
-    functionality to retrieve and draw what the content underneath should be
-    even if it's not currently drawn will require new fn on Element
-    "GetDrawingAtPos" as well as determining the layer order at a given
-    position.
+     - is this still an issue?
 
 10. When the keyboard is matching an event combo provided to it, it should be
     recording a partial match (and a suggested maximum wait time to recheck for
@@ -108,3 +104,19 @@
 
 30. figure out a nicer way of inheriting element functions from the above
     element besides lots of boilerplate, probably though the use of a macro
+
+20. Add another cargo repo like AssertCmd for tui
+     name: TuiTester?
+     - https://github.com/aschey/tui-tester
+     - what about https://github.com/microsoft/tui-test is this necessary?
+     - open and record mouse and keystroke events
+     - save only the final cui output
+     - test for the final cui output being the same from
+       the provided binary.
+     - view what the output should look like
+     - if a test is failing, but the output is correct but just changed
+        there should be an option to quickly rerecord what the test should look
+        like now.
+     - use the .ans format (such as
+       https://terminalroot.com/use-ms-paint-directly-in-terminal/) uses. 
+       this format can be viewed in the terminal with "cat my_ansi_image.ans"

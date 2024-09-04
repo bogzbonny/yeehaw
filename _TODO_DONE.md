@@ -17,10 +17,10 @@
 01. textbox  right-arrow wont get you to the last FINAL extra cursor position of the text. 
     - however the down arrow can get you there
 01. refactors
-     - create SclLocationSet type
-     - modify EO to use SclLocationSet instead of LocationSet (everything
+     - create DynLocationSet type
+     - modify EO to use DynLocationSet instead of LocationSet (everything
        dynamic on context) 
-     - move 'SclLocation' to the element from the EO  
+     - move 'DynLocation' to the element from the EO  
         - will need to remove pos_x, pos_y, width, height from Pane
      - move 'visible' to the element from the EO
      - remove unnecessary element event response items now that the location 

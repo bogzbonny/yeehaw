@@ -7,7 +7,7 @@ use {
         elements::menu::{MenuItem, MenuPath, MenuStyle},
         Context, DrawCh, DrawChPos, Element, ElementID, Error, Event, EventResponse,
         EventResponses, KeyPossibility, Keyboard as KB, Priority, ReceivableEventChanges,
-        RgbColour, RightClickMenu, SclLocationSet, SclVal, SortingHat, Style, UpwardPropagator,
+        RgbColour, RightClickMenu, DynLocationSet, DynVal, SortingHat, Style, UpwardPropagator,
     },
     crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -124,8 +124,8 @@ impl TextBox {
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
-            SclVal::new_fixed(width as i32),
-            SclVal::new_fixed(height as i32),
+            DynVal::new_fixed(width as i32),
+            DynVal::new_fixed(height as i32),
             Self::STYLE,
             Self::editable_receivable_events(),
         );
@@ -214,21 +214,21 @@ impl TextBox {
         self
     }
 
-    pub fn with_width(self, width: SclVal) -> Self {
+    pub fn with_width(self, width: DynVal) -> Self {
         self.base.set_scl_width(width);
         self
     }
-    pub fn with_height(self, height: SclVal) -> Self {
+    pub fn with_height(self, height: DynVal) -> Self {
         self.base.set_scl_height(height);
         self
     }
-    pub fn with_size(self, width: SclVal, height: SclVal) -> Self {
+    pub fn with_size(self, width: DynVal, height: DynVal) -> Self {
         self.base.set_scl_width(width);
         self.base.set_scl_height(height);
         self
     }
 
-    pub fn at(mut self, loc_x: SclVal, loc_y: SclVal) -> Self {
+    pub fn at(mut self, loc_x: DynVal, loc_y: DynVal) -> Self {
         self.base.at(loc_x, loc_y);
         self
     }
@@ -345,7 +345,7 @@ impl TextBox {
             let (lns, lnw) = self.get_line_numbers(ctx);
             let ln_tb = TextBox::new(hat, ctx, lns)
                 .at(x.clone(), y.clone())
-                .with_width(SclVal::new_fixed(lnw as i32))
+                .with_width(DynVal::new_fixed(lnw as i32))
                 .with_height(h.clone())
                 .with_no_wordwrap()
                 .non_editable();
@@ -594,7 +594,7 @@ impl TextBox {
                 self.base.set_scl_width(new_tb_width);
             }
             ln_tb.set_text(lns);
-            ln_tb.base.set_scl_width(SclVal::new_fixed(lnw as i32));
+            ln_tb.base.set_scl_width(DynVal::new_fixed(lnw as i32));
             ln_tb.base.set_content_y_offset(ctx, y_offset);
         }
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
@@ -1107,8 +1107,8 @@ impl Element for TextBox {
     fn call_hooks_of_kind(&self, kind: &str) {
         self.base.call_hooks_of_kind(kind)
     }
-    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
-        self.base.get_scl_location_set()
+    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
+        self.base.get_dyn_location_set()
     }
     fn get_visible(&self) -> Rc<RefCell<bool>> {
         self.base.get_visible()

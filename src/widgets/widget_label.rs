@@ -2,7 +2,7 @@ use {
     super::{common, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponses, Priority,
-        ReceivableEventChanges, RgbColour, SclLocationSet, SclVal, SortingHat, Style,
+        ReceivableEventChanges, RgbColour, DynLocationSet, DynVal, SortingHat, Style,
         UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
@@ -40,8 +40,8 @@ impl Label {
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
-            SclVal::new_fixed(w as i32),
-            SclVal::new_fixed(h as i32),
+            DynVal::new_fixed(w as i32),
+            DynVal::new_fixed(h as i32),
             LABEL_STYLE,
             LABEL_EV_COMBOS.clone(),
         );
@@ -113,12 +113,12 @@ impl Label {
     pub fn set_text(&self, ctx: &Context, text: String) {
         self.base.set_content_from_string(ctx, &text);
         let (w, h) = common::get_text_size(&text);
-        self.base.set_scl_width(SclVal::new_fixed(w as i32));
-        self.base.set_scl_height(SclVal::new_fixed(h as i32));
+        self.base.set_scl_width(DynVal::new_fixed(w as i32));
+        self.base.set_scl_height(DynVal::new_fixed(h as i32));
         *self.text.borrow_mut() = text;
     }
 
-    pub fn at(mut self, loc_x: SclVal, loc_y: SclVal) -> Self {
+    pub fn at(mut self, loc_x: DynVal, loc_y: DynVal) -> Self {
         self.base.at(loc_x, loc_y);
         self
     }
@@ -184,8 +184,8 @@ impl Element for Label {
     fn call_hooks_of_kind(&self, kind: &str) {
         self.base.call_hooks_of_kind(kind)
     }
-    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
-        self.base.get_scl_location_set()
+    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
+        self.base.get_dyn_location_set()
     }
     fn get_visible(&self) -> Rc<RefCell<bool>> {
         self.base.get_visible()

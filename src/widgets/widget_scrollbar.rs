@@ -2,7 +2,7 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponses, KeyPossibility,
-        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SclLocationSet, SclVal,
+        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, DynLocationSet, DynVal,
         SortingHat, Style, UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
@@ -70,11 +70,11 @@ impl VerticalScrollbar {
     pub fn default_receivable_events() -> Vec<Event> {
         vec![KB::KEY_UP.into(), KB::KEY_DOWN.into(), KB::KEY_SPACE.into()]
     }
-    pub fn new(hat: &SortingHat, scrollable_view_height: SclVal, scrollable_height: usize) -> Self {
+    pub fn new(hat: &SortingHat, scrollable_view_height: DynVal, scrollable_height: usize) -> Self {
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
-            SclVal::new_fixed(1),
+            DynVal::new_fixed(1),
             scrollable_view_height.clone(),
             Scrollbar::STYLE,
             Self::default_receivable_events(),
@@ -102,7 +102,7 @@ impl VerticalScrollbar {
     }
 
     pub fn set_height(
-        &self, view_height: SclVal, scrollbar_length: SclVal, scrollable_height: usize,
+        &self, view_height: DynVal, scrollbar_length: DynVal, scrollable_height: usize,
     ) {
         *self.scrollable_view_chs.borrow_mut() = view_height;
         self.base.set_scl_height(scrollbar_length.clone());
@@ -118,7 +118,7 @@ impl VerticalScrollbar {
         self
     }
 
-    pub fn at(mut self, loc_x: SclVal, loc_y: SclVal) -> Self {
+    pub fn at(mut self, loc_x: DynVal, loc_y: DynVal) -> Self {
         self.base.at(loc_x, loc_y);
         self
     }
@@ -138,12 +138,12 @@ impl HorizontalScrollbar {
     pub fn default_receivable_events() -> Vec<Event> {
         vec![KB::KEY_LEFT.into(), KB::KEY_RIGHT.into()]
     }
-    pub fn new(hat: &SortingHat, scrollable_view_width: SclVal, scrollable_width: usize) -> Self {
+    pub fn new(hat: &SortingHat, scrollable_view_width: DynVal, scrollable_width: usize) -> Self {
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
             scrollable_view_width.clone(),
-            SclVal::new_fixed(1),
+            DynVal::new_fixed(1),
             Scrollbar::STYLE,
             Self::default_receivable_events(),
         );
@@ -169,7 +169,7 @@ impl HorizontalScrollbar {
         })
     }
 
-    pub fn set_width(&self, view_width: SclVal, scrollbar_length: SclVal, scrollable_width: usize) {
+    pub fn set_width(&self, view_width: DynVal, scrollbar_length: DynVal, scrollable_width: usize) {
         *self.scrollable_view_chs.borrow_mut() = view_width;
         self.base.set_scl_width(scrollbar_length.clone());
         *self.scrollbar_length_chs.borrow_mut() = scrollbar_length;
@@ -184,7 +184,7 @@ impl HorizontalScrollbar {
         self
     }
 
-    pub fn at(mut self, loc_x: SclVal, loc_y: SclVal) -> Self {
+    pub fn at(mut self, loc_x: DynVal, loc_y: DynVal) -> Self {
         self.base.at(loc_x, loc_y);
         self
     }
@@ -221,13 +221,13 @@ pub struct Scrollbar {
     pub scrollable_domain_chs: Rc<RefCell<usize>>, // how large the area is that can be scrolled
 
     // how much of the scrollable area is visible in true chars.
-    pub scrollable_view_chs: Rc<RefCell<SclVal>>,
+    pub scrollable_view_chs: Rc<RefCell<DynVal>>,
 
     // Length of the actual scrollbar (and arrows) in true characters.
     // Typically this is the same as ScrollableViewChs, however some situations
     // call for a different size scrollbar than the scrollable view, such as the
     // dropdown menu with a scrollbar below the dropdown-arrow.
-    pub scrollbar_length_chs: Rc<RefCell<SclVal>>,
+    pub scrollbar_length_chs: Rc<RefCell<DynVal>>,
 
     // how far down the area is scrolled from the top in true chars.
     // The ScrollablePosition will be the first line of the area scrolled to.
@@ -1019,8 +1019,8 @@ impl Element for VerticalScrollbar {
     fn call_hooks_of_kind(&self, kind: &str) {
         self.base.call_hooks_of_kind(kind)
     }
-    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
-        self.base.get_scl_location_set()
+    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
+        self.base.get_dyn_location_set()
     }
     fn get_visible(&self) -> Rc<RefCell<bool>> {
         self.base.get_visible()
@@ -1072,8 +1072,8 @@ impl Element for HorizontalScrollbar {
     fn call_hooks_of_kind(&self, kind: &str) {
         self.base.call_hooks_of_kind(kind)
     }
-    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
-        self.base.get_scl_location_set()
+    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
+        self.base.get_dyn_location_set()
     }
     fn get_visible(&self) -> Rc<RefCell<bool>> {
         self.base.get_visible()

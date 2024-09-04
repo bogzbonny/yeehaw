@@ -1,7 +1,7 @@
 use {
     std::{cell::RefCell, rc::Rc},
     yeehaw::{
-        Context, Cui, DebugSizePane, Element, Error, ParentPane, SclLocation, SclVal, SortingHat,
+        Context, Cui, DebugSizePane, Element, Error, ParentPane, DynLocation, DynVal, SortingHat,
     },
 };
 
@@ -17,21 +17,21 @@ async fn main() -> Result<(), Error> {
     let pp = ParentPane::new(&hat, "pp");
     let left = DebugSizePane::new(&hat);
     let right = DebugSizePane::new(&hat);
-    let endval = SclVal::new_frac(0.35);
-    let left_loc = SclLocation::new(
-        SclVal::new_frac(0.0),
+    let endval = DynVal::new_frac(0.35);
+    let left_loc = DynLocation::new(
+        DynVal::new_frac(0.0),
         endval.clone(),
-        SclVal::new_frac(0.0),
-        SclVal::new_frac(1.0),
+        DynVal::new_frac(0.0),
+        DynVal::new_frac(1.0),
     );
-    let right_loc = SclLocation::new(
+    let right_loc = DynLocation::new(
         endval,
-        SclVal::new_frac(1.0),
-        SclVal::new_frac(0.0),
-        SclVal::new_frac(1.0),
+        DynVal::new_frac(1.0),
+        DynVal::new_frac(0.0),
+        DynVal::new_frac(1.0),
     );
-    left.get_scl_location_set().borrow_mut().l = left_loc;
-    right.get_scl_location_set().borrow_mut().l = right_loc;
+    left.get_dyn_location_set().borrow_mut().l = left_loc;
+    right.get_dyn_location_set().borrow_mut().l = right_loc;
     pp.add_element(Rc::new(RefCell::new(left)));
     pp.add_element(Rc::new(RefCell::new(right)));
 

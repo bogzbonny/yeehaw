@@ -2,7 +2,7 @@ use {
     super::{Selectability, VerticalScrollbar, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawCh, DrawChPos, Element, ElementID, Event, EventResponses, Keyboard as KB,
-        Priority, ReceivableEventChanges, RgbColour, SclLocationSet, SclVal, SortingHat, Style,
+        Priority, ReceivableEventChanges, RgbColour, DynLocationSet, DynVal, SortingHat, Style,
         UpwardPropagator, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -16,7 +16,7 @@ pub struct DropdownList {
     pub base: WidgetBase,
     pub entries: Rc<RefCell<Vec<String>>>,
     pub left_padding: Rc<RefCell<usize>>,
-    pub specified_width: Rc<RefCell<Option<SclVal>>>, // width explicitly set by the caller
+    pub specified_width: Rc<RefCell<Option<DynVal>>>, // width explicitly set by the caller
     pub selected: Rc<RefCell<usize>>,                 // the entry which has been selected
     pub cursor: Rc<RefCell<usize>>, // the entry that is currently hovered while open
     pub open: Rc<RefCell<bool>>,    // if the list is open
@@ -87,12 +87,12 @@ impl DropdownList {
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
-            SclVal::new_fixed(0), // NOTE width is set later
-            SclVal::new_fixed(1),
+            DynVal::new_fixed(0), // NOTE width is set later
+            DynVal::new_fixed(1),
             Self::STYLE,
             Self::default_receivable_events(),
         );
-        let sb = VerticalScrollbar::new(hat, SclVal::new_fixed(0), 0)
+        let sb = VerticalScrollbar::new(hat, DynVal::new_fixed(0), 0)
             .without_arrows()
             .with_styles(Self::STYLE_SCROLLBAR);
 
@@ -132,7 +132,7 @@ impl DropdownList {
         self
     }
 
-    pub fn with_width(self, width: SclVal) -> Self {
+    pub fn with_width(self, width: DynVal) -> Self {
         *self.specified_width.borrow_mut() = Some(width);
         self.base.set_scl_width(self.calculate_scl_width());
         self
@@ -147,14 +147,14 @@ impl DropdownList {
     pub fn with_max_expanded_height(self, height: usize) -> Self {
         *self.max_expanded_height.borrow_mut() = height;
         self.scrollbar.set_height(
-            SclVal::new_fixed(height as i32), // view height (same as the dropdown list height)
-            SclVal::new_fixed(height.saturating_sub(1) as i32), // scrollbar height (1 less, b/c scrollbar's below the drop-arrow)
+            DynVal::new_fixed(height as i32), // view height (same as the dropdown list height)
+            DynVal::new_fixed(height.saturating_sub(1) as i32), // scrollbar height (1 less, b/c scrollbar's below the drop-arrow)
             self.entries.borrow().len(),                        // scrollable domain
         );
         self
     }
 
-    pub fn at(mut self, loc_x: SclVal, loc_y: SclVal) -> Self {
+    pub fn at(mut self, loc_x: DynVal, loc_y: DynVal) -> Self {
         self.base.at(loc_x, loc_y);
         self
     }
@@ -176,7 +176,7 @@ impl DropdownList {
         );
     }
 
-    pub fn calculate_scl_width(&self) -> SclVal {
+    pub fn calculate_scl_width(&self) -> DynVal {
         if let Some(ref w) = *self.specified_width.borrow() {
             return w.clone();
         }
@@ -189,7 +189,7 @@ impl DropdownList {
             .max()
             .unwrap_or(0) as i32;
         let arrow_width = 1;
-        SclVal::new_fixed(left_padding + max_entry_width + arrow_width)
+        DynVal::new_fixed(left_padding + max_entry_width + arrow_width)
     }
 
     pub fn padded_entry_text(&self, ctx: &Context, i: usize) -> String {
@@ -238,7 +238,7 @@ impl DropdownList {
         *self.open.borrow_mut() = true;
         *self.cursor.borrow_mut() = *self.selected.borrow();
         let h = self.expanded_height() as i32;
-        self.base.set_scl_height(SclVal::new_fixed(h));
+        self.base.set_scl_height(DynVal::new_fixed(h));
 
         // must set the content for the offsets to be correct
         self.base.set_content_from_string(ctx, &self.text(ctx));
@@ -250,7 +250,7 @@ impl DropdownList {
         *self.base.pane.content_view_offset_y.borrow_mut() = 0;
         self.scrollbar
             .external_change(ctx, 0, self.base.content_height());
-        self.base.set_scl_height(SclVal::new_fixed(1));
+        self.base.set_scl_height(DynVal::new_fixed(1));
         if !escaped && *self.selected.borrow() != *self.cursor.borrow() {
             *self.selected.borrow_mut() = *self.cursor.borrow();
             (self.selection_made_fn.borrow_mut())(
@@ -503,8 +503,8 @@ impl Element for DropdownList {
     fn call_hooks_of_kind(&self, kind: &str) {
         self.base.call_hooks_of_kind(kind)
     }
-    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
-        self.base.get_scl_location_set()
+    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
+        self.base.get_dyn_location_set()
     }
     fn get_visible(&self) -> Rc<RefCell<bool>> {
         self.base.get_visible()

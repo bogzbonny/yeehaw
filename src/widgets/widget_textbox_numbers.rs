@@ -2,7 +2,7 @@ use {
     super::{Button, Selectability, TextBox, WBStyles, Widget, Widgets},
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponses, KeyPossibility,
-        Keyboard as KB, Priority, ReceivableEventChanges, SclLocationSet, SclVal, SortingHat,
+        Keyboard as KB, Priority, ReceivableEventChanges, DynLocationSet, DynVal, SortingHat,
         Style, UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
@@ -38,7 +38,7 @@ impl NumbersTextBox {
 
     pub fn new(hat: &SortingHat, ctx: &Context, starting_value: i64) -> Self {
         let tb =
-            TextBox::new(hat, ctx, format!("{}", starting_value)).with_width(SclVal::new_fixed(5));
+            TextBox::new(hat, ctx, format!("{}", starting_value)).with_width(DynVal::new_fixed(5));
         Self {
             tb,
             value: Rc::new(RefCell::new(starting_value)),
@@ -82,17 +82,17 @@ impl NumbersTextBox {
         self
     }
 
-    pub fn with_width(mut self, width: SclVal) -> Self {
+    pub fn with_width(mut self, width: DynVal) -> Self {
         self.tb = self.tb.with_width(width);
         self
     }
 
-    pub fn with_height(mut self, height: SclVal) -> Self {
+    pub fn with_height(mut self, height: DynVal) -> Self {
         self.tb = self.tb.with_height(height);
         self
     }
 
-    pub fn with_size(mut self, width: SclVal, height: SclVal) -> Self {
+    pub fn with_size(mut self, width: DynVal, height: DynVal) -> Self {
         self.tb = self.tb.with_size(width, height);
         self
     }
@@ -107,7 +107,7 @@ impl NumbersTextBox {
         self
     }
 
-    pub fn at(mut self, loc_x: SclVal, loc_y: SclVal) -> Self {
+    pub fn at(mut self, loc_x: DynVal, loc_y: DynVal) -> Self {
         self.tb = self.tb.at(loc_x, loc_y);
         self
     }
@@ -274,8 +274,8 @@ impl Element for NumbersTextBox {
     fn call_hooks_of_kind(&self, kind: &str) {
         self.tb.call_hooks_of_kind(kind)
     }
-    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
-        self.tb.get_scl_location_set()
+    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
+        self.tb.get_dyn_location_set()
     }
     fn get_visible(&self) -> Rc<RefCell<bool>> {
         self.tb.get_visible()

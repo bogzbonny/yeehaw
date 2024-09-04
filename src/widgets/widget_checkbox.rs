@@ -2,7 +2,7 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponses, Keyboard as KB, Priority,
-        ReceivableEventChanges, RgbColour, SclLocationSet, SclVal, SortingHat, Style,
+        ReceivableEventChanges, RgbColour, DynLocationSet, DynVal, SortingHat, Style,
         UpwardPropagator, YHAttributes,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -49,8 +49,8 @@ impl Checkbox {
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
-            SclVal::new_fixed(1),
-            SclVal::new_fixed(1),
+            DynVal::new_fixed(1),
+            DynVal::new_fixed(1),
             Self::STYLE,
             Self::default_receivable_events(),
         );
@@ -77,7 +77,7 @@ impl Checkbox {
         self
     }
 
-    pub fn at(mut self, loc_x: SclVal, loc_y: SclVal) -> Self {
+    pub fn at(mut self, loc_x: DynVal, loc_y: DynVal) -> Self {
         self.base.at(loc_x, loc_y);
         self
     }
@@ -166,8 +166,8 @@ impl Element for Checkbox {
     fn call_hooks_of_kind(&self, kind: &str) {
         self.base.call_hooks_of_kind(kind)
     }
-    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
-        self.base.get_scl_location_set()
+    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
+        self.base.get_dyn_location_set()
     }
     fn get_visible(&self) -> Rc<RefCell<bool>> {
         self.base.get_visible()

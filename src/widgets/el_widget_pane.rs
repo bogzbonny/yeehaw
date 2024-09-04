@@ -2,7 +2,7 @@ use {
     super::{Widget, WidgetOrganizer, Widgets},
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponses, Pane, Priority,
-        ReceivableEventChanges, SclLocationSet, SortingHat, UpwardPropagator,
+        ReceivableEventChanges, DynLocationSet, SortingHat, UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -30,7 +30,7 @@ impl WidgetPane {
 
     pub fn add_widget(&mut self, w: Box<dyn Widget>) {
         self.pane.self_evs.borrow_mut().extend(w.receivable());
-        w.get_scl_location_set().borrow_mut().set_z(w.get_z_index());
+        w.get_dyn_location_set().borrow_mut().set_z(w.get_z_index());
         self.org.borrow_mut().add_widget(w);
     }
 
@@ -130,8 +130,8 @@ impl Element for WidgetPane {
     fn call_hooks_of_kind(&self, kind: &str) {
         self.pane.call_hooks_of_kind(kind)
     }
-    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
-        self.pane.get_scl_location_set()
+    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
+        self.pane.get_dyn_location_set()
     }
     fn get_visible(&self) -> Rc<RefCell<bool>> {
         self.pane.get_visible()

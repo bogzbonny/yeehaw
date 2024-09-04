@@ -2,7 +2,7 @@ use {
     super::{widget::RESP_DEACTIVATE, Selectability, Widget},
     crate::{
         Context, DrawChPos, Event, EventResponse, EventResponses, KeyPossibility, Keyboard as KB,
-        Priority, ReceivableEventChanges, SclLocationSet,
+        Priority, ReceivableEventChanges, DynLocationSet,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -11,7 +11,7 @@ use {
 #[derive(Default)]
 pub struct WidgetOrganizer {
     #[allow(clippy::type_complexity)]
-    pub widgets: Vec<(Box<dyn Widget>, Rc<RefCell<SclLocationSet>>)>,
+    pub widgets: Vec<(Box<dyn Widget>, Rc<RefCell<DynLocationSet>>)>,
     active_widget_index: Option<usize>, // None means no widget active
 }
 
@@ -25,7 +25,7 @@ impl WidgetOrganizer {
     }
 
     pub fn add_widget(&mut self, w: Box<dyn Widget>) {
-        let loc = w.get_scl_location_set();
+        let loc = w.get_dyn_location_set();
         self.widgets.push((w, loc));
     }
 
@@ -87,7 +87,7 @@ impl WidgetOrganizer {
                     let loc = self.widgets[widget_index].1.borrow();
                     new_el
                         .borrow()
-                        .get_scl_location_set()
+                        .get_dyn_location_set()
                         .borrow_mut()
                         .adjust_locations_by(loc.l.start_x.clone(), loc.l.start_y.clone());
                 }
@@ -248,7 +248,7 @@ impl WidgetOrganizer {
 
         let mut most_front_z_index = i32::MAX; // lowest value is the most front
         let mut widget_index = None; // index of widget with most front z index
-        let mut widget_loc = SclLocationSet::default();
+        let mut widget_loc = DynLocationSet::default();
 
         // find the widget with the most front z index
         for (i, (_, loc)) in self.widgets.iter().enumerate() {
@@ -286,7 +286,7 @@ impl WidgetOrganizer {
     pub fn resize_event(&mut self, ctx: &Context) {
         for (w, _loc) in &mut self.widgets {
             w.receive_event(ctx, Event::Resize);
-            //*loc.borrow_mut() = w.get_scl_location_set().borrow().clone();
+            //*loc.borrow_mut() = w.get_dyn_location_set().borrow().clone();
         }
     }
 
@@ -303,7 +303,7 @@ impl WidgetOrganizer {
             let ds = w.drawing(ctx);
             for mut d in ds {
                 // adjust the location of the drawChPos relative to the WidgetPane
-                d.adjust_by_scl_location(ctx, &loc.borrow().l);
+                d.adjust_by_dyn_location(ctx, &loc.borrow().l);
                 // filter out chs that are outside of the WidgetPane bounds
                 if d.y < ctx.s.height && d.x < ctx.s.width {
                     out.push(d);
@@ -318,7 +318,7 @@ impl WidgetOrganizer {
 
             for mut d in ds {
                 // adjust the location of the drawChPos relative to the WidgetPane
-                d.adjust_by_scl_location(ctx, &locs.borrow().l);
+                d.adjust_by_dyn_location(ctx, &locs.borrow().l);
 
                 // filter out chs that are outside of the WidgetPane bounds
                 if d.y < ctx.s.height && d.x < ctx.s.width {

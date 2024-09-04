@@ -2,7 +2,7 @@ use {
     crate::{
         elements::menu::{MenuItem, MenuStyle},
         Context, DrawChPos, Element, ElementID, Event, EventResponse, EventResponses, MenuBar,
-        Point, Priority, ReceivableEventChanges, SclLocation, SclLocationSet, SclVal, SortingHat,
+        Point, Priority, ReceivableEventChanges, DynLocation, DynLocationSet, DynVal, SortingHat,
         UpwardPropagator, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
@@ -61,7 +61,7 @@ impl RightClickMenu {
         *self.pos.borrow_mut() = Point::new(ev_x.into(), ev_y.into());
 
         let (x, y): (i32, i32) = (ev_x.into(), (ev_y + 1).into()); // offset the menu 1 below the cursor
-        let (x, y) = (SclVal::new_fixed(x), SclVal::new_fixed(y));
+        let (x, y) = (DynVal::new_fixed(x), DynVal::new_fixed(y));
 
         self.menu.activate();
         self.menu.deselect_all();
@@ -75,13 +75,13 @@ impl RightClickMenu {
 
         // the location size doesn't matter as the top level element will be
         // empty, only the sub-elements will be take up space
-        let loc = SclLocationSet::default()
-            .with_location(SclLocation::new(x.clone(), x, y.clone(), y)) // placeholder
+        let loc = DynLocationSet::default()
+            .with_location(DynLocation::new(x.clone(), x, y.clone(), y)) // placeholder
             .with_extra(extra_locs)
             .with_z(Self::Z_INDEX);
 
         *self.just_created.borrow_mut() = true;
-        *self.get_scl_location_set().borrow_mut() = loc;
+        *self.get_dyn_location_set().borrow_mut() = loc;
 
         Some(EventResponse::NewElement(Rc::new(RefCell::new(self.clone()))).into())
     }
@@ -156,8 +156,8 @@ impl Element for RightClickMenu {
     fn call_hooks_of_kind(&self, kind: &str) {
         self.menu.call_hooks_of_kind(kind)
     }
-    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
-        self.menu.get_scl_location_set()
+    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
+        self.menu.get_dyn_location_set()
     }
     fn get_visible(&self) -> Rc<RefCell<bool>> {
         self.menu.get_visible()

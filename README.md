@@ -73,8 +73,19 @@ TUI support in the future.
    - basically drag and drop style element builder
  - Interactive Debugging TUI 
  - Wimp
-   - Text based image editor 
+   - like durdraw but with more features: 
+     - layers within each frame
+     - alpha
+   - Text based image editors
+     - https://github.com/mkrueger/icy_tools?tab=readme-ov-file
+       - pretty cool need to build custom 
+       - doesn't yet support unicode
+       - has a bunch of animation file formats built in
+     - https://github.com/cmang/durdraw/
+        - has ansi-animations! - check out the format 
+     - https://aac.iverv.com/about
      - Similar https://terminalroot.com/use-ms-paint-directly-in-terminal/
-   - ANSI-GIFs = ANSGIF
+     - https://www.gridsagegames.com/rexpaint/
+     - https://github.com/EtoDemerzel0427/ANSI-art
  - TUI Tester
 

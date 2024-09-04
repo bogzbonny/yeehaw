@@ -2,7 +2,7 @@ use {
     super::{Megafont, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponses, Priority,
-        ReceivableEventChanges, SclLocationSet, SclVal, SortingHat, UpwardPropagator,
+        ReceivableEventChanges, DynLocationSet, DynVal, SortingHat, UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -24,8 +24,8 @@ impl Megatext {
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
-            SclVal::new_fixed(size.width.into()),
-            SclVal::new_fixed(size.height.into()),
+            DynVal::new_fixed(size.width.into()),
+            DynVal::new_fixed(size.height.into()),
             WBStyles::default(),
             vec![],
         );
@@ -42,7 +42,7 @@ impl Megatext {
         self
     }
 
-    pub fn at(mut self, loc_x: SclVal, loc_y: SclVal) -> Self {
+    pub fn at(mut self, loc_x: DynVal, loc_y: DynVal) -> Self {
         self.base.at(loc_x, loc_y);
         self
     }
@@ -94,8 +94,8 @@ impl Element for Megatext {
     fn call_hooks_of_kind(&self, kind: &str) {
         self.base.call_hooks_of_kind(kind)
     }
-    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
-        self.base.get_scl_location_set()
+    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
+        self.base.get_dyn_location_set()
     }
     fn get_visible(&self) -> Rc<RefCell<bool>> {
         self.base.get_visible()

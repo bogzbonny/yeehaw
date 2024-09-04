@@ -1,5 +1,5 @@
 use {
-    crate::{Context, SclLocation, Size, Style},
+    crate::{Context, DynLocation, Size, Style},
     anyhow::{anyhow, Error},
     std::ops::{Deref, DerefMut},
 };
@@ -56,7 +56,7 @@ impl DrawChPos {
     pub fn new(ch: DrawCh, x: u16, y: u16) -> DrawChPos {
         DrawChPos { ch, x, y }
     }
-    pub fn adjust_by_scl_location(&mut self, ctx: &Context, loc: &SclLocation) {
+    pub fn adjust_by_dyn_location(&mut self, ctx: &Context, loc: &DynLocation) {
         let mut start_x = loc.get_start_x(ctx);
         let mut start_y = loc.get_start_y(ctx);
         // check for overflow

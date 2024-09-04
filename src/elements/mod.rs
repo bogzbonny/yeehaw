@@ -3,6 +3,7 @@ pub mod menu;
 pub mod menu_right_click;
 pub mod pane;
 pub mod pane_parent;
+pub mod stack;
 pub mod tabs;
 
 pub use {

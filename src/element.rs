@@ -1,5 +1,5 @@
 use {
-    crate::{prioritizer::Priority, DrawChPos, ElementID, Event, SclLocationSet, Size},
+    crate::{prioritizer::Priority, DrawChPos, ElementID, Event, DynLocationSet, Size},
     std::collections::HashMap,
     std::ops::{Deref, DerefMut},
     std::{cell::RefCell, rc::Rc},
@@ -98,12 +98,12 @@ pub trait Element {
     // get/set the scalable location of the widget
     // NOTE these functions should NOT be used to set values, use the set functions below to ensure
     // that hooks are called. TODO figure out some way of enforcing this
-    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>>;
+    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>>;
     fn get_visible(&self) -> Rc<RefCell<bool>>;
 
-    fn set_scl_location_set(&self, l: SclLocationSet) {
+    fn set_dyn_location_set(&self, l: DynLocationSet) {
         self.call_hooks_of_kind(PRE_LOCATION_CHANGE_HOOK_NAME);
-        *self.get_scl_location_set().borrow_mut() = l;
+        *self.get_dyn_location_set().borrow_mut() = l;
         self.call_hooks_of_kind(POST_LOCATION_CHANGE_HOOK_NAME);
     }
 
@@ -302,7 +302,7 @@ pub enum EventResponse {
     // sends a request to the parent to change the extra locations
     // of the element. TODO refactor to remove this, it should just be taking
     // place on the element itself, ensure the text box right click menu will work.
-    //ExtraLocations(Vec<SclLocation>),
+    //ExtraLocations(Vec<DynLocation>),
 
     // contains priority updates that should be made to the receiver's prioritizer
     ReceivableEventChanges(ReceivableEventChanges),

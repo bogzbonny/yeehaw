@@ -2,8 +2,8 @@ use {
     super::Label,
     crate::{
         event::Event, Context, DrawCh, DrawChPos, DrawChs2D, Element, ElementID, EventResponse,
-        EventResponses, Pane, Priority, ReceivableEventChanges, SclLocation, SclLocationSet,
-        SclVal, SortingHat, Style, UpwardPropagator, ZIndex,
+        EventResponses, Pane, Priority, ReceivableEventChanges, DynLocation, DynLocationSet,
+        DynVal, SortingHat, Style, UpwardPropagator, ZIndex,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -33,8 +33,8 @@ use {
 //let Ok(v) = serde_json::to_string(&zafs) else {
 pub const ATTR_SCL_WIDTH: &str = "widget_scl_width";
 pub const ATTR_SCL_HEIGHT: &str = "widget_scl_height";
-pub const ATTR_SCL_LOC_X: &str = "widget_scl_loc_x";
-pub const ATTR_SCL_LOC_Y: &str = "widget_scl_loc_y";
+pub const ATTR_SCL_LOC_X: &str = "widget_dyn_loc_x";
+pub const ATTR_SCL_LOC_Y: &str = "widget_dyn_loc_y";
 pub const ATTR_SELECTABILITY: &str = "widget_selectability";
 
 pub const WIDGET_Z_INDEX: ZIndex = 10;
@@ -153,14 +153,14 @@ impl From<Box<dyn Widget>> for Widgets {
 impl Widgets {
     // returns the smallest location which encompasses all
     // the sub-locations for all the contained widgets
-    pub fn overall_loc(&self) -> SclLocation {
+    pub fn overall_loc(&self) -> DynLocation {
         if self.0.is_empty() {
-            return SclLocation::default();
+            return DynLocation::default();
         }
 
-        let mut l = SclLocation::default();
+        let mut l = DynLocation::default();
         for w in &self.0 {
-            let wl_loc = w.get_scl_location_set().borrow().l.clone();
+            let wl_loc = w.get_dyn_location_set().borrow().l.clone();
             l.start_x = l.start_x.plus_min_of(wl_loc.start_x);
             l.end_x = l.end_x.plus_max_of(wl_loc.end_x);
             l.start_y = l.start_y.plus_min_of(wl_loc.start_y);
@@ -176,7 +176,7 @@ impl Widgets {
         label_width: usize,
         label_height: usize,
         //(x    , y     )
-    ) -> (SclVal, SclVal) {
+    ) -> (DynVal, DynVal) {
         let l = self.overall_loc();
         match p {
             LabelPosition::AboveThenLeft => (l.start_x, l.start_y.minus_fixed(label_height as i32)),
@@ -319,7 +319,7 @@ pub struct WidgetBase {
 
 impl WidgetBase {
     pub fn new(
-        hat: &SortingHat, kind: &'static str, width: SclVal, height: SclVal, sty: WBStyles,
+        hat: &SortingHat, kind: &'static str, width: DynVal, height: DynVal, sty: WBStyles,
         mut receivable_events: Vec<Event>,
     ) -> Self {
         let evs = receivable_events
@@ -338,7 +338,7 @@ impl WidgetBase {
         wb
     }
 
-    pub fn at(&mut self, pos_x: SclVal, pos_y: SclVal) {
+    pub fn at(&mut self, pos_x: DynVal, pos_y: DynVal) {
         let width = self.get_scl_width();
         let height = self.get_scl_height();
         self.set_scl_start_x(pos_x);
@@ -353,72 +353,72 @@ impl WidgetBase {
         self.pane.set_self_receivable_events(evs)
     }
 
-    pub fn set_scl_width(&self, w: SclVal) {
-        let mut loc = self.pane.get_scl_location_set().borrow().clone();
+    pub fn set_scl_width(&self, w: DynVal) {
+        let mut loc = self.pane.get_dyn_location_set().borrow().clone();
         loc.set_width(w);
-        self.pane.set_scl_location_set(loc);
+        self.pane.set_dyn_location_set(loc);
     }
 
-    pub fn set_scl_height(&self, h: SclVal) {
-        let mut loc = self.pane.get_scl_location_set().borrow().clone();
+    pub fn set_scl_height(&self, h: DynVal) {
+        let mut loc = self.pane.get_dyn_location_set().borrow().clone();
         loc.set_height(h);
-        self.pane.set_scl_location_set(loc);
+        self.pane.set_dyn_location_set(loc);
     }
 
-    pub fn set_scl_start_x(&self, x: SclVal) {
-        let mut loc = self.pane.get_scl_location_set().borrow().clone();
+    pub fn set_scl_start_x(&self, x: DynVal) {
+        let mut loc = self.pane.get_dyn_location_set().borrow().clone();
         loc.set_start_x(x);
-        self.pane.set_scl_location_set(loc);
+        self.pane.set_dyn_location_set(loc);
     }
 
-    pub fn set_scl_start_y(&self, y: SclVal) {
-        let mut loc = self.pane.get_scl_location_set().borrow().clone();
+    pub fn set_scl_start_y(&self, y: DynVal) {
+        let mut loc = self.pane.get_dyn_location_set().borrow().clone();
         loc.set_start_y(y);
-        self.pane.set_scl_location_set(loc);
+        self.pane.set_dyn_location_set(loc);
     }
 
-    pub fn set_scl_end_x(&self, x: SclVal) {
-        let mut loc = self.pane.get_scl_location_set().borrow().clone();
+    pub fn set_scl_end_x(&self, x: DynVal) {
+        let mut loc = self.pane.get_dyn_location_set().borrow().clone();
         loc.set_end_x(x);
-        self.pane.set_scl_location_set(loc);
+        self.pane.set_dyn_location_set(loc);
     }
 
-    pub fn set_scl_end_y(&self, y: SclVal) {
-        let mut loc = self.pane.get_scl_location_set().borrow().clone();
+    pub fn set_scl_end_y(&self, y: DynVal) {
+        let mut loc = self.pane.get_dyn_location_set().borrow().clone();
         loc.set_end_y(y);
-        self.pane.set_scl_location_set(loc);
+        self.pane.set_dyn_location_set(loc);
     }
 
-    pub fn get_scl_start_x(&self) -> SclVal {
-        self.pane.get_scl_location_set().borrow().get_scl_start_x()
+    pub fn get_scl_start_x(&self) -> DynVal {
+        self.pane.get_dyn_location_set().borrow().get_scl_start_x()
     }
 
-    pub fn get_scl_start_y(&self) -> SclVal {
-        self.pane.get_scl_location_set().borrow().get_scl_start_y()
+    pub fn get_scl_start_y(&self) -> DynVal {
+        self.pane.get_dyn_location_set().borrow().get_scl_start_y()
     }
 
-    pub fn get_scl_end_x(&self) -> SclVal {
-        self.pane.get_scl_location_set().borrow().get_scl_end_x()
+    pub fn get_scl_end_x(&self) -> DynVal {
+        self.pane.get_dyn_location_set().borrow().get_scl_end_x()
     }
 
-    pub fn get_scl_end_y(&self) -> SclVal {
-        self.pane.get_scl_location_set().borrow().get_scl_end_y()
+    pub fn get_scl_end_y(&self) -> DynVal {
+        self.pane.get_dyn_location_set().borrow().get_scl_end_y()
     }
 
     pub fn get_width(&self, ctx: &Context) -> usize {
-        self.pane.get_scl_location_set().borrow().get_width(ctx)
+        self.pane.get_dyn_location_set().borrow().get_width(ctx)
     }
 
     pub fn get_height(&self, ctx: &Context) -> usize {
-        self.pane.get_scl_location_set().borrow().get_height(ctx)
+        self.pane.get_dyn_location_set().borrow().get_height(ctx)
     }
 
-    pub fn get_scl_width(&self) -> SclVal {
-        self.pane.get_scl_location_set().borrow().get_scl_width()
+    pub fn get_scl_width(&self) -> DynVal {
+        self.pane.get_dyn_location_set().borrow().get_scl_width()
     }
 
-    pub fn get_scl_height(&self) -> SclVal {
-        self.pane.get_scl_location_set().borrow().get_scl_height()
+    pub fn get_scl_height(&self) -> DynVal {
+        self.pane.get_dyn_location_set().borrow().get_scl_height()
     }
 
     pub fn scroll_up(&self, ctx: &Context) {
@@ -642,8 +642,8 @@ impl Element for WidgetBase {
     fn call_hooks_of_kind(&self, kind: &str) {
         self.pane.call_hooks_of_kind(kind)
     }
-    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
-        self.pane.get_scl_location_set()
+    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
+        self.pane.get_dyn_location_set()
     }
     fn get_visible(&self) -> Rc<RefCell<bool>> {
         self.pane.get_visible()

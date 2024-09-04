@@ -2,7 +2,7 @@ use {
     super::{widget::RESP_DEACTIVATE, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponse, EventResponses,
-        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SclLocationSet, SclVal,
+        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, DynLocationSet, DynVal,
         SortingHat, Style, UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -57,8 +57,8 @@ impl Button {
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
-            SclVal::new_fixed(text.chars().count() as i32 + 2), // + 2 for sides
-            SclVal::new_fixed(1),
+            DynVal::new_fixed(text.chars().count() as i32 + 2), // + 2 for sides
+            DynVal::new_fixed(1),
             Self::STYLE,
             Self::default_receivable_events(),
         );
@@ -85,7 +85,7 @@ impl Button {
         *self.sides.borrow_mut() = sides;
         let text = self.button_text();
         self.base
-            .set_scl_width(SclVal::new_fixed(text.chars().count() as i32));
+            .set_scl_width(DynVal::new_fixed(text.chars().count() as i32));
         self.base.set_content_from_string(ctx, &text);
         self
     }
@@ -94,7 +94,7 @@ impl Button {
         self.with_sides(ctx, ("".to_string(), "".to_string()))
     }
 
-    pub fn at(mut self, loc_x: SclVal, loc_y: SclVal) -> Self {
+    pub fn at(mut self, loc_x: DynVal, loc_y: DynVal) -> Self {
         self.base.at(loc_x, loc_y);
         self
     }
@@ -176,8 +176,8 @@ impl Element for Button {
     fn call_hooks_of_kind(&self, kind: &str) {
         self.base.call_hooks_of_kind(kind)
     }
-    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
-        self.base.get_scl_location_set()
+    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
+        self.base.get_dyn_location_set()
     }
     fn get_visible(&self) -> Rc<RefCell<bool>> {
         self.base.get_visible()

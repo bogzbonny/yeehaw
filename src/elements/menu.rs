@@ -1,7 +1,7 @@
 use {
     crate::{
         Context, DrawCh, DrawChPos, Element, ElementID, Event, EventResponses, Pane, ParentPane,
-        Priority, ReceivableEventChanges, RgbColour, SclLocation, SclLocationSet, SclVal,
+        Priority, ReceivableEventChanges, RgbColour, DynLocation, DynLocationSet, DynVal,
         SortingHat, Style, UpwardPropagator, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -201,23 +201,23 @@ impl MenuBar {
             ) as i32;
             let loc = if *self.horizontal_bar.borrow() {
                 let x = self.max_primary_x(ctx).unwrap_or(0); // returns max end_x which is exclusive (so don't +1)
-                let x1 = SclVal::new_fixed(x);
-                let x2 = SclVal::new_fixed(x + item_width);
-                let y1 = SclVal::new_fixed(0);
-                let y2 = SclVal::new_fixed(1);
-                SclLocation::new(x1, x2, y1, y2)
+                let x1 = DynVal::new_fixed(x);
+                let x2 = DynVal::new_fixed(x + item_width);
+                let y1 = DynVal::new_fixed(0);
+                let y2 = DynVal::new_fixed(1);
+                DynLocation::new(x1, x2, y1, y2)
             } else {
                 let y = self.max_primary_y(ctx).unwrap_or(0); // returns max end_y which is exclusive (so don't +1)
-                let y1 = SclVal::new_fixed(y);
-                let y2 = SclVal::new_fixed(y + 1);
-                let x1 = SclVal::new_fixed(0);
-                let x2 = SclVal::new_fixed(item_width);
-                SclLocation::new(x1, x2, y1, y2)
+                let y1 = DynVal::new_fixed(y);
+                let y2 = DynVal::new_fixed(y + 1);
+                let x1 = DynVal::new_fixed(0);
+                let x2 = DynVal::new_fixed(item_width);
+                DynLocation::new(x1, x2, y1, y2)
             };
-            let ls = SclLocationSet::new(loc, vec![], Self::Z_INDEX);
+            let ls = DynLocationSet::new(loc, vec![], Self::Z_INDEX);
             (ls, true)
         } else {
-            (SclLocationSet::default(), false)
+            (DynLocationSet::default(), false)
         };
         self.pane
             .eo
@@ -243,7 +243,7 @@ impl MenuBar {
                 .map(|it| it.min_width(&m_sty, primary_arrow))
                 .max()
                 .unwrap_or(0);
-            let max_width = SclVal::new_fixed(max_width as i32);
+            let max_width = DynVal::new_fixed(max_width as i32);
 
             // adjust all the widths in the element organizer
             for it in primary_items {
@@ -327,7 +327,7 @@ impl MenuBar {
         }
         // update extra locations for parent eo.Locations
         //resps.push(EventResponse::ExtraLocations(self.extra_locations()));
-        //self.get_scl_location_set()
+        //self.get_dyn_location_set()
         //    .borrow_mut()
         //    .set_extra(self.extra_locations());
         (true, resps)
@@ -364,7 +364,7 @@ impl MenuBar {
 
         // update extra locations for parent eo
         //let resp: EventResponse = EventResponse::ExtraLocations(self.extra_locations());
-        //self.get_scl_location_set()
+        //self.get_dyn_location_set()
         //    .borrow_mut()
         //    .set_extra(self.extra_locations());
 
@@ -387,7 +387,7 @@ impl MenuBar {
         // update extra locations for parent eo
         //EventResponse::ExtraLocations(self.extra_locations()).into()
 
-        //self.get_scl_location_set()
+        //self.get_dyn_location_set()
         //    .borrow_mut()
         //    .set_extra(self.extra_locations());
     }
@@ -404,7 +404,7 @@ impl MenuBar {
         *self.activated.borrow_mut() = true;
     }
 
-    pub fn extra_locations(&self) -> Vec<SclLocation> {
+    pub fn extra_locations(&self) -> Vec<DynLocation> {
         let mut locs = vec![];
         for details in self.pane.eo.els.borrow().values() {
             locs.push(details.loc.borrow().l.clone());
@@ -459,8 +459,8 @@ impl MenuBar {
             .map(|it| it.min_width(&m_sty, primary_arrow))
             .max()
             .unwrap_or(0);
-        let neg_max_width = SclVal::new_fixed(-(max_width as i32));
-        let max_width = SclVal::new_fixed(max_width as i32);
+        let neg_max_width = DynVal::new_fixed(-(max_width as i32));
+        let max_width = DynVal::new_fixed(max_width as i32);
 
         // set all the locations in the element organizer
 
@@ -472,37 +472,37 @@ impl MenuBar {
             loc = loc.clone();
             match dir {
                 OpenDirection::Up => {
-                    loc.adjust_location_by_y(SclVal::new_fixed(-(i as i32)));
+                    loc.adjust_location_by_y(DynVal::new_fixed(-(i as i32)));
                 }
                 OpenDirection::Down => {
-                    loc.adjust_location_by_y(SclVal::new_fixed(1));
+                    loc.adjust_location_by_y(DynVal::new_fixed(1));
                 }
                 OpenDirection::LeftThenDown => {
                     if i == 0 {
                         loc.adjust_location_by_x(neg_max_width.clone());
                     } else {
-                        loc.adjust_location_by_y(SclVal::new_fixed(1));
+                        loc.adjust_location_by_y(DynVal::new_fixed(1));
                     }
                 }
                 OpenDirection::RightThenDown => {
                     if i == 0 {
                         loc.adjust_location_by_x(item_width.clone());
                     } else {
-                        loc.adjust_location_by_y(SclVal::new_fixed(1));
+                        loc.adjust_location_by_y(DynVal::new_fixed(1));
                     }
                 }
                 OpenDirection::LeftThenUp => {
                     if i == 0 {
                         loc.adjust_location_by_x(neg_max_width.clone());
                     } else {
-                        loc.adjust_location_by_y(SclVal::new_fixed(-1));
+                        loc.adjust_location_by_y(DynVal::new_fixed(-1));
                     }
                 }
                 OpenDirection::RightThenUp => {
                     if i == 0 {
                         loc.adjust_location_by_x(item_width.clone());
                     } else {
-                        loc.adjust_location_by_y(SclVal::new_fixed(-1));
+                        loc.adjust_location_by_y(DynVal::new_fixed(-1));
                     }
                 }
             };
@@ -655,7 +655,7 @@ impl Element for MenuBar {
             let dcps = el_details.el.borrow().drawing(&c);
 
             for mut dcp in dcps {
-                dcp.adjust_by_scl_location(ctx, &el_details.loc.borrow().l);
+                dcp.adjust_by_dyn_location(ctx, &el_details.loc.borrow().l);
                 out.push(dcp);
             }
         }
@@ -682,8 +682,8 @@ impl Element for MenuBar {
     fn call_hooks_of_kind(&self, kind: &str) {
         self.pane.call_hooks_of_kind(kind)
     }
-    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
-        self.pane.get_scl_location_set()
+    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
+        self.pane.get_dyn_location_set()
     }
     fn get_visible(&self) -> Rc<RefCell<bool>> {
         self.pane.get_visible()
@@ -804,8 +804,8 @@ impl Element for MenuItem {
     fn call_hooks_of_kind(&self, kind: &str) {
         self.pane.call_hooks_of_kind(kind)
     }
-    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
-        self.pane.get_scl_location_set()
+    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
+        self.pane.get_dyn_location_set()
     }
     fn get_visible(&self) -> Rc<RefCell<bool>> {
         self.pane.get_visible()

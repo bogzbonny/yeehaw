@@ -1,7 +1,7 @@
 use {
     crate::{
         element::ReceivableEventChanges, Context, DrawCh, DrawChPos, DrawChs2D, Element, ElementID,
-        Event, EventResponses, Priority, SclLocation, SclLocationSet, SclVal, SortingHat,
+        Event, EventResponses, Priority, DynLocation, DynLocationSet, DynVal, SortingHat,
         UpwardPropagator,
     },
     std::{
@@ -54,7 +54,7 @@ pub struct Pane {
 
     // scaleable values of x, y, width, and height in the parent context
     // NOTE use getters/setters to ensure hook calls
-    loc: Rc<RefCell<SclLocationSet>>,
+    loc: Rc<RefCell<DynLocationSet>>,
     visible: Rc<RefCell<bool>>,
 }
 
@@ -77,32 +77,32 @@ impl Pane {
             default_line: Rc::new(RefCell::new(vec![])),
             content_view_offset_x: Rc::new(RefCell::new(0)),
             content_view_offset_y: Rc::new(RefCell::new(0)),
-            loc: Rc::new(RefCell::new(SclLocationSet::default())),
+            loc: Rc::new(RefCell::new(DynLocationSet::default())),
             visible: Rc::new(RefCell::new(true)),
         }
     }
 
-    pub fn with_start_x(self, x: SclVal) -> Pane {
+    pub fn with_start_x(self, x: DynVal) -> Pane {
         self.loc.borrow_mut().l.set_start_x(x);
         self
     }
 
-    pub fn with_start_y(self, y: SclVal) -> Pane {
+    pub fn with_start_y(self, y: DynVal) -> Pane {
         self.loc.borrow_mut().l.set_start_y(y);
         self
     }
 
-    pub fn with_width(self, w: SclVal) -> Pane {
+    pub fn with_width(self, w: DynVal) -> Pane {
         self.loc.borrow_mut().l.set_width(w);
         self
     }
 
-    pub fn with_height(self, h: SclVal) -> Pane {
+    pub fn with_height(self, h: DynVal) -> Pane {
         self.loc.borrow_mut().l.set_height(h);
         self
     }
 
-    pub fn with_scl_location(self, l: SclLocation) -> Pane {
+    pub fn with_dyn_location(self, l: DynLocation) -> Pane {
         self.loc.borrow_mut().l = l;
         self
     }
@@ -271,7 +271,7 @@ impl Element for Pane {
         }
     }
 
-    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
+    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
         self.loc.clone()
     }
     fn get_visible(&self) -> Rc<RefCell<bool>> {

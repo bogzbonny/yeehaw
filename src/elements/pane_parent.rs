@@ -1,7 +1,7 @@
 use {
     crate::{
         element::ReceivableEventChanges, Context, DrawChPos, Element, ElementID, ElementOrganizer,
-        Event, EventResponses, Pane, Priority, SclLocationSet, SortingHat, UpwardPropagator,
+        Event, EventResponses, Pane, Priority, DynLocationSet, SortingHat, UpwardPropagator,
     },
     std::{
         ops::Deref,
@@ -30,7 +30,7 @@ impl ParentPane {
     }
 
     pub fn add_element(&self, el: Rc<RefCell<dyn Element>>) {
-        let loc = el.borrow().get_scl_location_set().borrow().clone();
+        let loc = el.borrow().get_dyn_location_set().borrow().clone();
         self.eo.add_element(el.clone(), None, loc, true);
     }
 
@@ -288,7 +288,7 @@ impl Element for ParentPane {
             let c = Context::new(s, *el_details.vis.borrow());
             let dcps = el_details.el.borrow().drawing(&c);
             for mut dcp in dcps {
-                dcp.adjust_by_scl_location(ctx, &el_details.loc.borrow().l);
+                dcp.adjust_by_dyn_location(ctx, &el_details.loc.borrow().l);
                 out.push(dcp);
             }
         }
@@ -315,8 +315,8 @@ impl Element for ParentPane {
     fn call_hooks_of_kind(&self, kind: &str) {
         self.pane.call_hooks_of_kind(kind)
     }
-    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
-        self.pane.get_scl_location_set()
+    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
+        self.pane.get_dyn_location_set()
     }
     fn get_visible(&self) -> Rc<RefCell<bool>> {
         self.pane.get_visible()

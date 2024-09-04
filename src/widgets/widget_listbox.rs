@@ -5,7 +5,7 @@ use {
     },
     crate::{
         Context, DrawChPos, Element, ElementID, Event, EventResponses, Keyboard as KB, Priority,
-        ReceivableEventChanges, RgbColour, SclLocationSet, SclVal, SortingHat, Style,
+        ReceivableEventChanges, RgbColour, DynLocationSet, DynVal, SortingHat, Style,
         UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -112,8 +112,8 @@ impl ListBox {
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
-            SclVal::new_fixed(max_entry_width as i32),
-            SclVal::new_fixed(line_count),
+            DynVal::new_fixed(max_entry_width as i32),
+            DynVal::new_fixed(line_count),
             Self::STYLE,
             Self::default_receivable_events(),
         );
@@ -164,7 +164,7 @@ impl ListBox {
 
     pub fn with_lines_per_item(self, ctx: &Context, lines: usize) -> Self {
         *self.lines_per_item.borrow_mut() = lines;
-        self.base.set_scl_height(SclVal::new_fixed(
+        self.base.set_scl_height(DynVal::new_fixed(
             self.entries.borrow().len() as i32 * lines as i32,
         ));
         self.update_content(ctx);
@@ -183,24 +183,24 @@ impl ListBox {
         self
     }
 
-    pub fn with_width(self, ctx: &Context, width: SclVal) -> Self {
+    pub fn with_width(self, ctx: &Context, width: DynVal) -> Self {
         self.base.set_scl_width(width);
         self.update_content(ctx);
         self
     }
-    pub fn with_height(self, ctx: &Context, height: SclVal) -> Self {
+    pub fn with_height(self, ctx: &Context, height: DynVal) -> Self {
         self.base.set_scl_height(height);
         self.update_content(ctx);
         self
     }
-    pub fn with_size(self, ctx: &Context, width: SclVal, height: SclVal) -> Self {
+    pub fn with_size(self, ctx: &Context, width: DynVal, height: DynVal) -> Self {
         self.base.set_scl_width(width);
         self.base.set_scl_height(height);
         self.update_content(ctx);
         self
     }
 
-    pub fn at(mut self, loc_x: SclVal, loc_y: SclVal) -> Self {
+    pub fn at(mut self, loc_x: DynVal, loc_y: DynVal) -> Self {
         self.base.at(loc_x, loc_y);
         self
     }
@@ -602,8 +602,8 @@ impl Element for ListBox {
     fn call_hooks_of_kind(&self, kind: &str) {
         self.base.call_hooks_of_kind(kind)
     }
-    fn get_scl_location_set(&self) -> Rc<RefCell<SclLocationSet>> {
-        self.base.get_scl_location_set()
+    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
+        self.base.get_dyn_location_set()
     }
     fn get_visible(&self) -> Rc<RefCell<bool>> {
         self.base.get_visible()
