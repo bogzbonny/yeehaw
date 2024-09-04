@@ -1,8 +1,8 @@
 use {
     crate::{
         element::ReceivableEventChanges, prioritizer::EventPrioritizer, CommandEvent, Context,
-        DrawChPos, Element, ElementID, Event, EventResponse, EventResponses, Priority, DynLocation,
-        DynLocationSet, UpwardPropagator, ZIndex,
+        DrawChPos, DynLocation, DynLocationSet, Element, ElementID, Event, EventResponse,
+        EventResponses, Priority, UpwardPropagator, ZIndex,
     },
     std::collections::HashMap,
     std::{cell::RefCell, rc::Rc},
@@ -82,8 +82,8 @@ impl ElementOrganizer {
         ReceivableEventChanges::default().with_remove_evs(rm_evs)
     }
 
-    // remove_all_elements removes all elements from the element organizer
-    pub fn remove_all_elements(&self) -> ReceivableEventChanges {
+    // removes all elements from the element organizer
+    pub fn clear_elements(&self) -> ReceivableEventChanges {
         self.els.borrow_mut().clear();
         let pes = self.receivable().drain(..).map(|(e, _)| e).collect();
         *self.prioritizer.borrow_mut() = EventPrioritizer::default();

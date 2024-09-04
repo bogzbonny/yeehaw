@@ -1,7 +1,7 @@
 use {
     crate::{
-        element::ReceivableEventChanges, Context, DrawCh, DrawChPos, DrawChs2D, Element, ElementID,
-        Event, EventResponses, Priority, DynLocation, DynLocationSet, DynVal, SortingHat,
+        element::ReceivableEventChanges, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation,
+        DynLocationSet, DynVal, Element, ElementID, Event, EventResponses, Priority, SortingHat,
         UpwardPropagator,
     },
     std::{
@@ -95,6 +95,14 @@ impl Pane {
     pub fn with_width(self, w: DynVal) -> Pane {
         self.loc.borrow_mut().l.set_dyn_width(w);
         self
+    }
+
+    pub fn set_dyn_height(&self, h: DynVal) {
+        self.loc.borrow_mut().l.set_dyn_height(h);
+    }
+
+    pub fn set_dyn_width(&self, w: DynVal) {
+        self.loc.borrow_mut().l.set_dyn_width(w);
     }
 
     pub fn with_height(self, h: DynVal) -> Pane {

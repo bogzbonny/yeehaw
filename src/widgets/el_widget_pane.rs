@@ -1,8 +1,8 @@
 use {
     super::{Widget, WidgetOrganizer, Widgets},
     crate::{
-        Context, DrawChPos, Element, ElementID, Event, EventResponses, Pane, Priority,
-        ReceivableEventChanges, DynLocationSet, SortingHat, UpwardPropagator,
+        Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
+        Pane, Priority, ReceivableEventChanges, SortingHat, UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -26,6 +26,16 @@ impl WidgetPane {
             Priority::FOCUSED,
         );
         wp
+    }
+
+    pub fn with_height(self, h: DynVal) -> Self {
+        self.pane.set_dyn_height(h);
+        self
+    }
+
+    pub fn with_width(self, w: DynVal) -> Self {
+        self.pane.set_dyn_width(w);
+        self
     }
 
     pub fn add_widget(&mut self, w: Box<dyn Widget>) {

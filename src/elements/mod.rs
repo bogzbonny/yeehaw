@@ -7,6 +7,10 @@ pub mod stack;
 pub mod tabs;
 
 pub use {
-    debug_pane::DebugSizePane, menu::MenuBar, menu_right_click::RightClickMenu, pane::Pane,
+    debug_pane::DebugSizePane,
+    menu::MenuBar,
+    menu_right_click::RightClickMenu,
+    pane::Pane,
     pane_parent::ParentPane,
+    stack::{HorizontalStack, VerticalStack},
 };

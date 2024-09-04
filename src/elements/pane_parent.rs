@@ -1,7 +1,7 @@
 use {
     crate::{
-        element::ReceivableEventChanges, Context, DrawChPos, Element, ElementID, ElementOrganizer,
-        Event, EventResponses, Pane, Priority, DynLocationSet, SortingHat, UpwardPropagator,
+        element::ReceivableEventChanges, Context, DrawChPos, DynLocationSet, Element, ElementID,
+        ElementOrganizer, Event, EventResponses, Pane, Priority, SortingHat, UpwardPropagator,
     },
     std::{
         ops::Deref,
@@ -32,6 +32,14 @@ impl ParentPane {
     pub fn add_element(&self, el: Rc<RefCell<dyn Element>>) {
         let loc = el.borrow().get_dyn_location_set().borrow().clone();
         self.eo.add_element(el.clone(), None, loc, true);
+    }
+
+    pub fn remove_element(&self, el_id: &ElementID) {
+        self.eo.remove_element(el_id);
+    }
+
+    pub fn clear_elements(&self) {
+        self.eo.clear_elements();
     }
 
     // generate_perceived_priorities generates the "perceived priorities" of the

@@ -3,7 +3,7 @@ use {std::cell::RefCell, std::collections::HashMap, std::rc::Rc};
 // The sorting hat is the sole entity which assigns element-ids to elements when they are created.
 // the element-id is in the form <kind>_<nonce>. The <nonce> is an incrementing number.
 // only one sorting-hat should ever exist in a cui.
-#[derive(Default)]
+#[derive(Clone, Default)]
 //                           < kind       , nonce >
 pub struct SortingHat(Rc<RefCell<HashMap<&'static str, u64>>>);
 

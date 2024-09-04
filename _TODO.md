@@ -39,6 +39,8 @@
 
 01. remove visibility from context
 
+01. remove loc and vis from add_element within element organizer
+
 05. use .flf (figlet font) format instead of custom megatext
      - https://docs.rs/figlet-rs/latest/figlet_rs/
 

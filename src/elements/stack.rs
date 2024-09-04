@@ -1,77 +1,240 @@
 use {
     crate::{
-        Context, DrawChPos, DynLocationSet, Element, ElementID, Event, EventResponses, ParentPane,
-        Priority, ReceivableEventChanges, SortingHat, UpwardPropagator,
+        Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
+        ParentPane, Priority, ReceivableEventChanges, SortingHat, UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
 };
 
+#[derive(Clone)]
 pub struct VerticalStack {
     pub pane: ParentPane,
-    pub els: Vec<Rc<RefCell<dyn Element>>>,
+    #[allow(clippy::type_complexity)]
+    pub els: Rc<RefCell<Vec<Rc<RefCell<dyn Element>>>>>,
 }
 
 impl VerticalStack {
+    const KIND: &'static str = "vertical_stack";
+
     pub fn new(hat: &SortingHat) -> Self {
         Self {
-            pane: ParentPane::new(hat, "vertical_stack"),
-            els: Vec::new(),
+            pane: ParentPane::new(hat, Self::KIND),
+            els: Rc::new(RefCell::new(Vec::new())),
         }
     }
 
     // add an element to the end of the stack resizing the other elements
     // in order to fit the new element
-    pub fn push(&mut self, el: Rc<RefCell<dyn Element>>) {
+    pub fn push(&self, ctx: &Context, el: Rc<RefCell<dyn Element>>) {
+        Self::sanitize_el_location(&el);
+        self.els.borrow_mut().push(el.clone());
+        self.normalize_locations(ctx);
+        self.pane.add_element(el);
+    }
+
+    pub fn insert(&self, ctx: &Context, idx: usize, el: Rc<RefCell<dyn Element>>) {
+        Self::sanitize_el_location(&el);
+        self.els.borrow_mut().insert(idx, el.clone());
+        self.normalize_locations(ctx);
+        self.pane.add_element(el);
+    }
+
+    pub fn remove(&self, ctx: &Context, idx: usize) {
+        let el = self.els.borrow_mut().remove(idx);
+        self.normalize_locations(ctx);
+        self.pane.remove_element(&el.borrow().id());
+    }
+
+    pub fn clear(&self) {
+        self.els.borrow_mut().clear();
+        self.pane.clear_elements();
+    }
+
+    // get the average value of the elements in the stack
+    // this is useful for pushing new elements with an even size
+    // to the other elements
+    pub fn avg_flex_height(&self) -> DynVal {
+        let els = self.els.borrow();
+        let avg_flex = els
+            .iter()
+            .map(|el| {
+                el.borrow()
+                    .get_dyn_location_set()
+                    .borrow()
+                    .get_dyn_height()
+                    .flex
+            })
+            .sum::<f64>()
+            / els.len() as f64;
+        DynVal::new_flex(avg_flex)
+    }
+
+    fn sanitize_el_location(el: &Rc<RefCell<dyn Element>>) {
         let mut loc = el.borrow().get_dyn_location_set().borrow().clone();
 
         // ignore the x-dimension everything must fit fully
         loc.set_start_x(0.0.into()); // 0
         loc.set_end_x(1.0.into()); // 100%
+        *el.borrow_mut().get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
+    }
 
-        //
-        let height = loc.get_dyn_height();
-        loc.set_start_y(0.into());
-        loc.set_dyn_height(height);
+    // normalize all the locations within the stack
+    pub fn normalize_locations(&self, ctx: &Context) {
+        let mut heights: Vec<DynVal> = self
+            .els
+            .borrow()
+            .iter()
+            .map(|el| el.borrow().get_dyn_location_set().borrow().get_dyn_height())
+            .collect();
 
-        if !self.els.is_empty() {
-            // determine the min and max dimension of the new element
-            let (min, max) = el
-                .borrow()
-                .get_dyn_location_set()
-                .borrow()
-                .get_dyn_height()
-                .get_bounds();
+        Self::normalize_heights_to_context(ctx, &mut heights);
+
+        // set all the locations based on the heights
+        self.adjust_locations_for_heights(&heights);
+    }
+
+    // incrementally change the flex value of each of the existing heights (evenly), until
+    // the context height is reached. max out at 30 iterations.
+    pub fn normalize_heights_to_context(ctx: &Context, heights: &mut [DynVal]) {
+        adjust_els_to_fit_ctx_size(ctx.get_height(), heights);
+    }
+
+    // adjust all the locations based on the heights
+    pub fn adjust_locations_for_heights(&self, heights: &[DynVal]) {
+        let mut y = DynVal::new_fixed(0);
+        for (el, height) in self.els.borrow().iter().zip(heights.iter()) {
+            let mut loc = el.borrow().get_dyn_location_set().borrow().clone();
+            loc.set_start_y(y.clone());
+            loc.set_dyn_height(height.clone());
+            *el.borrow_mut().get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
+            y = y.plus(height.clone());
         }
+    }
+}
 
-        self.els.push(el.clone());
+#[derive(Clone)]
+pub struct HorizontalStack {
+    pub pane: ParentPane,
+    #[allow(clippy::type_complexity)]
+    pub els: Rc<RefCell<Vec<Rc<RefCell<dyn Element>>>>>,
+}
+
+impl HorizontalStack {
+    const KIND: &'static str = "horizontal_stack";
+
+    pub fn new(hat: &SortingHat) -> Self {
+        Self {
+            pane: ParentPane::new(hat, Self::KIND),
+            els: Rc::new(RefCell::new(Vec::new())),
+        }
+    }
+
+    // add an element to the end of the stack resizing the other elements
+    // in order to fit the new element
+    pub fn push(&self, ctx: &Context, el: Rc<RefCell<dyn Element>>) {
+        Self::sanitize_el_location(&el);
+        self.els.borrow_mut().push(el.clone());
+        self.normalize_locations(ctx);
         self.pane.add_element(el);
     }
 
-    //pub fn insert(&mut self, idx: usize, el: Rc<RefCell<dyn Element>>) {
-    //    self.els.insert(idx, el.clone());
-    //    self.pane.add_element(el);
-    //    // TODO set the locations
-    //    // XXX
-    //}
+    pub fn insert(&self, ctx: &Context, idx: usize, el: Rc<RefCell<dyn Element>>) {
+        Self::sanitize_el_location(&el);
+        self.els.borrow_mut().insert(idx, el.clone());
+        self.normalize_locations(ctx);
+        self.pane.add_element(el);
+    }
 
-    //pub fn remove(&mut self, idx: usize) {
-    //    self.els.remove(idx);
-    //    self.pane.remove_element(idx);
-    //    // TODO set the locations
-    //    // XXX
-    //}
+    pub fn remove(&self, ctx: &Context, idx: usize) {
+        let el = self.els.borrow_mut().remove(idx);
+        self.normalize_locations(ctx);
+        self.pane.remove_element(&el.borrow().id());
+    }
 
-    //pub fn clear(&mut self) {
-    //    self.els.clear();
-    //    self.pane.clear_elements();
-    //    // TODO set the locations
-    //    // XXX
-    //}
+    pub fn clear(&self) {
+        self.els.borrow_mut().clear();
+        self.pane.clear_elements();
+    }
+
+    // get the average value of the elements in the stack
+    // this is useful for pushing new elements with an even size
+    // to the other elements
+    pub fn avg_flex_width(&self) -> DynVal {
+        let els = self.els.borrow();
+        let avg_flex = els
+            .iter()
+            .map(|el| {
+                el.borrow()
+                    .get_dyn_location_set()
+                    .borrow()
+                    .get_dyn_width()
+                    .flex
+            })
+            .sum::<f64>()
+            / els.len() as f64;
+        DynVal::new_flex(avg_flex)
+    }
+
+    fn sanitize_el_location(el: &Rc<RefCell<dyn Element>>) {
+        let mut loc = el.borrow().get_dyn_location_set().borrow().clone();
+
+        // ignore the y-dimension everything must fit fully
+        loc.set_start_y(0.0.into()); // 0
+        loc.set_end_y(1.0.into()); // 100%
+        *el.borrow_mut().get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
+    }
+
+    // normalize all the locations within the stack
+    pub fn normalize_locations(&self, ctx: &Context) {
+        let mut widths: Vec<DynVal> = self
+            .els
+            .borrow()
+            .iter()
+            .map(|el| el.borrow().get_dyn_location_set().borrow().get_dyn_width())
+            .collect();
+
+        Self::normalize_widths_to_context(ctx, &mut widths);
+
+        // set all the locations based on the widths
+        self.adjust_locations_for_widths(&widths);
+    }
+
+    // incrementally change the flex value of each of the existing widths (evenly), until
+    // the context width is reached. max out at 30 iterations.
+    pub fn normalize_widths_to_context(ctx: &Context, widths: &mut [DynVal]) {
+        adjust_els_to_fit_ctx_size(ctx.get_width(), widths);
+    }
+
+    // adjust all the locations based on the widths
+    pub fn adjust_locations_for_widths(&self, widths: &[DynVal]) {
+        let mut x = DynVal::new_fixed(0);
+        for (el, width) in self.els.borrow().iter().zip(widths.iter()) {
+            let mut loc = el.borrow().get_dyn_location_set().borrow().clone();
+            loc.set_start_x(x.clone());
+            loc.set_dyn_width(width.clone());
+            *el.borrow_mut().get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
+            x = x.plus(width.clone());
+        }
+    }
 }
 
-pub struct HorizontalStack {
-    pub pane: ParentPane,
-    pub els: Vec<Rc<RefCell<dyn Element>>>,
+// incrementally change the flex value of each of the existing element vals (either height or
+// width), until the total context size is reached. max out at 30 iterations. flex changes are
+// applied additively evenly to all elements (as opposed to multiplicatively).
+//
+// ctx_size is either the height or width of the context
+// vals is either element heights or widths to be adjusted
+fn adjust_els_to_fit_ctx_size(ctx_size: u16, vals: &mut [DynVal]) {
+    for _ in 0..30 {
+        let total_height: i32 = vals.iter().map(|h| h.get_val(ctx_size)).sum();
+        if total_height == ctx_size as i32 {
+            break;
+        }
+        let next_change = (ctx_size as i32 - total_height) as f64 / vals.len() as f64;
+        for h in vals.iter_mut() {
+            h.flex = f64::clamp(h.flex + next_change, 0.0, 1.0);
+        }
+    }
 }
 
 impl Element for VerticalStack {
