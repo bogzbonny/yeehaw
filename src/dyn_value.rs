@@ -1,25 +1,36 @@
-// DynVal represents a X or Y screen position value which scales based on the
-// size of the parent widget. The value is a fixed number of characters
-// (fixed) plus the flex of the parent widget size (flex x size).
-//
-// Additionally the DynVal can add the minimum or maximum of a set of other
-// SclVals. This is useful or Labels which depend on the size of a number of
-// other elements.
-
 // TODO multiplier...
 //  - then can get rid of minus field
 //  - int or float multiplier?? int is nice for fixed, float is nice for flex
 
-#[derive(Clone, Debug, Default)]
+// DynVal represents a dynamic x or y screen position value which scales based on the
+// size of the parent element. The value is a fixed number of characters
+// (fixed) plus the flexible fraction of the parent element size (flex).
+//
+// Additionally the DynVal can add the minimum or maximum of a set of other
+// SclVals. This is useful or Labels which depend on the size of a number of
+// other elements.
+#[derive(Clone, Debug)]
 pub struct DynVal {
+    pub mul: f64,   // the multiplier is applied to the final value of the dynval
     pub fixed: i32, // fixed number of characters
     pub flex: f64,  // flex of the total number of characters (1.0 = 100%)
 
-    // NOTE Rc is used such that locations can dynamicly reference each other
     plus: Vec<DynVal>,        // the DynVal adds all the provided SclVals
-    minus: Vec<DynVal>,       // the DynVal subtracts all the provided SclVals
     plus_min_of: Vec<DynVal>, // the DynVal adds the minimum value of these provided SclVals
     plus_max_of: Vec<DynVal>, // the DynVal adds the maximum value of these provided SclVals
+}
+
+impl Default for DynVal {
+    fn default() -> Self {
+        DynVal {
+            mul: 1.0,
+            fixed: 0,
+            flex: 0.0,
+            plus: Vec::new(),
+            plus_min_of: Vec::new(),
+            plus_max_of: Vec::new(),
+        }
+    }
 }
 
 impl DynVal {
@@ -36,7 +47,6 @@ impl DynVal {
             ..DynVal::default()
         }
     }
-
     // Create a new DynVal with a flex but which bounds at a minimum fixed value
     pub fn new_flex_with_min_fixed(flex: f64, min: i32) -> Self {
         DynVal {
@@ -67,12 +77,32 @@ impl DynVal {
         let f = max_size as f64 * self.flex;
         let rounded = (f + 0.5) as i32; // round the float to the nearest int
 
-        (self.fixed
+        let pre_mul = self.fixed
             + rounded
             + self.min_from_plus_min_of(max_size)
             + self.max_from_plus_max_of(max_size)
-            + self.sum_of_plusses(max_size))
-        .saturating_sub(self.sum_of_minuses(max_size))
+            + self.sum_of_plusses(max_size);
+
+        let mul = pre_mul as f64 * self.mul;
+        (mul + 0.5) as i32 // round
+    }
+
+    pub fn neg(&self) -> DynVal {
+        let mut out = self.clone();
+        out.mul = -out.mul;
+        out
+    }
+
+    pub fn mul(&self, mul: f64) -> DynVal {
+        let mut out = self.clone();
+        out.mul *= mul;
+        out
+    }
+
+    pub fn div(&self, div: f64) -> DynVal {
+        let mut out = self.clone();
+        out.mul /= div;
+        out
     }
 
     pub fn plus_in_place(&mut self, sv: DynVal) {
@@ -80,7 +110,7 @@ impl DynVal {
     }
 
     pub fn minus_in_place(&mut self, sv: DynVal) {
-        self.minus.push(sv);
+        self.plus.push(sv.neg());
     }
 
     // returns a new DynVal which is the sum of the two SclVals
@@ -93,7 +123,7 @@ impl DynVal {
 
     pub fn minus(&self, sv: DynVal) -> DynVal {
         let mut out = self.clone();
-        out.minus.push(sv);
+        out.plus.push(sv.neg());
         out
     }
 
@@ -128,12 +158,6 @@ impl DynVal {
     // gets the min DynVal of the plusMinOF SclVals
     pub fn sum_of_plusses(&self, max_size: u16) -> i32 {
         self.plus.iter().fold(0, |acc, v| acc + v.get_val(max_size))
-    }
-
-    pub fn sum_of_minuses(&self, max_size: u16) -> i32 {
-        self.minus
-            .iter()
-            .fold(0, |acc, v| acc + v.get_val(max_size))
     }
 
     // gets the min value of the plus_min_of SclVals, if there are no

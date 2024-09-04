@@ -2,12 +2,19 @@ use {
     //std::env,
     std::{cell::RefCell, rc::Rc},
     yeehaw::{
-        debug,
+        //debug,
         widgets::{
             megafonts, Button, Checkbox, DropdownList, Label, ListBox, Megatext, NumbersTextBox,
             RadioButtons, TextBox, Toggle,
         },
-        Context, Cui, Element, Error, EventResponses, DynVal, SortingHat, WidgetPane,
+        Context,
+        Cui,
+        DynVal,
+        Element,
+        Error,
+        EventResponses,
+        SortingHat,
+        WidgetPane,
     },
 };
 
@@ -26,7 +33,7 @@ async fn main() -> Result<(), Error> {
 
     let l = l1
         .clone()
-        .at(DynVal::new_frac(0.5), DynVal::new_frac(0.5))
+        .at(DynVal::new_flex(0.5), DynVal::new_flex(0.5))
         .to_widgets();
 
     el.add_widgets(l);
@@ -39,19 +46,19 @@ async fn main() -> Result<(), Error> {
     });
     let button = Button::new(&hat, &ctx, "click me".to_string(), button_click_fn)
         .with_description("a button!".to_string())
-        .at(DynVal::new_frac(0.25), DynVal::new_frac(0.25))
+        .at(DynVal::new_flex(0.25), DynVal::new_flex(0.25))
         .to_widgets()
         .with_label(&hat, &ctx, "button-label");
     el.add_widgets(button);
 
     let cb = Checkbox::new(&hat)
-        .at(DynVal::new_frac(0.1), DynVal::new_frac(0.1))
+        .at(DynVal::new_flex(0.1), DynVal::new_flex(0.1))
         .to_widgets()
         .with_label(&hat, &ctx, "check me");
     el.add_widgets(cb);
 
     let cb2 = Checkbox::new(&hat)
-        .at(DynVal::new_frac(0.1), DynVal::new_frac(0.1).plus_fixed(1))
+        .at(DynVal::new_flex(0.1), DynVal::new_flex(0.1).plus_fixed(1))
         .to_widgets()
         .with_label(&hat, &ctx, "check me2");
     el.add_widgets(cb2);
@@ -64,7 +71,7 @@ async fn main() -> Result<(), Error> {
             "radio3".to_string(),
         ],
     )
-    .at(DynVal::new_frac(0.1), DynVal::new_frac(0.1).plus_fixed(10))
+    .at(DynVal::new_flex(0.1), DynVal::new_flex(0.1).plus_fixed(10))
     .to_widgets();
     el.add_widgets(rbs);
 
@@ -74,7 +81,7 @@ async fn main() -> Result<(), Error> {
         "HELLO, WERLD!".to_string(),
         megafonts::ansi_regular_ex(),
     )
-    .at(DynVal::new_frac(0.1), DynVal::new_frac(0.6))
+    .at(DynVal::new_flex(0.1), DynVal::new_flex(0.6))
     .to_widgets();
     el.add_widgets(mtext);
 
@@ -88,7 +95,7 @@ async fn main() -> Result<(), Error> {
         " ⏾ ".to_string(),
         Box::new(|_, _| EventResponses::default()),
     )
-    .at(DynVal::new_frac(0.1), DynVal::new_frac(0.4))
+    .at(DynVal::new_flex(0.1), DynVal::new_flex(0.4))
     .to_widgets();
     el.add_widgets(toggle);
 
@@ -106,10 +113,10 @@ async fn main() -> Result<(), Error> {
     .with_max_expanded_height(10)
     .with_width(
         DynVal::default()
-            .plus_max_of(DynVal::new_frac(0.2))
+            .plus_max_of(DynVal::new_flex(0.2))
             .plus_max_of(DynVal::new_fixed(12)),
     )
-    .at(DynVal::new_frac(0.1), DynVal::new_frac(0.8))
+    .at(DynVal::new_flex(0.1), DynVal::new_flex(0.8))
     .to_widgets();
     el.add_widgets(dropdown);
 
@@ -128,7 +135,7 @@ async fn main() -> Result<(), Error> {
     .with_width(&ctx, DynVal::new_fixed(10))
     .with_height(&ctx, DynVal::new_fixed(5))
     .with_scrollbar()
-    .at(DynVal::new_frac(0.5), DynVal::new_frac(0.1))
+    .at(DynVal::new_flex(0.5), DynVal::new_flex(0.1))
     .to_widgets(&hat);
     el.add_widgets(listbox);
 
@@ -152,7 +159,7 @@ async fn main() -> Result<(), Error> {
     let ntb = NumbersTextBox::new(&hat, &ctx, 0)
         .with_min(-10)
         .with_max(10)
-        .at(DynVal::new_frac(0.75), DynVal::new_frac(0.5))
+        .at(DynVal::new_flex(0.75), DynVal::new_flex(0.5))
         .to_widgets(&hat, &ctx);
     el.add_widgets(ntb);
 
