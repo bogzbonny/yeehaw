@@ -221,17 +221,7 @@ impl HorizontalStack {
             .map(|el| el.borrow().get_dyn_location_set().borrow().get_dyn_width())
             .collect();
 
-        //debug!("normalize_locations, pre widths:",);
-        //for w in widths.iter() {
-        //    debug!("\t{:+?}", w);
-        //}
-
         Self::normalize_widths_to_context(ctx, &mut widths);
-
-        //debug!("post normalize_widths_to_context widths:",);
-        //for w in widths.iter() {
-        //    debug!("\t{:+?}", w);
-        //}
 
         // set all the locations based on the widths
         self.adjust_locations_for_widths(&widths);

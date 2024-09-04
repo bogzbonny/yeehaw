@@ -22,11 +22,11 @@
     position.
      - I don't think this is an issue now that drawing is contained to the
        single draw function.
+01. rewrite horizontal/vertical stack panes
 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-01. rewrite horizontal/vertical stack panes
 
 01. translate scrollable pane 
      - scrollbars should be optional (can scroll with mouse wheel otherwise)
@@ -36,6 +36,9 @@
      - button click should have the button as an input such that it can change
        colour when selected
 01. translate file_navigator
+
+01. ensure that menu will work in a vertical pane where it goes over other
+    content
 
 01. remove visibility from context
 
