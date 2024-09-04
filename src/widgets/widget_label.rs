@@ -87,10 +87,10 @@ impl Label {
     pub fn with_rotated_text(self) -> Self {
         let rotated = self.base.pane.content.borrow().rotate_90_deg();
         *self.base.pane.content.borrow_mut() = rotated;
-        let old_height = self.base.get_scl_height();
-        let old_width = self.base.get_scl_width();
-        self.base.set_scl_width(old_height);
-        self.base.set_scl_height(old_width);
+        let old_height = self.base.get_dyn_height();
+        let old_width = self.base.get_dyn_width();
+        self.base.set_dyn_width(old_height);
+        self.base.set_dyn_height(old_width);
         self
     }
 
@@ -113,8 +113,8 @@ impl Label {
     pub fn set_text(&self, ctx: &Context, text: String) {
         self.base.set_content_from_string(ctx, &text);
         let (w, h) = common::get_text_size(&text);
-        self.base.set_scl_width(DynVal::new_fixed(w as i32));
-        self.base.set_scl_height(DynVal::new_fixed(h as i32));
+        self.base.set_dyn_width(DynVal::new_fixed(w as i32));
+        self.base.set_dyn_height(DynVal::new_fixed(h as i32));
         *self.text.borrow_mut() = text;
     }
 
@@ -124,10 +124,10 @@ impl Label {
     }
 
     pub fn to_widgets(mut self) -> Widgets {
-        let mut x = self.base.get_scl_start_x();
-        let mut y = self.base.get_scl_start_y();
-        let w = self.base.get_scl_width();
-        let h = self.base.get_scl_height();
+        let mut x = self.base.get_dyn_start_x();
+        let mut y = self.base.get_dyn_start_y();
+        let w = self.base.get_dyn_width();
+        let h = self.base.get_dyn_height();
         match *self.justification.borrow() {
             LabelJustification::Left => {}
             LabelJustification::Right => {

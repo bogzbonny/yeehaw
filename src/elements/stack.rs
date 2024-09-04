@@ -1,8 +1,7 @@
-/*
 use {
     crate::{
-        Context, DrawChPos, Element, ElementID, Event, EventResponses, ParentPane, Priority,
-        ReceivableEventChanges, DynLocationSet, SortingHat, UpwardPropagator,
+        Context, DrawChPos, DynLocationSet, Element, ElementID, Event, EventResponses, ParentPane,
+        Priority, ReceivableEventChanges, SortingHat, UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -23,34 +22,33 @@ impl VerticalStack {
     // add an element to the end of the stack resizing the other elements
     // in order to fit the new element
     pub fn push(&mut self, el: Rc<RefCell<dyn Element>>) {
+        // determine the min and max dimension of the new element
+        let (min, max) = el.borrow().get_dyn_location_set().borrow().get_height();
+
         self.els.push(el.clone());
         self.pane.add_element(el);
-        // TODO set the locations
-        // XXX
-
-        // Determine min sizes for each element by sending in a fake context of size 0
     }
 
-    pub fn insert(&mut self, idx: usize, el: Rc<RefCell<dyn Element>>) {
-        self.els.insert(idx, el.clone());
-        self.pane.add_element(el);
-        // TODO set the locations
-        // XXX
-    }
+    //pub fn insert(&mut self, idx: usize, el: Rc<RefCell<dyn Element>>) {
+    //    self.els.insert(idx, el.clone());
+    //    self.pane.add_element(el);
+    //    // TODO set the locations
+    //    // XXX
+    //}
 
-    pub fn remove(&mut self, idx: usize) {
-        self.els.remove(idx);
-        self.pane.remove_element(idx);
-        // TODO set the locations
-        // XXX
-    }
+    //pub fn remove(&mut self, idx: usize) {
+    //    self.els.remove(idx);
+    //    self.pane.remove_element(idx);
+    //    // TODO set the locations
+    //    // XXX
+    //}
 
-    pub fn clear(&mut self) {
-        self.els.clear();
-        self.pane.clear_elements();
-        // TODO set the locations
-        // XXX
-    }
+    //pub fn clear(&mut self) {
+    //    self.els.clear();
+    //    self.pane.clear_elements();
+    //    // TODO set the locations
+    //    // XXX
+    //}
 }
 
 pub struct HorizontalStack {
@@ -153,4 +151,3 @@ impl Element for HorizontalStack {
         self.pane.get_visible()
     }
 }
-*/

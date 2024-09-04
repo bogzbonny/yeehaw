@@ -466,7 +466,7 @@ impl MenuBar {
 
         // TODO adjust the open direction if there isn't enough space.
         let mut loc = self.pane.eo.get_location(&item.id()).expect("missing el").l;
-        let item_width = loc.get_scl_width();
+        let item_width = loc.get_dyn_width();
         for (i, it) in sub_items.iter().enumerate() {
             // adjust for the next location
             loc = loc.clone();

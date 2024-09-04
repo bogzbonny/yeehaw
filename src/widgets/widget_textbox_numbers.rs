@@ -114,8 +114,8 @@ impl NumbersTextBox {
 
     pub fn to_widgets(&self, hat: &SortingHat, ctx: &Context) -> Widgets {
         let (x, y) = (
-            self.tb.base.get_scl_start_x(),
-            self.tb.base.get_scl_start_y(),
+            self.tb.base.get_dyn_start_x(),
+            self.tb.base.get_dyn_start_y(),
         );
 
         let mut out: Vec<Box<dyn Widget>> = vec![];
@@ -146,7 +146,7 @@ impl NumbersTextBox {
             )
             .without_sides(ctx);
 
-            let up_btn_x = x.clone().plus(self.tb.base.get_scl_width());
+            let up_btn_x = x.clone().plus(self.tb.base.get_dyn_width());
             let down_btn_x = up_btn_x.clone().plus_fixed(1);
             out.push(Box::new(up_btn.at(up_btn_x, y.clone())));
             out.push(Box::new(down_btn.at(down_btn_x, y.clone())));

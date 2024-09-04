@@ -85,7 +85,7 @@ impl Button {
         *self.sides.borrow_mut() = sides;
         let text = self.button_text();
         self.base
-            .set_scl_width(DynVal::new_fixed(text.chars().count() as i32));
+            .set_dyn_width(DynVal::new_fixed(text.chars().count() as i32));
         self.base.set_content_from_string(ctx, &text);
         self
     }

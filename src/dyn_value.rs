@@ -1,7 +1,3 @@
-// TODO multiplier...
-//  - then can get rid of minus field
-//  - int or float multiplier?? int is nice for fixed, float is nice for flex
-
 // DynVal represents a dynamic x or y screen position value which scales based on the
 // size of the parent element. The value is a fixed number of characters
 // (fixed) plus the flexible fraction of the parent element size (flex).
@@ -85,6 +81,13 @@ impl DynVal {
 
         let multiplied = pre_multiplied as f64 * self.mul;
         f64::round(multiplied) as i32
+    }
+
+    // get the bounds of this dynamic value
+    pub fn get_bounds(&self) -> (i32, i32) {
+        let min = self.get_val(0);
+        let max = self.get_val(u16::MAX);
+        (min, max)
     }
 
     pub fn neg(&self) -> DynVal {

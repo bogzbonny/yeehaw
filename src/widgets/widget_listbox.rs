@@ -164,7 +164,7 @@ impl ListBox {
 
     pub fn with_lines_per_item(self, ctx: &Context, lines: usize) -> Self {
         *self.lines_per_item.borrow_mut() = lines;
-        self.base.set_scl_height(DynVal::new_fixed(
+        self.base.set_dyn_height(DynVal::new_fixed(
             self.entries.borrow().len() as i32 * lines as i32,
         ));
         self.update_content(ctx);
@@ -184,18 +184,18 @@ impl ListBox {
     }
 
     pub fn with_width(self, ctx: &Context, width: DynVal) -> Self {
-        self.base.set_scl_width(width);
+        self.base.set_dyn_width(width);
         self.update_content(ctx);
         self
     }
     pub fn with_height(self, ctx: &Context, height: DynVal) -> Self {
-        self.base.set_scl_height(height);
+        self.base.set_dyn_height(height);
         self.update_content(ctx);
         self
     }
     pub fn with_size(self, ctx: &Context, width: DynVal, height: DynVal) -> Self {
-        self.base.set_scl_width(width);
-        self.base.set_scl_height(height);
+        self.base.set_dyn_width(width);
+        self.base.set_dyn_height(height);
         self.update_content(ctx);
         self
     }
@@ -210,19 +210,19 @@ impl ListBox {
         if let VerticalSBPositions::None = position {
             return Widgets(vec![Box::new(self)]);
         }
-        let height = self.base.get_scl_height();
+        let height = self.base.get_dyn_height();
         let content_height = self.base.content_height();
         let mut sb =
             VerticalScrollbar::new(hat, height, content_height).with_styles(Self::STYLE_SCROLLBAR);
         if let VerticalSBPositions::ToTheLeft = position {
             sb = sb.at(
-                self.base.get_scl_start_x().minus_fixed(1),
-                self.base.get_scl_start_y().clone(),
+                self.base.get_dyn_start_x().minus_fixed(1),
+                self.base.get_dyn_start_y().clone(),
             );
         } else if let VerticalSBPositions::ToTheRight = position {
             sb = sb.at(
-                self.base.get_scl_start_x().plus(self.base.get_scl_width()),
-                self.base.get_scl_start_y(),
+                self.base.get_dyn_start_x().plus(self.base.get_dyn_width()),
+                self.base.get_dyn_start_y(),
             );
         }
 

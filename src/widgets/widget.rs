@@ -31,8 +31,8 @@ use {
 // operation of the WidgetPane Element.
 //
 //let Ok(v) = serde_json::to_string(&zafs) else {
-pub const ATTR_SCL_WIDTH: &str = "widget_scl_width";
-pub const ATTR_SCL_HEIGHT: &str = "widget_scl_height";
+pub const ATTR_SCL_WIDTH: &str = "widget_dyn_width";
+pub const ATTR_SCL_HEIGHT: &str = "widget_dyn_height";
 pub const ATTR_SCL_LOC_X: &str = "widget_dyn_loc_x";
 pub const ATTR_SCL_LOC_Y: &str = "widget_dyn_loc_y";
 pub const ATTR_SELECTABILITY: &str = "widget_selectability";
@@ -332,19 +332,19 @@ impl WidgetBase {
             pane,
             styles: Rc::new(RefCell::new(sty)),
         };
-        wb.set_scl_width(width);
-        wb.set_scl_height(height);
+        wb.set_dyn_width(width);
+        wb.set_dyn_height(height);
         wb.set_attr_selectability(Selectability::Ready);
         wb
     }
 
     pub fn at(&mut self, pos_x: DynVal, pos_y: DynVal) {
-        let width = self.get_scl_width();
-        let height = self.get_scl_height();
-        self.set_scl_start_x(pos_x);
-        self.set_scl_start_y(pos_y);
-        self.set_scl_width(width);
-        self.set_scl_height(height);
+        let width = self.get_dyn_width();
+        let height = self.get_dyn_height();
+        self.set_dyn_start_x(pos_x);
+        self.set_dyn_start_y(pos_y);
+        self.set_dyn_width(width);
+        self.set_dyn_height(height);
     }
 
     //-------------------------
@@ -353,56 +353,56 @@ impl WidgetBase {
         self.pane.set_self_receivable_events(evs)
     }
 
-    pub fn set_scl_width(&self, w: DynVal) {
+    pub fn set_dyn_width(&self, w: DynVal) {
         let mut loc = self.pane.get_dyn_location_set().borrow().clone();
         loc.set_width(w);
         self.pane.set_dyn_location_set(loc);
     }
 
-    pub fn set_scl_height(&self, h: DynVal) {
+    pub fn set_dyn_height(&self, h: DynVal) {
         let mut loc = self.pane.get_dyn_location_set().borrow().clone();
         loc.set_height(h);
         self.pane.set_dyn_location_set(loc);
     }
 
-    pub fn set_scl_start_x(&self, x: DynVal) {
+    pub fn set_dyn_start_x(&self, x: DynVal) {
         let mut loc = self.pane.get_dyn_location_set().borrow().clone();
         loc.set_start_x(x);
         self.pane.set_dyn_location_set(loc);
     }
 
-    pub fn set_scl_start_y(&self, y: DynVal) {
+    pub fn set_dyn_start_y(&self, y: DynVal) {
         let mut loc = self.pane.get_dyn_location_set().borrow().clone();
         loc.set_start_y(y);
         self.pane.set_dyn_location_set(loc);
     }
 
-    pub fn set_scl_end_x(&self, x: DynVal) {
+    pub fn set_dyn_end_x(&self, x: DynVal) {
         let mut loc = self.pane.get_dyn_location_set().borrow().clone();
         loc.set_end_x(x);
         self.pane.set_dyn_location_set(loc);
     }
 
-    pub fn set_scl_end_y(&self, y: DynVal) {
+    pub fn set_dyn_end_y(&self, y: DynVal) {
         let mut loc = self.pane.get_dyn_location_set().borrow().clone();
         loc.set_end_y(y);
         self.pane.set_dyn_location_set(loc);
     }
 
-    pub fn get_scl_start_x(&self) -> DynVal {
-        self.pane.get_dyn_location_set().borrow().get_scl_start_x()
+    pub fn get_dyn_start_x(&self) -> DynVal {
+        self.pane.get_dyn_location_set().borrow().get_dyn_start_x()
     }
 
-    pub fn get_scl_start_y(&self) -> DynVal {
-        self.pane.get_dyn_location_set().borrow().get_scl_start_y()
+    pub fn get_dyn_start_y(&self) -> DynVal {
+        self.pane.get_dyn_location_set().borrow().get_dyn_start_y()
     }
 
-    pub fn get_scl_end_x(&self) -> DynVal {
-        self.pane.get_dyn_location_set().borrow().get_scl_end_x()
+    pub fn get_dyn_end_x(&self) -> DynVal {
+        self.pane.get_dyn_location_set().borrow().get_dyn_end_x()
     }
 
-    pub fn get_scl_end_y(&self) -> DynVal {
-        self.pane.get_dyn_location_set().borrow().get_scl_end_y()
+    pub fn get_dyn_end_y(&self) -> DynVal {
+        self.pane.get_dyn_location_set().borrow().get_dyn_end_y()
     }
 
     pub fn get_width(&self, ctx: &Context) -> usize {
@@ -413,12 +413,12 @@ impl WidgetBase {
         self.pane.get_dyn_location_set().borrow().get_height(ctx)
     }
 
-    pub fn get_scl_width(&self) -> DynVal {
-        self.pane.get_dyn_location_set().borrow().get_scl_width()
+    pub fn get_dyn_width(&self) -> DynVal {
+        self.pane.get_dyn_location_set().borrow().get_dyn_width()
     }
 
-    pub fn get_scl_height(&self) -> DynVal {
-        self.pane.get_dyn_location_set().borrow().get_scl_height()
+    pub fn get_dyn_height(&self) -> DynVal {
+        self.pane.get_dyn_location_set().borrow().get_dyn_height()
     }
 
     pub fn scroll_up(&self, ctx: &Context) {

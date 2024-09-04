@@ -215,16 +215,16 @@ impl TextBox {
     }
 
     pub fn with_width(self, width: DynVal) -> Self {
-        self.base.set_scl_width(width);
+        self.base.set_dyn_width(width);
         self
     }
     pub fn with_height(self, height: DynVal) -> Self {
-        self.base.set_scl_height(height);
+        self.base.set_dyn_height(height);
         self
     }
     pub fn with_size(self, width: DynVal, height: DynVal) -> Self {
-        self.base.set_scl_width(width);
-        self.base.set_scl_height(height);
+        self.base.set_dyn_width(width);
+        self.base.set_dyn_height(height);
         self
     }
 
@@ -334,8 +334,8 @@ impl TextBox {
     }
 
     pub fn to_widgets(mut self, hat: &SortingHat, ctx: &Context) -> Widgets {
-        let (x, y) = (self.base.get_scl_start_x(), self.base.get_scl_start_y());
-        let (h, w) = (self.base.get_scl_height(), self.base.get_scl_width());
+        let (x, y) = (self.base.get_dyn_start_x(), self.base.get_dyn_start_y());
+        let (h, w) = (self.base.get_dyn_height(), self.base.get_dyn_width());
         let mut out: Vec<Box<dyn Widget>> = vec![];
 
         let ln_tb = if *self.line_numbered.borrow() {
@@ -354,8 +354,8 @@ impl TextBox {
             out.push(Box::new(ln_tb.clone()));
 
             // reduce the width of the main textbox
-            self.base.set_scl_start_x(x.clone().plus_fixed(lnw as i32));
-            self.base.set_scl_width(w.clone().minus_fixed(lnw as i32));
+            self.base.set_dyn_start_x(x.clone().plus_fixed(lnw as i32));
+            self.base.set_dyn_width(w.clone().minus_fixed(lnw as i32));
 
             self.line_number_tb = Rc::new(RefCell::new(Some(ln_tb.clone())));
             Some(ln_tb)
@@ -588,13 +588,13 @@ impl TextBox {
             let last_lnw = ln_tb.base.get_width(ctx);
             if lnw != last_lnw {
                 let diff_lnw = lnw as i32 - last_lnw as i32;
-                let new_tb_width = self.base.get_scl_width().minus_fixed(diff_lnw);
+                let new_tb_width = self.base.get_dyn_width().minus_fixed(diff_lnw);
                 self.base
-                    .set_scl_start_x(self.base.get_scl_start_x().plus_fixed(diff_lnw));
-                self.base.set_scl_width(new_tb_width);
+                    .set_dyn_start_x(self.base.get_dyn_start_x().plus_fixed(diff_lnw));
+                self.base.set_dyn_width(new_tb_width);
             }
             ln_tb.set_text(lns);
-            ln_tb.base.set_scl_width(DynVal::new_fixed(lnw as i32));
+            ln_tb.base.set_dyn_width(DynVal::new_fixed(lnw as i32));
             ln_tb.base.set_content_y_offset(ctx, y_offset);
         }
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {

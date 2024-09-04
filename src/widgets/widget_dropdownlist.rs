@@ -115,7 +115,7 @@ impl DropdownList {
             selection_made_fn: Rc::new(RefCell::new(selection_made_fn)),
             scrollbar: sb,
         };
-        d.base.set_scl_width(d.calculate_scl_width());
+        d.base.set_dyn_width(d.calculate_dyn_width());
         d
     }
 
@@ -134,13 +134,13 @@ impl DropdownList {
 
     pub fn with_width(self, width: DynVal) -> Self {
         *self.specified_width.borrow_mut() = Some(width);
-        self.base.set_scl_width(self.calculate_scl_width());
+        self.base.set_dyn_width(self.calculate_dyn_width());
         self
     }
 
     pub fn with_left_padding(self, padding: usize) -> Self {
         *self.left_padding.borrow_mut() = padding;
-        self.base.set_scl_width(self.calculate_scl_width());
+        self.base.set_dyn_width(self.calculate_dyn_width());
         self
     }
 
@@ -176,7 +176,7 @@ impl DropdownList {
         );
     }
 
-    pub fn calculate_scl_width(&self) -> DynVal {
+    pub fn calculate_dyn_width(&self) -> DynVal {
         if let Some(ref w) = *self.specified_width.borrow() {
             return w.clone();
         }
@@ -196,7 +196,7 @@ impl DropdownList {
         let entry = self.entries.borrow()[i].clone();
         let entry_len = entry.chars().count();
         //let width = self.base.get_width(ctx);
-        let width = self.calculate_scl_width().get_val(ctx.get_width());
+        let width = self.calculate_dyn_width().get_val(ctx.get_width());
         let left_padding = *self.left_padding.borrow();
         let right_padding = width.saturating_sub(entry_len as i32 + left_padding as i32);
         let pad_left = " ".repeat(left_padding);
@@ -238,7 +238,7 @@ impl DropdownList {
         *self.open.borrow_mut() = true;
         *self.cursor.borrow_mut() = *self.selected.borrow();
         let h = self.expanded_height() as i32;
-        self.base.set_scl_height(DynVal::new_fixed(h));
+        self.base.set_dyn_height(DynVal::new_fixed(h));
 
         // must set the content for the offsets to be correct
         self.base.set_content_from_string(ctx, &self.text(ctx));
@@ -250,7 +250,7 @@ impl DropdownList {
         *self.base.pane.content_view_offset_y.borrow_mut() = 0;
         self.scrollbar
             .external_change(ctx, 0, self.base.content_height());
-        self.base.set_scl_height(DynVal::new_fixed(1));
+        self.base.set_dyn_height(DynVal::new_fixed(1));
         if !escaped && *self.selected.borrow() != *self.cursor.borrow() {
             *self.selected.borrow_mut() = *self.cursor.borrow();
             (self.selection_made_fn.borrow_mut())(

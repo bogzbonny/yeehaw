@@ -50,11 +50,11 @@ impl DynLocation {
         }
     }
 
-    pub fn get_scl_height(&self) -> DynVal {
+    pub fn get_dyn_height(&self) -> DynVal {
         self.end_y.clone().minus(self.start_y.clone())
     }
 
-    pub fn get_scl_width(&self) -> DynVal {
+    pub fn get_dyn_width(&self) -> DynVal {
         self.end_x.clone().minus(self.start_x.clone())
     }
 
@@ -273,30 +273,30 @@ impl DynLocationSet {
         self.l.height(ctx)
     }
 
-    pub fn get_scl_start_x(&self) -> DynVal {
+    pub fn get_dyn_start_x(&self) -> DynVal {
         self.l.start_x.clone()
     }
 
-    pub fn get_scl_start_y(&self) -> DynVal {
+    pub fn get_dyn_start_y(&self) -> DynVal {
         self.l.start_y.clone()
     }
 
-    pub fn get_scl_end_x(&self) -> DynVal {
+    pub fn get_dyn_end_x(&self) -> DynVal {
         self.l.end_x.clone()
     }
 
-    pub fn get_scl_end_y(&self) -> DynVal {
+    pub fn get_dyn_end_y(&self) -> DynVal {
         self.l.end_y.clone()
     }
 
     // convenience function to get the height of the primary location
-    pub fn get_scl_height(&self) -> DynVal {
-        self.l.get_scl_height()
+    pub fn get_dyn_height(&self) -> DynVal {
+        self.l.get_dyn_height()
     }
 
     // convenience function to get the width of the primary location
-    pub fn get_scl_width(&self) -> DynVal {
-        self.l.get_scl_width()
+    pub fn get_dyn_width(&self) -> DynVal {
+        self.l.get_dyn_width()
     }
 
     // Contains checks if the given location falls in the primary
