@@ -1,9 +1,8 @@
 use {
     super::{common, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Context, DrawChPos, Element, ElementID, Event, EventResponses, Priority,
-        ReceivableEventChanges, RgbColour, DynLocationSet, DynVal, SortingHat, Style,
-        UpwardPropagator,
+        Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
+        Priority, ReceivableEventChanges, RgbColour, SortingHat, Style, UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -54,12 +53,12 @@ impl Label {
         }
     }
 
-    pub fn get_width(&self, ctx: &Context) -> usize {
-        self.base.get_width(ctx)
+    pub fn get_width_val(&self, ctx: &Context) -> usize {
+        self.base.get_width_val(ctx)
     }
 
-    pub fn get_height(&self, ctx: &Context) -> usize {
-        self.base.get_height(ctx)
+    pub fn get_height_val(&self, ctx: &Context) -> usize {
+        self.base.get_height_val(ctx)
     }
 
     pub fn with_left_justification(self) -> Self {

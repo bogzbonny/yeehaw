@@ -497,7 +497,7 @@ impl TextBox {
         let mut max_x = 0;
         let (mut x, mut y) = (0, 0); // working x and y position in the textbox
         for (abs_pos, r) in rs.iter().enumerate() {
-            if *self.wordwrap.borrow() && x == self.base.get_width(ctx) {
+            if *self.wordwrap.borrow() && x == self.base.get_width_val(ctx) {
                 y += 1;
                 x = 0;
                 if x > max_x {
@@ -585,7 +585,7 @@ impl TextBox {
         let resp = EventResponse::default();
         if let Some(ln_tb) = self.line_number_tb.borrow().as_ref() {
             let (lns, lnw) = self.get_line_numbers(ctx);
-            let last_lnw = ln_tb.base.get_width(ctx);
+            let last_lnw = ln_tb.base.get_width_val(ctx);
             if lnw != last_lnw {
                 let diff_lnw = lnw as i32 - last_lnw as i32;
                 let new_tb_width = self.base.get_dyn_width().minus_fixed(diff_lnw);

@@ -283,7 +283,7 @@ impl ListBox {
         };
         let (start_y, end_y) = self.get_content_y_range_for_item_index(cursor);
         let y_offset = *self.base.pane.content_view_offset_y.borrow();
-        let height = self.base.get_height(ctx);
+        let height = self.base.get_height_val(ctx);
 
         if end_y >= y_offset + height {
             self.base.correct_offsets_to_view_position(ctx, 0, end_y);
@@ -322,7 +322,7 @@ impl ListBox {
         for i in 0..entries_len {
             content += &self.get_text_for_entry(
                 i,
-                self.base.get_width(ctx),
+                self.base.get_width_val(ctx),
                 *self.lines_per_item.borrow(),
             );
             if i < entries_len - 1 {
@@ -369,7 +369,7 @@ impl ListBox {
 
             // update the rest of the lines
             let entries_len = self.entries.borrow().len();
-            for i in entries_len * *self.lines_per_item.borrow()..self.base.get_height(ctx) {
+            for i in entries_len * *self.lines_per_item.borrow()..self.base.get_height_val(ctx) {
                 let sty = self.base.get_current_style();
                 self.base
                     .pane
@@ -542,7 +542,7 @@ impl Element for ListBox {
 
                         // check if this should be a scrollbar event
                         if let Some(sb) = self.scrollbar.borrow().as_ref() {
-                            if y > 0 && x == self.base.get_width(ctx).saturating_sub(1) {
+                            if y > 0 && x == self.base.get_width_val(ctx).saturating_sub(1) {
                                 if dragging {
                                     if sb.get_selectability() != Selectability::Selected {
                                         let _ = sb.set_selectability(ctx, Selectability::Selected);

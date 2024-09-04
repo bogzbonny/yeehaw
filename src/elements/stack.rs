@@ -22,8 +22,26 @@ impl VerticalStack {
     // add an element to the end of the stack resizing the other elements
     // in order to fit the new element
     pub fn push(&mut self, el: Rc<RefCell<dyn Element>>) {
-        // determine the min and max dimension of the new element
-        let (min, max) = el.borrow().get_dyn_location_set().borrow().get_height();
+        let mut loc = el.borrow().get_dyn_location_set().borrow().clone();
+
+        // ignore the x-dimension everything must fit fully
+        loc.set_start_x(0.0.into()); // 0
+        loc.set_end_x(1.0.into()); // 100%
+
+        //
+        let height = loc.get_dyn_height();
+        loc.set_start_y(0.into());
+        loc.set_dyn_height(height);
+
+        if !self.els.is_empty() {
+            // determine the min and max dimension of the new element
+            let (min, max) = el
+                .borrow()
+                .get_dyn_location_set()
+                .borrow()
+                .get_dyn_height()
+                .get_bounds();
+        }
 
         self.els.push(el.clone());
         self.pane.add_element(el);

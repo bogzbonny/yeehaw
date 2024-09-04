@@ -29,7 +29,23 @@ impl Default for DynVal {
     }
 }
 
+impl From<i32> for DynVal {
+    fn from(fixed: i32) -> Self {
+        DynVal::new_fixed(fixed)
+    }
+}
+
+impl From<f64> for DynVal {
+    fn from(flex: f64) -> Self {
+        DynVal::new_flex(flex)
+    }
+}
+
 impl DynVal {
+    pub fn new<T: Into<DynVal>>(val: T) -> Self {
+        val.into()
+    }
+
     pub fn new_fixed(fixed: i32) -> Self {
         DynVal {
             fixed,

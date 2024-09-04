@@ -58,11 +58,11 @@ impl DynLocation {
         self.end_x.clone().minus(self.start_x.clone())
     }
 
-    pub fn set_width(&mut self, width: DynVal) {
+    pub fn set_dyn_width(&mut self, width: DynVal) {
         self.end_x = self.start_x.clone().plus(width);
     }
 
-    pub fn set_height(&mut self, height: DynVal) {
+    pub fn set_dyn_height(&mut self, height: DynVal) {
         self.end_y = self.start_y.clone().plus(height);
     }
 
@@ -214,13 +214,13 @@ impl DynLocationSet {
     }
 
     // convenience function to set the width of the primary location
-    pub fn set_width(&mut self, width: DynVal) {
-        self.l.set_width(width);
+    pub fn set_dyn_width(&mut self, width: DynVal) {
+        self.l.set_dyn_width(width);
     }
 
     // convenience function to set the height of the primary location
-    pub fn set_height(&mut self, height: DynVal) {
-        self.l.set_height(height);
+    pub fn set_dyn_height(&mut self, height: DynVal) {
+        self.l.set_dyn_height(height);
     }
 
     // convenience function to set the start x of the primary location
@@ -264,12 +264,12 @@ impl DynLocationSet {
     }
 
     // convenience function to get the width of the primary location
-    pub fn get_width(&self, ctx: &Context) -> usize {
+    pub fn get_width_val(&self, ctx: &Context) -> usize {
         self.l.width(ctx)
     }
 
     // convenience function to get the height of the primary location
-    pub fn get_height(&self, ctx: &Context) -> usize {
+    pub fn get_height_val(&self, ctx: &Context) -> usize {
         self.l.height(ctx)
     }
 

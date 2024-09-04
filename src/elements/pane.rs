@@ -93,12 +93,12 @@ impl Pane {
     }
 
     pub fn with_width(self, w: DynVal) -> Pane {
-        self.loc.borrow_mut().l.set_width(w);
+        self.loc.borrow_mut().l.set_dyn_width(w);
         self
     }
 
     pub fn with_height(self, h: DynVal) -> Pane {
-        self.loc.borrow_mut().l.set_height(h);
+        self.loc.borrow_mut().l.set_dyn_height(h);
         self
     }
 

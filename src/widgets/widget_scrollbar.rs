@@ -101,7 +101,7 @@ impl VerticalScrollbar {
         })
     }
 
-    pub fn set_height(
+    pub fn set_dyn_height(
         &self, view_height: DynVal, scrollbar_length: DynVal, scrollable_height: usize,
     ) {
         *self.scrollable_view_chs.borrow_mut() = view_height;
@@ -169,7 +169,7 @@ impl HorizontalScrollbar {
         })
     }
 
-    pub fn set_width(&self, view_width: DynVal, scrollbar_length: DynVal, scrollable_width: usize) {
+    pub fn set_dyn_width(&self, view_width: DynVal, scrollbar_length: DynVal, scrollable_width: usize) {
         *self.scrollable_view_chs.borrow_mut() = view_width;
         self.base.set_dyn_width(scrollbar_length.clone());
         *self.scrollbar_length_chs.borrow_mut() = scrollbar_length;

@@ -1,8 +1,8 @@
 use {
     crate::{
-        Context, DrawCh, DrawChPos, Element, ElementID, Event, EventResponses, Pane, ParentPane,
-        Priority, ReceivableEventChanges, RgbColour, DynLocation, DynLocationSet, DynVal,
-        SortingHat, Style, UpwardPropagator, ZIndex,
+        Context, DrawCh, DrawChPos, DynLocation, DynLocationSet, DynVal, Element, ElementID, Event,
+        EventResponses, Pane, ParentPane, Priority, ReceivableEventChanges, RgbColour, SortingHat,
+        Style, UpwardPropagator, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::collections::HashMap,
@@ -248,7 +248,7 @@ impl MenuBar {
             // adjust all the widths in the element organizer
             for it in primary_items {
                 let mut loc = self.pane.eo.get_location(&it.id()).expect("missing item").l;
-                loc.set_width(max_width.clone());
+                loc.set_dyn_width(max_width.clone());
                 self.pane.eo.update_el_primary_location(it.id(), loc);
             }
         }
@@ -506,7 +506,7 @@ impl MenuBar {
                     }
                 }
             };
-            loc.set_width(max_width.clone());
+            loc.set_dyn_width(max_width.clone());
             self.pane
                 .eo
                 .update_el_primary_location(it.id(), loc.clone());

@@ -1,9 +1,9 @@
 use {
     super::Label,
     crate::{
-        event::Event, Context, DrawCh, DrawChPos, DrawChs2D, Element, ElementID, EventResponse,
-        EventResponses, Pane, Priority, ReceivableEventChanges, DynLocation, DynLocationSet,
-        DynVal, SortingHat, Style, UpwardPropagator, ZIndex,
+        event::Event, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal,
+        Element, ElementID, EventResponse, EventResponses, Pane, Priority, ReceivableEventChanges,
+        SortingHat, Style, UpwardPropagator, ZIndex,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -192,7 +192,7 @@ impl Widgets {
 
     //adds the label at the position provided
     pub fn add_label(&mut self, ctx: &Context, l: Label, p: LabelPosition) {
-        let (x, y) = self.label_position_to_xy(p, l.get_width(ctx), l.get_height(ctx));
+        let (x, y) = self.label_position_to_xy(p, l.get_width_val(ctx), l.get_height_val(ctx));
         self.0.push(Box::new(l.at(x, y)));
     }
 
@@ -355,13 +355,13 @@ impl WidgetBase {
 
     pub fn set_dyn_width(&self, w: DynVal) {
         let mut loc = self.pane.get_dyn_location_set().borrow().clone();
-        loc.set_width(w);
+        loc.set_dyn_width(w);
         self.pane.set_dyn_location_set(loc);
     }
 
     pub fn set_dyn_height(&self, h: DynVal) {
         let mut loc = self.pane.get_dyn_location_set().borrow().clone();
-        loc.set_height(h);
+        loc.set_dyn_height(h);
         self.pane.set_dyn_location_set(loc);
     }
 
@@ -405,12 +405,15 @@ impl WidgetBase {
         self.pane.get_dyn_location_set().borrow().get_dyn_end_y()
     }
 
-    pub fn get_width(&self, ctx: &Context) -> usize {
-        self.pane.get_dyn_location_set().borrow().get_width(ctx)
+    pub fn get_width_val(&self, ctx: &Context) -> usize {
+        self.pane.get_dyn_location_set().borrow().get_width_val(ctx)
     }
 
-    pub fn get_height(&self, ctx: &Context) -> usize {
-        self.pane.get_dyn_location_set().borrow().get_height(ctx)
+    pub fn get_height_val(&self, ctx: &Context) -> usize {
+        self.pane
+            .get_dyn_location_set()
+            .borrow()
+            .get_height_val(ctx)
     }
 
     pub fn get_dyn_width(&self) -> DynVal {
@@ -451,8 +454,8 @@ impl WidgetBase {
 
     pub fn set_content_x_offset(&self, ctx: &Context, x: usize) {
         *self.pane.content_view_offset_x.borrow_mut() =
-            if x > self.content_width() - self.get_width(ctx) {
-                self.content_width() - self.get_width(ctx)
+            if x > self.content_width() - self.get_width_val(ctx) {
+                self.content_width() - self.get_width_val(ctx)
             } else {
                 x
             };
@@ -460,8 +463,8 @@ impl WidgetBase {
 
     pub fn set_content_y_offset(&self, ctx: &Context, y: usize) {
         *self.pane.content_view_offset_y.borrow_mut() =
-            if y > self.content_height() - self.get_height(ctx) {
-                self.content_height() - self.get_height(ctx)
+            if y > self.content_height() - self.get_height_val(ctx) {
+                self.content_height() - self.get_height_val(ctx)
             } else {
                 y
             };
@@ -473,8 +476,8 @@ impl WidgetBase {
         let mut rs: Vec<Vec<char>> = Vec::new();
         let sty = self.get_current_style();
 
-        let mut width = self.get_width(ctx);
-        let mut height = self.get_height(ctx);
+        let mut width = self.get_width_val(ctx);
+        let mut height = self.get_height_val(ctx);
         for line in lines {
             if width < line.len() {
                 width = line.len();
@@ -514,9 +517,9 @@ impl WidgetBase {
         let view_offset_x = *self.pane.content_view_offset_x.borrow();
 
         // set y offset if cursor out of bounds
-        if y >= view_offset_y + self.get_height(ctx) {
+        if y >= view_offset_y + self.get_height_val(ctx) {
             //debug!("cor1");
-            self.set_content_y_offset(ctx, y - self.get_height(ctx) + 1);
+            self.set_content_y_offset(ctx, y - self.get_height_val(ctx) + 1);
         } else if y < view_offset_y {
             //debug!("cor2");
             self.set_content_y_offset(ctx, y);
@@ -524,23 +527,23 @@ impl WidgetBase {
 
         // correct the offset if the offset is now showing lines that don't exist in
         // the content
-        //if view_offset_y + self.get_height(ctx) > self.content_height() - 1 {
-        if view_offset_y + self.get_height(ctx) > self.content_height() {
+        //if view_offset_y + self.get_height_val(ctx) > self.content_height() - 1 {
+        if view_offset_y + self.get_height_val(ctx) > self.content_height() {
             //debug!("cor3");
             self.set_content_y_offset(ctx, self.content_height());
         }
 
         // set x offset if cursor out of bounds
-        if x >= view_offset_x + self.get_width(ctx) {
-            self.set_content_x_offset(ctx, x - self.get_width(ctx) + 1);
+        if x >= view_offset_x + self.get_width_val(ctx) {
+            self.set_content_x_offset(ctx, x - self.get_width_val(ctx) + 1);
         } else if x < view_offset_x {
             self.set_content_x_offset(ctx, x);
         }
 
         // correct the offset if the offset is now showing characters to the right
         // which don't exist in the content.
-        //if view_offset_x + self.get_width(ctx) > self.content_width() - 1 {
-        if view_offset_x + self.get_width(ctx) > self.content_width() {
+        //if view_offset_x + self.get_width_val(ctx) > self.content_width() - 1 {
+        if view_offset_x + self.get_width_val(ctx) > self.content_width() {
             self.set_content_x_offset(ctx, self.content_width());
         }
     }
@@ -596,8 +599,8 @@ impl Element for WidgetBase {
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let sty = self.get_current_style(); // XXX this is different than standard_pane draw... unless this should be set somewhere else
-        let h = self.get_height(ctx);
-        let w = self.get_width(ctx);
+        let h = self.get_height_val(ctx);
+        let w = self.get_width_val(ctx);
         let view_offset_y = *self.pane.content_view_offset_y.borrow();
         let view_offset_x = *self.pane.content_view_offset_x.borrow();
         let content_height = self.pane.content.borrow().height();
