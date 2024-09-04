@@ -1,5 +1,3 @@
-use crate::Context;
-
 // DynVal represents a dynamic x or y screen position value which scales based on the
 // size of the parent element. The value is a fixed number of characters
 // (fixed) plus the flexible fraction of the parent element size (flex).
@@ -115,6 +113,35 @@ impl DynVal {
         let fixed_amount = self.get_val(0);
         let val = self.get_val(max_size);
         val - fixed_amount
+    }
+
+    pub fn is_flat(&self) -> bool {
+        self.plus.is_empty() && self.plus_min_of.is_empty() && self.plus_max_of.is_empty()
+    }
+
+    // simplify the calculation of the DynVal
+    // recursive function. Add any plus values to the main value if they are flat
+    pub fn flatten_internal(&mut self) {
+        for i in 0..self.plus.len() {
+            self.plus[i].flatten_internal();
+        }
+        for i in 0..self.plus_min_of.len() {
+            self.plus_min_of[i].flatten_internal();
+        }
+        for i in 0..self.plus_max_of.len() {
+            self.plus_max_of[i].flatten_internal();
+        }
+
+        let mut i = 0;
+        while i < self.plus.len() {
+            if self.plus[i].is_flat() {
+                self.fixed += f64::round(self.plus[i].mul * self.plus[i].fixed as f64) as i32;
+                self.flex += self.plus[i].mul * self.plus[i].flex;
+                self.plus.remove(i);
+            } else {
+                i += 1;
+            }
+        }
     }
 
     pub fn neg(&self) -> DynVal {

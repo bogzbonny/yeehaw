@@ -33,7 +33,9 @@ async fn main() -> Result<(), Error> {
 
     let hstack__ = hstack.clone();
     let remove_button_click_fn = Box::new(move |ctx_| {
-        hstack__.remove(&ctx_, 0);
+        if !hstack__.is_empty() {
+            hstack__.remove(&ctx_, 0);
+        }
         EventResponses::default()
     });
     let remove_button = Button::new(

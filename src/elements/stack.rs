@@ -50,6 +50,10 @@ impl VerticalStack {
         self.pane.clear_elements();
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.els.borrow().is_empty()
+    }
+
     // get the average value of the elements in the stack
     // this is useful for pushing new elements with an even size
     // to the other elements
@@ -171,6 +175,10 @@ impl HorizontalStack {
         self.pane.clear_elements();
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.els.borrow().is_empty()
+    }
+
     // get the average value of the elements in the stack
     // this is useful for pushing new elements with an even size
     // to the other elements
@@ -215,14 +223,14 @@ impl HorizontalStack {
 
         //debug!("normalize_locations, pre widths:",);
         //for w in widths.iter() {
-        //    debug!("\t{:?}", w.get_val(ctx.get_width()));
+        //    debug!("\t{:+?}", w);
         //}
 
         Self::normalize_widths_to_context(ctx, &mut widths);
 
         //debug!("post normalize_widths_to_context widths:",);
         //for w in widths.iter() {
-        //    debug!("\t{:?}", w.get_val(ctx.get_width()));
+        //    debug!("\t{:+?}", w);
         //}
 
         // set all the locations based on the widths
@@ -255,34 +263,23 @@ impl HorizontalStack {
 // ctx_size is either the height or width of the context
 // vals is either element heights or widths to be adjusted
 fn adjust_els_to_fit_ctx_size(ctx_size: u16, vals: &mut [DynVal]) {
-    //debug!("adjust_els_to_fit_ctx_size, ctx_size: {}", ctx_size);
-    //debug!("vals: {:+?}", vals);
-
+    vals.iter_mut().for_each(|h| h.flatten_internal());
     for _i in 0..30 {
-        //debug!("iter: {}", i);
         let total_size: i32 = vals.iter().map(|h| h.get_val(ctx_size)).sum();
-        //debug!("\ttotal_size {}", total_size);
         if total_size == ctx_size as i32 {
             break;
         }
         let total_static: i32 = vals.iter().map(|h| h.get_val(0)).sum();
-        //debug!("\ttotal_static {}", total_size);
         let total_flex: i32 = total_size - total_static;
-        //debug!("\ttotal_flex {}", total_flex);
         if total_flex == 0 {
             break;
         }
 
         let next_change = (ctx_size as i32 - total_size) as f64 / (ctx_size as f64);
-        //debug!("\tnext_change {}", next_change);
         for h in vals.iter_mut() {
             let h_flex = h.get_flex_val_portion_for_ctx(ctx_size);
-            //debug!("\t\th_flex portion {}", h_flex);
             let h_flex_change = next_change * h_flex as f64 / total_flex as f64;
-            //debug!("\t\th_flex_change {}", h_flex_change);
-            //debug!("\t\th.flex start {}", h.flex);
             h.flex += h_flex_change;
-            //debug!("\t\th.flex end {}", h.flex);
         }
     }
 }
