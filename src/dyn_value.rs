@@ -1,3 +1,5 @@
+use crate::Context;
+
 // DynVal represents a dynamic x or y screen position value which scales based on the
 // size of the parent element. The value is a fixed number of characters
 // (fixed) plus the flexible fraction of the parent element size (flex).
@@ -104,6 +106,15 @@ impl DynVal {
         let min = self.get_val(0);
         let max = self.get_val(u16::MAX);
         (min, max)
+    }
+
+    // get the flexible absolute value for the context provided
+    // this is the value of the flex portion of the DynVal
+    // without the fixed portion.
+    pub fn get_flex_val_portion_for_ctx(&self, max_size: u16) -> i32 {
+        let fixed_amount = self.get_val(0);
+        let val = self.get_val(max_size);
+        val - fixed_amount
     }
 
     pub fn neg(&self) -> DynVal {

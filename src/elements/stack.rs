@@ -1,7 +1,7 @@
 use {
     crate::{
         Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
-        ParentPane, Priority, ReceivableEventChanges, SortingHat, UpwardPropagator,
+        ParentPane, Priority, ReceivableEventChanges, Size, SortingHat, UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -53,19 +53,24 @@ impl VerticalStack {
     // get the average value of the elements in the stack
     // this is useful for pushing new elements with an even size
     // to the other elements
-    pub fn avg_flex_height(&self) -> DynVal {
+    pub fn avg_height(&self) -> DynVal {
         let els = self.els.borrow();
-        let avg_flex = els
+        if els.is_empty() {
+            return 1.0.into();
+        }
+        let virtual_size = 1000;
+        let virtual_context = Context::new(Size::new(virtual_size, virtual_size), true);
+        let avg = els
             .iter()
             .map(|el| {
                 el.borrow()
                     .get_dyn_location_set()
                     .borrow()
-                    .get_dyn_height()
-                    .flex
+                    .get_height_val(&virtual_context)
             })
-            .sum::<f64>()
+            .sum::<usize>() as f64
             / els.len() as f64;
+        let avg_flex = avg / virtual_size as f64;
         DynVal::new_flex(avg_flex)
     }
 
@@ -129,6 +134,16 @@ impl HorizontalStack {
         }
     }
 
+    pub fn with_height(self, h: DynVal) -> Self {
+        self.pane.pane.set_dyn_height(h);
+        self
+    }
+
+    pub fn with_width(self, w: DynVal) -> Self {
+        self.pane.pane.set_dyn_width(w);
+        self
+    }
+
     // add an element to the end of the stack resizing the other elements
     // in order to fit the new element
     pub fn push(&self, ctx: &Context, el: Rc<RefCell<dyn Element>>) {
@@ -159,19 +174,24 @@ impl HorizontalStack {
     // get the average value of the elements in the stack
     // this is useful for pushing new elements with an even size
     // to the other elements
-    pub fn avg_flex_width(&self) -> DynVal {
+    pub fn avg_width(&self) -> DynVal {
         let els = self.els.borrow();
-        let avg_flex = els
+        if els.is_empty() {
+            return 1.0.into();
+        }
+        let virtual_size = 1000;
+        let virtual_context = Context::new(Size::new(virtual_size, virtual_size), true);
+        let avg = els
             .iter()
             .map(|el| {
                 el.borrow()
                     .get_dyn_location_set()
                     .borrow()
-                    .get_dyn_width()
-                    .flex
+                    .get_width_val(&virtual_context)
             })
-            .sum::<f64>()
+            .sum::<usize>() as f64
             / els.len() as f64;
+        let avg_flex = avg / virtual_size as f64;
         DynVal::new_flex(avg_flex)
     }
 
@@ -193,7 +213,17 @@ impl HorizontalStack {
             .map(|el| el.borrow().get_dyn_location_set().borrow().get_dyn_width())
             .collect();
 
+        //debug!("normalize_locations, pre widths:",);
+        //for w in widths.iter() {
+        //    debug!("\t{:?}", w.get_val(ctx.get_width()));
+        //}
+
         Self::normalize_widths_to_context(ctx, &mut widths);
+
+        //debug!("post normalize_widths_to_context widths:",);
+        //for w in widths.iter() {
+        //    debug!("\t{:?}", w.get_val(ctx.get_width()));
+        //}
 
         // set all the locations based on the widths
         self.adjust_locations_for_widths(&widths);
@@ -225,14 +255,34 @@ impl HorizontalStack {
 // ctx_size is either the height or width of the context
 // vals is either element heights or widths to be adjusted
 fn adjust_els_to_fit_ctx_size(ctx_size: u16, vals: &mut [DynVal]) {
-    for _ in 0..30 {
-        let total_height: i32 = vals.iter().map(|h| h.get_val(ctx_size)).sum();
-        if total_height == ctx_size as i32 {
+    //debug!("adjust_els_to_fit_ctx_size, ctx_size: {}", ctx_size);
+    //debug!("vals: {:+?}", vals);
+
+    for _i in 0..30 {
+        //debug!("iter: {}", i);
+        let total_size: i32 = vals.iter().map(|h| h.get_val(ctx_size)).sum();
+        //debug!("\ttotal_size {}", total_size);
+        if total_size == ctx_size as i32 {
             break;
         }
-        let next_change = (ctx_size as i32 - total_height) as f64 / vals.len() as f64;
+        let total_static: i32 = vals.iter().map(|h| h.get_val(0)).sum();
+        //debug!("\ttotal_static {}", total_size);
+        let total_flex: i32 = total_size - total_static;
+        //debug!("\ttotal_flex {}", total_flex);
+        if total_flex == 0 {
+            break;
+        }
+
+        let next_change = (ctx_size as i32 - total_size) as f64 / (ctx_size as f64);
+        //debug!("\tnext_change {}", next_change);
         for h in vals.iter_mut() {
-            h.flex = f64::clamp(h.flex + next_change, 0.0, 1.0);
+            let h_flex = h.get_flex_val_portion_for_ctx(ctx_size);
+            //debug!("\t\th_flex portion {}", h_flex);
+            let h_flex_change = next_change * h_flex as f64 / total_flex as f64;
+            //debug!("\t\th_flex_change {}", h_flex_change);
+            //debug!("\t\th.flex start {}", h.flex);
+            h.flex += h_flex_change;
+            //debug!("\t\th.flex end {}", h.flex);
         }
     }
 }

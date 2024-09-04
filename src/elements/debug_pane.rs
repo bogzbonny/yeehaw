@@ -1,7 +1,7 @@
 use {
     crate::{
-        element::ReceivableEventChanges, Context, DrawChPos, Element, ElementID, Event,
-        EventResponses, Pane, Priority, RgbColour, DynLocationSet, SortingHat, Style,
+        element::ReceivableEventChanges, Context, DrawChPos, DynLocationSet, DynVal, Element,
+        ElementID, Event, EventResponses, Pane, Priority, RgbColour, SortingHat, Style,
         UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
@@ -18,6 +18,16 @@ impl DebugSizePane {
         DebugSizePane {
             pane: Pane::new(hat, "debug_size_pane"),
         }
+    }
+
+    pub fn with_height(self, h: DynVal) -> Self {
+        self.pane.set_dyn_height(h);
+        self
+    }
+
+    pub fn with_width(self, w: DynVal) -> Self {
+        self.pane.set_dyn_width(w);
+        self
     }
 }
 

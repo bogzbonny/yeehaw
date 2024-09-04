@@ -1,5 +1,5 @@
 use {
-    crate::{prioritizer::Priority, DrawChPos, ElementID, Event, DynLocationSet, Size},
+    crate::{prioritizer::Priority, DrawChPos, DynLocationSet, ElementID, Event, Size},
     std::collections::HashMap,
     std::ops::{Deref, DerefMut},
     std::{cell::RefCell, rc::Rc},
