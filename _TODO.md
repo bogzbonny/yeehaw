@@ -28,6 +28,39 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+01. remove extra locations
+     - menu item should manually refer back to the menu-bar element when an
+       event is called
+
+01. support taffy as a layout structure.
+     - I THINK it only makes sense to only use taffy optionally within an
+       element and keep using the Dynamic-Location. There is a lot of weird
+       stuff that enforcing taffy globally makes us do. 
+        - could use an enum on the location so that it was either DynLocation Or
+          taffy::Style.
+     - first would need to refactor ZIndex to work in opposite order of current
+       workings
+     - https://github.com/DioxusLabs/taffy
+     - model after the partial owned model https://github.com/DioxusLabs/taffy/blob/main/examples/custom_tree_owned_partial.rs
+     - would need to mimic some form of the "plus" function for the Taffy Style.  
+       - IMPOSSIBLE needs things to just be wrapped in further containers
+       - this becomes annoying for things like grouped widgets (textbox with
+         scrollbar... OR anything with labels). which will then need a wrapped
+         into a parent pane and have the events propogated downward. 
+          - the grouping of widgets would then need to fulfill the Widget
+            interface and act like one.
+     - How would this even work for something like a menu?
+       - menu bar has a position (arbitrary). 
+       - next menu expansion would need to have a position of that original 
+         arbitrary position + some offset
+          - could make the whole menu a parent pane, BUT then it would
+            introduce a bunch of empty transparent space which would be awkward
+            to then propogate the events downward from.
+          - Maybe could work if there was a "flatten" the tree for locations
+            - each sub-item would be a leaf of the menu-bar however a final
+              location would be flattened down such that it was not a sub-item
+              of the menu-bar but of the same parent the menu-bar has 
+
 01. translate scrollable pane 
      - scrollbars should be optional (can scroll with mouse wheel otherwise)
      - interaction with border pane?
@@ -53,6 +86,13 @@
     routed through the standard event loop as normal. This can be used to
     replicate a heartbeat for a element, or to simulate a visual effect such as
     a button click.
+
+05. Subscription based events on common objects. 
+     - like leptos. any element could subscribe to an object (with any other
+       element can change). When that object changes it would send out events to
+       any other elements which subscribed to it... OR maybe it would just make
+       sense to use hooks this way you don't need all the parents of the
+       destination to also subscribe to the hook. USE HOOKS!
 
 05. create builder types for each widget. 
      - annoying to send in the ctx and hat objects each time.
@@ -109,6 +149,7 @@
 
 30. figure out a nicer way of inheriting element functions from the above
     element besides lots of boilerplate, probably though the use of a macro
+
 
 20. Add another cargo repo like AssertCmd for tui
      name: TuiTester?
