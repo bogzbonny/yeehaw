@@ -42,6 +42,40 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+01. support taffy as a layout structure.
+     - I THINK it only makes sense to only use taffy optionally within an
+       element and keep using the Dynamic-Location. There is a lot of weird
+       stuff that enforcing taffy globally makes us do. 
+        - [DONE] If we are to integrate in to a new Location type which can be either
+          DynLocationSet or TafLocation then we would need to somehow either
+          remove the Cache on Clone or have the Cache be in a Rc<RefCel<>>
+          (wierd) 
+        - [DONE] first would need to refactor ZIndex to work in opposite order
+          of current workings
+        - Integrate TafLocation as an Option on Pane? ParentPane?
+          - Have the TafLocation Simply change the DynLocation (fixed) every
+            time it changes. 
+     - model after the partial owned model https://github.com/DioxusLabs/taffy/blob/main/examples/custom_tree_owned_partial.rs
+     MISC NOTES
+        - would need to mimic some form of the "plus" function for the Taffy Style.  
+          - IMPOSSIBLE needs things to just be wrapped in further containers
+          - this becomes annoying for things like grouped widgets (textbox with
+            scrollbar... OR anything with labels). which will then need a wrapped
+            into a parent pane and have the events propogated downward. 
+             - the grouping of widgets would then need to fulfill the Widget
+               interface and act like one.
+        - How would this even work for something like a menu?
+          - menu bar has a position (arbitrary). 
+          - next menu expansion would need to have a position of that original 
+            arbitrary position + some offset
+             - could make the whole menu a parent pane, BUT then it would
+               introduce a bunch of empty transparent space which would be awkward
+               to then propogate the events downward from.
+             - Maybe could work if there was a "flatten" the tree for locations
+               - each sub-item would be a leaf of the menu-bar however a final
+                 location would be flattened down such that it was not a sub-item
+                 of the menu-bar but of the same parent the menu-bar has 
+
 01. translate scrollable pane 
      - scrollbars should be optional (can scroll with mouse wheel otherwise)
      - interaction with border pane?
@@ -52,7 +86,6 @@
 01. translate file_navigator
 
 01. remove visibility from context
-
 
 05. use .flf (figlet font) format instead of custom megatext
      - https://docs.rs/figlet-rs/latest/figlet_rs/
@@ -105,35 +138,6 @@
      - after the final position is reached (and before the final position if
        there is an offset) repeat the pattern
 
-10. support taffy as a layout structure.
-     - I THINK it only makes sense to only use taffy optionally within an
-       element and keep using the Dynamic-Location. There is a lot of weird
-       stuff that enforcing taffy globally makes us do. 
-       If we are to integrate in to a new Location type which can be either 
-       DynLocationSet or TafLocation then we would need to somehow either remove
-       the Cache on Clone or have the Cache be in a Rc<RefCel<>> (wierd) [DONE]. 
-     - [DONE] first would need to refactor ZIndex to work in opposite order of current
-       workings
-     - model after the partial owned model https://github.com/DioxusLabs/taffy/blob/main/examples/custom_tree_owned_partial.rs
-     MISC NOTES
-        - would need to mimic some form of the "plus" function for the Taffy Style.  
-          - IMPOSSIBLE needs things to just be wrapped in further containers
-          - this becomes annoying for things like grouped widgets (textbox with
-            scrollbar... OR anything with labels). which will then need a wrapped
-            into a parent pane and have the events propogated downward. 
-             - the grouping of widgets would then need to fulfill the Widget
-               interface and act like one.
-        - How would this even work for something like a menu?
-          - menu bar has a position (arbitrary). 
-          - next menu expansion would need to have a position of that original 
-            arbitrary position + some offset
-             - could make the whole menu a parent pane, BUT then it would
-               introduce a bunch of empty transparent space which would be awkward
-               to then propogate the events downward from.
-             - Maybe could work if there was a "flatten" the tree for locations
-               - each sub-item would be a leaf of the menu-bar however a final
-                 location would be flattened down such that it was not a sub-item
-                 of the menu-bar but of the same parent the menu-bar has 
 
 10. When the keyboard is matching an event combo provided to it, it should be
     recording a partial match (and a suggested maximum wait time to recheck for
