@@ -35,10 +35,11 @@
        "non-captured" to the EO which would then need to send the event down to
        the next z-index... too-much extra complexity compared to just allowing
        for extra locations
+01. menubar doesn't properly render output on top of element below
+01. ensure that menu will work in a vertical pane where it goes over other
+    content
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-01. menubar doesn't properly render output on top of element below
 
 01. support taffy as a layout structure.
      - I THINK it only makes sense to only use taffy optionally within an
@@ -77,9 +78,6 @@
      - button click should have the button as an input such that it can change
        colour when selected
 01. translate file_navigator
-
-01. ensure that menu will work in a vertical pane where it goes over other
-    content
 
 01. remove visibility from context
 

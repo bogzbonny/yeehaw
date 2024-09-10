@@ -293,18 +293,7 @@ impl Element for ParentPane {
             return vec![];
         }
         let mut out = self.pane.drawing(ctx);
-
-        // draw each sub-element
-        for el_details in self.eo.els.borrow().values() {
-            // offset pos to location
-            let s = el_details.loc.borrow().l.get_size(ctx);
-            let c = Context::new(s, *el_details.vis.borrow());
-            let dcps = el_details.el.borrow().drawing(&c);
-            for mut dcp in dcps {
-                dcp.adjust_by_dyn_location(ctx, &el_details.loc.borrow().l);
-                out.push(dcp);
-            }
-        }
+        out.extend(self.eo.all_drawing(ctx));
         out
     }
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
