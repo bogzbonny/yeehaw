@@ -162,7 +162,7 @@ impl ElementOrganizer {
     // incremented)
     //
     // TRANSLATION: SetZIndexForElement set_z_index_for_element
-    pub fn update_el_z_index(&self, el_id: &ElementID, z: i32) {
+    pub fn update_el_z_index(&self, el_id: &ElementID, z: ZIndex) {
         if let Some(details) = self.get_el_at_z_index(z) {
             self.increment_z_index_for_el(details);
         }
@@ -176,32 +176,6 @@ impl ElementOrganizer {
     pub fn get_context_for_el(&self, higher_ctx: &Context, el_details: &ElDetails) -> Context {
         let size = el_details.loc.borrow().l.get_size(higher_ctx);
         Context::new(size, *el_details.vis.borrow())
-    }
-
-    // GetHighestZIndex returns the highest z-index of all elements
-    // NOTE: the highest z-index is the furthest back visually
-    pub fn get_highest_z_index(&self) -> i32 {
-        let mut highest = i32::MIN;
-        for detail in self.els.borrow().values() {
-            let z = detail.loc.borrow().z;
-            if z > highest {
-                highest = z;
-            }
-        }
-        highest
-    }
-
-    // get_lowest_z_index returns the lowest z-index of all elements
-    // NOTE: the lowest z-index is the furthest forward visually
-    pub fn get_lowest_z_index(&self) -> i32 {
-        let mut lowest = i32::MAX;
-        for detail in self.els.borrow().values() {
-            let z = detail.loc.borrow().z;
-            if z < lowest {
-                lowest = z;
-            }
-        }
-        lowest
     }
 
     // Receivable returns all of the key combos and commands registered to this
@@ -219,9 +193,9 @@ impl ElementOrganizer {
     // organizer.
     // A DrawChPos slice is returned and passed up the chain to the top of the CUI
     // element hierarchy.
-    // NOTE: the elements are sorted by z-index, from highest to lowest (furthest
+    // NOTE: the elements are sorted by z-index, from lowest to highest (furthest
     // back to furthest forward) and then drawn in that order, such that the element
-    // with the lowest z-index is drawn last and thus is on top of all others in the
+    // with the highest z-index is drawn last and thus is on top of all others in the
     // DrawChPos slice
     pub fn all_drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let mut out = Vec::new();
@@ -232,8 +206,8 @@ impl ElementOrganizer {
             eoz.push((el_id.clone(), details.clone()));
         }
 
-        // sort z index from high to low
-        eoz.sort_by(|a, b| b.1.loc.borrow().z.cmp(&a.1.loc.borrow().z));
+        // sort z index from low to high
+        eoz.sort_by(|a, b| a.1.loc.borrow().z.cmp(&b.1.loc.borrow().z));
 
         // draw elements in order from highest z-index to lowest
         for el_id_z in eoz {
@@ -449,14 +423,12 @@ impl ElementOrganizer {
     pub fn mouse_event_process(
         &self, ctx: &Context, ev: &crossterm::event::MouseEvent,
     ) -> Option<(ElementID, EventResponses)> {
-        let mut eoz = self.get_el_id_z_order_under_mouse(ctx, ev);
-        if eoz.is_empty() {
-            return None;
-        }
+        let eoz = self.get_el_id_z_order_under_mouse(ctx, ev);
 
-        // get the lowest-z element that falls under mouse event
-        eoz.sort_by(|a, b| a.1.cmp(&b.1)); // sort z index from low to high
-        let el_id = eoz[0].0.clone(); // first element will be the lowest z-index ("on top")
+        // get the highest-z element from the eoz list
+        let max_z = eoz.iter().max_by_key(|(_, z)| *z)?;
+        let el_id = max_z.0.clone();
+
         let details = self
             .get_element_details(&el_id)
             .expect("no element for destination id");

@@ -246,13 +246,13 @@ impl WidgetOrganizer {
             clicked = true;
         }
 
-        let mut most_front_z_index = i32::MAX; // lowest value is the most front
+        let mut most_front_z_index = 0; // highest value is the most front
         let mut widget_index_loc = None; // index of widget with most front z index
 
         // find the widget with the most front z index
         for (i, (_, loc)) in self.widgets.iter().enumerate() {
             let loc = loc.borrow();
-            if loc.contains(ctx, ev.column.into(), ev.row.into()) && loc.z < most_front_z_index {
+            if loc.contains(ctx, ev.column.into(), ev.row.into()) && loc.z > most_front_z_index {
                 most_front_z_index = loc.z;
                 widget_index_loc = Some((i, loc.clone()));
             }
@@ -284,7 +284,6 @@ impl WidgetOrganizer {
     pub fn resize_event(&mut self, ctx: &Context) {
         for (w, _loc) in &mut self.widgets {
             w.receive_event(ctx, Event::Resize);
-            //*loc.borrow_mut() = w.get_dyn_location_set().borrow().clone();
         }
     }
 

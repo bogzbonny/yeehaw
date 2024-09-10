@@ -41,35 +41,6 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-01. support taffy as a layout structure.
-     - I THINK it only makes sense to only use taffy optionally within an
-       element and keep using the Dynamic-Location. There is a lot of weird
-       stuff that enforcing taffy globally makes us do. 
-        - could use an enum on the location so that it was either DynLocation Or
-          taffy::Style.
-     - first would need to refactor ZIndex to work in opposite order of current
-       workings
-     - https://github.com/DioxusLabs/taffy
-     - model after the partial owned model https://github.com/DioxusLabs/taffy/blob/main/examples/custom_tree_owned_partial.rs
-     - would need to mimic some form of the "plus" function for the Taffy Style.  
-       - IMPOSSIBLE needs things to just be wrapped in further containers
-       - this becomes annoying for things like grouped widgets (textbox with
-         scrollbar... OR anything with labels). which will then need a wrapped
-         into a parent pane and have the events propogated downward. 
-          - the grouping of widgets would then need to fulfill the Widget
-            interface and act like one.
-     - How would this even work for something like a menu?
-       - menu bar has a position (arbitrary). 
-       - next menu expansion would need to have a position of that original 
-         arbitrary position + some offset
-          - could make the whole menu a parent pane, BUT then it would
-            introduce a bunch of empty transparent space which would be awkward
-            to then propogate the events downward from.
-          - Maybe could work if there was a "flatten" the tree for locations
-            - each sub-item would be a leaf of the menu-bar however a final
-              location would be flattened down such that it was not a sub-item
-              of the menu-bar but of the same parent the menu-bar has 
-
 01. translate scrollable pane 
      - scrollbars should be optional (can scroll with mouse wheel otherwise)
      - interaction with border pane?
@@ -117,6 +88,12 @@
      - built in scrollbar
      - drag-resizing - drag while on the edge to resize the location
 
+05. Remove Refresh logic from Elements. currently when an element is destroyed
+    or replaced, the parents call some Refresh logic, this should be removed in
+    favour of specifically removing the priorities by the element id of the
+    element being destroyed or replaced
+     - is this still an issue?
+
 10. gradient colour types, don't ask me how exactly however this is basically
     what we should do.
      - refactor colour to make a call each draw
@@ -128,16 +105,40 @@
      - after the final position is reached (and before the final position if
        there is an offset) repeat the pattern
 
-
-05. Remove Refresh logic from Elements. currently when an element is destroyed
-    or replaced, the parents call some Refresh logic, this should be removed in
-    favour of specifically removing the priorities by the element id of the
-    element being destroyed or replaced
-     - is this still an issue?
+10. support taffy as a layout structure.
+     - I THINK it only makes sense to only use taffy optionally within an
+       element and keep using the Dynamic-Location. There is a lot of weird
+       stuff that enforcing taffy globally makes us do. 
+       If we are to integrate in to a new Location type which can be either 
+       DynLocationSet or TafLocation then we would need to somehow either remove
+       the Cache on Clone or have the Cache be in a Rc<RefCel<>> (wierd). 
+     - use Taffy Style only as a part of a special ParentPane, DO NOT integrate
+       into the DynLocationSet
+     - first would need to refactor ZIndex to work in opposite order of current
+       workings
+     - model after the partial owned model https://github.com/DioxusLabs/taffy/blob/main/examples/custom_tree_owned_partial.rs
+     MISC NOTES
+        - would need to mimic some form of the "plus" function for the Taffy Style.  
+          - IMPOSSIBLE needs things to just be wrapped in further containers
+          - this becomes annoying for things like grouped widgets (textbox with
+            scrollbar... OR anything with labels). which will then need a wrapped
+            into a parent pane and have the events propogated downward. 
+             - the grouping of widgets would then need to fulfill the Widget
+               interface and act like one.
+        - How would this even work for something like a menu?
+          - menu bar has a position (arbitrary). 
+          - next menu expansion would need to have a position of that original 
+            arbitrary position + some offset
+             - could make the whole menu a parent pane, BUT then it would
+               introduce a bunch of empty transparent space which would be awkward
+               to then propogate the events downward from.
+             - Maybe could work if there was a "flatten" the tree for locations
+               - each sub-item would be a leaf of the menu-bar however a final
+                 location would be flattened down such that it was not a sub-item
+                 of the menu-bar but of the same parent the menu-bar has 
 
 10. When the keyboard is matching an event combo provided to it, it should be
     recording a partial match (and a suggested maximum wait time to recheck for
-    this match) whereby the caller can then make a choice given the associated
     priority to this combo whether to wait the time before checking for other
     matches or to ignore the wait and to proceed attempting to match the
     character in other ways.  
@@ -148,6 +149,7 @@
     - scroll when the expansion exceeds element size (this logic is already in
      standard pane just needs to be hooked up)
     - save sub-folder expansion when a parent folder closes and then reopens. 
+    this match) whereby the caller can then make a choice given the associated
       - the folder keeps records of its navItems once they've been populated.
          - would need to "refresh" this list with each open could cause
            problems.

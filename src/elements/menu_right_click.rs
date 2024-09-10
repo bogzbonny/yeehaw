@@ -30,7 +30,7 @@ pub struct RightClickMenu {
 
 impl RightClickMenu {
     pub const MENU_POSITION_MD_KEY: &'static str = "menu_position";
-    pub const Z_INDEX: ZIndex = -100;
+    pub const Z_INDEX: ZIndex = 100;
 
     pub fn new(hat: &SortingHat, sty: MenuStyle) -> Self {
         let menu = MenuBar::right_click_menu(hat).with_menu_style(sty);

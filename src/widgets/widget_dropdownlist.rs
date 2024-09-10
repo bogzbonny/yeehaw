@@ -1,9 +1,9 @@
 use {
     super::{Selectability, VerticalScrollbar, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Context, DrawCh, DrawChPos, Element, ElementID, Event, EventResponses, Keyboard as KB,
-        Priority, ReceivableEventChanges, RgbColour, DynLocationSet, DynVal, SortingHat, Style,
-        UpwardPropagator, ZIndex,
+        Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
+        EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SortingHat,
+        Style, UpwardPropagator, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -67,7 +67,7 @@ impl DropdownList {
 
     // needs to be slightly above other widgets to select properly
     // if widgets overlap
-    const Z_INDEX: i32 = super::widget::WIDGET_Z_INDEX - 1;
+    const Z_INDEX: ZIndex = super::widget::WIDGET_Z_INDEX + 1;
 
     pub fn default_receivable_events() -> Vec<Event> {
         vec![

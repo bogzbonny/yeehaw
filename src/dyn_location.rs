@@ -1,9 +1,8 @@
 use crate::{Context, DynVal};
 
 // ZIndex is the z-index or position in the z-dimension of the element
-// The lower the z-index, further toward the front the element is
-// (0 is the front, 1 is behind 0, etc.)
-pub type ZIndex = i32;
+// The higher the z-index, further "on top" the element is.
+pub type ZIndex = u32;
 
 #[derive(Default, Debug, Clone)]
 pub struct DynLocation {
@@ -162,7 +161,7 @@ impl DynLocation {
 // DynLocationSet holds the primary location as well as the extra
 // locations of an element. In addition it holds a ZIndex which all
 // locations are said to exist at.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct DynLocationSet {
     pub l: DynLocation,
 
@@ -172,17 +171,7 @@ pub struct DynLocationSet {
     // menu element)
     pub extra: Vec<DynLocation>,
 
-    pub z: ZIndex,
-}
-
-impl Default for DynLocationSet {
-    fn default() -> DynLocationSet {
-        DynLocationSet {
-            l: DynLocation::default(),
-            extra: Vec::new(),
-            z: 255, // far back
-        }
-    }
+    pub z: ZIndex, // 0 is the farthest back
 }
 
 impl DynLocationSet {

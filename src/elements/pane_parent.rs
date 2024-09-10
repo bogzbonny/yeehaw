@@ -2,6 +2,7 @@ use {
     crate::{
         element::ReceivableEventChanges, Context, DrawChPos, DynLocationSet, Element, ElementID,
         ElementOrganizer, Event, EventResponses, Pane, Priority, SortingHat, UpwardPropagator,
+        ZIndex,
     },
     std::{
         ops::Deref,
@@ -29,7 +30,7 @@ impl ParentPane {
         }
     }
 
-    pub fn with_z(self, z: i32) -> Self {
+    pub fn with_z(self, z: ZIndex) -> Self {
         self.pane.set_z(z);
         self
     }
@@ -174,7 +175,7 @@ impl ParentPane {
     }
 
     // TRANSLATION: SetZIndexForElement set_z_index_for_element
-    pub fn update_el_z_index(&self, el_id: &ElementID, z: i32) {
+    pub fn update_el_z_index(&self, el_id: &ElementID, z: ZIndex) {
         self.eo.update_el_z_index(el_id, z);
     }
 

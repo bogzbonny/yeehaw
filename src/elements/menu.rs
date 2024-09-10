@@ -69,7 +69,7 @@ pub enum OpenDirection {
 
 impl MenuBar {
     const KIND: &'static str = "menu_bar";
-    const Z_INDEX: ZIndex = -100; // very front
+    const Z_INDEX: ZIndex = 100; // very frontward
     const MENU_STYLE_MD_KEY: &'static str = "menu_style";
 
     pub fn top_menu_bar(hat: &SortingHat) -> Self {
