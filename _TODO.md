@@ -24,13 +24,21 @@
        single draw function.
 01. rewrite horizontal/vertical stack panes
 
+01. WONT DO remove extra locations
+     - menu item should manually refer back to the menu-bar element when an
+       event is called
+     - turns out this is actually very useful if we want to have parent panes
+       which have elements outside of their original location (obv!). Otherwise
+       we would need to have the parent pane constantly grow and shrink its main
+       dimention which would be annoying to track.. basically the same as using
+       taffy. - we would then need to do the wierd thing of passing back
+       "non-captured" to the EO which would then need to send the event down to
+       the next z-index... too-much extra complexity compared to just allowing
+       for extra locations
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
-01. remove extra locations
-     - menu item should manually refer back to the menu-bar element when an
-       event is called
+01. menubar doesn't properly render output on top of element below
 
 01. support taffy as a layout structure.
      - I THINK it only makes sense to only use taffy optionally within an

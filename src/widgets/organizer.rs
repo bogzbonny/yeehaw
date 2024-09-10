@@ -1,8 +1,8 @@
 use {
     super::{widget::RESP_DEACTIVATE, Selectability, Widget},
     crate::{
-        Context, DrawChPos, Event, EventResponse, EventResponses, KeyPossibility, Keyboard as KB,
-        Priority, ReceivableEventChanges, DynLocationSet,
+        Context, DrawChPos, DynLocationSet, Event, EventResponse, EventResponses, KeyPossibility,
+        Keyboard as KB, Priority, ReceivableEventChanges,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -247,20 +247,18 @@ impl WidgetOrganizer {
         }
 
         let mut most_front_z_index = i32::MAX; // lowest value is the most front
-        let mut widget_index = None; // index of widget with most front z index
-        let mut widget_loc = DynLocationSet::default();
+        let mut widget_index_loc = None; // index of widget with most front z index
 
         // find the widget with the most front z index
         for (i, (_, loc)) in self.widgets.iter().enumerate() {
             let loc = loc.borrow();
             if loc.contains(ctx, ev.column.into(), ev.row.into()) && loc.z < most_front_z_index {
                 most_front_z_index = loc.z;
-                widget_index = Some(i);
-                widget_loc = loc.clone();
+                widget_index_loc = Some((i, loc.clone()));
             }
         }
 
-        let Some(widget_index) = widget_index else {
+        let Some((widget_index, widget_loc)) = widget_index_loc else {
             if clicked {
                 let resps = self.unselect_selected_widget(ctx);
                 return (false, resps);

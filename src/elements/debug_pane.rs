@@ -2,7 +2,7 @@ use {
     crate::{
         element::ReceivableEventChanges, Context, DrawChPos, DynLocationSet, DynVal, Element,
         ElementID, Event, EventResponses, Pane, Priority, RgbColour, SortingHat, Style,
-        UpwardPropagator,
+        UpwardPropagator, ZIndex,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -27,6 +27,11 @@ impl DebugSizePane {
 
     pub fn with_width(self, w: DynVal) -> Self {
         self.pane.set_dyn_width(w);
+        self
+    }
+
+    pub fn with_z(self, z: ZIndex) -> Self {
+        self.pane.set_z(z);
         self
     }
 }

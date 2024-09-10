@@ -73,8 +73,9 @@ impl MenuBar {
     const MENU_STYLE_MD_KEY: &'static str = "menu_style";
 
     pub fn top_menu_bar(hat: &SortingHat) -> Self {
+        let pane = ParentPane::new(hat, MenuBar::KIND).with_z(MenuBar::Z_INDEX);
         MenuBar {
-            pane: ParentPane::new(hat, MenuBar::KIND),
+            pane,
             horizontal_bar: Rc::new(RefCell::new(true)),
             menu_items: Rc::new(RefCell::new(HashMap::new())),
             menu_items_order: Rc::new(RefCell::new(vec![])),
@@ -88,8 +89,9 @@ impl MenuBar {
     }
 
     pub fn right_click_menu(hat: &SortingHat) -> Self {
+        let pane = ParentPane::new(hat, MenuBar::KIND).with_z(MenuBar::Z_INDEX);
         MenuBar {
-            pane: ParentPane::new(hat, MenuBar::KIND),
+            pane,
             horizontal_bar: Rc::new(RefCell::new(false)),
             menu_items: Rc::new(RefCell::new(HashMap::new())),
             menu_items_order: Rc::new(RefCell::new(vec![])),
@@ -104,6 +106,16 @@ impl MenuBar {
 
     pub fn with_menu_style(self, style: MenuStyle) -> Self {
         *self.menu_style.borrow_mut() = style;
+        self
+    }
+
+    pub fn with_height(self, height: DynVal) -> Self {
+        self.pane.pane.set_dyn_height(height);
+        self
+    }
+
+    pub fn with_width(self, width: DynVal) -> Self {
+        self.pane.pane.set_dyn_width(width);
         self
     }
 
@@ -217,7 +229,7 @@ impl MenuBar {
             let ls = DynLocationSet::new(loc, vec![], Self::Z_INDEX);
             (ls, true)
         } else {
-            (DynLocationSet::default(), false)
+            (DynLocationSet::default().with_z(Self::Z_INDEX), false)
         };
         self.pane
             .eo
@@ -325,11 +337,7 @@ impl MenuBar {
 
             self.expand_folder(item, open_dir);
         }
-        // update extra locations for parent eo.Locations
-        //resps.push(EventResponse::ExtraLocations(self.extra_locations()));
-        //self.get_dyn_location_set()
-        //    .borrow_mut()
-        //    .set_extra(self.extra_locations());
+        self.update_extra_locations();
         (true, resps)
     }
 
@@ -363,10 +371,7 @@ impl MenuBar {
         }
 
         // update extra locations for parent eo
-        //let resp: EventResponse = EventResponse::ExtraLocations(self.extra_locations());
-        //self.get_dyn_location_set()
-        //    .borrow_mut()
-        //    .set_extra(self.extra_locations());
+        self.update_extra_locations();
 
         if make_invis {
             // make the actual menu bar element invisible in the parent eo
@@ -385,11 +390,7 @@ impl MenuBar {
         }
 
         // update extra locations for parent eo
-        //EventResponse::ExtraLocations(self.extra_locations()).into()
-
-        //self.get_dyn_location_set()
-        //    .borrow_mut()
-        //    .set_extra(self.extra_locations());
+        self.update_extra_locations();
     }
 
     // useful for right click menu
@@ -405,11 +406,22 @@ impl MenuBar {
     }
 
     pub fn extra_locations(&self) -> Vec<DynLocation> {
+        let bar_loc = self.get_dyn_location_set().borrow().clone();
+        let x = bar_loc.get_dyn_start_x();
+        let y = bar_loc.get_dyn_end_y();
+
         let mut locs = vec![];
         for details in self.pane.eo.els.borrow().values() {
-            locs.push(details.loc.borrow().l.clone());
+            let mut item_loc = details.loc.borrow().l.clone();
+            item_loc.adjust_location_by(x.clone(), y.clone());
+            locs.push(item_loc);
         }
         locs
+    }
+
+    pub fn update_extra_locations(&self) {
+        let extra = self.extra_locations();
+        self.get_dyn_location_set().borrow_mut().set_extra(extra);
     }
 
     pub fn collapse_non_primary(&self) {
@@ -533,8 +545,9 @@ impl MenuItem {
     pub const KIND: &'static str = "menu_item";
 
     pub fn new(hat: &SortingHat, path: MenuPath) -> Self {
+        let pane = Pane::new(hat, MenuItem::KIND).with_z(MenuBar::Z_INDEX);
         MenuItem {
-            pane: Pane::new(hat, MenuItem::KIND),
+            pane,
             path: Rc::new(RefCell::new(path)),
             selectable: Rc::new(RefCell::new(true)),
             is_selected: Rc::new(RefCell::new(false)),

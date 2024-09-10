@@ -29,6 +29,11 @@ impl ParentPane {
         }
     }
 
+    pub fn with_z(self, z: i32) -> Self {
+        self.pane.set_z(z);
+        self
+    }
+
     pub fn add_element(&self, el: Rc<RefCell<dyn Element>>) {
         let loc = el.borrow().get_dyn_location_set().borrow().clone();
         self.eo.add_element(el.clone(), None, loc, true);

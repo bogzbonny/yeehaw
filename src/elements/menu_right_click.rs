@@ -1,9 +1,9 @@
 use {
     crate::{
         elements::menu::{MenuItem, MenuStyle},
-        Context, DrawChPos, Element, ElementID, Event, EventResponse, EventResponses, MenuBar,
-        Point, Priority, ReceivableEventChanges, DynLocation, DynLocationSet, DynVal, SortingHat,
-        UpwardPropagator, ZIndex,
+        Context, DrawChPos, DynLocation, DynLocationSet, DynVal, Element, ElementID, Event,
+        EventResponse, EventResponses, MenuBar, Point, Priority, ReceivableEventChanges,
+        SortingHat, UpwardPropagator, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -63,25 +63,20 @@ impl RightClickMenu {
         let (x, y): (i32, i32) = (ev_x.into(), (ev_y + 1).into()); // offset the menu 1 below the cursor
         let (x, y) = (DynVal::new_fixed(x), DynVal::new_fixed(y));
 
+        // the location size doesn't matter as the top level element will be
+        // empty, only the sub-elements will be take up space
+        let loc = DynLocationSet::new(
+            DynLocation::new(x.clone(), x, y.clone(), y),
+            vec![],
+            Self::Z_INDEX,
+        );
+        *self.get_dyn_location_set().borrow_mut() = loc;
+
         self.menu.activate();
         self.menu.deselect_all();
         self.menu.collapse_non_primary();
         self.menu.make_primary_visible();
-        let mut extra_locs = self.menu.extra_locations();
-
-        for l in extra_locs.iter_mut() {
-            l.adjust_location_by(x.clone(), y.clone());
-        }
-
-        // the location size doesn't matter as the top level element will be
-        // empty, only the sub-elements will be take up space
-        let loc = DynLocationSet::default()
-            .with_location(DynLocation::new(x.clone(), x, y.clone(), y)) // placeholder
-            .with_extra(extra_locs)
-            .with_z(Self::Z_INDEX);
-
         *self.just_created.borrow_mut() = true;
-        *self.get_dyn_location_set().borrow_mut() = loc;
 
         Some(EventResponse::NewElement(Rc::new(RefCell::new(self.clone()))).into())
     }
