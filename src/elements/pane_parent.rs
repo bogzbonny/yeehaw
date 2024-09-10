@@ -36,8 +36,7 @@ impl ParentPane {
     }
 
     pub fn add_element(&self, el: Rc<RefCell<dyn Element>>) {
-        let loc = el.borrow().get_dyn_location_set().borrow().clone();
-        self.eo.add_element(el.clone(), None, loc, true);
+        self.eo.add_element(el.clone(), None);
     }
 
     pub fn remove_element(&self, el_id: &ElementID) {

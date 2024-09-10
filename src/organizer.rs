@@ -44,19 +44,16 @@ impl ElDetails {
 }
 
 impl ElementOrganizer {
-    pub fn add_element(
-        &self, el: Rc<RefCell<dyn Element>>, up: Option<Box<dyn UpwardPropagator>>,
-        loc: DynLocationSet, vis: bool,
-    ) {
+    pub fn add_element(&self, el: Rc<RefCell<dyn Element>>, up: Option<Box<dyn UpwardPropagator>>) {
         // assign the new element id
         let el_id = el.borrow().id().clone();
 
+        let z = el.borrow().get_dyn_location_set().borrow().z;
+
         // put it at the top of the z-dim (pushing everything else down))
-        self.update_el_z_index(&el_id, loc.z);
+        self.update_el_z_index(&el_id, z);
 
         let el_details = ElDetails::new(el.clone());
-        el_details.set_location_set(loc);
-        el_details.set_visibility(vis);
         self.els.borrow_mut().insert(el_id.clone(), el_details);
 
         // add the elements recievable events and commands to the prioritizer
@@ -270,8 +267,7 @@ impl ElementOrganizer {
                             details.loc.borrow().l.start_x.clone(),
                             details.loc.borrow().l.start_y.clone(),
                         );
-                    let loc = new_el.borrow().get_dyn_location_set().borrow().clone();
-                    self.add_element(new_el.clone(), None, loc, true);
+                    self.add_element(new_el.clone(), None);
                     modified_resp = Some(EventResponse::None);
                 }
                 EventResponse::Destruct => {

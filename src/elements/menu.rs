@@ -231,9 +231,11 @@ impl MenuBar {
         } else {
             (DynLocationSet::default().with_z(Self::Z_INDEX), false)
         };
+        item.set_dyn_location_set(loc);
+        item.set_visible(vis);
         self.pane
             .eo
-            .add_element(Rc::new(RefCell::new(item.clone())), None, loc, vis);
+            .add_element(Rc::new(RefCell::new(item.clone())), None);
         self.menu_items.borrow_mut().insert(item.id(), item.clone());
         self.menu_items_order.borrow_mut().push(item);
 

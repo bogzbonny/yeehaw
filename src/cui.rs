@@ -53,13 +53,15 @@ impl Cui {
         let ctx = Context::new_context_for_screen();
         let loc = DynLocation::new_fixed(0, ctx.s.width.into(), 0, ctx.s.height.into());
         let loc = DynLocationSet::new(loc, vec![], 0);
+        main_el.borrow_mut().set_dyn_location_set(loc);
+        main_el.borrow_mut().set_visible(true);
 
         let cup = Box::new(CuiUpwardPropagator::new(eo));
 
         // when adding the main element, nil is passed in as the parent
         // this is because the top of the tree is the CUI's main EO and so no parent
         // is necessary
-        cui.eo.add_element(main_el, Some(cup), loc, true);
+        cui.eo.add_element(main_el, Some(cup));
 
         set_panic_hook_with_closedown();
         Ok(cui)

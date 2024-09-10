@@ -38,6 +38,7 @@
 01. menubar doesn't properly render output on top of element below
 01. ensure that menu will work in a vertical pane where it goes over other
     content
+01. remove loc and vis from add_element within element organizer
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -52,7 +53,6 @@
 
 01. remove visibility from context
 
-01. remove loc and vis from add_element within element organizer
 
 05. use .flf (figlet font) format instead of custom megatext
      - https://docs.rs/figlet-rs/latest/figlet_rs/
@@ -111,10 +111,8 @@
        stuff that enforcing taffy globally makes us do. 
        If we are to integrate in to a new Location type which can be either 
        DynLocationSet or TafLocation then we would need to somehow either remove
-       the Cache on Clone or have the Cache be in a Rc<RefCel<>> (wierd). 
-     - use Taffy Style only as a part of a special ParentPane, DO NOT integrate
-       into the DynLocationSet
-     - first would need to refactor ZIndex to work in opposite order of current
+       the Cache on Clone or have the Cache be in a Rc<RefCel<>> (wierd) [DONE]. 
+     - [DONE] first would need to refactor ZIndex to work in opposite order of current
        workings
      - model after the partial owned model https://github.com/DioxusLabs/taffy/blob/main/examples/custom_tree_owned_partial.rs
      MISC NOTES

@@ -2,7 +2,7 @@ use {
     crate::{
         element::ReceivableEventChanges, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation,
         DynLocationSet, DynVal, Element, ElementID, Event, EventResponses, Priority, SortingHat,
-        UpwardPropagator, ZIndex,
+        TafLocation, UpwardPropagator, ZIndex,
     },
     std::{
         collections::HashMap,
@@ -54,6 +54,7 @@ pub struct Pane {
 
     // scaleable values of x, y, width, and height in the parent context
     // NOTE use getters/setters to ensure hook calls
+    taffy_loc: Rc<RefCell<Option<TafLocation>>>,
     loc: Rc<RefCell<DynLocationSet>>,
     visible: Rc<RefCell<bool>>,
 }
@@ -77,6 +78,7 @@ impl Pane {
             default_line: Rc::new(RefCell::new(vec![])),
             content_view_offset_x: Rc::new(RefCell::new(0)),
             content_view_offset_y: Rc::new(RefCell::new(0)),
+            taffy_loc: Rc::new(RefCell::new(None)),
             loc: Rc::new(RefCell::new(DynLocationSet::default())),
             visible: Rc::new(RefCell::new(true)),
         }
