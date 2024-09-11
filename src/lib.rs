@@ -15,7 +15,6 @@ pub mod organizer;
 pub mod prioritizer;
 pub mod sorting_hat;
 pub mod style;
-pub mod taffy_location;
 pub mod widgets;
 
 pub use {
@@ -37,6 +36,5 @@ pub use {
     prioritizer::Priority,
     sorting_hat::{ElementID, SortingHat},
     style::{Style, YHAttributes},
-    taffy_location::TafLocation,
     widgets::WidgetPane,
 };
