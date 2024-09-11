@@ -289,7 +289,7 @@ impl Element for ParentPane {
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        if !ctx.visible {
+        if !*self.get_visible().borrow() {
             return vec![];
         }
         let mut out = self.pane.drawing(ctx);

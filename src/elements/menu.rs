@@ -647,7 +647,7 @@ impl Element for MenuBar {
         self.pane.change_priority(ctx, p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        if !ctx.visible {
+        if !*self.get_visible().borrow() {
             return vec![];
         }
 
@@ -665,7 +665,7 @@ impl Element for MenuBar {
         for el_details in self.pane.eo.els.borrow().values() {
             // offset pos to location
             let s = el_details.loc.borrow().l.get_size(ctx);
-            let c = Context::new(s, *el_details.vis.borrow())
+            let c = Context::new(s)
                 .with_metadata(Self::MENU_STYLE_MD_KEY.to_string(), menu_style_bz.clone());
             let dcps = el_details.el.borrow().drawing(&c);
 
@@ -740,7 +740,7 @@ impl Element for MenuItem {
         self.pane.change_priority(ctx, p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        if !ctx.visible {
+        if !*self.get_visible().borrow() {
             return vec![];
         }
 

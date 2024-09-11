@@ -172,7 +172,7 @@ impl ElementOrganizer {
     // get_context_for_el_id returns the context for the element registered under the given id
     pub fn get_context_for_el(&self, higher_ctx: &Context, el_details: &ElDetails) -> Context {
         let size = el_details.loc.borrow().l.get_size(higher_ctx);
-        Context::new(size, *el_details.vis.borrow())
+        Context::new(size)
     }
 
     // Receivable returns all of the key combos and commands registered to this
@@ -396,11 +396,9 @@ impl ElementOrganizer {
         let mut ezo: Vec<(ElementID, ZIndex)> = Vec::new();
 
         for (el_id, details) in self.els.borrow().iter() {
-            let child_ctx = self.get_context_for_el(ctx, details);
-            if !child_ctx.visible {
+            if !*details.vis.borrow() {
                 continue;
             }
-
             if details
                 .loc
                 .borrow()

@@ -39,8 +39,10 @@
 01. ensure that menu will work in a vertical pane where it goes over other
     content
 01. remove loc and vis from add_element within element organizer
+01. remove visibility from context
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 
 01. translate scrollable pane 
      - scrollbars should be optional (can scroll with mouse wheel otherwise)
@@ -50,8 +52,6 @@
      - button click should have the button as an input such that it can change
        colour when selected
 01. translate file_navigator
-
-01. remove visibility from context
 
 05. use .flf (figlet font) format instead of custom megatext
      - https://docs.rs/figlet-rs/latest/figlet_rs/
