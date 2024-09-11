@@ -16,6 +16,14 @@ use {
 
 pub struct PaneScrollable {
     pane: VerticalStack,
+
+    view_height: Rc<RefCell<DynVal>>,
+    view_width: Rc<RefCell<DynVal>>,
+    content_width: Rc<RefCell<usize>>,
+    content_height: Rc<RefCell<usize>>,
+    content_view_offset_x: Rc<RefCell<usize>>,
+    content_view_offset_y: Rc<RefCell<usize>>,
+
     pub x_scrollbar: Rc<RefCell<Option<HorizontalScrollbar>>>,
     pub y_scrollbar: Rc<RefCell<Option<VerticalScrollbar>>>,
     // for when there are two scrollbars
@@ -24,7 +32,7 @@ pub struct PaneScrollable {
 
 impl PaneScrollable {
     pub fn new(
-        hat: &SortingHat, ctx: &Context, main_pane: Element, x_scrollbar_op: HorizontalSBPositions,
+        hat: &SortingHat, ctx: &Context, main_pane: Box<dyn Element>, x_scrollbar_op: HorizontalSBPositions,
         y_scrollbar_op: VerticalSBPositions,
     ) -> Self {
         let pane = VerticalStack::new(hat);

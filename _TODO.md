@@ -126,7 +126,6 @@
 30. figure out a nicer way of inheriting element functions from the above
     element besides lots of boilerplate, probably though the use of a macro
 
-
 20. Add another cargo repo like AssertCmd for tui
      name: TuiTester?
      - https://github.com/aschey/tui-tester
@@ -147,6 +146,18 @@
      - CAN'T easily integrate in Taffy low-level API with EO due to ownership
        constraints... could build the basic tree with each new context and or
        element change then set all the taffy locations... PAIN IN THE 
+       - use the taffy high level API
+          - taffy recompute logic to take place in the drawing function
+          - track the last size, only recompute the taffy tree on size changes
+            OR taffy style change event (create a new EventResponse Type)
+             - this response type would effect a "dirty" flag which would exist
+               at the cui level. 
+          - each element would have a taffy type which is taffy::Style and
+            taffy::Layout. The layout would get recomputed and set after each
+            taffy tree computation. 
+          - each element organizer would need to have a helper function for
+            helping to compute the taffy tree such that it could be called into
+            to add leaf nodes ect. 
      - I THINK it only makes sense to only use taffy optionally within an
        element and keep using the Dynamic-Location. There is a lot of weird
        stuff that enforcing taffy globally makes us do. 
