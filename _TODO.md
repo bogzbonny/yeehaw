@@ -43,11 +43,10 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
 01. translate scrollable pane 
      - scrollbars should be optional (can scroll with mouse wheel otherwise)
      - interaction with border pane?
-01. translate tabs NOTE do this after stack so the tabs can be a stack
+01. translate tabs 
      - just use buttons as the tabs?!
      - button click should have the button as an input such that it can change
        colour when selected
@@ -103,7 +102,8 @@
         grad-colours and positions(DynVal?!) (need multiple positions for rainbows). 
      - after the final position is reached (and before the final position if
        there is an offset) repeat the pattern
-
+   - AT THE SAME TIME: maybe the enum of colour could just have a "Transparent"
+     colour - then remove the transparent bool from DrawCh
 
 10. When the keyboard is matching an event combo provided to it, it should be
     recording a partial match (and a suggested maximum wait time to recheck for

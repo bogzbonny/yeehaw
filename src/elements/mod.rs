@@ -3,6 +3,7 @@ pub mod menu;
 pub mod menu_right_click;
 pub mod pane;
 pub mod pane_parent;
+pub mod pane_scrollable;
 pub mod stack;
 pub mod tabs;
 
@@ -12,5 +13,6 @@ pub use {
     menu_right_click::RightClickMenu,
     pane::Pane,
     pane_parent::ParentPane,
+    pane_scrollable::PaneScrollable,
     stack::{HorizontalStack, VerticalStack},
 };
