@@ -35,6 +35,11 @@ impl ParentPane {
         self
     }
 
+    pub fn with_kind(self, kind: &'static str) -> Self {
+        self.pane.set_kind(kind);
+        self
+    }
+
     pub fn add_element(&self, el: Rc<RefCell<dyn Element>>) {
         self.eo.add_element(el.clone(), None);
     }

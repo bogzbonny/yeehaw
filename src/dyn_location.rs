@@ -13,6 +13,15 @@ pub struct DynLocation {
 }
 
 impl DynLocation {
+    pub fn new_full() -> DynLocation {
+        DynLocation {
+            start_x: DynVal::new_fixed(0),
+            end_x: DynVal::new_flex(1.),
+            start_y: DynVal::new_fixed(0),
+            end_y: DynVal::new_flex(1.),
+        }
+    }
+
     pub fn new(start_x: DynVal, end_x: DynVal, start_y: DynVal, end_y: DynVal) -> DynLocation {
         DynLocation {
             start_x,
@@ -175,6 +184,14 @@ pub struct DynLocationSet {
 }
 
 impl DynLocationSet {
+    pub fn new_full() -> DynLocationSet {
+        DynLocationSet {
+            l: DynLocation::new_full(),
+            extra: vec![],
+            z: 0,
+        }
+    }
+
     pub fn new(l: DynLocation, extra: Vec<DynLocation>, z: ZIndex) -> DynLocationSet {
         DynLocationSet { l, extra, z }
     }

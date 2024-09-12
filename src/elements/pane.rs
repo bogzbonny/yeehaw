@@ -77,9 +77,18 @@ impl Pane {
             default_line: Rc::new(RefCell::new(vec![])),
             content_view_offset_x: Rc::new(RefCell::new(0)),
             content_view_offset_y: Rc::new(RefCell::new(0)),
-            loc: Rc::new(RefCell::new(DynLocationSet::default())),
+            loc: Rc::new(RefCell::new(DynLocationSet::new_full())),
             visible: Rc::new(RefCell::new(true)),
         }
+    }
+
+    pub fn with_kind(self, kind: &'static str) -> Pane {
+        *self.kind.borrow_mut() = kind;
+        self
+    }
+
+    pub fn set_kind(&self, kind: &'static str) {
+        *self.kind.borrow_mut() = kind;
     }
 
     pub fn with_z(self, z: ZIndex) -> Pane {

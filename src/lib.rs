@@ -18,7 +18,7 @@ pub mod style;
 pub mod widgets;
 
 pub use {
-    ch::{DrawCh, DrawChPos, DrawChs2D},
+    ch::{DrawCh, DrawChPos, DrawChPosVec, DrawChs2D},
     colour::RgbColour,
     cui::Cui,
     dyn_location::{DynLocation, DynLocationSet, Point, Size, ZIndex},
@@ -27,7 +27,8 @@ pub use {
         Context, Element, EventResponse, EventResponses, ReceivableEventChanges, UpwardPropagator,
     },
     elements::{
-        DebugSizePane, HorizontalStack, MenuBar, Pane, ParentPane, RightClickMenu, VerticalStack,
+        DebugSizePane, HorizontalStack, MenuBar, Pane, PaneScrollable, ParentPane, RightClickMenu,
+        VerticalStack,
     },
     errors::Error,
     event::{CommandEvent, Event, KeyPossibility},

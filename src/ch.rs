@@ -75,6 +75,46 @@ impl DrawChPos {
     }
 }
 
+pub struct DrawChPosVec(pub Vec<DrawChPos>);
+impl Deref for DrawChPosVec {
+    type Target = Vec<DrawChPos>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl DerefMut for DrawChPosVec {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl From<Vec<DrawChPos>> for DrawChPosVec {
+    fn from(chs: Vec<DrawChPos>) -> DrawChPosVec {
+        DrawChPosVec(chs)
+    }
+}
+
+impl DrawChPosVec {
+    pub fn new(chs: Vec<DrawChPos>) -> DrawChPosVec {
+        DrawChPosVec(chs)
+    }
+
+    // adjust the position of the DrawChPos by the offset, if the position
+    // is less than the offset, then truncate the DrawChPos
+    pub fn adjust_for_offset_truncate_early(&mut self, offset_x: usize, offset_y: usize) {
+        let mut out: Vec<DrawChPos> = Vec::with_capacity(self.0.len());
+        for mut ch in self.0.drain(..) {
+            if (ch.x as usize) < offset_x || (ch.y as usize) < offset_y {
+                continue;
+            }
+            ch.x = (ch.x as usize - offset_x) as u16;
+            ch.y = (ch.y as usize - offset_y) as u16;
+            out.push(ch);
+        }
+        self.0 = out;
+    }
+}
+
 // ----------------------------------------------------
 
 #[derive(Clone, Default)]

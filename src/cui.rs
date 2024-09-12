@@ -204,24 +204,24 @@ impl Cui {
     // provided by each element in order from the bottom of the tree to the top.
     // This results in elements higher up the tree being able to overwrite elements
     // lower down the tree.
-    //
-    // TODO see ISSUE 2302-2203. Could optimize for elements not requiring updates by
-    // sending in a timestamp. Would then need a force-render option (for startup)
     pub fn render(&mut self) {
         let mut sc = stdout();
         let ctx = Context::new_context_for_screen();
         let chs = self.eo.all_drawing(&ctx);
 
+        // deduplicate and also remove any chs that are out of bounds
         let mut dedup_chs = HashMap::new();
         for c in chs {
+            if c.x >= ctx.s.width || c.y >= ctx.s.height {
+                continue;
+            }
             dedup_chs.insert((c.x, c.y), c);
         }
 
         let mut do_flush = false;
-        //for c in chs {
         for (_, c) in dedup_chs {
             if c.ch.transparent {
-                // TODO see ISSUE 2206-1000
+                // TODO change to colour type
             } else if self.is_ch_style_at_position_dirty(c.x, c.y, c.ch.ch, c.ch.style) {
                 let st = StyledContent::new((c.ch.style).into(), &c.ch.ch);
                 queue!(&mut sc, MoveTo(c.x, c.y), style::PrintStyledContent(st)).unwrap();

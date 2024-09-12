@@ -123,6 +123,21 @@
            problems.
     - fix the up-dir (..) button 
 
+10. MousePossibility events: 
+    - adjust mouse event logic to mirror that of the keyboard, each element
+      can define what kind of mouse logic it is able to receive. 
+    - this way priority can be defined between different types of mouse events,
+      noteably within a scrollable pane, the scroll event could be routed to the 
+      scrollpane if it is not over a textbox widget but routed to the textbox
+      widget if the the event takes place over the widget AND the priority of
+      the widget is greater than the priority of the scrollpane
+    - it would be cool to integrate in better capture event logic too, if the
+      mouse event is NOT captured, send the event to the next priority down. 
+       - this could potentially also be applied to the accomplish the scroll
+         situation as described above.. first send the event to the inner pane,
+         then if the mouse scroll event is not captured then send it to the
+         scrollable pane.
+
 30. figure out a nicer way of inheriting element functions from the above
     element besides lots of boilerplate, probably though the use of a macro
 
