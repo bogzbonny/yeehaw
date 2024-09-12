@@ -43,6 +43,8 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+01. widget_textbox right click only works once
+
 01. translate scrollable pane 
      - scrollbars should be optional (can scroll with mouse wheel otherwise)
      - interaction with border pane?

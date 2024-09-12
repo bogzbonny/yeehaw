@@ -76,6 +76,7 @@ impl RightClickMenu {
         self.menu.deselect_all();
         self.menu.collapse_non_primary();
         self.menu.make_primary_visible();
+        self.menu.set_visible(true);
         *self.just_created.borrow_mut() = true;
 
         Some(EventResponse::NewElement(Rc::new(RefCell::new(self.clone()))).into())
