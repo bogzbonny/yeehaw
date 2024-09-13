@@ -1,5 +1,5 @@
 use {
-    crate::{prioritizer::Priority, DrawChPos, DynLocationSet, ElementID, Event, Size},
+    crate::{prioritizer::Priority, DrawChPos, DynLocationSet, ElementID, Event, Loc, Size},
     std::collections::HashMap,
     std::ops::{Deref, DerefMut},
     std::{cell::RefCell, rc::Rc},
@@ -192,6 +192,7 @@ pub trait UpwardPropagator {
 #[derive(Default, Clone, Debug)]
 pub struct Context {
     pub s: Size,
+    pub visible_region: Option<Loc>, // the visible region of the element
     //                      key , value
     pub metadata: HashMap<String, Vec<u8>>,
 }
@@ -200,8 +201,14 @@ impl Context {
     pub fn new(s: Size) -> Context {
         Context {
             s,
+            visible_region: None,
             metadata: HashMap::new(),
         }
+    }
+
+    pub fn with_visible_region(mut self, vr: Option<Loc>) -> Self {
+        self.visible_region = vr;
+        self
     }
 
     // TODO return error
@@ -209,6 +216,7 @@ impl Context {
         let (xmax, ymax) = crossterm::terminal::size().unwrap();
         Context {
             s: Size::new(xmax, ymax),
+            visible_region: None,
             metadata: HashMap::new(),
         }
     }

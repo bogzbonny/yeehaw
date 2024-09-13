@@ -40,10 +40,10 @@
     content
 01. remove loc and vis from add_element within element organizer
 01. remove visibility from context
+01. special way to not draw outside of max context (scrollable_pane) 
+     - may need to add something special to the context.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-01. widget_textbox right click only works once
 
 01. translate scrollable pane 
      - scrollbars should be optional (can scroll with mouse wheel otherwise)
@@ -53,6 +53,8 @@
      - button click should have the button as an input such that it can change
        colour when selected
 01. translate file_navigator
+
+01. widget_organizer should extend regular organizer
 
 05. use .flf (figlet font) format instead of custom megatext
      - https://docs.rs/figlet-rs/latest/figlet_rs/

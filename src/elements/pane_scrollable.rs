@@ -12,6 +12,7 @@ use {
         ElementID,
         Event,
         EventResponses,
+        Loc,
         ParentPane,
         Priority,
         ReceivableEventChanges,
@@ -69,6 +70,12 @@ impl PaneScrollable {
         let mut inner_ctx = ctx.clone();
         inner_ctx.s.height = *self.content_height.borrow() as u16;
         inner_ctx.s.width = *self.content_width.borrow() as u16;
+        let x1 = *self.content_offset_x.borrow() as u16;
+        let y1 = *self.content_offset_y.borrow() as u16;
+        let x2 = x1 + ctx.s.width;
+        let y2 = y1 + ctx.s.height;
+        let visible_region = Loc::new(x1, x2, y1, y2);
+        inner_ctx.visible_region = Some(visible_region);
         inner_ctx
     }
 }
@@ -123,6 +130,14 @@ impl Element for PaneScrollable {
                             *self.content_offset_x.borrow_mut() = x;
                         } else {
                             *self.content_offset_x.borrow_mut() += dx as usize;
+                            if *self.content_offset_x.borrow() + ctx.s.width as usize
+                                > *self.content_width.borrow()
+                            {
+                                *self.content_offset_x.borrow_mut() = self
+                                    .content_width
+                                    .borrow()
+                                    .saturating_sub(ctx.s.width as usize);
+                            }
                         }
                         if dy < 0 {
                             let y = self
@@ -132,6 +147,14 @@ impl Element for PaneScrollable {
                             *self.content_offset_y.borrow_mut() = y;
                         } else {
                             *self.content_offset_y.borrow_mut() += dy as usize;
+                            if *self.content_offset_y.borrow() + ctx.s.height as usize
+                                > *self.content_height.borrow()
+                            {
+                                *self.content_offset_y.borrow_mut() = self
+                                    .content_height
+                                    .borrow()
+                                    .saturating_sub(ctx.s.height as usize);
+                            }
                         }
 
                         (true, EventResponses::default())
@@ -150,9 +173,15 @@ impl Element for PaneScrollable {
         let inner_ctx = self.inner_ctx(ctx);
         let out = self.pane.drawing(&inner_ctx);
         let mut out = DrawChPosVec::new(out);
-        out.adjust_for_offset_truncate_early(
+        let x_off = *self.content_offset_x.borrow();
+        let y_off = *self.content_offset_y.borrow();
+        let max_x = x_off + *self.content_width.borrow();
+        let max_y = y_off + *self.content_height.borrow();
+        out.adjust_for_offset_and_truncate(
             *self.content_offset_x.borrow(),
             *self.content_offset_y.borrow(),
+            max_x,
+            max_y,
         );
         out.0
     }

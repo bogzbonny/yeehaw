@@ -208,9 +208,21 @@ impl Element for Pane {
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let mut chs = vec![];
 
+        let (xmin, xmax, ymin, ymax) = if let Some(vis_region) = ctx.visible_region {
+            (
+                vis_region.start_x as usize,
+                vis_region.end_x as usize,
+                vis_region.start_y as usize,
+                vis_region.end_y as usize,
+            )
+        } else {
+            (0, ctx.s.width as usize, 0, ctx.s.height as usize)
+        };
+        //let (xmin, xmax, ymin, ymax) = (0, ctx.s.width as usize, 0, ctx.s.height as usize);
+
         // convert the Content to DrawChPos
-        for y in 0..ctx.s.height as usize {
-            for x in 0..ctx.s.width as usize {
+        for y in ymin..ymax {
+            for x in xmin..xmax {
                 // default ch being added next is the DefaultCh
                 let mut ch_out = *self.default_ch.borrow();
 

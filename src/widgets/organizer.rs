@@ -297,6 +297,12 @@ impl WidgetOrganizer {
                 continue;
             }
 
+            if let Some(vis_loc) = ctx.visible_region {
+                if !vis_loc.intersects_dyn_location_set(ctx, &loc.borrow()) {
+                    continue;
+                }
+            }
+
             let ds = w.drawing(ctx);
             for mut d in ds {
                 // adjust the location of the drawChPos relative to the WidgetPane

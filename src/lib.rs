@@ -21,7 +21,7 @@ pub use {
     ch::{DrawCh, DrawChPos, DrawChPosVec, DrawChs2D},
     colour::RgbColour,
     cui::Cui,
-    dyn_location::{DynLocation, DynLocationSet, Point, Size, ZIndex},
+    dyn_location::{DynLocation, DynLocationSet, Loc, Point, Size, ZIndex},
     dyn_value::DynVal,
     element::{
         Context, Element, EventResponse, EventResponses, ReceivableEventChanges, UpwardPropagator,

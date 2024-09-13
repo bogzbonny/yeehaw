@@ -100,11 +100,17 @@ impl DrawChPosVec {
     }
 
     // adjust the position of the DrawChPos by the offset, if the position
-    // is less than the offset, then truncate the DrawChPos
-    pub fn adjust_for_offset_truncate_early(&mut self, offset_x: usize, offset_y: usize) {
+    // is less than the offset or greater than max_x/y, then truncate the DrawChPos
+    pub fn adjust_for_offset_and_truncate(
+        &mut self, offset_x: usize, offset_y: usize, max_x: usize, max_y: usize,
+    ) {
         let mut out: Vec<DrawChPos> = Vec::with_capacity(self.0.len());
         for mut ch in self.0.drain(..) {
-            if (ch.x as usize) < offset_x || (ch.y as usize) < offset_y {
+            if (ch.x as usize) < offset_x
+                || (ch.y as usize) < offset_y
+                || (ch.x as usize) > max_x
+                || (ch.y as usize) > max_y
+            {
                 continue;
             }
             ch.x = (ch.x as usize - offset_x) as u16;

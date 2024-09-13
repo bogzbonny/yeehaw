@@ -172,7 +172,19 @@ impl ElementOrganizer {
     // get_context_for_el_id returns the context for the element registered under the given id
     pub fn get_context_for_el(&self, higher_ctx: &Context, el_details: &ElDetails) -> Context {
         let size = el_details.loc.borrow().l.get_size(higher_ctx);
-        Context::new(size)
+        let visible_region = if let Some(mut vr) = higher_ctx.visible_region {
+            // make the visible region relative to the el
+            let el_x = el_details.loc.borrow().l.get_start_x(higher_ctx) as u16;
+            let el_y = el_details.loc.borrow().l.get_start_y(higher_ctx) as u16;
+            vr.start_x = vr.start_x.saturating_sub(el_x);
+            vr.end_x = vr.end_x.saturating_sub(el_x);
+            vr.start_y = vr.start_y.saturating_sub(el_y);
+            vr.end_y = vr.end_y.saturating_sub(el_y);
+            Some(vr)
+        } else {
+            None
+        };
+        Context::new(size).with_visible_region(visible_region)
     }
 
     // Receivable returns all of the key combos and commands registered to this
@@ -199,7 +211,6 @@ impl ElementOrganizer {
         let mut eoz: Vec<(ElementID, ElDetails)> = Vec::new();
 
         for (el_id, details) in self.els.borrow().iter() {
-            //let z = details.loc.borrow().z;
             eoz.push((el_id.clone(), details.clone()));
         }
 
@@ -208,8 +219,17 @@ impl ElementOrganizer {
 
         // draw elements in order from highest z-index to lowest
         for el_id_z in eoz {
-            let child_ctx = self.get_context_for_el(ctx, &el_id_z.1);
             let details = self.get_element_details(&el_id_z.0).expect("impossible");
+            if !*details.vis.borrow() {
+                continue;
+            }
+            if let Some(vis_loc) = ctx.visible_region {
+                if !vis_loc.intersects_dyn_location_set(ctx, &details.loc.borrow()) {
+                    continue;
+                }
+            }
+
+            let child_ctx = self.get_context_for_el(ctx, &el_id_z.1);
             let dcps = details.el.borrow().drawing(&child_ctx);
             for mut dcp in dcps {
                 dcp.adjust_by_dyn_location(ctx, &details.loc.borrow().l);

@@ -371,6 +371,49 @@ impl Size {
     }
 }
 
+#[derive(Clone, Copy, Default, Debug, PartialEq)]
+pub struct Loc {
+    pub start_x: u16,
+    pub end_x: u16,
+    pub start_y: u16,
+    pub end_y: u16,
+}
+
+impl Loc {
+    pub fn new(start_x: u16, end_x: u16, start_y: u16, end_y: u16) -> Loc {
+        Loc {
+            start_x,
+            end_x,
+            start_y,
+            end_y,
+        }
+    }
+
+    pub fn intersects_dyn_location_set(&self, ctx: &Context, d: &DynLocationSet) -> bool {
+        let (start_x, end_x) = d.l.x(ctx);
+        let (start_y, end_y) = d.l.y(ctx);
+        if self.start_x < end_x as u16
+            && self.end_x > start_x as u16
+            && self.start_y < end_y as u16
+            && self.end_y > start_y as u16
+        {
+            return true;
+        }
+        for loc in d.extra.iter() {
+            let (start_x, end_x) = loc.x(ctx);
+            let (start_y, end_y) = loc.y(ctx);
+            if self.start_x < end_x as u16
+                && self.end_x > start_x as u16
+                && self.start_y < end_y as u16
+                && self.end_y > start_y as u16
+            {
+                return true;
+            }
+        }
+        false
+    }
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Default, Debug, PartialEq)]
 pub struct Point {
     pub x: i32,

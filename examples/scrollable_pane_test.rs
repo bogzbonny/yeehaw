@@ -21,13 +21,13 @@ use {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    //yeehaw::debug::set_log_file("./widget_test.log".to_string());
-    //yeehaw::debug::clear();
+    yeehaw::debug::set_log_file("./widget_test.log".to_string());
+    yeehaw::debug::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let hat = SortingHat::default();
 
-    let sc_pane = PaneScrollable::new(&hat, 300, 100);
+    let sc_pane = PaneScrollable::new(&hat, 100, 200);
 
     let mut el = WidgetPane::new(&hat);
     let ctx = Context::new_context_for_screen();
