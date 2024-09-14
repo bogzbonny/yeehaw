@@ -42,19 +42,21 @@
 01. remove visibility from context
 01. special way to not draw outside of max context (scrollable_pane) 
      - may need to add something special to the context.
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 01. translate scrollable pane 
      - scrollbars should be optional (can scroll with mouse wheel otherwise)
      - interaction with border pane?
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 01. translate tabs 
      - just use buttons as the tabs?!
      - button click should have the button as an input such that it can change
        colour when selected
+
 01. translate file_navigator
 
-01. widget_organizer should extend regular organizer
+01. widget_organizer should extend regular organizer not be its totally own
+    thing
 
 05. use .flf (figlet font) format instead of custom megatext
      - https://docs.rs/figlet-rs/latest/figlet_rs/

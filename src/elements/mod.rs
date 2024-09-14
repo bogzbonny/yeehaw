@@ -13,6 +13,6 @@ pub use {
     menu_right_click::RightClickMenu,
     pane::Pane,
     pane_parent::ParentPane,
-    pane_scrollable::PaneScrollable,
+    pane_scrollable::{PaneScrollable, PaneWithScrollbars},
     stack::{HorizontalStack, VerticalStack},
 };

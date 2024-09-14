@@ -4,8 +4,8 @@ use {
     yeehaw::{
         //debug,
         widgets::{
-            megafonts, Button, Checkbox, DropdownList, Label, ListBox, Megatext, NumbersTextBox,
-            RadioButtons, TextBox, Toggle,
+            megafonts, Button, Checkbox, DropdownList, HorizontalSBPositions, Label, ListBox,
+            Megatext, NumbersTextBox, RadioButtons, TextBox, Toggle, VerticalSBPositions,
         },
         Context,
         Cui,
@@ -13,7 +13,8 @@ use {
         Element,
         Error,
         EventResponses,
-        PaneScrollable,
+        //PaneScrollable,
+        PaneWithScrollbars,
         SortingHat,
         WidgetPane,
     },
@@ -26,11 +27,18 @@ async fn main() -> Result<(), Error> {
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let hat = SortingHat::default();
+    let ctx = Context::new_context_for_screen();
 
-    let sc_pane = PaneScrollable::new(&hat, 100, 200);
+    let sc_pane = PaneWithScrollbars::new(
+        &hat,
+        &ctx,
+        200,
+        200,
+        HorizontalSBPositions::Below,
+        VerticalSBPositions::ToTheRight,
+    );
 
     let mut el = WidgetPane::new(&hat);
-    let ctx = Context::new_context_for_screen();
 
     let l1 = Label::new(&hat, &ctx, "some label");
 

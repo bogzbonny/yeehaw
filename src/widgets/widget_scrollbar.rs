@@ -1,17 +1,14 @@
 use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Context, DrawChPos, Element, ElementID, Event, EventResponses, KeyPossibility,
-        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, DynLocationSet, DynVal,
-        SortingHat, Style, UpwardPropagator,
+        Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
+        KeyPossibility, Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SortingHat,
+        Style, UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
     std::ops::{Deref, DerefMut},
     std::{cell::RefCell, cmp::Ordering, rc::Rc},
 };
-
-// TODO Better handling of dragging if the mouse leaves the scrollbar
-// location but is still dragging
 
 // NOTE the code in this file is structured in a "zipper" fashion between vertical and horizontal
 // scrollbar, although this increases the line count (extra impl lines everywhere) it is useful for
@@ -169,7 +166,9 @@ impl HorizontalScrollbar {
         })
     }
 
-    pub fn set_dyn_width(&self, view_width: DynVal, scrollbar_length: DynVal, scrollable_width: usize) {
+    pub fn set_dyn_width(
+        &self, view_width: DynVal, scrollbar_length: DynVal, scrollable_width: usize,
+    ) {
         *self.scrollable_view_chs.borrow_mut() = view_width;
         self.base.set_dyn_width(scrollbar_length.clone());
         *self.scrollbar_length_chs.borrow_mut() = scrollbar_length;
@@ -542,7 +541,6 @@ impl Scrollbar {
 
     // process for the selectibility of the scrollbar
     pub fn update_selectibility(&self, ctx: &Context, p_size: usize) {
-        *self.currently_dragging.borrow_mut() = false;
         if self.is_currently_unnecessary(p_size) {
             let _ = self
                 .base
@@ -739,7 +737,6 @@ impl VerticalScrollbar {
                 (true, EventResponses::default())
             }
             MouseEventKind::Up(MouseButton::Left) => {
-                //debug!("sb up click");
                 *self.currently_dragging.borrow_mut() = false;
                 let y = ev.row as usize;
                 match self.position_relative_to_scrollbar(h.into(), y) {
@@ -756,57 +753,11 @@ impl VerticalScrollbar {
             MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Drag(MouseButton::Left)
                 if curr_dragging =>
             {
-                //debug!("sb down click while dragging");
-                let y = ev.row as usize;
-                let start_drag_pos = *self.start_drag_position.borrow();
-                if y == start_drag_pos {
-                    return (false, EventResponses::default());
-                }
-
-                // only allow dragging if the scrollbar is 1 away from the last
-                // drag position
-                if !(y == start_drag_pos.saturating_sub(1) || y == start_drag_pos + 1) {
-                    *self.currently_dragging.borrow_mut() = false;
-                    // TRANSLATION NOTE used to be below... but why?
-                    // return self.receive_mouse_event(ctx, ev);
-                    return (false, EventResponses::default());
-                }
-
-                // consider dragging on the arrow keys to be a drag ONLY if the
-                // mouse is already a single character away from each
-                // otherwise, cancel the drag and perform a single scroll
-                if *self.has_arrows.borrow() {
-                    if y == 0 && start_drag_pos != 1 {
-                        *self.currently_dragging.borrow_mut() = false;
-                        self.scroll_backwards(ctx);
-                        return (true, EventResponses::default());
-                    }
-                    let sb_len_chs = self.scrollbar_length_chs.borrow().get_val(h) as usize;
-                    if y == sb_len_chs.saturating_sub(1)
-                        && start_drag_pos != sb_len_chs.saturating_sub(2)
-                    {
-                        *self.currently_dragging.borrow_mut() = false;
-                        self.scroll_forwards(ctx, h.into());
-                        return (true, EventResponses::default());
-                    }
-                }
-
-                match y.cmp(&start_drag_pos) {
-                    Ordering::Greater => {
-                        self.drag_forwards_by_1_ch(ctx, h.into());
-                    }
-                    Ordering::Less => {
-                        self.drag_backwards_by_1_ch(ctx, h.into());
-                    }
-                    Ordering::Equal => {}
-                }
-                *self.start_drag_position.borrow_mut() = y;
-                (true, EventResponses::default())
+                self.drag_while_dragging(ctx, ev)
             }
             MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Drag(MouseButton::Left)
                 if !curr_dragging =>
             {
-                //debug!("sb down click while not dragging");
                 let y = ev.row as usize;
                 let has_arrows = *self.has_arrows.borrow();
                 match true {
@@ -847,6 +798,70 @@ impl VerticalScrollbar {
             }
         }
     }
+
+    pub fn drag_while_dragging(&self, ctx: &Context, ev: MouseEvent) -> (bool, EventResponses) {
+        let h = ctx.get_height();
+        let y = ev.row as usize;
+        let start_drag_pos = *self.start_drag_position.borrow();
+        if y == start_drag_pos {
+            return (false, EventResponses::default());
+        }
+
+        // only allow dragging if the scrollbar is 1 away from the last
+        // drag position
+        if !(y == start_drag_pos.saturating_sub(1) || y == start_drag_pos + 1) {
+            *self.currently_dragging.borrow_mut() = false;
+            return self.receive_mouse_event(ctx, ev); // resend the event as a non-dragging event
+        }
+
+        // consider dragging on the arrow keys to be a drag ONLY if the
+        // mouse is already a single character away from each
+        // otherwise, cancel the drag and perform a single scroll
+        if *self.has_arrows.borrow() {
+            if y == 0 && start_drag_pos != 1 {
+                *self.currently_dragging.borrow_mut() = false;
+                self.scroll_backwards(ctx);
+                return (true, EventResponses::default());
+            }
+            let sb_len_chs = self.scrollbar_length_chs.borrow().get_val(h) as usize;
+            if y == sb_len_chs.saturating_sub(1) && start_drag_pos != sb_len_chs.saturating_sub(2) {
+                *self.currently_dragging.borrow_mut() = false;
+                self.scroll_forwards(ctx, h.into());
+                return (true, EventResponses::default());
+            }
+        }
+
+        match y.cmp(&start_drag_pos) {
+            Ordering::Greater => {
+                self.drag_forwards_by_1_ch(ctx, h.into());
+            }
+            Ordering::Less => {
+                self.drag_backwards_by_1_ch(ctx, h.into());
+            }
+            Ordering::Equal => {}
+        }
+        *self.start_drag_position.borrow_mut() = y;
+        (false, EventResponses::default())
+    }
+
+    pub fn receive_external_mouse_event(
+        &self, ctx: &Context, ev: MouseEvent,
+    ) -> (bool, EventResponses) {
+        if self.base.get_selectability() == Selectability::Unselectable {
+            return (false, EventResponses::default());
+        }
+        let curr_dragging = *self.currently_dragging.borrow();
+        if !curr_dragging {
+            return (false, EventResponses::default());
+        }
+        match ev.kind {
+            MouseEventKind::Drag(MouseButton::Left) => self.drag_while_dragging(ctx, ev),
+            _ => {
+                *self.currently_dragging.borrow_mut() = false;
+                (false, EventResponses::default())
+            }
+        }
+    }
 }
 
 impl HorizontalScrollbar {
@@ -874,40 +889,7 @@ impl HorizontalScrollbar {
             MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Drag(MouseButton::Left)
                 if curr_dragging =>
             {
-                let x = ev.column as usize;
-                let start_drag_pos = *self.start_drag_position.borrow();
-                if x == start_drag_pos {
-                    return (false, EventResponses::default());
-                }
-                let has_arrows = *self.has_arrows.borrow();
-                if has_arrows {
-                    if x == 0 && start_drag_pos != 1 {
-                        *self.currently_dragging.borrow_mut() = false;
-                        self.scroll_backwards(ctx);
-                        return (true, EventResponses::default());
-                    }
-                    let sb_len_chs = self.scrollbar_length_chs.borrow().get_val(w);
-                    if x == (sb_len_chs as usize).saturating_sub(1)
-                        && start_drag_pos != (sb_len_chs as usize).saturating_sub(2)
-                    {
-                        *self.currently_dragging.borrow_mut() = false;
-                        self.scroll_forwards(ctx, w.into());
-                        return (true, EventResponses::default());
-                    }
-                }
-
-                match x.cmp(&start_drag_pos) {
-                    Ordering::Greater => {
-                        self.drag_forwards_by_1_ch(ctx, w.into());
-                    }
-                    Ordering::Less => {
-                        self.drag_backwards_by_1_ch(ctx, w.into());
-                    }
-                    Ordering::Equal => {}
-                }
-                *self.start_drag_position.borrow_mut() = x;
-
-                (true, EventResponses::default())
+                self.drag_while_dragging(ctx, ev)
             }
             MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Drag(MouseButton::Left)
                 if !curr_dragging =>
@@ -952,6 +934,62 @@ impl HorizontalScrollbar {
             }
         }
     }
+
+    pub fn drag_while_dragging(&self, ctx: &Context, ev: MouseEvent) -> (bool, EventResponses) {
+        let w = ctx.get_width();
+        let x = ev.column as usize;
+        let start_drag_pos = *self.start_drag_position.borrow();
+        if x == start_drag_pos {
+            return (false, EventResponses::default());
+        }
+        let has_arrows = *self.has_arrows.borrow();
+        if has_arrows {
+            if x == 0 && start_drag_pos != 1 {
+                *self.currently_dragging.borrow_mut() = false;
+                self.scroll_backwards(ctx);
+                return (true, EventResponses::default());
+            }
+            let sb_len_chs = self.scrollbar_length_chs.borrow().get_val(w);
+            if x == (sb_len_chs as usize).saturating_sub(1)
+                && start_drag_pos != (sb_len_chs as usize).saturating_sub(2)
+            {
+                *self.currently_dragging.borrow_mut() = false;
+                self.scroll_forwards(ctx, w.into());
+                return (true, EventResponses::default());
+            }
+        }
+
+        match x.cmp(&start_drag_pos) {
+            Ordering::Greater => {
+                self.drag_forwards_by_1_ch(ctx, w.into());
+            }
+            Ordering::Less => {
+                self.drag_backwards_by_1_ch(ctx, w.into());
+            }
+            Ordering::Equal => {}
+        }
+        *self.start_drag_position.borrow_mut() = x;
+        (false, EventResponses::default())
+    }
+
+    pub fn receive_external_mouse_event(
+        &self, ctx: &Context, ev: MouseEvent,
+    ) -> (bool, EventResponses) {
+        if self.base.get_selectability() == Selectability::Unselectable {
+            return (false, EventResponses::default());
+        }
+        let curr_dragging = *self.currently_dragging.borrow();
+        if !curr_dragging {
+            return (false, EventResponses::default());
+        }
+        match ev.kind {
+            MouseEventKind::Drag(MouseButton::Left) => self.drag_while_dragging(ctx, ev),
+            _ => {
+                *self.currently_dragging.borrow_mut() = false;
+                (false, EventResponses::default())
+            }
+        }
+    }
 }
 
 // TRANSLATION NOTE, used to be implemented on the scrollbar
@@ -987,6 +1025,7 @@ impl Element for VerticalScrollbar {
         match ev {
             Event::KeyCombo(ke) => self.receive_key_event(ke, ctx),
             Event::Mouse(me) => self.receive_mouse_event(ctx, me),
+            Event::ExternalMouse(me) => self.receive_external_mouse_event(ctx, me),
             Event::Resize => self.resize_event(ctx),
             _ => (false, EventResponses::default()),
         }
