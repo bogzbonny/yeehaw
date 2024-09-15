@@ -1,8 +1,8 @@
 use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Context, DrawChPos, Element, ElementID, Event, EventResponses, Keyboard as KB, Priority,
-        ReceivableEventChanges, RgbColour, DynLocationSet, DynVal, SortingHat, Style,
+        Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
+        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SortingHat, Style,
         UpwardPropagator, YHAttributes,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -13,6 +13,8 @@ use {
 pub struct Checkbox {
     pub base: WidgetBase,
     pub checked: Rc<RefCell<bool>>, // whether the checkbox is checked or not
+
+    pub clicked_down: Rc<RefCell<bool>>, // activated when mouse is clicked down while over object
 
     // rune to use for the checkmark
     // recommended:  √ X x ✖
@@ -57,6 +59,7 @@ impl Checkbox {
         Checkbox {
             base: wb,
             checked: Rc::new(RefCell::new(false)),
+            clicked_down: Rc::new(RefCell::new(false)),
             checkmark: Rc::new(RefCell::new('√')),
             clicked_fn: Rc::new(RefCell::new(|_, _| EventResponses::default())),
         }
@@ -128,8 +131,20 @@ impl Element for Checkbox {
                 }
             }
             Event::Mouse(me) => {
-                if let MouseEventKind::Up(MouseButton::Left) = me.kind {
-                    return (true, self.click(ctx));
+                let clicked_down = *self.clicked_down.borrow();
+                match me.kind {
+                    MouseEventKind::Down(MouseButton::Left) => {
+                        *self.clicked_down.borrow_mut() = true;
+                        return (true, EventResponses::default());
+                    }
+                    MouseEventKind::Drag(MouseButton::Left) if clicked_down => {}
+                    MouseEventKind::Up(MouseButton::Left) if clicked_down => {
+                        *self.clicked_down.borrow_mut() = false;
+                        return (true, self.click(ctx));
+                    }
+                    _ => {
+                        *self.clicked_down.borrow_mut() = false;
+                    }
                 }
             }
             _ => {}

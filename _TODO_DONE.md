@@ -1,4 +1,55 @@
 
+
+01. write debug_pane
+01. textbox rcm bug.. need to go to the upper right hand corner to first
+    activate the rcm 
+30. refactor: remove ExtraLocations from EventResponse
+05. menu.rs: 
+        // XXX this should just be loc width (post refactor of dyn_location to element)
+01. Hooks 
+     - HashMap(HookKind, Vec(ElementID, fn Hook))
+     - register_hook
+     - type HookKind = String
+        - use string to allow for totally custom widget hook kinds
+     - remove_hook(el_id, kind) 
+     - remove_all_hooks(el_id)
+     - pre/post event hook
+     - pre/post location change hook 
+     - pre/post visibility change hook
+05. Proper overwrite when writing a transparent character. Build in
+    functionality to retrieve and draw what the content underneath should be
+    even if it's not currently drawn will require new fn on Element
+    "GetDrawingAtPos" as well as determining the layer order at a given
+    position.
+     - I don't think this is an issue now that drawing is contained to the
+       single draw function.
+01. rewrite horizontal/vertical stack panes
+
+01. WONT DO remove extra locations
+     - menu item should manually refer back to the menu-bar element when an
+       event is called
+     - turns out this is actually very useful if we want to have parent panes
+       which have elements outside of their original location (obv!). Otherwise
+       we would need to have the parent pane constantly grow and shrink its main
+       dimention which would be annoying to track.. basically the same as using
+       taffy. - we would then need to do the wierd thing of passing back
+       "non-captured" to the EO which would then need to send the event down to
+       the next z-index... too-much extra complexity compared to just allowing
+       for extra locations
+01. menubar doesn't properly render output on top of element below
+01. ensure that menu will work in a vertical pane where it goes over other
+    content
+01. remove loc and vis from add_element within element organizer
+01. remove visibility from context
+01. special way to not draw outside of max context (scrollable_pane) 
+     - may need to add something special to the context.
+01. translate scrollable pane 
+     - scrollbars should be optional (can scroll with mouse wheel otherwise)
+     - interaction with border pane?
+
+
+
+
 01. make the element-id a name (string) which is unique across the entire cui application.
      - the element-id will nolonger be assigned by each element organizer, but
        assigned to each element at it's creation. 

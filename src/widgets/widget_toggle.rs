@@ -1,8 +1,8 @@
 use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Context, DrawChPos, Element, ElementID, Event, EventResponses, Keyboard as KB, Priority,
-        ReceivableEventChanges, RgbColour, DynLocationSet, DynVal, SortingHat, Style,
+        Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
+        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SortingHat, Style,
         UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -15,6 +15,7 @@ pub struct Toggle {
     pub left: Rc<RefCell<String>>,
     pub right: Rc<RefCell<String>>,
     pub left_selected: Rc<RefCell<bool>>, // otherwise right is selected
+    pub clicked_down: Rc<RefCell<bool>>,  // activated when mouse is clicked down while over button
     pub selected_sty: Rc<RefCell<Style>>,
     //                                   selected
     pub toggled_fn: Rc<RefCell<dyn FnMut(Context, String) -> EventResponses>>,
@@ -68,6 +69,7 @@ impl Toggle {
             left: Rc::new(RefCell::new(left)),
             right: Rc::new(RefCell::new(right)),
             left_selected: Rc::new(RefCell::new(true)),
+            clicked_down: Rc::new(RefCell::new(false)),
             selected_sty: Rc::new(RefCell::new(Self::DEFAULT_SELECTED_STY)),
             toggled_fn: Rc::new(RefCell::new(toggeld_fn)),
         }
@@ -147,13 +149,25 @@ impl Element for Toggle {
                 return (false, EventResponses::default());
             }
             Event::Mouse(me) => {
-                if let MouseEventKind::Up(MouseButton::Left) = me.kind {
-                    let x = me.column as usize;
-                    let left_sel = *self.left_selected.borrow();
-                    if (!left_sel && x < self.left.borrow().chars().count())
-                        || (left_sel && x >= self.left.borrow().chars().count())
-                    {
-                        return (true, self.perform_toggle(ctx));
+                let clicked_down = *self.clicked_down.borrow();
+                match me.kind {
+                    MouseEventKind::Down(MouseButton::Left) => {
+                        *self.clicked_down.borrow_mut() = true;
+                        return (true, EventResponses::default());
+                    }
+                    MouseEventKind::Drag(MouseButton::Left) if clicked_down => {}
+                    MouseEventKind::Up(MouseButton::Left) if clicked_down => {
+                        *self.clicked_down.borrow_mut() = false;
+                        let x = me.column as usize;
+                        let left_sel = *self.left_selected.borrow();
+                        if (!left_sel && x < self.left.borrow().chars().count())
+                            || (left_sel && x >= self.left.borrow().chars().count())
+                        {
+                            return (true, self.perform_toggle(ctx));
+                        }
+                    }
+                    _ => {
+                        *self.clicked_down.borrow_mut() = false;
                     }
                 }
                 return (false, EventResponses::default());

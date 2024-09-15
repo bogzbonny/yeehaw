@@ -4,8 +4,8 @@ use {
         Widgets,
     },
     crate::{
-        Context, DrawChPos, Element, ElementID, Event, EventResponses, Keyboard as KB, Priority,
-        ReceivableEventChanges, RgbColour, DynLocationSet, DynVal, SortingHat, Style,
+        Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
+        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SortingHat, Style,
         UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -18,6 +18,7 @@ pub struct ListBox {
     pub entries: Rc<RefCell<Vec<String>>>,
     pub selected: Rc<RefCell<Vec<usize>>>, // the entries which have been selected
     pub cursor: Rc<RefCell<Option<usize>>>, // position of a listbox cursor
+    pub clicked_down: Rc<RefCell<bool>>,   // activated when mouse is clicked down while over object
 
     pub lines_per_item: Rc<RefCell<usize>>, // how many lines each item is to take up
 
@@ -35,8 +36,6 @@ pub struct ListBox {
 
     pub scrollbar_options: Rc<RefCell<VerticalSBPositions>>,
     pub scrollbar: Rc<RefCell<Option<VerticalScrollbar>>>,
-    // XXX TODO
-    //pub right_click_menu: Option<RightClickMenuTemplate>, // right click menu for the list
 }
 
 #[derive(Clone)]
@@ -124,6 +123,7 @@ impl ListBox {
             lines_per_item: Rc::new(RefCell::new(max_lines_per_entry)),
             selected: Rc::new(RefCell::new(Vec::new())),
             cursor: Rc::new(RefCell::new(None)),
+            clicked_down: Rc::new(RefCell::new(false)),
             selection_mode: Rc::new(RefCell::new(SelectionMode::NoLimit)),
 
             item_selected_style: Rc::new(RefCell::new(Self::STYLE_ITEM_SELECTED)),
@@ -155,12 +155,6 @@ impl ListBox {
         *self.scrollbar_options.borrow_mut() = VerticalSBPositions::ToTheRight;
         self
     }
-
-    // XXX TODO
-    //pub fn with_right_click_menu(mut self) -> Self {
-    //self.right_click_menu = rcm;
-    //    self
-    //}
 
     pub fn with_lines_per_item(self, ctx: &Context, lines: usize) -> Self {
         *self.lines_per_item.borrow_mut() = lines;
@@ -509,10 +503,31 @@ impl Element for ListBox {
                 };
             }
             Event::Mouse(me) => {
+                //let (mut clicked, mut dragging, mut scroll_up, mut scroll_down) =
+                //    (false, false, false, false);
+                //match me.kind {
+                //    MouseEventKind::Up(MouseButton::Left) => clicked = true,
+                //    MouseEventKind::Drag(MouseButton::Left) => dragging = true,
+                //    MouseEventKind::ScrollUp => scroll_up = true,
+                //    MouseEventKind::ScrollDown => scroll_down = true,
+                //    _ => {}
+                //}
+
+                let clicked_down = *self.clicked_down.borrow();
                 let (mut clicked, mut dragging, mut scroll_up, mut scroll_down) =
                     (false, false, false, false);
                 match me.kind {
-                    MouseEventKind::Up(MouseButton::Left) => clicked = true,
+                    MouseEventKind::Down(MouseButton::Left) => {
+                        *self.clicked_down.borrow_mut() = true;
+                        return (true, EventResponses::default());
+                    }
+                    MouseEventKind::Drag(MouseButton::Left) if clicked_down => {}
+                    _ => {
+                        *self.clicked_down.borrow_mut() = false;
+                    }
+                }
+                match me.kind {
+                    MouseEventKind::Up(MouseButton::Left) if clicked_down => clicked = true,
                     MouseEventKind::Drag(MouseButton::Left) => dragging = true,
                     MouseEventKind::ScrollUp => scroll_up = true,
                     MouseEventKind::ScrollDown => scroll_down = true,
@@ -528,16 +543,7 @@ impl Element for ListBox {
                         self.cursor_down(ctx);
                         (true, EventResponses::default())
                     }
-                    // XXX TODO
-                    //// handle right click
-                    //if lb.RightClickMenu != nil {
-                    //    // send the event to the right click menu to check for right click
-                    //    createRCM := lb.RightClickMenu.CreateMenuIfRightClick(ev)
-                    //    if createRCM.HasWindow() {
-                    //        return true, yh.NewEventResponse().WithWindow(createRCM)
-                    //    }
-                    //}
-                    _ if (clicked || dragging) => {
+                    _ if clicked => {
                         let (x, y) = (me.column as usize, me.row as usize);
 
                         // check if this should be a scrollbar event

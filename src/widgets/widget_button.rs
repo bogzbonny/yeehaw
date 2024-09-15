@@ -1,9 +1,9 @@
 use {
     super::{widget::RESP_DEACTIVATE, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Context, DrawChPos, Element, ElementID, Event, EventResponse, EventResponses,
-        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, DynLocationSet, DynVal,
-        SortingHat, Style, UpwardPropagator,
+        Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponse,
+        EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SortingHat,
+        Style, UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -21,6 +21,7 @@ pub struct Button {
     pub base: WidgetBase,
     pub text: Rc<RefCell<String>>,
     pub sides: Rc<RefCell<(String, String)>>, // left right
+    pub clicked_down: Rc<RefCell<bool>>, // activated when mouse is clicked down while over button
     // function which executes when button moves from pressed -> unpressed
     #[allow(clippy::type_complexity)]
     pub clicked_fn: Rc<RefCell<dyn FnMut(Context) -> EventResponses>>,
@@ -67,6 +68,7 @@ impl Button {
             base: wb,
             text: Rc::new(RefCell::new(text)),
             sides: Rc::new(RefCell::new((']'.to_string(), '['.to_string()))),
+            clicked_down: Rc::new(RefCell::new(false)),
             clicked_fn: Rc::new(RefCell::new(clicked_fn)),
         };
         b.base.set_content_from_string(ctx, &b.button_text());
@@ -140,8 +142,20 @@ impl Element for Button {
                 }
             }
             Event::Mouse(me) => {
-                if let MouseEventKind::Up(MouseButton::Left) = me.kind {
-                    return (true, self.click(ctx));
+                let clicked_down = *self.clicked_down.borrow();
+                match me.kind {
+                    MouseEventKind::Down(MouseButton::Left) => {
+                        *self.clicked_down.borrow_mut() = true;
+                        return (true, EventResponses::default());
+                    }
+                    MouseEventKind::Drag(MouseButton::Left) if clicked_down => {}
+                    MouseEventKind::Up(MouseButton::Left) if clicked_down => {
+                        *self.clicked_down.borrow_mut() = false;
+                        return (true, self.click(ctx));
+                    }
+                    _ => {
+                        *self.clicked_down.borrow_mut() = false;
+                    }
                 }
             }
             _ => {}

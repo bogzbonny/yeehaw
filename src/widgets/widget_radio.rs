@@ -1,8 +1,8 @@
 use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Context, DrawChPos, Element, ElementID, Event, EventResponses, Keyboard as KB, Priority,
-        ReceivableEventChanges, RgbColour, DynLocationSet, DynVal, SortingHat, Style,
+        Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
+        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SortingHat, Style,
         UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -19,6 +19,8 @@ pub struct RadioButtons {
     pub off_ch: Rc<RefCell<char>>, // ch used for the unselected
 
     pub radios: Rc<RefCell<Vec<String>>>, // the text for each radio button
+
+    pub clicked_down: Rc<RefCell<bool>>, // activated when mouse is clicked down while over object
 
     pub selected: Rc<RefCell<usize>>, // which radio button is selected
 
@@ -65,6 +67,7 @@ impl RadioButtons {
             base: wb,
             on_ch: Rc::new(RefCell::new('⍟')),
             off_ch: Rc::new(RefCell::new('◯')),
+            clicked_down: Rc::new(RefCell::new(false)),
             radios: Rc::new(RefCell::new(radios)),
             selected: Rc::new(RefCell::new(0)),
             radio_selected_fn: Rc::new(RefCell::new(|_, _, _| EventResponses::default())),
@@ -143,18 +146,33 @@ impl Element for RadioButtons {
                 return (false, EventResponses::default());
             }
             Event::Mouse(me) => {
-                if let MouseEventKind::Up(MouseButton::Left) = me.kind {
-                    let y = me.row as usize;
-                    if y < self.radios.borrow().len() {
-                        *self.selected.borrow_mut() = y;
-                        let resp = self.radio_selected_fn.borrow_mut()(
-                            ctx.clone(),
-                            y,
-                            self.radios.borrow()[y].clone(),
-                        );
-                        return (true, resp);
+                if let MouseEventKind::Up(MouseButton::Left) = me.kind {}
+
+                let clicked_down = *self.clicked_down.borrow();
+                match me.kind {
+                    MouseEventKind::Down(MouseButton::Left) => {
+                        *self.clicked_down.borrow_mut() = true;
+                        return (true, EventResponses::default());
+                    }
+                    MouseEventKind::Drag(MouseButton::Left) if clicked_down => {}
+                    MouseEventKind::Up(MouseButton::Left) if clicked_down => {
+                        *self.clicked_down.borrow_mut() = false;
+                        let y = me.row as usize;
+                        if y < self.radios.borrow().len() {
+                            *self.selected.borrow_mut() = y;
+                            let resp = self.radio_selected_fn.borrow_mut()(
+                                ctx.clone(),
+                                y,
+                                self.radios.borrow()[y].clone(),
+                            );
+                            return (true, resp);
+                        }
+                    }
+                    _ => {
+                        *self.clicked_down.borrow_mut() = false;
                     }
                 }
+
                 return (false, EventResponses::default());
             }
             _ => {}

@@ -23,6 +23,7 @@ pub struct DropdownList {
     pub max_expanded_height: Rc<RefCell<usize>>, // the max height of the entire dropdown list when expanded
     pub dropdown_arrow: Rc<RefCell<DrawCh>>,     // ▼
     pub cursor_style: Rc<RefCell<Style>>,        // style for the selected entry
+    pub clicked_down: Rc<RefCell<bool>>, // activated when mouse is clicked down while over object
     #[allow(clippy::type_complexity)]
     pub selection_made_fn: Rc<RefCell<Box<dyn FnMut(Context, String) -> EventResponses>>>, // function which executes when button moves from pressed -> unpressed
     pub scrollbar: VerticalScrollbar, // embedded scrollbar in dropdown list
@@ -112,6 +113,7 @@ impl DropdownList {
             max_expanded_height: Rc::new(RefCell::new(10)),
             dropdown_arrow: Rc::new(RefCell::new(Self::DEFAULT_DROPDOWN_ARROW)),
             cursor_style: Rc::new(RefCell::new(Self::STYLE_DD_CURSOR)),
+            clicked_down: Rc::new(RefCell::new(false)),
             selection_made_fn: Rc::new(RefCell::new(selection_made_fn)),
             scrollbar: sb,
         };
@@ -349,16 +351,29 @@ impl Element for DropdownList {
                 };
             }
             Event::Mouse(me) => {
+                let clicked_down = *self.clicked_down.borrow();
+                let open = *self.open.borrow();
                 let (mut clicked, mut dragging, mut scroll_up, mut scroll_down) =
                     (false, false, false, false);
+                if !open {
+                    match me.kind {
+                        MouseEventKind::Down(MouseButton::Left) if !open => {
+                            *self.clicked_down.borrow_mut() = true;
+                            return (true, EventResponses::default());
+                        }
+                        MouseEventKind::Drag(MouseButton::Left) if clicked_down => {}
+                        _ => {
+                            *self.clicked_down.borrow_mut() = false;
+                        }
+                    }
+                }
                 match me.kind {
-                    MouseEventKind::Up(MouseButton::Left) => clicked = true,
+                    MouseEventKind::Up(MouseButton::Left) if clicked_down || open => clicked = true,
                     MouseEventKind::Drag(MouseButton::Left) => dragging = true,
                     MouseEventKind::ScrollUp => scroll_up = true,
                     MouseEventKind::ScrollDown => scroll_down = true,
                     _ => {}
                 }
-                let open = *self.open.borrow();
 
                 return match true {
                     _ if !open && clicked => {
