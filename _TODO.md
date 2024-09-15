@@ -1,8 +1,21 @@
 
 01. tab key not working to go between widgets in pane_scrollable_test (nor
     escape?) - works for scrollablepane now, but not for pane_with_scrollbars
+01. widget_organizer should extend regular organizer not be its totally own
+    thing
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+01. translate tabs 
+     - just use buttons as the tabs?!
+       - maybe not for tab dragging?
+         - have a few buttons that live after the tabs (for the a + button for
+           instance)
+     - button click should have the button as an input such that it can change
+       colour when selected
+
+01. translate file_navigator
 
 01. support taffy as a layout structure.
      - Taffy low-level API (MUST use master branch)
@@ -19,8 +32,8 @@
           - Have the TafLocation Simply change the DynLocation (fixed) every
             time it changes or there is a resize.
      - model after the partial owned model https://github.com/DioxusLabs/taffy/blob/main/examples/custom_tree_owned_partial.rs
-     MISC NOTES
-       - use the taffy high level API
+     OLD NOTES
+       - WONT DO use the taffy high level API
           - taffy recompute logic to take place in the drawing function
           - track the last size, only recompute the taffy tree on size changes
             OR taffy style change event (create a new EventResponse Type)
@@ -32,14 +45,14 @@
           - each element organizer would need to have a helper function for
             helping to compute the taffy tree such that it could be called into
             to add leaf nodes ect. 
-        - would need to mimic some form of the "plus" function for the Taffy Style.  
+        - WONT DO would need to mimic some form of the "plus" function for the Taffy Style.  
           - IMPOSSIBLE needs things to just be wrapped in further containers
           - this becomes annoying for things like grouped widgets (textbox with
             scrollbar... OR anything with labels). which will then need a wrapped
             into a parent pane and have the events propogated downward. 
              - the grouping of widgets would then need to fulfill the Widget
                interface and act like one.
-        - How would this even work for something like a menu?
+        - WONT DO How would this even work for something like a menu?
           - menu bar has a position (arbitrary). 
           - next menu expansion would need to have a position of that original 
             arbitrary position + some offset
@@ -51,18 +64,6 @@
                  location would be flattened down such that it was not a sub-item
                  of the menu-bar but of the same parent the menu-bar has 
 
-01. translate tabs 
-     - just use buttons as the tabs?!
-       - maybe not for tab dragging?
-         - have a few buttons that live after the tabs (for the a + button for
-           instance)
-     - button click should have the button as an input such that it can change
-       colour when selected
-
-01. translate file_navigator
-
-01. widget_organizer should extend regular organizer not be its totally own
-    thing
 
 05. use .flf (figlet font) format instead of custom megatext
      - https://docs.rs/figlet-rs/latest/figlet_rs/

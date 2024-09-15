@@ -1,7 +1,6 @@
 pub mod common;
 pub mod el_widget_pane;
 pub mod megafonts;
-pub mod organizer;
 pub mod widget;
 pub mod widget_button;
 pub mod widget_checkbox;
@@ -18,7 +17,6 @@ pub mod widget_toggle;
 pub use {
     el_widget_pane::WidgetPane,
     megafonts::Megafont,
-    organizer::WidgetOrganizer,
     widget::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     widget_button::Button,
     widget_checkbox::Checkbox,
