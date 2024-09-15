@@ -74,7 +74,7 @@ impl Element for WidgetPane {
         // all of the events returned by the widget organizer are set to
         // focused because WO.Receivable only returns the events associated with
         // widget that is currently active.
-        let wpes = self.org.borrow_mut().receivable();
+        let wpes = self.org.borrow().receivable();
         // Add the widget pane's self events. These are default receivable events of the widget
         // organizer
         let mut rec = self.pane.receivable();

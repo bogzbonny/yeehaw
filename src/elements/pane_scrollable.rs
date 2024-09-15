@@ -293,7 +293,6 @@ impl PaneWithScrollbars {
 
         let y_sb =
             VerticalScrollbar::new(hat, y_scrollbar_size, *inner_pane.content_height.borrow());
-
         let x_sb =
             HorizontalScrollbar::new(hat, x_scrollbar_size, *inner_pane.content_width.borrow());
 
@@ -323,20 +322,20 @@ impl PaneWithScrollbars {
                 *x_scrollbar.borrow_mut() = Some(x_sb.clone());
                 vs.push(ctx, Rc::new(RefCell::new(x_sb.clone())));
                 vs.push(ctx, Rc::new(RefCell::new(inner_pane.clone())));
-                pane.push(ctx, Rc::new(RefCell::new(vs)));
+                pane.push(ctx, Rc::new(RefCell::new(vs.clone())));
             }
             (VerticalSBPositions::None, HorizontalSBPositions::Below) => {
                 *x_scrollbar.borrow_mut() = Some(x_sb.clone());
                 vs.push(ctx, Rc::new(RefCell::new(inner_pane.clone())));
                 vs.push(ctx, Rc::new(RefCell::new(x_sb.clone())));
-                pane.push(ctx, Rc::new(RefCell::new(vs)));
+                pane.push(ctx, Rc::new(RefCell::new(vs.clone())));
             }
             (VerticalSBPositions::ToTheRight, HorizontalSBPositions::Above) => {
                 *y_scrollbar.borrow_mut() = Some(y_sb.clone());
                 *x_scrollbar.borrow_mut() = Some(x_sb.clone());
                 vs.push(ctx, Rc::new(RefCell::new(x_sb.clone())));
                 vs.push(ctx, Rc::new(RefCell::new(inner_pane.clone())));
-                pane.push(ctx, Rc::new(RefCell::new(vs)));
+                pane.push(ctx, Rc::new(RefCell::new(vs.clone())));
                 pane.push(ctx, Rc::new(RefCell::new(y_sb.clone())));
             }
             (VerticalSBPositions::ToTheRight, HorizontalSBPositions::Below) => {
@@ -344,7 +343,7 @@ impl PaneWithScrollbars {
                 *x_scrollbar.borrow_mut() = Some(x_sb.clone());
                 vs.push(ctx, Rc::new(RefCell::new(inner_pane.clone())));
                 vs.push(ctx, Rc::new(RefCell::new(x_sb.clone())));
-                pane.push(ctx, Rc::new(RefCell::new(vs)));
+                pane.push(ctx, Rc::new(RefCell::new(vs.clone())));
                 pane.push(ctx, Rc::new(RefCell::new(y_sb.clone())));
             }
             (VerticalSBPositions::ToTheLeft, HorizontalSBPositions::Above) => {
@@ -353,7 +352,7 @@ impl PaneWithScrollbars {
                 vs.push(ctx, Rc::new(RefCell::new(x_sb.clone())));
                 vs.push(ctx, Rc::new(RefCell::new(inner_pane.clone())));
                 pane.push(ctx, Rc::new(RefCell::new(y_sb.clone())));
-                pane.push(ctx, Rc::new(RefCell::new(vs)));
+                pane.push(ctx, Rc::new(RefCell::new(vs.clone())));
             }
             (VerticalSBPositions::ToTheLeft, HorizontalSBPositions::Below) => {
                 *y_scrollbar.borrow_mut() = Some(y_sb.clone());
@@ -361,9 +360,13 @@ impl PaneWithScrollbars {
                 vs.push(ctx, Rc::new(RefCell::new(inner_pane.clone())));
                 vs.push(ctx, Rc::new(RefCell::new(x_sb.clone())));
                 pane.push(ctx, Rc::new(RefCell::new(y_sb.clone())));
-                pane.push(ctx, Rc::new(RefCell::new(vs)));
+                pane.push(ctx, Rc::new(RefCell::new(vs.clone())));
             }
         };
+
+        inner_pane.change_priority(ctx, Priority::FOCUSED);
+        pane.change_priority(ctx, Priority::FOCUSED);
+        vs.change_priority(ctx, Priority::FOCUSED);
 
         Self {
             pane,

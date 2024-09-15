@@ -251,6 +251,7 @@ impl Element for ParentPane {
                 (false, self.eo.external_mouse_event_process(ctx, &me))
             }
             Event::KeyCombo(ke) => {
+                //debug!("ParentPane::receive_key_event: {}, {:?}", self.id(), ke);
                 // convert ke to Vec<crossterm::event::KeyEvent>
                 let ke = ke.into_iter().filter_map(|kp| kp.get_key()).collect();
                 let mep = self.eo.key_events_process(ctx, ke);

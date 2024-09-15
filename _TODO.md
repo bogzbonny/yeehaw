@@ -1,8 +1,61 @@
 
+01. tab key not working to go between widgets in pane_scrollable_test (nor
+    escape?) - works for scrollablepane now, but not for pane_with_scrollbars
+
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+01. support taffy as a layout structure.
+     - Taffy low-level API (MUST use master branch)
+     - I THINK it only makes sense to only use taffy optionally within an
+       element and keep using the Dynamic-Location. There is a lot of weird
+       stuff that enforcing taffy globally makes us do. 
+        - [DONE] If we are to integrate in to a new Location type which can be either
+          DynLocationSet or TafLocation then we would need to somehow either
+          remove the Cache on Clone or have the Cache be in a Rc<RefCel<>>
+          (wierd) 
+        - [DONE] first would need to refactor ZIndex to work in opposite order
+          of current workings
+        - Integrate TafLocation as an Option on Pane? ParentPane?
+          - Have the TafLocation Simply change the DynLocation (fixed) every
+            time it changes or there is a resize.
+     - model after the partial owned model https://github.com/DioxusLabs/taffy/blob/main/examples/custom_tree_owned_partial.rs
+     MISC NOTES
+       - use the taffy high level API
+          - taffy recompute logic to take place in the drawing function
+          - track the last size, only recompute the taffy tree on size changes
+            OR taffy style change event (create a new EventResponse Type)
+             - this response type would effect a "dirty" flag which would exist
+               at the cui level. 
+          - each element would have a taffy type which is taffy::Style and
+            taffy::Layout. The layout would get recomputed and set after each
+            taffy tree computation. 
+          - each element organizer would need to have a helper function for
+            helping to compute the taffy tree such that it could be called into
+            to add leaf nodes ect. 
+        - would need to mimic some form of the "plus" function for the Taffy Style.  
+          - IMPOSSIBLE needs things to just be wrapped in further containers
+          - this becomes annoying for things like grouped widgets (textbox with
+            scrollbar... OR anything with labels). which will then need a wrapped
+            into a parent pane and have the events propogated downward. 
+             - the grouping of widgets would then need to fulfill the Widget
+               interface and act like one.
+        - How would this even work for something like a menu?
+          - menu bar has a position (arbitrary). 
+          - next menu expansion would need to have a position of that original 
+            arbitrary position + some offset
+             - could make the whole menu a parent pane, BUT then it would
+               introduce a bunch of empty transparent space which would be awkward
+               to then propogate the events downward from.
+             - Maybe could work if there was a "flatten" the tree for locations
+               - each sub-item would be a leaf of the menu-bar however a final
+                 location would be flattened down such that it was not a sub-item
+                 of the menu-bar but of the same parent the menu-bar has 
 
 01. translate tabs 
      - just use buttons as the tabs?!
+       - maybe not for tab dragging?
+         - have a few buttons that live after the tabs (for the a + button for
+           instance)
      - button click should have the button as an input such that it can change
        colour when selected
 
@@ -20,6 +73,30 @@
     routed through the standard event loop as normal. This can be used to
     replicate a heartbeat for a element, or to simulate a visual effect such as
     a button click.
+
+10. gradient colour types, don't ask me how exactly however this is basically
+    what we should do.
+     - refactor colour to make a call each draw
+       - maybe make colour an enum for serialization purposes. 
+     - maybe the gradient moves based on the screen position.
+     - keep it linear gradients for now
+     - gradient params: pos-offset x/y (as DynVal!), 
+        grad-colours and positions(DynVal?!) (need multiple positions for rainbows). 
+     - after the final position is reached (and before the final position if
+       there is an offset) repeat the pattern
+   - Time gradient
+   - time and screen position gradient.
+      - maybe this could be a time gradient, however each colour on the gradient
+        scale WAS another gradient.
+   - AT THE SAME TIME: maybe the enum of colour could just have a "Transparent"
+     colour - then remove the transparent bool from DrawCh
+     - maybe transparent should be an alpha setting... could still be an integer 
+       and could blend with the colour behind it. 
+        - if applied to the fg, the current fg character would still be the ch
+          up to a threshold of maybe 50% alpha (in which case it would use the
+          character behind it. 
+
+05. button selectable (can hit with enter key)
 
 05. Subscription based events on common objects. 
      - like leptos. any element could subscribe to an object (with any other
@@ -50,19 +127,6 @@
     favour of specifically removing the priorities by the element id of the
     element being destroyed or replaced
      - is this still an issue?
-
-10. gradient colour types, don't ask me how exactly however this is basically
-    what we should do.
-     - refactor colour to make a call each draw
-       - maybe make colour an enum for serialization purposes. 
-     - maybe the gradient moves based on the screen position.
-     - keep it linear gradients for now
-     - gradient params: pos-offset x/y (as DynVal!), 
-        grad-colours and positions(DynVal?!) (need multiple positions for rainbows). 
-     - after the final position is reached (and before the final position if
-       there is an offset) repeat the pattern
-   - AT THE SAME TIME: maybe the enum of colour could just have a "Transparent"
-     colour - then remove the transparent bool from DrawCh
 
 10. When the keyboard is matching an event combo provided to it, it should be
     recording a partial match (and a suggested maximum wait time to recheck for
@@ -116,52 +180,4 @@
        https://terminalroot.com/use-ms-paint-directly-in-terminal/) uses. 
        this format can be viewed in the terminal with "cat my_ansi_image.ans"
 
-30. support taffy as a layout structure.
-     - CAN'T easily integrate in Taffy low-level API with EO due to ownership
-       constraints... could build the basic tree with each new context and or
-       element change then set all the taffy locations... PAIN IN THE 
-       - use the taffy high level API
-          - taffy recompute logic to take place in the drawing function
-          - track the last size, only recompute the taffy tree on size changes
-            OR taffy style change event (create a new EventResponse Type)
-             - this response type would effect a "dirty" flag which would exist
-               at the cui level. 
-          - each element would have a taffy type which is taffy::Style and
-            taffy::Layout. The layout would get recomputed and set after each
-            taffy tree computation. 
-          - each element organizer would need to have a helper function for
-            helping to compute the taffy tree such that it could be called into
-            to add leaf nodes ect. 
-     - I THINK it only makes sense to only use taffy optionally within an
-       element and keep using the Dynamic-Location. There is a lot of weird
-       stuff that enforcing taffy globally makes us do. 
-        - [DONE] If we are to integrate in to a new Location type which can be either
-          DynLocationSet or TafLocation then we would need to somehow either
-          remove the Cache on Clone or have the Cache be in a Rc<RefCel<>>
-          (wierd) 
-        - [DONE] first would need to refactor ZIndex to work in opposite order
-          of current workings
-        - Integrate TafLocation as an Option on Pane? ParentPane?
-          - Have the TafLocation Simply change the DynLocation (fixed) every
-            time it changes. 
-     - model after the partial owned model https://github.com/DioxusLabs/taffy/blob/main/examples/custom_tree_owned_partial.rs
-     MISC NOTES
-        - would need to mimic some form of the "plus" function for the Taffy Style.  
-          - IMPOSSIBLE needs things to just be wrapped in further containers
-          - this becomes annoying for things like grouped widgets (textbox with
-            scrollbar... OR anything with labels). which will then need a wrapped
-            into a parent pane and have the events propogated downward. 
-             - the grouping of widgets would then need to fulfill the Widget
-               interface and act like one.
-        - How would this even work for something like a menu?
-          - menu bar has a position (arbitrary). 
-          - next menu expansion would need to have a position of that original 
-            arbitrary position + some offset
-             - could make the whole menu a parent pane, BUT then it would
-               introduce a bunch of empty transparent space which would be awkward
-               to then propogate the events downward from.
-             - Maybe could work if there was a "flatten" the tree for locations
-               - each sub-item would be a leaf of the menu-bar however a final
-                 location would be flattened down such that it was not a sub-item
-                 of the menu-bar but of the same parent the menu-bar has 
 

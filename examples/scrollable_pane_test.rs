@@ -22,8 +22,8 @@ use {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    yeehaw::debug::set_log_file("./widget_test.log".to_string());
-    yeehaw::debug::clear();
+    //yeehaw::debug::set_log_file("./widget_test.log".to_string());
+    //yeehaw::debug::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let hat = SortingHat::default();
@@ -35,8 +35,10 @@ async fn main() -> Result<(), Error> {
         200,
         200,
         HorizontalSBPositions::Below,
+        //HorizontalSBPositions::None,
         VerticalSBPositions::ToTheRight,
     );
+    //let sc_pane = PaneScrollable::new(&hat, 200, 200);
 
     let mut el = WidgetPane::new(&hat);
 

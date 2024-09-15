@@ -33,10 +33,10 @@ impl Priority {
 // EventPrioritizer registers/provides elements and priorities which ought to
 // execute specified events.
 // NOTE: used to sort events by priority
-#[derive(PartialEq, Eq, Clone, Default)]
+#[derive(PartialEq, Eq, Clone, Default, Debug)]
 pub struct EventPrioritizer(Vec<PriorityIdEvent>);
 
-#[derive(PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct PriorityIdEvent {
     pub priority: Priority,
     pub id: ElementID,
@@ -153,7 +153,7 @@ impl EventPrioritizer {
         // and check if the input_ev matches any of them
         for priority_id_event in self.0.iter() {
             if priority_id_event.priority == Priority::UNFOCUSED {
-                // since the evprioritizer is sorted by priority, there is no point
+                // since the ev prioritizer is sorted by priority, there is no point
                 // in continuing to loop through the rest of the events as elements
                 // with a priority of unfocused will never be sent events
                 break;

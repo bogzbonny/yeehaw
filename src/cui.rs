@@ -1,7 +1,8 @@
 use {
     crate::{
         element::ReceivableEventChanges, keyboard::Keyboard, Context, DynLocation, DynLocationSet,
-        Element, ElementID, ElementOrganizer, Error, Event, EventResponse, Style, UpwardPropagator,
+        Element, ElementID, ElementOrganizer, Error, Event, EventResponse, Priority, Style,
+        UpwardPropagator,
     },
     crossterm::{
         cursor,
@@ -55,13 +56,18 @@ impl Cui {
         let loc = DynLocationSet::new(loc, vec![], 0);
         main_el.borrow_mut().set_dyn_location_set(loc);
         main_el.borrow_mut().set_visible(true);
+        main_el
+            .borrow_mut()
+            .change_priority(&ctx, Priority::FOCUSED);
 
         let cup = Box::new(CuiUpwardPropagator::new(eo));
 
         // when adding the main element, nil is passed in as the parent
         // this is because the top of the tree is the CUI's main EO and so no parent
         // is necessary
-        cui.eo.add_element(main_el, Some(cup));
+        cui.eo.add_element(main_el.clone(), Some(cup));
+        cui.eo.refresh(&ctx);
+        //debug!("mail_el rec: {:?}", main_el.borrow().receivable());
 
         set_panic_hook_with_closedown();
         Ok(cui)
@@ -135,6 +141,8 @@ impl Cui {
             return true;
         }
 
+        //debug!("cui Key event: {:?}", key_ev);
+
         // we only care about the event response as all keys are sent to the main
         // element no matter what
         self.kb.add_ev(key_ev);
@@ -149,9 +157,11 @@ impl Cui {
             .borrow()
             .get_destination_el_from_kb(&mut self.kb)
         else {
+            //debug!("no dest");
             return false;
         };
         let ctx = Context::new_context_for_screen();
+        //debug!("cui destination: {:?}", dest);
 
         let Some((_, resps)) = self.eo.key_events_process(&ctx, evs) else {
             return false;

@@ -58,6 +58,7 @@ impl ElementOrganizer {
 
         // add the elements recievable events and commands to the prioritizer
         let receivable_evs = el.borrow().receivable();
+        //debug!("add_element: receivable_evs: {:?}", receivable_evs);
         self.prioritizer
             .borrow_mut()
             .include(&el_id, &receivable_evs);
@@ -348,7 +349,14 @@ impl ElementOrganizer {
     ) -> Option<(ElementID, EventResponses)> {
         // determine elementID to send events to
         let evs: Event = evs.into();
-        let el_id = self.prioritizer.borrow().get_destination_el(&evs)?;
+        let el_id = self.prioritizer.borrow().get_destination_el(&evs);
+
+        let el_id = match el_id {
+            Some(e) => e,
+            None => {
+                return None;
+            }
+        };
 
         // get element
         let el_details = self
@@ -378,15 +386,22 @@ impl ElementOrganizer {
         // refresh all children
         for (_, details) in self.els.borrow().iter() {
             let el_ctx = self.get_context_for_el(ctx, details);
-            details
+            let _ = details
                 .el
                 .borrow_mut()
                 .receive_event(&el_ctx, Event::Refresh);
-            details
+            let _ = details
                 .el
                 .borrow_mut()
                 .receive_event(&el_ctx, Event::Resize);
+
+            let pe = details.el.borrow().receivable();
+            self.prioritizer
+                .borrow_mut()
+                .include(&details.el.borrow().id(), &pe)
         }
+
+        //debug!("post-refresh prioritizer: {:?}", self.prioritizer.borrow());
     }
 
     // change_priority_for_el updates a child element (el_id) to a new priority. It does

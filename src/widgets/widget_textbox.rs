@@ -5,9 +5,9 @@ use {
     },
     crate::{
         elements::menu::{MenuItem, MenuPath, MenuStyle},
-        Context, DrawCh, DrawChPos, Element, ElementID, Error, Event, EventResponse,
-        EventResponses, KeyPossibility, Keyboard as KB, Priority, ReceivableEventChanges,
-        RgbColour, RightClickMenu, DynLocationSet, DynVal, SortingHat, Style, UpwardPropagator,
+        Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Error, Event,
+        EventResponse, EventResponses, KeyPossibility, Keyboard as KB, Priority,
+        ReceivableEventChanges, RgbColour, RightClickMenu, SortingHat, Style, UpwardPropagator,
     },
     crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -665,7 +665,6 @@ impl TextBox {
 
     pub fn copy_to_clipboard(&self) -> Result<(), Error> {
         let text = self.visual_selected_text();
-        debug!("copying to clipboard: {}", text);
         arboard::Clipboard::new()?.set_text(text)?;
         Ok(())
     }
