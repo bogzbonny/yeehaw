@@ -13,7 +13,15 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+05. ratatui wrapper
+     - https://github.com/benjajaja/ratatui-image
+
+01. basic file viewer 
+
 01. translate file_navigator
+
+05. use .flf (figlet font) format instead of custom megatext
+     - https://docs.rs/figlet-rs/latest/figlet_rs/
 
 01. support taffy as a layout structure.
      - Taffy low-level API (MUST use master branch)
@@ -62,9 +70,6 @@
                  location would be flattened down such that it was not a sub-item
                  of the menu-bar but of the same parent the menu-bar has 
 
-05. use .flf (figlet font) format instead of custom megatext
-     - https://docs.rs/figlet-rs/latest/figlet_rs/
-
 05. Time Base Events. add a "future event" to a part of the EventResponse. In
     the future event there is a timestamp which says when this event should be
     activated. This can be triggered in the render loop and the event will then
@@ -94,9 +99,18 @@
           up to a threshold of maybe 50% alpha (in which case it would use the
           character behind it. 
 
+
 05. button selectable (can hit with enter key)
 
 05. Command functionality
+
+05. Collapse Element Wrapper... 
+      - should be able to collapse to a single line (vert or horiz) with custom
+        text. 
+      - when the element it open the collapse triangle button could just be a
+        single button or an entire line
+      - when an entire line is used it should be able to be draggable to effect
+        the size of the element
 
 05. Subscription based events on common objects. 
      - like leptos. any element could subscribe to an object (with any other
@@ -114,6 +128,8 @@
 05. Into<Widgets> Trait which can be applied to each widget builder so that
     .to_widgets() doesn't need to be manually called during construction
     (applied in add_widget).
+
+10. vertical tabs (like brave)
 
 05. borders-pane wrapper
      - option for each of up/down/right/left
@@ -165,6 +181,7 @@
     el_widget_pane drawing functionality in favour of the parent pane draw).
     https://github.com/rust-lang/rust/issues/65991
 
+
 30. figure out a nicer way of inheriting element functions from the above
     element besides lots of boilerplate, probably though the use of a macro
 
@@ -184,4 +201,4 @@
        https://terminalroot.com/use-ms-paint-directly-in-terminal/) uses. 
        this format can be viewed in the terminal with "cat my_ansi_image.ans"
 
-
+40. custom mouse types (requires sixel, and mouse pixel tracking) 

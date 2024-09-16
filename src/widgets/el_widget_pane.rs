@@ -12,8 +12,6 @@ use {
 #[derive(Clone)]
 pub struct WidgetPane {
     pub pane: ParentPane,
-    //pub eo: Rc<RefCell<ElementOrganizer>>,
-    //pub org: Rc<RefCell<WidgetOrganizer>>,
     #[allow(clippy::type_complexity)]
     widgets: Rc<RefCell<Vec<(Box<dyn Widget>, Rc<RefCell<DynLocationSet>>)>>>,
     active_widget_index: Rc<RefCell<Option<usize>>>, // None means no widget active
