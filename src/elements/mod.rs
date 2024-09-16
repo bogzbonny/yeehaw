@@ -15,4 +15,5 @@ pub use {
     pane_parent::ParentPane,
     pane_scrollable::{PaneScrollable, PaneWithScrollbars},
     stack::{HorizontalStack, VerticalStack},
+    tabs::Tabs,
 };

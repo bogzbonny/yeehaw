@@ -3,10 +3,6 @@
     escape?) - works for scrollablepane now, but not for pane_with_scrollbars
 01. widget_organizer should extend regular organizer not be its totally own
     thing
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
 01. translate tabs 
      - just use buttons as the tabs?!
        - maybe not for tab dragging?
@@ -14,6 +10,8 @@
            instance)
      - button click should have the button as an input such that it can change
        colour when selected
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 01. translate file_navigator
 
@@ -64,7 +62,6 @@
                  location would be flattened down such that it was not a sub-item
                  of the menu-bar but of the same parent the menu-bar has 
 
-
 05. use .flf (figlet font) format instead of custom megatext
      - https://docs.rs/figlet-rs/latest/figlet_rs/
 
@@ -98,6 +95,8 @@
           character behind it. 
 
 05. button selectable (can hit with enter key)
+
+05. Command functionality
 
 05. Subscription based events on common objects. 
      - like leptos. any element could subscribe to an object (with any other
@@ -161,6 +160,10 @@
          situation as described above.. first send the event to the inner pane,
          then if the mouse scroll event is not captured then send it to the
          scrollable pane.
+
+10. integrate in trait upcasting for Widget Type once available (remove
+    el_widget_pane drawing functionality in favour of the parent pane draw).
+    https://github.com/rust-lang/rust/issues/65991
 
 30. figure out a nicer way of inheriting element functions from the above
     element besides lots of boilerplate, probably though the use of a macro

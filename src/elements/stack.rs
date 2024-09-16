@@ -50,6 +50,10 @@ impl VerticalStack {
         self.pane.clear_elements();
     }
 
+    pub fn get(&self, idx: usize) -> Option<Rc<RefCell<dyn Element>>> {
+        self.els.borrow().get(idx).cloned()
+    }
+
     pub fn is_empty(&self) -> bool {
         self.els.borrow().is_empty()
     }

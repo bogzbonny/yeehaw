@@ -11,13 +11,20 @@ use {
 #[derive(Clone)]
 pub struct DebugSizePane {
     pub pane: Pane,
+    pub text: Rc<RefCell<String>>,
 }
 
 impl DebugSizePane {
     pub fn new(hat: &SortingHat) -> DebugSizePane {
         DebugSizePane {
             pane: Pane::new(hat, "debug_size_pane"),
+            text: Rc::new(RefCell::new(String::new())),
         }
+    }
+
+    pub fn with_text(self, text: String) -> Self {
+        *self.text.borrow_mut() = text;
+        self
     }
 
     pub fn with_height(self, h: DynVal) -> Self {
@@ -54,7 +61,7 @@ impl Element for DebugSizePane {
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let size = ctx.s;
-        let s = format!("{}x{}", size.width, size.height);
+        let s = format!("{}x{} {}", size.width, size.height, self.text.borrow());
         DrawChPos::new_from_string(
             s,
             0,

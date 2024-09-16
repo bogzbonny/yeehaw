@@ -28,7 +28,7 @@ pub use {
     },
     elements::{
         DebugSizePane, HorizontalStack, MenuBar, Pane, PaneScrollable, PaneWithScrollbars,
-        ParentPane, RightClickMenu, VerticalStack,
+        ParentPane, RightClickMenu, Tabs, VerticalStack,
     },
     errors::Error,
     event::{CommandEvent, Event, KeyPossibility},

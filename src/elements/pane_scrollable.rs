@@ -67,45 +67,6 @@ impl PaneScrollable {
         inner_ctx
     }
 
-    //pub fn set_content_x_offset(&self, ctx: &Context, dx: i16) {
-    //    if dx < 0 {
-    //        let x = self
-    //            .content_offset_x
-    //            .borrow()
-    //            .saturating_sub((-dx) as usize);
-    //        *self.content_offset_x.borrow_mut() = x;
-    //    } else {
-    //        *self.content_offset_x.borrow_mut() += dx as usize;
-    //        if *self.content_offset_x.borrow() + ctx.s.width as usize > *self.content_width.borrow()
-    //        {
-    //            *self.content_offset_x.borrow_mut() = self
-    //                .content_width
-    //                .borrow()
-    //                .saturating_sub(ctx.s.width as usize);
-    //        }
-    //    }
-    //}
-
-    //pub fn set_content_y_offset(&self, ctx: &Context, dy: i16) {
-    //    if dy < 0 {
-    //        let y = self
-    //            .content_offset_y
-    //            .borrow()
-    //            .saturating_sub((-dy) as usize);
-    //        *self.content_offset_y.borrow_mut() = y;
-    //    } else {
-    //        *self.content_offset_y.borrow_mut() += dy as usize;
-    //        if *self.content_offset_y.borrow() + ctx.s.height as usize
-    //            > *self.content_height.borrow()
-    //        {
-    //            *self.content_offset_y.borrow_mut() = self
-    //                .content_height
-    //                .borrow()
-    //                .saturating_sub(ctx.s.height as usize);
-    //        }
-    //    }
-    //}
-
     pub fn get_width_val(&self, ctx: &Context) -> usize {
         self.pane.get_dyn_location_set().borrow().get_width_val(ctx)
     }

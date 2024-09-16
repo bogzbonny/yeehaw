@@ -1,6 +1,3 @@
-
-
-
     _ISSUES.md                           │ DONE
     cui.go                               │ DONE
     cui_ch.go                            │ DONE
@@ -20,40 +17,40 @@
   ▾ elements/                            │ - 
     ▾ adv/                               │ - 
         _ISSUES.md                       │ DONE (moved into _TODO.md)
-        file_navigator.go                │
-        file_view.go                     │
-        pane_horiz_vert_std.go           │
-        pane_scrollable.go               │
-        pane_stack_std.go                │
+        file_navigator.go                │ 
+        file_view.go                     │ 
+        pane_horiz_vert_std.go           │ WONT DO
+        pane_scrollable.go               │ DONE
+        pane_stack_std.go                │ DONE 
       command.go                         │
       menu.go                            │ DONE
       menu_item.go                       │ DONE (integrated into menu)
       menu_rightclick.go                 │ DONE
       pane_parent.go                     │ DONE
-      pane_size.go                       │ 
-      pane_stack.go                      │ 
+      pane_size.go                       │ DONE
+      pane_stack.go                      │ DONE
       pane_standard.go                   │ DONE
-      tab.go                             │ 
-  ▾ examples/                            │
-    ▾ comment2/                          │ WONT DO
+      tab.go                             │ DONE
+  ▾ examples/                            │ - 
+    ▾ comment2/                          │ - 
         main.go                          │ WONT DO 
-    ▾ complex_panes/                     │ WONT DO
+    ▾ complex_panes/                     │ -
         main.go                          │ WONT DO
-    ▾ complex_panes2/                    │ WONT DO
+    ▾ complex_panes2/                    │ -
         main.go                          │ WONT DO
-    ▾ complex_panes3/                    │ WONT DO
+    ▾ complex_panes3/                    │ -
         main.go                          │ WONT DO
-    ▾ complex_panes4/                    │ WONT DO
+    ▾ complex_panes4/                    │ -
         main.go                          │ WONT DO
-    ▾ filenav-ex/                        │ WONT DO
+    ▾ filenav-ex/                        │ -
         main.go                          │ WONT DO
-    ▾ priority_panic/                    │ WONT DO
+    ▾ priority_panic/                    │ -
         main.go                          │ WONT DO
-    ▾ resize_test/                       │ WONT DO
+    ▾ resize_test/                       │ -
         main.go                          │ WONT DO
-    ▾ scroll_pane/                       │
+    ▾ scroll_pane/                       │ -
         main.go                          │
-    ▾ widget_ex/                         │
+    ▾ widget_ex/                         │ 
         main.go                          │
       README.md                          │ WONT DO
   ▾ widgets/                             │ DONE
