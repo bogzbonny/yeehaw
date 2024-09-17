@@ -2,7 +2,7 @@ use {
     super::{Selectability, VerticalScrollbar, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SortingHat,
+        EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, Rgba, SortingHat,
         Style, UpwardPropagator, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -34,36 +34,36 @@ impl DropdownList {
 
     const STYLE: WBStyles = WBStyles {
         selected_style: Style::new()
-            .with_bg(RgbColour::YELLOW)
-            .with_fg(RgbColour::BLACK),
+            .with_bg(Rgba::YELLOW)
+            .with_fg(Rgba::BLACK),
         ready_style: Style::new()
-            .with_bg(RgbColour::WHITE)
-            .with_fg(RgbColour::BLACK),
+            .with_bg(Rgba::WHITE)
+            .with_fg(Rgba::BLACK),
         unselectable_style: Style::new()
-            .with_bg(RgbColour::GREY13)
-            .with_fg(RgbColour::BLACK),
+            .with_bg(Rgba::GREY13)
+            .with_fg(Rgba::BLACK),
     };
 
     const STYLE_SCROLLBAR: WBStyles = WBStyles {
         selected_style: Style::new()
-            .with_bg(RgbColour::GREY13)
-            .with_fg(RgbColour::WHITE),
+            .with_bg(Rgba::GREY13)
+            .with_fg(Rgba::WHITE),
         ready_style: Style::new()
-            .with_bg(RgbColour::GREY13)
-            .with_fg(RgbColour::WHITE),
+            .with_bg(Rgba::GREY13)
+            .with_fg(Rgba::WHITE),
         unselectable_style: Style::new()
-            .with_bg(RgbColour::GREY13)
-            .with_fg(RgbColour::WHITE),
+            .with_bg(Rgba::GREY13)
+            .with_fg(Rgba::WHITE),
     };
 
-    const STYLE_DD_CURSOR: Style = Style::new().with_bg(RgbColour::BLUE);
+    const STYLE_DD_CURSOR: Style = Style::new().with_bg(Rgba::BLUE);
 
     const DEFAULT_DROPDOWN_ARROW: DrawCh = DrawCh::new(
         '▼',
         false,
         Style::new()
-            .with_bg(RgbColour::GREY13)
-            .with_fg(RgbColour::BLACK),
+            .with_bg(Rgba::GREY13)
+            .with_fg(Rgba::BLACK),
     );
 
     // needs to be slightly above other widgets to select properly

@@ -4,27 +4,24 @@ use {
         ElementID, Event, EventResponses, Pane, Priority, Rgba, SortingHat, Style,
         UpwardPropagator, ZIndex,
     },
+    ratatui::{backend::TestBackend, terminal::Frame, Terminal},
+    ratatui_image::{picker::Picker, protocol::StatefulProtocol, StatefulImage},
     std::{cell::RefCell, rc::Rc},
 };
 
 // displays the size
 #[derive(Clone)]
-pub struct DebugSizePane {
+pub struct ImageViewer {
     pub pane: Pane,
-    pub text: Rc<RefCell<String>>,
+    image: Box<dyn StatefulProtocol>,
 }
 
-impl DebugSizePane {
-    pub fn new(hat: &SortingHat) -> DebugSizePane {
-        DebugSizePane {
+impl ImageViewer {
+    pub fn new(hat: &SortingHat) -> Self {
+        Self {
             pane: Pane::new(hat, "debug_size_pane"),
-            text: Rc::new(RefCell::new(String::new())),
+            image: Box::new(StatefulImage::new(None)),
         }
-    }
-
-    pub fn with_text(self, text: String) -> Self {
-        *self.text.borrow_mut() = text;
-        self
     }
 
     pub fn with_height(self, h: DynVal) -> Self {
@@ -43,7 +40,7 @@ impl DebugSizePane {
     }
 }
 
-impl Element for DebugSizePane {
+impl Element for ImageViewer {
     fn kind(&self) -> &'static str {
         self.pane.kind()
     }
@@ -61,16 +58,35 @@ impl Element for DebugSizePane {
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let size = ctx.s;
-        let s = format!("{}x{} {}", size.width, size.height, self.text.borrow());
-        DrawChPos::new_from_string(
-            s,
-            0,
-            0,
-            Style::default()
-                .with_bg(Rgba::BLACK)
-                .with_fg(Rgba::WHITE),
-        )
+        let backend = TestBackend::new(80, 30);
+        let Ok(mut terminal) = Terminal::new(backend) else {
+            return vec![];
+        };
+
+        // Should use Picker::from_termios(), to get the font size,
+        // but we can't put that here because that would break doctests!
+        //let mut picker = Picker::new((8, 12));
+        let Ok(mut picker) = Picker::from_termios() else {
+            return vec![];
+        };
+
+        // Guess the protocol.
+        picker.guess_protocol();
+
+        // Load an image with the image crate.
+        let dyn_img = image::io::Reader::open("./assets/Ada.png")?.decode()?;
+
+        // Create the Protocol which will be used by the widget.
+        let image = picker.new_resize_protocol(dyn_img);
+
+        let image_ = StatefulImage::new(None);
+
+        let area = image_.get_area(size.width, size.height);
+        let buffer = String::new();
+        image_.render(&mut terminal, area, buffer, &image);
+        //f.render_stateful_widget(image, f.size(), &mut app.image);
     }
+
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
         self.pane.get_attribute(key)
     }

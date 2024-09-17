@@ -2,7 +2,7 @@ use {
     super::{widget::RESP_DEACTIVATE, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponse,
-        EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SortingHat,
+        EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, Rgba, SortingHat,
         Style, UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -32,14 +32,14 @@ impl Button {
 
     const STYLE: WBStyles = WBStyles {
         selected_style: Style::new()
-            .with_bg(RgbColour::LIGHT_YELLOW2)
-            .with_fg(RgbColour::BLACK),
+            .with_bg(Rgba::LIGHT_YELLOW2)
+            .with_fg(Rgba::BLACK),
         ready_style: Style::new()
-            .with_bg(RgbColour::WHITE)
-            .with_fg(RgbColour::BLACK),
+            .with_bg(Rgba::WHITE)
+            .with_fg(Rgba::BLACK),
         unselectable_style: Style::new()
-            .with_bg(RgbColour::GREY13)
-            .with_fg(RgbColour::BLACK),
+            .with_bg(Rgba::GREY13)
+            .with_fg(Rgba::BLACK),
     };
 
     pub fn default_receivable_events() -> Vec<Event> {

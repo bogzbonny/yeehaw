@@ -23,8 +23,8 @@ have been assigned to them from parent elements.
 
 ## Tribute
 
-[ratatui](https://ratatui.rs/) rocks! Check it out. Their design goals are
-slightly different, it's a more mature TUI framework which you should consider.
+[ratatui](https://ratatui.rs/) obviously rocks. its design goals are
+slightly different
 
 [dioxus](https://github.com/dioxuslabs/dioxus) seems lit - they have a goal of
 TUI support in the future.
@@ -43,7 +43,6 @@ TUI support in the future.
  - right click menu
  - file viewer
  - file navigator (think nerdtree)
- - vim-style command input
  - widgets:
    - megafonts
    - button
@@ -57,22 +56,26 @@ TUI support in the future.
    - titles
    - toggles
 
-## Planned Elements
+## Planned
+ - ratatui element
  - accordion stack container
  - hover comments
  - vertical tabs
+ - vim-style command input system
  - widgets:
    - colour selector
-   - pixel art viewer
-   - image viewer
    - table 
+ - ratatui imported:
+   - image viewer 
    - vim-style text editor
-
-## Planned Tooling
  - TUI Application Builder 
    - basically drag and drop style element builder
  - Interactive Debugging TUI 
- - Wimp
+ - TUI Snapshot Tester
+ - Ansi-animation viewer (using WIMP asc format)
+
+## Planned Tooling
+ - seperate project: WIMP
    - like durdraw but with more features: 
      - layers within each frame
      - alpha
@@ -82,10 +85,14 @@ TUI support in the future.
        - doesn't yet support unicode
        - has a bunch of animation file formats built in
      - https://github.com/cmang/durdraw/
-        - has ansi-animations! - check out the format 
+        - has ansi-animations
+        - use a new custom ansi animation format, simply define a sleep
+          functionality with APC codes (like kitty uses)
+          <ESC>_sleep<ms><ESC>\
+          <ESC>_sleep16<ESC>\
      - https://aac.iverv.com/about
      - Similar https://terminalroot.com/use-ms-paint-directly-in-terminal/
      - https://www.gridsagegames.com/rexpaint/
      - https://github.com/EtoDemerzel0427/ANSI-art
- - TUI Tester
+
 

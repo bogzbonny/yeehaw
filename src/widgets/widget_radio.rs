@@ -2,7 +2,7 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
-        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SortingHat, Style,
+        Keyboard as KB, Priority, ReceivableEventChanges, Rgba, SortingHat, Style,
         UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -39,9 +39,9 @@ impl RadioButtons {
     const KIND: &'static str = "widget_radio";
 
     const STYLE: WBStyles = WBStyles {
-        selected_style: Style::new().with_fg(RgbColour::LIGHT_YELLOW2),
-        ready_style: Style::new().with_fg(RgbColour::WHITE),
-        unselectable_style: Style::new().with_fg(RgbColour::GREY13),
+        selected_style: Style::new().with_fg(Rgba::LIGHT_YELLOW2),
+        ready_style: Style::new().with_fg(Rgba::WHITE),
+        unselectable_style: Style::new().with_fg(Rgba::GREY13),
     };
 
     pub fn default_receivable_events() -> Vec<Event> {

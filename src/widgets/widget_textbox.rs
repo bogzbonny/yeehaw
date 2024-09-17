@@ -7,7 +7,7 @@ use {
         elements::menu::{MenuItem, MenuPath, MenuStyle},
         Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Error, Event,
         EventResponse, EventResponses, KeyPossibility, Keyboard as KB, Priority,
-        ReceivableEventChanges, RgbColour, RightClickMenu, SortingHat, Style, UpwardPropagator,
+        ReceivableEventChanges, Rgba, RightClickMenu, SortingHat, Style, UpwardPropagator,
     },
     crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -63,29 +63,29 @@ impl TextBox {
 
     const STYLE: WBStyles = WBStyles {
         selected_style: Style::new()
-            .with_bg(RgbColour::WHITE)
-            .with_fg(RgbColour::BLACK),
+            .with_bg(Rgba::WHITE)
+            .with_fg(Rgba::BLACK),
         ready_style: Style::new()
-            .with_bg(RgbColour::GREY13)
-            .with_fg(RgbColour::BLACK),
+            .with_bg(Rgba::GREY13)
+            .with_fg(Rgba::BLACK),
         unselectable_style: Style::new()
-            .with_bg(RgbColour::GREY15)
-            .with_fg(RgbColour::BLACK),
+            .with_bg(Rgba::GREY15)
+            .with_fg(Rgba::BLACK),
     };
 
     const STYLE_SCROLLBAR: WBStyles = WBStyles {
         selected_style: Style::new()
-            .with_bg(RgbColour::GREY13)
-            .with_fg(RgbColour::WHITE),
+            .with_bg(Rgba::GREY13)
+            .with_fg(Rgba::WHITE),
         ready_style: Style::new()
-            .with_bg(RgbColour::GREY13)
-            .with_fg(RgbColour::WHITE),
+            .with_bg(Rgba::GREY13)
+            .with_fg(Rgba::WHITE),
         unselectable_style: Style::new()
-            .with_bg(RgbColour::GREY13)
-            .with_fg(RgbColour::WHITE),
+            .with_bg(Rgba::GREY13)
+            .with_fg(Rgba::WHITE),
     };
 
-    const DEFAULT_CURSOR_STYLE: Style = Style::new().with_bg(RgbColour::BLUE);
+    const DEFAULT_CURSOR_STYLE: Style = Style::new().with_bg(Rgba::BLUE);
 
     // for textboxes which are editable
     pub fn editable_receivable_events() -> Vec<Event> {

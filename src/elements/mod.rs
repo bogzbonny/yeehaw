@@ -1,4 +1,5 @@
 pub mod debug_pane;
+pub mod image_viewer;
 pub mod menu;
 pub mod menu_right_click;
 pub mod pane;
@@ -9,6 +10,7 @@ pub mod tabs;
 
 pub use {
     debug_pane::DebugSizePane,
+    image_viewer::ImageViewer,
     menu::MenuBar,
     menu_right_click::RightClickMenu,
     pane::Pane,

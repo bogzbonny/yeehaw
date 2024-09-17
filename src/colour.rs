@@ -1,15 +1,22 @@
 use rand::Rng;
 
-#[derive(serde::Serialize, serde::Deserialize, Copy, Clone, Default, Debug, PartialEq, Eq)]
-pub struct RgbColour {
+#[derive(serde::Serialize, serde::Deserialize, Copy, Clone, Debug, PartialEq, Eq)]
+pub struct Rgba {
     pub r: u8,
     pub g: u8,
     pub b: u8,
+    pub a: u8, // alpha
 }
 
-impl RgbColour {
-    pub const fn new(r: u8, g: u8, b: u8) -> RgbColour {
-        RgbColour { r, g, b }
+impl Default for Rgba {
+    fn default() -> Self {
+        Self::new(0, 0, 0)
+    }
+}
+
+impl Rgba {
+    pub const fn new(r: u8, g: u8, b: u8) -> Rgba {
+        Rgba { r, g, b, a: 255 }
     }
 
     pub fn random_light() -> Self {
@@ -36,184 +43,184 @@ impl RgbColour {
     //    Ok(v)
     //}
 
-    //pub fn decode(bytes: &[u8]) -> Result<RgbColour, Error> {
+    //pub fn decode(bytes: &[u8]) -> Result<Rgba, Error> {
     //    let (v, _) = bincode::decode_from_slice(bytes, BINCODE_CONFIG)?;
     //    Ok(v)
     //}
 }
 
 #[rustfmt::skip]
-impl RgbColour {
-    pub const GREY1:         RgbColour = RgbColour::new(10, 10, 10);
-    pub const GREY2:         RgbColour = RgbColour::new(20, 20, 20);
-    pub const GREY3:         RgbColour = RgbColour::new(30, 30, 32);
-    pub const GREY4:         RgbColour = RgbColour::new(40, 40, 42);
-    pub const GREY5:         RgbColour = RgbColour::new(50, 50, 55);
-    pub const GREY6:         RgbColour = RgbColour::new(60, 60, 65);
-    pub const GREY7:         RgbColour = RgbColour::new(70, 70, 75);
-    pub const GREY8:         RgbColour = RgbColour::new(80, 80, 85);
-    pub const GREY9:         RgbColour = RgbColour::new(90, 90, 95);
-    pub const GREY11:        RgbColour = RgbColour::new(110, 110, 115);
-    pub const GREY13:        RgbColour = RgbColour::new(130, 130, 135);
-    pub const GREY14:        RgbColour = RgbColour::new(140, 140, 145);
-    pub const GREY15:        RgbColour = RgbColour::new(150, 150, 155);
+impl Rgba {
+    pub const GREY1:         Rgba = Rgba::new(10, 10, 10);
+    pub const GREY2:         Rgba = Rgba::new(20, 20, 20);
+    pub const GREY3:         Rgba = Rgba::new(30, 30, 32);
+    pub const GREY4:         Rgba = Rgba::new(40, 40, 42);
+    pub const GREY5:         Rgba = Rgba::new(50, 50, 55);
+    pub const GREY6:         Rgba = Rgba::new(60, 60, 65);
+    pub const GREY7:         Rgba = Rgba::new(70, 70, 75);
+    pub const GREY8:         Rgba = Rgba::new(80, 80, 85);
+    pub const GREY9:         Rgba = Rgba::new(90, 90, 95);
+    pub const GREY11:        Rgba = Rgba::new(110, 110, 115);
+    pub const GREY13:        Rgba = Rgba::new(130, 130, 135);
+    pub const GREY14:        Rgba = Rgba::new(140, 140, 145);
+    pub const GREY15:        Rgba = Rgba::new(150, 150, 155);
 
     // TODO remove these colours only use the css ones
-    pub const DIM_YELLOW:    RgbColour = RgbColour::new(200, 200, 100);
-    pub const ORANGE2:       RgbColour = RgbColour::new(200, 100, 50);
-    pub const YELLOW2:       RgbColour = RgbColour::new(220, 220, 0);
-    pub const PALLID_BLUE:   RgbColour = RgbColour::new(90, 110, 190);
+    pub const DIM_YELLOW:    Rgba = Rgba::new(200, 200, 100);
+    pub const ORANGE2:       Rgba = Rgba::new(200, 100, 50);
+    pub const YELLOW2:       Rgba = Rgba::new(220, 220, 0);
+    pub const PALLID_BLUE:   Rgba = Rgba::new(90, 110, 190);
 
-    pub const LIGHT_YELLOW2:    RgbColour = RgbColour::new(255, 255, 200);
+    pub const LIGHT_YELLOW2:    Rgba = Rgba::new(255, 255, 200);
 
 
     // css named colours
-    pub const MAROON:                  RgbColour = RgbColour::new(128, 0, 0);
-    pub const DARK_RED:                RgbColour = RgbColour::new(139, 0, 0);
-    pub const BROWN:                   RgbColour = RgbColour::new(165, 42, 42);
-    pub const FIREBRICK:               RgbColour = RgbColour::new(178, 34, 34);
-    pub const CRIMSON:                 RgbColour = RgbColour::new(220, 20, 60);
-    pub const RED:                     RgbColour = RgbColour::new(255, 0, 0);
-    pub const TOMATO:                  RgbColour = RgbColour::new(255, 99, 71);
-    pub const CORAL:                   RgbColour = RgbColour::new(255, 127, 80);
-    pub const INDIAN_RED:              RgbColour = RgbColour::new(205, 92, 92);
-    pub const LIGHT_CORAL:             RgbColour = RgbColour::new(240, 128, 128);
-    pub const DARK_SALMON:             RgbColour = RgbColour::new(233, 150, 122);
-    pub const SALMON:                  RgbColour = RgbColour::new(250, 128, 114);
-    pub const LIGHT_SALMON:            RgbColour = RgbColour::new(255, 160, 122);
-    pub const ORANGE_RED:              RgbColour = RgbColour::new(255, 69, 0);
-    pub const DARK_ORANGE:             RgbColour = RgbColour::new(255, 140, 0);
-    pub const ORANGE:                  RgbColour = RgbColour::new(255, 165, 0);
-    pub const GOLD:                    RgbColour = RgbColour::new(255, 215, 0);
-    pub const DARK_GOLDEN_ROD:         RgbColour = RgbColour::new(184, 134, 11);
-    pub const GOLDEN_ROD:              RgbColour = RgbColour::new(218, 165, 32);
-    pub const PALE_GOLDEN_ROD:         RgbColour = RgbColour::new(238, 232, 170);
-    pub const DARK_KHAKI:              RgbColour = RgbColour::new(189, 183, 107);
-    pub const KHAKI:                   RgbColour = RgbColour::new(240, 230, 140);
-    pub const OLIVE:                   RgbColour = RgbColour::new(128, 128, 0);
-    pub const YELLOW:                  RgbColour = RgbColour::new(255, 255, 0);
-    pub const YELLOW_GREEN:            RgbColour = RgbColour::new(154, 205, 50);
-    pub const DARK_OLIVE_GREEN:        RgbColour = RgbColour::new(85, 107, 47);
-    pub const OLIVE_DRAB:              RgbColour = RgbColour::new(107, 142, 35);
-    pub const LAWN_GREEN:              RgbColour = RgbColour::new(124, 252, 0);
-    pub const CHARTREUSE:              RgbColour = RgbColour::new(127, 255, 0);
-    pub const GREEN_YELLOW:            RgbColour = RgbColour::new(173, 255, 47);
-    pub const DARK_GREEN:              RgbColour = RgbColour::new(0, 100, 0);
-    pub const GREEN:                   RgbColour = RgbColour::new(0, 128, 0);
-    pub const FOREST_GREEN:            RgbColour = RgbColour::new(34, 139, 34);
-    pub const LIME:                    RgbColour = RgbColour::new(0, 255, 0);
-    pub const LIME_GREEN:              RgbColour = RgbColour::new(50, 205, 50);
-    pub const LIGHT_GREEN:             RgbColour = RgbColour::new(144, 238, 144);
-    pub const PALE_GREEN:              RgbColour = RgbColour::new(152, 251, 152);
-    pub const DARK_SEA_GREEN:          RgbColour = RgbColour::new(143, 188, 143);
-    pub const MEDIUM_SPRING_GREEN:     RgbColour = RgbColour::new(0, 250, 154);
-    pub const SPRING_GREEN:            RgbColour = RgbColour::new(0, 255, 127);
-    pub const SEA_GREEN:               RgbColour = RgbColour::new(46, 139, 87);
-    pub const MEDIUM_AQUA_MARINE:      RgbColour = RgbColour::new(102, 205, 170);
-    pub const MEDIUM_SEA_GREEN:        RgbColour = RgbColour::new(60, 179, 113);
-    pub const LIGHT_SEA_GREEN:         RgbColour = RgbColour::new(32, 178, 170);
-    pub const DARK_SLATE_GRAY:         RgbColour = RgbColour::new(47, 79, 79);
-    pub const TEAL:                    RgbColour = RgbColour::new(0, 128, 128);
-    pub const DARK_CYAN:               RgbColour = RgbColour::new(0, 139, 139);
-    pub const AQUA:                    RgbColour = RgbColour::new(0, 255, 255);
-    pub const CYAN:                    RgbColour = RgbColour::new(0, 255, 255);
-    pub const LIGHT_CYAN:              RgbColour = RgbColour::new(224, 255, 255);
-    pub const DARK_TURQUOISE:          RgbColour = RgbColour::new(0, 206, 209);
-    pub const TURQUOISE:               RgbColour = RgbColour::new(64, 224, 208);
-    pub const MEDIUM_TURQUOISE:        RgbColour = RgbColour::new(72, 209, 204);
-    pub const PALE_TURQUOISE:          RgbColour = RgbColour::new(175, 238, 238);
-    pub const AQUA_MARINE:             RgbColour = RgbColour::new(127, 255, 212);
-    pub const POWDER_BLUE:             RgbColour = RgbColour::new(176, 224, 230);
-    pub const CADET_BLUE:              RgbColour = RgbColour::new(95, 158, 160);
-    pub const STEEL_BLUE:              RgbColour = RgbColour::new(70, 130, 180);
-    pub const CORNFLOWER_BLUE:         RgbColour = RgbColour::new(100, 149, 237);
-    pub const DEEP_SKY_BLUE:           RgbColour = RgbColour::new(0, 191, 255);
-    pub const DODGER_BLUE:             RgbColour = RgbColour::new(30, 144, 255);
-    pub const LIGHT_BLUE:              RgbColour = RgbColour::new(173, 216, 230);
-    pub const SKY_BLUE:                RgbColour = RgbColour::new(135, 206, 235);
-    pub const LIGHT_SKY_BLUE:          RgbColour = RgbColour::new(135, 206, 250);
-    pub const MIDNIGHT_BLUE:           RgbColour = RgbColour::new(25, 25, 112);
-    pub const NAVY:                    RgbColour = RgbColour::new(0, 0, 128);
-    pub const DARK_BLUE:               RgbColour = RgbColour::new(0, 0, 139);
-    pub const MEDIUM_BLUE:             RgbColour = RgbColour::new(0, 0, 205);
-    pub const BLUE:                    RgbColour = RgbColour::new(0, 0, 255);
-    pub const ROYAL_BLUE:              RgbColour = RgbColour::new(65, 105, 225);
-    pub const BLUE_VIOLET:             RgbColour = RgbColour::new(138, 43, 226);
-    pub const INDIGO:                  RgbColour = RgbColour::new(75, 0, 130);
-    pub const DARK_SLATE_BLUE:         RgbColour = RgbColour::new(72, 61, 139);
-    pub const SLATE_BLUE:              RgbColour = RgbColour::new(106, 90, 205);
-    pub const MEDIUM_SLATE_BLUE:       RgbColour = RgbColour::new(123, 104, 238);
-    pub const MEDIUM_PURPLE:           RgbColour = RgbColour::new(147, 112, 219);
-    pub const DARK_MAGENTA:            RgbColour = RgbColour::new(139, 0, 139);
-    pub const DARK_VIOLET:             RgbColour = RgbColour::new(148, 0, 211);
-    pub const DARK_ORCHID:             RgbColour = RgbColour::new(153, 50, 204);
-    pub const MEDIUM_ORCHID:           RgbColour = RgbColour::new(186, 85, 211);
-    pub const PURPLE:                  RgbColour = RgbColour::new(128, 0, 128);
-    pub const THISTLE:                 RgbColour = RgbColour::new(216, 191, 216);
-    pub const PLUM:                    RgbColour = RgbColour::new(221, 160, 221);
-    pub const VIOLET:                  RgbColour = RgbColour::new(238, 130, 238);
-    pub const MAGENTA:                 RgbColour = RgbColour::new(255, 0, 255);
-    pub const FUCHSIA:                 RgbColour = RgbColour::new(255, 0, 255);
-    pub const ORCHID:                  RgbColour = RgbColour::new(218, 112, 214);
-    pub const MEDIUM_VIOLET_RED:       RgbColour = RgbColour::new(199, 21, 133);
-    pub const PALE_VIOLET_RED:         RgbColour = RgbColour::new(219, 112, 147);
-    pub const DEEP_PINK:               RgbColour = RgbColour::new(255, 20, 147);
-    pub const HOT_PINK:                RgbColour = RgbColour::new(255, 105, 180);
-    pub const LIGHT_PINK:              RgbColour = RgbColour::new(255, 182, 193);
-    pub const PINK:                    RgbColour = RgbColour::new(255, 192, 203);
-    pub const ANTIQUE_WHITE:           RgbColour = RgbColour::new(250, 235, 215);
-    pub const BEIGE:                   RgbColour = RgbColour::new(245, 245, 220);
-    pub const BISQUE:                  RgbColour = RgbColour::new(255, 228, 196);
-    pub const BLANCHED_ALMOND:         RgbColour = RgbColour::new(255, 235, 205);
-    pub const WHEAT:                   RgbColour = RgbColour::new(245, 222, 179);
-    pub const CORN_SILK:               RgbColour = RgbColour::new(255, 248, 220);
-    pub const LEMON_CHIFFON:           RgbColour = RgbColour::new(255, 250, 205);
-    pub const LIGHT_GOLDEN_ROD_YELLOW: RgbColour = RgbColour::new(250, 250, 210);
-    pub const LIGHT_YELLOW:            RgbColour = RgbColour::new(255, 255, 224);
-    pub const SADDLE_BROWN:            RgbColour = RgbColour::new(139, 69, 19);
-    pub const SIENNA:                  RgbColour = RgbColour::new(160, 82, 45);
-    pub const CHOCOLATE:               RgbColour = RgbColour::new(210, 105, 30);
-    pub const PERU:                    RgbColour = RgbColour::new(205, 133, 63);
-    pub const SANDY_BROWN:             RgbColour = RgbColour::new(244, 164, 96);
-    pub const BURLY_WOOD:              RgbColour = RgbColour::new(222, 184, 135);
-    pub const TAN:                     RgbColour = RgbColour::new(210, 180, 140);
-    pub const ROSY_BROWN:              RgbColour = RgbColour::new(188, 143, 143);
-    pub const MOCCASIN:                RgbColour = RgbColour::new(255, 228, 181);
-    pub const NAVAJO_WHITE:            RgbColour = RgbColour::new(255, 222, 173);
-    pub const PEACH_PUFF:              RgbColour = RgbColour::new(255, 218, 185);
-    pub const MISTY_ROSE:              RgbColour = RgbColour::new(255, 228, 225);
-    pub const LAVENDER_BLUSH:          RgbColour = RgbColour::new(255, 240, 245);
-    pub const LINEN:                   RgbColour = RgbColour::new(250, 240, 230);
-    pub const OLD_LACE:                RgbColour = RgbColour::new(253, 245, 230);
-    pub const PAPAYA_WHIP:             RgbColour = RgbColour::new(255, 239, 213);
-    pub const SEA_SHELL:               RgbColour = RgbColour::new(255, 245, 238);
-    pub const MINT_CREAM:              RgbColour = RgbColour::new(245, 255, 250);
-    pub const SLATE_GRAY:              RgbColour = RgbColour::new(112, 128, 144);
-    pub const LIGHT_SLATE_GRAY:        RgbColour = RgbColour::new(119, 136, 153);
-    pub const LIGHT_STEEL_BLUE:        RgbColour = RgbColour::new(176, 196, 222);
-    pub const LAVENDER:                RgbColour = RgbColour::new(230, 230, 250);
-    pub const FLORAL_WHITE:            RgbColour = RgbColour::new(255, 250, 240);
-    pub const ALICE_BLUE:              RgbColour = RgbColour::new(240, 248, 255);
-    pub const GHOST_WHITE:             RgbColour = RgbColour::new(248, 248, 255);
-    pub const HONEYDEW:                RgbColour = RgbColour::new(240, 255, 240);
-    pub const IVORY:                   RgbColour = RgbColour::new(255, 255, 240);
-    pub const AZURE:                   RgbColour = RgbColour::new(240, 255, 255);
-    pub const SNOW:                    RgbColour = RgbColour::new(255, 250, 250);
-    pub const BLACK:                   RgbColour = RgbColour::new(0, 0, 0);
-    pub const DIM_GRAY:                RgbColour = RgbColour::new(105, 105, 105);
-    pub const DIM_GREY:                RgbColour = RgbColour::new(105, 105, 105);
-    pub const GRAY:                    RgbColour = RgbColour::new(128, 128, 128);
-    pub const GREY:                    RgbColour = RgbColour::new(128, 128, 128);
-    pub const DARK_GRAY:               RgbColour = RgbColour::new(169, 169, 169);
-    pub const DARK_GREY:               RgbColour = RgbColour::new(169, 169, 169);
-    pub const SILVER:                  RgbColour = RgbColour::new(192, 192, 192);
-    pub const LIGHT_GRAY:              RgbColour = RgbColour::new(211, 211, 211);
-    pub const LIGHT_GREY:              RgbColour = RgbColour::new(211, 211, 211);
-    pub const GAINSBORO:               RgbColour = RgbColour::new(220, 220, 220);
-    pub const WHITE_SMOKE:             RgbColour = RgbColour::new(245, 245, 245);
-    pub const WHITE:                   RgbColour = RgbColour::new(255, 255, 255);
+    pub const MAROON:                  Rgba = Rgba::new(128, 0, 0);
+    pub const DARK_RED:                Rgba = Rgba::new(139, 0, 0);
+    pub const BROWN:                   Rgba = Rgba::new(165, 42, 42);
+    pub const FIREBRICK:               Rgba = Rgba::new(178, 34, 34);
+    pub const CRIMSON:                 Rgba = Rgba::new(220, 20, 60);
+    pub const RED:                     Rgba = Rgba::new(255, 0, 0);
+    pub const TOMATO:                  Rgba = Rgba::new(255, 99, 71);
+    pub const CORAL:                   Rgba = Rgba::new(255, 127, 80);
+    pub const INDIAN_RED:              Rgba = Rgba::new(205, 92, 92);
+    pub const LIGHT_CORAL:             Rgba = Rgba::new(240, 128, 128);
+    pub const DARK_SALMON:             Rgba = Rgba::new(233, 150, 122);
+    pub const SALMON:                  Rgba = Rgba::new(250, 128, 114);
+    pub const LIGHT_SALMON:            Rgba = Rgba::new(255, 160, 122);
+    pub const ORANGE_RED:              Rgba = Rgba::new(255, 69, 0);
+    pub const DARK_ORANGE:             Rgba = Rgba::new(255, 140, 0);
+    pub const ORANGE:                  Rgba = Rgba::new(255, 165, 0);
+    pub const GOLD:                    Rgba = Rgba::new(255, 215, 0);
+    pub const DARK_GOLDEN_ROD:         Rgba = Rgba::new(184, 134, 11);
+    pub const GOLDEN_ROD:              Rgba = Rgba::new(218, 165, 32);
+    pub const PALE_GOLDEN_ROD:         Rgba = Rgba::new(238, 232, 170);
+    pub const DARK_KHAKI:              Rgba = Rgba::new(189, 183, 107);
+    pub const KHAKI:                   Rgba = Rgba::new(240, 230, 140);
+    pub const OLIVE:                   Rgba = Rgba::new(128, 128, 0);
+    pub const YELLOW:                  Rgba = Rgba::new(255, 255, 0);
+    pub const YELLOW_GREEN:            Rgba = Rgba::new(154, 205, 50);
+    pub const DARK_OLIVE_GREEN:        Rgba = Rgba::new(85, 107, 47);
+    pub const OLIVE_DRAB:              Rgba = Rgba::new(107, 142, 35);
+    pub const LAWN_GREEN:              Rgba = Rgba::new(124, 252, 0);
+    pub const CHARTREUSE:              Rgba = Rgba::new(127, 255, 0);
+    pub const GREEN_YELLOW:            Rgba = Rgba::new(173, 255, 47);
+    pub const DARK_GREEN:              Rgba = Rgba::new(0, 100, 0);
+    pub const GREEN:                   Rgba = Rgba::new(0, 128, 0);
+    pub const FOREST_GREEN:            Rgba = Rgba::new(34, 139, 34);
+    pub const LIME:                    Rgba = Rgba::new(0, 255, 0);
+    pub const LIME_GREEN:              Rgba = Rgba::new(50, 205, 50);
+    pub const LIGHT_GREEN:             Rgba = Rgba::new(144, 238, 144);
+    pub const PALE_GREEN:              Rgba = Rgba::new(152, 251, 152);
+    pub const DARK_SEA_GREEN:          Rgba = Rgba::new(143, 188, 143);
+    pub const MEDIUM_SPRING_GREEN:     Rgba = Rgba::new(0, 250, 154);
+    pub const SPRING_GREEN:            Rgba = Rgba::new(0, 255, 127);
+    pub const SEA_GREEN:               Rgba = Rgba::new(46, 139, 87);
+    pub const MEDIUM_AQUA_MARINE:      Rgba = Rgba::new(102, 205, 170);
+    pub const MEDIUM_SEA_GREEN:        Rgba = Rgba::new(60, 179, 113);
+    pub const LIGHT_SEA_GREEN:         Rgba = Rgba::new(32, 178, 170);
+    pub const DARK_SLATE_GRAY:         Rgba = Rgba::new(47, 79, 79);
+    pub const TEAL:                    Rgba = Rgba::new(0, 128, 128);
+    pub const DARK_CYAN:               Rgba = Rgba::new(0, 139, 139);
+    pub const AQUA:                    Rgba = Rgba::new(0, 255, 255);
+    pub const CYAN:                    Rgba = Rgba::new(0, 255, 255);
+    pub const LIGHT_CYAN:              Rgba = Rgba::new(224, 255, 255);
+    pub const DARK_TURQUOISE:          Rgba = Rgba::new(0, 206, 209);
+    pub const TURQUOISE:               Rgba = Rgba::new(64, 224, 208);
+    pub const MEDIUM_TURQUOISE:        Rgba = Rgba::new(72, 209, 204);
+    pub const PALE_TURQUOISE:          Rgba = Rgba::new(175, 238, 238);
+    pub const AQUA_MARINE:             Rgba = Rgba::new(127, 255, 212);
+    pub const POWDER_BLUE:             Rgba = Rgba::new(176, 224, 230);
+    pub const CADET_BLUE:              Rgba = Rgba::new(95, 158, 160);
+    pub const STEEL_BLUE:              Rgba = Rgba::new(70, 130, 180);
+    pub const CORNFLOWER_BLUE:         Rgba = Rgba::new(100, 149, 237);
+    pub const DEEP_SKY_BLUE:           Rgba = Rgba::new(0, 191, 255);
+    pub const DODGER_BLUE:             Rgba = Rgba::new(30, 144, 255);
+    pub const LIGHT_BLUE:              Rgba = Rgba::new(173, 216, 230);
+    pub const SKY_BLUE:                Rgba = Rgba::new(135, 206, 235);
+    pub const LIGHT_SKY_BLUE:          Rgba = Rgba::new(135, 206, 250);
+    pub const MIDNIGHT_BLUE:           Rgba = Rgba::new(25, 25, 112);
+    pub const NAVY:                    Rgba = Rgba::new(0, 0, 128);
+    pub const DARK_BLUE:               Rgba = Rgba::new(0, 0, 139);
+    pub const MEDIUM_BLUE:             Rgba = Rgba::new(0, 0, 205);
+    pub const BLUE:                    Rgba = Rgba::new(0, 0, 255);
+    pub const ROYAL_BLUE:              Rgba = Rgba::new(65, 105, 225);
+    pub const BLUE_VIOLET:             Rgba = Rgba::new(138, 43, 226);
+    pub const INDIGO:                  Rgba = Rgba::new(75, 0, 130);
+    pub const DARK_SLATE_BLUE:         Rgba = Rgba::new(72, 61, 139);
+    pub const SLATE_BLUE:              Rgba = Rgba::new(106, 90, 205);
+    pub const MEDIUM_SLATE_BLUE:       Rgba = Rgba::new(123, 104, 238);
+    pub const MEDIUM_PURPLE:           Rgba = Rgba::new(147, 112, 219);
+    pub const DARK_MAGENTA:            Rgba = Rgba::new(139, 0, 139);
+    pub const DARK_VIOLET:             Rgba = Rgba::new(148, 0, 211);
+    pub const DARK_ORCHID:             Rgba = Rgba::new(153, 50, 204);
+    pub const MEDIUM_ORCHID:           Rgba = Rgba::new(186, 85, 211);
+    pub const PURPLE:                  Rgba = Rgba::new(128, 0, 128);
+    pub const THISTLE:                 Rgba = Rgba::new(216, 191, 216);
+    pub const PLUM:                    Rgba = Rgba::new(221, 160, 221);
+    pub const VIOLET:                  Rgba = Rgba::new(238, 130, 238);
+    pub const MAGENTA:                 Rgba = Rgba::new(255, 0, 255);
+    pub const FUCHSIA:                 Rgba = Rgba::new(255, 0, 255);
+    pub const ORCHID:                  Rgba = Rgba::new(218, 112, 214);
+    pub const MEDIUM_VIOLET_RED:       Rgba = Rgba::new(199, 21, 133);
+    pub const PALE_VIOLET_RED:         Rgba = Rgba::new(219, 112, 147);
+    pub const DEEP_PINK:               Rgba = Rgba::new(255, 20, 147);
+    pub const HOT_PINK:                Rgba = Rgba::new(255, 105, 180);
+    pub const LIGHT_PINK:              Rgba = Rgba::new(255, 182, 193);
+    pub const PINK:                    Rgba = Rgba::new(255, 192, 203);
+    pub const ANTIQUE_WHITE:           Rgba = Rgba::new(250, 235, 215);
+    pub const BEIGE:                   Rgba = Rgba::new(245, 245, 220);
+    pub const BISQUE:                  Rgba = Rgba::new(255, 228, 196);
+    pub const BLANCHED_ALMOND:         Rgba = Rgba::new(255, 235, 205);
+    pub const WHEAT:                   Rgba = Rgba::new(245, 222, 179);
+    pub const CORN_SILK:               Rgba = Rgba::new(255, 248, 220);
+    pub const LEMON_CHIFFON:           Rgba = Rgba::new(255, 250, 205);
+    pub const LIGHT_GOLDEN_ROD_YELLOW: Rgba = Rgba::new(250, 250, 210);
+    pub const LIGHT_YELLOW:            Rgba = Rgba::new(255, 255, 224);
+    pub const SADDLE_BROWN:            Rgba = Rgba::new(139, 69, 19);
+    pub const SIENNA:                  Rgba = Rgba::new(160, 82, 45);
+    pub const CHOCOLATE:               Rgba = Rgba::new(210, 105, 30);
+    pub const PERU:                    Rgba = Rgba::new(205, 133, 63);
+    pub const SANDY_BROWN:             Rgba = Rgba::new(244, 164, 96);
+    pub const BURLY_WOOD:              Rgba = Rgba::new(222, 184, 135);
+    pub const TAN:                     Rgba = Rgba::new(210, 180, 140);
+    pub const ROSY_BROWN:              Rgba = Rgba::new(188, 143, 143);
+    pub const MOCCASIN:                Rgba = Rgba::new(255, 228, 181);
+    pub const NAVAJO_WHITE:            Rgba = Rgba::new(255, 222, 173);
+    pub const PEACH_PUFF:              Rgba = Rgba::new(255, 218, 185);
+    pub const MISTY_ROSE:              Rgba = Rgba::new(255, 228, 225);
+    pub const LAVENDER_BLUSH:          Rgba = Rgba::new(255, 240, 245);
+    pub const LINEN:                   Rgba = Rgba::new(250, 240, 230);
+    pub const OLD_LACE:                Rgba = Rgba::new(253, 245, 230);
+    pub const PAPAYA_WHIP:             Rgba = Rgba::new(255, 239, 213);
+    pub const SEA_SHELL:               Rgba = Rgba::new(255, 245, 238);
+    pub const MINT_CREAM:              Rgba = Rgba::new(245, 255, 250);
+    pub const SLATE_GRAY:              Rgba = Rgba::new(112, 128, 144);
+    pub const LIGHT_SLATE_GRAY:        Rgba = Rgba::new(119, 136, 153);
+    pub const LIGHT_STEEL_BLUE:        Rgba = Rgba::new(176, 196, 222);
+    pub const LAVENDER:                Rgba = Rgba::new(230, 230, 250);
+    pub const FLORAL_WHITE:            Rgba = Rgba::new(255, 250, 240);
+    pub const ALICE_BLUE:              Rgba = Rgba::new(240, 248, 255);
+    pub const GHOST_WHITE:             Rgba = Rgba::new(248, 248, 255);
+    pub const HONEYDEW:                Rgba = Rgba::new(240, 255, 240);
+    pub const IVORY:                   Rgba = Rgba::new(255, 255, 240);
+    pub const AZURE:                   Rgba = Rgba::new(240, 255, 255);
+    pub const SNOW:                    Rgba = Rgba::new(255, 250, 250);
+    pub const BLACK:                   Rgba = Rgba::new(0, 0, 0);
+    pub const DIM_GRAY:                Rgba = Rgba::new(105, 105, 105);
+    pub const DIM_GREY:                Rgba = Rgba::new(105, 105, 105);
+    pub const GRAY:                    Rgba = Rgba::new(128, 128, 128);
+    pub const GREY:                    Rgba = Rgba::new(128, 128, 128);
+    pub const DARK_GRAY:               Rgba = Rgba::new(169, 169, 169);
+    pub const DARK_GREY:               Rgba = Rgba::new(169, 169, 169);
+    pub const SILVER:                  Rgba = Rgba::new(192, 192, 192);
+    pub const LIGHT_GRAY:              Rgba = Rgba::new(211, 211, 211);
+    pub const LIGHT_GREY:              Rgba = Rgba::new(211, 211, 211);
+    pub const GAINSBORO:               Rgba = Rgba::new(220, 220, 220);
+    pub const WHITE_SMOKE:             Rgba = Rgba::new(245, 245, 245);
+    pub const WHITE:                   Rgba = Rgba::new(255, 255, 255);
 
-    pub fn from_name(name: &str) -> RgbColour {
+    pub fn from_name(name: &str) -> Rgba {
         // normalize the name
         let name = name.to_lowercase();
         let name = name.replace(' ', "_");
@@ -370,51 +377,13 @@ impl RgbColour {
 
 }
 
-impl From<RgbColour> for crossterm::style::Color {
-    fn from(item: RgbColour) -> Self {
+// XXX requires background colour to set properly with alpha
+impl From<Rgba> for crossterm::style::Color {
+    fn from(item: Rgba) -> Self {
         Self::Rgb {
             r: item.r,
             g: item.g,
             b: item.b,
-        }
-    }
-}
-
-//impl From<RgbColour> for plotters::style::RGBColor {
-//    fn from(item: RgbColour) -> Self {
-//        Self(item.r, item.g, item.b)
-//    }
-//}
-
-// used for zell custom colour additions
-#[derive(Copy, Clone)]
-pub struct Colouring {
-    pub fg: Option<RgbColour>,
-    pub bg: Option<RgbColour>,
-}
-
-// The colour scheme defines the background
-// and forground colours for the main zell 2D visualization:
-// [ norm  ] [ norm  ] [ norm  ] [ norm  ]
-// [ norm  ] [ alt   ] [ norm  ] [ alt   ]
-// [ norm  ] [ norm  ] [ norm  ] [ norm  ]
-// [ norm  ] [ alt   ] [ norm  ] [ alt   ]
-#[derive(Copy, Clone, Default, Debug)]
-pub struct ColourScheme {
-    //          (fg       , bg       ),
-    pub normal: (RgbColour, RgbColour),
-    pub alt: (RgbColour, RgbColour), // alternating
-    pub sel: (RgbColour, RgbColour), // selected
-}
-
-impl ColourScheme {
-    pub const fn new(
-        fg: RgbColour, bg: RgbColour, alt_bg: RgbColour, sel_fg: RgbColour, sel_bg: RgbColour,
-    ) -> ColourScheme {
-        ColourScheme {
-            normal: (fg, bg),
-            alt: (fg, alt_bg),
-            sel: (sel_fg, sel_bg),
         }
     }
 }

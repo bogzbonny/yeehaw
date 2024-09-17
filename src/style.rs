@@ -1,12 +1,12 @@
 use {
-    crate::RgbColour,
+    crate::Rgba,
     crossterm::style::{Attribute, Attributes, ContentStyle},
 };
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Debug, Eq, Default)]
 pub struct Style {
-    pub fg: Option<RgbColour>,
-    pub bg: Option<RgbColour>,
+    pub fg: Option<Rgba>,
+    pub bg: Option<Rgba>,
     pub attr: YHAttributes,
 }
 
@@ -20,7 +20,7 @@ impl Style {
         }
     }
 
-    pub const fn new_coloured(fg: RgbColour, bg: RgbColour) -> Self {
+    pub const fn new_coloured(fg: Rgba, bg: Rgba) -> Self {
         Self {
             fg: Some(fg),
             bg: Some(bg),
@@ -28,7 +28,7 @@ impl Style {
         }
     }
 
-    pub const fn new_coloured_op(fg: Option<RgbColour>, bg: Option<RgbColour>) -> Self {
+    pub const fn new_coloured_op(fg: Option<Rgba>, bg: Option<Rgba>) -> Self {
         Self {
             fg,
             bg,
@@ -36,12 +36,12 @@ impl Style {
         }
     }
 
-    pub const fn with_fg(mut self, fg: RgbColour) -> Self {
+    pub const fn with_fg(mut self, fg: Rgba) -> Self {
         self.fg = Some(fg);
         self
     }
 
-    pub const fn with_bg(mut self, bg: RgbColour) -> Self {
+    pub const fn with_bg(mut self, bg: Rgba) -> Self {
         self.bg = Some(bg);
         self
     }
@@ -51,10 +51,10 @@ impl Style {
         self
     }
 
-    pub fn set_fg(&mut self, fg: RgbColour) {
+    pub fn set_fg(&mut self, fg: Rgba) {
         self.fg = Some(fg);
     }
-    pub fn set_bg(&mut self, bg: RgbColour) {
+    pub fn set_bg(&mut self, bg: Rgba) {
         self.bg = Some(bg);
     }
     pub fn set_attr(&mut self, attr: YHAttributes) {
@@ -75,8 +75,8 @@ impl From<Style> for ContentStyle {
     }
 }
 
-impl From<(RgbColour, RgbColour)> for Style {
-    fn from((fg, bg): (RgbColour, RgbColour)) -> Self {
+impl From<(Rgba, Rgba)> for Style {
+    fn from((fg, bg): (Rgba, Rgba)) -> Self {
         Self {
             fg: Some(fg),
             bg: Some(bg),

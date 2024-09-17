@@ -1,7 +1,7 @@
 use {
     crate::{
         Context, DrawCh, DrawChPos, DynLocation, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Pane, ParentPane, Priority, ReceivableEventChanges, RgbColour, SortingHat,
+        EventResponses, Pane, ParentPane, Priority, ReceivableEventChanges, Rgba, SortingHat,
         Style, UpwardPropagator, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -44,13 +44,13 @@ impl Default for MenuStyle {
             folder_arrow: " ❯".to_string(),
             left_padding: 1,
             right_padding: 1,
-            unselected_style: Style::default().with_fg(RgbColour::WHITE),
+            unselected_style: Style::default().with_fg(Rgba::WHITE),
             selected_style: Style::default()
-                .with_bg(RgbColour::BLUE)
-                .with_fg(RgbColour::WHITE),
+                .with_bg(Rgba::BLUE)
+                .with_fg(Rgba::WHITE),
             disabled_style: Style::default()
-                .with_bg(RgbColour::GREY13)
-                .with_fg(RgbColour::WHITE),
+                .with_bg(Rgba::GREY13)
+                .with_fg(Rgba::WHITE),
         }
     }
 }

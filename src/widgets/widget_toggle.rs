@@ -2,7 +2,7 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
-        Keyboard as KB, Priority, ReceivableEventChanges, RgbColour, SortingHat, Style,
+        Keyboard as KB, Priority, ReceivableEventChanges, Rgba, SortingHat, Style,
         UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -26,20 +26,20 @@ impl Toggle {
 
     const STYLE: WBStyles = WBStyles {
         selected_style: Style::new()
-            .with_bg(RgbColour::LIGHT_YELLOW2)
-            .with_fg(RgbColour::BLACK),
+            .with_bg(Rgba::LIGHT_YELLOW2)
+            .with_fg(Rgba::BLACK),
         ready_style: Style::new()
-            .with_bg(RgbColour::WHITE)
-            .with_fg(RgbColour::BLACK),
+            .with_bg(Rgba::WHITE)
+            .with_fg(Rgba::BLACK),
         unselectable_style: Style::new()
-            .with_bg(RgbColour::GREY13)
-            .with_fg(RgbColour::BLACK),
+            .with_bg(Rgba::GREY13)
+            .with_fg(Rgba::BLACK),
     };
 
     // for the selected toggle
     const DEFAULT_SELECTED_STY: Style = Style::new()
-        .with_bg(RgbColour::LIGHT_BLUE)
-        .with_fg(RgbColour::BLACK);
+        .with_bg(Rgba::LIGHT_BLUE)
+        .with_fg(Rgba::BLACK);
 
     pub fn default_receivable_events() -> Vec<Event> {
         vec![
