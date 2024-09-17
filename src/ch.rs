@@ -8,7 +8,6 @@ use {
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct DrawCh {
     pub ch: char,
-    pub transparent: bool, // aka do not draw this character
     pub style: Style,
 }
 
@@ -17,26 +16,21 @@ impl Default for DrawCh {
     fn default() -> DrawCh {
         DrawCh {
             ch: ' ',
-            transparent: false,
             style: Style::new(),
         }
     }
 }
 
 impl DrawCh {
-    pub const fn new(ch: char, transparent: bool, style: Style) -> DrawCh {
-        DrawCh {
-            ch,
-            transparent,
-            style,
-        }
+    pub const fn new(ch: char, style: Style) -> DrawCh {
+        DrawCh { ch, style }
     }
     pub fn at(self, x: u16, y: u16) -> DrawChPos {
         DrawChPos { ch: self, x, y }
     }
 
     pub fn str_to_draw_chs(s: &str, sty: Style) -> Vec<DrawCh> {
-        s.chars().map(|c| DrawCh::new(c, false, sty)).collect()
+        s.chars().map(|c| DrawCh::new(c, sty)).collect()
     }
 }
 
@@ -164,7 +158,7 @@ impl DrawChs2D {
         for _ in 0..height {
             let mut line = Vec::new();
             for _ in 0..width {
-                line.push(DrawCh::new(' ', false, sty));
+                line.push(DrawCh::new(' ', sty));
             }
             out.push(line);
         }
@@ -185,7 +179,7 @@ impl DrawChs2D {
         for line in text.iter_mut() {
             let mut new_line = Vec::new();
             for c in line.iter_mut() {
-                new_line.push(DrawCh::new(*c, false, sty));
+                new_line.push(DrawCh::new(*c, sty));
             }
             out.push(new_line);
         }
@@ -328,9 +322,9 @@ mod tests {
     // TODO fix text
     //#[test]
     //fn test_adjust_by_location() {
-    //    let a = DrawCh::new('a', false, Style::new());
-    //    let b = DrawCh::new('b', false, Style::new());
-    //    let c = DrawCh::new('c', false, Style::new());
+    //    let a = DrawCh::new('a', Style::new());
+    //    let b = DrawCh::new('b', Style::new());
+    //    let c = DrawCh::new('c', Style::new());
     //    let chs = vec![
     //        DrawChPos::new(a, 0, 0),
     //        DrawChPos::new(b, 1, 0),

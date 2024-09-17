@@ -150,7 +150,7 @@ impl TextBox {
             x_scrollbar: Rc::new(RefCell::new(None)),
             y_scrollbar: Rc::new(RefCell::new(None)),
             line_number_tb: Rc::new(RefCell::new(None)),
-            corner_decor: Rc::new(RefCell::new(DrawCh::new('⁙', false, Style::default()))),
+            corner_decor: Rc::new(RefCell::new(DrawCh::new('⁙', Style::default()))),
             right_click_menu: Rc::new(RefCell::new(None)),
         };
 

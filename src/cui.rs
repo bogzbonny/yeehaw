@@ -230,9 +230,7 @@ impl Cui {
 
         let mut do_flush = false;
         for (_, c) in dedup_chs {
-            if c.ch.transparent {
-                // TODO change to colour type
-            } else if self.is_ch_style_at_position_dirty(c.x, c.y, c.ch.ch, c.ch.style) {
+            if self.is_ch_style_at_position_dirty(c.x, c.y, c.ch.ch, c.ch.style) {
                 let st = StyledContent::new((c.ch.style).into(), &c.ch.ch);
                 queue!(&mut sc, MoveTo(c.x, c.y), style::PrintStyledContent(st)).unwrap();
                 self.sc_last_flushed

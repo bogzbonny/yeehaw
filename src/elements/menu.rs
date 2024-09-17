@@ -616,7 +616,7 @@ impl MenuItem {
     ) -> (usize, Vec<DrawChPos>) {
         let mut dcps = dcps;
         for _ in 0..padding {
-            let dc = DrawCh::new(' ', false, style);
+            let dc = DrawCh::new(' ', style);
             dcps.push(DrawChPos::new(dc, x as u16, 0));
             x += 1;
         }
@@ -783,7 +783,7 @@ impl Element for MenuItem {
             < (ctx.s.width as usize)
                 .saturating_sub(m_sty.right_padding + arrow_text.chars().count())
         {
-            let dc = DrawCh::new(' ', false, sty);
+            let dc = DrawCh::new(' ', sty);
             let dcp = DrawChPos::new(dc, x as u16, 0);
             out.push(dcp);
             x += 1;

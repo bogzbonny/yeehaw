@@ -2,8 +2,8 @@ use {
     super::{Selectability, VerticalScrollbar, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, Rgba, SortingHat,
-        Style, UpwardPropagator, ZIndex,
+        EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, Rgba, SortingHat, Style,
+        UpwardPropagator, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -33,38 +33,21 @@ impl DropdownList {
     const KIND: &'static str = "widget_dropdownlist";
 
     const STYLE: WBStyles = WBStyles {
-        selected_style: Style::new()
-            .with_bg(Rgba::YELLOW)
-            .with_fg(Rgba::BLACK),
-        ready_style: Style::new()
-            .with_bg(Rgba::WHITE)
-            .with_fg(Rgba::BLACK),
-        unselectable_style: Style::new()
-            .with_bg(Rgba::GREY13)
-            .with_fg(Rgba::BLACK),
+        selected_style: Style::new().with_bg(Rgba::YELLOW).with_fg(Rgba::BLACK),
+        ready_style: Style::new().with_bg(Rgba::WHITE).with_fg(Rgba::BLACK),
+        unselectable_style: Style::new().with_bg(Rgba::GREY13).with_fg(Rgba::BLACK),
     };
 
     const STYLE_SCROLLBAR: WBStyles = WBStyles {
-        selected_style: Style::new()
-            .with_bg(Rgba::GREY13)
-            .with_fg(Rgba::WHITE),
-        ready_style: Style::new()
-            .with_bg(Rgba::GREY13)
-            .with_fg(Rgba::WHITE),
-        unselectable_style: Style::new()
-            .with_bg(Rgba::GREY13)
-            .with_fg(Rgba::WHITE),
+        selected_style: Style::new().with_bg(Rgba::GREY13).with_fg(Rgba::WHITE),
+        ready_style: Style::new().with_bg(Rgba::GREY13).with_fg(Rgba::WHITE),
+        unselectable_style: Style::new().with_bg(Rgba::GREY13).with_fg(Rgba::WHITE),
     };
 
     const STYLE_DD_CURSOR: Style = Style::new().with_bg(Rgba::BLUE);
 
-    const DEFAULT_DROPDOWN_ARROW: DrawCh = DrawCh::new(
-        '▼',
-        false,
-        Style::new()
-            .with_bg(Rgba::GREY13)
-            .with_fg(Rgba::BLACK),
-    );
+    const DEFAULT_DROPDOWN_ARROW: DrawCh =
+        DrawCh::new('▼', Style::new().with_bg(Rgba::GREY13).with_fg(Rgba::BLACK));
 
     // needs to be slightly above other widgets to select properly
     // if widgets overlap

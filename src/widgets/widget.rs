@@ -500,7 +500,7 @@ impl WidgetBase {
                 } else {
                     continue;
                 };
-                let dch = DrawCh::new(r, false, sty);
+                let dch = DrawCh::new(r, sty);
                 self.pane.content.borrow_mut().0[y][x] = dch;
             }
         }
@@ -612,7 +612,7 @@ impl Element for WidgetBase {
                 let ch = if y < content_height && x < content_width {
                     self.pane.content.borrow().0[y][x]
                 } else {
-                    DrawCh::new(' ', false, sty)
+                    DrawCh::new(' ', sty)
                 };
                 chs.push(DrawChPos::new(
                     ch,
