@@ -26,7 +26,7 @@ async fn main() -> Result<(), Error> {
 
     let vstack = VerticalStack::new(&hat);
     //let mut widget_pane = WidgetPane::new(&hat).with_height(DynVal::new_flex_with_max_fixed(0., 3));
-    let mut widget_pane = WidgetPane::new(&hat).with_height(3.into());
+    let widget_pane = WidgetPane::new(&hat).with_height(3.into());
     let hstack = HorizontalStack::new(&hat).with_height(1.0.into());
     vstack.push(&ctx, Rc::new(RefCell::new(widget_pane.clone())));
     vstack.push(&ctx, Rc::new(RefCell::new(hstack.clone())));

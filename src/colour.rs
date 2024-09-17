@@ -14,6 +14,17 @@ impl Default for Rgba {
     }
 }
 
+// XXX requires background colour to set properly with alpha
+//impl From<Rgba> for crossterm::style::Color {
+//    fn from(item: Rgba) -> Self {
+//        Self::Rgb {
+//            r: item.r,
+//            g: item.g,
+//            b: item.b,
+//        }
+//    }
+//}
+
 impl Rgba {
     pub const fn new(r: u8, g: u8, b: u8) -> Rgba {
         Rgba { r, g, b, a: 255 }
@@ -36,6 +47,23 @@ impl Rgba {
     // returns a tuple of the rgb values
     pub fn to_tuple(&self) -> (u8, u8, u8) {
         (self.r, self.g, self.b)
+    }
+
+    // considers the alpha of the self and blends with the previous colour
+    pub fn to_crossterm_color(
+        &self, prev: Option<crossterm::style::Color>,
+    ) -> crossterm::style::Color {
+        let (r, g, b) = self.to_tuple();
+        let a = self.a as f64 / 255.0;
+        let prev = prev.unwrap_or(crossterm::style::Color::Rgb { r: 0, g: 0, b: 0 });
+        let (pr, pg, pb) = match prev {
+            crossterm::style::Color::Rgb { r, g, b } => (r, g, b),
+            _ => (0, 0, 0),
+        };
+        let r = (r as f64 * a + pr as f64 * (1.0 - a)) as u8;
+        let g = (g as f64 * a + pg as f64 * (1.0 - a)) as u8;
+        let b = (b as f64 * a + pb as f64 * (1.0 - a)) as u8;
+        crossterm::style::Color::Rgb { r, g, b }
     }
 
     //pub fn encode(&self) -> Result<Vec<u8>, Error> {
@@ -375,15 +403,4 @@ impl Rgba {
 
     }
 
-}
-
-// XXX requires background colour to set properly with alpha
-impl From<Rgba> for crossterm::style::Color {
-    fn from(item: Rgba) -> Self {
-        Self::Rgb {
-            r: item.r,
-            g: item.g,
-            b: item.b,
-        }
-    }
 }

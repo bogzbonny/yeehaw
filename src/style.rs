@@ -1,12 +1,13 @@
 use {
     crate::Rgba,
-    crossterm::style::{Attribute, Attributes, ContentStyle},
+    crossterm::style::{Attribute, Attributes},
 };
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Debug, Eq, Default)]
 pub struct Style {
     pub fg: Option<Rgba>,
     pub bg: Option<Rgba>,
+    pub underline: Option<Rgba>,
     pub attr: YHAttributes,
 }
 
@@ -16,6 +17,7 @@ impl Style {
         Self {
             fg: None,
             bg: None,
+            underline: None,
             attr: YHAttributes::new(),
         }
     }
@@ -24,14 +26,7 @@ impl Style {
         Self {
             fg: Some(fg),
             bg: Some(bg),
-            attr: YHAttributes::new(),
-        }
-    }
-
-    pub const fn new_coloured_op(fg: Option<Rgba>, bg: Option<Rgba>) -> Self {
-        Self {
-            fg,
-            bg,
+            underline: None,
             attr: YHAttributes::new(),
         }
     }
@@ -46,6 +41,11 @@ impl Style {
         self
     }
 
+    pub const fn with_underline(mut self, underline: Rgba) -> Self {
+        self.underline = Some(underline);
+        self
+    }
+
     pub const fn with_attr(mut self, attr: YHAttributes) -> Self {
         self.attr = attr;
         self
@@ -57,21 +57,11 @@ impl Style {
     pub fn set_bg(&mut self, bg: Rgba) {
         self.bg = Some(bg);
     }
+    pub fn set_underline(&mut self, underline: Rgba) {
+        self.underline = Some(underline);
+    }
     pub fn set_attr(&mut self, attr: YHAttributes) {
         self.attr = attr;
-    }
-}
-
-impl From<Style> for ContentStyle {
-    fn from(sty: Style) -> Self {
-        let fg = sty.fg.map(|fg| fg.into());
-        let bg = sty.bg.map(|bg| bg.into());
-        ContentStyle {
-            foreground_color: fg,
-            background_color: bg,
-            underline_color: None,
-            attributes: sty.attr.into(),
-        }
     }
 }
 
@@ -80,6 +70,7 @@ impl From<(Rgba, Rgba)> for Style {
         Self {
             fg: Some(fg),
             bg: Some(bg),
+            underline: None,
             attr: YHAttributes::new(),
         }
     }

@@ -1,6 +1,7 @@
 use {
     crate::{Context, DynLocation, Size, Style},
     anyhow::{anyhow, Error},
+    crossterm::style::{ContentStyle, StyledContent},
     std::ops::{Deref, DerefMut},
 };
 
@@ -66,6 +67,41 @@ impl DrawChPos {
 
     pub fn new_from_string(s: String, start_x: u16, start_y: u16, sty: Style) -> Vec<DrawChPos> {
         DrawChs2D::from_string(s.to_string(), sty).to_draw_ch_pos(start_x, start_y)
+    }
+
+    // get the content style for this DrawChPos given the underlying style
+    pub fn get_content_style(&self, prev: StyledContent<char>) -> StyledContent<char> {
+        let (ch, attr) = if let Some(fg) = self.ch.style.fg {
+            if fg.a < u8::MAX / 2 {
+                (*prev.content(), prev.style().attributes)
+            } else {
+                (self.ch.ch, self.ch.style.attr.into())
+            }
+        } else {
+            (self.ch.ch, self.ch.style.attr.into())
+        };
+
+        let (prev_fg, prev_bg, prev_ul) = (
+            prev.style().foreground_color,
+            prev.style().background_color,
+            prev.style().background_color,
+        );
+
+        let fg = self.ch.style.fg.map(|fg| fg.to_crossterm_color(prev_fg));
+        let bg = self.ch.style.bg.map(|bg| bg.to_crossterm_color(prev_bg));
+        let ul = self
+            .ch
+            .style
+            .underline
+            .map(|ul| ul.to_crossterm_color(prev_ul));
+
+        let cs = ContentStyle {
+            foreground_color: fg,
+            background_color: bg,
+            underline_color: ul,
+            attributes: attr,
+        };
+        StyledContent::new(cs, ch)
     }
 }
 

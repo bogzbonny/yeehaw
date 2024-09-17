@@ -40,7 +40,7 @@ async fn main() -> Result<(), Error> {
     );
     //let sc_pane = PaneScrollable::new(&hat, 200, 200);
 
-    let mut el = WidgetPane::new(&hat);
+    let el = WidgetPane::new(&hat);
 
     let l1 = Label::new(&hat, &ctx, "some label");
 

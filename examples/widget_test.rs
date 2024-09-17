@@ -26,7 +26,7 @@ async fn main() -> Result<(), Error> {
 
     let hat = SortingHat::default();
 
-    let mut el = WidgetPane::new(&hat);
+    let el = WidgetPane::new(&hat);
     let ctx = Context::new_context_for_screen();
 
     let l1 = Label::new(&hat, &ctx, "some label");

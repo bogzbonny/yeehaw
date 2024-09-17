@@ -1,7 +1,7 @@
 use {
     crate::{
         element::ReceivableEventChanges, keyboard::Keyboard, Context, DynLocation, DynLocationSet,
-        Element, ElementID, ElementOrganizer, Error, Event, EventResponse, Priority, Style,
+        Element, ElementID, ElementOrganizer, Error, Event, EventResponse, Priority,
         UpwardPropagator,
     },
     crossterm::{
@@ -11,7 +11,7 @@ use {
         event::EventStream,
         event::{DisableMouseCapture, EnableMouseCapture, Event as CTEvent},
         execute, queue, style,
-        style::StyledContent,
+        style::{ContentStyle, StyledContent},
         terminal,
     },
     futures::{future::FutureExt, StreamExt},
@@ -35,8 +35,8 @@ pub struct Cui {
     pub kill_on_ctrl_c: bool,
 
     // last flushed internal screen, used to determine what needs to be flushed next
-    //                            y  , x
-    pub sc_last_flushed: HashMap<(u16, u16), (char, Style)>,
+    //                            x  , y
+    pub sc_last_flushed: HashMap<(u16, u16), StyledContent<char>>,
 }
 
 impl Cui {
@@ -219,22 +219,29 @@ impl Cui {
         let ctx = Context::new_context_for_screen();
         let chs = self.eo.all_drawing(&ctx);
 
-        // deduplicate and also remove any chs that are out of bounds
-        let mut dedup_chs = HashMap::new();
+        let mut dedup_chs = HashMap::new(); // deduplicated content
         for c in chs {
+            // remove out of bounds
             if c.x >= ctx.s.width || c.y >= ctx.s.height {
                 continue;
             }
-            dedup_chs.insert((c.x, c.y), c);
+
+            // determine the character style, provide the underlying content
+            // for alpha considerations
+            let prev_sty = if let Some(prev_sty) = dedup_chs.get(&(c.x, c.y)) {
+                *prev_sty
+            } else {
+                StyledContent::new(ContentStyle::default(), ' ')
+            };
+            let content = c.get_content_style(prev_sty);
+            dedup_chs.insert((c.x, c.y), content);
         }
 
         let mut do_flush = false;
-        for (_, c) in dedup_chs {
-            if self.is_ch_style_at_position_dirty(c.x, c.y, c.ch.ch, c.ch.style) {
-                let st = StyledContent::new((c.ch.style).into(), &c.ch.ch);
-                queue!(&mut sc, MoveTo(c.x, c.y), style::PrintStyledContent(st)).unwrap();
-                self.sc_last_flushed
-                    .insert((c.y, c.x), (c.ch.ch, c.ch.style));
+        for ((x, y), sty) in dedup_chs {
+            if self.is_ch_style_at_position_dirty(x, y, sty) {
+                queue!(&mut sc, MoveTo(x, y), style::PrintStyledContent(sty)).unwrap();
+                self.sc_last_flushed.insert((x, y), sty);
                 do_flush = true;
             }
         }
@@ -244,11 +251,11 @@ impl Cui {
         }
     }
 
-    pub fn is_ch_style_at_position_dirty(&self, x: u16, y: u16, ch: char, sty: Style) -> bool {
-        let Some((existing_ch, existing_sty)) = self.sc_last_flushed.get(&(y, x)) else {
+    pub fn is_ch_style_at_position_dirty(&self, x: u16, y: u16, sty: StyledContent<char>) -> bool {
+        let Some(existing_sty) = self.sc_last_flushed.get(&(x, y)) else {
             return true;
         };
-        !(*existing_ch == ch && *existing_sty == sty)
+        !(*existing_sty == sty)
     }
 }
 
