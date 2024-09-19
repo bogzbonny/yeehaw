@@ -19,6 +19,7 @@ pub enum ChPlus {
     Transparent, // no character, ch taken from underneath
     Char(char),
     Str(CompactString),
+    ImagePlacement, // image placement artifact
 }
 
 // NOTE need to implement Default for DrawCh so that it is a space character
@@ -37,6 +38,7 @@ impl std::fmt::Display for ChPlus {
             ChPlus::Transparent => write!(f, ""),
             ChPlus::Char(ch) => write!(f, "{}", ch),
             ChPlus::Str(s) => write!(f, "{}", s),
+            ChPlus::ImagePlacement => write!(f, ""),
         }
     }
 }
@@ -180,7 +182,15 @@ impl From<ratatui::buffer::Buffer> for DrawChPosVec {
 
         buf.content.iter().enumerate().for_each(|(i, cell)| {
             let (x, y) = buf.pos_of(i);
-            let ch = cell.symbol();
+            let mut ch: ChPlus = cell.symbol().into();
+
+            if cell.skip {
+                ch = ChPlus::ImagePlacement; // XXX placeholder move into image_viewer
+            }
+
+            // XXX deal with modifiers and colors
+            // deal with img artifacts left behind by the image protocol
+
             out.push(DrawChPos::new(DrawCh::new(ch, Style::new()), x, y));
         });
 

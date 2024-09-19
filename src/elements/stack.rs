@@ -50,6 +50,10 @@ impl VerticalStack {
         self.pane.clear_elements();
     }
 
+    pub fn len(&self) -> usize {
+        self.els.borrow().len()
+    }
+
     pub fn get(&self, idx: usize) -> Option<Rc<RefCell<dyn Element>>> {
         self.els.borrow().get(idx).cloned()
     }
@@ -177,6 +181,14 @@ impl HorizontalStack {
     pub fn clear(&self) {
         self.els.borrow_mut().clear();
         self.pane.clear_elements();
+    }
+
+    pub fn len(&self) -> usize {
+        self.els.borrow().len()
+    }
+
+    pub fn get(&self, idx: usize) -> Option<Rc<RefCell<dyn Element>>> {
+        self.els.borrow().get(idx).cloned()
     }
 
     pub fn is_empty(&self) -> bool {

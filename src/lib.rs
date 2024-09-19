@@ -27,8 +27,8 @@ pub use {
         Context, Element, EventResponse, EventResponses, ReceivableEventChanges, UpwardPropagator,
     },
     elements::{
-        DebugSizePane, HorizontalStack, MenuBar, Pane, PaneScrollable, PaneWithScrollbars,
-        ParentPane, RightClickMenu, Tabs, VerticalStack,
+        DebugSizePane, HorizontalStack, ImageViewer, MenuBar, Pane, PaneScrollable,
+        PaneWithScrollbars, ParentPane, RightClickMenu, Tabs, VerticalStack,
     },
     errors::Error,
     event::{CommandEvent, Event, KeyPossibility},

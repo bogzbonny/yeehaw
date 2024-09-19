@@ -19,10 +19,10 @@ pub enum Error {
         backtrace: Backtrace,
     },
 
-    //CbaError {
-    //    message: String,
-    //    backtrace: Backtrace,
-    //},
+    YhError {
+        message: String,
+    },
+
     #[snafu(context(false))]
     IoError {
         source: std::io::Error,
@@ -41,3 +41,11 @@ pub enum Error {
 //        CbaSnafu { message }.build()
 //    }
 //}
+
+impl Error {
+    pub fn new(message: &str) -> Self {
+        Error::YhError {
+            message: message.to_string(),
+        }
+    }
+}

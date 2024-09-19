@@ -5,7 +5,7 @@ use {
         ZIndex,
     },
     ratatui::widgets::StatefulWidget,
-    ratatui_image::{picker::Picker, protocol::StatefulProtocol, StatefulImage},
+    ratatui_image::{picker::Picker, protocol::StatefulProtocol, Resize, StatefulImage},
     std::{cell::RefCell, rc::Rc},
 };
 
@@ -20,6 +20,7 @@ pub struct ImageViewer {
 impl ImageViewer {
     pub fn new(hat: &SortingHat, img_path: &str) -> Self {
         // Load an image with the image crate.
+        //panic!("{}", img_path);
         let dyn_img = image::ImageReader::open(img_path)
             .unwrap()
             .decode()
@@ -76,7 +77,10 @@ impl Element for ImageViewer {
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let area = ratatui::layout::Rect::new(0, 0, ctx.s.width, ctx.s.height);
         let mut buffer = ratatui::buffer::Buffer::empty(area);
-        let st_image = StatefulImage::new(None);
+        //let st_image = StatefulImage::new(None)
+        //    .resize(Resize::Fit(Some(image::imageops::FilterType::Nearest)));
+        let st_image = StatefulImage::new(None).resize(Resize::Crop(None));
+
         st_image.render(area, &mut buffer, &mut self.st_pro.borrow_mut());
 
         let out: DrawChPosVec = buffer.into();
