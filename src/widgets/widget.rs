@@ -610,7 +610,7 @@ impl Element for WidgetBase {
         for y in view_offset_y..view_offset_y + h {
             for x in view_offset_x..view_offset_x + w {
                 let ch = if y < content_height && x < content_width {
-                    self.pane.content.borrow().0[y][x]
+                    self.pane.content.borrow().0[y][x].clone()
                 } else {
                     DrawCh::new(' ', sty)
                 };

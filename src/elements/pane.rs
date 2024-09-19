@@ -224,7 +224,7 @@ impl Element for Pane {
         for y in ymin..ymax {
             for x in xmin..xmax {
                 // default ch being added next is the DefaultCh
-                let mut ch_out = *self.default_ch.borrow();
+                let mut ch_out = self.default_ch.borrow().clone();
 
                 // TODO XXX allow for negative offsets! currently crashes
 
@@ -237,7 +237,7 @@ impl Element for Pane {
                 if offset_y < self.content.borrow().0.len()
                     && offset_x < self.content.borrow().0[offset_y].len()
                 {
-                    ch_out = self.content.borrow().0[offset_y][offset_x];
+                    ch_out = self.content.borrow().0[offset_y][offset_x].clone();
                 }
 
                 // if y is greater than the height of the visible content,
@@ -246,9 +246,9 @@ impl Element for Pane {
                 // content minus the offset
                 if y > self.content.borrow().0.len() {
                     if x < self.default_line.borrow().len() {
-                        ch_out = self.default_line.borrow()[x];
+                        ch_out = self.default_line.borrow()[x].clone();
                     } else {
-                        ch_out = *self.default_ch.borrow();
+                        ch_out = self.default_ch.borrow().clone();
                     }
                 }
 

@@ -1,31 +1,84 @@
 use {
     crate::{Context, DynLocation, Size, Style},
     anyhow::{anyhow, Error},
+    compact_str::CompactString,
     crossterm::style::{ContentStyle, StyledContent},
     std::ops::{Deref, DerefMut},
 };
 
 // DrawCh is a character with a style and transparency
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DrawCh {
-    pub ch: char,
+    pub ch: ChPlus,
     pub style: Style,
+}
+
+/// ch+ more than just your regular char
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ChPlus {
+    Transparent, // no character, ch taken from underneath
+    Char(char),
+    Str(CompactString),
 }
 
 // NOTE need to implement Default for DrawCh so that it is a space character
 impl Default for DrawCh {
     fn default() -> DrawCh {
         DrawCh {
-            ch: ' ',
+            ch: ChPlus::default(),
             style: Style::new(),
         }
     }
 }
 
-impl DrawCh {
-    pub const fn new(ch: char, style: Style) -> DrawCh {
-        DrawCh { ch, style }
+impl std::fmt::Display for ChPlus {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            ChPlus::Transparent => write!(f, ""),
+            ChPlus::Char(ch) => write!(f, "{}", ch),
+            ChPlus::Str(s) => write!(f, "{}", s),
+        }
     }
+}
+
+impl Default for ChPlus {
+    fn default() -> Self {
+        Self::Char(' ')
+    }
+}
+
+impl From<char> for ChPlus {
+    fn from(ch: char) -> ChPlus {
+        ChPlus::Char(ch)
+    }
+}
+
+impl From<&str> for ChPlus {
+    fn from(s: &str) -> ChPlus {
+        ChPlus::Str(CompactString::new(s))
+    }
+}
+
+impl From<String> for ChPlus {
+    fn from(s: String) -> ChPlus {
+        ChPlus::Str(CompactString::new(&s))
+    }
+}
+
+impl DrawCh {
+    pub const fn const_new(ch: char, style: Style) -> DrawCh {
+        DrawCh {
+            ch: ChPlus::Char(ch),
+            style,
+        }
+    }
+    pub fn new<CH: Into<ChPlus>>(ch: CH, style: Style) -> DrawCh {
+        DrawCh {
+            ch: ch.into(),
+            style,
+        }
+    }
+
     pub fn at(self, x: u16, y: u16) -> DrawChPos {
         DrawChPos { ch: self, x, y }
     }
@@ -70,15 +123,11 @@ impl DrawChPos {
     }
 
     // get the content style for this DrawChPos given the underlying style
-    pub fn get_content_style(&self, prev: StyledContent<char>) -> StyledContent<char> {
-        let (ch, attr) = if let Some(fg) = self.ch.style.fg {
-            if fg.a < u8::MAX / 2 {
-                (*prev.content(), prev.style().attributes)
-            } else {
-                (self.ch.ch, self.ch.style.attr.into())
-            }
+    pub fn get_content_style(&self, prev: &StyledContent<ChPlus>) -> StyledContent<ChPlus> {
+        let (ch, attr) = if matches!(self.ch.ch, ChPlus::Transparent) {
+            (prev.content(), prev.style().attributes)
         } else {
-            (self.ch.ch, self.ch.style.attr.into())
+            (&self.ch.ch, self.ch.style.attr.into())
         };
 
         let (prev_fg, prev_bg, prev_ul) = (
@@ -101,7 +150,7 @@ impl DrawChPos {
             underline_color: ul,
             attributes: attr,
         };
-        StyledContent::new(cs, ch)
+        StyledContent::new(cs, ch.clone())
     }
 }
 
@@ -121,6 +170,21 @@ impl DerefMut for DrawChPosVec {
 impl From<Vec<DrawChPos>> for DrawChPosVec {
     fn from(chs: Vec<DrawChPos>) -> DrawChPosVec {
         DrawChPosVec(chs)
+    }
+}
+
+impl From<ratatui::buffer::Buffer> for DrawChPosVec {
+    fn from(buf: ratatui::buffer::Buffer) -> Self {
+        let mut out = Vec::new();
+        //pos_of(&self, i: usize) -> (u16, u16)
+
+        buf.content.iter().enumerate().for_each(|(i, cell)| {
+            let (x, y) = buf.pos_of(i);
+            let ch = cell.symbol();
+            out.push(DrawChPos::new(DrawCh::new(ch, Style::new()), x, y));
+        });
+
+        DrawChPosVec(out)
     }
 }
 
@@ -226,7 +290,11 @@ impl DrawChs2D {
         let mut out = Vec::new();
         for (y, line) in self.0.iter().enumerate() {
             for (x, ch) in line.iter().enumerate() {
-                out.push(DrawChPos::new(*ch, start_x + x as u16, start_y + y as u16));
+                out.push(DrawChPos::new(
+                    ch.clone(),
+                    start_x + x as u16,
+                    start_y + y as u16,
+                ));
             }
         }
         out
@@ -322,7 +390,7 @@ impl DrawChs2D {
         }
         for y in 0..self.height() {
             for x in 0..self.width() {
-                new_chs[x].push(self.0[y][x]);
+                new_chs[x].push(self.0[y][x].clone());
             }
         }
         DrawChs2D(new_chs)

@@ -47,7 +47,7 @@ impl DropdownList {
     const STYLE_DD_CURSOR: Style = Style::new().with_bg(Rgba::BLUE);
 
     const DEFAULT_DROPDOWN_ARROW: DrawCh =
-        DrawCh::new('▼', Style::new().with_bg(Rgba::GREY13).with_fg(Rgba::BLACK));
+        DrawCh::const_new('▼', Style::new().with_bg(Rgba::GREY13).with_fg(Rgba::BLACK));
 
     // needs to be slightly above other widgets to select properly
     // if widgets overlap
@@ -472,7 +472,7 @@ impl Element for DropdownList {
 
         // set the arrow
         let arrow_ch = DrawChPos::new(
-            *self.dropdown_arrow.borrow(),
+            self.dropdown_arrow.borrow().clone(),
             self.base.get_width_val(ctx).saturating_sub(1) as u16,
             0,
         );

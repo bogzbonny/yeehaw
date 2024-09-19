@@ -1,10 +1,10 @@
-/*use {
+use {
     crate::{
-        element::ReceivableEventChanges, Context, DrawChPos, DynLocationSet, DynVal, Element,
-        ElementID, Event, EventResponses, Pane, Priority, Rgba, SortingHat, Style,
-        UpwardPropagator, ZIndex,
+        element::ReceivableEventChanges, Context, DrawChPos, DrawChPosVec, DynLocationSet, DynVal,
+        Element, ElementID, Event, EventResponses, Pane, Priority, SortingHat, UpwardPropagator,
+        ZIndex,
     },
-    ratatui::{backend::TestBackend, terminal::Frame, Terminal},
+    ratatui::widgets::StatefulWidget,
     ratatui_image::{picker::Picker, protocol::StatefulProtocol, StatefulImage},
     std::{cell::RefCell, rc::Rc},
 };
@@ -13,14 +13,31 @@
 #[derive(Clone)]
 pub struct ImageViewer {
     pub pane: Pane,
-    image: Box<dyn StatefulProtocol>,
+    //image: Rc<RefCell<DynamicImage>>,
+    st_pro: Rc<RefCell<Box<dyn StatefulProtocol>>>,
 }
 
 impl ImageViewer {
-    pub fn new(hat: &SortingHat) -> Self {
+    pub fn new(hat: &SortingHat, img_path: &str) -> Self {
+        // Load an image with the image crate.
+        let dyn_img = image::ImageReader::open(img_path)
+            .unwrap()
+            .decode()
+            .unwrap();
+
+        let Ok(mut picker) = Picker::from_termios() else {
+            panic!("Could not create picker");
+        };
+
+        // Guess the protocol.
+        picker.guess_protocol();
+
+        // Create the Protocol which will be used by the widget.
+        let st_pro = picker.new_resize_protocol(dyn_img);
         Self {
             pane: Pane::new(hat, "debug_size_pane"),
-            image: Box::new(StatefulImage::new(None)),
+            //image: Rc::new(RefCell::new(dyn_img)),
+            st_pro: Rc::new(RefCell::new(st_pro)),
         }
     }
 
@@ -57,34 +74,13 @@ impl Element for ImageViewer {
         self.pane.change_priority(ctx, p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        let size = ctx.s;
-        let backend = TestBackend::new(80, 30);
-        let Ok(mut terminal) = Terminal::new(backend) else {
-            return vec![];
-        };
+        let area = ratatui::layout::Rect::new(0, 0, ctx.s.width, ctx.s.height);
+        let mut buffer = ratatui::buffer::Buffer::empty(area);
+        let st_image = StatefulImage::new(None);
+        st_image.render(area, &mut buffer, &mut self.st_pro.borrow_mut());
 
-        // Should use Picker::from_termios(), to get the font size,
-        // but we can't put that here because that would break doctests!
-        //let mut picker = Picker::new((8, 12));
-        let Ok(mut picker) = Picker::from_termios() else {
-            return vec![];
-        };
-
-        // Guess the protocol.
-        picker.guess_protocol();
-
-        // Load an image with the image crate.
-        let dyn_img = image::io::Reader::open("./assets/Ada.png")?.decode()?;
-
-        // Create the Protocol which will be used by the widget.
-        let image = picker.new_resize_protocol(dyn_img);
-
-        let image_ = StatefulImage::new(None);
-
-        let area = image_.get_area(size.width, size.height);
-        let buffer = String::new();
-        image_.render(&mut terminal, area, buffer, &image);
-        //f.render_stateful_widget(image, f.size(), &mut app.image);
+        let out: DrawChPosVec = buffer.into();
+        out.0
     }
 
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
@@ -115,4 +111,3 @@ impl Element for ImageViewer {
         self.pane.get_visible()
     }
 }
-*/

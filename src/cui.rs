@@ -1,8 +1,8 @@
 use {
     crate::{
-        element::ReceivableEventChanges, keyboard::Keyboard, Context, DynLocation, DynLocationSet,
-        Element, ElementID, ElementOrganizer, Error, Event, EventResponse, Priority,
-        UpwardPropagator,
+        element::ReceivableEventChanges, keyboard::Keyboard, ChPlus, Context, DynLocation,
+        DynLocationSet, Element, ElementID, ElementOrganizer, Error, Event, EventResponse,
+        Priority, UpwardPropagator,
     },
     crossterm::{
         cursor,
@@ -36,7 +36,7 @@ pub struct Cui {
 
     // last flushed internal screen, used to determine what needs to be flushed next
     //                            x  , y
-    pub sc_last_flushed: HashMap<(u16, u16), StyledContent<char>>,
+    pub sc_last_flushed: HashMap<(u16, u16), StyledContent<ChPlus>>,
 }
 
 impl Cui {
@@ -219,7 +219,7 @@ impl Cui {
         let ctx = Context::new_context_for_screen();
         let chs = self.eo.all_drawing(&ctx);
 
-        let mut dedup_chs = HashMap::new(); // deduplicated content
+        let mut dedup_chs: HashMap<(u16, u16), StyledContent<ChPlus>> = HashMap::new();
         for c in chs {
             // remove out of bounds
             if c.x >= ctx.s.width || c.y >= ctx.s.height {
@@ -229,9 +229,9 @@ impl Cui {
             // determine the character style, provide the underlying content
             // for alpha considerations
             let prev_sty = if let Some(prev_sty) = dedup_chs.get(&(c.x, c.y)) {
-                *prev_sty
+                prev_sty
             } else {
-                StyledContent::new(ContentStyle::default(), ' ')
+                &StyledContent::new(ContentStyle::default(), ChPlus::Char(' '))
             };
             let content = c.get_content_style(prev_sty);
             dedup_chs.insert((c.x, c.y), content);
@@ -239,8 +239,13 @@ impl Cui {
 
         let mut do_flush = false;
         for ((x, y), sty) in dedup_chs {
-            if self.is_ch_style_at_position_dirty(x, y, sty) {
-                queue!(&mut sc, MoveTo(x, y), style::PrintStyledContent(sty)).unwrap();
+            if self.is_ch_style_at_position_dirty(x, y, &sty) {
+                queue!(
+                    &mut sc,
+                    MoveTo(x, y),
+                    style::PrintStyledContent(sty.clone())
+                )
+                .unwrap();
                 self.sc_last_flushed.insert((x, y), sty);
                 do_flush = true;
             }
@@ -251,11 +256,13 @@ impl Cui {
         }
     }
 
-    pub fn is_ch_style_at_position_dirty(&self, x: u16, y: u16, sty: StyledContent<char>) -> bool {
+    pub fn is_ch_style_at_position_dirty(
+        &self, x: u16, y: u16, sty: &StyledContent<ChPlus>,
+    ) -> bool {
         let Some(existing_sty) = self.sc_last_flushed.get(&(x, y)) else {
             return true;
         };
-        !(*existing_sty == sty)
+        !(existing_sty == sty)
     }
 }
 

@@ -22,3 +22,5 @@ arboard = "^3.2.0"
 ratatui = "^0.28.0"
 ratatui-image = "^1.0.0"
 image = { version = ">=0.24", default-features = false, features = ["jpeg"] }
+
+compact_str = "^0.8.0"
