@@ -2,7 +2,7 @@
 pub mod debug; // note, must be first for the macro to work throughout
 
 pub mod ch;
-pub mod colour;
+pub mod color;
 pub mod cui;
 pub mod dyn_location;
 pub mod dyn_value;
@@ -19,7 +19,7 @@ pub mod widgets;
 
 pub use {
     ch::{ChPlus, DrawCh, DrawChPos, DrawChPosVec, DrawChs2D},
-    colour::{Color, Rgba},
+    color::{Color, Rgba},
     cui::Cui,
     dyn_location::{DynLocation, DynLocationSet, Loc, Point, Size, ZIndex},
     dyn_value::DynVal,
@@ -36,6 +36,6 @@ pub use {
     organizer::ElementOrganizer,
     prioritizer::Priority,
     sorting_hat::{ElementID, SortingHat},
-    style::{Style, YHAttributes},
+    style::{Attributes, Style},
     widgets::WidgetPane,
 };

@@ -1,9 +1,9 @@
 use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
-        Keyboard as KB, Priority, ReceivableEventChanges, Rgba, SortingHat, Style,
-        UpwardPropagator, YHAttributes,
+        Attributes, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
+        EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, Rgba, SortingHat, Style,
+        UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -32,15 +32,15 @@ impl Checkbox {
         selected_style: Style::new()
             .with_bg(Rgba::LIGHT_YELLOW2)
             .with_fg(Rgba::BLACK)
-            .with_attr(YHAttributes::new().with_bold()),
+            .with_attr(Attributes::new().with_bold()),
         ready_style: Style::new()
             .with_bg(Rgba::WHITE)
             .with_fg(Rgba::BLACK)
-            .with_attr(YHAttributes::new().with_bold()),
+            .with_attr(Attributes::new().with_bold()),
         unselectable_style: Style::new()
             .with_bg(Rgba::GREY13)
             .with_fg(Rgba::BLACK)
-            .with_attr(YHAttributes::new().with_bold()),
+            .with_attr(Attributes::new().with_bold()),
     };
 
     pub fn default_receivable_events() -> Vec<Event> {

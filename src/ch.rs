@@ -16,13 +16,12 @@ pub struct DrawCh {
 /// ch+ more than just your regular char
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ChPlus {
-    Transparent, // no character, ch taken from underneath
+    Transparent, // no character, ch taken from underneath (NOTE fg and bg are still applied)
     Char(char),
     Str(CompactString),
 
-    // image placholder is used for where images are displayed over.
-    // They are to be used in conjunction with other image protocols.
-    ImagePlaceholder,
+    // skip this character entirely, useful for image viewers
+    Skip,
 }
 
 // NOTE need to implement Default for DrawCh so that it is a space character
@@ -41,7 +40,7 @@ impl std::fmt::Display for ChPlus {
             ChPlus::Transparent => write!(f, ""),
             ChPlus::Char(ch) => write!(f, "{}", ch),
             ChPlus::Str(s) => write!(f, "{}", s),
-            ChPlus::ImagePlaceholder => write!(f, ""),
+            ChPlus::Skip => write!(f, ""),
         }
     }
 }
@@ -181,22 +180,17 @@ impl From<Vec<DrawChPos>> for DrawChPosVec {
 impl From<ratatui::buffer::Buffer> for DrawChPosVec {
     fn from(buf: ratatui::buffer::Buffer) -> Self {
         let mut out = Vec::new();
-        //pos_of(&self, i: usize) -> (u16, u16)
 
         buf.content.iter().enumerate().for_each(|(i, cell)| {
             let (x, y) = buf.pos_of(i);
             let mut ch: ChPlus = cell.symbol().into();
 
             if cell.skip {
-                ch = ChPlus::ImagePlaceholder; // XXX placeholder move into image_viewer
+                ch = ChPlus::Skip;
             }
-
-            // XXX deal with modifiers and colors
-            // deal with img artifacts left behind by the image protocol
-
-            out.push(DrawChPos::new(DrawCh::new(ch, Style::new()), x, y));
+            let sty = Style::from(cell.clone());
+            out.push(DrawChPos::new(DrawCh::new(ch, sty), x, y));
         });
-
         DrawChPosVec(out)
     }
 }

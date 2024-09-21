@@ -1,6 +1,7 @@
 use {
     crate::Color,
-    crossterm::style::{Attribute, Attributes},
+    crossterm::style::{Attribute as CrAttribute, Attributes as CrAttributes},
+    ratatui::style::Modifier as RAttributes,
 };
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Debug, Eq, Default)]
@@ -8,7 +9,7 @@ pub struct Style {
     pub fg: Option<Color>,
     pub bg: Option<Color>,
     pub underline: Option<Color>,
-    pub attr: YHAttributes,
+    pub attr: Attributes,
 }
 
 impl Style {
@@ -18,7 +19,7 @@ impl Style {
             fg: None,
             bg: None,
             underline: None,
-            attr: YHAttributes::new(),
+            attr: Attributes::new(),
         }
     }
 
@@ -27,7 +28,7 @@ impl Style {
             fg: Some(fg),
             bg: Some(bg),
             underline: None,
-            attr: YHAttributes::new(),
+            attr: Attributes::new(),
         }
     }
 
@@ -46,7 +47,7 @@ impl Style {
         self
     }
 
-    pub const fn with_attr(mut self, attr: YHAttributes) -> Self {
+    pub const fn with_attr(mut self, attr: Attributes) -> Self {
         self.attr = attr;
         self
     }
@@ -60,7 +61,7 @@ impl Style {
     pub fn set_underline(&mut self, underline: Color) {
         self.underline = Some(underline);
     }
-    pub fn set_attr(&mut self, attr: YHAttributes) {
+    pub fn set_attr(&mut self, attr: Attributes) {
         self.attr = attr;
     }
 }
@@ -71,54 +72,25 @@ impl From<(Color, Color)> for Style {
             fg: Some(fg),
             bg: Some(bg),
             underline: None,
-            attr: YHAttributes::new(),
+            attr: Attributes::new(),
         }
     }
 }
 
-//#[derive(Clone, Copy)]
-//pub struct LetterStyle {
-//    pub ch:    char,
-//    pub style: Style,
-//}
-
-//impl LetterStyle {
-//    pub fn new(ch: char, style: Style) -> Self { LetterStyle { ch, style } }
-//}
-
-#[derive(Debug, PartialEq)]
-pub enum Justification {
-    Left,
-    Centre,
-    Right,
-}
-
-impl Justification {
-    //pub fn encode(&self) -> Result<Vec<u8>, Error> {
-    //    Ok(bincode::encode_to_vec(self, BINCODE_CONFIG)?)
-    //}
-
-    //pub fn decode(bytes: &[u8]) -> Result<Justification, Error> {
-    //    let (v, _) = bincode::decode_from_slice(bytes, BINCODE_CONFIG)?;
-    //    Ok(v)
-    //}
-
-    pub fn is_left(&self) -> bool {
-        matches!(self, Justification::Left)
-    }
-
-    pub fn is_centre(&self) -> bool {
-        matches!(self, Justification::Centre)
-    }
-
-    pub fn is_right(&self) -> bool {
-        matches!(self, Justification::Right)
+impl From<ratatui::buffer::Cell> for Style {
+    fn from(cell: ratatui::buffer::Cell) -> Self {
+        Self {
+            fg: Some(cell.fg.into()),
+            bg: Some(cell.bg.into()),
+            underline: Some(cell.underline_color.into()),
+            attr: cell.modifier.into(),
+        }
     }
 }
 
 // mirroring the crossterm Attributes
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Debug, Eq, Default)]
-pub struct YHAttributes {
+pub struct Attributes {
     pub bold: bool,
     pub faded: bool,
     pub italic: bool,
@@ -138,7 +110,7 @@ pub struct YHAttributes {
     pub overlined: bool,
 }
 
-impl YHAttributes {
+impl Attributes {
     pub const fn new() -> Self {
         Self {
             bold: false,
@@ -251,91 +223,115 @@ impl YHAttributes {
     }
 }
 
-impl From<YHAttributes> for Attributes {
-    fn from(attr: YHAttributes) -> Self {
-        let mut att_out = Attributes::default();
+impl From<Attributes> for CrAttributes {
+    fn from(attr: Attributes) -> Self {
+        let mut att_out = CrAttributes::default();
         if attr.bold {
-            att_out.set(Attribute::Bold);
+            att_out.set(CrAttribute::Bold);
         }
         if attr.faded {
-            att_out.set(Attribute::Dim);
+            att_out.set(CrAttribute::Dim);
         }
         if attr.italic {
-            att_out.set(Attribute::Italic);
+            att_out.set(CrAttribute::Italic);
         }
         if attr.underlined {
-            att_out.set(Attribute::Underlined);
+            att_out.set(CrAttribute::Underlined);
         }
         if attr.doubleunderlined {
-            att_out.set(Attribute::DoubleUnderlined);
+            att_out.set(CrAttribute::DoubleUnderlined);
         }
         if attr.undercurled {
-            att_out.set(Attribute::Undercurled);
+            att_out.set(CrAttribute::Undercurled);
         }
         if attr.underdotted {
-            att_out.set(Attribute::Underdotted);
+            att_out.set(CrAttribute::Underdotted);
         }
         if attr.underdashed {
-            att_out.set(Attribute::Underdashed);
+            att_out.set(CrAttribute::Underdashed);
         }
         if attr.slowblink {
-            att_out.set(Attribute::SlowBlink);
+            att_out.set(CrAttribute::SlowBlink);
         }
         if attr.rapidblink {
-            att_out.set(Attribute::RapidBlink);
+            att_out.set(CrAttribute::RapidBlink);
         }
         if attr.reverse {
-            att_out.set(Attribute::Reverse);
+            att_out.set(CrAttribute::Reverse);
         }
         if attr.hidden {
-            att_out.set(Attribute::Hidden);
+            att_out.set(CrAttribute::Hidden);
         }
         if attr.crossedout {
-            att_out.set(Attribute::CrossedOut);
+            att_out.set(CrAttribute::CrossedOut);
         }
         if attr.fraktur {
-            att_out.set(Attribute::Fraktur);
+            att_out.set(CrAttribute::Fraktur);
         }
         if attr.framed {
-            att_out.set(Attribute::Framed);
+            att_out.set(CrAttribute::Framed);
         }
         if attr.encircled {
-            att_out.set(Attribute::Encircled);
+            att_out.set(CrAttribute::Encircled);
         }
         if attr.overlined {
-            att_out.set(Attribute::OverLined);
+            att_out.set(CrAttribute::OverLined);
         }
         att_out
     }
 }
 
-impl From<Attribute> for YHAttributes {
-    fn from(attr: Attribute) -> Self {
-        let attrs = Attributes::from(attr);
+impl From<CrAttribute> for Attributes {
+    fn from(attr: CrAttribute) -> Self {
+        let attrs = CrAttributes::from(attr);
         attrs.into()
     }
 }
 
-impl From<Attributes> for YHAttributes {
-    fn from(attr: Attributes) -> Self {
+impl From<CrAttributes> for Attributes {
+    fn from(attr: CrAttributes) -> Self {
         Self {
-            bold: attr.has(Attribute::Bold),
-            faded: attr.has(Attribute::Dim),
-            italic: attr.has(Attribute::Italic),
-            underlined: attr.has(Attribute::Underlined),
-            doubleunderlined: attr.has(Attribute::DoubleUnderlined),
-            undercurled: attr.has(Attribute::Undercurled),
-            underdotted: attr.has(Attribute::Underdotted),
-            underdashed: attr.has(Attribute::Underdashed),
-            slowblink: attr.has(Attribute::SlowBlink),
-            rapidblink: attr.has(Attribute::RapidBlink),
-            reverse: attr.has(Attribute::Reverse),
-            hidden: attr.has(Attribute::Hidden),
-            crossedout: attr.has(Attribute::CrossedOut),
-            fraktur: attr.has(Attribute::Fraktur),
-            framed: attr.has(Attribute::Framed),
-            encircled: attr.has(Attribute::Encircled),
-            overlined: attr.has(Attribute::OverLined),
+            bold: attr.has(CrAttribute::Bold),
+            faded: attr.has(CrAttribute::Dim),
+            italic: attr.has(CrAttribute::Italic),
+            underlined: attr.has(CrAttribute::Underlined),
+            doubleunderlined: attr.has(CrAttribute::DoubleUnderlined),
+            undercurled: attr.has(CrAttribute::Undercurled),
+            underdotted: attr.has(CrAttribute::Underdotted),
+            underdashed: attr.has(CrAttribute::Underdashed),
+            slowblink: attr.has(CrAttribute::SlowBlink),
+            rapidblink: attr.has(CrAttribute::RapidBlink),
+            reverse: attr.has(CrAttribute::Reverse),
+            hidden: attr.has(CrAttribute::Hidden),
+            crossedout: attr.has(CrAttribute::CrossedOut),
+            fraktur: attr.has(CrAttribute::Fraktur),
+            framed: attr.has(CrAttribute::Framed),
+            encircled: attr.has(CrAttribute::Encircled),
+            overlined: attr.has(CrAttribute::OverLined),
+        }
+    }
+}
+
+impl From<RAttributes> for Attributes {
+    fn from(attr: RAttributes) -> Self {
+        Self {
+            bold: attr.contains(RAttributes::BOLD),
+            faded: attr.contains(RAttributes::DIM),
+            italic: attr.contains(RAttributes::ITALIC),
+            underlined: attr.contains(RAttributes::UNDERLINED),
+            doubleunderlined: false,
+            undercurled: false,
+            underdotted: false,
+            underdashed: false,
+            slowblink: attr.contains(RAttributes::SLOW_BLINK),
+            rapidblink: attr.contains(RAttributes::RAPID_BLINK),
+            reverse: attr.contains(RAttributes::REVERSED),
+            hidden: attr.contains(RAttributes::HIDDEN),
+            crossedout: attr.contains(RAttributes::CROSSED_OUT),
+            fraktur: false,
+            framed: false,
+            encircled: false,
+            overlined: false,
         }
     }
 }
