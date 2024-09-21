@@ -10,11 +10,14 @@
            instance)
      - button click should have the button as an input such that it can change
        colour when selected
+05. ratatui wrapper
+     - okay so most rat widget objects are CREATED for each render.. 
+     - any wrapper is not super useful unless the details of the widget are
+       known - probably best to just help with low level conversions such as
+       Buffer
+     - https://github.com/benjajaja/ratatui-image
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-05. ratatui wrapper
-     - https://github.com/benjajaja/ratatui-image
 
 01. basic file viewer 
 
@@ -77,6 +80,9 @@
     replicate a heartbeat for a element, or to simulate a visual effect such as
     a button click.
 
+10. cui export visual area to either DynamicImage, .png, or .ans
+      - useful for WIMP
+
 10. gradient colour types, don't ask me how exactly however this is basically
     what we should do.
      - refactor colour to make a call each draw
@@ -98,7 +104,6 @@
         - if applied to the fg, the current fg character would still be the ch
           up to a threshold of maybe 50% alpha (in which case it would use the
           character behind it. 
-
 
 05. button selectable (can hit with enter key)
 
@@ -129,8 +134,6 @@
     .to_widgets() doesn't need to be manually called during construction
     (applied in add_widget).
 
-10. vertical tabs (like brave)
-
 05. borders-pane wrapper
      - option for each of up/down/right/left
      - custom up/down/right/left DrawChs AND corner pieces
@@ -143,6 +146,10 @@
     favour of specifically removing the priorities by the element id of the
     element being destroyed or replaced
      - is this still an issue?
+
+10. introduce errors, remove all unwraps
+
+10. vertical tabs (like brave)
 
 10. When the keyboard is matching an event combo provided to it, it should be
     recording a partial match (and a suggested maximum wait time to recheck for

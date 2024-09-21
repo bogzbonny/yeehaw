@@ -4,10 +4,13 @@ use {
         Element, ElementID, Event, EventResponses, Pane, Priority, SortingHat, UpwardPropagator,
         ZIndex,
     },
+    image::DynamicImage,
     ratatui::widgets::StatefulWidget,
     ratatui_image::{picker::Picker, protocol::StatefulProtocol, Resize, StatefulImage},
     std::{cell::RefCell, rc::Rc},
 };
+
+// TODO integrate in resize kind
 
 // displays the size
 #[derive(Clone)]
@@ -19,13 +22,28 @@ pub struct ImageViewer {
 
 impl ImageViewer {
     pub fn new(hat: &SortingHat, img_path: &str) -> Self {
-        // Load an image with the image crate.
-        //panic!("{}", img_path);
         let dyn_img = image::ImageReader::open(img_path)
             .unwrap()
             .decode()
             .unwrap();
 
+        let Ok(mut picker) = Picker::from_termios() else {
+            panic!("Could not create picker");
+        };
+
+        // Guess the protocol.
+        picker.guess_protocol();
+
+        // Create the Protocol which will be used by the widget.
+        let st_pro = picker.new_resize_protocol(dyn_img);
+        Self {
+            pane: Pane::new(hat, "debug_size_pane"),
+            //image: Rc::new(RefCell::new(dyn_img)),
+            st_pro: Rc::new(RefCell::new(st_pro)),
+        }
+    }
+
+    pub fn new_from_dyn_image(hat: &SortingHat, dyn_img: DynamicImage) -> Self {
         let Ok(mut picker) = Picker::from_termios() else {
             panic!("Could not create picker");
         };
@@ -80,9 +98,7 @@ impl Element for ImageViewer {
         //let st_image = StatefulImage::new(None)
         //    .resize(Resize::Fit(Some(image::imageops::FilterType::Nearest)));
         let st_image = StatefulImage::new(None).resize(Resize::Crop(None));
-
         st_image.render(area, &mut buffer, &mut self.st_pro.borrow_mut());
-
         let out: DrawChPosVec = buffer.into();
         out.0
     }

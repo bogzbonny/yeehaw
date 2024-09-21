@@ -17,12 +17,12 @@
   ▾ elements/                            │ - 
     ▾ adv/                               │ - 
         _ISSUES.md                       │ DONE (moved into _TODO.md)
-        file_navigator.go                │ 
-        file_view.go                     │ 
+        file_navigator.go                │  
+        file_view.go                     │  
         pane_horiz_vert_std.go           │ WONT DO
         pane_scrollable.go               │ DONE
         pane_stack_std.go                │ DONE 
-      command.go                         │
+      command.go                         │ 
       menu.go                            │ DONE
       menu_item.go                       │ DONE (integrated into menu)
       menu_rightclick.go                 │ DONE
@@ -49,9 +49,9 @@
     ▾ resize_test/                       │ -
         main.go                          │ WONT DO
     ▾ scroll_pane/                       │ -
-        main.go                          │
-    ▾ widget_ex/                         │ 
-        main.go                          │
+        main.go                          │ WONT DO
+    ▾ widget_ex/                         │ - 
+        main.go                          │  
       README.md                          │ WONT DO
   ▾ widgets/                             │ DONE
     ▾ megafonts/                         │ DONE

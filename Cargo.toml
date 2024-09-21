@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 
-crossterm = {version = "^0.28.0", features = ["event-stream"]}
+crossterm = {version = "^0.28.0", features = ["event-stream", "serde"]}
 futures = "^0.3.0"
 anyhow = "^1.0.0"
 rand = "^0.8.0"

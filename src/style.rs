@@ -1,13 +1,13 @@
 use {
-    crate::Rgba,
+    crate::Color,
     crossterm::style::{Attribute, Attributes},
 };
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Debug, Eq, Default)]
 pub struct Style {
-    pub fg: Option<Rgba>,
-    pub bg: Option<Rgba>,
-    pub underline: Option<Rgba>,
+    pub fg: Option<Color>,
+    pub bg: Option<Color>,
+    pub underline: Option<Color>,
     pub attr: YHAttributes,
 }
 
@@ -22,7 +22,7 @@ impl Style {
         }
     }
 
-    pub const fn new_coloured(fg: Rgba, bg: Rgba) -> Self {
+    pub const fn new_coloured(fg: Color, bg: Color) -> Self {
         Self {
             fg: Some(fg),
             bg: Some(bg),
@@ -31,17 +31,17 @@ impl Style {
         }
     }
 
-    pub const fn with_fg(mut self, fg: Rgba) -> Self {
+    pub const fn with_fg(mut self, fg: Color) -> Self {
         self.fg = Some(fg);
         self
     }
 
-    pub const fn with_bg(mut self, bg: Rgba) -> Self {
+    pub const fn with_bg(mut self, bg: Color) -> Self {
         self.bg = Some(bg);
         self
     }
 
-    pub const fn with_underline(mut self, underline: Rgba) -> Self {
+    pub const fn with_underline(mut self, underline: Color) -> Self {
         self.underline = Some(underline);
         self
     }
@@ -51,13 +51,13 @@ impl Style {
         self
     }
 
-    pub fn set_fg(&mut self, fg: Rgba) {
+    pub fn set_fg(&mut self, fg: Color) {
         self.fg = Some(fg);
     }
-    pub fn set_bg(&mut self, bg: Rgba) {
+    pub fn set_bg(&mut self, bg: Color) {
         self.bg = Some(bg);
     }
-    pub fn set_underline(&mut self, underline: Rgba) {
+    pub fn set_underline(&mut self, underline: Color) {
         self.underline = Some(underline);
     }
     pub fn set_attr(&mut self, attr: YHAttributes) {
@@ -65,8 +65,8 @@ impl Style {
     }
 }
 
-impl From<(Rgba, Rgba)> for Style {
-    fn from((fg, bg): (Rgba, Rgba)) -> Self {
+impl From<(Color, Color)> for Style {
+    fn from((fg, bg): (Color, Color)) -> Self {
         Self {
             fg: Some(fg),
             bg: Some(bg),
