@@ -9,7 +9,7 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
          - have a few buttons that live after the tabs (for the a + button for
            instance)
      - button click should have the button as an input such that it can change
-       colour when selected
+       color when selected
 05. ratatui wrapper
      - okay so most rat widget objects are CREATED for each render.. 
      - any wrapper is not super useful unless the details of the widget are
@@ -19,10 +19,22 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
 
 05. Jexer style button clicking 
 
+01. maybe the enum of color could just have a "Transparent"
+     color - then remove the transparent bool from DrawCh
+     - maybe transparent should be an alpha setting... could still be an integer 
+       and could blend with the color behind it. 
+        - if applied to the fg, the current fg character would still be the ch
+          up to a threshold of maybe 50% alpha (in which case it would use the
+          character behind it. 
+
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 05. button selectable (can hit with enter key)
+
+05. color "darker", "lighter" methods
+
+05. table widget
 
 01. basic file viewer 
 
@@ -90,28 +102,28 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
 10. cui export visual area to either DynamicImage, .png, or .ans
       - useful for WIMP
 
-10. gradient colour types, don't ask me how exactly however this is basically
+10. gradient color types, don't ask me how exactly however this is basically
     what we should do.
-     - refactor colour to make a call each draw
-       - maybe make colour an enum for serialization purposes. 
-     - maybe the gradient moves based on the screen position.
-     - keep it linear gradients for now
+     - refactor color to make a call each draw
+       - maybe make color an enum for serialization purposes. 
+     - maybe the gradient moves based on the **LOCAL** screen position. (aka
+       position within the parent)
+     - only linear gradient, but can simulate other functions with different
+       position colors
      - gradient params: pos-offset x/y (as DynVal!), 
-        grad-colours and positions(DynVal?!) (need multiple positions for rainbows). 
+        grad-colors and positions(DynVal?!) (need multiple positions for rainbows). 
      - after the final position is reached (and before the final position if
-       there is an offset) repeat the pattern
+       there is an offset) repeat the pattern ... would need the "final length"
+       (aka what is the gradient inbetween the final color and the first color)
    - Time gradient
+     - should pass in the time with the draw context
    - time and screen position gradient.
-      - maybe this could be a time gradient, however each colour on the gradient
-        scale WAS another gradient.
-   - AT THE SAME TIME: maybe the enum of colour could just have a "Transparent"
-     colour - then remove the transparent bool from DrawCh
-     - maybe transparent should be an alpha setting... could still be an integer 
-       and could blend with the colour behind it. 
-        - if applied to the fg, the current fg character would still be the ch
-          up to a threshold of maybe 50% alpha (in which case it would use the
-          character behind it. 
+      - maybe this could be a time gradient, however each color on the gradient
+        scale WAS another gradient. (or vice versa) 
 
+20. color-pallet widget
+
+20. cui get the color under the cursor - useful for color pickers or image pallets
 
 05. Command functionality
 

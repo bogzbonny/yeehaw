@@ -48,8 +48,10 @@ impl Default for ButtonSides {
             depressed_style: Style::new().with_fg(Rgba::BLACK).with_bg(Rgba::WHITE),
             left: "]".to_string(),
             right: "[".to_string(),
-            left_depressed: "⢸".to_string(),
-            right_depressed: "⡇".to_string(),
+            //left_depressed: "⢸".to_string(),
+            //right_depressed: "⡇".to_string(),
+            left_depressed: " ".to_string(),
+            right_depressed: " ".to_string(),
         }
     }
 }
@@ -275,13 +277,10 @@ impl Element for Button {
                     }
                 }
             }
-            Event::ExternalMouse(me) => {
+            Event::ExternalMouse(_) => {
                 let clicked_down = *self.clicked_down.borrow();
-                match me.kind {
-                    MouseEventKind::Up(MouseButton::Left) if clicked_down => {
-                        *self.clicked_down.borrow_mut() = false;
-                    }
-                    _ => {}
+                if clicked_down {
+                    *self.clicked_down.borrow_mut() = false;
                 }
             }
             _ => {}
