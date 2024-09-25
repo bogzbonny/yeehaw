@@ -6,7 +6,7 @@ use {
     std::ops::{Deref, DerefMut},
 };
 
-// DrawCh is a character with a style and transparency
+/// DrawCh is a character with a style and transparency
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DrawCh {
     pub ch: ChPlus,
@@ -16,11 +16,13 @@ pub struct DrawCh {
 /// ch+ more than just your regular char
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ChPlus {
-    Transparent, // no character, ch taken from underneath (NOTE fg and bg are still applied)
+    /// no character, ch taken from underneath (NOTE fg and bg are still applied)
+    Transparent,
+    /// regular character
     Char(char),
+    /// more complex display information (useful for image protocols)
     Str(CompactString),
-
-    // skip this character entirely, useful for image viewers
+    /// skip this character entirely, useful for image viewers / mirroring ratatui buffer
     Skip,
 }
 

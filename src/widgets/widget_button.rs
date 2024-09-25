@@ -1,30 +1,78 @@
 use {
     super::{widget::RESP_DEACTIVATE, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponse,
-        EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, Rgba, SortingHat,
-        Style, UpwardPropagator,
+        Color, Context, DrawChPos, DrawChs2D, DynLocationSet, DynVal, Element, ElementID, Event,
+        EventResponse, EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, Rgba,
+        SortingHat, Style, UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
 };
 
-// TODO simulate button press with down click, time based event
-
-// button sides inspiration:
-//	]button[  ⡇button⢸
-//  ⢸button⡇   ⎤button⎣
-//  ❳button❲  ⎣button⎤
+// TODO DynVal button width
 
 #[derive(Clone)]
 pub struct Button {
     pub base: WidgetBase,
     pub text: Rc<RefCell<String>>,
-    pub sides: Rc<RefCell<(String, String)>>, // left right
+    pub button_style: Rc<RefCell<ButtonStyle>>,
     pub clicked_down: Rc<RefCell<bool>>, // activated when mouse is clicked down while over button
     // function which executes when button moves from pressed -> unpressed
     #[allow(clippy::type_complexity)]
     pub clicked_fn: Rc<RefCell<dyn FnMut(Context) -> EventResponses>>,
+}
+
+#[derive(Clone)]
+pub enum ButtonStyle {
+    Basic(Option<Style>), // style when depressed
+    Sides(ButtonSides),
+    Shadow(ButtonShadow),
+}
+
+// ideas
+//	]button[  ⡇button⢸
+//	]button[  ⢸button⡇
+//	⎤button⎣  ❳button❲ ⎣⦘button⦗⎤
+#[derive(Clone)]
+pub struct ButtonSides {
+    pub depressed_style: Style,
+    pub left: String,
+    pub right: String,
+    pub left_depressed: String, // while clicked
+    pub right_depressed: String,
+}
+
+impl Default for ButtonSides {
+    fn default() -> Self {
+        ButtonSides {
+            depressed_style: Style::new().with_fg(Rgba::BLACK).with_bg(Rgba::WHITE),
+            left: "]".to_string(),
+            right: "[".to_string(),
+            left_depressed: "⢸".to_string(),
+            right_depressed: "⡇".to_string(),
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct ButtonShadow {
+    pub shadow_style: Color,
+    pub left: char,
+    pub middle: char,
+    pub right: char,
+    pub top_right: char, // beside the button
+}
+
+impl Default for ButtonShadow {
+    fn default() -> Self {
+        ButtonShadow {
+            shadow_style: Rgba::GREY8,
+            left: '▝',
+            middle: '▀',
+            right: '▘',
+            top_right: '▖',
+        }
+    }
 }
 
 impl Button {
@@ -34,21 +82,69 @@ impl Button {
         selected_style: Style::new()
             .with_bg(Rgba::LIGHT_YELLOW2)
             .with_fg(Rgba::BLACK),
-        ready_style: Style::new()
-            .with_bg(Rgba::WHITE)
-            .with_fg(Rgba::BLACK),
-        unselectable_style: Style::new()
-            .with_bg(Rgba::GREY13)
-            .with_fg(Rgba::BLACK),
+        ready_style: Style::new().with_bg(Rgba::WHITE).with_fg(Rgba::BLACK),
+        unselectable_style: Style::new().with_bg(Rgba::GREY15).with_fg(Rgba::BLACK),
     };
 
     pub fn default_receivable_events() -> Vec<Event> {
         vec![KB::KEY_ENTER.into()] // when "active" hitting enter will click the button
     }
 
-    pub fn button_text(&self) -> String {
-        let (left, right) = &*self.sides.borrow();
-        format!("{}{}{}", left, *self.text.borrow(), right)
+    pub fn button_drawing(&self) -> DrawChs2D {
+        match self.button_style.borrow().clone() {
+            ButtonStyle::Basic(depressed_sty) => {
+                let sty = if let Some(dsty) = depressed_sty {
+                    if *self.clicked_down.borrow() {
+                        dsty
+                    } else {
+                        self.base.get_current_style()
+                    }
+                } else {
+                    self.base.get_current_style()
+                };
+                DrawChs2D::from_string(self.text.borrow().clone(), sty)
+            }
+            ButtonStyle::Sides(sides) => {
+                let left =
+                    if *self.clicked_down.borrow() { &sides.left_depressed } else { &sides.left };
+                let right =
+                    if *self.clicked_down.borrow() { &sides.right_depressed } else { &sides.right };
+                let sty = if *self.clicked_down.borrow() {
+                    &sides.depressed_style
+                } else {
+                    &self.base.get_current_style()
+                };
+                DrawChs2D::from_string(format!("{}{}{}", left, self.text.borrow(), right), *sty)
+            }
+            ButtonStyle::Shadow(shadow) => {
+                let text_sty = self.base.get_current_style();
+                if *self.clicked_down.borrow() {
+                    let non_button_sty = Style::new().with_bg(Rgba::TRANSPARENT);
+                    let left = DrawChs2D::from_string(" ".to_string(), non_button_sty);
+                    let top = DrawChs2D::from_string(format!(" {} ", self.text.borrow()), text_sty);
+                    let top = left.concat_left_right(top).unwrap();
+                    let width = top.width();
+                    // bottom all spaces
+                    let bottom = DrawChs2D::from_string(" ".repeat(width), non_button_sty);
+                    top.concat_top_bottom(bottom)
+                } else {
+                    let shadow_sty = Style::new()
+                        .with_bg(Rgba::TRANSPARENT)
+                        .with_fg(shadow.shadow_style);
+                    let top = DrawChs2D::from_string(format!(" {} ", self.text.borrow()), text_sty);
+                    let right = DrawChs2D::from_string(shadow.top_right.to_string(), shadow_sty);
+                    let top = top.concat_left_right(right).unwrap();
+                    let bottom_text = format!(
+                        "{}{}{}",
+                        shadow.left,
+                        shadow.middle.to_string().repeat(top.width() - 2),
+                        shadow.right
+                    );
+                    let bottom = DrawChs2D::from_string(bottom_text, shadow_sty);
+                    top.concat_top_bottom(bottom)
+                }
+            }
+        }
     }
 
     pub fn new(
@@ -67,11 +163,15 @@ impl Button {
         let b = Button {
             base: wb,
             text: Rc::new(RefCell::new(text)),
-            sides: Rc::new(RefCell::new((']'.to_string(), '['.to_string()))),
+            button_style: Rc::new(RefCell::new(ButtonStyle::Shadow(ButtonShadow::default()))),
             clicked_down: Rc::new(RefCell::new(false)),
             clicked_fn: Rc::new(RefCell::new(clicked_fn)),
         };
-        b.base.set_content_from_string(ctx, &b.button_text());
+
+        let d = b.button_drawing();
+        b.base.set_dyn_width(DynVal::new_fixed(d.width() as i32));
+        b.base.set_dyn_height(DynVal::new_fixed(d.height() as i32));
+        //b.base.set_content_from_string(ctx, &b.button_text());
         b
     }
 
@@ -83,17 +183,34 @@ impl Button {
         self
     }
 
-    pub fn with_sides(self, ctx: &Context, sides: (String, String)) -> Self {
-        *self.sides.borrow_mut() = sides;
-        let text = self.button_text();
+    pub fn with_sides(self, sides: ButtonSides) -> Self {
+        *self.button_style.borrow_mut() = ButtonStyle::Sides(sides);
+        let d = self.button_drawing();
+        self.base.set_dyn_width(DynVal::new_fixed(d.width() as i32));
         self.base
-            .set_dyn_width(DynVal::new_fixed(text.chars().count() as i32));
-        self.base.set_content_from_string(ctx, &text);
+            .set_dyn_height(DynVal::new_fixed(d.height() as i32));
+        //self.base.set_content_from_string(ctx, &text);
         self
     }
 
-    pub fn without_sides(self, ctx: &Context) -> Self {
-        self.with_sides(ctx, ("".to_string(), "".to_string()))
+    pub fn with_shadow(self, shadow: ButtonShadow) -> Self {
+        *self.button_style.borrow_mut() = ButtonStyle::Shadow(shadow);
+        let d = self.button_drawing();
+        self.base.set_dyn_width(DynVal::new_fixed(d.width() as i32));
+        self.base
+            .set_dyn_height(DynVal::new_fixed(d.height() as i32));
+        //self.base.set_content_from_string(ctx, &text);
+        self
+    }
+
+    pub fn basic_button(self, sty: Option<Style>) -> Self {
+        *self.button_style.borrow_mut() = ButtonStyle::Basic(sty);
+        let d = self.button_drawing();
+        self.base.set_dyn_width(DynVal::new_fixed(d.width() as i32));
+        self.base
+            .set_dyn_height(DynVal::new_fixed(d.height() as i32));
+        //self.base.set_content_from_string(ctx, &text);
+        self
     }
 
     pub fn at(mut self, loc_x: DynVal, loc_y: DynVal) -> Self {
@@ -158,6 +275,15 @@ impl Element for Button {
                     }
                 }
             }
+            Event::ExternalMouse(me) => {
+                let clicked_down = *self.clicked_down.borrow();
+                match me.kind {
+                    MouseEventKind::Up(MouseButton::Left) if clicked_down => {
+                        *self.clicked_down.borrow_mut() = false;
+                    }
+                    _ => {}
+                }
+            }
             _ => {}
         }
         (false, EventResponses::default())
@@ -166,8 +292,8 @@ impl Element for Button {
     fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
         self.base.change_priority(ctx, p)
     }
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        self.base.drawing(ctx)
+    fn drawing(&self, _ctx: &Context) -> Vec<DrawChPos> {
+        self.button_drawing().to_draw_ch_pos(0, 0)
     }
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
         self.base.get_attribute(key)

@@ -23,10 +23,13 @@ have been assigned to them from parent elements.
 
 ## Tribute
 
-[ratatui](https://ratatui.rs/) obviously rocks. its design goals are
-slightly different
+[jexer](https://gitlab.com/AutumnMeowMeow/jexer) what the heck!!!
 
-[dioxus](https://github.com/dioxuslabs/dioxus) seems lit - they have a goal of
+[notcurses](https://github.com/dankamongmen/notcurses) insane
+
+[ratatui](https://ratatui.rs/) obviously rocks
+
+[dioxus](https://github.com/dioxuslabs/dioxus) seems cool - they have a goal of
 TUI support in the future.
 
 [rooibos](https://github.com/aschey/rooibos) similar project, different approach
@@ -86,13 +89,13 @@ TUI support in the future.
        - has a bunch of animation file formats built in
      - https://github.com/cmang/durdraw/
         - has ansi-animations
-        - use a new custom ansi animation format, simply define a sleep
-          functionality with APC codes (like kitty uses)
-          <ESC>_sleep<ms><ESC>\
-          <ESC>_sleep16<ESC>\
-     - https://aac.iverv.com/about
+     - use a new custom ansi animation format, simply define a sleep
+       functionality with APC codes (like kitty uses)
+        <ESC>_sleep<ms><ESC>\
+        <ESC>_sleep16.66<ESC>\
+        <ESC>_repeat<ESC>\ // for repeating sequences ? maybe not?
+        - super basic application for viewing with these sequences
+          - extcat or excat or ecat
      - Similar https://terminalroot.com/use-ms-paint-directly-in-terminal/
      - https://www.gridsagegames.com/rexpaint/
      - https://github.com/EtoDemerzel0427/ANSI-art
-
-

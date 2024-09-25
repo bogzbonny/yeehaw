@@ -1,5 +1,5 @@
 
-01. tab key not working to go between widgets in pane_scrollable_test (nor
+hl. tab key not working to go between widgets in pane_scrollable_test (nor
     escape?) - works for scrollablepane now, but not for pane_with_scrollbars
 01. widget_organizer should extend regular organizer not be its totally own
     thing
@@ -17,9 +17,16 @@
        Buffer
      - https://github.com/benjajaja/ratatui-image
 
+05. Jexer style button clicking 
+
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+
+05. button selectable (can hit with enter key)
+
 01. basic file viewer 
+
+05. scrollbar shouldn't move if uninitialized and a drag mouse enters it
 
 01. translate file_navigator
 
@@ -105,7 +112,6 @@
           up to a threshold of maybe 50% alpha (in which case it would use the
           character behind it. 
 
-05. button selectable (can hit with enter key)
 
 05. Command functionality
 
@@ -208,4 +214,4 @@
        https://terminalroot.com/use-ms-paint-directly-in-terminal/) uses. 
        this format can be viewed in the terminal with "cat my_ansi_image.ans"
 
-40. custom mouse types (requires sixel, and mouse pixel tracking) 
+40. jexer custom mouse types (requires sixel, and mouse pixel tracking) 

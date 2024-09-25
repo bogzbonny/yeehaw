@@ -1,9 +1,9 @@
 use {
     super::{Button, Selectability, TextBox, WBStyles, Widget, Widgets},
     crate::{
-        Context, DrawChPos, Element, ElementID, Event, EventResponses, KeyPossibility,
-        Keyboard as KB, Priority, ReceivableEventChanges, DynLocationSet, DynVal, SortingHat,
-        Style, UpwardPropagator,
+        Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
+        KeyPossibility, Keyboard as KB, Priority, ReceivableEventChanges, SortingHat, Style,
+        UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -132,7 +132,7 @@ impl NumbersTextBox {
                     EventResponses::default()
                 }),
             )
-            .without_sides(ctx);
+            .basic_button(None);
             let self_ = self.clone();
             let down_btn = Button::new(
                 hat,
@@ -144,7 +144,7 @@ impl NumbersTextBox {
                     EventResponses::default()
                 }),
             )
-            .without_sides(ctx);
+            .basic_button(None);
 
             let up_btn_x = x.clone().plus(self.tb.base.get_dyn_width());
             let down_btn_x = up_btn_x.clone().plus_fixed(1);

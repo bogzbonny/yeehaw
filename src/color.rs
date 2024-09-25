@@ -23,6 +23,10 @@ impl Color {
         Color::Rgba(Rgba::new(r, g, b))
     }
 
+    pub const fn new_with_alpha(r: u8, g: u8, b: u8, a: u8) -> Color {
+        Color::Rgba(Rgba::new_with_alpha(r, g, b, a))
+    }
+
     pub fn random_light() -> Self {
         let r: u8 = rand::thread_rng().gen_range(150..=255);
         let g: u8 = rand::thread_rng().gen_range(150..=255);
@@ -66,6 +70,9 @@ impl Rgba {
     pub const fn new(r: u8, g: u8, b: u8) -> Self {
         Self { r, g, b, a: 255 }
     }
+    pub const fn new_with_alpha(r: u8, g: u8, b: u8, a: u8) -> Self {
+        Self { r, g, b, a }
+    }
 
     // returns a tuple of the rgb values
     pub fn to_tuple(&self) -> (u8, u8, u8) {
@@ -92,6 +99,8 @@ impl Rgba {
 
 #[rustfmt::skip]
 impl Rgba {
+    pub const TRANSPARENT:         Color = Color::new_with_alpha(0, 0, 0, 0);
+
     pub const GREY1:         Color = Color::new(10, 10, 10);
     pub const GREY2:         Color = Color::new(20, 20, 20);
     pub const GREY3:         Color = Color::new(30, 30, 32);

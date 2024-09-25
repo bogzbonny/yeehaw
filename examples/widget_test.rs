@@ -4,8 +4,8 @@ use {
     yeehaw::{
         //debug,
         widgets::{
-            megafonts, Button, Checkbox, DropdownList, Label, ListBox, Megatext, NumbersTextBox,
-            RadioButtons, TextBox, Toggle,
+            megafonts, widget_button::ButtonSides, Button, Checkbox, DropdownList, Label, ListBox,
+            Megatext, NumbersTextBox, RadioButtons, TextBox, Toggle,
         },
         Context,
         Cui,
@@ -20,8 +20,8 @@ use {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    //yeehaw::debug::set_log_file("./widget_test.log".to_string());
-    //yeehaw::debug::clear();
+    yeehaw::debug::set_log_file("./widget_test.log".to_string());
+    yeehaw::debug::clear();
     std::env::set_var("RUST_BACKTRACE", "1");
 
     let hat = SortingHat::default();
@@ -50,6 +50,19 @@ async fn main() -> Result<(), Error> {
         .to_widgets()
         .with_label(&hat, &ctx, "button-label");
     el.add_widgets(button);
+
+    let button2 = Button::new(
+        &hat,
+        &ctx,
+        "button2".to_string(),
+        Box::new(|_| EventResponses::default()),
+    )
+    .with_description("a button!".to_string())
+    .with_sides(ButtonSides::default())
+    .at(DynVal::new_flex(0.25), DynVal::new_flex(0.29))
+    .to_widgets();
+
+    el.add_widgets(button2);
 
     let cb = Checkbox::new(&hat)
         .at(DynVal::new_flex(0.1), DynVal::new_flex(0.1))

@@ -291,11 +291,13 @@ impl WidgetPane {
         }
 
         let Some((widget_index, widget_loc)) = widget_index_loc else {
-            if clicked {
-                let resps = self.unselect_selected_widget(ctx);
-                return (false, resps);
-            }
-            return (false, EventResponses::default());
+            let mut resps = if clicked {
+                self.unselect_selected_widget(ctx)
+            } else {
+                EventResponses::default()
+            };
+            resps.extend(self.send_external_mouse_event(ctx, ev, None).0);
+            return (false, resps);
         };
 
         let active_index = *self.active_widget_index.borrow();
@@ -311,7 +313,30 @@ impl WidgetPane {
 
         self.process_widget_resps(ctx, &mut resps2, widget_index);
         resps2.extend(resps.0);
+
+        resps2.extend(
+            self.send_external_mouse_event(ctx, ev, Some(widget_index))
+                .0,
+        );
         (captured, resps2)
+    }
+
+    pub fn send_external_mouse_event(
+        &self, ctx: &Context, ev: crossterm::event::MouseEvent, excluding_index: Option<usize>,
+    ) -> EventResponses {
+        let mut resps = EventResponses::default();
+        for (i, (w, loc)) in self.widgets.borrow().iter().enumerate() {
+            if let Some(i_) = excluding_index {
+                if i == i_ {
+                    continue;
+                }
+            }
+            let ev_adj = loc.borrow().l.adjust_mouse_event(ctx, &ev);
+            let (_, mut resps_) = w.receive_event(ctx, Event::ExternalMouse(ev_adj));
+            self.process_widget_resps(ctx, &mut resps_, i);
+            resps.extend(resps_.0);
+        }
+        resps
     }
 
     pub fn resize_event(&self, ctx: &Context) {
@@ -356,6 +381,9 @@ impl Element for WidgetPane {
             }
             Event::KeyCombo(ke) => {
                 return self.capture_key_event(ctx, ke);
+            }
+            Event::ExternalMouse(me) => {
+                return (false, self.send_external_mouse_event(ctx, me, None));
             }
             Event::Resize => {
                 self.resize_event(ctx);
