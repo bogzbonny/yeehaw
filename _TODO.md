@@ -115,6 +115,8 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
      - after the final position is reached (and before the final position if
        there is an offset) repeat the pattern ... would need the "final length"
        (aka what is the gradient inbetween the final color and the first color)
+   - Color will need a "blend" function with another color for the gradients
+       blended = color1.blend(percent, color2)
    - Time gradient
      - should pass in the time with the draw context
    - time and screen position gradient.
