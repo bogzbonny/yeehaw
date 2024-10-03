@@ -1,7 +1,7 @@
 use {
     crate::{
-        Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
-        ParentPane, Priority, ReceivableEventChanges, Rgba, SortingHat, Style,
+        Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
+        EventResponses, ParentPane, Priority, ReceivableEventChanges, SortingHat, Style,
         UpwardPropagator, VerticalStack,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -42,14 +42,12 @@ impl TabsTop {
             tab_prefix: Rc::new(RefCell::new(String::new())),
             tab_suffix: Rc::new(RefCell::new(" ".to_string())),
             highlight_style: Rc::new(RefCell::new(
-                Style::new()
-                    .with_bg(Rgba::BLUE)
-                    .with_fg(Rgba::BLACK),
+                Style::new().with_bg(Color::BLUE).with_fg(Color::BLACK),
             )),
             normal_style: Rc::new(RefCell::new(
                 Style::new()
-                    .with_bg(Rgba::LIGHT_YELLOW)
-                    .with_fg(Rgba::BLACK),
+                    .with_bg(Color::LIGHT_YELLOW)
+                    .with_fg(Color::BLACK),
             )),
         };
 

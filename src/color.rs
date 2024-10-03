@@ -98,7 +98,7 @@ impl Rgba {
 }
 
 #[rustfmt::skip]
-impl Rgba {
+impl Color {
     pub const TRANSPARENT:         Color = Color::new_with_alpha(0, 0, 0, 0);
 
     pub const GREY1:         Color = Color::new(10, 10, 10);

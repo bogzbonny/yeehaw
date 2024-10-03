@@ -29,18 +29,13 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
-05. button selectable (can hit with enter key)
-
-05. color "darker", "lighter" methods
-
-05. table widget
-
 01. basic file viewer 
-
-05. scrollbar shouldn't move if uninitialized and a drag mouse enters it
-
 01. translate file_navigator
+
+10. button selectable (can hit with enter key)
+05. color "darker", "lighter" methods
+10. table widget
+05. scrollbar shouldn't move if uninitialized and a drag mouse enters it
 
 05. use .flf (figlet font) format instead of custom megatext
      - https://docs.rs/figlet-rs/latest/figlet_rs/

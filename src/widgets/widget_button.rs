@@ -2,7 +2,7 @@ use {
     super::{widget::RESP_DEACTIVATE, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Color, Context, DrawChPos, DrawChs2D, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponse, EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, Rgba,
+        EventResponse, EventResponses, Keyboard as KB, Priority, ReceivableEventChanges,
         SortingHat, Style, UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -45,7 +45,7 @@ pub struct ButtonSides {
 impl Default for ButtonSides {
     fn default() -> Self {
         ButtonSides {
-            depressed_style: Style::new().with_fg(Rgba::BLACK).with_bg(Rgba::WHITE),
+            depressed_style: Style::new().with_fg(Color::BLACK).with_bg(Color::WHITE),
             left: "]".to_string(),
             right: "[".to_string(),
             //left_depressed: "⢸".to_string(),
@@ -68,7 +68,7 @@ pub struct ButtonShadow {
 impl Default for ButtonShadow {
     fn default() -> Self {
         ButtonShadow {
-            shadow_style: Rgba::GREY8,
+            shadow_style: Color::GREY8,
             left: '▝',
             middle: '▀',
             right: '▘',
@@ -82,10 +82,10 @@ impl Button {
 
     const STYLE: WBStyles = WBStyles {
         selected_style: Style::new()
-            .with_bg(Rgba::LIGHT_YELLOW2)
-            .with_fg(Rgba::BLACK),
-        ready_style: Style::new().with_bg(Rgba::WHITE).with_fg(Rgba::BLACK),
-        unselectable_style: Style::new().with_bg(Rgba::GREY15).with_fg(Rgba::BLACK),
+            .with_bg(Color::LIGHT_YELLOW2)
+            .with_fg(Color::BLACK),
+        ready_style: Style::new().with_bg(Color::WHITE).with_fg(Color::BLACK),
+        unselectable_style: Style::new().with_bg(Color::GREY15).with_fg(Color::BLACK),
     };
 
     pub fn default_receivable_events() -> Vec<Event> {
@@ -121,7 +121,7 @@ impl Button {
             ButtonStyle::Shadow(shadow) => {
                 let text_sty = self.base.get_current_style();
                 if *self.clicked_down.borrow() {
-                    let non_button_sty = Style::new().with_bg(Rgba::TRANSPARENT);
+                    let non_button_sty = Style::new().with_bg(Color::TRANSPARENT);
                     let left = DrawChs2D::from_string(" ".to_string(), non_button_sty);
                     let top = DrawChs2D::from_string(format!(" {} ", self.text.borrow()), text_sty);
                     let top = left.concat_left_right(top).unwrap();
@@ -131,7 +131,7 @@ impl Button {
                     top.concat_top_bottom(bottom)
                 } else {
                     let shadow_sty = Style::new()
-                        .with_bg(Rgba::TRANSPARENT)
+                        .with_bg(Color::TRANSPARENT)
                         .with_fg(shadow.shadow_style);
                     let top = DrawChs2D::from_string(format!(" {} ", self.text.borrow()), text_sty);
                     let right = DrawChs2D::from_string(shadow.top_right.to_string(), shadow_sty);

@@ -1,8 +1,8 @@
 use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Attributes, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, Rgba, SortingHat, Style,
+        Attributes, Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
+        EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, SortingHat, Style,
         UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -30,16 +30,16 @@ impl Checkbox {
 
     const STYLE: WBStyles = WBStyles {
         selected_style: Style::new()
-            .with_bg(Rgba::LIGHT_YELLOW2)
-            .with_fg(Rgba::BLACK)
+            .with_bg(Color::LIGHT_YELLOW2)
+            .with_fg(Color::BLACK)
             .with_attr(Attributes::new().with_bold()),
         ready_style: Style::new()
-            .with_bg(Rgba::WHITE)
-            .with_fg(Rgba::BLACK)
+            .with_bg(Color::WHITE)
+            .with_fg(Color::BLACK)
             .with_attr(Attributes::new().with_bold()),
         unselectable_style: Style::new()
-            .with_bg(Rgba::GREY13)
-            .with_fg(Rgba::BLACK)
+            .with_bg(Color::GREY13)
+            .with_fg(Color::BLACK)
             .with_attr(Attributes::new().with_bold()),
     };
 

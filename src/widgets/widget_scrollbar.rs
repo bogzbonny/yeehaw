@@ -1,9 +1,9 @@
 use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
-        KeyPossibility, Keyboard as KB, Priority, ReceivableEventChanges, Rgba, SortingHat,
-        Style, UpwardPropagator,
+        Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
+        EventResponses, KeyPossibility, Keyboard as KB, Priority, ReceivableEventChanges,
+        SortingHat, Style, UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
     std::ops::{Deref, DerefMut},
@@ -269,14 +269,10 @@ impl Scrollbar {
     const STYLE: WBStyles = WBStyles {
         //
         selected_style: Style::new()
-            .with_bg(Rgba::LIGHT_YELLOW2)
-            .with_fg(Rgba::BLACK),
-        ready_style: Style::new()
-            .with_bg(Rgba::GREY13)
-            .with_fg(Rgba::WHITE),
-        unselectable_style: Style::new()
-            .with_bg(Rgba::GREY13)
-            .with_fg(Rgba::WHITE),
+            .with_bg(Color::LIGHT_YELLOW2)
+            .with_fg(Color::BLACK),
+        ready_style: Style::new().with_bg(Color::GREY13).with_fg(Color::WHITE),
+        unselectable_style: Style::new().with_bg(Color::GREY13).with_fg(Color::WHITE),
     };
 
     // if the Scrollbar currently cannot be used due to insufficient domain.

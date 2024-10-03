@@ -256,6 +256,12 @@ impl std::fmt::Display for DrawChs2D {
     }
 }
 
+impl From<Vec<Vec<DrawCh>>> for DrawChs2D {
+    fn from(chs: Vec<Vec<DrawCh>>) -> DrawChs2D {
+        DrawChs2D(chs)
+    }
+}
+
 impl DrawChs2D {
     pub fn new(chs: Vec<Vec<DrawCh>>) -> DrawChs2D {
         DrawChs2D(chs)

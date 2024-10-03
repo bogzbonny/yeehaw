@@ -5,9 +5,9 @@ use {
     },
     crate::{
         elements::menu::{MenuItem, MenuPath, MenuStyle},
-        Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Error, Event,
-        EventResponse, EventResponses, KeyPossibility, Keyboard as KB, Priority,
-        ReceivableEventChanges, Rgba, RightClickMenu, SortingHat, Style, UpwardPropagator,
+        Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Error,
+        Event, EventResponse, EventResponses, KeyPossibility, Keyboard as KB, Priority,
+        ReceivableEventChanges, RightClickMenu, SortingHat, Style, UpwardPropagator,
     },
     crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -62,30 +62,18 @@ impl TextBox {
     const KIND: &'static str = "widget_textbox";
 
     const STYLE: WBStyles = WBStyles {
-        selected_style: Style::new()
-            .with_bg(Rgba::WHITE)
-            .with_fg(Rgba::BLACK),
-        ready_style: Style::new()
-            .with_bg(Rgba::GREY13)
-            .with_fg(Rgba::BLACK),
-        unselectable_style: Style::new()
-            .with_bg(Rgba::GREY15)
-            .with_fg(Rgba::BLACK),
+        selected_style: Style::new().with_bg(Color::WHITE).with_fg(Color::BLACK),
+        ready_style: Style::new().with_bg(Color::GREY13).with_fg(Color::BLACK),
+        unselectable_style: Style::new().with_bg(Color::GREY15).with_fg(Color::BLACK),
     };
 
     const STYLE_SCROLLBAR: WBStyles = WBStyles {
-        selected_style: Style::new()
-            .with_bg(Rgba::GREY13)
-            .with_fg(Rgba::WHITE),
-        ready_style: Style::new()
-            .with_bg(Rgba::GREY13)
-            .with_fg(Rgba::WHITE),
-        unselectable_style: Style::new()
-            .with_bg(Rgba::GREY13)
-            .with_fg(Rgba::WHITE),
+        selected_style: Style::new().with_bg(Color::GREY13).with_fg(Color::WHITE),
+        ready_style: Style::new().with_bg(Color::GREY13).with_fg(Color::WHITE),
+        unselectable_style: Style::new().with_bg(Color::GREY13).with_fg(Color::WHITE),
     };
 
-    const DEFAULT_CURSOR_STYLE: Style = Style::new().with_bg(Rgba::BLUE);
+    const DEFAULT_CURSOR_STYLE: Style = Style::new().with_bg(Color::BLUE);
 
     // for textboxes which are editable
     pub fn editable_receivable_events() -> Vec<Event> {

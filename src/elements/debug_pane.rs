@@ -1,7 +1,7 @@
 use {
     crate::{
-        element::ReceivableEventChanges, Context, DrawChPos, DynLocationSet, DynVal, Element,
-        ElementID, Event, EventResponses, Pane, Priority, Rgba, SortingHat, Style,
+        element::ReceivableEventChanges, Color, Context, DrawChPos, DynLocationSet, DynVal,
+        Element, ElementID, Event, EventResponses, Pane, Priority, SortingHat, Style,
         UpwardPropagator, ZIndex,
     },
     std::{cell::RefCell, rc::Rc},
@@ -66,9 +66,7 @@ impl Element for DebugSizePane {
             s,
             0,
             0,
-            Style::default()
-                .with_bg(Rgba::BLACK)
-                .with_fg(Rgba::WHITE),
+            Style::default().with_bg(Color::BLACK).with_fg(Color::WHITE),
         )
     }
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {

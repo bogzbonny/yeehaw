@@ -1,8 +1,8 @@
 use {
     super::{common, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
-        Priority, ReceivableEventChanges, Rgba, SortingHat, Style, UpwardPropagator,
+        Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
+        EventResponses, Priority, ReceivableEventChanges, SortingHat, Style, UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -28,7 +28,7 @@ pub static LABEL_EV_COMBOS: Vec<Event> = Vec::new();
 pub static LABEL_STYLE: WBStyles = WBStyles {
     selected_style: Style::new(),
     ready_style: Style::new(),
-    unselectable_style: Style::new().with_fg(Rgba::WHITE),
+    unselectable_style: Style::new().with_fg(Color::WHITE),
 };
 
 impl Label {

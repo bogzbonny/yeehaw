@@ -4,8 +4,8 @@ use {
         Widgets,
     },
     crate::{
-        Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
-        Keyboard as KB, Priority, ReceivableEventChanges, Rgba, SortingHat, Style,
+        Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
+        EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, SortingHat, Style,
         UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -52,38 +52,23 @@ impl ListBox {
     const KIND: &'static str = "widget_listbox";
 
     const STYLE: WBStyles = WBStyles {
-        selected_style: Style::new()
-            .with_bg(Rgba::YELLOW)
-            .with_fg(Rgba::BLACK),
-        ready_style: Style::new()
-            .with_bg(Rgba::WHITE)
-            .with_fg(Rgba::BLACK),
-        unselectable_style: Style::new()
-            .with_bg(Rgba::GREY13)
-            .with_fg(Rgba::BLACK),
+        selected_style: Style::new().with_bg(Color::YELLOW).with_fg(Color::BLACK),
+        ready_style: Style::new().with_bg(Color::WHITE).with_fg(Color::BLACK),
+        unselectable_style: Style::new().with_bg(Color::GREY13).with_fg(Color::BLACK),
     };
 
     const STYLE_SCROLLBAR: WBStyles = WBStyles {
-        selected_style: Style::new()
-            .with_bg(Rgba::GREY13)
-            .with_fg(Rgba::WHITE),
-        ready_style: Style::new()
-            .with_bg(Rgba::GREY13)
-            .with_fg(Rgba::WHITE),
-        unselectable_style: Style::new()
-            .with_bg(Rgba::GREY13)
-            .with_fg(Rgba::WHITE),
+        selected_style: Style::new().with_bg(Color::GREY13).with_fg(Color::WHITE),
+        ready_style: Style::new().with_bg(Color::GREY13).with_fg(Color::WHITE),
+        unselectable_style: Style::new().with_bg(Color::GREY13).with_fg(Color::WHITE),
     };
 
-    const STYLE_ITEM_SELECTED: Style = Style::new()
-        .with_bg(Rgba::NAVY)
-        .with_fg(Rgba::WHITE);
+    const STYLE_ITEM_SELECTED: Style = Style::new().with_bg(Color::NAVY).with_fg(Color::WHITE);
     const STYLE_CURSOR_OVER_UNSELECTED: Style = Style::new()
-        .with_bg(Rgba::LIGHT_BLUE)
-        .with_fg(Rgba::BLACK);
-    const STYLE_CURSOR_OVER_SELECTED: Style = Style::new()
-        .with_bg(Rgba::BLUE)
-        .with_fg(Rgba::WHITE);
+        .with_bg(Color::LIGHT_BLUE)
+        .with_fg(Color::BLACK);
+    const STYLE_CURSOR_OVER_SELECTED: Style =
+        Style::new().with_bg(Color::BLUE).with_fg(Color::WHITE);
 
     pub fn default_receivable_events() -> Vec<Event> {
         vec![

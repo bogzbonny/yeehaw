@@ -1,4 +1,5 @@
 pub mod debug_pane;
+pub mod file_navigator;
 pub mod file_viewer;
 pub mod image_viewer;
 pub mod menu;
@@ -11,6 +12,7 @@ pub mod tabs;
 
 pub use {
     debug_pane::DebugSizePane,
+    file_navigator::FileNavPane,
     file_viewer::FileViewerPane,
     image_viewer::ImageViewer,
     menu::MenuBar,
