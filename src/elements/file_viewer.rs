@@ -4,7 +4,7 @@ use {
         DynVal, Element, ElementID, Event, EventResponses, Priority, SortingHat, UpwardPropagator,
         WidgetPane,
     },
-    std::path::Path,
+    std::path::PathBuf,
     std::{cell::RefCell, rc::Rc},
 };
 
@@ -15,7 +15,7 @@ pub struct FileViewerPane {
 }
 
 impl FileViewerPane {
-    pub fn new(hat: &SortingHat, ctx: &Context, file_path: &Path) -> FileViewerPane {
+    pub fn new(hat: &SortingHat, ctx: &Context, file_path: PathBuf) -> FileViewerPane {
         let content = std::fs::read_to_string(file_path).unwrap();
 
         let pane = WidgetPane::new(hat);

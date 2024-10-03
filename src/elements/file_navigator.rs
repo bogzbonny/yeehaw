@@ -23,7 +23,7 @@ pub struct FileNavPane {
     pub highlight_position: Rc<RefCell<usize>>,
     pub offset: Rc<RefCell<usize>>,
     #[allow(clippy::type_complexity)]
-    pub file_enter_hook: Rc<RefCell<Box<dyn FnMut(String)>>>,
+    pub file_enter_hook: Rc<RefCell<Box<dyn FnMut(PathBuf)>>>,
 }
 
 #[derive(Clone)]
@@ -63,9 +63,7 @@ impl FileNavPane {
         ]
     }
 
-    pub fn new(
-        hat: &SortingHat, ctx: &Context, dir: PathBuf, file_enter_hook: Box<dyn FnMut(String)>,
-    ) -> Self {
+    pub fn new(hat: &SortingHat, ctx: &Context, dir: PathBuf) -> Self {
         let styles = FileNavStyle::default();
         let pane = Pane::new(hat, "file_nav_pane");
         let up_dir = UpDir::new(".. (up a dir)".to_string(), styles.up_dir, 0);
@@ -91,10 +89,14 @@ impl FileNavPane {
             nav_items: Rc::new(RefCell::new(nav_items)),
             highlight_position: Rc::new(RefCell::new(1)),
             offset: Rc::new(RefCell::new(0)),
-            file_enter_hook: Rc::new(RefCell::new(file_enter_hook)),
+            file_enter_hook: Rc::new(RefCell::new(Box::new(|_path| {}))),
         };
         out.update_content(ctx);
         out
+    }
+
+    pub fn set_open_fn(&self, file_enter_hook: Box<dyn FnMut(PathBuf)>) {
+        *self.file_enter_hook.borrow_mut() = file_enter_hook;
     }
 
     pub fn update_content(&self, ctx: &Context) {
@@ -238,7 +240,7 @@ impl NavItem {
     }
 
     pub fn enter(
-        &mut self, nis: &NavItems, file_enter_hook: &mut Box<dyn FnMut(String)>,
+        &mut self, nis: &NavItems, file_enter_hook: &mut Box<dyn FnMut(PathBuf)>,
         highlight_position: usize,
     ) -> Option<NavItems> {
         match self {
@@ -325,8 +327,8 @@ impl File {
     }
 
     // Execute the file enter hook
-    pub fn enter(&self, file_enter_hook: &mut Box<dyn FnMut(String)>) {
-        file_enter_hook(self.path.to_str().unwrap().to_string());
+    pub fn enter(&self, file_enter_hook: &mut Box<dyn FnMut(PathBuf)>) {
+        file_enter_hook(self.path.clone());
     }
 
     pub fn draw(&self, default_ch: DrawCh, width: usize) -> Vec<DrawCh> {
