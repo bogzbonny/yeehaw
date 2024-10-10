@@ -288,7 +288,7 @@ impl ElementOrganizer {
                             details.loc.borrow().l.start_x.clone(),
                             details.loc.borrow().l.start_y.clone(),
                         );
-                    self.add_element(new_el.clone(), None);
+                    self.add_element(new_el.clone(), None); // XXX TODO add upward propagator
                     modified_resp = Some(EventResponse::None);
                 }
                 EventResponse::Destruct => {

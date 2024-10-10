@@ -41,7 +41,8 @@ impl ParentPane {
     }
 
     pub fn add_element(&self, el: Rc<RefCell<dyn Element>>) {
-        self.eo.add_element(el.clone(), None);
+        self.eo
+            .add_element(el.clone(), Some(Box::new(self.clone())));
     }
 
     pub fn remove_element(&self, el_id: &ElementID) {
@@ -182,36 +183,6 @@ impl ParentPane {
     pub fn update_el_z_index(&self, el_id: &ElementID, z: ZIndex) {
         self.eo.update_el_z_index(el_id, z);
     }
-
-    // Passes changes to inputability to this element's parent element. If
-    // updateThisElementsPrioritizers is TRUE then this element's prioritizers should be updated
-    // using the given IC. This should be set to false when an upwards propagation is being
-    // initiated as all of the changes to the prioritzers should have already been handled. The
-    // boolean should be set to true on all further calls as the changes are propagated upstream so
-    // as to update the ancestors' prioritizers.
-    //
-    // childEl is the element which is invoking the propagation from BELOW this parent pane. This
-    // is used by the parent to determine which events/cmds to update the prioritizers for.
-    //
-    // The propagateEl is the element to send further upward propagation to. Typically this means
-    // the Element which is inheriting THIS parent pane.
-    //
-    // NOTE: propagateEl is necessary as the parent pane will usually have registered an element
-    // that extends ParentPane. If this ParentPane sent itself, it would not match the child
-    // registered in the parent's EO.
-    //
-    // NOTE this function should be extended from if the parent pane is used as a base for a more
-    // complex element. As the developer you should be fulfilling the
-    // propagate_receivable_event_changes_upward function directly.
-    pub fn propagate_receivable_event_changes_upward(
-        &self, child_el: Rc<RefCell<dyn Element>>, ic: ReceivableEventChanges,
-    ) {
-        let child_el_id = child_el.borrow().id();
-        self.eo.process_receivable_event_changes(&child_el_id, &ic);
-        if let Some(up) = self.pane.propagator.borrow_mut().deref() {
-            up.propagate_receivable_event_changes_upward(&child_el_id, ic);
-        }
-    }
 }
 
 impl Element for ParentPane {
@@ -328,5 +299,36 @@ impl Element for ParentPane {
     }
     fn get_visible(&self) -> Rc<RefCell<bool>> {
         self.pane.get_visible()
+    }
+}
+
+impl UpwardPropagator for ParentPane {
+    // Passes changes to inputability to this element's parent element. If
+    // updateThisElementsPrioritizers is TRUE then this element's prioritizers should be updated
+    // using the given IC. This should be set to false when an upwards propagation is being
+    // initiated as all of the changes to the prioritzers should have already been handled. The
+    // boolean should be set to true on all further calls as the changes are propagated upstream so
+    // as to update the ancestors' prioritizers.
+    //
+    // childEl is the element which is invoking the propagation from BELOW this parent pane. This
+    // is used by the parent to determine which events/cmds to update the prioritizers for.
+    //
+    // The propagateEl is the element to send further upward propagation to. Typically this means
+    // the Element which is inheriting THIS parent pane.
+    //
+    // NOTE: propagateEl is necessary as the parent pane will usually have registered an element
+    // that extends ParentPane. If this ParentPane sent itself, it would not match the child
+    // registered in the parent's EO.
+    //
+    // NOTE this function should be extended from if the parent pane is used as a base for a more
+    // complex element. As the developer you should be fulfilling the
+    // propagate_receivable_event_changes_upward function directly.
+    fn propagate_receivable_event_changes_upward(
+        &self, child_el_id: &ElementID, ic: ReceivableEventChanges,
+    ) {
+        self.eo.process_receivable_event_changes(child_el_id, &ic);
+        if let Some(up) = self.pane.propagator.borrow_mut().deref() {
+            up.propagate_receivable_event_changes_upward(&self.id(), ic);
+        }
     }
 }

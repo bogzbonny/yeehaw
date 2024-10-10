@@ -16,6 +16,18 @@ impl Priority {
     pub const UNFOCUSED: Priority = Priority(3);
 }
 
+impl std::fmt::Display for Priority {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self.0 {
+            0 => write!(f, "HIGHEST"),
+            1 => write!(f, "ABOVE_FOCUSED"),
+            2 => write!(f, "FOCUSED"),
+            3 => write!(f, "UNFOCUSED"),
+            _ => write!(f, "OTHER({})", self.0),
+        }
+    }
+}
+
 // TRANSLATION NOTE PrioritizableEv was replaced by just Event
 // TODO delete post translation
 //
@@ -65,15 +77,15 @@ impl PriorityIdEvent {
 impl EventPrioritizer {
     // are there any priority events already registered with the same priority and
     // event (independant of the event prioritizers element id).
-    pub fn has_priority_ev(&self, priority_ev: &[(Event, Priority)]) -> bool {
+    pub fn has_priority_ev(&self, priority_ev: &[(Event, Priority)]) -> Option<(Event, Priority)> {
         for pec in self.0.iter() {
             for p in priority_ev.iter() {
                 if p.0 == pec.event && p.1 == pec.priority {
-                    return true;
+                    return Some((p.0.clone(), p.1));
                 }
             }
         }
-        false
+        None
     }
 
     pub fn include(&mut self, id: &ElementID, priority_ev: &Vec<(Event, Priority)>) {
@@ -81,11 +93,13 @@ impl EventPrioritizer {
         // Panic if two children have registered the same ev/cmd at the same
         // priority. If false the event will be sent to the ev/cmd to which happens
         // to be first in the prioritizer
-        debug_assert!(
-                !self.has_priority_ev(priority_ev),
-                "EvPrioritizer found at least 2 events registered to different elements with the same priority {:?}",
-                priority_ev
+        #[cfg(debug_assertions)]
+        if let Some((ev, pr)) = self.has_priority_ev(priority_ev) {
+            panic!(
+                "EvPrioritizer found at least 2 events registered to different elements with the
+                same priority. \n\tregistering-id: {id}\n\tpr: {pr}\n\tev: {ev:?}",
             );
+        }
 
         for pe in priority_ev {
             let peie = PriorityIdEvent::new(pe.1, id.clone(), pe.0.clone());

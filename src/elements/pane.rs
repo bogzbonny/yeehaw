@@ -168,6 +168,28 @@ impl Pane {
     pub fn get_element_priority(&self) -> Priority {
         *self.element_priority.borrow()
     }
+
+    // defocus all prioritized events
+    pub fn unfocus(&self) {
+        *self.element_priority.borrow_mut() = Priority::UNFOCUSED;
+        self.self_evs
+            .borrow_mut()
+            .update_priority_for_all(Priority::UNFOCUSED);
+        if let Some(propagator) = self.propagator.borrow().as_ref() {
+            let rec = ReceivableEventChanges::default()
+                .with_remove_evs(
+                    self.self_evs
+                        .borrow()
+                        .0
+                        .clone()
+                        .iter()
+                        .map(|(ev, _)| ev.clone())
+                        .collect(),
+                )
+                .with_evs(self.self_evs.borrow().0.clone());
+            propagator.propagate_receivable_event_changes_upward(&self.id(), rec);
+        }
+    }
 }
 
 impl Element for Pane {
@@ -389,6 +411,12 @@ impl SelfReceivableEvents {
     pub fn update_priority_for_evs(&mut self, evs: Vec<Event>, p: Priority) {
         for ev in evs {
             self.update_priority_for_ev(ev, p)
+        }
+    }
+
+    pub fn update_priority_for_all(&mut self, p: Priority) {
+        for i in 0..self.0.len() {
+            self.0[i].1 = p;
         }
     }
 }

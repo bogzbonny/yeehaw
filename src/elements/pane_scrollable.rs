@@ -41,7 +41,7 @@ impl PaneScrollable {
     }
 
     pub fn add_element(&self, el: Rc<RefCell<dyn Element>>) {
-        self.pane.eo.add_element(el.clone(), None);
+        self.pane.add_element(el.clone());
     }
 
     pub fn remove_element(&self, el_id: &ElementID) {

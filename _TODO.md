@@ -26,11 +26,14 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
         - if applied to the fg, the current fg character would still be the ch
           up to a threshold of maybe 50% alpha (in which case it would use the
           character behind it. 
+01. basic file viewer 
+01. translate file_navigator
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-01. basic file viewer 
-01. translate file_navigator
+01. prioritizing bug in file_nav_test: 
+    - nav is not unfocusing properly 
+    - click on the file_viewer and get the duplicate junk
 
 10. button selectable (can hit with enter key)
 05. color "darker", "lighter" methods
