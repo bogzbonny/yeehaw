@@ -4,7 +4,7 @@ use {std::cell::RefCell, std::collections::HashMap, std::rc::Rc};
 // the element-id is in the form <kind>_<nonce>. The <nonce> is an incrementing number.
 // only one sorting-hat should ever exist in a cui.
 #[derive(Clone, Default)]
-//                           < kind       , nonce >
+//                                      < kind       , nonce >
 pub struct SortingHat(Rc<RefCell<HashMap<&'static str, u64>>>);
 
 // ElementID is a unique identifier nonce assigned to each active element

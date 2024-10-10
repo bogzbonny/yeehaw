@@ -28,23 +28,21 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
           character behind it. 
 01. basic file viewer 
 01. translate file_navigator
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 01. prioritizing bug in file_nav_test: 
     - nav is not unfocusing properly 
     - click on the file_viewer and get the duplicate junk
-
-10. button selectable (can hit with enter key)
 05. color "darker", "lighter" methods
-10. table widget
+10. button selectable (can hit with enter key)
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 05. scrollbar shouldn't move if uninitialized and a drag mouse enters it
 
 05. use .flf (figlet font) format instead of custom megatext
      - https://docs.rs/figlet-rs/latest/figlet_rs/
 
 01. support taffy as a layout structure.
-     - Taffy low-level API (MUST use master branch)
+     - Taffy low-level API (0.6.0 fixes ownership issues I was facing)
      - I THINK it only makes sense to only use taffy optionally within an
        element and keep using the Dynamic-Location. There is a lot of weird
        stuff that enforcing taffy globally makes us do. 
@@ -95,10 +93,8 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
     activated. This can be triggered in the render loop and the event will then
     routed through the standard event loop as normal. This can be used to
     replicate a heartbeat for a element, or to simulate a visual effect such as
-    a button click.
+    a button click (useful for button when Enter key is hit).
 
-10. cui export visual area to either DynamicImage, .png, or .ans
-      - useful for WIMP
 
 10. gradient color types, don't ask me how exactly however this is basically
     what we should do.
@@ -121,11 +117,16 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
       - maybe this could be a time gradient, however each color on the gradient
         scale WAS another gradient. (or vice versa) 
 
+10. cui export visual area to either DynamicImage, .png, or .ans
+      - useful for WIMP
+
 20. color-pallet widget
 
-20. cui get the color under the cursor - useful for color pickers or image pallets
+20. cui get the color under the cursor - useful for color pickers or from actual image pallets
 
 05. Command functionality
+
+20. table widget
 
 05. Collapse Element Wrapper... 
       - should be able to collapse to a single line (vert or horiz) with custom
@@ -206,7 +207,6 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
     el_widget_pane drawing functionality in favour of the parent pane draw).
     https://github.com/rust-lang/rust/issues/65991
 
-
 30. figure out a nicer way of inheriting element functions from the above
     element besides lots of boilerplate, probably though the use of a macro
 
@@ -226,4 +226,4 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
        https://terminalroot.com/use-ms-paint-directly-in-terminal/) uses. 
        this format can be viewed in the terminal with "cat my_ansi_image.ans"
 
-40. jexer custom mouse types (requires sixel, and mouse pixel tracking) 
+40. jexer custom mouse types (requires image support, and mouse pixel tracking) 

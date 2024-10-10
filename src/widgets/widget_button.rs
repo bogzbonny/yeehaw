@@ -1,9 +1,9 @@
 use {
-    super::{widget::RESP_DEACTIVATE, Selectability, WBStyles, Widget, WidgetBase, Widgets},
+    super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Color, Context, DrawChPos, DrawChs2D, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponse, EventResponses, Keyboard as KB, Priority, ReceivableEventChanges,
-        SortingHat, Style, UpwardPropagator,
+        EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, SortingHat, Style,
+        UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -58,7 +58,8 @@ impl Default for ButtonSides {
 
 #[derive(Clone)]
 pub struct ButtonShadow {
-    pub shadow_style: Color,
+    pub shadow_style: Option<Color>,
+    /// if None will use a darkened version of the button's bg color
     pub left: char,
     pub middle: char,
     pub right: char,
@@ -68,7 +69,7 @@ pub struct ButtonShadow {
 impl Default for ButtonShadow {
     fn default() -> Self {
         ButtonShadow {
-            shadow_style: Color::GREY8,
+            shadow_style: None,
             left: '▝',
             middle: '▀',
             right: '▘',
@@ -130,9 +131,13 @@ impl Button {
                     let bottom = DrawChs2D::from_string(" ".repeat(width), non_button_sty);
                     top.concat_top_bottom(bottom)
                 } else {
-                    let shadow_sty = Style::new()
-                        .with_bg(Color::TRANSPARENT)
-                        .with_fg(shadow.shadow_style);
+                    let shadow_sty = match shadow.shadow_style {
+                        Some(c) => Style::new().with_bg(Color::TRANSPARENT).with_fg(c),
+                        None => {
+                            let fg = text_sty.bg.unwrap_or_default().darken();
+                            Style::new().with_bg(Color::TRANSPARENT).with_fg(fg)
+                        }
+                    };
                     let top = DrawChs2D::from_string(format!(" {} ", self.text.borrow()), text_sty);
                     let right = DrawChs2D::from_string(shadow.top_right.to_string(), shadow_sty);
                     let top = top.concat_left_right(right).unwrap();
@@ -150,7 +155,7 @@ impl Button {
     }
 
     pub fn new(
-        hat: &SortingHat, ctx: &Context, text: String,
+        hat: &SortingHat, _ctx: &Context, text: String,
         clicked_fn: Box<dyn FnMut(Context) -> EventResponses>,
     ) -> Self {
         let wb = WidgetBase::new(
@@ -161,7 +166,7 @@ impl Button {
             Self::STYLE,
             Self::default_receivable_events(),
         );
-        _ = wb.set_selectability(ctx, Selectability::Unselectable);
+        //_ = wb.set_selectability(ctx, Selectability::Unselectable);
         let b = Button {
             base: wb,
             text: Rc::new(RefCell::new(text)),
@@ -173,7 +178,6 @@ impl Button {
         let d = b.button_drawing();
         b.base.set_dyn_width(DynVal::new_fixed(d.width() as i32));
         b.base.set_dyn_height(DynVal::new_fixed(d.height() as i32));
-        //b.base.set_content_from_string(ctx, &b.button_text());
         b
     }
 
@@ -191,7 +195,6 @@ impl Button {
         self.base.set_dyn_width(DynVal::new_fixed(d.width() as i32));
         self.base
             .set_dyn_height(DynVal::new_fixed(d.height() as i32));
-        //self.base.set_content_from_string(ctx, &text);
         self
     }
 
@@ -201,7 +204,6 @@ impl Button {
         self.base.set_dyn_width(DynVal::new_fixed(d.width() as i32));
         self.base
             .set_dyn_height(DynVal::new_fixed(d.height() as i32));
-        //self.base.set_content_from_string(ctx, &text);
         self
     }
 
@@ -211,7 +213,6 @@ impl Button {
         self.base.set_dyn_width(DynVal::new_fixed(d.width() as i32));
         self.base
             .set_dyn_height(DynVal::new_fixed(d.height() as i32));
-        //self.base.set_content_from_string(ctx, &text);
         self
     }
 
@@ -226,13 +227,7 @@ impl Button {
 
     // ----------------------------------------------
     pub fn click(&self, ctx: &Context) -> EventResponses {
-        let mut resps = (self.clicked_fn.borrow_mut())(ctx.clone());
-        //resp.with_deactivate()
-        resps.push(EventResponse::Metadata((
-            RESP_DEACTIVATE.to_string(),
-            vec![],
-        )));
-        resps
+        (self.clicked_fn.borrow_mut())(ctx.clone())
     }
 }
 

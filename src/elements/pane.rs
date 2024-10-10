@@ -190,6 +190,28 @@ impl Pane {
             propagator.propagate_receivable_event_changes_upward(&self.id(), rec);
         }
     }
+
+    // focus all prioritized events
+    pub fn focus(&self) {
+        *self.element_priority.borrow_mut() = Priority::FOCUSED;
+        self.self_evs
+            .borrow_mut()
+            .update_priority_for_all(Priority::FOCUSED);
+        if let Some(propagator) = self.propagator.borrow().as_ref() {
+            let rec = ReceivableEventChanges::default()
+                .with_remove_evs(
+                    self.self_evs
+                        .borrow()
+                        .0
+                        .clone()
+                        .iter()
+                        .map(|(ev, _)| ev.clone())
+                        .collect(),
+                )
+                .with_evs(self.self_evs.borrow().0.clone());
+            propagator.propagate_receivable_event_changes_upward(&self.id(), rec);
+        }
+    }
 }
 
 impl Element for Pane {

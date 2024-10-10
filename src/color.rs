@@ -41,6 +41,20 @@ impl Color {
         Self::new(r, g, b)
     }
 
+    pub fn darken(&self) -> Self {
+        match self {
+            Color::ANSI(_) => Color::ANSI(crossterm::style::Color::DarkGrey),
+            Color::Rgba(c) => Color::Rgba(c.mul(0.5)),
+        }
+    }
+
+    pub fn lighten(&self) -> Self {
+        match self {
+            Color::ANSI(_) => Color::ANSI(crossterm::style::Color::Grey),
+            Color::Rgba(c) => Color::Rgba(c.mul(1.5)),
+        }
+    }
+
     // considers the alpha of the self and blends with the previous colour
     pub fn to_crossterm_color(
         &self, prev: Option<crossterm::style::Color>,
@@ -77,6 +91,14 @@ impl Rgba {
     // returns a tuple of the rgb values
     pub fn to_tuple(&self) -> (u8, u8, u8) {
         (self.r, self.g, self.b)
+    }
+
+    /// Multiply the color by a scalar amount
+    pub fn mul(&self, amount: f64) -> Self {
+        let r = (self.r as f64 * amount) as u8;
+        let g = (self.g as f64 * amount) as u8;
+        let b = (self.b as f64 * amount) as u8;
+        Self::new(r, g, b)
     }
 
     // considers the alpha of the self and blends with the previous colour
