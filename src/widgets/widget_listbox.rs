@@ -52,23 +52,22 @@ impl ListBox {
     const KIND: &'static str = "widget_listbox";
 
     const STYLE: WBStyles = WBStyles {
-        selected_style: Style::new().with_bg(Color::YELLOW).with_fg(Color::BLACK),
-        ready_style: Style::new().with_bg(Color::WHITE).with_fg(Color::BLACK),
-        unselectable_style: Style::new().with_bg(Color::GREY13).with_fg(Color::BLACK),
+        selected_style: Style::new(Some(Color::BLACK), Some(Color::YELLOW), None),
+        ready_style: Style::new(Some(Color::BLACK), Some(Color::WHITE), None),
+        unselectable_style: Style::new(Some(Color::BLACK), Some(Color::GREY13), None),
     };
 
     const STYLE_SCROLLBAR: WBStyles = WBStyles {
-        selected_style: Style::new().with_bg(Color::GREY13).with_fg(Color::WHITE),
-        ready_style: Style::new().with_bg(Color::GREY13).with_fg(Color::WHITE),
-        unselectable_style: Style::new().with_bg(Color::GREY13).with_fg(Color::WHITE),
+        selected_style: Style::new(Some(Color::WHITE), Some(Color::GREY13), None),
+        ready_style: Style::new(Some(Color::WHITE), Some(Color::GREY13), None),
+        unselectable_style: Style::new(Some(Color::WHITE), Some(Color::GREY13), None),
     };
 
-    const STYLE_ITEM_SELECTED: Style = Style::new().with_bg(Color::NAVY).with_fg(Color::WHITE);
-    const STYLE_CURSOR_OVER_UNSELECTED: Style = Style::new()
-        .with_bg(Color::LIGHT_BLUE)
-        .with_fg(Color::BLACK);
+    const STYLE_ITEM_SELECTED: Style = Style::new(Some(Color::WHITE), Some(Color::NAVY), None);
+    const STYLE_CURSOR_OVER_UNSELECTED: Style =
+        Style::new(Some(Color::BLACK), Some(Color::LIGHT_BLUE), None);
     const STYLE_CURSOR_OVER_SELECTED: Style =
-        Style::new().with_bg(Color::BLUE).with_fg(Color::WHITE);
+        Style::new(Some(Color::WHITE), Some(Color::BLUE), None);
 
     pub fn default_receivable_events() -> Vec<Event> {
         vec![
@@ -325,15 +324,15 @@ impl ListBox {
                     && cursor == Some(i)
                     && selectedness == Selectability::Selected =>
                 {
-                    *self.cursor_over_selected_style.borrow()
+                    self.cursor_over_selected_style.borrow().clone()
                 }
                 _ if !item_selected
                     && cursor == Some(i)
                     && selectedness == Selectability::Selected =>
                 {
-                    *self.cursor_over_unselected_style.borrow()
+                    self.cursor_over_unselected_style.borrow().clone()
                 }
-                _ if item_selected => *self.item_selected_style.borrow(),
+                _ if item_selected => self.item_selected_style.borrow().clone(),
                 _ => self.base.get_current_style(),
             };
 
@@ -343,7 +342,7 @@ impl ListBox {
                     .pane
                     .content
                     .borrow_mut()
-                    .change_style_along_y(y, sty);
+                    .change_style_along_y(y, sty.clone());
             }
 
             // update the rest of the lines

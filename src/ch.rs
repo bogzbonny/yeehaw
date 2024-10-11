@@ -7,7 +7,7 @@ use {
 };
 
 /// DrawCh is a character with a style and transparency
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct DrawCh {
     pub ch: ChPlus,
     pub style: Style,
@@ -31,7 +31,7 @@ impl Default for DrawCh {
     fn default() -> DrawCh {
         DrawCh {
             ch: ChPlus::default(),
-            style: Style::new(),
+            style: Style::default_const(),
         }
     }
 }
@@ -90,7 +90,7 @@ impl DrawCh {
     }
 
     pub fn str_to_draw_chs(s: &str, sty: Style) -> Vec<DrawCh> {
-        s.chars().map(|c| DrawCh::new(c, sty)).collect()
+        s.chars().map(|c| DrawCh::new(c, sty.clone())).collect()
     }
 }
 
@@ -99,7 +99,7 @@ impl DrawCh {
 // DrawChPos is a DrawCh with an X and Y position
 // The positions X and Y are local positions within the element
 // and begin from 0 and count right and down respecively.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct DrawChPos {
     pub ch: DrawCh,
     pub x: u16,
@@ -129,7 +129,9 @@ impl DrawChPos {
     }
 
     // get the content style for this DrawChPos given the underlying style
-    pub fn get_content_style(&self, prev: &StyledContent<ChPlus>) -> StyledContent<ChPlus> {
+    pub fn get_content_style(
+        &self, ctx: &Context, prev: &StyledContent<ChPlus>,
+    ) -> StyledContent<ChPlus> {
         let (ch, attr) = if matches!(self.ch.ch, ChPlus::Transparent) {
             (prev.content(), prev.style().attributes)
         } else {
@@ -142,13 +144,24 @@ impl DrawChPos {
             prev.style().background_color,
         );
 
-        let fg = self.ch.style.fg.map(|fg| fg.to_crossterm_color(prev_fg));
-        let bg = self.ch.style.bg.map(|bg| bg.to_crossterm_color(prev_bg));
+        let fg = self
+            .ch
+            .style
+            .fg
+            .clone()
+            .map(|fg| fg.to_crossterm_color(ctx, prev_fg, self.x, self.y));
+        let bg = self
+            .ch
+            .style
+            .bg
+            .clone()
+            .map(|bg| bg.to_crossterm_color(ctx, prev_bg, self.x, self.y));
         let ul = self
             .ch
             .style
             .underline
-            .map(|ul| ul.to_crossterm_color(prev_ul));
+            .clone()
+            .map(|ul| ul.to_crossterm_color(ctx, prev_ul, self.x, self.y));
 
         let cs = ContentStyle {
             foreground_color: fg,
@@ -273,7 +286,7 @@ impl DrawChs2D {
         for _ in 0..height {
             let mut line = Vec::new();
             for _ in 0..width {
-                line.push(DrawCh::new(' ', sty));
+                line.push(DrawCh::new(' ', sty.clone()));
             }
             out.push(line);
         }
@@ -284,7 +297,7 @@ impl DrawChs2D {
         let lines = text.split('\n');
         let mut chs = Vec::new();
         for line in lines {
-            chs.push(DrawCh::str_to_draw_chs(line, sty));
+            chs.push(DrawCh::str_to_draw_chs(line, sty.clone()));
         }
         DrawChs2D(chs)
     }
@@ -294,7 +307,7 @@ impl DrawChs2D {
         for line in text.iter_mut() {
             let mut new_line = Vec::new();
             for c in line.iter_mut() {
-                new_line.push(DrawCh::new(*c, sty));
+                new_line.push(DrawCh::new(*c, sty.clone()));
             }
             out.push(new_line);
         }
@@ -382,7 +395,7 @@ impl DrawChs2D {
             return;
         }
         for x in 0..self.0[y].len() {
-            self.0[y][x].style = sty;
+            self.0[y][x].style = sty.clone();
         }
     }
 
@@ -393,7 +406,15 @@ impl DrawChs2D {
             return;
         }
         for y in 0..self.0.len() {
-            self.0[y][x].style = sty;
+            self.0[y][x].style = sty.clone();
+        }
+    }
+
+    pub fn change_all_styles(&mut self, sty: Style) {
+        for y in 0..self.0.len() {
+            for x in 0..self.0[y].len() {
+                self.0[y][x].style = sty.clone();
+            }
         }
     }
 
@@ -419,13 +440,13 @@ mod tests {
 
     #[test]
     fn test_draw_chs2d() {
-        let chs = DrawChs2D::from_string("abc\ndef".to_string(), Style::new());
+        let chs = DrawChs2D::from_string("abc\ndef".to_string(), Style::default_const());
         assert_eq!(chs.width(), 3);
         assert_eq!(chs.height(), 2);
         assert_eq!(chs.size(), Size::new(3, 2));
         assert_eq!(chs.to_string(), "abc\ndef");
 
-        let chs2 = DrawChs2D::from_string("123\n456".to_string(), Style::new());
+        let chs2 = DrawChs2D::from_string("123\n456".to_string(), Style::default_const());
         assert_eq!(chs2.width(), 3);
         assert_eq!(chs2.height(), 2);
         assert_eq!(chs2.size(), Size::new(3, 2));
@@ -441,9 +462,9 @@ mod tests {
     // TODO fix text
     //#[test]
     //fn test_adjust_by_location() {
-    //    let a = DrawCh::new('a', Style::new());
-    //    let b = DrawCh::new('b', Style::new());
-    //    let c = DrawCh::new('c', Style::new());
+    //    let a = DrawCh::new('a', Style::default_const());
+    //    let b = DrawCh::new('b', Style::default_const());
+    //    let c = DrawCh::new('c', Style::default_const());
     //    let chs = vec![
     //        DrawChPos::new(a, 0, 0),
     //        DrawChPos::new(b, 1, 0),

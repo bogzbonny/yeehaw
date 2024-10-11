@@ -26,9 +26,9 @@ pub enum LabelJustification {
 pub static LABEL_EV_COMBOS: Vec<Event> = Vec::new();
 
 pub static LABEL_STYLE: WBStyles = WBStyles {
-    selected_style: Style::new(),
-    ready_style: Style::new(),
-    unselectable_style: Style::new().with_fg(Color::WHITE),
+    selected_style: Style::default_const(),
+    ready_style: Style::default_const(),
+    unselectable_style: Style::new(Some(Color::WHITE), None, None),
 };
 
 impl Label {
@@ -41,7 +41,7 @@ impl Label {
             Self::KIND,
             DynVal::new_fixed(w as i32),
             DynVal::new_fixed(h as i32),
-            LABEL_STYLE,
+            LABEL_STYLE.clone(),
             LABEL_EV_COMBOS.clone(),
         );
         _ = wb.set_selectability(ctx, Selectability::Unselectable);

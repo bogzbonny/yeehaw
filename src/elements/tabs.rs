@@ -42,10 +42,12 @@ impl TabsTop {
             tab_prefix: Rc::new(RefCell::new(String::new())),
             tab_suffix: Rc::new(RefCell::new(" ".to_string())),
             highlight_style: Rc::new(RefCell::new(
-                Style::new().with_bg(Color::BLUE).with_fg(Color::BLACK),
+                Style::default_const()
+                    .with_bg(Color::BLUE)
+                    .with_fg(Color::BLACK),
             )),
             normal_style: Rc::new(RefCell::new(
-                Style::new()
+                Style::default_const()
                     .with_bg(Color::LIGHT_YELLOW)
                     .with_fg(Color::BLACK),
             )),
@@ -120,12 +122,12 @@ impl Element for TabsTop {
 
             let style = if let Some(sel) = *self.selected.borrow() {
                 if i == sel {
-                    *self.highlight_style.borrow()
+                    self.highlight_style.borrow().clone()
                 } else {
-                    *self.normal_style.borrow()
+                    self.normal_style.borrow().clone()
                 }
             } else {
-                *self.normal_style.borrow()
+                self.normal_style.borrow().clone()
             };
             let name_len = name.chars().count();
             let name_chs = DrawChPos::new_from_string(name, pos as u16, 0, style);

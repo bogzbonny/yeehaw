@@ -33,22 +33,22 @@ impl DropdownList {
     const KIND: &'static str = "widget_dropdownlist";
 
     const STYLE: WBStyles = WBStyles {
-        selected_style: Style::new().with_bg(Color::YELLOW).with_fg(Color::BLACK),
-        ready_style: Style::new().with_bg(Color::WHITE).with_fg(Color::BLACK),
-        unselectable_style: Style::new().with_bg(Color::GREY13).with_fg(Color::BLACK),
+        selected_style: Style::new(Some(Color::BLACK), Some(Color::YELLOW), None),
+        ready_style: Style::new(Some(Color::BLACK), Some(Color::WHITE), None),
+        unselectable_style: Style::new(Some(Color::BLACK), Some(Color::GREY13), None),
     };
 
     const STYLE_SCROLLBAR: WBStyles = WBStyles {
-        selected_style: Style::new().with_bg(Color::GREY13).with_fg(Color::WHITE),
-        ready_style: Style::new().with_bg(Color::GREY13).with_fg(Color::WHITE),
-        unselectable_style: Style::new().with_bg(Color::GREY13).with_fg(Color::WHITE),
+        selected_style: Style::new(Some(Color::WHITE), Some(Color::GREY13), None),
+        ready_style: Style::new(Some(Color::WHITE), Some(Color::GREY13), None),
+        unselectable_style: Style::new(Some(Color::WHITE), Some(Color::GREY13), None),
     };
 
-    const STYLE_DD_CURSOR: Style = Style::new().with_bg(Color::BLUE);
+    const STYLE_DD_CURSOR: Style = Style::new(None, Some(Color::BLUE), None);
 
     const DEFAULT_DROPDOWN_ARROW: DrawCh = DrawCh::const_new(
         '▼',
-        Style::new().with_bg(Color::GREY13).with_fg(Color::BLACK),
+        Style::new(Some(Color::BLACK), Some(Color::GREY13), None),
     );
 
     // needs to be slightly above other widgets to select properly
@@ -456,7 +456,7 @@ impl Element for DropdownList {
                 .pane
                 .content
                 .borrow_mut()
-                .change_style_along_y(*self.cursor.borrow(), *self.cursor_style.borrow());
+                .change_style_along_y(*self.cursor.borrow(), self.cursor_style.borrow().clone());
         }
 
         let mut chs = self.base.drawing(ctx);

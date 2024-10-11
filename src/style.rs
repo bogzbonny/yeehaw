@@ -4,7 +4,7 @@ use {
     ratatui::style::Modifier as RAttributes,
 };
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Debug, Eq, Default)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug, Default)]
 pub struct Style {
     pub fg: Option<Color>,
     pub bg: Option<Color>,
@@ -13,8 +13,7 @@ pub struct Style {
 }
 
 impl Style {
-    // creates new style from fg, bg with a default style
-    pub const fn new() -> Self {
+    pub const fn default_const() -> Self {
         Self {
             fg: None,
             bg: None,
@@ -23,26 +22,27 @@ impl Style {
         }
     }
 
-    pub const fn new_coloured(fg: Color, bg: Color) -> Self {
+    // creates new style from fg, bg with a default style
+    pub const fn new(fg: Option<Color>, bg: Option<Color>, underline: Option<Color>) -> Self {
         Self {
-            fg: Some(fg),
-            bg: Some(bg),
-            underline: None,
+            fg,
+            bg,
+            underline,
             attr: Attributes::new(),
         }
     }
 
-    pub const fn with_fg(mut self, fg: Color) -> Self {
+    pub fn with_fg(mut self, fg: Color) -> Self {
         self.fg = Some(fg);
         self
     }
 
-    pub const fn with_bg(mut self, bg: Color) -> Self {
+    pub fn with_bg(mut self, bg: Color) -> Self {
         self.bg = Some(bg);
         self
     }
 
-    pub const fn with_underline(mut self, underline: Color) -> Self {
+    pub fn with_underline(mut self, underline: Color) -> Self {
         self.underline = Some(underline);
         self
     }

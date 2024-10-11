@@ -25,17 +25,14 @@ impl Toggle {
     const KIND: &'static str = "widget_button";
 
     const STYLE: WBStyles = WBStyles {
-        selected_style: Style::new()
-            .with_bg(Color::LIGHT_YELLOW2)
-            .with_fg(Color::BLACK),
-        ready_style: Style::new().with_bg(Color::WHITE).with_fg(Color::BLACK),
-        unselectable_style: Style::new().with_bg(Color::GREY13).with_fg(Color::BLACK),
+        selected_style: Style::new(Some(Color::BLACK), Some(Color::LIGHT_YELLOW2), None),
+        ready_style: Style::new(Some(Color::BLACK), Some(Color::WHITE), None),
+        unselectable_style: Style::new(Some(Color::BLACK), Some(Color::GREY13), None),
     };
 
     // for the selected toggle
-    const DEFAULT_SELECTED_STY: Style = Style::new()
-        .with_bg(Color::LIGHT_BLUE)
-        .with_fg(Color::BLACK);
+    const DEFAULT_SELECTED_STY: Style =
+        Style::new(Some(Color::BLACK), Some(Color::LIGHT_BLUE), None);
 
     pub fn default_receivable_events() -> Vec<Event> {
         vec![
@@ -186,11 +183,13 @@ impl Element for Toggle {
             .set_content_from_string(ctx, &(left.clone() + &right));
         if *self.left_selected.borrow() {
             for i in 0..left_len {
-                self.base.pane.content.borrow_mut()[0][i].style = *self.selected_sty.borrow();
+                self.base.pane.content.borrow_mut()[0][i].style =
+                    self.selected_sty.borrow().clone();
             }
         } else {
             for i in left_len..left_len + right_len {
-                self.base.pane.content.borrow_mut()[0][i].style = *self.selected_sty.borrow();
+                self.base.pane.content.borrow_mut()[0][i].style =
+                    self.selected_sty.borrow().clone();
             }
         }
         self.base.drawing(ctx)

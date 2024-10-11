@@ -66,7 +66,7 @@ impl Element for DebugSizePane {
             s,
             0,
             0,
-            Style::default().with_bg(Color::BLACK).with_fg(Color::WHITE),
+            Style::default_const().with_bg(Color::BLACK).with_fg(Color::WHITE),
         )
     }
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {

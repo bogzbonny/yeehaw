@@ -44,9 +44,11 @@ impl Default for MenuStyle {
             folder_arrow: " ❯".to_string(),
             left_padding: 1,
             right_padding: 1,
-            unselected_style: Style::default().with_fg(Color::WHITE),
-            selected_style: Style::default().with_bg(Color::BLUE).with_fg(Color::WHITE),
-            disabled_style: Style::default()
+            unselected_style: Style::default_const().with_fg(Color::WHITE),
+            selected_style: Style::default_const()
+                .with_bg(Color::BLUE)
+                .with_fg(Color::WHITE),
+            disabled_style: Style::default_const()
                 .with_bg(Color::GREY13)
                 .with_fg(Color::WHITE),
         }
@@ -612,7 +614,7 @@ impl MenuItem {
     ) -> (usize, Vec<DrawChPos>) {
         let mut dcps = dcps;
         for _ in 0..padding {
-            let dc = DrawCh::new(' ', style);
+            let dc = DrawCh::new(' ', style.clone());
             dcps.push(DrawChPos::new(dc, x as u16, 0));
             x += 1;
         }
@@ -758,11 +760,11 @@ impl Element for MenuItem {
             (false, false) => m_sty.disabled_style,
         };
 
-        let (mut x, mut out) = MenuItem::draw_padding(m_sty.left_padding, 0, sty, vec![]);
+        let (mut x, mut out) = MenuItem::draw_padding(m_sty.left_padding, 0, sty.clone(), vec![]);
 
         // draw name
         let name = self.path.borrow().name().to_string();
-        let name_chs = DrawChPos::new_from_string(name, x as u16, 0, sty);
+        let name_chs = DrawChPos::new_from_string(name, x as u16, 0, sty.clone());
         x += name_chs.len();
         out.extend(name_chs);
 
@@ -779,19 +781,19 @@ impl Element for MenuItem {
             < (ctx.s.width as usize)
                 .saturating_sub(m_sty.right_padding + arrow_text.chars().count())
         {
-            let dc = DrawCh::new(' ', sty);
+            let dc = DrawCh::new(' ', sty.clone());
             let dcp = DrawChPos::new(dc, x as u16, 0);
             out.push(dcp);
             x += 1;
         }
 
         // draw folder arrow
-        let arrow_chs = DrawChPos::new_from_string(arrow_text, x as u16, 0, sty);
+        let arrow_chs = DrawChPos::new_from_string(arrow_text, x as u16, 0, sty.clone());
         x += arrow_chs.len();
         out.extend(arrow_chs);
 
         // add right padding
-        let (_, out) = MenuItem::draw_padding(m_sty.right_padding, x, sty, out);
+        let (_, out) = MenuItem::draw_padding(m_sty.right_padding, x, sty.clone(), out);
         out
     }
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {

@@ -5,7 +5,7 @@
 // Additionally the DynVal can add the minimum or maximum of a set of other
 // SclVals. This is useful or Labels which depend on the size of a number of
 // other elements.
-#[derive(Clone, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
 pub struct DynVal {
     pub mul: f64,   // the multiplier is applied to the final value of the dynval
     pub fixed: i32, // fixed number of characters

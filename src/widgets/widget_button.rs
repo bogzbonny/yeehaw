@@ -45,7 +45,9 @@ pub struct ButtonSides {
 impl Default for ButtonSides {
     fn default() -> Self {
         ButtonSides {
-            depressed_style: Style::new().with_fg(Color::BLACK).with_bg(Color::WHITE),
+            depressed_style: Style::default_const()
+                .with_fg(Color::BLACK)
+                .with_bg(Color::WHITE),
             left: "]".to_string(),
             right: "[".to_string(),
             //left_depressed: "⢸".to_string(),
@@ -82,11 +84,9 @@ impl Button {
     const KIND: &'static str = "widget_button";
 
     const STYLE: WBStyles = WBStyles {
-        selected_style: Style::new()
-            .with_bg(Color::LIGHT_YELLOW2)
-            .with_fg(Color::BLACK),
-        ready_style: Style::new().with_bg(Color::WHITE).with_fg(Color::BLACK),
-        unselectable_style: Style::new().with_bg(Color::GREY15).with_fg(Color::BLACK),
+        selected_style: Style::new(Some(Color::BLACK), Some(Color::LIGHT_YELLOW2), None),
+        ready_style: Style::new(Some(Color::BLACK), Some(Color::WHITE), None),
+        unselectable_style: Style::new(Some(Color::BLACK), Some(Color::GREY15), None),
     };
 
     pub fn default_receivable_events() -> Vec<Event> {
@@ -117,29 +117,40 @@ impl Button {
                 } else {
                     &self.base.get_current_style()
                 };
-                DrawChs2D::from_string(format!("{}{}{}", left, self.text.borrow(), right), *sty)
+                DrawChs2D::from_string(
+                    format!("{}{}{}", left, self.text.borrow(), right),
+                    sty.clone(),
+                )
             }
             ButtonStyle::Shadow(shadow) => {
                 let text_sty = self.base.get_current_style();
                 if *self.clicked_down.borrow() {
-                    let non_button_sty = Style::new().with_bg(Color::TRANSPARENT);
-                    let left = DrawChs2D::from_string(" ".to_string(), non_button_sty);
+                    let non_button_sty = Style::default_const().with_bg(Color::TRANSPARENT);
+                    let left = DrawChs2D::from_string(" ".to_string(), non_button_sty.clone());
                     let top = DrawChs2D::from_string(format!(" {} ", self.text.borrow()), text_sty);
                     let top = left.concat_left_right(top).unwrap();
                     let width = top.width();
                     // bottom all spaces
-                    let bottom = DrawChs2D::from_string(" ".repeat(width), non_button_sty);
+                    let bottom = DrawChs2D::from_string(" ".repeat(width), non_button_sty.clone());
                     top.concat_top_bottom(bottom)
                 } else {
                     let shadow_sty = match shadow.shadow_style {
-                        Some(c) => Style::new().with_bg(Color::TRANSPARENT).with_fg(c),
+                        Some(c) => Style::default_const()
+                            .with_bg(Color::TRANSPARENT)
+                            .with_fg(c),
                         None => {
-                            let fg = text_sty.bg.unwrap_or_default().darken();
-                            Style::new().with_bg(Color::TRANSPARENT).with_fg(fg)
+                            let fg = text_sty.bg.clone().unwrap_or_default().darken();
+                            Style::default_const()
+                                .with_bg(Color::TRANSPARENT)
+                                .with_fg(fg)
                         }
                     };
-                    let top = DrawChs2D::from_string(format!(" {} ", self.text.borrow()), text_sty);
-                    let right = DrawChs2D::from_string(shadow.top_right.to_string(), shadow_sty);
+                    let top = DrawChs2D::from_string(
+                        format!(" {} ", self.text.borrow()),
+                        text_sty.clone(),
+                    );
+                    let right =
+                        DrawChs2D::from_string(shadow.top_right.to_string(), shadow_sty.clone());
                     let top = top.concat_left_right(right).unwrap();
                     let bottom_text = format!(
                         "{}{}{}",
@@ -147,7 +158,7 @@ impl Button {
                         shadow.middle.to_string().repeat(top.width() - 2),
                         shadow.right
                     );
-                    let bottom = DrawChs2D::from_string(bottom_text, shadow_sty);
+                    let bottom = DrawChs2D::from_string(bottom_text, shadow_sty.clone());
                     top.concat_top_bottom(bottom)
                 }
             }

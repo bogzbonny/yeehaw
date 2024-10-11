@@ -1,9 +1,15 @@
-use rand::Rng;
+use {
+    crate::{Context, DynVal},
+    crossterm::style::Color as CrosstermColor,
+    rand::Rng,
+    std::time::Duration,
+};
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Debug, Eq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug)]
 pub enum Color {
-    ANSI(crossterm::style::Color),
+    ANSI(CrosstermColor),
     Rgba(Rgba),
+    XGradient(XGradient),
 }
 
 impl Default for Color {
@@ -18,6 +24,12 @@ impl From<ratatui::style::Color> for Color {
     }
 }
 
+impl From<CrosstermColor> for Color {
+    fn from(c: CrosstermColor) -> Self {
+        Self::ANSI(c)
+    }
+}
+
 impl Color {
     pub const fn new(r: u8, g: u8, b: u8) -> Color {
         Color::Rgba(Rgba::new(r, g, b))
@@ -25,6 +37,43 @@ impl Color {
 
     pub const fn new_with_alpha(r: u8, g: u8, b: u8, a: u8) -> Color {
         Color::Rgba(Rgba::new_with_alpha(r, g, b, a))
+    }
+
+    /// blends two colors together with the given percentage of the other color
+    pub fn blend(&self, other: Color, percent_other: f64) -> Color {
+        match self {
+            Color::ANSI(_) => {
+                if percent_other < 0.5 {
+                    self.clone()
+                } else {
+                    other
+                }
+            }
+            Color::Rgba(c) => match other {
+                Color::ANSI(_) => {
+                    if percent_other < 0.5 {
+                        self.clone()
+                    } else {
+                        other
+                    }
+                }
+                Color::Rgba(oc) => Color::Rgba(c.blend(oc, percent_other)),
+                Color::XGradient(gr) => {
+                    let mut out = vec![];
+                    for (x, c) in gr.0 {
+                        out.push((x, c.clone().blend(c, percent_other)));
+                    }
+                    Color::XGradient(XGradient(out))
+                }
+            },
+            Color::XGradient(gr) => {
+                let mut out = vec![];
+                for (x, c) in &gr.0 {
+                    out.push((x.clone(), c.blend(other.clone(), percent_other)));
+                }
+                Color::XGradient(XGradient(out))
+            }
+        }
     }
 
     pub fn random_light() -> Self {
@@ -43,27 +92,148 @@ impl Color {
 
     pub fn darken(&self) -> Self {
         match self {
-            Color::ANSI(_) => Color::ANSI(crossterm::style::Color::DarkGrey),
+            Color::ANSI(c) => Color::darken_ansi(c),
             Color::Rgba(c) => Color::Rgba(c.mul(0.5)),
+            Color::XGradient(gr) => {
+                let mut out = vec![];
+                for (x, c) in &gr.0 {
+                    out.push((x.clone(), c.darken()));
+                }
+                Color::XGradient(XGradient(out))
+            }
         }
     }
 
     pub fn lighten(&self) -> Self {
         match self {
-            Color::ANSI(_) => Color::ANSI(crossterm::style::Color::Grey),
+            Color::ANSI(c) => Color::lighten_ansi(c),
             Color::Rgba(c) => Color::Rgba(c.mul(1.5)),
+            Color::XGradient(gr) => {
+                let mut out = vec![];
+                for (x, c) in &gr.0 {
+                    out.push((x.clone(), c.lighten()));
+                }
+                Color::XGradient(XGradient(out))
+            }
+        }
+    }
+
+    pub fn darken_ansi(c: &CrosstermColor) -> Color {
+        match c {
+            CrosstermColor::Red => Color::ANSI(CrosstermColor::DarkRed),
+            CrosstermColor::Green => Color::ANSI(CrosstermColor::DarkGreen),
+            CrosstermColor::Yellow => Color::ANSI(CrosstermColor::DarkYellow),
+            CrosstermColor::Blue => Color::ANSI(CrosstermColor::DarkBlue),
+            CrosstermColor::Magenta => Color::ANSI(CrosstermColor::DarkMagenta),
+            CrosstermColor::Cyan => Color::ANSI(CrosstermColor::DarkCyan),
+            CrosstermColor::Grey => Color::ANSI(CrosstermColor::DarkGrey),
+            CrosstermColor::White => Color::ANSI(CrosstermColor::Grey),
+            CrosstermColor::Rgb { r, g, b } => Color::new(*r, *g, *b).darken(),
+            _ => Color::ANSI(*c),
+        }
+    }
+
+    pub fn lighten_ansi(c: &CrosstermColor) -> Color {
+        match c {
+            CrosstermColor::DarkRed => Color::ANSI(CrosstermColor::Red),
+            CrosstermColor::DarkGreen => Color::ANSI(CrosstermColor::Green),
+            CrosstermColor::DarkYellow => Color::ANSI(CrosstermColor::Yellow),
+            CrosstermColor::DarkBlue => Color::ANSI(CrosstermColor::Blue),
+            CrosstermColor::DarkMagenta => Color::ANSI(CrosstermColor::Magenta),
+            CrosstermColor::DarkCyan => Color::ANSI(CrosstermColor::Cyan),
+            CrosstermColor::DarkGrey => Color::ANSI(CrosstermColor::Grey),
+            CrosstermColor::Grey => Color::ANSI(CrosstermColor::White),
+            CrosstermColor::Rgb { r, g, b } => Color::new(*r, *g, *b).lighten(),
+            _ => Color::ANSI(*c),
         }
     }
 
     // considers the alpha of the self and blends with the previous colour
     pub fn to_crossterm_color(
-        &self, prev: Option<crossterm::style::Color>,
-    ) -> crossterm::style::Color {
+        &self, ctx: &Context, prev: Option<CrosstermColor>, x: u16, y: u16,
+    ) -> CrosstermColor {
         match self {
             Color::ANSI(c) => *c,
             Color::Rgba(c) => c.to_crossterm_color(prev),
+            Color::XGradient(gr) => gr.to_crossterm_color(ctx, prev, x, y),
         }
     }
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
+pub struct XGradient(pub Vec<(DynVal, Color)>);
+
+impl XGradient {
+    pub fn new_2_color(c1: Color, c2: Color) -> Self {
+        XGradient(vec![(DynVal::new_flex(0.), c1), (DynVal::new_flex(1.), c2)])
+    }
+
+    /// length is the number of characters per color gradient
+    pub fn new_2_color_repeater(c1: Color, c2: Color, length: usize) -> Self {
+        XGradient(vec![
+            (DynVal::new_fixed(0), c1.clone()),
+            (DynVal::new_fixed(length as i32), c2),
+            (DynVal::new_fixed(2 * length as i32), c1),
+        ])
+    }
+
+    /// length is the number of characters per color gradient
+    pub fn new_repeater(mut colors: Vec<Color>, length: usize) -> Self {
+        if colors.is_empty() {
+            return XGradient(vec![]);
+        }
+        let mut v = Vec::with_capacity(colors.len() + 1);
+        for (i, c) in colors.drain(..).enumerate() {
+            v.push((DynVal::new_fixed((i * length) as i32), c));
+        }
+        v.push((DynVal::new_fixed((v.len() * length) as i32), v[0].1.clone()));
+        XGradient(v)
+    }
+
+    pub fn to_crossterm_color(
+        &self, ctx: &Context, prev: Option<CrosstermColor>, mut x: u16, y: u16,
+    ) -> CrosstermColor {
+        if self.0.is_empty() {
+            return CrosstermColor::Black;
+        }
+        let last_x = self.0.last().unwrap().0.get_val(ctx.get_width());
+        if last_x < x as i32 {
+            // subtract x so that it is within the range
+            x = (x as i32 % last_x) as u16;
+        }
+
+        let mut start: Option<Color> = None;
+        let mut end: Option<Color> = None;
+        //x_val.get_val(ctx.get_width())
+        //iterate in window of 2
+        for ((x1, c1), (x2, c2)) in self.0.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
+            let x1_val = x1.get_val(ctx.get_width());
+            let x2_val = x2.get_val(ctx.get_width());
+            if (x1_val <= x as i32) && ((x as i32) < x2_val) {
+                start = Some(c1.clone());
+                end = Some(c2.clone());
+                break;
+            }
+        }
+        let start_clr = start.unwrap_or_else(|| self.0[0].1.clone());
+        let end_clr = end.unwrap_or_else(|| self.0[self.0.len() - 1].1.clone());
+        let start_x = self.0[0].0.get_val(ctx.get_width());
+        let end_x = self.0[self.0.len() - 1].0.get_val(ctx.get_width());
+        let percent = (x as f64 - start_x as f64) / (end_x as f64 - start_x as f64);
+        start_clr
+            .blend(end_clr, percent)
+            .to_crossterm_color(ctx, prev, x, y)
+    }
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
+pub struct YGradient(pub Vec<(DynVal, Color)>);
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
+pub struct TimeGradient {
+    /// The total time duration of the gradient
+    pub total_dur: Duration,
+    pub points: Vec<(Duration, Color)>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Copy, Clone, Debug, PartialEq, Eq)]
@@ -88,6 +258,14 @@ impl Rgba {
         Self { r, g, b, a }
     }
 
+    pub fn blend(&self, other: Self, percent_other: f64) -> Self {
+        let r = (self.r as f64 * (1.0 - percent_other) + other.r as f64 * percent_other) as u8;
+        let g = (self.g as f64 * (1.0 - percent_other) + other.g as f64 * percent_other) as u8;
+        let b = (self.b as f64 * (1.0 - percent_other) + other.b as f64 * percent_other) as u8;
+        let a = (self.a as f64 * (1.0 - percent_other) + other.a as f64 * percent_other) as u8;
+        Self::new_with_alpha(r, g, b, a)
+    }
+
     // returns a tuple of the rgb values
     pub fn to_tuple(&self) -> (u8, u8, u8) {
         (self.r, self.g, self.b)
@@ -102,26 +280,26 @@ impl Rgba {
     }
 
     // considers the alpha of the self and blends with the previous colour
-    pub fn to_crossterm_color(
-        &self, prev: Option<crossterm::style::Color>,
-    ) -> crossterm::style::Color {
+    pub fn to_crossterm_color(&self, prev: Option<CrosstermColor>) -> CrosstermColor {
         let (r, g, b) = self.to_tuple();
         let a = self.a as f64 / 255.0;
-        let prev = prev.unwrap_or(crossterm::style::Color::Rgb { r: 0, g: 0, b: 0 });
+        let prev = prev.unwrap_or(CrosstermColor::Rgb { r: 0, g: 0, b: 0 });
         let (pr, pg, pb) = match prev {
-            crossterm::style::Color::Rgb { r, g, b } => (r, g, b),
+            CrosstermColor::Rgb { r, g, b } => (r, g, b),
             _ => (0, 0, 0),
         };
         let r = (r as f64 * a + pr as f64 * (1.0 - a)) as u8;
         let g = (g as f64 * a + pg as f64 * (1.0 - a)) as u8;
         let b = (b as f64 * a + pb as f64 * (1.0 - a)) as u8;
-        crossterm::style::Color::Rgb { r, g, b }
+        CrosstermColor::Rgb { r, g, b }
     }
 }
 
 #[rustfmt::skip]
 impl Color {
     pub const TRANSPARENT:         Color = Color::new_with_alpha(0, 0, 0, 0);
+
+
 
     pub const GREY1:         Color = Color::new(10, 10, 10);
     pub const GREY2:         Color = Color::new(20, 20, 20);

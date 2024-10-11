@@ -40,11 +40,11 @@ pub struct FileNavStyle {
 impl Default for FileNavStyle {
     fn default() -> Self {
         FileNavStyle {
-            up_dir: Style::default().with_fg(Color::GREEN),
-            file: Style::default(),
-            folder: Style::default().with_fg(Color::GREEN),
-            top_dir: Style::default().with_fg(Color::RED),
-            background: Style::default(),
+            up_dir: Style::default_const().with_fg(Color::GREEN),
+            file: Style::default_const(),
+            folder: Style::default_const().with_fg(Color::GREEN),
+            top_dir: Style::default_const().with_fg(Color::RED),
+            background: Style::default_const(),
             cursor_bg: Color::new(35, 45, 40),
         }
     }
@@ -66,10 +66,10 @@ impl FileNavPane {
     pub fn new(hat: &SortingHat, ctx: &Context, dir: PathBuf) -> Self {
         let styles = FileNavStyle::default();
         let pane = Pane::new(hat, "file_nav_pane");
-        let up_dir = UpDir::new(".. (up a dir)".to_string(), styles.up_dir, 0);
+        let up_dir = UpDir::new(".. (up a dir)".to_string(), styles.up_dir.clone(), 0);
         let top_dir = TopDir::new(
-            Folder::new(dir, styles.folder, styles.file, 0, true),
-            styles.top_dir,
+            Folder::new(dir, styles.folder.clone(), styles.file.clone(), 0, true),
+            styles.top_dir.clone(),
         );
 
         let sub_items = top_dir.folder.sub_items(Self::INDENT_SIZE);
@@ -110,7 +110,7 @@ impl FileNavPane {
             // cursor logic
             if i == *self.highlight_position.borrow() {
                 for ch in chs.iter_mut() {
-                    ch.style = ch.style.with_bg(self.styles.borrow().cursor_bg);
+                    ch.style.set_bg(self.styles.borrow().cursor_bg.clone());
                 }
             }
             content.push(chs);
@@ -338,7 +338,11 @@ impl File {
             out.push(default_ch.clone());
             x += 1;
         }
-        out.extend(self.name().chars().map(|c| DrawCh::new(c, self.style)));
+        out.extend(
+            self.name()
+                .chars()
+                .map(|c| DrawCh::new(c, self.style.clone())),
+        );
         while x < width {
             out.push(default_ch.clone());
             x += 1;
@@ -386,15 +390,18 @@ impl Folder {
             if file.file_type().unwrap().is_dir() {
                 let new_folder = Folder::new(
                     file.path(),
-                    self.folder_style,
-                    self.file_style,
+                    self.folder_style.clone(),
+                    self.file_style.clone(),
                     self.indentation + indent_size,
                     false,
                 );
                 sub_items.push(NavItem::Folder(new_folder));
             } else {
-                let new_file =
-                    File::new(file.path(), self.file_style, self.indentation + indent_size);
+                let new_file = File::new(
+                    file.path(),
+                    self.file_style.clone(),
+                    self.indentation + indent_size,
+                );
                 sub_items.push(NavItem::File(new_file));
             }
         }
@@ -432,9 +439,9 @@ impl Folder {
         while x < self.indentation {
             if x == self.indentation - indent_size {
                 if self.is_expanded {
-                    out.push(DrawCh::new('▾', self.folder_style));
+                    out.push(DrawCh::new('▾', self.folder_style.clone()));
                 } else {
-                    out.push(DrawCh::new('▸', self.folder_style));
+                    out.push(DrawCh::new('▸', self.folder_style.clone()));
                 }
             } else {
                 out.push(default_ch.clone());
@@ -444,7 +451,7 @@ impl Folder {
         out.extend(
             self.name()
                 .chars()
-                .map(|c| DrawCh::new(c, self.folder_style)),
+                .map(|c| DrawCh::new(c, self.folder_style.clone())),
         );
         while x < width {
             out.push(default_ch.clone());
@@ -465,7 +472,7 @@ impl TopDir {
         TopDir { folder, sty }
     }
     pub fn draw(&self, default_ch: DrawCh, width: usize) -> Vec<DrawCh> {
-        let mut out = DrawCh::str_to_draw_chs(&self.folder.name(), self.sty);
+        let mut out = DrawCh::str_to_draw_chs(&self.folder.name(), self.sty.clone());
         for _ in out.len()..width {
             out.push(default_ch.clone());
         }
@@ -494,7 +501,7 @@ impl UpDir {
     }
 
     pub fn draw(&self, default_ch: DrawCh, width: usize) -> Vec<DrawCh> {
-        let mut out = DrawCh::str_to_draw_chs(&self.text, self.sty);
+        let mut out = DrawCh::str_to_draw_chs(&self.text, self.sty.clone());
         for _ in out.len()..width {
             out.push(default_ch.clone());
         }

@@ -86,7 +86,7 @@ impl FontInputGroup {
         for (i, ch) in self.chars.iter().enumerate() {
             let width = self.widths[i];
             let mut sliced_glyphs = slice_from_group(&self.glyphs, gx, gx + width);
-            map.insert(*ch, DrawChs2D::from_runes(&mut sliced_glyphs, sty));
+            map.insert(*ch, DrawChs2D::from_runes(&mut sliced_glyphs, sty.clone()));
             gx += width;
         }
     }

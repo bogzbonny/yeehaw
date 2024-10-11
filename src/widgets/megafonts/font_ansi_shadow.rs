@@ -90,7 +90,7 @@ pub fn ansi_shadow_ex() -> Megafont {
     ];
     let mut chs = HashMap::new();
     for ig in font_input_group.iter_mut() {
-        ig.add_glyphs_to_map(&mut chs, Style::default());
+        ig.add_glyphs_to_map(&mut chs, Style::default_const());
     }
     Megafont::new(chs)
 }

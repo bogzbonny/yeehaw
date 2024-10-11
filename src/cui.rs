@@ -233,7 +233,7 @@ impl Cui {
             } else {
                 &StyledContent::new(ContentStyle::default(), ChPlus::Char(' '))
             };
-            let content = c.get_content_style(prev_sty);
+            let content = c.get_content_style(&ctx, prev_sty);
             dedup_chs.insert((c.x, c.y), content);
         }
 

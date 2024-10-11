@@ -490,7 +490,7 @@ impl WidgetBase {
 
         // initialize the content with blank characters
         // of the height and width of the widget
-        *self.pane.content.borrow_mut() = DrawChs2D::new_empty_of_size(width, height, sty);
+        *self.pane.content.borrow_mut() = DrawChs2D::new_empty_of_size(width, height, sty.clone());
 
         // now fill in with actual content
         for y in 0..height {
@@ -500,7 +500,7 @@ impl WidgetBase {
                 } else {
                     continue;
                 };
-                let dch = DrawCh::new(r, sty);
+                let dch = DrawCh::new(r, sty.clone());
                 self.pane.content.borrow_mut().0[y][x] = dch;
             }
         }
@@ -508,6 +508,10 @@ impl WidgetBase {
 
     pub fn set_content(&self, content: DrawChs2D) {
         *self.pane.content.borrow_mut() = content;
+    }
+
+    pub fn set_content_style(&self, sty: Style) {
+        self.pane.content.borrow_mut().change_all_styles(sty);
     }
 
     // correct_offsets_to_view_position changes the content offsets within the
@@ -558,9 +562,9 @@ impl WidgetBase {
 
     pub fn get_current_style(&self) -> Style {
         match self.get_attr_selectability() {
-            Selectability::Selected => self.styles.borrow().selected_style,
-            Selectability::Ready => self.styles.borrow().ready_style,
-            Selectability::Unselectable => self.styles.borrow().unselectable_style,
+            Selectability::Selected => self.styles.borrow().selected_style.clone(),
+            Selectability::Ready => self.styles.borrow().ready_style.clone(),
+            Selectability::Unselectable => self.styles.borrow().unselectable_style.clone(),
         }
     }
 
@@ -612,7 +616,7 @@ impl Element for WidgetBase {
                 let ch = if y < content_height && x < content_width {
                     self.pane.content.borrow().0[y][x].clone()
                 } else {
-                    DrawCh::new(' ', sty)
+                    DrawCh::new(' ', sty.clone())
                 };
                 chs.push(DrawChPos::new(
                     ch,
@@ -654,7 +658,7 @@ impl Element for WidgetBase {
 }
 
 // ---------------------------------------
-#[derive(Copy, Clone, Default)]
+#[derive(Clone, Default)]
 pub struct WBStyles {
     pub selected_style: Style,
     pub ready_style: Style,

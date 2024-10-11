@@ -29,17 +29,11 @@ impl Checkbox {
     const KIND: &'static str = "widget_checkbox";
 
     const STYLE: WBStyles = WBStyles {
-        selected_style: Style::new()
-            .with_bg(Color::LIGHT_YELLOW2)
-            .with_fg(Color::BLACK)
+        selected_style: Style::new(Some(Color::BLACK), Some(Color::LIGHT_YELLOW2), None)
             .with_attr(Attributes::new().with_bold()),
-        ready_style: Style::new()
-            .with_bg(Color::WHITE)
-            .with_fg(Color::BLACK)
+        ready_style: Style::new(Some(Color::BLACK), Some(Color::WHITE), None)
             .with_attr(Attributes::new().with_bold()),
-        unselectable_style: Style::new()
-            .with_bg(Color::GREY13)
-            .with_fg(Color::BLACK)
+        unselectable_style: Style::new(Some(Color::BLACK), Some(Color::GREY13), None)
             .with_attr(Attributes::new().with_bold()),
     };
 

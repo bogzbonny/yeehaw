@@ -19,7 +19,7 @@ pub mod widgets;
 
 pub use {
     ch::{ChPlus, DrawCh, DrawChPos, DrawChPosVec, DrawChs2D},
-    color::{Color, Rgba},
+    color::{Color, Rgba, XGradient},
     cui::Cui,
     dyn_location::{DynLocation, DynLocationSet, Loc, Point, Size, ZIndex},
     dyn_value::DynVal,

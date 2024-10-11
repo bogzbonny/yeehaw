@@ -241,7 +241,7 @@ impl PaneWithScrollbars {
         let pane = HorizontalStack::new(hat);
         let x_scrollbar = Rc::new(RefCell::new(None));
         let y_scrollbar = Rc::new(RefCell::new(None));
-        let corner_decor = Rc::new(RefCell::new(DrawCh::new('⁙', Style::new())));
+        let corner_decor = Rc::new(RefCell::new(DrawCh::new('⁙', Style::default_const())));
 
         let inner_pane = PaneScrollable::new(hat, width, height);
 

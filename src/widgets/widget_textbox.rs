@@ -62,18 +62,18 @@ impl TextBox {
     const KIND: &'static str = "widget_textbox";
 
     const STYLE: WBStyles = WBStyles {
-        selected_style: Style::new().with_bg(Color::WHITE).with_fg(Color::BLACK),
-        ready_style: Style::new().with_bg(Color::GREY13).with_fg(Color::BLACK),
-        unselectable_style: Style::new().with_bg(Color::GREY15).with_fg(Color::BLACK),
+        selected_style: Style::new(Some(Color::BLACK), Some(Color::WHITE), None),
+        ready_style: Style::new(Some(Color::BLACK), Some(Color::GREY13), None),
+        unselectable_style: Style::new(Some(Color::BLACK), Some(Color::GREY15), None),
     };
 
     const STYLE_SCROLLBAR: WBStyles = WBStyles {
-        selected_style: Style::new().with_bg(Color::GREY13).with_fg(Color::WHITE),
-        ready_style: Style::new().with_bg(Color::GREY13).with_fg(Color::WHITE),
-        unselectable_style: Style::new().with_bg(Color::GREY13).with_fg(Color::WHITE),
+        selected_style: Style::new(Some(Color::WHITE), Some(Color::GREY13), None),
+        ready_style: Style::new(Some(Color::WHITE), Some(Color::GREY13), None),
+        unselectable_style: Style::new(Some(Color::WHITE), Some(Color::GREY13), None),
     };
 
-    const DEFAULT_CURSOR_STYLE: Style = Style::new().with_bg(Color::BLUE);
+    const DEFAULT_CURSOR_STYLE: Style = Style::new(None, Some(Color::BLUE), None);
 
     // for textboxes which are editable
     pub fn editable_receivable_events() -> Vec<Event> {
@@ -138,7 +138,7 @@ impl TextBox {
             x_scrollbar: Rc::new(RefCell::new(None)),
             y_scrollbar: Rc::new(RefCell::new(None)),
             line_number_tb: Rc::new(RefCell::new(None)),
-            corner_decor: Rc::new(RefCell::new(DrawCh::new('⁙', Style::default()))),
+            corner_decor: Rc::new(RefCell::new(DrawCh::new('⁙', Style::default_const()))),
             right_click_menu: Rc::new(RefCell::new(None)),
         };
 
@@ -359,7 +359,7 @@ impl TextBox {
         let no_x_sb = matches!(x_sb_op, HorizontalSBPositions::None);
         if !no_y_sb && !no_x_sb {
             let cd = Label::new(hat, ctx, &(self.corner_decor.borrow().ch.to_string()))
-                .with_style(ctx, self.corner_decor.borrow().style);
+                .with_style(ctx, self.corner_decor.borrow().style.clone());
             let (cd_x, cd_y) = match (y_sb_op, x_sb_op) {
                 (VerticalSBPositions::ToTheLeft, HorizontalSBPositions::Above) => {
                     (x.clone().minus_fixed(1), y.clone().minus_fixed(1))
@@ -1050,7 +1050,7 @@ impl Element for TextBox {
                 self.base.pane.content.borrow_mut().change_style_at_xy(
                     cur_x,
                     cur_y,
-                    *self.cursor_style.borrow(),
+                    self.cursor_style.borrow().clone(),
                 );
             }
         }
@@ -1065,7 +1065,7 @@ impl Element for TextBox {
                     self.base.pane.content.borrow_mut().change_style_at_xy(
                         cur_x,
                         cur_y,
-                        *self.cursor_style.borrow(),
+                        self.cursor_style.borrow().clone(),
                     );
                 }
             }

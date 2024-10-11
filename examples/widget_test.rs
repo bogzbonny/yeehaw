@@ -5,8 +5,9 @@ use {
         //debug,
         widgets::{
             megafonts, widget_button::ButtonSides, Button, Checkbox, DropdownList, Label, ListBox,
-            Megatext, NumbersTextBox, RadioButtons, TextBox, Toggle,
+            Megatext, NumbersTextBox, RadioButtons, TextBox, Toggle, WBStyles,
         },
+        Color,
         Context,
         Cui,
         DynVal,
@@ -15,6 +16,7 @@ use {
         EventResponses,
         SortingHat,
         WidgetPane,
+        XGradient,
     },
 };
 
@@ -46,7 +48,6 @@ async fn main() -> Result<(), Error> {
     });
     let button = Button::new(&hat, &ctx, "click me".to_string(), button_click_fn)
         .with_description("a button!".to_string())
-        .with_
         .at(DynVal::new_flex(0.25), DynVal::new_flex(0.25))
         .to_widgets()
         .with_label(&hat, &ctx, "button-label");
@@ -89,12 +90,40 @@ async fn main() -> Result<(), Error> {
     .to_widgets();
     el.add_widgets(rbs);
 
+    let mut mtext_sty = WBStyles::default();
+    //mtext_sty.unselectable_style.fg = Some(Color::XGradient(XGradient::new_2_color(
+    //    Color::RED,
+    //    Color::BLUE,
+    //)));
+    //mtext_sty.unselectable_style.fg = Some(Color::XGradient(XGradient::new_2_color_repeater(
+    //    Color::RED,
+    //    Color::BLUE,
+    //    10,
+    //)));
+    mtext_sty.unselectable_style.fg = Some(Color::XGradient(XGradient::new_repeater(
+        vec![
+            Color::VIOLET,
+            Color::INDIGO,
+            Color::BLUE,
+            Color::GREEN,
+            //Color::YELLOW,
+            //Color::ORANGE,
+            //Color::RED,
+        ],
+        15,
+    )));
+    //mtext_sty.unselectable_style.fg = Some(Color::XGradient(XGradient::new_repeater(
+    //    vec![Color::GREEN, Color::BLUE, Color::RED],
+    //    5,
+    //)));
+
     let mtext = Megatext::new(
         &hat,
         &ctx,
         "HELLO, WERLD!".to_string(),
         megafonts::ansi_regular_ex(),
     )
+    .with_styles(mtext_sty)
     .at(DynVal::new_flex(0.1), DynVal::new_flex(0.6))
     .to_widgets();
     el.add_widgets(mtext);

@@ -1,8 +1,8 @@
 use {
     super::{Megafont, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Context, DrawChPos, Element, ElementID, Event, EventResponses, Priority,
-        ReceivableEventChanges, DynLocationSet, DynVal, SortingHat, UpwardPropagator,
+        Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
+        Priority, ReceivableEventChanges, SortingHat, UpwardPropagator,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -38,6 +38,8 @@ impl Megatext {
     // decorators
 
     pub fn with_styles(self, styles: WBStyles) -> Self {
+        self.base
+            .set_content_style(styles.unselectable_style.clone());
         self.base.set_styles(styles);
         self
     }
