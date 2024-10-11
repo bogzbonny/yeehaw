@@ -10,6 +10,7 @@ pub enum Color {
     ANSI(CrosstermColor),
     Rgba(Rgba),
     XGradient(XGradient),
+    YGradient(YGradient),
 }
 
 impl Default for Color {
@@ -65,6 +66,13 @@ impl Color {
                     }
                     Color::XGradient(XGradient(out))
                 }
+                Color::YGradient(gr) => {
+                    let mut out = vec![];
+                    for (y, c) in gr.0 {
+                        out.push((y, c.clone().blend(c, percent_other)));
+                    }
+                    Color::YGradient(YGradient(out))
+                }
             },
             Color::XGradient(gr) => {
                 let mut out = vec![];
@@ -72,6 +80,13 @@ impl Color {
                     out.push((x.clone(), c.blend(other.clone(), percent_other)));
                 }
                 Color::XGradient(XGradient(out))
+            }
+            Color::YGradient(gr) => {
+                let mut out = vec![];
+                for (y, c) in &gr.0 {
+                    out.push((y.clone(), c.blend(other.clone(), percent_other)));
+                }
+                Color::YGradient(YGradient(out))
             }
         }
     }
@@ -101,6 +116,13 @@ impl Color {
                 }
                 Color::XGradient(XGradient(out))
             }
+            Color::YGradient(gr) => {
+                let mut out = vec![];
+                for (y, c) in &gr.0 {
+                    out.push((y.clone(), c.darken()));
+                }
+                Color::YGradient(YGradient(out))
+            }
         }
     }
 
@@ -114,6 +136,13 @@ impl Color {
                     out.push((x.clone(), c.lighten()));
                 }
                 Color::XGradient(XGradient(out))
+            }
+            Color::YGradient(gr) => {
+                let mut out = vec![];
+                for (y, c) in &gr.0 {
+                    out.push((y.clone(), c.lighten()));
+                }
+                Color::YGradient(YGradient(out))
             }
         }
     }
@@ -156,6 +185,7 @@ impl Color {
             Color::ANSI(c) => *c,
             Color::Rgba(c) => c.to_crossterm_color(prev),
             Color::XGradient(gr) => gr.to_crossterm_color(ctx, prev, x, y),
+            Color::YGradient(gr) => gr.to_crossterm_color(ctx, prev, x, y),
         }
     }
 }
@@ -190,35 +220,54 @@ impl XGradient {
         XGradient(v)
     }
 
+    pub fn rainbow(length: usize) -> Self {
+        XGradient::new_repeater(
+            vec![
+                Color::VIOLET,
+                Color::INDIGO,
+                Color::BLUE,
+                Color::GREEN,
+                Color::YELLOW,
+                Color::ORANGE,
+                Color::RED,
+            ],
+            length,
+        )
+    }
+
     pub fn to_crossterm_color(
         &self, ctx: &Context, prev: Option<CrosstermColor>, mut x: u16, y: u16,
     ) -> CrosstermColor {
         if self.0.is_empty() {
             return CrosstermColor::Black;
         }
+        let first_x = self.0.first().unwrap().0.get_val(ctx.get_width());
         let last_x = self.0.last().unwrap().0.get_val(ctx.get_width());
-        if last_x < x as i32 {
+        let gr_width = last_x - first_x;
+        if gr_width < x as i32 {
             // subtract x so that it is within the range
-            x = (x as i32 % last_x) as u16;
+            x = (x as i32 % gr_width) as u16;
         }
 
-        let mut start: Option<Color> = None;
-        let mut end: Option<Color> = None;
-        //x_val.get_val(ctx.get_width())
-        //iterate in window of 2
+        let mut start_clr: Option<Color> = None;
+        let mut end_clr: Option<Color> = None;
+        let mut start_x: Option<i32> = None;
+        let mut end_x: Option<i32> = None;
         for ((x1, c1), (x2, c2)) in self.0.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
             let x1_val = x1.get_val(ctx.get_width());
             let x2_val = x2.get_val(ctx.get_width());
             if (x1_val <= x as i32) && ((x as i32) < x2_val) {
-                start = Some(c1.clone());
-                end = Some(c2.clone());
+                start_clr = Some(c1.clone());
+                end_clr = Some(c2.clone());
+                start_x = Some(x1_val);
+                end_x = Some(x2_val);
                 break;
             }
         }
-        let start_clr = start.unwrap_or_else(|| self.0[0].1.clone());
-        let end_clr = end.unwrap_or_else(|| self.0[self.0.len() - 1].1.clone());
-        let start_x = self.0[0].0.get_val(ctx.get_width());
-        let end_x = self.0[self.0.len() - 1].0.get_val(ctx.get_width());
+        let start_clr = start_clr.unwrap_or_else(|| self.0[0].1.clone());
+        let end_clr = end_clr.unwrap_or_else(|| self.0[self.0.len() - 1].1.clone());
+        let start_x = start_x.unwrap_or_else(|| self.0[0].0.get_val(ctx.get_width()));
+        let end_x = end_x.unwrap_or_else(|| self.0[self.0.len() - 1].0.get_val(ctx.get_width()));
         let percent = (x as f64 - start_x as f64) / (end_x as f64 - start_x as f64);
         start_clr
             .blend(end_clr, percent)
@@ -228,6 +277,88 @@ impl XGradient {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
 pub struct YGradient(pub Vec<(DynVal, Color)>);
+
+impl YGradient {
+    pub fn new_2_color(c1: Color, c2: Color) -> Self {
+        YGradient(vec![(DynVal::new_flex(0.), c1), (DynVal::new_flex(1.), c2)])
+    }
+
+    /// length is the number of characters per color gradient
+    pub fn new_2_color_repeater(c1: Color, c2: Color, length: usize) -> Self {
+        YGradient(vec![
+            (DynVal::new_fixed(0), c1.clone()),
+            (DynVal::new_fixed(length as i32), c2),
+            (DynVal::new_fixed(2 * length as i32), c1),
+        ])
+    }
+
+    /// length is the number of characters per color gradient
+    pub fn new_repeater(mut colors: Vec<Color>, length: usize) -> Self {
+        if colors.is_empty() {
+            return YGradient(vec![]);
+        }
+        let mut v = Vec::with_capacity(colors.len() + 1);
+        for (i, c) in colors.drain(..).enumerate() {
+            v.push((DynVal::new_fixed((i * length) as i32), c));
+        }
+        v.push((DynVal::new_fixed((v.len() * length) as i32), v[0].1.clone()));
+        YGradient(v)
+    }
+
+    pub fn rainbow(length: usize) -> Self {
+        YGradient::new_repeater(
+            vec![
+                Color::VIOLET,
+                Color::INDIGO,
+                Color::BLUE,
+                Color::GREEN,
+                Color::YELLOW,
+                Color::ORANGE,
+                Color::RED,
+            ],
+            length,
+        )
+    }
+
+    pub fn to_crossterm_color(
+        &self, ctx: &Context, prev: Option<CrosstermColor>, x: u16, mut y: u16,
+    ) -> CrosstermColor {
+        if self.0.is_empty() {
+            return CrosstermColor::Black;
+        }
+        let first_y = self.0.first().unwrap().0.get_val(ctx.get_height());
+        let last_y = self.0.last().unwrap().0.get_val(ctx.get_height());
+        let gr_height = last_y - first_y;
+        if gr_height < y as i32 {
+            // subtract y so that it is within the range
+            y = (y as i32 % gr_height) as u16;
+        }
+
+        let mut start_clr: Option<Color> = None;
+        let mut end_clr: Option<Color> = None;
+        let mut start_y: Option<i32> = None;
+        let mut end_y: Option<i32> = None;
+        for ((y1, c1), (y2, c2)) in self.0.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
+            let y1_val = y1.get_val(ctx.get_height());
+            let y2_val = y2.get_val(ctx.get_height());
+            if (y1_val <= y as i32) && ((y as i32) < y2_val) {
+                start_clr = Some(c1.clone());
+                end_clr = Some(c2.clone());
+                start_y = Some(y1_val);
+                end_y = Some(y2_val);
+                break;
+            }
+        }
+        let start_clr = start_clr.unwrap_or_else(|| self.0[0].1.clone());
+        let end_clr = end_clr.unwrap_or_else(|| self.0[self.0.len() - 1].1.clone());
+        let start_y = start_y.unwrap_or_else(|| self.0[0].0.get_val(ctx.get_height()));
+        let end_y = end_y.unwrap_or_else(|| self.0[self.0.len() - 1].0.get_val(ctx.get_height()));
+        let percent = (y as f64 - start_y as f64) / (end_y as f64 - start_y as f64);
+        start_clr
+            .blend(end_clr, percent)
+            .to_crossterm_color(ctx, prev, x, y)
+    }
+}
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
 pub struct TimeGradient {

@@ -17,6 +17,7 @@ use {
         SortingHat,
         WidgetPane,
         XGradient,
+        YGradient,
     },
 };
 
@@ -100,17 +101,12 @@ async fn main() -> Result<(), Error> {
     //    Color::BLUE,
     //    10,
     //)));
-    mtext_sty.unselectable_style.fg = Some(Color::XGradient(XGradient::new_repeater(
-        vec![
-            Color::VIOLET,
-            Color::INDIGO,
-            Color::BLUE,
-            Color::GREEN,
-            //Color::YELLOW,
-            //Color::ORANGE,
-            //Color::RED,
-        ],
-        15,
+    mtext_sty.unselectable_style.fg = Some(Color::YGradient(YGradient::new_2_color_repeater(
+        Color::BLACK,
+        //Color::BLUE,
+        //Color::XGradient(XGradient::new_repeater(vec![Color::BLUE, Color::RED], 10)),
+        Color::XGradient(XGradient::new_repeater(vec![Color::RED, Color::BLUE], 10)),
+        10,
     )));
     //mtext_sty.unselectable_style.fg = Some(Color::XGradient(XGradient::new_repeater(
     //    vec![Color::GREEN, Color::BLUE, Color::RED],
