@@ -734,16 +734,6 @@ impl VerticalScrollbar {
             }
             MouseEventKind::Up(MouseButton::Left) => {
                 *self.currently_dragging.borrow_mut() = false;
-                let y = ev.row as usize;
-                match self.position_relative_to_scrollbar(h.into(), y) {
-                    SBRelPosition::Before => {
-                        self.jump_scroll_backwards(ctx, h.into());
-                    }
-                    SBRelPosition::After => {
-                        self.jump_scroll_forwards(ctx, h.into());
-                    }
-                    _ => {}
-                }
                 (true, EventResponses::default())
             }
             MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Drag(MouseButton::Left)
@@ -751,9 +741,7 @@ impl VerticalScrollbar {
             {
                 self.drag_while_dragging(ctx, ev)
             }
-            MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Drag(MouseButton::Left)
-                if !curr_dragging =>
-            {
+            MouseEventKind::Down(MouseButton::Left) if !curr_dragging => {
                 let y = ev.row as usize;
                 let has_arrows = *self.has_arrows.borrow();
                 match true {
@@ -887,9 +875,7 @@ impl HorizontalScrollbar {
             {
                 self.drag_while_dragging(ctx, ev)
             }
-            MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Drag(MouseButton::Left)
-                if !curr_dragging =>
-            {
+            MouseEventKind::Down(MouseButton::Left) if !curr_dragging => {
                 let x = ev.column as usize;
                 let has_arrows = *self.has_arrows.borrow();
                 match true {
@@ -1075,6 +1061,7 @@ impl Element for HorizontalScrollbar {
         match ev {
             Event::KeyCombo(ke) => self.receive_key_event(ke, ctx),
             Event::Mouse(me) => self.receive_mouse_event(ctx, me),
+            Event::ExternalMouse(me) => self.receive_external_mouse_event(ctx, me),
             Event::Resize => self.resize_event(ctx),
             _ => (false, EventResponses::default()),
         }

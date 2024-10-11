@@ -46,6 +46,7 @@ async fn main() -> Result<(), Error> {
     });
     let button = Button::new(&hat, &ctx, "click me".to_string(), button_click_fn)
         .with_description("a button!".to_string())
+        .with_
         .at(DynVal::new_flex(0.25), DynVal::new_flex(0.25))
         .to_widgets()
         .with_label(&hat, &ctx, "button-label");

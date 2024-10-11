@@ -33,10 +33,9 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
     - click on the file_viewer and get the duplicate junk
 05. color "darker", "lighter" methods
 10. button selectable (can hit with enter key)
+05. scrollbar shouldn't move if uninitialized and a drag mouse enters it
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-05. scrollbar shouldn't move if uninitialized and a drag mouse enters it
 
 05. use .flf (figlet font) format instead of custom megatext
      - https://docs.rs/figlet-rs/latest/figlet_rs/
@@ -55,6 +54,12 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
         - Integrate TafLocation as an Option on Pane? ParentPane?
           - Have the TafLocation Simply change the DynLocation (fixed) every
             time it changes or there is a resize.
+          - will need to deal with the Taffy NodeId type now... could probably
+            just tack on an u64 absolute type to the ElementId type
+              - either that or have to store a vec of all the elementIds
+              - OR could just sort all the ElementIds per Organizer and call
+                that the vec... not the most efficient but easy enough to tack
+                ontop without adding more crap to the organizer
      - model after the partial owned model https://github.com/DioxusLabs/taffy/blob/main/examples/custom_tree_owned_partial.rs
      OLD NOTES
        - WONT DO use the taffy high level API
