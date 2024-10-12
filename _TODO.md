@@ -38,8 +38,15 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-10. gradient color types, don't ask me how exactly however this is basically
-    what we should do.
+10. gradient color 
+     - posibilities: 
+         - mono-directional = going either up or down / or diagonal
+           as continious (non - radial) 
+            - can also be thought of as radiating from a straight line (the
+              perpendicular line) 
+         - radial 
+           - radiating from a point instead of a line
+           
      - refactor color to make a call each draw
        - maybe make color an enum for serialization purposes. 
      - maybe the gradient moves based on the **LOCAL** screen position. (aka
@@ -58,6 +65,7 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
    - time and screen position gradient.
       - maybe this could be a time gradient, however each color on the gradient
         scale WAS another gradient. (or vice versa) 
+   DONE
 
 05. use .flf (figlet font) format instead of custom megatext
      - https://docs.rs/figlet-rs/latest/figlet_rs/

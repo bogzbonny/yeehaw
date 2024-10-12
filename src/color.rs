@@ -9,8 +9,7 @@ use {
 pub enum Color {
     ANSI(CrosstermColor),
     Rgba(Rgba),
-    XGradient(XGradient),
-    YGradient(YGradient),
+    Gradient(Gradient),
 }
 
 impl Default for Color {
@@ -41,7 +40,7 @@ impl Color {
     }
 
     /// blends two colors together with the given percentage of the other color
-    pub fn blend(&self, other: Color, percent_other: f64) -> Color {
+    pub fn blend(&self, other: Color, percent_other: f64, blend_kind: BlendKind) -> Color {
         match self {
             Color::ANSI(_) => {
                 if percent_other < 0.5 {
@@ -58,35 +57,41 @@ impl Color {
                         other
                     }
                 }
-                Color::Rgba(oc) => Color::Rgba(c.blend(oc, percent_other)),
-                Color::XGradient(gr) => {
-                    let mut out = vec![];
-                    for (x, c) in gr.0 {
-                        out.push((x, c.clone().blend(c, percent_other)));
+                Color::Rgba(oc) => Color::Rgba(blend_kind.blend(*c, oc, percent_other)),
+                Color::Gradient(gr) => {
+                    let mut x_grad = vec![];
+                    for (x, gr_c) in gr.x_grad.iter() {
+                        x_grad.push((
+                            x.clone(),
+                            self.clone().blend(gr_c.clone(), percent_other, blend_kind),
+                        ));
                     }
-                    Color::XGradient(XGradient(out))
-                }
-                Color::YGradient(gr) => {
-                    let mut out = vec![];
-                    for (y, c) in gr.0 {
-                        out.push((y, c.clone().blend(c, percent_other)));
+                    let mut y_grad = vec![];
+                    for (y, gr_c) in gr.y_grad.iter() {
+                        y_grad.push((
+                            y.clone(),
+                            self.clone().blend(gr_c.clone(), percent_other, blend_kind),
+                        ));
                     }
-                    Color::YGradient(YGradient(out))
+                    Color::Gradient(Gradient { x_grad, y_grad })
                 }
             },
-            Color::XGradient(gr) => {
-                let mut out = vec![];
-                for (x, c) in &gr.0 {
-                    out.push((x.clone(), c.blend(other.clone(), percent_other)));
+            Color::Gradient(gr) => {
+                let mut x_grad = vec![];
+                for (x, c) in gr.x_grad.iter() {
+                    x_grad.push((
+                        x.clone(),
+                        c.clone().blend(other.clone(), percent_other, blend_kind),
+                    ));
                 }
-                Color::XGradient(XGradient(out))
-            }
-            Color::YGradient(gr) => {
-                let mut out = vec![];
-                for (y, c) in &gr.0 {
-                    out.push((y.clone(), c.blend(other.clone(), percent_other)));
+                let mut y_grad = vec![];
+                for (y, c) in gr.y_grad.iter() {
+                    y_grad.push((
+                        y.clone(),
+                        c.clone().blend(other.clone(), percent_other, blend_kind),
+                    ));
                 }
-                Color::YGradient(YGradient(out))
+                Color::Gradient(Gradient { x_grad, y_grad })
             }
         }
     }
@@ -109,19 +114,16 @@ impl Color {
         match self {
             Color::ANSI(c) => Color::darken_ansi(c),
             Color::Rgba(c) => Color::Rgba(c.mul(0.5)),
-            Color::XGradient(gr) => {
-                let mut out = vec![];
-                for (x, c) in &gr.0 {
-                    out.push((x.clone(), c.darken()));
+            Color::Gradient(gr) => {
+                let mut x_grad = vec![];
+                for (x, c) in &gr.x_grad {
+                    x_grad.push((x.clone(), c.darken()));
                 }
-                Color::XGradient(XGradient(out))
-            }
-            Color::YGradient(gr) => {
-                let mut out = vec![];
-                for (y, c) in &gr.0 {
-                    out.push((y.clone(), c.darken()));
+                let mut y_grad = vec![];
+                for (y, c) in &gr.y_grad {
+                    y_grad.push((y.clone(), c.darken()));
                 }
-                Color::YGradient(YGradient(out))
+                Color::Gradient(Gradient { x_grad, y_grad })
             }
         }
     }
@@ -130,19 +132,16 @@ impl Color {
         match self {
             Color::ANSI(c) => Color::lighten_ansi(c),
             Color::Rgba(c) => Color::Rgba(c.mul(1.5)),
-            Color::XGradient(gr) => {
-                let mut out = vec![];
-                for (x, c) in &gr.0 {
-                    out.push((x.clone(), c.lighten()));
+            Color::Gradient(gr) => {
+                let mut x_grad = vec![];
+                for (x, c) in &gr.x_grad {
+                    x_grad.push((x.clone(), c.lighten()));
                 }
-                Color::XGradient(XGradient(out))
-            }
-            Color::YGradient(gr) => {
-                let mut out = vec![];
-                for (y, c) in &gr.0 {
-                    out.push((y.clone(), c.lighten()));
+                let mut y_grad = vec![];
+                for (y, c) in &gr.y_grad {
+                    y_grad.push((y.clone(), c.lighten()));
                 }
-                Color::YGradient(YGradient(out))
+                Color::Gradient(Gradient { x_grad, y_grad })
             }
         }
     }
@@ -184,44 +183,111 @@ impl Color {
         match self {
             Color::ANSI(c) => *c,
             Color::Rgba(c) => c.to_crossterm_color(prev),
-            Color::XGradient(gr) => gr.to_crossterm_color(ctx, prev, x, y),
-            Color::YGradient(gr) => gr.to_crossterm_color(ctx, prev, x, y),
+            Color::Gradient(gr) => gr.to_crossterm_color(ctx, prev, x, y),
         }
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
-pub struct XGradient(pub Vec<(DynVal, Color)>);
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Default)]
+pub struct Gradient {
+    pub x_grad: Vec<(DynVal, Color)>,
+    pub y_grad: Vec<(DynVal, Color)>,
+}
 
-impl XGradient {
-    pub fn new_2_color(c1: Color, c2: Color) -> Self {
-        XGradient(vec![(DynVal::new_flex(0.), c1), (DynVal::new_flex(1.), c2)])
+impl Gradient {
+    pub fn new(x_grad: Vec<(DynVal, Color)>, y_grad: Vec<(DynVal, Color)>) -> Self {
+        Gradient { x_grad, y_grad }
+    }
+
+    pub fn new_x_grad_2_color(c1: Color, c2: Color) -> Self {
+        let x_grad = vec![(DynVal::new_flex(0.), c1), (DynVal::new_flex(1.), c2)];
+        Gradient {
+            x_grad,
+            y_grad: vec![],
+        }
+    }
+
+    pub fn new_y_grad_2_color(c1: Color, c2: Color) -> Self {
+        let y_grad = vec![(DynVal::new_flex(0.), c1), (DynVal::new_flex(1.), c2)];
+        Gradient {
+            x_grad: vec![],
+            y_grad,
+        }
     }
 
     /// length is the number of characters per color gradient
-    pub fn new_2_color_repeater(c1: Color, c2: Color, length: usize) -> Self {
-        XGradient(vec![
+    pub fn new_x_grad_2_color_repeater(c1: Color, c2: Color, length: usize) -> Self {
+        let x_grad = vec![
             (DynVal::new_fixed(0), c1.clone()),
             (DynVal::new_fixed(length as i32), c2),
             (DynVal::new_fixed(2 * length as i32), c1),
-        ])
+        ];
+        Gradient {
+            x_grad,
+            y_grad: vec![],
+        }
+    }
+
+    pub fn new_y_grad_2_color_repeater(c1: Color, c2: Color, length: usize) -> Self {
+        let y_grad = vec![
+            (DynVal::new_fixed(0), c1.clone()),
+            (DynVal::new_fixed(length as i32), c2),
+            (DynVal::new_fixed(2 * length as i32), c1),
+        ];
+        Gradient {
+            x_grad: vec![],
+            y_grad,
+        }
     }
 
     /// length is the number of characters per color gradient
-    pub fn new_repeater(mut colors: Vec<Color>, length: usize) -> Self {
+    pub fn new_x_grad_repeater(mut colors: Vec<Color>, length: usize) -> Self {
         if colors.is_empty() {
-            return XGradient(vec![]);
+            return Gradient::default();
         }
         let mut v = Vec::with_capacity(colors.len() + 1);
         for (i, c) in colors.drain(..).enumerate() {
             v.push((DynVal::new_fixed((i * length) as i32), c));
         }
         v.push((DynVal::new_fixed((v.len() * length) as i32), v[0].1.clone()));
-        XGradient(v)
+        Gradient {
+            x_grad: v,
+            y_grad: vec![],
+        }
     }
 
-    pub fn rainbow(length: usize) -> Self {
-        XGradient::new_repeater(
+    pub fn new_y_grad_repeater(mut colors: Vec<Color>, length: usize) -> Self {
+        if colors.is_empty() {
+            return Gradient::default();
+        }
+        let mut v = Vec::with_capacity(colors.len() + 1);
+        for (i, c) in colors.drain(..).enumerate() {
+            v.push((DynVal::new_fixed((i * length) as i32), c));
+        }
+        v.push((DynVal::new_fixed((v.len() * length) as i32), v[0].1.clone()));
+        Gradient {
+            x_grad: vec![],
+            y_grad: v,
+        }
+    }
+
+    pub fn x_grad_rainbow(length: usize) -> Self {
+        Gradient::new_x_grad_repeater(
+            vec![
+                Color::VIOLET,
+                Color::INDIGO,
+                Color::BLUE,
+                Color::GREEN,
+                Color::YELLOW,
+                Color::ORANGE,
+                Color::RED,
+            ],
+            length,
+        )
+    }
+
+    pub fn y_grad_rainbow(length: usize) -> Self {
+        Gradient::new_y_grad_repeater(
             vec![
                 Color::VIOLET,
                 Color::INDIGO,
@@ -236,13 +302,32 @@ impl XGradient {
     }
 
     pub fn to_crossterm_color(
-        &self, ctx: &Context, prev: Option<CrosstermColor>, mut x: u16, y: u16,
+        &self, ctx: &Context, prev: Option<CrosstermColor>, x: u16, y: u16,
     ) -> CrosstermColor {
-        if self.0.is_empty() {
-            return CrosstermColor::Black;
+        match (self.x_grad.is_empty(), self.y_grad.is_empty()) {
+            (true, true) => CrosstermColor::Black,
+            (false, true) => self
+                .x_grad_color(ctx, x)
+                .to_crossterm_color(ctx, prev, x, y),
+            (true, false) => self
+                .y_grad_color(ctx, y)
+                .to_crossterm_color(ctx, prev, x, y),
+            (false, false) => {
+                let x_clr = self.x_grad_color(ctx, x);
+                let y_clr = self.y_grad_color(ctx, y);
+                x_clr
+                    .blend(y_clr, 0.5, BlendKind::Blend2)
+                    .to_crossterm_color(ctx, prev, x, y)
+            }
         }
-        let first_x = self.0.first().unwrap().0.get_val(ctx.get_width());
-        let last_x = self.0.last().unwrap().0.get_val(ctx.get_width());
+    }
+
+    pub fn x_grad_color(&self, ctx: &Context, mut x: u16) -> Color {
+        if self.x_grad.is_empty() {
+            return Color::TRANSPARENT;
+        }
+        let first_x = self.x_grad.first().unwrap().0.get_val(ctx.get_width());
+        let last_x = self.x_grad.last().unwrap().0.get_val(ctx.get_width());
         let gr_width = last_x - first_x;
         if gr_width < x as i32 {
             // subtract x so that it is within the range
@@ -253,7 +338,7 @@ impl XGradient {
         let mut end_clr: Option<Color> = None;
         let mut start_x: Option<i32> = None;
         let mut end_x: Option<i32> = None;
-        for ((x1, c1), (x2, c2)) in self.0.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
+        for ((x1, c1), (x2, c2)) in self.x_grad.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
             let x1_val = x1.get_val(ctx.get_width());
             let x2_val = x2.get_val(ctx.get_width());
             if (x1_val <= x as i32) && ((x as i32) < x2_val) {
@@ -264,70 +349,24 @@ impl XGradient {
                 break;
             }
         }
-        let start_clr = start_clr.unwrap_or_else(|| self.0[0].1.clone());
-        let end_clr = end_clr.unwrap_or_else(|| self.0[self.0.len() - 1].1.clone());
-        let start_x = start_x.unwrap_or_else(|| self.0[0].0.get_val(ctx.get_width()));
-        let end_x = end_x.unwrap_or_else(|| self.0[self.0.len() - 1].0.get_val(ctx.get_width()));
+        let start_clr = start_clr.unwrap_or_else(|| self.x_grad[0].1.clone());
+        let end_clr = end_clr.unwrap_or_else(|| self.x_grad[self.x_grad.len() - 1].1.clone());
+        let start_x = start_x.unwrap_or_else(|| self.x_grad[0].0.get_val(ctx.get_width()));
+        let end_x = end_x.unwrap_or_else(|| {
+            self.x_grad[self.x_grad.len() - 1]
+                .0
+                .get_val(ctx.get_width())
+        });
         let percent = (x as f64 - start_x as f64) / (end_x as f64 - start_x as f64);
-        start_clr
-            .blend(end_clr, percent)
-            .to_crossterm_color(ctx, prev, x, y)
-    }
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
-pub struct YGradient(pub Vec<(DynVal, Color)>);
-
-impl YGradient {
-    pub fn new_2_color(c1: Color, c2: Color) -> Self {
-        YGradient(vec![(DynVal::new_flex(0.), c1), (DynVal::new_flex(1.), c2)])
+        start_clr.blend(end_clr, percent, BlendKind::Blend1)
     }
 
-    /// length is the number of characters per color gradient
-    pub fn new_2_color_repeater(c1: Color, c2: Color, length: usize) -> Self {
-        YGradient(vec![
-            (DynVal::new_fixed(0), c1.clone()),
-            (DynVal::new_fixed(length as i32), c2),
-            (DynVal::new_fixed(2 * length as i32), c1),
-        ])
-    }
-
-    /// length is the number of characters per color gradient
-    pub fn new_repeater(mut colors: Vec<Color>, length: usize) -> Self {
-        if colors.is_empty() {
-            return YGradient(vec![]);
+    pub fn y_grad_color(&self, ctx: &Context, mut y: u16) -> Color {
+        if self.y_grad.is_empty() {
+            return Color::TRANSPARENT;
         }
-        let mut v = Vec::with_capacity(colors.len() + 1);
-        for (i, c) in colors.drain(..).enumerate() {
-            v.push((DynVal::new_fixed((i * length) as i32), c));
-        }
-        v.push((DynVal::new_fixed((v.len() * length) as i32), v[0].1.clone()));
-        YGradient(v)
-    }
-
-    pub fn rainbow(length: usize) -> Self {
-        YGradient::new_repeater(
-            vec![
-                Color::VIOLET,
-                Color::INDIGO,
-                Color::BLUE,
-                Color::GREEN,
-                Color::YELLOW,
-                Color::ORANGE,
-                Color::RED,
-            ],
-            length,
-        )
-    }
-
-    pub fn to_crossterm_color(
-        &self, ctx: &Context, prev: Option<CrosstermColor>, x: u16, mut y: u16,
-    ) -> CrosstermColor {
-        if self.0.is_empty() {
-            return CrosstermColor::Black;
-        }
-        let first_y = self.0.first().unwrap().0.get_val(ctx.get_height());
-        let last_y = self.0.last().unwrap().0.get_val(ctx.get_height());
+        let first_y = self.y_grad.first().unwrap().0.get_val(ctx.get_height());
+        let last_y = self.y_grad.last().unwrap().0.get_val(ctx.get_height());
         let gr_height = last_y - first_y;
         if gr_height < y as i32 {
             // subtract y so that it is within the range
@@ -338,7 +377,7 @@ impl YGradient {
         let mut end_clr: Option<Color> = None;
         let mut start_y: Option<i32> = None;
         let mut end_y: Option<i32> = None;
-        for ((y1, c1), (y2, c2)) in self.0.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
+        for ((y1, c1), (y2, c2)) in self.y_grad.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
             let y1_val = y1.get_val(ctx.get_height());
             let y2_val = y2.get_val(ctx.get_height());
             if (y1_val <= y as i32) && ((y as i32) < y2_val) {
@@ -349,14 +388,16 @@ impl YGradient {
                 break;
             }
         }
-        let start_clr = start_clr.unwrap_or_else(|| self.0[0].1.clone());
-        let end_clr = end_clr.unwrap_or_else(|| self.0[self.0.len() - 1].1.clone());
-        let start_y = start_y.unwrap_or_else(|| self.0[0].0.get_val(ctx.get_height()));
-        let end_y = end_y.unwrap_or_else(|| self.0[self.0.len() - 1].0.get_val(ctx.get_height()));
+        let start_clr = start_clr.unwrap_or_else(|| self.y_grad[0].1.clone());
+        let end_clr = end_clr.unwrap_or_else(|| self.y_grad[self.y_grad.len() - 1].1.clone());
+        let start_y = start_y.unwrap_or_else(|| self.y_grad[0].0.get_val(ctx.get_height()));
+        let end_y = end_y.unwrap_or_else(|| {
+            self.y_grad[self.y_grad.len() - 1]
+                .0
+                .get_val(ctx.get_height())
+        });
         let percent = (y as f64 - start_y as f64) / (end_y as f64 - start_y as f64);
-        start_clr
-            .blend(end_clr, percent)
-            .to_crossterm_color(ctx, prev, x, y)
+        start_clr.blend(end_clr, percent, BlendKind::Blend1)
     }
 }
 
@@ -381,20 +422,74 @@ impl Default for Rgba {
     }
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Copy, Clone, Debug, PartialEq, Eq)]
+pub enum BlendKind {
+    Blend1,
+    Blend2,
+}
+
+impl BlendKind {
+    pub fn blend(&self, c1: Rgba, c2: Rgba, perc_other: f64) -> Rgba {
+        match self {
+            BlendKind::Blend1 => Self::blend1(c1, c2, perc_other),
+            BlendKind::Blend2 => Self::blend2(c1, c2, perc_other),
+        }
+    }
+
+    pub fn blend1(c1: Rgba, c2: Rgba, perc_c2: f64) -> Rgba {
+        let c1_a_perc = c1.a as f64 / 255.0;
+        let c2_a_perc = c2.a as f64 / 255.0;
+        let a_blend_perc = c1_a_perc + c2_a_perc - (c1_a_perc * c2_a_perc);
+
+        let perc_c1 = 1. - perc_c2;
+
+        let r = ((c1.r as f64 * perc_c1 * c1_a_perc + c2.r as f64 * perc_c2 * c2_a_perc)
+            / a_blend_perc) as u8;
+        let g = ((c1.g as f64 * perc_c1 * c1_a_perc + c2.g as f64 * perc_c2 * c2_a_perc)
+            / a_blend_perc) as u8;
+        let b = ((c1.b as f64 * perc_c1 * c1_a_perc + c2.b as f64 * perc_c2 * c2_a_perc)
+            / a_blend_perc) as u8;
+
+        let a = (a_blend_perc * 255.0) as u8;
+        Rgba::new_with_alpha(r, g, b, a)
+    }
+
+    /// This is a different blend function that takes into account the alpha of the colors
+    /// and mixes in the opposite color for each alpha.
+    pub fn blend2(c1: Rgba, c2: Rgba, perc_c2: f64) -> Rgba {
+        let c1_a_perc = c1.a as f64 / 255.0;
+        let c2_a_perc = c2.a as f64 / 255.0;
+        let a_blend_perc = c1_a_perc + c2_a_perc - (c1_a_perc * c2_a_perc);
+
+        let perc_c1 = 1. - perc_c2;
+
+        let r = ((c1.r as f64 * perc_c1 * c1_a_perc
+            + c1.r as f64 * perc_c2 * (1. - c2_a_perc)
+            + c2.r as f64 * perc_c2 * c2_a_perc
+            + c2.r as f64 * perc_c1 * (1. - c1_a_perc))
+            / a_blend_perc) as u8;
+        let g = ((c1.g as f64 * perc_c1 * c1_a_perc
+            + c1.g as f64 * perc_c2 * (1. - c2_a_perc)
+            + c2.g as f64 * perc_c2 * c2_a_perc
+            + c2.g as f64 * perc_c1 * (1. - c1_a_perc))
+            / a_blend_perc) as u8;
+        let b = ((c1.b as f64 * perc_c1 * c1_a_perc
+            + c1.b as f64 * perc_c2 * (1. - c2_a_perc)
+            + c2.b as f64 * perc_c2 * c2_a_perc
+            + c2.b as f64 * perc_c1 * (1. - c1_a_perc))
+            / a_blend_perc) as u8;
+
+        let a = (a_blend_perc * 255.0) as u8;
+        Rgba::new_with_alpha(r, g, b, a)
+    }
+}
+
 impl Rgba {
     pub const fn new(r: u8, g: u8, b: u8) -> Self {
         Self { r, g, b, a: 255 }
     }
     pub const fn new_with_alpha(r: u8, g: u8, b: u8, a: u8) -> Self {
         Self { r, g, b, a }
-    }
-
-    pub fn blend(&self, other: Self, percent_other: f64) -> Self {
-        let r = (self.r as f64 * (1.0 - percent_other) + other.r as f64 * percent_other) as u8;
-        let g = (self.g as f64 * (1.0 - percent_other) + other.g as f64 * percent_other) as u8;
-        let b = (self.b as f64 * (1.0 - percent_other) + other.b as f64 * percent_other) as u8;
-        let a = (self.a as f64 * (1.0 - percent_other) + other.a as f64 * percent_other) as u8;
-        Self::new_with_alpha(r, g, b, a)
     }
 
     // returns a tuple of the rgb values
@@ -430,8 +525,6 @@ impl Rgba {
 impl Color {
     pub const TRANSPARENT:         Color = Color::new_with_alpha(0, 0, 0, 0);
 
-
-
     pub const GREY1:         Color = Color::new(10, 10, 10);
     pub const GREY2:         Color = Color::new(20, 20, 20);
     pub const GREY3:         Color = Color::new(30, 30, 32);
@@ -451,7 +544,6 @@ impl Color {
     pub const YELLOW2:          Color = Color::new(220, 220, 0);
     pub const PALLID_BLUE:      Color = Color::new(90, 110, 190);
     pub const LIGHT_YELLOW2:    Color = Color::new(255, 255, 200);
-
 
     // css named colours
     pub const MAROON:                  Color = Color::new(128, 0, 0);

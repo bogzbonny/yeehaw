@@ -1,8 +1,8 @@
 use {
     super::{widget::RESP_DEACTIVATE, Selectability, Widget, Widgets},
     crate::{
-        Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponse,
-        EventResponses, KeyPossibility, Keyboard as KB, ParentPane, Priority,
+        Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
+        EventResponse, EventResponses, KeyPossibility, Keyboard as KB, ParentPane, Priority,
         ReceivableEventChanges, SortingHat, UpwardPropagator,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -49,6 +49,11 @@ impl WidgetPane {
 
     pub fn with_width(self, w: DynVal) -> Self {
         self.pane.pane.set_dyn_width(w);
+        self
+    }
+
+    pub fn with_bg_color(self, c: Color) -> Self {
+        self.pane.pane.default_ch.borrow_mut().style.bg = Some(c);
         self
     }
 

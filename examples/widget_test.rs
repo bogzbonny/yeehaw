@@ -14,10 +14,9 @@ use {
         Element,
         Error,
         EventResponses,
+        Gradient,
         SortingHat,
         WidgetPane,
-        XGradient,
-        YGradient,
     },
 };
 
@@ -29,7 +28,25 @@ async fn main() -> Result<(), Error> {
 
     let hat = SortingHat::default();
 
-    let el = WidgetPane::new(&hat);
+    let x_length = 10;
+    let x_grad = vec![
+        (DynVal::new_fixed(0), Color::RED),
+        (DynVal::new_fixed(x_length), Color::GREEN),
+        (DynVal::new_fixed(2 * x_length), Color::RED),
+    ];
+    let y_length = 2;
+    let y_grad = vec![
+        (DynVal::new_fixed(0), Color::TRANSPARENT),
+        (DynVal::new_fixed(y_length), Color::BLUE),
+        (DynVal::new_fixed(2 * y_length), Color::TRANSPARENT),
+        //(DynVal::new_fixed(0), Color::GREY),
+        //(DynVal::new_fixed(y_length), Color::GREY),
+        //(DynVal::new_fixed(2 * y_length), Color::GREY),
+    ];
+    let el_bg = Color::Gradient(Gradient::new(x_grad, y_grad));
+
+    let el = WidgetPane::new(&hat).with_bg_color(el_bg);
+    //let el = WidgetPane::new(&hat);
     let ctx = Context::new_context_for_screen();
 
     let l1 = Label::new(&hat, &ctx, "some label");
@@ -101,17 +118,28 @@ async fn main() -> Result<(), Error> {
     //    Color::BLUE,
     //    10,
     //)));
-    mtext_sty.unselectable_style.fg = Some(Color::YGradient(YGradient::new_2_color_repeater(
-        Color::BLACK,
-        //Color::BLUE,
-        //Color::XGradient(XGradient::new_repeater(vec![Color::BLUE, Color::RED], 10)),
-        Color::XGradient(XGradient::new_repeater(vec![Color::RED, Color::BLUE], 10)),
-        10,
-    )));
     //mtext_sty.unselectable_style.fg = Some(Color::XGradient(XGradient::new_repeater(
     //    vec![Color::GREEN, Color::BLUE, Color::RED],
     //    5,
     //)));
+
+    let x_length = 10;
+    let x_grad = vec![
+        (DynVal::new_fixed(0), Color::RED),
+        (DynVal::new_fixed(x_length), Color::GREEN),
+        (DynVal::new_fixed(2 * x_length), Color::RED),
+    ];
+    let y_length = 2;
+    let y_grad = vec![
+        (DynVal::new_fixed(0), Color::TRANSPARENT),
+        (DynVal::new_fixed(y_length), Color::TRANSPARENT),
+        (DynVal::new_fixed(2 * y_length), Color::TRANSPARENT),
+        //(DynVal::new_fixed(0), Color::GREY),
+        //(DynVal::new_fixed(y_length), Color::GREY),
+        //(DynVal::new_fixed(2 * y_length), Color::GREY),
+    ];
+    mtext_sty.unselectable_style.fg = Some(Color::Gradient(Gradient::new(x_grad, y_grad)));
+    //mtext_sty.unselectable_style.bg = Some(Color::WHITE);
 
     let mtext = Megatext::new(
         &hat,
