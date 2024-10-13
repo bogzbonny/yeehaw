@@ -9,8 +9,8 @@ async fn main() -> Result<(), Error> {
     //yeehaw::debug::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
-    let ctx = Context::new_context_for_screen();
     let hat = SortingHat::default();
+    let ctx = Context::new_context_for_screen_no_dir();
 
     let vstack = VerticalStack::new(&hat);
     let lower = DebugSizePane::new(&hat)

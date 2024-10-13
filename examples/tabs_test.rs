@@ -18,7 +18,7 @@ async fn main() -> Result<(), Error> {
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let hat = SortingHat::default();
-    let ctx = Context::new_context_for_screen();
+    let ctx = Context::new_context_for_screen_no_dir();
 
     let tabs = Tabs::new(&hat, &ctx);
     let el1 = DebugSizePane::new(&hat).with_text("tab 1".to_string());

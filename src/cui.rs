@@ -31,6 +31,7 @@ pub struct Cui {
     eo: ElementOrganizer,
     main_el_id: ElementID,
     kb: Keyboard,
+    launch_instant: std::time::Instant,
 
     pub kill_on_ctrl_c: bool,
 
@@ -46,12 +47,13 @@ impl Cui {
             eo: eo.clone(),
             main_el_id: main_el.borrow().id().clone(),
             kb: Keyboard::default(),
+            launch_instant: std::time::Instant::now(),
             kill_on_ctrl_c: true,
             sc_last_flushed: HashMap::new(),
         };
 
         // add the element here after the location has been created
-        let ctx = Context::new_context_for_screen();
+        let ctx = Context::new_context_for_screen_no_dur();
         let loc = DynLocation::new_fixed(0, ctx.s.width.into(), 0, ctx.s.height.into());
         let loc = DynLocationSet::new(loc, vec![], 0);
         main_el.borrow_mut().set_dyn_location_set(loc);
@@ -82,6 +84,7 @@ impl Cui {
 
     async fn launch(&mut self) {
         let mut reader = EventStream::new();
+        self.launch_instant = std::time::Instant::now();
 
         loop {
             let delay = time::sleep(ANIMATION_SPEED).fuse();
@@ -105,7 +108,7 @@ impl Cui {
                                 }
 
                                 CTEvent::Resize(_, _) => {
-                                    let ctx = Context::new_context_for_screen();
+                                    let ctx = Context::new_context_for_screen(self.launch_instant);
                                     let loc = DynLocation::new_fixed(0, ctx.s.width.into(), 0, ctx.s.height.into());
                                     // There should only be one element at index 0 in the upper level EO
                                     self.eo.update_el_primary_location(self.main_el_id.clone(), loc);
@@ -160,7 +163,7 @@ impl Cui {
             //debug!("no dest");
             return false;
         };
-        let ctx = Context::new_context_for_screen();
+        let ctx = Context::new_context_for_screen(self.launch_instant);
         //debug!("cui destination: {:?}", dest);
 
         let Some((_, resps)) = self.eo.key_events_process(&ctx, evs) else {
@@ -179,7 +182,7 @@ impl Cui {
     // process_event_mouse handles mouse events
     //                                                                       exit-cui
     pub fn process_event_mouse(&mut self, mouse_ev: ct_event::MouseEvent) -> bool {
-        let ctx = Context::new_context_for_screen();
+        let ctx = Context::new_context_for_screen(self.launch_instant);
         let Some((_, resps)) = self.eo.mouse_event_process(&ctx, &mouse_ev) else {
             return false;
         };
@@ -216,7 +219,7 @@ impl Cui {
     // lower down the tree.
     pub fn render(&mut self) {
         let mut sc = stdout();
-        let ctx = Context::new_context_for_screen();
+        let ctx = Context::new_context_for_screen(self.launch_instant);
         let chs = self.eo.all_drawing(&ctx);
 
         let mut dedup_chs: HashMap<(u16, u16), StyledContent<ChPlus>> = HashMap::new();

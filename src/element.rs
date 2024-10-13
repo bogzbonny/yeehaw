@@ -192,15 +192,17 @@ pub trait UpwardPropagator {
 #[derive(Default, Clone, Debug)]
 pub struct Context {
     pub s: Size,
+    pub dur_since_launch: std::time::Duration,
     pub visible_region: Option<Loc>, // the visible region of the element
     //                      key , value
     pub metadata: HashMap<String, Vec<u8>>,
 }
 
 impl Context {
-    pub fn new(s: Size) -> Context {
+    pub fn new(s: Size, dur_since_launch: std::time::Duration) -> Context {
         Context {
             s,
+            dur_since_launch,
             visible_region: None,
             metadata: HashMap::new(),
         }
@@ -212,10 +214,22 @@ impl Context {
     }
 
     // TODO return error
-    pub fn new_context_for_screen() -> Context {
+    pub fn new_context_for_screen_no_dur() -> Context {
         let (xmax, ymax) = crossterm::terminal::size().unwrap();
         Context {
             s: Size::new(xmax, ymax),
+            dur_since_launch: std::time::Duration::default(),
+            visible_region: None,
+            metadata: HashMap::new(),
+        }
+    }
+
+    // TODO return error
+    pub fn new_context_for_screen(launch_instant: std::time::Instant) -> Context {
+        let (xmax, ymax) = crossterm::terminal::size().unwrap();
+        Context {
+            s: Size::new(xmax, ymax),
+            dur_since_launch: launch_instant.elapsed(),
             visible_region: None,
             metadata: HashMap::new(),
         }

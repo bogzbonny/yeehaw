@@ -10,6 +10,7 @@ pub enum Color {
     ANSI(CrosstermColor),
     Rgba(Rgba),
     Gradient(Gradient),
+    TimeGradient(TimeGradient),
 }
 
 impl Default for Color {
@@ -37,6 +38,56 @@ impl Color {
 
     pub const fn new_with_alpha(r: u8, g: u8, b: u8, a: u8) -> Color {
         Color::Rgba(Rgba::new_with_alpha(r, g, b, a))
+    }
+
+    pub fn new_from_hsva(h: f64, s: f64, v: f64, a: f64) -> Color {
+        let (r, g, b) = Self::hsv_to_rgb(h, s, v);
+        Color::Rgba(Rgba::new_with_alpha(r, g, b, (a * 255.0) as u8))
+    }
+
+    pub fn new_from_hsv(h: f64, s: f64, v: f64) -> Color {
+        let (r, g, b) = Self::hsv_to_rgb(h, s, v);
+        Color::Rgba(Rgba::new(r, g, b))
+    }
+
+    pub fn hsv_to_rgb(h: f64, s: f64, v: f64) -> (u8, u8, u8) {
+        let c = v * s;
+        let x = c * (1. - ((h / 60.).rem_euclid(2.) - 1.).abs());
+        let m = v - c;
+        let (r, g, b) = match h {
+            h if h < 60. => (c, x, 0.),
+            h if h < 120. => (x, c, 0.),
+            h if h < 180. => (0., c, x),
+            h if h < 240. => (0., x, c),
+            h if h < 300. => (x, 0., c),
+            _ => (c, 0., x),
+        };
+        (
+            ((r + m) * 255.) as u8,
+            ((g + m) * 255.) as u8,
+            ((b + m) * 255.) as u8,
+        )
+    }
+
+    pub fn rgb_to_hsv(r: u8, g: u8, b: u8) -> (f64, f64, f64) {
+        let r = r as f64 / 255.;
+        let g = g as f64 / 255.;
+        let b = b as f64 / 255.;
+        let cmax = r.max(g).max(b);
+        let cmin = r.min(g).min(b);
+        let delta = cmax - cmin;
+        let h = if delta == 0. {
+            0.
+        } else if cmax == r {
+            60. * (((g - b) / delta) % 6.)
+        } else if cmax == g {
+            60. * ((b - r) / delta + 2.)
+        } else {
+            60. * ((r - g) / delta + 4.)
+        };
+        let s = if cmax == 0. { 0. } else { delta / cmax };
+        let v = cmax;
+        (h, s, v)
     }
 
     /// blends two colors together with the given percentage of the other color
@@ -75,6 +126,16 @@ impl Color {
                     }
                     Color::Gradient(Gradient { x_grad, y_grad })
                 }
+                Color::TimeGradient(tg) => {
+                    let mut points = vec![];
+                    for (dur, gr_c) in tg.points.iter() {
+                        points.push((
+                            *dur,
+                            self.clone().blend(gr_c.clone(), percent_other, blend_kind),
+                        ));
+                    }
+                    Color::TimeGradient(TimeGradient::new(tg.total_dur, points))
+                }
             },
             Color::Gradient(gr) => {
                 let mut x_grad = vec![];
@@ -92,6 +153,16 @@ impl Color {
                     ));
                 }
                 Color::Gradient(Gradient { x_grad, y_grad })
+            }
+            Color::TimeGradient(tg) => {
+                let mut points = vec![];
+                for (dur, c) in tg.points.iter() {
+                    points.push((
+                        *dur,
+                        c.clone().blend(other.clone(), percent_other, blend_kind),
+                    ));
+                }
+                Color::TimeGradient(TimeGradient::new(tg.total_dur, points))
             }
         }
     }
@@ -125,6 +196,13 @@ impl Color {
                 }
                 Color::Gradient(Gradient { x_grad, y_grad })
             }
+            Color::TimeGradient(tg) => {
+                let mut points = vec![];
+                for (dur, c) in &tg.points {
+                    points.push((*dur, c.darken()));
+                }
+                Color::TimeGradient(TimeGradient::new(tg.total_dur, points))
+            }
         }
     }
 
@@ -142,6 +220,13 @@ impl Color {
                     y_grad.push((y.clone(), c.lighten()));
                 }
                 Color::Gradient(Gradient { x_grad, y_grad })
+            }
+            Color::TimeGradient(tg) => {
+                let mut points = vec![];
+                for (dur, c) in &tg.points {
+                    points.push((*dur, c.lighten()));
+                }
+                Color::TimeGradient(TimeGradient::new(tg.total_dur, points))
             }
         }
     }
@@ -184,8 +269,19 @@ impl Color {
             Color::ANSI(c) => *c,
             Color::Rgba(c) => c.to_crossterm_color(prev),
             Color::Gradient(gr) => gr.to_crossterm_color(ctx, prev, x, y),
+            Color::TimeGradient(tg) => tg.to_color(ctx).to_crossterm_color(ctx, prev, x, y),
         }
     }
+}
+
+pub struct RadialGradient {
+    pub center: (DynVal, DynVal), // x, y
+    pub skew: (f64, f64),         // horizontal, vertical skew
+    pub grad: Vec<(DynVal, Color)>,
+}
+
+pub struct LineGradient {
+    pub grad: Vec<(DynVal, DynVal, Color)>, // x, y, color
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Default)]
@@ -406,6 +502,43 @@ pub struct TimeGradient {
     /// The total time duration of the gradient
     pub total_dur: Duration,
     pub points: Vec<(Duration, Color)>,
+}
+
+impl TimeGradient {
+    pub fn new(total_dur: Duration, points: Vec<(Duration, Color)>) -> Self {
+        TimeGradient { total_dur, points }
+    }
+
+    pub fn to_color(&self, ctx: &Context) -> Color {
+        if self.points.is_empty() {
+            return Color::TRANSPARENT;
+        }
+
+        let mut d = ctx.dur_since_launch;
+        // calculate d so that it is within the range
+        while d >= self.total_dur {
+            d -= self.total_dur;
+        }
+        let mut start_clr: Option<Color> = None;
+        let mut end_clr: Option<Color> = None;
+        let mut start_time: Option<Duration> = None;
+        let mut end_time: Option<Duration> = None;
+        for ((t1, c1), (t2, c2)) in self.points.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
+            if (t1 <= d) && (d < t2) {
+                start_clr = Some(c1.clone());
+                end_clr = Some(c2.clone());
+                start_time = Some(t1);
+                end_time = Some(t2);
+                break;
+            }
+        }
+        let start_clr = start_clr.unwrap_or_else(|| self.points[0].1.clone());
+        let end_clr = end_clr.unwrap_or_else(|| self.points[self.points.len() - 1].1.clone());
+        let start_time = start_time.unwrap_or_else(|| self.points[0].0);
+        let end_time = end_time.unwrap_or_else(|| self.points[self.points.len() - 1].0);
+        let percent = (d - start_time).as_secs_f64() / (end_time - start_time).as_secs_f64();
+        start_clr.blend(end_clr, percent, BlendKind::Blend1)
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Copy, Clone, Debug, PartialEq, Eq)]

@@ -46,11 +46,18 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
               perpendicular line) 
          - radial 
            - radiating from a point instead of a line
-           
-     - refactor color to make a call each draw
-       - maybe make color an enum for serialization purposes. 
      - maybe the gradient moves based on the **LOCAL** screen position. (aka
        position within the parent)
+   - Time gradient
+     - should pass in the time with the draw context
+   DONE
+   - time and screen position gradient.
+      - maybe this could be a time gradient, however each color on the gradient
+        scale WAS another gradient. (or vice versa) 
+     - refactor color to make a call each draw
+       - maybe make color an enum for serialization purposes. 
+   - Color will need a "blend" function with another color for the gradients
+       blended = color1.blend(percent, color2)
      - only linear gradient, but can simulate other functions with different
        position colors
      - gradient params: pos-offset x/y (as DynVal!), 
@@ -58,14 +65,6 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
      - after the final position is reached (and before the final position if
        there is an offset) repeat the pattern ... would need the "final length"
        (aka what is the gradient inbetween the final color and the first color)
-   - Color will need a "blend" function with another color for the gradients
-       blended = color1.blend(percent, color2)
-   - Time gradient
-     - should pass in the time with the draw context
-   - time and screen position gradient.
-      - maybe this could be a time gradient, however each color on the gradient
-        scale WAS another gradient. (or vice versa) 
-   DONE
 
 05. use .flf (figlet font) format instead of custom megatext
      - https://docs.rs/figlet-rs/latest/figlet_rs/

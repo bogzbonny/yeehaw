@@ -32,7 +32,7 @@ async fn main() -> Result<(), Error> {
     };
 
     let hat = SortingHat::default();
-    let ctx = Context::new_context_for_screen();
+    let ctx = Context::new_context_for_screen_no_dir();
 
     let vstack = VerticalStack::new(&hat);
     //let mut widget_pane = WidgetPane::new(&hat).with_height(DynVal::new_flex_with_max_fixed(0., 3));

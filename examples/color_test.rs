@@ -16,6 +16,7 @@ use {
         EventResponses,
         Gradient,
         SortingHat,
+        TimeGradient,
         WidgetPane,
     },
 };
@@ -48,13 +49,23 @@ async fn main() -> Result<(), Error> {
     //];
     //let el_bg = Color::Gradient(Gradient::new(x_grad, y_grad));
 
+    let time_gr = vec![
+        (std::time::Duration::from_secs(0), Color::BLUE),
+        (std::time::Duration::from_secs(2), Color::GREEN),
+        (std::time::Duration::from_secs(4), Color::BLUE),
+    ];
+    let time_gr = Color::TimeGradient(TimeGradient::new(
+        std::time::Duration::from_secs(4),
+        time_gr,
+    ));
+
     let x_grad = vec![
         (DynVal::new_fixed(0), Color::RED),
-        (DynVal::new_fixed(5), Color::GREEN),
-        (DynVal::new_fixed(10), Color::RED),
+        (DynVal::new_fixed(20), time_gr),
+        (DynVal::new_fixed(40), Color::RED),
     ];
     //let el_bg1 = Color::Gradient(Gradient::new(x_grad.clone(), vec![]));
-    let el_bg1 = Color::Gradient(Gradient::new(vec![], x_grad.clone()));
+    let el_bg1 = Color::Gradient(Gradient::new(x_grad.clone(), vec![]));
     let y_grad = vec![
         (DynVal::new_flex(0.), Color::WHITE),
         (DynVal::new_flex(0.5), el_bg1.clone()),

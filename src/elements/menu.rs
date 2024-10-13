@@ -663,7 +663,7 @@ impl Element for MenuBar {
         for el_details in self.pane.eo.els.borrow().values() {
             // offset pos to location
             let s = el_details.loc.borrow().l.get_size(ctx);
-            let c = Context::new(s)
+            let c = Context::new(s, ctx.dur_since_launch)
                 .with_metadata(Self::MENU_STYLE_MD_KEY.to_string(), menu_style_bz.clone());
             let dcps = el_details.el.borrow().drawing(&c);
 

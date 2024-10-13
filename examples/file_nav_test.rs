@@ -20,7 +20,7 @@ async fn main() -> Result<(), Error> {
     std::env::set_var("RUST_BACKTRACE", "1");
 
     let hat = SortingHat::default();
-    let ctx = Context::new_context_for_screen();
+    let ctx = Context::new_context_for_screen_no_dir();
 
     let hstack = HorizontalStack::new(&hat);
     let vstack2 = VerticalStack::new(&hat);

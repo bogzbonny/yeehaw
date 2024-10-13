@@ -65,13 +65,14 @@ impl VerticalStack {
     // get the average value of the elements in the stack
     // this is useful for pushing new elements with an even size
     // to the other elements
-    pub fn avg_height(&self) -> DynVal {
+    pub fn avg_height(&self, ctx: &Context) -> DynVal {
         let els = self.els.borrow();
         if els.is_empty() {
             return 1.0.into();
         }
         let virtual_size = 1000;
-        let virtual_context = Context::new(Size::new(virtual_size, virtual_size));
+        let virtual_context =
+            Context::new(Size::new(virtual_size, virtual_size), ctx.dur_since_launch);
         let avg = els
             .iter()
             .map(|el| {
@@ -198,13 +199,14 @@ impl HorizontalStack {
     // get the average value of the elements in the stack
     // this is useful for pushing new elements with an even size
     // to the other elements
-    pub fn avg_width(&self) -> DynVal {
+    pub fn avg_width(&self, ctx: &Context) -> DynVal {
         let els = self.els.borrow();
         if els.is_empty() {
             return 1.0.into();
         }
         let virtual_size = 1000;
-        let virtual_context = Context::new(Size::new(virtual_size, virtual_size));
+        let virtual_context =
+            Context::new(Size::new(virtual_size, virtual_size), ctx.dur_since_launch);
         let avg = els
             .iter()
             .map(|el| {

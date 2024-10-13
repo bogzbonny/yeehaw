@@ -27,6 +27,7 @@ async fn main() -> Result<(), Error> {
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let hat = SortingHat::default();
+    let ctx = Context::new_context_for_screen_no_dir();
 
     let x_length = 10;
     let x_grad = vec![
@@ -47,7 +48,6 @@ async fn main() -> Result<(), Error> {
 
     let el = WidgetPane::new(&hat).with_bg_color(el_bg);
     //let el = WidgetPane::new(&hat);
-    let ctx = Context::new_context_for_screen();
 
     let l1 = Label::new(&hat, &ctx, "some label");
 
