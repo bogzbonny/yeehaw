@@ -33,6 +33,7 @@ async fn main() -> Result<(), Error> {
         (std::time::Duration::from_secs(0), Color::RED),
         (std::time::Duration::from_secs(1), Color::GREEN),
         (std::time::Duration::from_secs(2), Color::BLUE),
+        (std::time::Duration::from_secs(3), Color::RED),
     ];
     let t1 = Color::TimeGradient(TimeGradient::new(
         std::time::Duration::from_secs(3),
@@ -43,6 +44,7 @@ async fn main() -> Result<(), Error> {
         (std::time::Duration::from_secs(0), Color::GREEN),
         (std::time::Duration::from_secs(1), Color::BLUE),
         (std::time::Duration::from_secs(2), Color::RED),
+        (std::time::Duration::from_secs(3), Color::GREEN),
     ];
     let t2 = Color::TimeGradient(TimeGradient::new(
         std::time::Duration::from_secs(3),
@@ -53,6 +55,7 @@ async fn main() -> Result<(), Error> {
         (std::time::Duration::from_secs(0), Color::BLUE),
         (std::time::Duration::from_secs(1), Color::RED),
         (std::time::Duration::from_secs(2), Color::GREEN),
+        (std::time::Duration::from_secs(3), Color::BLUE),
     ];
     let t3 = Color::TimeGradient(TimeGradient::new(
         std::time::Duration::from_secs(3),
@@ -74,12 +77,13 @@ async fn main() -> Result<(), Error> {
 
     let grad = vec![
         //(DynVal::new_fixed(0), t1),
-        (DynVal::new_fixed(0), t1),
+        (DynVal::new_fixed(0), t1.clone()),
         (DynVal::new_fixed(15), t2),
         (DynVal::new_fixed(30), t3),
+        (DynVal::new_fixed(45), t1),
     ];
 
-    let el_bg = Color::Gradient(Gradient::new(grad, 0.));
+    let el_bg = Color::Gradient(Gradient::new(grad, 60.));
 
     let el = WidgetPane::new(&hat).with_bg_color(el_bg);
     Cui::new(Rc::new(RefCell::new(el)))?.run().await
