@@ -34,9 +34,13 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
 05. color "darker", "lighter" methods
 10. button selectable (can hit with enter key)
 05. scrollbar shouldn't move if uninitialized and a drag mouse enters it
+2. gradient on angles > 90 doesn't work, fix
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+
+10. blending two time gradients overflows
+10. blending a gradient and time gradient fails
 
 10. gradient color 
      - posibilities: 
@@ -48,9 +52,9 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
            - radiating from a point instead of a line
      - maybe the gradient moves based on the **LOCAL** screen position. (aka
        position within the parent)
+   DONE
    - Time gradient
      - should pass in the time with the draw context
-   DONE
    - time and screen position gradient.
       - maybe this could be a time gradient, however each color on the gradient
         scale WAS another gradient. (or vice versa) 
@@ -128,8 +132,6 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
     routed through the standard event loop as normal. This can be used to
     replicate a heartbeat for a element, or to simulate a visual effect such as
     a button click (useful for button when Enter key is hit).
-
-
 
 10. cui export visual area to either DynamicImage, .png, or .ans
       - useful for WIMP
@@ -241,3 +243,23 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
        this format can be viewed in the terminal with "cat my_ansi_image.ans"
 
 40. jexer custom mouse types (requires image support, and mouse pixel tracking) 
+
+40. irregular gradient lines
+    - OUTWARD
+      - a gradient moving outward from an irregular set of coordinates (making a
+        line
+      - basically just a bunch of radial point gradients however when they
+        interact the lowest gradient position should just be used (as opposed to
+        a blend)
+    - ALONG 
+      - gradient moving along the irregular line 
+      - could be used to simulate a gradient border (imagine the gradient
+        follows this line:         ┌──────────┐
+                                   │          │
+                                   │          │
+                                   │          │
+                                   └──────────┘
+
+20. gradients on angles: get the actual aspect ratio from the terminal instead of
+   assuming a 3:4. 
+
