@@ -17,7 +17,7 @@
  - right click menus
 
 ## Planned Features
- - widget: colour selector
+ - widget: color selector
  - widget: table (see ratatui)
  - button: visualize button being clicked
  - TGIF

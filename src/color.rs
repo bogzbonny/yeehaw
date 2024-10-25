@@ -255,7 +255,7 @@ impl Color {
         }
     }
 
-    // considers the alpha of the self and blends with the previous colour
+    // considers the alpha of the self and blends with the previous color
     pub fn to_crossterm_color(
         &self, ctx: &Context, prev: Option<CrosstermColor>, x: u16, y: u16,
     ) -> CrosstermColor {
@@ -804,7 +804,7 @@ impl Rgba {
         Self::new(r, g, b)
     }
 
-    // considers the alpha of the self and blends with the previous colour
+    // considers the alpha of the self and blends with the previous color
     pub fn to_crossterm_color(&self, prev: Option<CrosstermColor>) -> CrosstermColor {
         let (r, g, b) = self.to_tuple();
         let a = self.a as f64 / 255.0;

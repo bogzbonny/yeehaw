@@ -6,6 +6,19 @@
 based applications, with the goal of presenting as much information as cleanly
 as possible. 
 
+# Reasons Why You Want Your Application to be Text-Based
+
+1) It's the only way you'll ever be cool again
+2) They're rapidly iterable during development
+2) They're conceptually straightforward, it's just a grid 
+4) They minimize hidden UI features, it's all on the grid 
+
+## Examples
+
+[TODO gifs] -> VHS to produce gifs
+
+# Design Overview
+
 Core to 'yeehaw' is an element ownership model. TUI Elements are arranged in a
 hierarchical manner and route event information (keyboard/mouse events) between
 them. Parent elements hold ownership over child elements and determine how the
@@ -14,29 +27,19 @@ elements are viewed and where within the parent element they are displayed.
 Elements are only required to have spatial awareness within the confines which
 have been assigned to them from parent elements.  
 
-# Reasons why you want your application to be text-based
-
-1) It's the only way you'll ever be cool again
-2) They're rapidly iterable
-3) They're distraction free
-4) They're conceptually simple, it's just a grid 
-
 ## Tribute
-
-[jexer](https://gitlab.com/AutumnMeowMeow/jexer) what the heck!!!
 
 [notcurses](https://github.com/dankamongmen/notcurses) insane
 
-[ratatui](https://ratatui.rs/) obviously rocks
+[jexer](https://gitlab.com/AutumnMeowMeow/jexer) what the heck!!!
+
+[ratatui](https://ratatui.rs/) obviously rocks, [well done](https://www.youtube.com/watch?v=9wm1D6Rk8TE)
 
 [dioxus](https://github.com/dioxuslabs/dioxus) seems cool - they have a goal of
 TUI support in the future.
 
 [rooibos](https://github.com/aschey/rooibos) similar project, different approach
 
-## Examples
-
-[TODO gifs] NOTE use VHS to produce gifs
 
 ## Existing Elements:
  - tabs 
@@ -48,7 +51,7 @@ TUI support in the future.
  - file navigator (think nerdtree)
  - image viewer 
  - widgets:
-   - megafonts
+   - figlet fonts 
    - button
    - checkbox
    - dropdown-list
@@ -61,18 +64,23 @@ TUI support in the future.
    - toggles
 
 ## Planned
+ - windows
+ - built in terminal
+    - https://github.com/a-kenji/tui-term/blob/development/examples/smux.rs
+    - easy use of Editor
+ - optional mouse pixel support
  - accordion stack container
  - hover comments
  - vertical tabs
- - vim-style command input system
- - widgets:
-   - colour selector
-   - table 
+ - vim-style command input system (complete with events and routing)
+ - interactive debugging TUI application
+ - TUI Snapshot Tester
+ - ANSI-animation viewer (using extended asc format)
  - TUI Application Builder 
    - basically drag and drop style element builder
- - Interactive Debugging TUI 
- - TUI Snapshot Tester
- - Ansi-animation viewer (using extended asc format)
+ - widgets:
+   - color selector
+   - table 
 
 ## Planned Tooling
  - seperate project: WIMP

@@ -11,7 +11,6 @@
 
 01. terminal widget 
 
-
 01. support taffy as a layout structure.
      - Taffy low-level API (0.6.0 fixes ownership issues I was facing)
      - I THINK it only makes sense to only use taffy optionally within an
