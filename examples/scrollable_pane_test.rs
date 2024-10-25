@@ -4,8 +4,8 @@ use {
     yeehaw::{
         //debug,
         widgets::{
-            megafonts, Button, Checkbox, DropdownList, HorizontalSBPositions, Label, ListBox,
-            Megatext, NumbersTextBox, RadioButtons, TextBox, Toggle, VerticalSBPositions,
+            Button, Checkbox, DropdownList, FigletText, HorizontalSBPositions, Label, ListBox,
+            NumbersTextBox, RadioButtons, TextBox, Toggle, VerticalSBPositions,
         },
         Context,
         Cui,
@@ -22,12 +22,12 @@ use {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    //yeehaw::debug::set_log_file("./widget_test.log".to_string());
+    //yeehaw::debug::set_log_file("./debug_test.log".to_string());
     //yeehaw::debug::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let hat = SortingHat::default();
-    let ctx = Context::new_context_for_screen_no_dir();
+    let ctx = Context::new_context_for_screen_no_dur();
 
     let sc_pane = PaneWithScrollbars::new(
         &hat,
@@ -88,11 +88,12 @@ async fn main() -> Result<(), Error> {
     .to_widgets();
     el.add_widgets(rbs);
 
-    let mtext = Megatext::new(
+    let mtext = FigletText::new(
         &hat,
         &ctx,
-        "HELLO, WERLD!".to_string(),
-        megafonts::ansi_regular_ex(),
+        "HELLO, WERLD!",
+        figlet_rs::FIGfont::from_content(std::include_str!("../assets/figlet/ANSI_Shadow.flf"))
+            .unwrap(),
     )
     .at(DynVal::new_flex(0.1), DynVal::new_flex(0.6))
     .to_widgets();

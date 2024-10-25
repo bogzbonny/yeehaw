@@ -1,73 +1,16 @@
 
-hl. tab key not working to go between widgets in pane_scrollable_test (nor
-    escape?) - works for scrollablepane now, but not for pane_with_scrollbars
-01. widget_organizer should extend regular organizer not be its totally own
-    thing
-01. translate tabs 
-     - just use buttons as the tabs?!
-       - maybe not for tab dragging?
-         - have a few buttons that live after the tabs (for the a + button for
-           instance)
-     - button click should have the button as an input such that it can change
-       color when selected
-05. ratatui wrapper
-     - okay so most rat widget objects are CREATED for each render.. 
-     - any wrapper is not super useful unless the details of the widget are
-       known - probably best to just help with low level conversions such as
-       Buffer
-     - https://github.com/benjajaja/ratatui-image
-
-05. Jexer style button clicking 
-
-01. maybe the enum of color could just have a "Transparent"
-     color - then remove the transparent bool from DrawCh
-     - maybe transparent should be an alpha setting... could still be an integer 
-       and could blend with the color behind it. 
-        - if applied to the fg, the current fg character would still be the ch
-          up to a threshold of maybe 50% alpha (in which case it would use the
-          character behind it. 
-01. basic file viewer 
-01. translate file_navigator
-01. prioritizing bug in file_nav_test: 
-    - nav is not unfocusing properly 
-    - click on the file_viewer and get the duplicate junk
-05. color "darker", "lighter" methods
-10. button selectable (can hit with enter key)
-05. scrollbar shouldn't move if uninitialized and a drag mouse enters it
-2. gradient on angles > 90 doesn't work, fix
-10. blending two time gradients overflows
-10. blending a gradient and time gradient fails
-10. gradient color 
-     - posibilities: 
-         - mono-directional = going either up or down / or diagonal
-           as continious (non - radial) 
-            - can also be thought of as radiating from a straight line (the
-              perpendicular line) 
-         - radial 
-           - radiating from a point instead of a line
-     - gradient moves based on the **LOCAL** screen position. (aka
-       position within the parent)
-   - Time gradient
-     - should pass in the time with the draw context
-   - time and screen position gradient.
-      - maybe this could be a time gradient, however each color on the gradient
-        scale WAS another gradient. (or vice versa) 
-     - refactor color to make a call each draw
-       - maybe make color an enum for serialization purposes. 
-   - Color will need a "blend" function with another color for the gradients
-       blended = color1.blend(percent, color2)
-     - only linear gradient, but can simulate other functions with different
-       position colors
-     - gradient params: pos-offset x/y (as DynVal!), 
-        grad-colors and positions(DynVal?!) (need multiple positions for rainbows). 
-     - after the final position is reached (and before the final position if
-       there is an offset) repeat the pattern ... would need the "final length"
-       (aka what is the gradient inbetween the final color and the first color)
+05. use .flf (figlet font) format instead of custom megatext
+     - https://docs.rs/figlet-rs/latest/figlet_rs/
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-05. use .flf (figlet font) format instead of custom megatext
-     - https://docs.rs/figlet-rs/latest/figlet_rs/
+01. floating window element
+      - TopBar - title, x button, drag to move the whole window
+      - optional borders
+      - optionally resizeable (if bordered) 
+
+01. terminal widget 
+
 
 01. support taffy as a layout structure.
      - Taffy low-level API (0.6.0 fixes ownership issues I was facing)
@@ -238,9 +181,8 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
        https://terminalroot.com/use-ms-paint-directly-in-terminal/) uses. 
        this format can be viewed in the terminal with "cat my_ansi_image.ans"
 
-40. jexer custom mouse types (requires image support, and mouse pixel tracking) 
 
-40. irregular gradient lines
+30. irregular gradient lines
     - OUTWARD
       - a gradient moving outward from an irregular set of coordinates (making a
         line
@@ -256,6 +198,7 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
                                    │          │
                                    └──────────┘
 
-20. gradients on angles: get the actual aspect ratio from the terminal instead of
-   assuming a 3:4. 
+30. gradients on angles: get the actual aspect ratio from the terminal and integrate it in. 
+
+40. jexer custom mouse types (requires image support, and mouse pixel tracking) 
 

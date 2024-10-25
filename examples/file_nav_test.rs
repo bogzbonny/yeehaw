@@ -15,12 +15,12 @@ use {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    yeehaw::debug::set_log_file("./widgt_test.log".to_string());
-    yeehaw::debug::clear();
-    std::env::set_var("RUST_BACKTRACE", "1");
+    //yeehaw::debug::set_log_file("./widgt_test.log".to_string());
+    //yeehaw::debug::clear();
+    //std::env::set_var("RUST_BACKTRACE", "1");
 
     let hat = SortingHat::default();
-    let ctx = Context::new_context_for_screen_no_dir();
+    let ctx = Context::new_context_for_screen_no_dur();
 
     let hstack = HorizontalStack::new(&hat);
     let vstack2 = VerticalStack::new(&hat);

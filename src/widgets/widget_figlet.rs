@@ -1,37 +1,53 @@
 use {
-    super::{Megafont, Selectability, WBStyles, Widget, WidgetBase, Widgets},
+    super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
-        Priority, ReceivableEventChanges, SortingHat, UpwardPropagator,
+        Context, DrawChPos, DrawChs2D, DynLocationSet, DynVal, Element, ElementID, Event,
+        EventResponses, Priority, ReceivableEventChanges, SortingHat, Style, UpwardPropagator,
     },
+    figlet_rs::FIGfont,
     std::{cell::RefCell, rc::Rc},
 };
 
 // TODO click function
 
 #[derive(Clone)]
-pub struct Megatext {
+pub struct FigletText {
     pub base: WidgetBase,
 }
 
-impl Megatext {
+impl FigletText {
     const KIND: &'static str = "widget_megatext";
 
-    pub fn new(hat: &SortingHat, ctx: &Context, text: String, font: Megafont) -> Self {
-        let mega_text = font.get_mega_text(&text);
-        let size = mega_text.size();
+    pub fn new(hat: &SortingHat, ctx: &Context, text: &str, font: FIGfont) -> Self {
+        let Some(fig_text) = font.convert(text) else {
+            return FigletText {
+                base: WidgetBase::new(
+                    hat,
+                    Self::KIND,
+                    DynVal::new_fixed(0),
+                    DynVal::new_fixed(0),
+                    WBStyles::default(),
+                    vec![],
+                ),
+            };
+        };
+
+        let text = format!("{}", fig_text);
+        let text = text.trim_end_matches('\n'); // remove the last newline
+        let content = DrawChs2D::from_string(text.to_string(), Style::default());
+        let size = content.size();
 
         let wb = WidgetBase::new(
             hat,
             Self::KIND,
-            DynVal::new_fixed(size.width.into()),
-            DynVal::new_fixed(size.height.into()),
+            DynVal::new_fixed(size.width as i32),
+            DynVal::new_fixed(size.height as i32),
             WBStyles::default(),
             vec![],
         );
-        wb.set_content(mega_text);
+        wb.set_content(content);
         _ = wb.set_selectability(ctx, Selectability::Unselectable);
-        Megatext { base: wb }
+        FigletText { base: wb }
     }
 
     // ----------------------------------------------
@@ -54,9 +70,9 @@ impl Megatext {
     }
 }
 
-impl Widget for Megatext {}
+impl Widget for FigletText {}
 
-impl Element for Megatext {
+impl Element for FigletText {
     fn kind(&self) -> &'static str {
         self.base.kind()
     }

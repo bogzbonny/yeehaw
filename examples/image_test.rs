@@ -18,9 +18,9 @@ use {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    //yeehaw::debug::set_log_file("./widget_test.log".to_string());
+    //yeehaw::debug::set_log_file("./debug_test.log".to_string());
     //yeehaw::debug::clear();
-    std::env::set_var("RUST_BACKTRACE", "1");
+    //std::env::set_var("RUST_BACKTRACE", "1");
 
     // get the first arg
     let args: Vec<String> = std::env::args().collect();
@@ -32,7 +32,7 @@ async fn main() -> Result<(), Error> {
     };
 
     let hat = SortingHat::default();
-    let ctx = Context::new_context_for_screen_no_dir();
+    let ctx = Context::new_context_for_screen_no_dur();
 
     let vstack = VerticalStack::new(&hat);
     //let mut widget_pane = WidgetPane::new(&hat).with_height(DynVal::new_flex_with_max_fixed(0., 3));
@@ -62,11 +62,11 @@ async fn main() -> Result<(), Error> {
     let hat_ = hat.clone();
     let add_button_click_fn = Box::new(move |ctx_| {
         if hstack_.len() == 3 {
-            let el = ImageViewer::new(&hat_, &img_path).with_width(hstack_.avg_width());
+            let el = ImageViewer::new(&hat_, &img_path).with_width(hstack_.avg_width(&ctx_));
             hstack_.push(&ctx_, Rc::new(RefCell::new(el)));
             EventResponses::default()
         } else {
-            let el = DebugSizePane::new(&hat_).with_width(hstack_.avg_width());
+            let el = DebugSizePane::new(&hat_).with_width(hstack_.avg_width(&ctx_));
             hstack_.push(&ctx_, Rc::new(RefCell::new(el)));
             EventResponses::default()
         }

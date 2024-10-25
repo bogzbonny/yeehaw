@@ -4,8 +4,8 @@ use {
     yeehaw::{
         //debug,
         widgets::{
-            megafonts, widget_button::ButtonSides, Button, Checkbox, DropdownList, Label, ListBox,
-            Megatext, NumbersTextBox, RadioButtons, TextBox, Toggle, WBStyles,
+            widget_button::ButtonSides, Button, Checkbox, DropdownList, FigletText, Label, ListBox,
+            NumbersTextBox, RadioButtons, TextBox, Toggle, WBStyles,
         },
         Color,
         Context,
@@ -22,8 +22,8 @@ use {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    //yeehaw::debug::set_log_file("./widget_test.log".to_string());
-    //yeehaw::debug::clear();
+    yeehaw::debug::set_log_file("./debug_test.log".to_string());
+    yeehaw::debug::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let hat = SortingHat::default();
@@ -95,11 +95,12 @@ async fn main() -> Result<(), Error> {
     gr.angle_deg = 60.;
     mtext_sty.unselectable_style.fg = Some(Color::Gradient(gr));
 
-    let mtext = Megatext::new(
+    let mtext = FigletText::new(
         &hat,
         &ctx,
-        "HELLO, WERLD!".to_string(),
-        megafonts::ansi_regular_ex(),
+        "HELLO, WERLD!",
+        figlet_rs::FIGfont::from_content(std::include_str!("../assets/figlet/ANSI_Shadow.flf"))
+            .unwrap(),
     )
     .with_styles(mtext_sty)
     .at(DynVal::new_flex(0.1), DynVal::new_flex(0.6))
