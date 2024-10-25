@@ -428,7 +428,10 @@ impl Element for WidgetPane {
                 }
             }
 
-            let ds = w.drawing(ctx);
+            let mut ds = w.drawing(ctx);
+            for d in &mut ds {
+                d.update_colors_for_time_and_pos(ctx);
+            }
             for mut d in ds {
                 // adjust the location of the drawChPos relative to the WidgetPane
                 d.adjust_by_dyn_location(ctx, &loc.borrow().l);

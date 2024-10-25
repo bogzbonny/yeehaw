@@ -1,5 +1,5 @@
 use {
-    crate::Color,
+    crate::{Color, Context},
     crossterm::style::{Attribute as CrAttribute, Attributes as CrAttributes},
     ratatui::style::Modifier as RAttributes,
 };
@@ -63,6 +63,18 @@ impl Style {
     }
     pub fn set_attr(&mut self, attr: Attributes) {
         self.attr = attr;
+    }
+
+    pub fn update_colors_for_time_and_pos(&mut self, ctx: &Context, x: u16, y: u16) {
+        self.fg.as_mut().map(|fg| {
+            fg.update_color(ctx, x, y);
+        });
+        self.bg.as_mut().map(|bg| {
+            bg.update_color(ctx, x, y);
+        });
+        self.underline.as_mut().map(|underline| {
+            underline.update_color(ctx, x, y);
+        });
     }
 }
 

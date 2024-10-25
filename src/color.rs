@@ -277,6 +277,16 @@ impl Color {
             Color::RadialGradient(rg) => rg.to_color(ctx, x, y),
         }
     }
+
+    // to color with the given context and position
+    pub fn update_color(&mut self, ctx: &Context, x: u16, y: u16) {
+        match &self {
+            Color::Gradient(gr) => *self = gr.clone().to_color(ctx, x, y),
+            Color::TimeGradient(tg) => *self = tg.clone().to_color(ctx, x, y),
+            Color::RadialGradient(rg) => *self = rg.clone().to_color(ctx, x, y),
+            _ => {}
+        }
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]

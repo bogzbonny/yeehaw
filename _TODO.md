@@ -37,13 +37,7 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
 2. gradient on angles > 90 doesn't work, fix
 10. blending two time gradients overflows
 10. blending a gradient and time gradient fails
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 10. gradient color 
-     - gradient moves based on the **LOCAL** screen position. (aka
-       position within the parent)
-   DONE
      - posibilities: 
          - mono-directional = going either up or down / or diagonal
            as continious (non - radial) 
@@ -51,6 +45,8 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
               perpendicular line) 
          - radial 
            - radiating from a point instead of a line
+     - gradient moves based on the **LOCAL** screen position. (aka
+       position within the parent)
    - Time gradient
      - should pass in the time with the draw context
    - time and screen position gradient.
@@ -67,6 +63,8 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
      - after the final position is reached (and before the final position if
        there is an offset) repeat the pattern ... would need the "final length"
        (aka what is the gradient inbetween the final color and the first color)
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 05. use .flf (figlet font) format instead of custom megatext
      - https://docs.rs/figlet-rs/latest/figlet_rs/

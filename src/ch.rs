@@ -124,6 +124,12 @@ impl DrawChPos {
         self.y += start_y as u16;
     }
 
+    pub fn update_colors_for_time_and_pos(&mut self, ctx: &Context) {
+        self.ch
+            .style
+            .update_colors_for_time_and_pos(ctx, self.x, self.y);
+    }
+
     pub fn new_from_string(s: String, start_x: u16, start_y: u16, sty: Style) -> Vec<DrawChPos> {
         DrawChs2D::from_string(s.to_string(), sty).to_draw_ch_pos(start_x, start_y)
     }

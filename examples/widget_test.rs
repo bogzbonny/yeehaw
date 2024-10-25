@@ -27,27 +27,9 @@ async fn main() -> Result<(), Error> {
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let hat = SortingHat::default();
-    let ctx = Context::new_context_for_screen_no_dir();
+    let ctx = Context::new_context_for_screen_no_dur();
 
-    let x_length = 10;
-    let x_grad = vec![
-        (DynVal::new_fixed(0), Color::RED),
-        (DynVal::new_fixed(x_length), Color::GREEN),
-        (DynVal::new_fixed(2 * x_length), Color::RED),
-    ];
-    let y_length = 2;
-    let y_grad = vec![
-        (DynVal::new_fixed(0), Color::TRANSPARENT),
-        (DynVal::new_fixed(y_length), Color::BLUE),
-        (DynVal::new_fixed(2 * y_length), Color::TRANSPARENT),
-        //(DynVal::new_fixed(0), Color::GREY),
-        //(DynVal::new_fixed(y_length), Color::GREY),
-        //(DynVal::new_fixed(2 * y_length), Color::GREY),
-    ];
-    let el_bg = Color::Gradient(Gradient::new(x_grad, y_grad));
-
-    let el = WidgetPane::new(&hat).with_bg_color(el_bg);
-    //let el = WidgetPane::new(&hat);
+    let el = WidgetPane::new(&hat);
 
     let l1 = Label::new(&hat, &ctx, "some label");
 
@@ -109,37 +91,9 @@ async fn main() -> Result<(), Error> {
     el.add_widgets(rbs);
 
     let mut mtext_sty = WBStyles::default();
-    //mtext_sty.unselectable_style.fg = Some(Color::XGradient(XGradient::new_2_color(
-    //    Color::RED,
-    //    Color::BLUE,
-    //)));
-    //mtext_sty.unselectable_style.fg = Some(Color::XGradient(XGradient::new_2_color_repeater(
-    //    Color::RED,
-    //    Color::BLUE,
-    //    10,
-    //)));
-    //mtext_sty.unselectable_style.fg = Some(Color::XGradient(XGradient::new_repeater(
-    //    vec![Color::GREEN, Color::BLUE, Color::RED],
-    //    5,
-    //)));
-
-    let x_length = 10;
-    let x_grad = vec![
-        (DynVal::new_fixed(0), Color::RED),
-        (DynVal::new_fixed(x_length), Color::GREEN),
-        (DynVal::new_fixed(2 * x_length), Color::RED),
-    ];
-    let y_length = 2;
-    let y_grad = vec![
-        (DynVal::new_fixed(0), Color::TRANSPARENT),
-        (DynVal::new_fixed(y_length), Color::TRANSPARENT),
-        (DynVal::new_fixed(2 * y_length), Color::TRANSPARENT),
-        //(DynVal::new_fixed(0), Color::GREY),
-        //(DynVal::new_fixed(y_length), Color::GREY),
-        //(DynVal::new_fixed(2 * y_length), Color::GREY),
-    ];
-    mtext_sty.unselectable_style.fg = Some(Color::Gradient(Gradient::new(x_grad, y_grad)));
-    //mtext_sty.unselectable_style.bg = Some(Color::WHITE);
+    let mut gr = Gradient::x_grad_rainbow(5);
+    gr.angle_deg = 60.;
+    mtext_sty.unselectable_style.fg = Some(Color::Gradient(gr));
 
     let mtext = Megatext::new(
         &hat,

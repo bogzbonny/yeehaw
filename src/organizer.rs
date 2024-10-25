@@ -231,7 +231,10 @@ impl ElementOrganizer {
             }
 
             let child_ctx = self.get_context_for_el(ctx, &el_id_z.1);
-            let dcps = details.el.borrow().drawing(&child_ctx);
+            let mut dcps = details.el.borrow().drawing(&child_ctx);
+            for dcp in &mut dcps {
+                dcp.update_colors_for_time_and_pos(ctx);
+            }
             for mut dcp in dcps {
                 dcp.adjust_by_dyn_location(ctx, &details.loc.borrow().l);
                 out.push(dcp);

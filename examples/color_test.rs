@@ -2,22 +2,7 @@ use {
     //std::env,
     std::{cell::RefCell, rc::Rc},
     yeehaw::{
-        //debug,
-        widgets::{
-            megafonts, widget_button::ButtonSides, Button, Checkbox, DropdownList, Label, ListBox,
-            Megatext, NumbersTextBox, RadioButtons, TextBox, Toggle, WBStyles,
-        },
-        Color,
-        Context,
-        Cui,
-        DynVal,
-        Element,
-        Error,
-        EventResponses,
-        Gradient,
-        RadialGradient,
-        SortingHat,
-        TimeGradient,
+        Color, Cui, DynVal, Error, /*Gradient,*/ RadialGradient, SortingHat, TimeGradient,
         WidgetPane,
     },
 };
@@ -26,7 +11,7 @@ use {
 async fn main() -> Result<(), Error> {
     //yeehaw::debug::set_log_file("./debug_test.log".to_string());
     //yeehaw::debug::clear();
-    std::env::set_var("RUST_BACKTRACE", "1");
+    //std::env::set_var("RUST_BACKTRACE", "1");
 
     let hat = SortingHat::default();
 
@@ -76,20 +61,21 @@ async fn main() -> Result<(), Error> {
     //];
     //let g2 = Color::Gradient(Gradient::new(grad2, 90.));
 
-    let grad = vec![
-        //(DynVal::new_fixed(0), t1),
-        (DynVal::new_fixed(0), t1.clone()),
-        (DynVal::new_fixed(15), t2),
-        (DynVal::new_fixed(30), t3),
-        (DynVal::new_fixed(45), t1),
-    ];
+    //let grad = vec![
+    //    //(DynVal::new_fixed(0), t1),
+    //    (DynVal::new_fixed(0), t1.clone()),
+    //    (DynVal::new_fixed(15), t2),
+    //    (DynVal::new_fixed(30), t3),
+    //    (DynVal::new_fixed(45), t1),
+    //];
 
     //let el_bg = Color::Gradient(Gradient::new(grad, 60.));
 
     let rgrad = vec![
-        (DynVal::new_flex(0.), Color::ORANGE),
-        (DynVal::new_flex(0.25), Color::BLUE),
-        (DynVal::new_flex(0.5), Color::GREEN),
+        (DynVal::new_flex(0.), t1.clone()),
+        (DynVal::new_flex(0.2), t2),
+        (DynVal::new_flex(0.4), t3),
+        (DynVal::new_flex(0.5), t1),
     ];
 
     let el_bg = Color::RadialGradient(RadialGradient {
