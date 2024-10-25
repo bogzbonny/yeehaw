@@ -87,16 +87,15 @@ async fn main() -> Result<(), Error> {
     //let el_bg = Color::Gradient(Gradient::new(grad, 60.));
 
     let rgrad = vec![
-        (DynVal::new_fixed(0), Color::ORANGE),
-        (DynVal::new_fixed(10), Color::BLUE),
-        (DynVal::new_fixed(20), Color::GREEN),
-        (DynVal::new_fixed(30), Color::ORANGE),
+        (DynVal::new_flex(0.), Color::ORANGE),
+        (DynVal::new_flex(0.25), Color::BLUE),
+        (DynVal::new_flex(0.5), Color::GREEN),
     ];
 
     let el_bg = Color::RadialGradient(RadialGradient {
-        center: (0.5.into(), 0.5.into()),
+        center: (0.25.into(), 0.5.into()),
         skew: (1., 1. / 0.55),
-        grad,
+        grad: rgrad,
     });
 
     let el = WidgetPane::new(&hat).with_bg_color(el_bg);

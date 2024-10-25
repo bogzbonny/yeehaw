@@ -262,9 +262,19 @@ impl Color {
         match self {
             Color::ANSI(c) => *c,
             Color::Rgba(c) => c.to_crossterm_color(prev),
-            Color::Gradient(gr) => gr.to_crossterm_color(ctx, prev, x, y),
+            Color::Gradient(gr) => gr.to_color(ctx, x, y).to_crossterm_color(ctx, prev, x, y),
             Color::TimeGradient(tg) => tg.to_color(ctx, x, y).to_crossterm_color(ctx, prev, x, y),
             Color::RadialGradient(rg) => rg.to_color(ctx, x, y).to_crossterm_color(ctx, prev, x, y),
+        }
+    }
+
+    // to color with the given context and position
+    pub fn to_color(self, ctx: &Context, x: u16, y: u16) -> Color {
+        match self {
+            Color::ANSI(_) | Color::Rgba(_) => self,
+            Color::Gradient(gr) => gr.to_color(ctx, x, y),
+            Color::TimeGradient(tg) => tg.to_color(ctx, x, y),
+            Color::RadialGradient(rg) => rg.to_color(ctx, x, y),
         }
     }
 }
@@ -277,6 +287,16 @@ pub struct RadialGradient {
 }
 
 impl RadialGradient {
+    fn dist_from_center(
+        x: f64, y: f64, center_x: f64, center_y: f64, skew_x: f64, skew_y: f64,
+    ) -> f64 {
+        let dx = x - center_x;
+        let dy = y - center_y;
+        let dx = skew_x * dx;
+        let dy = skew_y * dy;
+        (dx * dx + dy * dy).sqrt()
+    }
+
     pub fn to_color(&self, ctx: &Context, x: u16, y: u16) -> Color {
         if self.grad.is_empty() {
             return Color::TRANSPARENT;
@@ -289,17 +309,35 @@ impl RadialGradient {
             self.center.1.get_val(ctx.s.height) as f64,
         );
         let (skew_x, skew_y) = self.skew;
-        let dx = x - center_x;
-        let dy = y - center_y;
-        let dx = skew_x * dx;
-        let dy = skew_y * dy;
-        let mut dist = (dx * dx + dy * dy).sqrt();
-        let max_dist = self
-            .grad
-            .last()
-            .unwrap()
-            .0
-            .get_val(ctx.s.width.max(ctx.s.height)) as f64;
+        let mut dist = Self::dist_from_center(x, y, center_x, center_y, skew_x, skew_y);
+
+        // choose the furthest corner as the max distance
+        let max_dist1 = Self::dist_from_center(0., 0., center_x, center_y, skew_x, skew_y);
+        let max_dist2 = Self::dist_from_center(
+            (ctx.s.width - 1) as f64,
+            (ctx.s.height - 1) as f64,
+            center_x,
+            center_y,
+            skew_x,
+            skew_y,
+        );
+        let max_dist3 = Self::dist_from_center(
+            0.,
+            (ctx.s.height - 1) as f64,
+            center_x,
+            center_y,
+            skew_x,
+            skew_y,
+        );
+        let max_dist4 = Self::dist_from_center(
+            (ctx.s.width - 1) as f64,
+            0.,
+            center_x,
+            center_y,
+            skew_x,
+            skew_y,
+        );
+        let max_dist = max_dist1.max(max_dist2).max(max_dist3).max(max_dist4);
 
         // loop the pos if it is outside the maximum value
         while dist < 0. {
