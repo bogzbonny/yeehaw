@@ -15,6 +15,7 @@ use {
         Error,
         EventResponses,
         Gradient,
+        RadialGradient,
         SortingHat,
         TimeGradient,
         WidgetPane,
@@ -83,7 +84,20 @@ async fn main() -> Result<(), Error> {
         (DynVal::new_fixed(45), t1),
     ];
 
-    let el_bg = Color::Gradient(Gradient::new(grad, 60.));
+    //let el_bg = Color::Gradient(Gradient::new(grad, 60.));
+
+    let rgrad = vec![
+        (DynVal::new_fixed(0), Color::ORANGE),
+        (DynVal::new_fixed(10), Color::BLUE),
+        (DynVal::new_fixed(20), Color::GREEN),
+        (DynVal::new_fixed(30), Color::ORANGE),
+    ];
+
+    let el_bg = Color::RadialGradient(RadialGradient {
+        center: (0.5.into(), 0.5.into()),
+        skew: (1., 1. / 0.55),
+        grad,
+    });
 
     let el = WidgetPane::new(&hat).with_bg_color(el_bg);
     Cui::new(Rc::new(RefCell::new(el)))?.run().await

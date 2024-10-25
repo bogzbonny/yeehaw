@@ -11,6 +11,7 @@ pub enum Color {
     Rgba(Rgba),
     Gradient(Gradient),
     TimeGradient(TimeGradient),
+    RadialGradient(RadialGradient),
 }
 
 impl Default for Color {
@@ -95,7 +96,6 @@ impl Color {
         &self, ctx: &Context, x: u16, y: u16, other: Color, percent_other: f64,
         blend_kind: BlendKind,
     ) -> Color {
-        //debug!("1");
         match self {
             Color::ANSI(_) => {
                 if percent_other < 0.5 {
@@ -112,72 +112,31 @@ impl Color {
                         other
                     }
                 }
-                Color::Rgba(oc) => {
-                    //debug!("2");
-                    Color::Rgba(blend_kind.blend(*c, oc, percent_other))
-                }
+                Color::Rgba(oc) => Color::Rgba(blend_kind.blend(*c, oc, percent_other)),
                 Color::Gradient(gr) => {
-                    //debug!("3");
-                    //let mut grad = vec![];
-                    //for (y, gr_c) in gr.grad.iter() {
-                    //    grad.push((
-                    //        y.clone(),
-                    //        self.clone()
-                    //            .blend(ctx, x, y, gr_c.clone(), percent_other, blend_kind),
-                    //    ));
-                    //}
-                    //Color::Gradient(Gradient {
-                    //    grad,
-                    //    angle_deg: gr.angle_deg,
-                    //})
                     let gr = gr.to_color(ctx, x, y);
                     self.clone().blend(ctx, x, y, gr, percent_other, blend_kind)
                 }
                 Color::TimeGradient(tg) => {
-                    //debug!("4");
-                    //let mut points = vec![];
-                    //for (dur, gr_c) in tg.points.iter() {
-                    //    points.push((
-                    //        *dur,
-                    //        self.clone().blend(gr_c.clone(), percent_other, blend_kind),
-                    //    ));
-                    //}
-                    //Color::TimeGradient(TimeGradient::new(tg.total_dur, points))
-
                     let tg = tg.to_color(ctx, x, y);
                     self.clone().blend(ctx, x, y, tg, percent_other, blend_kind)
                 }
+                Color::RadialGradient(rg) => {
+                    let rg = rg.to_color(ctx, x, y);
+                    self.clone().blend(ctx, x, y, rg, percent_other, blend_kind)
+                }
             },
             Color::Gradient(gr) => {
-                //debug!("5");
-                //let mut grad = vec![];
-                //for (x, c) in gr.grad.iter() {
-                //    grad.push((
-                //        x.clone(),
-                //        c.clone().blend(other.clone(), percent_other, blend_kind),
-                //    ));
-                //}
-                //Color::Gradient(Gradient {
-                //    grad,
-                //    angle_deg: gr.angle_deg,
-                //})
-
                 let gr = gr.to_color(ctx, x, y);
                 gr.blend(ctx, x, y, other, percent_other, blend_kind)
             }
-            Color::TimeGradient(tg) => {
-                //debug!("6");
-                //let mut points = vec![];
-                //for (dur, c) in tg.points.iter() {
-                //    points.push((
-                //        *dur,
-                //        c.clone().blend(other.clone(), percent_other, blend_kind),
-                //    ));
-                //}
-                //Color::TimeGradient(TimeGradient::new(tg.total_dur, points))
-
-                let tg = tg.to_color(ctx, x, y);
-                tg.blend(ctx, x, y, other, percent_other, blend_kind)
+            Color::TimeGradient(gr) => {
+                let gr = gr.to_color(ctx, x, y);
+                gr.blend(ctx, x, y, other, percent_other, blend_kind)
+            }
+            Color::RadialGradient(gr) => {
+                let gr = gr.to_color(ctx, x, y);
+                gr.blend(ctx, x, y, other, percent_other, blend_kind)
             }
         }
     }
@@ -217,6 +176,17 @@ impl Color {
                 }
                 Color::TimeGradient(TimeGradient::new(tg.total_dur, points))
             }
+            Color::RadialGradient(rg) => {
+                let mut grad = vec![];
+                for (x, c) in &rg.grad {
+                    grad.push((x.clone(), c.darken()));
+                }
+                Color::RadialGradient(RadialGradient {
+                    center: rg.center.clone(),
+                    skew: rg.skew,
+                    grad,
+                })
+            }
         }
     }
 
@@ -240,6 +210,17 @@ impl Color {
                     points.push((*dur, c.lighten()));
                 }
                 Color::TimeGradient(TimeGradient::new(tg.total_dur, points))
+            }
+            Color::RadialGradient(rg) => {
+                let mut grad = vec![];
+                for (x, c) in &rg.grad {
+                    grad.push((x.clone(), c.lighten()));
+                }
+                Color::RadialGradient(RadialGradient {
+                    center: rg.center.clone(),
+                    skew: rg.skew,
+                    grad,
+                })
             }
         }
     }
@@ -283,18 +264,110 @@ impl Color {
             Color::Rgba(c) => c.to_crossterm_color(prev),
             Color::Gradient(gr) => gr.to_crossterm_color(ctx, prev, x, y),
             Color::TimeGradient(tg) => tg.to_color(ctx, x, y).to_crossterm_color(ctx, prev, x, y),
+            Color::RadialGradient(rg) => rg.to_color(ctx, x, y).to_crossterm_color(ctx, prev, x, y),
         }
     }
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
 pub struct RadialGradient {
     pub center: (DynVal, DynVal), // x, y
-    pub skew: (f64, f64),         // horizontal, vertical skew
+    pub skew: (f64, f64), // horizontal, vertical skew (as skew of (1., 1./0.55) seems to make a circle)
     pub grad: Vec<(DynVal, Color)>,
 }
 
-pub struct LineGradient {
-    pub grad: Vec<(DynVal, DynVal, Color)>, // x, y, color
+impl RadialGradient {
+    pub fn to_color(&self, ctx: &Context, x: u16, y: u16) -> Color {
+        if self.grad.is_empty() {
+            return Color::TRANSPARENT;
+        }
+
+        let x = x as f64;
+        let y = y as f64;
+        let (center_x, center_y) = (
+            self.center.0.get_val(ctx.s.width) as f64,
+            self.center.1.get_val(ctx.s.height) as f64,
+        );
+        let (skew_x, skew_y) = self.skew;
+        let dx = x - center_x;
+        let dy = y - center_y;
+        let dx = skew_x * dx;
+        let dy = skew_y * dy;
+        let mut dist = (dx * dx + dy * dy).sqrt();
+        let max_dist = self
+            .grad
+            .last()
+            .unwrap()
+            .0
+            .get_val(ctx.s.width.max(ctx.s.height)) as f64;
+
+        // loop the pos if it is outside the maximum value
+        while dist < 0. {
+            dist += max_dist;
+        }
+        while dist > max_dist {
+            dist -= max_dist;
+        }
+
+        let mut start_clr: Option<Color> = None;
+        let mut end_clr: Option<Color> = None;
+        let mut start_pos: Option<f64> = None;
+        let mut end_pos: Option<f64> = None;
+        for ((p1, c1), (p2, c2)) in self.grad.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
+            if (p1.get_val(ctx.s.width.max(ctx.s.height)) as f64 <= dist)
+                && (dist < p2.get_val(ctx.s.width.max(ctx.s.height)) as f64)
+            {
+                start_clr = Some(c1.clone());
+                end_clr = Some(c2.clone());
+                start_pos = Some(p1.get_val(ctx.s.width.max(ctx.s.height)) as f64);
+                end_pos = Some(p2.get_val(ctx.s.width.max(ctx.s.height)) as f64);
+                break;
+            }
+        }
+
+        let start_clr = start_clr.unwrap_or_else(|| self.grad[0].1.clone());
+        let end_clr = end_clr.unwrap_or_else(|| self.grad[self.grad.len() - 1].1.clone());
+        let start_pos = start_pos
+            .unwrap_or_else(|| self.grad[0].0.get_val(ctx.s.width.max(ctx.s.height)) as f64);
+        let end_pos = end_pos.unwrap_or_else(|| {
+            self.grad[self.grad.len() - 1]
+                .0
+                .get_val(ctx.s.width.max(ctx.s.height)) as f64
+        });
+        let percent = (dist - start_pos) / (end_pos - start_pos);
+        start_clr.blend(ctx, x as u16, y as u16, end_clr, percent, BlendKind::Blend1)
+
+        //// loop the pos if it is outside the maximum value
+        //let max_pos = self.grad.last().unwrap().0.get_val(max_ctx_val);
+        //while pos < 0 {
+        //    pos += max_pos;
+        //}
+        //while pos > max_pos {
+        //    pos -= max_pos;
+        //}
+
+        //// find the two colors to blend
+        //let mut start_clr: Option<Color> = None;
+        //let mut end_clr: Option<Color> = None;
+        //let mut start_pos: Option<i32> = None;
+        //let mut end_pos: Option<i32> = None;
+        //for ((p1, c1), (p2, c2)) in self.grad.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
+        //    if (p1.get_val(max_ctx_val) <= pos) && (pos < p2.get_val(max_ctx_val)) {
+        //        start_clr = Some(c1.clone());
+        //        end_clr = Some(c2.clone());
+        //        start_pos = Some(p1.get_val(max_ctx_val));
+        //        end_pos = Some(p2.get_val(max_ctx_val));
+        //        break;
+        //    }
+        //}
+        //let start_clr = start_clr.unwrap_or_else(|| self.grad[0].1.clone());
+        //let end_clr = end_clr.unwrap_or_else(|| self.grad[self.grad.len() - 1].1.clone());
+        //let start_pos = start_pos.unwrap_or_else(|| self.grad[0].0.get_val(max_ctx_val));
+        //let end_pos =
+        //    end_pos.unwrap_or_else(|| self.grad[self.grad.len() - 1].0.get_val(max_ctx_val));
+        //let percent = (pos - start_pos) as f64 / (end_pos - start_pos) as f64;
+        //start_clr.blend(ctx, x, y, end_clr, percent, BlendKind::Blend1)
+    }
 }
 
 /// a gradient along a line with a given angle

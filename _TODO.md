@@ -35,14 +35,17 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
 10. button selectable (can hit with enter key)
 05. scrollbar shouldn't move if uninitialized and a drag mouse enters it
 2. gradient on angles > 90 doesn't work, fix
+10. blending two time gradients overflows
+10. blending a gradient and time gradient fails
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-10. blending two time gradients overflows
-10. blending a gradient and time gradient fails
 
 10. gradient color 
+     - gradient moves based on the **LOCAL** screen position. (aka
+       position within the parent)
+   DONE
      - posibilities: 
          - mono-directional = going either up or down / or diagonal
            as continious (non - radial) 
@@ -50,9 +53,6 @@ hl. tab key not working to go between widgets in pane_scrollable_test (nor
               perpendicular line) 
          - radial 
            - radiating from a point instead of a line
-     - maybe the gradient moves based on the **LOCAL** screen position. (aka
-       position within the parent)
-   DONE
    - Time gradient
      - should pass in the time with the draw context
    - time and screen position gradient.
