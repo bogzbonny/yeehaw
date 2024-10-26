@@ -1,8 +1,8 @@
 use {
     crate::{
-        element::ReceivableEventChanges, Context, DrawChPos, DynLocationSet, Element, ElementID,
-        ElementOrganizer, Event, EventResponses, Pane, Priority, SortingHat, UpwardPropagator,
-        ZIndex,
+        element::ReceivableEventChanges, Context, DrawChPos, DynLocationSet, DynVal, Element,
+        ElementID, ElementOrganizer, Event, EventResponses, Pane, Priority, SortingHat,
+        UpwardPropagator, ZIndex,
     },
     std::{
         ops::Deref,
@@ -33,6 +33,17 @@ impl ParentPane {
     pub fn with_z(self, z: ZIndex) -> Self {
         self.pane.set_z(z);
         self
+    }
+
+    pub fn at(self, x: DynVal, y: DynVal) -> Self {
+        self.pane.set_start_x(x);
+        self.pane.set_start_y(y);
+        self
+    }
+
+    pub fn set_x_y(&self, x: DynVal, y: DynVal) {
+        self.pane.set_start_x(x);
+        self.pane.set_start_y(y);
     }
 
     pub fn with_kind(self, kind: &'static str) -> Self {

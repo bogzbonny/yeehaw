@@ -9,6 +9,7 @@ pub mod pane_parent;
 pub mod pane_scrollable;
 pub mod stack;
 pub mod tabs;
+pub mod window;
 
 pub use {
     debug_pane::DebugSizePane,
@@ -22,4 +23,5 @@ pub use {
     pane_scrollable::{PaneScrollable, PaneWithScrollbars},
     stack::{HorizontalStack, VerticalStack},
     tabs::Tabs,
+    window::WindowPane,
 };

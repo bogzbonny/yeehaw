@@ -9,7 +9,22 @@
       - optional borders
       - optionally resizeable (if bordered) 
 
-01. terminal widget 
+05. borders-pane wrapper
+     - option for each of up/down/right/left
+     - custom up/down/right/left DrawChs AND corner pieces
+     - single/double/bold lines
+     - built in scrollbar
+     - drag-resizing - drag while on the edge to resize the location
+
+01. terminal element
+    - https://github.com/a-kenji/tui-term/blob/development/examples/smux.rs
+
+01. editor element
+    - uses the $EDITOR env variable
+    - execute with something like: "$EDITOR; echo "exit_this_terminal""
+    - then scan the terminal for "exit_this_terminal" and if it's found then
+      exit the terminal
+      - maybe use an APC code instead of a keyword?
 
 01. support taffy as a layout structure.
      - Taffy low-level API (0.6.0 fixes ownership issues I was facing)
@@ -107,12 +122,6 @@
     .to_widgets() doesn't need to be manually called during construction
     (applied in add_widget).
 
-05. borders-pane wrapper
-     - option for each of up/down/right/left
-     - custom up/down/right/left DrawChs AND corner pieces
-     - single/double/bold lines
-     - built in scrollbar
-     - drag-resizing - drag while on the edge to resize the location
 
 05. Remove Refresh logic from Elements. currently when an element is destroyed
     or replaced, the parents call some Refresh logic, this should be removed in

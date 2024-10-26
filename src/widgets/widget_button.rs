@@ -166,7 +166,7 @@ impl Button {
     }
 
     pub fn new(
-        hat: &SortingHat, _ctx: &Context, text: String,
+        hat: &SortingHat, _ctx: &Context, text: &str,
         clicked_fn: Box<dyn FnMut(Context) -> EventResponses>,
     ) -> Self {
         let wb = WidgetBase::new(
@@ -180,7 +180,7 @@ impl Button {
         //_ = wb.set_selectability(ctx, Selectability::Unselectable);
         let b = Button {
             base: wb,
-            text: Rc::new(RefCell::new(text)),
+            text: Rc::new(RefCell::new(text.to_string())),
             button_style: Rc::new(RefCell::new(ButtonStyle::Shadow(ButtonShadow::default()))),
             clicked_down: Rc::new(RefCell::new(false)),
             clicked_fn: Rc::new(RefCell::new(clicked_fn)),

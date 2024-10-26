@@ -29,6 +29,7 @@ pub use {
     elements::{
         DebugSizePane, FileNavPane, FileViewerPane, HorizontalStack, ImageViewer, MenuBar, Pane,
         PaneScrollable, PaneWithScrollbars, ParentPane, RightClickMenu, Tabs, VerticalStack,
+        WindowPane,
     },
     errors::Error,
     event::{CommandEvent, Event, KeyPossibility},

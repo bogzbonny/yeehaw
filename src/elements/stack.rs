@@ -23,6 +23,13 @@ impl VerticalStack {
         }
     }
 
+    pub fn new_with_kind(hat: &SortingHat, kind: &'static str) -> Self {
+        Self {
+            pane: ParentPane::new(hat, kind),
+            els: Rc::new(RefCell::new(Vec::new())),
+        }
+    }
+
     // add an element to the end of the stack resizing the other elements
     // in order to fit the new element
     pub fn push(&self, ctx: &Context, el: Rc<RefCell<dyn Element>>) {

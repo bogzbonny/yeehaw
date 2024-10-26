@@ -66,15 +66,15 @@ impl Style {
     }
 
     pub fn update_colors_for_time_and_pos(&mut self, ctx: &Context, x: u16, y: u16) {
-        self.fg.as_mut().map(|fg| {
+        if let Some(fg) = self.fg.as_mut() {
             fg.update_color(ctx, x, y);
-        });
-        self.bg.as_mut().map(|bg| {
+        }
+        if let Some(bg) = self.bg.as_mut() {
             bg.update_color(ctx, x, y);
-        });
-        self.underline.as_mut().map(|underline| {
+        }
+        if let Some(underline) = self.underline.as_mut() {
             underline.update_color(ctx, x, y);
-        });
+        }
     }
 }
 

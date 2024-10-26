@@ -106,6 +106,22 @@ impl Pane {
         self
     }
 
+    pub fn set_start_x(&self, x: DynVal) {
+        self.loc.borrow_mut().l.set_start_x(x);
+    }
+
+    pub fn set_start_y(&self, y: DynVal) {
+        self.loc.borrow_mut().l.set_start_y(y);
+    }
+
+    pub fn get_start_x(&self, ctx: &Context) -> i32 {
+        self.loc.borrow().l.get_start_x(ctx)
+    }
+
+    pub fn get_start_y(&self, ctx: &Context) -> i32 {
+        self.loc.borrow().l.get_start_y(ctx)
+    }
+
     pub fn with_width(self, w: DynVal) -> Pane {
         self.loc.borrow_mut().l.set_dyn_width(w);
         self

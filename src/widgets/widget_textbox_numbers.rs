@@ -125,7 +125,7 @@ impl NumbersTextBox {
             let up_btn = Button::new(
                 hat,
                 ctx,
-                "▲".to_string(),
+                "▲",
                 Box::new(move |ctx| {
                     let old_value = *self_.value.borrow();
                     self_.change_value(&ctx, old_value + incr);
@@ -137,7 +137,7 @@ impl NumbersTextBox {
             let down_btn = Button::new(
                 hat,
                 ctx,
-                "▼".to_string(),
+                "▼",
                 Box::new(move |ctx| {
                     let old_value = *self_.value.borrow();
                     self_.change_value(&ctx, old_value - incr);
