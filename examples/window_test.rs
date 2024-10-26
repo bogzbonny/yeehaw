@@ -21,7 +21,7 @@ async fn main() -> Result<(), Error> {
 
     let hat_ = hat.clone();
     //let pp_ = pp.clone();
-    let add_button_click_fn = Box::new(move |mut ctx_: Context| {
+    let add_button_click_fn = Box::new(move |_, mut ctx_: Context| {
         let title = format!("Pane {}", *counter.borrow());
         let el = DebugSizePane::new(&hat_)
             .with_text(title.clone())

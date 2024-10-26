@@ -167,6 +167,9 @@
          then if the mouse scroll event is not captured then send it to the
          scrollable pane.
 
+10. Simplify WidgetPane type to little more than a ParentPane
+     - using the ParentPane store to hold index of the currently selected widget 
+
 10. integrate in trait upcasting for Widget Type once available (remove
     el_widget_pane drawing functionality in favour of the parent pane draw).
     https://github.com/rust-lang/rust/issues/65991

@@ -51,13 +51,13 @@ async fn main() -> Result<(), Error> {
 
     el.add_widgets(l);
 
-    let button_click_fn = Box::new(move |ctx_| {
+    let button_click_fn = Box::new(move |_, ctx_| {
         let t = l1.get_text();
         let t = t + "0";
         l1.set_text(&ctx_, t);
         EventResponses::default()
     });
-    let button = Button::new(&hat, &ctx, "click me".to_string(), button_click_fn)
+    let button = Button::new(&hat, &ctx, "click me", button_click_fn)
         .with_description("a button!".to_string())
         .at(DynVal::new_flex(0.25), DynVal::new_flex(0.25))
         .to_widgets()

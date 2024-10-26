@@ -305,10 +305,16 @@ impl EventResponses {
 pub enum EventResponse {
     #[default]
     None,
+
     // quit the application
     Quit,
+
     // destroy the current element
     Destruct,
+
+    // bring this element to the front (greatest z-index)
+    BringToFront,
+
     // create an element, its location will be adjusted
     // by the elements current location.
     //

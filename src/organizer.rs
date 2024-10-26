@@ -2,7 +2,7 @@ use {
     crate::{
         element::ReceivableEventChanges, prioritizer::EventPrioritizer, CommandEvent, Context,
         DrawChPos, DynLocation, DynLocationSet, Element, ElementID, Event, EventResponse,
-        EventResponses, Priority, Parent, ZIndex,
+        EventResponses, Parent, Priority, ZIndex,
     },
     std::collections::HashMap,
     std::{cell::RefCell, rc::Rc},
@@ -170,6 +170,26 @@ impl ElementOrganizer {
             .and_modify(|ed| ed.loc.borrow_mut().z = z);
     }
 
+    pub fn get_greatest_z_index(&self) -> (ElementID, ZIndex) {
+        let mut max_z = (ElementID::default(), 0);
+        for (el_id, details) in self.els.borrow().iter() {
+            if details.loc.borrow().z > max_z.1 {
+                max_z = (el_id.clone(), details.loc.borrow().z);
+            }
+        }
+        max_z
+    }
+
+    /// brings the element at the provided id to the top of the z-index stack
+    pub fn set_el_to_top(&self, el_id: &ElementID) {
+        let (el_id_, z) = self.get_greatest_z_index();
+        if el_id == &el_id_ {
+            // already at the top!
+            return;
+        }
+        self.update_el_z_index(el_id, z + 1);
+    }
+
     // get_context_for_el_id returns the context for the element registered under the given id
     pub fn get_context_for_el(&self, higher_ctx: &Context, el_details: &ElDetails) -> Context {
         let size = el_details.loc.borrow().l.get_size(higher_ctx);
@@ -299,6 +319,10 @@ impl ElementOrganizer {
                     // NOTE no need to process the receivable event changes here,
                     // they've already been removed in the above call
                     modified_resp = Some(EventResponse::ReceivableEventChanges(ic));
+                }
+                EventResponse::BringToFront => {
+                    self.set_el_to_top(el_id);
+                    modified_resp = Some(EventResponse::None);
                 }
                 EventResponse::ReceivableEventChanges(rec) => {
                     self.process_receivable_event_changes(el_id, rec);

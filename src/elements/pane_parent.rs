@@ -1,8 +1,8 @@
 use {
     crate::{
-        element::ReceivableEventChanges, Context, DrawCh, DrawChPos, DynLocationSet, DynVal,
-        Element, ElementID, ElementOrganizer, Event, EventResponses, Pane, Priority, SortingHat,
-        Style, Parent, ZIndex,
+        element::ReceivableEventChanges, Context, DrawCh, DrawChPos, DynLocation, DynLocationSet,
+        DynVal, Element, ElementID, ElementOrganizer, Event, EventResponses, Pane, Parent,
+        Priority, SortingHat, Style, ZIndex,
     },
     std::collections::HashMap,
     std::{
@@ -66,6 +66,26 @@ impl ParentPane {
 
     pub fn set_end_y(&self, y: DynVal) {
         self.pane.set_end_y(y);
+    }
+
+    pub fn set_z(&self, z: ZIndex) {
+        self.pane.set_z(z);
+    }
+
+    pub fn set_dyn_width(&self, w: DynVal) {
+        self.pane.set_dyn_width(w);
+    }
+
+    pub fn set_dyn_height(&self, h: DynVal) {
+        self.pane.set_dyn_height(h);
+    }
+
+    pub fn get_dyn_location(&self) -> DynLocation {
+        self.pane.get_dyn_location()
+    }
+
+    pub fn set_dyn_location(&self, dl: DynLocation) {
+        self.pane.set_dyn_location(dl);
     }
 
     pub fn with_kind(self, kind: &'static str) -> Self {

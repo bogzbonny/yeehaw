@@ -2,8 +2,8 @@ use {
     super::{Button, Selectability, TextBox, WBStyles, Widget, Widgets},
     crate::{
         Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
-        KeyPossibility, Keyboard as KB, Priority, ReceivableEventChanges, SortingHat, Style,
-        Parent,
+        KeyPossibility, Keyboard as KB, Parent, Priority, ReceivableEventChanges, SortingHat,
+        Style,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -126,7 +126,7 @@ impl NumbersTextBox {
                 hat,
                 ctx,
                 "▲",
-                Box::new(move |ctx| {
+                Box::new(move |_, ctx| {
                     let old_value = *self_.value.borrow();
                     self_.change_value(&ctx, old_value + incr);
                     EventResponses::default()
@@ -138,7 +138,7 @@ impl NumbersTextBox {
                 hat,
                 ctx,
                 "▼",
-                Box::new(move |ctx| {
+                Box::new(move |_, ctx| {
                     let old_value = *self_.value.borrow();
                     self_.change_value(&ctx, old_value - incr);
                     EventResponses::default()

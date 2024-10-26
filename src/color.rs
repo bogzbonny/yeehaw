@@ -839,6 +839,16 @@ impl Color {
     pub const GREY13:        Color = Color::new(130, 130, 135);
     pub const GREY14:        Color = Color::new(140, 140, 145);
     pub const GREY15:        Color = Color::new(150, 150, 155);
+    pub const GREY16:        Color = Color::new(160, 160, 165);
+    pub const GREY17:        Color = Color::new(170, 170, 175);
+    pub const GREY18:        Color = Color::new(180, 180, 185);
+    pub const GREY19:        Color = Color::new(190, 190, 195);
+    pub const GREY20:        Color = Color::new(200, 200, 205);
+    pub const GREY21:        Color = Color::new(210, 210, 215);
+    pub const GREY22:        Color = Color::new(220, 220, 225);
+    pub const GREY23:        Color = Color::new(230, 230, 235);
+    pub const GREY24:        Color = Color::new(240, 240, 245);
+    pub const GREY25:        Color = Color::new(250, 250, 255);
 
     pub const DIM_YELLOW:       Color = Color::new(200, 200, 100);
     pub const ORANGE2:          Color = Color::new(200, 100, 50);

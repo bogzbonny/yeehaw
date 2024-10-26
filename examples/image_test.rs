@@ -42,25 +42,20 @@ async fn main() -> Result<(), Error> {
     vstack.push(&ctx, Rc::new(RefCell::new(hstack.clone())));
 
     let hstack__ = hstack.clone();
-    let remove_button_click_fn = Box::new(move |ctx_| {
+    let remove_button_click_fn = Box::new(move |_, ctx_| {
         if !hstack__.is_empty() {
             hstack__.remove(&ctx_, 0);
         }
         EventResponses::default()
     });
-    let remove_button = Button::new(
-        &hat,
-        &ctx,
-        "remove_pane".to_string(),
-        remove_button_click_fn,
-    )
-    .at(13.into(), 1.into())
-    .to_widgets();
+    let remove_button = Button::new(&hat, &ctx, "remove_pane", remove_button_click_fn)
+        .at(13.into(), 1.into())
+        .to_widgets();
     widget_pane.add_widgets(remove_button);
 
     let hstack_ = hstack.clone();
     let hat_ = hat.clone();
-    let add_button_click_fn = Box::new(move |ctx_| {
+    let add_button_click_fn = Box::new(move |_, ctx_| {
         if hstack_.len() == 3 {
             let el = ImageViewer::new(&hat_, &img_path).with_width(hstack_.avg_width(&ctx_));
             hstack_.push(&ctx_, Rc::new(RefCell::new(el)));
@@ -71,7 +66,7 @@ async fn main() -> Result<(), Error> {
             EventResponses::default()
         }
     });
-    let add_button = Button::new(&hat, &ctx, "add_pane".to_string(), add_button_click_fn)
+    let add_button = Button::new(&hat, &ctx, "add_pane", add_button_click_fn)
         .at(1.into(), 1.into())
         .to_widgets();
     widget_pane.add_widgets(add_button);

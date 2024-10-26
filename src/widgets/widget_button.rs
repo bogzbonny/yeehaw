@@ -2,8 +2,8 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Color, Context, DrawChPos, DrawChs2D, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, SortingHat, Style,
-        Parent,
+        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEventChanges, SortingHat,
+        Style,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -19,7 +19,7 @@ pub struct Button {
     pub clicked_down: Rc<RefCell<bool>>, // activated when mouse is clicked down while over button
     // function which executes when button moves from pressed -> unpressed
     #[allow(clippy::type_complexity)]
-    pub clicked_fn: Rc<RefCell<dyn FnMut(Context) -> EventResponses>>,
+    pub clicked_fn: Rc<RefCell<dyn FnMut(Button, Context) -> EventResponses>>,
 }
 
 #[derive(Clone)]
@@ -167,7 +167,7 @@ impl Button {
 
     pub fn new(
         hat: &SortingHat, _ctx: &Context, text: &str,
-        clicked_fn: Box<dyn FnMut(Context) -> EventResponses>,
+        clicked_fn: Box<dyn FnMut(Button, Context) -> EventResponses>,
     ) -> Self {
         let wb = WidgetBase::new(
             hat,
@@ -238,7 +238,7 @@ impl Button {
 
     // ----------------------------------------------
     pub fn click(&self, ctx: &Context) -> EventResponses {
-        (self.clicked_fn.borrow_mut())(ctx.clone())
+        (self.clicked_fn.borrow_mut())(self.clone(), ctx.clone())
     }
 }
 

@@ -1,8 +1,8 @@
 use {
     crate::{
         element::ReceivableEventChanges, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation,
-        DynLocationSet, DynVal, Element, ElementID, Event, EventResponses, Priority, SortingHat,
-        Style, Parent, ZIndex,
+        DynLocationSet, DynVal, Element, ElementID, Event, EventResponses, Parent, Priority,
+        SortingHat, Style, ZIndex,
     },
     std::{
         collections::HashMap,
@@ -171,6 +171,14 @@ impl Pane {
     pub fn with_dyn_location(self, l: DynLocation) -> Pane {
         self.loc.borrow_mut().l = l;
         self
+    }
+
+    pub fn get_dyn_location(&self) -> DynLocation {
+        self.loc.borrow().l.clone()
+    }
+
+    pub fn set_dyn_location(&self, l: DynLocation) {
+        self.loc.borrow_mut().l = l;
     }
 
     pub fn with_content(self, content: DrawChs2D) -> Pane {
