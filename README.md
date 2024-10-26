@@ -8,10 +8,12 @@ as possible.
 
 # Reasons Why You Want Your Application to be Text-Based
 
-1) It's the only way you'll ever be cool again
-2) They're rapidly iterable during development
-2) They're conceptually straightforward, it's just a grid 
-4) They minimize hidden UI features, it's all on the grid 
+1) it's the only way you'll ever be cool again
+2) they're conceptually straightforward, it's just a grid 
+3) they're rapidly iterable during development
+4) they're extremely extensible -> nesting other TUIs in your TUI is a
+   flippin breeze with yeehaw
+5) they fas
 
 ## Examples
 
@@ -27,19 +29,8 @@ elements are viewed and where within the parent element they are displayed.
 Elements are only required to have spatial awareness within the confines which
 have been assigned to them from parent elements.  
 
-## Tribute
-
-[notcurses](https://github.com/dankamongmen/notcurses) insane
-
-[jexer](https://gitlab.com/AutumnMeowMeow/jexer) what the heck!!!
-
-[ratatui](https://ratatui.rs/) obviously rocks, [well done](https://www.youtube.com/watch?v=9wm1D6Rk8TE)
-
-[dioxus](https://github.com/dioxuslabs/dioxus) seems cool - they have a goal of
-TUI support in the future.
-
-[rooibos](https://github.com/aschey/rooibos) similar project, different approach
-
+### Non-objectives
+Catering to non- UTF-8 or non- true-color terminals.
 
 ## Existing Elements:
  - tabs 
@@ -82,27 +73,14 @@ TUI support in the future.
    - color selector
    - table 
 
-## Planned Tooling
- - seperate project: WIMP
-   - layers within each frame
-     - use https://github.com/tomcur/termsnap/blob/main/src/main.rs
-        for layer icons
-     - then use https://www.reddit.com/r/rust/comments/p4l610/render_svg_to_pngother_format/ 
-       https://github.com/RazrFalcon/resvg?tab=readme-ov-file
-       to render to png
-     - alpha channel
-   - use a new custom ansi animation format, simply define a sleep
-     functionality with APC codes (like kitty uses)
-        <ESC>_sleep<ms><ESC>\
-        <ESC>_sleep16.66<ESC>\
-        <ESC>_repeat<ESC>\ // for repeating sequences ? maybe not?
-        - super basic application for viewing with these sequences
-          - extcat or excat or ecat
-     - Deduplication considerations: when writing frames, all the duplicate
-       draws should simply be ignored and not written, only the changed places
-  - inspiration: 
-    - https://github.com/mkrueger/icy_tools?tab=readme-ov-file
-    - https://github.com/cmang/durdraw/
-    - https://terminalroot.com/use-ms-paint-directly-in-terminal/
-    - https://www.gridsagegames.com/rexpaint/
-    - https://github.com/EtoDemerzel0427/ANSI-art
+## Tribute
+
+[notcurses](https://github.com/dankamongmen/notcurses) insane
+
+[jexer](https://gitlab.com/AutumnMeowMeow/jexer) what the heck!!!
+
+[ratatui](https://ratatui.rs/) obviously rocks, [well done](https://www.youtube.com/watch?v=9wm1D6Rk8TE)
+
+[dioxus](https://github.com/dioxuslabs/dioxus) seems cool - they have a goal of
+TUI support in the future.
+
