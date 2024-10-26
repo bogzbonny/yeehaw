@@ -99,6 +99,12 @@ impl ParentPane {
         self
     }
 
+    pub fn with_transparent(self) -> Self {
+        let ch = DrawCh::transparent();
+        self.pane.set_default_ch(ch);
+        self
+    }
+
     pub fn with_dyn_height(self, h: DynVal) -> Self {
         self.pane.set_dyn_height(h);
         self

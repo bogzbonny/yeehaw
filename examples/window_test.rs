@@ -1,8 +1,8 @@
 use {
     std::{cell::RefCell, rc::Rc},
     yeehaw::{
-        widgets::Button, Color, Context, Cui, DebugSizePane, DynVal, Error, EventResponse,
-        ParentPane, SortingHat, Style, WindowPane,
+        widgets::Button, ChPlus, Color, Context, Cui, DebugSizePane, DrawCh, DynVal, Error,
+        EventResponse, ParentPane, SortingHat, Style, WindowPane,
     },
 };
 
@@ -15,7 +15,9 @@ async fn main() -> Result<(), Error> {
     let hat = SortingHat::default();
     let ctx = Context::new_context_for_screen_no_dur();
 
-    let pp = ParentPane::new(&hat, "parent_pane");
+    let pp = ParentPane::new(&hat, "parent_pane")
+        .with_dyn_height(1.0.into())
+        .with_dyn_width(1.0.into());
 
     let counter = Rc::new(RefCell::new(0));
 
@@ -23,15 +25,19 @@ async fn main() -> Result<(), Error> {
     //let pp_ = pp.clone();
     let add_button_click_fn = Box::new(move |_, mut ctx_: Context| {
         let title = format!("Pane {}", *counter.borrow());
+        let bg = Color::new_with_alpha(150, 150, 155, 150);
+        let fg = Color::new_with_alpha(150, 150, 155, 150);
+        let def_ch = DrawCh::new(
+            ChPlus::Transparent,
+            Style::default().with_bg(bg.clone()).with_fg(fg),
+        );
+
         let el = DebugSizePane::new(&hat_)
             .with_text(title.clone())
             .with_width(DynVal::new_flex(1.))
             .with_height(DynVal::new_flex(1.))
-            .with_style(
-                Style::default()
-                    .with_bg(Color::GREY15)
-                    .with_fg(Color::BLACK),
-            );
+            .with_default_ch(def_ch)
+            .with_style(Style::default().with_bg(bg).with_fg(Color::BLACK));
 
         *counter.borrow_mut() += 1;
         ctx_.s.width = 30;

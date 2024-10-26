@@ -1,13 +1,50 @@
 
 05. use .flf (figlet font) format instead of custom megatext
      - https://docs.rs/figlet-rs/latest/figlet_rs/
+01. alpha not working for bg of debug window in window_test
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+01. wierd bug with maximized windows (window_test)
+    - create two windows
+    - maximize one
+    - minimize one
+    - the maximized one will not draw on top of the minimized windows 
+      however it likely is receiving the events for the entire screen 
+      as the minimized window cannot be restored until you shrink the 
+      maximized window back.
+    - might be a bug with either parent pane or vertical stack
+
 01. floating window element
       - TopBar - title, x button, drag to move the whole window
-      - optional borders
-      - optionally resizeable (if bordered) 
+      - restore minimize only on upclick
+      DONE ^^^ 
+      - lower righthand triangle for resizing
+      - test with scrollable pane
+      - minimized guys should stack in the parent pane (ex. to the right)
+         - this should be easy for adding new panes on top
+         - the difficulty comes if you maximize any early minimized window. The
+           righthand minimized windows would need to be shifted to the right.
+            KEY: MINIMIZED_ELEMENTS
+            Values: 
+               orientation: Enum (left or right)
+               els: Vec<(ElementID, pos)> 
+            - with all this information, each time a window maximized or
+              minimized itself it should be able to reorient the locations 
+              of the other panes if need be.
+            
+30. reorient minimized window in the parent when there is a resize. 
+     - for instance if the minimized windows used the entire bottom 
+       of the parent pane, then those elements should be shuffled to the higher
+       row if the parent pane is resized smaller.
+     - this will be technically a bit complex maybe, I imagine we 
+       need a special hook for moving around minimized panes. Alternatively 
+       we could just hard code in special logic if the MINIMIZED_ELEMENTS key
+       exists in the store. 
+        - maybe we could allow other elements to register hooks on event kinds.
+           - shouldn't be that complex. Each window could just ensure that the 
+           parent pane has this hook registered for resized on each
+           minimization.
 
 05. borders-pane wrapper
      - option for each of up/down/right/left
@@ -22,10 +59,10 @@
 
 01. editor element
     - uses the $EDITOR env variable
-    - execute with something like: "$EDITOR; echo "exit_this_terminal""
-    - then scan the terminal for "exit_this_terminal" and if it's found then
-      exit the terminal
-      - maybe use an APC code instead of a keyword?
+    - execute with something like: "$EDITOR; exit" 
+       - however smux doesn't handle exit gracefully, will need to repair
+
+01. Ensure that HorizontalStack has all the new functions added to VerticalStack
 
 01. support taffy as a layout structure.
      - Taffy low-level API (0.6.0 fixes ownership issues I was facing)

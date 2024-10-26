@@ -23,6 +23,8 @@ pub enum Event {
     Refresh,
 
     Command(CommandEvent),
+
+    Custom(String, Vec<u8>), // custom event type with a name and a payload
 }
 
 impl From<KeyPossibility> for Event {
@@ -64,6 +66,7 @@ impl Event {
             Event::Resize => "RESIZE".to_string(),
             Event::Refresh => "REFRESH".to_string(),
             Event::Command(ev) => "COMMAND=".to_string() + &ev.cmd,
+            Event::Custom(name, _) => "CUSTOM=".to_string() + name,
         }
     }
 

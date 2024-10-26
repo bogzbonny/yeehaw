@@ -1,7 +1,8 @@
 use {
     crate::{
-        Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
-        ParentPane, Priority, ReceivableEventChanges, Size, SortingHat, Parent,
+        Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
+        EventResponses, Parent, ParentPane, Priority, ReceivableEventChanges, Size, SortingHat,
+        Style,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -67,6 +68,17 @@ impl VerticalStack {
 
     pub fn is_empty(&self) -> bool {
         self.els.borrow().is_empty()
+    }
+
+    pub fn with_style(self, style: Style) -> Self {
+        self.pane.pane.set_style(style);
+        self
+    }
+
+    pub fn with_transparent(self) -> Self {
+        let ch = DrawCh::transparent();
+        self.pane.pane.set_default_ch(ch);
+        self
     }
 
     // get the average value of the elements in the stack

@@ -126,6 +126,12 @@ impl ElementOrganizer {
         None
     }
 
+    pub fn set_all_visibility(&self, vis: bool) {
+        for details in self.els.borrow().values() {
+            details.set_visibility(vis);
+        }
+    }
+
     // update_el_primary_location updates the primary location of the element with the given id
     pub fn update_el_location_set(&self, el_id: ElementID, loc: DynLocationSet) {
         //self.locations.entry(el_id).and_modify(|l| (*l) = loc);

@@ -1,8 +1,8 @@
 use {
     crate::{
-        element::ReceivableEventChanges, Context, DrawChPos, DrawChs2D, DynLocationSet, DynVal,
-        Element, ElementID, Event, EventResponses, Pane, Priority, SortingHat, Style,
-        Parent, ZIndex,
+        element::ReceivableEventChanges, Context, DrawCh, DrawChPos, DrawChs2D, DynLocationSet,
+        DynVal, Element, ElementID, Event, EventResponses, Pane, Parent, Priority, SortingHat,
+        Style, ZIndex,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -11,6 +11,7 @@ use {
 #[derive(Clone)]
 pub struct DebugSizePane {
     pub pane: Pane,
+    pub sty: Rc<RefCell<Style>>,
     pub text: Rc<RefCell<String>>,
 }
 
@@ -18,6 +19,7 @@ impl DebugSizePane {
     pub fn new(hat: &SortingHat) -> DebugSizePane {
         DebugSizePane {
             pane: Pane::new(hat, "debug_size_pane"),
+            sty: Rc::new(RefCell::new(Style::default())),
             text: Rc::new(RefCell::new(String::new())),
         }
     }
@@ -33,7 +35,12 @@ impl DebugSizePane {
     }
 
     pub fn with_style(self, style: Style) -> Self {
-        self.pane.set_style(style);
+        *self.sty.borrow_mut() = style;
+        self
+    }
+
+    pub fn with_default_ch(self, ch: DrawCh) -> Self {
+        self.pane.set_default_ch(ch);
         self
     }
 
@@ -67,7 +74,7 @@ impl Element for DebugSizePane {
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let size = ctx.s;
         let s = format!("{}x{} {}", size.width, size.height, self.text.borrow());
-        let sty = self.pane.get_style();
+        let sty = self.sty.borrow().clone();
         let content = DrawChs2D::from_string(s, sty);
         self.pane.set_content(content);
         self.pane.drawing(ctx)

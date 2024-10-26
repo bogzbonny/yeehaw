@@ -85,6 +85,13 @@ impl DrawCh {
         }
     }
 
+    pub fn transparent() -> DrawCh {
+        DrawCh {
+            ch: ChPlus::Transparent,
+            style: Style::transparent(),
+        }
+    }
+
     pub fn at(self, x: u16, y: u16) -> DrawChPos {
         DrawChPos { ch: self, x, y }
     }
