@@ -2,7 +2,7 @@ use {
     crate::{
         element::ReceivableEventChanges, Context, DrawChPos, DrawChs2D, DynLocationSet, DynVal,
         Element, ElementID, Event, EventResponses, Pane, Priority, SortingHat, Style,
-        UpwardPropagator, ZIndex,
+        Parent, ZIndex,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -78,7 +78,7 @@ impl Element for DebugSizePane {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.pane.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
+    fn set_upward_propagator(&self, up: Box<dyn Parent>) {
         self.pane.set_upward_propagator(up)
     }
     fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {

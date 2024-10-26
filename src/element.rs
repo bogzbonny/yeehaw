@@ -91,9 +91,9 @@ pub trait Element {
     // calls all the hooks of the provided kind
     fn call_hooks_of_kind(&self, kind: &str);
 
-    // Assign a reference to the element's parent through the UpwardPropagator trait. This is used
+    // Assign a reference to the element's parent through the Parent trait. This is used
     // to pass ReceivableEventChanges to the parent. (see UpwardPropogator for more context)
-    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>);
+    fn set_upward_propagator(&self, up: Box<dyn Parent>);
 
     // get/set the scalable location of the widget
     // NOTE these functions should NOT be used to set values, use the set functions below to ensure
@@ -156,8 +156,8 @@ pub const POST_LOCATION_CHANGE_HOOK_NAME: &str = "post-location-change";
 
 // ----------------------------------------
 
-pub trait UpwardPropagator {
-    // The UpwardPropagator is a trait that a parent element should fulfill which can then be
+pub trait Parent {
+    // The Parent is a trait that a parent element should fulfill which can then be
     // provided to child elements as a means for those child elements to propagate changes upward
     // to their parent (and grand-parents etc.).
     //
@@ -173,13 +173,16 @@ pub trait UpwardPropagator {
     // event changes.
     //
     // child_el_id is the child element-id which is invoking the propagation from BELOW the element
-    // fulfilling the UpwardPropagator trait. This is used by the parent element (this one) to
+    // fulfilling the Parent trait. This is used by the parent element (this one) to
     // determine which events/cmds to update the prioritizers for.
     //
     // TRANSLATION NOTE PropagateUpwardChangesToInputability propagate_upward_changes_to_inputability
     fn propagate_receivable_event_changes_upward(
         &self, child_el_id: &ElementID, rec: ReceivableEventChanges,
     );
+
+    fn get_store_item(&self, key: &str) -> Option<Vec<u8>>;
+    fn set_store_item(&self, key: &str, value: Vec<u8>);
 }
 
 // Context is a struct which contains information about the current context of a

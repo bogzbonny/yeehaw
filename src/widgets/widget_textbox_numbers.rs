@@ -3,7 +3,7 @@ use {
     crate::{
         Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
         KeyPossibility, Keyboard as KB, Priority, ReceivableEventChanges, SortingHat, Style,
-        UpwardPropagator,
+        Parent,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -259,7 +259,7 @@ impl Element for NumbersTextBox {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.tb.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
+    fn set_upward_propagator(&self, up: Box<dyn Parent>) {
         self.tb.set_upward_propagator(up)
     }
     fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {

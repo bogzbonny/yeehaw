@@ -1,8 +1,8 @@
 use {
     crate::{
         element::ReceivableEventChanges, keyboard::Keyboard, ChPlus, Context, DynLocation,
-        DynLocationSet, Element, ElementID, ElementOrganizer, Error, Event, EventResponse,
-        Priority, UpwardPropagator,
+        DynLocationSet, Element, ElementID, ElementOrganizer, Error, Event, EventResponse, Parent,
+        Priority,
     },
     crossterm::{
         cursor,
@@ -62,7 +62,7 @@ impl Cui {
             .borrow_mut()
             .change_priority(&ctx, Priority::FOCUSED);
 
-        let cup = Box::new(CuiUpwardPropagator::new(eo));
+        let cup = Box::new(CuiParent::new(eo));
 
         // when adding the main element, nil is passed in as the parent
         // this is because the top of the tree is the CUI's main EO and so no parent
@@ -267,19 +267,23 @@ impl Cui {
     }
 }
 
-pub struct CuiUpwardPropagator {
-    eo: ElementOrganizer,
+pub struct CuiParent {
+    pub eo: ElementOrganizer,
+    pub el_store: Rc<RefCell<HashMap<String, Vec<u8>>>>,
 }
 
-impl CuiUpwardPropagator {
-    pub fn new(eo: ElementOrganizer) -> CuiUpwardPropagator {
-        CuiUpwardPropagator { eo }
+impl CuiParent {
+    pub fn new(eo: ElementOrganizer) -> CuiParent {
+        CuiParent {
+            eo,
+            el_store: Rc::new(RefCell::new(HashMap::new())),
+        }
     }
 }
 
-impl UpwardPropagator for CuiUpwardPropagator {
+impl Parent for CuiParent {
     // Receives the final upward propagation of changes to inputability
-    // NOTE: It is necessary for the CUI to fulfill the UpwardPropagator interface
+    // NOTE: It is necessary for the CUI to fulfill the Parent interface
     // as it is the top of the element tree, despite it not itself being an element
     // (it does not fulfill the Element interface). For the MainEl to pass changes
     // in inputability to the cui's ElementOrganizer, it must hold a reference to
@@ -290,6 +294,14 @@ impl UpwardPropagator for CuiUpwardPropagator {
     ) {
         // process changes in element organizer
         self.eo.process_receivable_event_changes(child_el_id, &rec);
+    }
+
+    fn get_store_item(&self, key: &str) -> Option<Vec<u8>> {
+        self.el_store.borrow().get(key).cloned()
+    }
+
+    fn set_store_item(&self, key: &str, value: Vec<u8>) {
+        self.el_store.borrow_mut().insert(key.to_string(), value);
     }
 }
 

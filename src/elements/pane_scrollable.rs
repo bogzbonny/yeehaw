@@ -5,7 +5,7 @@ use {
         },
         Context, DrawCh, DrawChPos, DrawChPosVec, DynLocationSet, DynVal, Element, ElementID,
         Event, EventResponses, HorizontalStack, Loc, ParentPane, Priority, ReceivableEventChanges,
-        SortingHat, Style, UpwardPropagator, VerticalStack,
+        SortingHat, Style, Parent, VerticalStack,
     },
     crossterm::event::{KeyModifiers, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -199,7 +199,7 @@ impl Element for PaneScrollable {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.pane.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
+    fn set_upward_propagator(&self, up: Box<dyn Parent>) {
         self.pane.set_upward_propagator(up)
     }
     fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {
@@ -389,7 +389,7 @@ impl Element for PaneWithScrollbars {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.pane.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
+    fn set_upward_propagator(&self, up: Box<dyn Parent>) {
         self.pane.set_upward_propagator(up)
     }
     fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {

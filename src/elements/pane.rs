@@ -2,7 +2,7 @@ use {
     crate::{
         element::ReceivableEventChanges, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation,
         DynLocationSet, DynVal, Element, ElementID, Event, EventResponses, Priority, SortingHat,
-        Style, UpwardPropagator, ZIndex,
+        Style, Parent, ZIndex,
     },
     std::{
         collections::HashMap,
@@ -34,7 +34,7 @@ pub struct Pane {
     // else ever uses it.
     element_priority: Rc<RefCell<Priority>>,
 
-    pub propagator: Rc<RefCell<Option<Box<dyn UpwardPropagator>>>>,
+    pub propagator: Rc<RefCell<Option<Box<dyn Parent>>>>,
 
     #[allow(clippy::type_complexity)]
     pub hooks:
@@ -372,7 +372,7 @@ impl Element for Pane {
         self.attributes.borrow_mut().insert(key.to_string(), value);
     }
 
-    fn set_upward_propagator(&self, propagator: Box<dyn UpwardPropagator>) {
+    fn set_upward_propagator(&self, propagator: Box<dyn Parent>) {
         *self.propagator.borrow_mut() = Some(propagator);
     }
 

@@ -11,9 +11,10 @@
 
 05. borders-pane wrapper
      - option for each of up/down/right/left
+        - aka. doesn't need to be fully bordered.
      - custom up/down/right/left DrawChs AND corner pieces
-     - single/double/bold lines
-     - built in scrollbar
+     - single/double/bold lines defaults 
+     - built in scrollbars optionally
      - drag-resizing - drag while on the edge to resize the location
 
 01. terminal element

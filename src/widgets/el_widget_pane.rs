@@ -3,7 +3,7 @@ use {
     crate::{
         Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
         EventResponse, EventResponses, KeyPossibility, Keyboard as KB, ParentPane, Priority,
-        ReceivableEventChanges, SortingHat, UpwardPropagator,
+        ReceivableEventChanges, SortingHat, Parent,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -467,7 +467,7 @@ impl Element for WidgetPane {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.pane.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
+    fn set_upward_propagator(&self, up: Box<dyn Parent>) {
         self.pane.set_upward_propagator(up)
     }
     fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {

@@ -3,7 +3,7 @@ use {
         elements::menu::{MenuItem, MenuStyle},
         Context, DrawChPos, DynLocation, DynLocationSet, DynVal, Element, ElementID, Event,
         EventResponse, EventResponses, MenuBar, Point, Priority, ReceivableEventChanges,
-        SortingHat, UpwardPropagator, ZIndex,
+        SortingHat, Parent, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -137,7 +137,7 @@ impl Element for RightClickMenu {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.menu.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
+    fn set_upward_propagator(&self, up: Box<dyn Parent>) {
         self.menu.set_upward_propagator(up)
     }
     fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {

@@ -3,13 +3,14 @@ use {
         widgets::{Button, Label, WBStyles},
         Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
         EventResponse, EventResponses, ParentPane, Priority, ReceivableEventChanges, SortingHat,
-        Style, UpwardPropagator, VerticalStack, ZIndex,
+        Style, Parent, VerticalStack, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
 };
 
 // TODO border
+// TODO work in z-index changes when clicked if there are other windows
 
 // ---------------------------------------------------
 #[derive(Clone)]
@@ -192,7 +193,7 @@ impl Element for WindowPane {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.pane.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
+    fn set_upward_propagator(&self, up: Box<dyn Parent>) {
         self.pane.set_upward_propagator(up)
     }
     fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {
@@ -293,7 +294,7 @@ impl Element for BasicWindowTopBar {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.pane.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
+    fn set_upward_propagator(&self, up: Box<dyn Parent>) {
         self.pane.set_upward_propagator(up)
     }
     fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {

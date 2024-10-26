@@ -2,8 +2,9 @@ use {
     crate::{
         element::ReceivableEventChanges, Context, DrawCh, DrawChPos, DynLocationSet, DynVal,
         Element, ElementID, ElementOrganizer, Event, EventResponses, Pane, Priority, SortingHat,
-        Style, UpwardPropagator, ZIndex,
+        Style, Parent, ZIndex,
     },
+    std::collections::HashMap,
     std::{
         ops::Deref,
         {cell::RefCell, rc::Rc},
@@ -15,10 +16,14 @@ use {
 //
 // NOTE the ParentPane does not itself fulfill the Element trait however
 // it provides much of the boilerplate required to do so.
+//
+// the element store (el_store) is a store for sub-elements. Any of the sub-elements can be
+// accessed any of the contents and share it with other elements of this parent pane.
 #[derive(Clone)]
 pub struct ParentPane {
     pub pane: Pane,
     pub eo: ElementOrganizer,
+    pub el_store: Rc<RefCell<HashMap<String, Vec<u8>>>>,
 }
 
 impl ParentPane {
@@ -27,6 +32,7 @@ impl ParentPane {
         ParentPane {
             pane,
             eo: ElementOrganizer::default(),
+            el_store: Rc::new(RefCell::new(HashMap::new())),
         }
     }
 
@@ -319,7 +325,7 @@ impl Element for ParentPane {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.pane.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
+    fn set_upward_propagator(&self, up: Box<dyn Parent>) {
         self.pane.set_upward_propagator(up)
     }
     fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {
@@ -342,7 +348,7 @@ impl Element for ParentPane {
     }
 }
 
-impl UpwardPropagator for ParentPane {
+impl Parent for ParentPane {
     // Passes changes to inputability to this element's parent element. If
     // updateThisElementsPrioritizers is TRUE then this element's prioritizers should be updated
     // using the given IC. This should be set to false when an upwards propagation is being
@@ -370,5 +376,13 @@ impl UpwardPropagator for ParentPane {
         if let Some(up) = self.pane.propagator.borrow_mut().deref() {
             up.propagate_receivable_event_changes_upward(&self.id(), ic);
         }
+    }
+
+    fn get_store_item(&self, key: &str) -> Option<Vec<u8>> {
+        self.el_store.borrow().get(key).cloned()
+    }
+
+    fn set_store_item(&self, key: &str, value: Vec<u8>) {
+        self.el_store.borrow_mut().insert(key.to_string(), value);
     }
 }

@@ -2,7 +2,7 @@ use {
     crate::{
         element::ReceivableEventChanges, prioritizer::EventPrioritizer, CommandEvent, Context,
         DrawChPos, DynLocation, DynLocationSet, Element, ElementID, Event, EventResponse,
-        EventResponses, Priority, UpwardPropagator, ZIndex,
+        EventResponses, Priority, Parent, ZIndex,
     },
     std::collections::HashMap,
     std::{cell::RefCell, rc::Rc},
@@ -44,7 +44,7 @@ impl ElDetails {
 }
 
 impl ElementOrganizer {
-    pub fn add_element(&self, el: Rc<RefCell<dyn Element>>, up: Option<Box<dyn UpwardPropagator>>) {
+    pub fn add_element(&self, el: Rc<RefCell<dyn Element>>, up: Option<Box<dyn Parent>>) {
         // assign the new element id
         let el_id = el.borrow().id().clone();
 

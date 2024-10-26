@@ -3,7 +3,7 @@ use {
     crate::{
         event::Event, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal,
         Element, ElementID, EventResponse, EventResponses, Pane, Priority, ReceivableEventChanges,
-        SortingHat, Style, UpwardPropagator, ZIndex,
+        SortingHat, Style, Parent, ZIndex,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -634,7 +634,7 @@ impl Element for WidgetBase {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.pane.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
+    fn set_upward_propagator(&self, up: Box<dyn Parent>) {
         self.pane.set_upward_propagator(up)
     }
     fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {

@@ -1,7 +1,7 @@
 use {
     crate::{
         element::ReceivableEventChanges, widgets::TextBox, Context, DrawChPos, DynLocationSet,
-        DynVal, Element, ElementID, Event, EventResponses, Priority, SortingHat, UpwardPropagator,
+        DynVal, Element, ElementID, Event, EventResponses, Priority, SortingHat, Parent,
         WidgetPane,
     },
     std::path::PathBuf,
@@ -59,7 +59,7 @@ impl Element for FileViewerPane {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.pane.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
+    fn set_upward_propagator(&self, up: Box<dyn Parent>) {
         self.pane.set_upward_propagator(up)
     }
     fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {

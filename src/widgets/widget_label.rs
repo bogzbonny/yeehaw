@@ -2,7 +2,7 @@ use {
     super::{common, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
-        Priority, ReceivableEventChanges, SortingHat, Style, UpwardPropagator,
+        Priority, ReceivableEventChanges, SortingHat, Style, Parent,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -168,7 +168,7 @@ impl Element for Label {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.base.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
+    fn set_upward_propagator(&self, up: Box<dyn Parent>) {
         self.base.set_upward_propagator(up)
     }
     fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {

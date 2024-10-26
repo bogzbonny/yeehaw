@@ -24,7 +24,7 @@ pub use {
     dyn_location::{DynLocation, DynLocationSet, Loc, Point, Size, ZIndex},
     dyn_value::DynVal,
     element::{
-        Context, Element, EventResponse, EventResponses, ReceivableEventChanges, UpwardPropagator,
+        Context, Element, EventResponse, EventResponses, ReceivableEventChanges, Parent,
     },
     elements::{
         DebugSizePane, FileNavPane, FileViewerPane, HorizontalStack, ImageViewer, MenuBar, Pane,

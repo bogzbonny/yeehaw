@@ -7,7 +7,7 @@ use {
         elements::menu::{MenuItem, MenuPath, MenuStyle},
         Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Error,
         Event, EventResponse, EventResponses, KeyPossibility, Keyboard as KB, Priority,
-        ReceivableEventChanges, RightClickMenu, SortingHat, Style, UpwardPropagator,
+        ReceivableEventChanges, RightClickMenu, SortingHat, Style, Parent,
     },
     crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -1079,7 +1079,7 @@ impl Element for TextBox {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.base.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Box<dyn UpwardPropagator>) {
+    fn set_upward_propagator(&self, up: Box<dyn Parent>) {
         self.base.set_upward_propagator(up)
     }
     fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {
