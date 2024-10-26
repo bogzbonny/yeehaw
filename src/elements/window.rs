@@ -1,8 +1,9 @@
 use {
     crate::{
-        widgets::Button, widgets::Label, Color, Context, DrawChPos, DynLocationSet, DynVal,
-        Element, ElementID, Event, EventResponse, EventResponses, ParentPane, Priority,
-        ReceivableEventChanges, SortingHat, Style, UpwardPropagator, VerticalStack, ZIndex,
+        widgets::{Button, Label, WBStyles},
+        Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
+        EventResponse, EventResponses, ParentPane, Priority, ReceivableEventChanges, SortingHat,
+        Style, UpwardPropagator, VerticalStack, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -42,9 +43,13 @@ impl WindowPane {
         hat: &SortingHat, ctx: &Context, inner: Rc<RefCell<dyn Element>>, title: &str,
     ) -> Self {
         let vs = VerticalStack::new_with_kind(hat, Self::KIND);
+        //vs.pane.pane.set_dyn_width(20.into());
+        //vs.pane.pane.set_dyn_height(10.into());
         let top_bar = Rc::new(RefCell::new(BasicWindowTopBar::new(hat, ctx, title)));
+
         vs.push(ctx, top_bar.clone());
         vs.push(ctx, inner.clone());
+
         Self {
             pane: vs,
             top_bar,
@@ -102,6 +107,11 @@ impl Element for WindowPane {
             }
         }
 
+        // Won't work until mouse capturing is reformatted
+        //if captured {
+        //    return (captured, resps);
+        //}
+
         let top_height = self
             .top_bar
             .borrow()
@@ -118,18 +128,22 @@ impl Element for WindowPane {
                 }
                 let dragging = self.dragging.borrow().is_some();
                 match me.kind {
-                    MouseEventKind::Down(MouseButton::Left) => {
+                    MouseEventKind::Down(MouseButton::Left) if !dragging => {
                         *self.dragging.borrow_mut() = Some((me.column, me.row));
                     }
                     MouseEventKind::Drag(MouseButton::Left) if dragging => {
                         let (start_x, start_y) = self.dragging.borrow().expect("impossible");
-                        let dx = me.column - start_x;
-                        let dy = me.row - start_y;
-                        let x = self.pane.pane.pane.get_start_x(ctx) + dx as i32;
-                        let y = self.pane.pane.pane.get_start_y(ctx) + dy as i32;
-                        self.pane
-                            .pane
-                            .set_x_y(DynVal::new_fixed(x), DynVal::new_fixed(y));
+                        let dx = me.column as i32 - start_x as i32;
+                        let dy = me.row as i32 - start_y as i32;
+                        let x1 = self.pane.pane.pane.get_start_x(ctx) + dx;
+                        let y1 = self.pane.pane.pane.get_start_y(ctx) + dy;
+                        let x2 = self.pane.pane.pane.get_end_x(ctx) + dx;
+                        let y2 = self.pane.pane.pane.get_end_y(ctx) + dy;
+
+                        self.pane.pane.set_start_x(DynVal::new_fixed(x1));
+                        self.pane.pane.set_start_y(DynVal::new_fixed(y1));
+                        self.pane.pane.set_end_x(DynVal::new_fixed(x2));
+                        self.pane.pane.set_end_y(DynVal::new_fixed(y2));
                     }
                     _ => {
                         *self.dragging.borrow_mut() = None;
@@ -140,7 +154,20 @@ impl Element for WindowPane {
                 let dragging = self.dragging.borrow().is_some();
                 if dragging {
                     match me.kind {
-                        MouseEventKind::Drag(MouseButton::Left) => {}
+                        MouseEventKind::Drag(MouseButton::Left) => {
+                            // logic is now relative to the parent context
+                            let (start_x, start_y) = self.dragging.borrow().expect("impossible");
+                            let dx = me.column as i32 - start_x as i32;
+                            let dy = me.row as i32 - start_y as i32;
+                            let x1 = dx;
+                            let y1 = dy;
+                            let x2 = self.pane.pane.pane.get_width(ctx) as i32 + dx;
+                            let y2 = self.pane.pane.pane.get_height(ctx) as i32 + dy;
+                            self.pane.pane.set_start_x(DynVal::new_fixed(x1));
+                            self.pane.pane.set_start_y(DynVal::new_fixed(y1));
+                            self.pane.pane.set_end_x(DynVal::new_fixed(x2));
+                            self.pane.pane.set_end_y(DynVal::new_fixed(y2));
+                        }
                         _ => {
                             *self.dragging.borrow_mut() = None;
                         }
@@ -195,7 +222,22 @@ pub struct BasicWindowTopBar {
 
 impl BasicWindowTopBar {
     pub fn new(hat: &SortingHat, ctx: &Context, title: &str) -> Self {
-        let pane = ParentPane::new(hat, "basic_window_top_bar");
+        let pane = ParentPane::new(hat, "basic_window_top_bar")
+            .with_dyn_height(DynVal::new_fixed(1))
+            .with_dyn_width(DynVal::new_flex(1.))
+            .with_style(Style::default().with_bg(Color::WHITE).with_fg(Color::BLACK));
+
+        let btn_styles = WBStyles::new(
+            Style::default()
+                .with_bg(Color::GREY15)
+                .with_fg(Color::BLACK),
+            Style::default()
+                .with_bg(Color::GREY15)
+                .with_fg(Color::BLACK),
+            Style::default()
+                .with_bg(Color::GREY15)
+                .with_fg(Color::BLACK),
+        );
 
         let close_button = Button::new(
             hat,
@@ -210,19 +252,19 @@ impl BasicWindowTopBar {
             }),
         )
         .basic_button(Some(
-            Style::default().with_fg(Color::BLACK).with_bg(Color::WHITE),
+            Style::default().with_fg(Color::BLACK).with_bg(Color::BLUE),
         ))
-        .at(DynVal::new_fixed(0), DynVal::new_fixed(1));
+        .with_styles(btn_styles)
+        .at(DynVal::new_flex(1.).minus(2.into()), DynVal::new_fixed(0));
+
         let title_label =
-            Label::new(hat, ctx, title).at(DynVal::new_fixed(0), DynVal::new_flex(0.5));
+            Label::new(hat, ctx, title).at(DynVal::new_fixed(1), DynVal::new_fixed(0));
         pane.add_element(Rc::new(RefCell::new(close_button)));
         pane.add_element(Rc::new(RefCell::new(title_label)));
-        let out = Self {
+        Self {
             pane,
             title: title.to_string(),
-        };
-        out.pane.pane.set_dyn_height(DynVal::new_fixed(1));
-        out
+        }
     }
 }
 

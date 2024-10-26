@@ -183,9 +183,7 @@ impl Cui {
     //                                                                       exit-cui
     pub fn process_event_mouse(&mut self, mouse_ev: ct_event::MouseEvent) -> bool {
         let ctx = Context::new_context_for_screen(self.launch_instant);
-        let Some((_, resps)) = self.eo.mouse_event_process(&ctx, &mouse_ev) else {
-            return false;
-        };
+        let (_, resps) = self.eo.mouse_event_process(&ctx, &mouse_ev);
 
         // only check for response for quit
         for resp in resps.iter() {

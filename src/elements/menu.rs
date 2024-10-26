@@ -303,7 +303,7 @@ impl MenuBar {
         }
 
         let mep = self.pane.eo.mouse_event_process(ctx, &ev);
-        let Some((el_id, resps)) = mep else {
+        let (Some(el_id), resps) = mep else {
             if clicked {
                 return self.closedown();
             }

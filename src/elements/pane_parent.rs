@@ -1,8 +1,8 @@
 use {
     crate::{
-        element::ReceivableEventChanges, Context, DrawChPos, DynLocationSet, DynVal, Element,
-        ElementID, ElementOrganizer, Event, EventResponses, Pane, Priority, SortingHat,
-        UpwardPropagator, ZIndex,
+        element::ReceivableEventChanges, Context, DrawCh, DrawChPos, DynLocationSet, DynVal,
+        Element, ElementID, ElementOrganizer, Event, EventResponses, Pane, Priority, SortingHat,
+        Style, UpwardPropagator, ZIndex,
     },
     std::{
         ops::Deref,
@@ -46,8 +46,40 @@ impl ParentPane {
         self.pane.set_start_y(y);
     }
 
+    pub fn set_start_x(&self, x: DynVal) {
+        self.pane.set_start_x(x);
+    }
+
+    pub fn set_start_y(&self, y: DynVal) {
+        self.pane.set_start_y(y);
+    }
+
+    pub fn set_end_x(&self, x: DynVal) {
+        self.pane.set_end_x(x);
+    }
+
+    pub fn set_end_y(&self, y: DynVal) {
+        self.pane.set_end_y(y);
+    }
+
     pub fn with_kind(self, kind: &'static str) -> Self {
         self.pane.set_kind(kind);
+        self
+    }
+
+    pub fn with_style(self, sty: Style) -> Self {
+        let ch = DrawCh::new(' ', sty);
+        self.pane.set_default_ch(ch);
+        self
+    }
+
+    pub fn with_dyn_height(self, h: DynVal) -> Self {
+        self.pane.set_dyn_height(h);
+        self
+    }
+
+    pub fn with_dyn_width(self, w: DynVal) -> Self {
+        self.pane.set_dyn_width(w);
         self
     }
 
@@ -222,10 +254,7 @@ impl Element for ParentPane {
                 (false, EventResponses::default())
             }
             Event::Mouse(me) => {
-                let mep = self.eo.mouse_event_process(ctx, &me);
-                let Some((_, resps)) = mep else {
-                    return (true, EventResponses::default());
-                };
+                let (_, resps) = self.eo.mouse_event_process(ctx, &me);
                 (true, resps)
             }
             Event::ExternalMouse(me) => {

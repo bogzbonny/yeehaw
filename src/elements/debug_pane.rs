@@ -1,6 +1,6 @@
 use {
     crate::{
-        element::ReceivableEventChanges, Color, Context, DrawChPos, DynLocationSet, DynVal,
+        element::ReceivableEventChanges, Context, DrawChPos, DrawChs2D, DynLocationSet, DynVal,
         Element, ElementID, Event, EventResponses, Pane, Priority, SortingHat, Style,
         UpwardPropagator, ZIndex,
     },
@@ -29,6 +29,11 @@ impl DebugSizePane {
 
     pub fn with_height(self, h: DynVal) -> Self {
         self.pane.set_dyn_height(h);
+        self
+    }
+
+    pub fn with_style(self, style: Style) -> Self {
+        self.pane.set_style(style);
         self
     }
 
@@ -62,12 +67,10 @@ impl Element for DebugSizePane {
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let size = ctx.s;
         let s = format!("{}x{} {}", size.width, size.height, self.text.borrow());
-        DrawChPos::new_from_string(
-            s,
-            0,
-            0,
-            Style::default_const().with_bg(Color::BLACK).with_fg(Color::WHITE),
-        )
+        let sty = self.pane.get_style();
+        let content = DrawChs2D::from_string(s, sty);
+        self.pane.set_content(content);
+        self.pane.drawing(ctx)
     }
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
         self.pane.get_attribute(key)

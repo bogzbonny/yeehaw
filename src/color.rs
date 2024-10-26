@@ -833,7 +833,9 @@ impl Color {
     pub const GREY7:         Color = Color::new(70, 70, 75);
     pub const GREY8:         Color = Color::new(80, 80, 85);
     pub const GREY9:         Color = Color::new(90, 90, 95);
+    pub const GREY10:        Color = Color::new(100, 100, 105);
     pub const GREY11:        Color = Color::new(110, 110, 115);
+    pub const GREY12:        Color = Color::new(120, 120, 125);
     pub const GREY13:        Color = Color::new(130, 130, 135);
     pub const GREY14:        Color = Color::new(140, 140, 145);
     pub const GREY15:        Color = Color::new(150, 150, 155);

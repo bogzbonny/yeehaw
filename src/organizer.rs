@@ -454,11 +454,27 @@ impl ElementOrganizer {
     // - processes changes to the element's receivable events
     pub fn mouse_event_process(
         &self, ctx: &Context, ev: &crossterm::event::MouseEvent,
-    ) -> Option<(ElementID, EventResponses)> {
+    ) -> (Option<ElementID>, EventResponses) {
         let eoz = self.get_el_id_z_order_under_mouse(ctx, ev);
 
+        if eoz.is_empty() {
+            let mut el_resps = Vec::new();
+            for (el_id2, details2) in self.els.borrow().iter() {
+                let child_ctx = self.get_context_for_el(ctx, details2); // XXX this is new make sure this doesn't mess stuff up (test menu)
+                let (_, r) = details2
+                    .el
+                    .borrow_mut()
+                    .receive_event(&child_ctx, Event::ExternalMouse(*ev));
+                el_resps.push((el_id2.clone(), r));
+            }
+            return (None, EventResponses::default());
+        }
+
         // get the highest-z element from the eoz list
-        let max_z = eoz.iter().max_by_key(|(_, z)| *z)?;
+        let max_z = eoz
+            .iter()
+            .max_by_key(|(_, z)| *z)
+            .expect("impossible as eoz is not empty");
         let el_id = max_z.0.clone();
 
         let details = self
@@ -497,7 +513,7 @@ impl ElementOrganizer {
             self.partially_process_ev_resps(ctx, &el_id2, &mut resps);
             ev_resps.extend(resps.0);
         }
-        Some((el_id, ev_resps))
+        (Some(el_id), ev_resps)
     }
 
     // sends the external mouse command to all elements in the organizer

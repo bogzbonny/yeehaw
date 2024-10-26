@@ -2,7 +2,7 @@ use {
     crate::{
         element::ReceivableEventChanges, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation,
         DynLocationSet, DynVal, Element, ElementID, Event, EventResponses, Priority, SortingHat,
-        UpwardPropagator, ZIndex,
+        Style, UpwardPropagator, ZIndex,
     },
     std::{
         collections::HashMap,
@@ -114,12 +114,41 @@ impl Pane {
         self.loc.borrow_mut().l.set_start_y(y);
     }
 
+    pub fn set_end_x(&self, x: DynVal) {
+        self.loc.borrow_mut().l.set_end_x(x);
+    }
+
+    pub fn set_end_y(&self, y: DynVal) {
+        self.loc.borrow_mut().l.set_end_y(y);
+    }
+
     pub fn get_start_x(&self, ctx: &Context) -> i32 {
         self.loc.borrow().l.get_start_x(ctx)
     }
 
     pub fn get_start_y(&self, ctx: &Context) -> i32 {
         self.loc.borrow().l.get_start_y(ctx)
+    }
+
+    pub fn get_end_x(&self, ctx: &Context) -> i32 {
+        self.loc.borrow().l.get_end_x(ctx)
+    }
+
+    pub fn get_end_y(&self, ctx: &Context) -> i32 {
+        self.loc.borrow().l.get_end_y(ctx)
+    }
+
+    pub fn get_height(&self, ctx: &Context) -> usize {
+        self.loc.borrow().l.height(ctx)
+    }
+
+    pub fn get_width(&self, ctx: &Context) -> usize {
+        self.loc.borrow().l.width(ctx)
+    }
+
+    pub fn with_height(self, h: DynVal) -> Pane {
+        self.loc.borrow_mut().l.set_dyn_height(h);
+        self
     }
 
     pub fn with_width(self, w: DynVal) -> Pane {
@@ -139,11 +168,6 @@ impl Pane {
         self.loc.borrow_mut().set_z(z);
     }
 
-    pub fn with_height(self, h: DynVal) -> Pane {
-        self.loc.borrow_mut().l.set_dyn_height(h);
-        self
-    }
-
     pub fn with_dyn_location(self, l: DynLocation) -> Pane {
         self.loc.borrow_mut().l = l;
         self
@@ -154,9 +178,30 @@ impl Pane {
         self
     }
 
+    pub fn set_content(&self, content: DrawChs2D) {
+        *self.content.borrow_mut() = content;
+    }
+
     pub fn with_default_ch(self, ch: DrawCh) -> Pane {
         *self.default_ch.borrow_mut() = ch;
         self
+    }
+
+    pub fn with_style(self, style: Style) -> Pane {
+        self.default_ch.borrow_mut().style = style;
+        self
+    }
+
+    pub fn set_style(&self, style: Style) {
+        self.default_ch.borrow_mut().style = style;
+    }
+
+    pub fn get_style(&self) -> Style {
+        self.default_ch.borrow().style.clone()
+    }
+
+    pub fn set_default_ch(&self, ch: DrawCh) {
+        *self.default_ch.borrow_mut() = ch;
     }
 
     pub fn with_default_line(self, line: Vec<DrawCh>) -> Pane {
