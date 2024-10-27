@@ -2,12 +2,9 @@
 05. use .flf (figlet font) format instead of custom megatext
      - https://docs.rs/figlet-rs/latest/figlet_rs/
 01. alpha not working for bg of debug window in window_test
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 01. SB bug, if setting size to flex(1.).minus(fixed(x)) for each x the scrollbar
     will actually remove two character spaces (instead of expected 1)
       - I suspect this has to do with the domain_incr
-
 01. wierd bugs with maximized windows (window_test)
  - HAS TODO WITH STACK PANE:             self.normalize_locations(ctx); helps
     - Also when adjusting up the CornerAdjuster gets higher!
@@ -22,45 +19,20 @@
       maximized window back.
     - might be a bug with either parent pane or vertical stack
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 01. floating window element
       - TopBar - title, x button, drag to move the whole window
       - restore minimize only on upclick
       - lower righthand triangle for resizing
       - test with scrollable pane
-      DONE ^^^ 
       - when maximized, if the corner adjustor is used, then reset the maxizer
         button to not maximized.
-      - bug; the top bar is receiving events for top row of the inner
-        pane
       - prevent the window from moving further left than the screen... 
          - this makes the buttons and the corner adjuster stop working
-      - minimized guys should stack in the parent pane (ex. to the right)
-         - this should be easy for adding new panes on top
-         - the difficulty comes if you maximize any early minimized window. The
-           righthand minimized windows would need to be shifted to the right.
-            KEY: MINIMIZED_ELEMENTS
-            Values: 
-               orientation: Enum (left or right)
-               els: Vec<(ElementID, pos)> 
-            - with all this information, each time a window maximized or
-              minimized itself it should be able to reorient the locations 
-              of the other panes if need be.
-
-            
-30. reorient minimized window in the parent when there is a resize. 
-     - for instance if the minimized windows used the entire bottom 
-       of the parent pane, then those elements should be shuffled to the higher
-       row if the parent pane is resized smaller.
-     - this will be technically a bit complex maybe, I imagine we 
-       need a special hook for moving around minimized panes. Alternatively 
-       we could just hard code in special logic if the MINIMIZED_ELEMENTS key
-       exists in the store. 
-        - maybe we could allow other elements to register hooks on event kinds.
-           - shouldn't be that complex. Each window could just ensure that the 
-           parent pane has this hook registered for resized on each
-           minimization.
-
-01. make crate into a workspace
+      DONE ^^^ 
+      - bug; the top bar is receiving events for top row of the inner
+        pane
 
 01. menu_test seems to not select the final final sub menu (hi in diner) 
     - NOT due to 9bdebc2 (HEAD -> main, origin/main) made external mouse events relative
@@ -138,12 +110,40 @@
                  location would be flattened down such that it was not a sub-item
                  of the menu-bar but of the same parent the menu-bar has 
 
+05. STACKING of minimized windows in parent pane
+    MAYBE do only after taffy is integrated... could help for these guys
+      - minimized guys should stack in the parent pane (ex. to the right)
+         - this should be easy for adding new panes on top
+         - the difficulty comes if you maximize any early minimized window. The
+           righthand minimized windows would need to be shifted to the right.
+            KEY: MINIMIZED_ELEMENTS
+            Values: 
+               orientation: Enum (left or right)
+               els: Vec<(ElementID, pos)> 
+            - with all this information, each time a window maximized or
+              minimized itself it should be able to reorient the locations 
+              of the other panes if need be.
+    reorient minimized window in the parent when there is a resize. 
+     - for instance if the minimized windows used the entire bottom 
+       of the parent pane, then those elements should be shuffled to the higher
+       row if the parent pane is resized smaller.
+     - this will be technically a bit complex maybe, I imagine we 
+       need a special hook for moving around minimized panes. Alternatively 
+       we could just hard code in special logic if the MINIMIZED_ELEMENTS key
+       exists in the store. 
+        - maybe we could allow other elements to register hooks on event kinds.
+           - shouldn't be that complex. Each window could just ensure that the 
+           parent pane has this hook registered for resized on each
+           minimization.
+
 05. Time Base Events. add a "future event" to a part of the EventResponse. In
     the future event there is a timestamp which says when this event should be
     activated. This can be triggered in the render loop and the event will then
     routed through the standard event loop as normal. This can be used to
     replicate a heartbeat for a element, or to simulate a visual effect such as
     a button click (useful for button when Enter key is hit).
+
+01. make crate into a workspace
 
 10. cui export visual area to either DynamicImage, .png, or .ans
       - useful for WIMP
