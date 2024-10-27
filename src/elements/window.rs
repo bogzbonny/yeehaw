@@ -388,14 +388,14 @@ impl Element for WindowPane {
                 if dragging {
                     match me.kind {
                         MouseEventKind::Drag(MouseButton::Left) => {
-                            // logic is now relative to the parent context
                             let (start_x, start_y) = self.dragging.borrow().expect("impossible");
-                            let dx = me.column as i32 - start_x as i32;
-                            let dy = me.row as i32 - start_y as i32;
-                            let x1 = dx;
-                            let y1 = dy;
-                            let x2 = self.pane.pane.pane.get_width(ctx) as i32 + dx;
-                            let y2 = self.pane.pane.pane.get_height(ctx) as i32 + dy;
+                            let (start_x, start_y) = (start_x as i32, start_y as i32);
+                            let dx = me.column - start_x;
+                            let dy = me.row - start_y;
+                            let x1 = self.pane.pane.pane.get_start_x(ctx) + dx;
+                            let y1 = self.pane.pane.pane.get_start_y(ctx) + dy;
+                            let x2 = self.pane.pane.pane.get_end_x(ctx) + dx;
+                            let y2 = self.pane.pane.pane.get_end_y(ctx) + dy;
                             self.pane.pane.set_start_x(DynVal::new_fixed(x1));
                             self.pane.pane.set_start_y(DynVal::new_fixed(y1));
                             self.pane.pane.set_end_x(DynVal::new_fixed(x2));
@@ -709,7 +709,7 @@ impl Element for CornerAdjuster {
     fn receivable(&self) -> Vec<(Event, Priority)> {
         self.pane.receivable()
     }
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event_inner(&self, _ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let cur_dragging = *self.dragging.borrow();
         match ev {
             Event::Mouse(me) => match me.kind {
@@ -719,17 +719,8 @@ impl Element for CornerAdjuster {
             },
             Event::ExternalMouse(me) => match me.kind {
                 MouseEventKind::Drag(MouseButton::Left) if cur_dragging => {
-                    // logic is now relative to the parent context
-                    let Some(ref p_ctx) = ctx.parent_ctx else {
-                        return (false, EventResponses::default());
-                    };
-                    let start_x = self.pane.get_start_x(p_ctx);
-                    let start_y = self.pane.get_start_y(p_ctx);
-                    debug!("\nctx: {:?}", ctx);
-                    let dx = me.column as i32 - start_x;
-                    debug!("me.column {:?}, start_x: {}", me.column, start_x);
-                    let dy = me.row as i32 - start_y;
-                    debug!("me.row {:?}, start_y: {}", me.row, start_y);
+                    let dx = me.column;
+                    let dy = me.row;
                     let adj_size_ev = AdjustSizeEvent { dx, dy };
                     let bz = match serde_json::to_vec(&adj_size_ev) {
                         Ok(v) => v,

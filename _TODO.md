@@ -35,7 +35,9 @@
               of the other panes if need be.
 
 01. menu_test seems to not select the final final sub menu (hi in diner) 
+    - NOT due to 9bdebc2 (HEAD -> main, origin/main) made external mouse events relative
 01. right click menu is way to large in widget_test
+    - NOT due to 9bdebc2 (HEAD -> main, origin/main) made external mouse events relative
             
 30. reorient minimized window in the parent when there is a resize. 
      - for instance if the minimized windows used the entire bottom 

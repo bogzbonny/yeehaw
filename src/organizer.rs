@@ -211,8 +211,7 @@ impl ElementOrganizer {
         } else {
             None
         };
-        Context::new(size, higher_ctx.dur_since_launch, Some(higher_ctx.clone()))
-            .with_visible_region(visible_region)
+        Context::new(size, higher_ctx.dur_since_launch).with_visible_region(visible_region)
     }
 
     // Receivable returns all of the key combos and commands registered to this

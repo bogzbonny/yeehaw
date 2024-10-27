@@ -17,19 +17,15 @@ pub struct Context {
     pub visible_region: Option<Loc>, // the visible region of the element
     //                      key , value
     pub metadata: HashMap<String, Vec<u8>>,
-    pub parent_ctx: Option<Box<Context>>,
 }
 
 impl Context {
-    pub fn new(
-        s: Size, dur_since_launch: std::time::Duration, parent_ctx: Option<Context>,
-    ) -> Context {
+    pub fn new(s: Size, dur_since_launch: std::time::Duration) -> Context {
         Context {
             s,
             dur_since_launch,
             visible_region: None,
             metadata: HashMap::new(),
-            parent_ctx: parent_ctx.map(|pc| Box::new(pc)),
         }
     }
 
@@ -46,7 +42,6 @@ impl Context {
             dur_since_launch: std::time::Duration::default(),
             visible_region: None,
             metadata: HashMap::new(),
-            parent_ctx: None,
         }
     }
 
@@ -58,7 +53,6 @@ impl Context {
             dur_since_launch: launch_instant.elapsed(),
             visible_region: None,
             metadata: HashMap::new(),
-            parent_ctx: None,
         }
     }
 
