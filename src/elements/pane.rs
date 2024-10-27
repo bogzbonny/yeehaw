@@ -147,6 +147,14 @@ impl Pane {
         self.loc.borrow().l.get_end_y(ctx)
     }
 
+    pub fn get_dyn_end_x(&self) -> DynVal {
+        self.loc.borrow().l.end_x.clone()
+    }
+
+    pub fn get_dyn_end_y(&self) -> DynVal {
+        self.loc.borrow().l.end_y.clone()
+    }
+
     pub fn get_height(&self, ctx: &Context) -> usize {
         self.loc.borrow().l.height(ctx)
     }

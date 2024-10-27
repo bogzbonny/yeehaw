@@ -171,12 +171,31 @@ impl Element for WindowPane {
                         continue;
                     }
                 };
-                let dx = adj_size_ev.dx;
-                let dy = adj_size_ev.dy;
-                let end_x = self.pane.pane.pane.get_end_x(ctx) + dx;
-                let end_y = self.pane.pane.pane.get_end_y(ctx) + dy;
-                self.pane.pane.set_end_x(DynVal::new_fixed(end_x));
-                self.pane.pane.set_end_y(DynVal::new_fixed(end_y));
+                let mut dx = adj_size_ev.dx;
+                let mut dy = adj_size_ev.dy;
+                let width = self.pane.pane.pane.get_width(ctx) as i32;
+                let height = self.pane.pane.pane.get_height(ctx) as i32;
+                if width + dx < 2 {
+                    dx = 0
+                }
+                if height + dy < 2 {
+                    dy = 0
+                }
+
+                //let end_x = self.pane.pane.pane.get_end_x(ctx) + dx;
+                //let end_y = self.pane.pane.pane.get_end_y(ctx) + dy;
+                //self.pane.pane.set_end_x(DynVal::new_fixed(end_x));
+                //self.pane.pane.set_end_y(DynVal::new_fixed(end_y));
+
+                let mut end_x = self.pane.pane.pane.get_dyn_end_x().plus(dx.into());
+                let mut end_y = self.pane.pane.pane.get_dyn_end_y().plus(dy.into());
+                end_x.flatten_internal();
+                end_y.flatten_internal();
+                self.pane.pane.set_end_x(end_x);
+                self.pane.pane.set_end_y(end_y);
+
+                self.pane.normalize_locations(ctx); // need this or else the inner size gets wonky
+
                 *resp = EventResponse::None;
                 continue;
             }
@@ -222,6 +241,7 @@ impl Element for WindowPane {
                         resps_.extend(r.0);
                         let (_, r) = self.inner.borrow().receive_event(&inner_ctx, Event::Resize);
                         resps_.extend(r.0);
+                        self.pane.normalize_locations(ctx); // need this or else the inner size gets wonky
 
                         self.maximized_restore.replace(None);
                     }
@@ -248,6 +268,8 @@ impl Element for WindowPane {
 
                         *resp = EventResponse::None;
                         self.maximized_restore.replace(Some(restore_loc));
+
+                        self.pane.normalize_locations(ctx); // need this or else the inner size gets wonky
                         continue;
                     }
                 }
@@ -296,6 +318,7 @@ impl Element for WindowPane {
                 self.inner.borrow().get_visible().replace(false);
                 *resp = EventResponse::None;
                 self.minimized_restore.replace(Some(restore_loc));
+                self.pane.normalize_locations(ctx); // need this or else the inner size gets wonky
                 continue;
             }
         }

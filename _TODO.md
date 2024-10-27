@@ -5,8 +5,11 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
-01. wierd bug with maximized windows (window_test)
+01. wierd bugs with maximized windows (window_test)
+ - HAS TODO WITH STACK PANE:             self.normalize_locations(ctx); helps
+    - Also when adjusting up the CornerAdjuster gets higher!
+       - seems to be only in the y dir not the x-dir
+       - seems to be in x and y for scrollable pane inside window
     - create two windows
     - maximize one
     - minimize one
@@ -19,9 +22,15 @@
 01. floating window element
       - TopBar - title, x button, drag to move the whole window
       - restore minimize only on upclick
-      DONE ^^^ 
       - lower righthand triangle for resizing
       - test with scrollable pane
+      DONE ^^^ 
+      - when maximized, if the corner adjustor is used, then reset the maxizer
+        button to not maximized.
+      - bug; the top bar is receiving events for top row of the inner
+        pane
+      - prevent the window from moving further left than the screen... 
+         - this makes the buttons and the corner adjuster stop working
       - minimized guys should stack in the parent pane (ex. to the right)
          - this should be easy for adding new panes on top
          - the difficulty comes if you maximize any early minimized window. The
@@ -34,10 +43,6 @@
               minimized itself it should be able to reorient the locations 
               of the other panes if need be.
 
-01. menu_test seems to not select the final final sub menu (hi in diner) 
-    - NOT due to 9bdebc2 (HEAD -> main, origin/main) made external mouse events relative
-01. right click menu is way to large in widget_test
-    - NOT due to 9bdebc2 (HEAD -> main, origin/main) made external mouse events relative
             
 30. reorient minimized window in the parent when there is a resize. 
      - for instance if the minimized windows used the entire bottom 
@@ -53,6 +58,11 @@
            minimization.
 
 01. make crate into a workspace
+
+01. menu_test seems to not select the final final sub menu (hi in diner) 
+    - NOT due to 9bdebc2 (HEAD -> main, origin/main) made external mouse events relative
+01. right click menu is way to large in widget_test
+    - NOT due to 9bdebc2 (HEAD -> main, origin/main) made external mouse events relative
 
 05. borders-pane wrapper
      - option for each of up/down/right/left

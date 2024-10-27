@@ -322,6 +322,9 @@ impl Element for VerticalStack {
         self.pane.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        if ev == Event::Resize {
+            self.normalize_locations(ctx);
+        }
         self.pane.receive_event(ctx, ev.clone())
     }
     fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
@@ -370,6 +373,9 @@ impl Element for HorizontalStack {
         self.pane.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        if ev == Event::Resize {
+            self.normalize_locations(ctx);
+        }
         self.pane.receive_event(ctx, ev.clone())
     }
     fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
