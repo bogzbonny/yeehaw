@@ -87,6 +87,15 @@ impl Pane {
         self
     }
 
+    pub fn at(self, x: DynVal, y: DynVal) -> Pane {
+        self.set_at(x, y);
+        self
+    }
+
+    pub fn set_at(&self, x: DynVal, y: DynVal) {
+        self.loc.borrow_mut().l.set_at(x, y);
+    }
+
     pub fn set_kind(&self, kind: &'static str) {
         *self.kind.borrow_mut() = kind;
     }
@@ -146,12 +155,12 @@ impl Pane {
         self.loc.borrow().l.width(ctx)
     }
 
-    pub fn with_height(self, h: DynVal) -> Pane {
+    pub fn with_dyn_height(self, h: DynVal) -> Pane {
         self.loc.borrow_mut().l.set_dyn_height(h);
         self
     }
 
-    pub fn with_width(self, w: DynVal) -> Pane {
+    pub fn with_dyn_width(self, w: DynVal) -> Pane {
         self.loc.borrow_mut().l.set_dyn_width(w);
         self
     }

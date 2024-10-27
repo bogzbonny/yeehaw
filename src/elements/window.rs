@@ -1,9 +1,9 @@
 use {
     crate::{
         widgets::{Button, Label, WBStyles},
-        Color, Context, DrawChPos, DynLocation, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponse, EventResponses, Parent, ParentPane, Priority, ReceivableEventChanges,
-        SortingHat, Style, VerticalStack, ZIndex,
+        Color, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal, Element,
+        ElementID, Event, EventResponse, EventResponses, Pane, Parent, ParentPane, Priority,
+        ReceivableEventChanges, SortingHat, Style, VerticalStack, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -23,21 +23,6 @@ pub struct WindowPane {
     pub minimized_restore: Rc<RefCell<Option<DynLocation>>>,
     pub minimized_width: Rc<RefCell<u16>>,
 }
-
-/// Window border characters
-/// NOTE top characters will intersect with the upper bar of the window
-//pub struct WindowBorder {
-//    pub top: char,
-//    pub top_left: char,
-//    pub top_right: char,
-
-//    pub left: char,
-//    pub right: char,
-
-//    pub bottom: char,
-//    pub bottom_right: char,
-//    pub bottom_left: char,
-//}
 
 impl WindowPane {
     const KIND: &'static str = "window_pane";
@@ -72,7 +57,7 @@ impl WindowPane {
     }
 
     pub fn at(self, x: DynVal, y: DynVal) -> Self {
-        self.pane.pane.set_x_y(x, y);
+        self.pane.pane.set_at(x, y);
         self
     }
 
@@ -96,6 +81,62 @@ impl WindowPane {
         self.pane.pane.pane.set_dyn_height(h);
         self
     }
+
+    pub fn with_corner_adjuster(self, hat: &SortingHat, ctx: &Context) -> Self {
+        let ca = CornerAdjuster::new(hat, ctx).at(
+            DynVal::new_flex(1.).minus(1.into()),
+            DynVal::new_flex(1.).minus(1.into()),
+        );
+        self.pane.pane.add_element(Rc::new(RefCell::new(ca)));
+
+        use crate::organizer::ElDetails;
+        let mut eoz: Vec<(ElementID, ElDetails)> = Vec::new();
+        for (el_id, details) in self.pane.pane.eo.els.borrow().iter() {
+            eoz.push((el_id.clone(), details.clone()));
+        }
+
+        /*
+        // sort z index from low to high
+        eoz.sort_by(|a, b| a.1.loc.borrow().z.cmp(&b.1.loc.borrow().z));
+
+        // draw elements in order from highest z-index to lowest
+        for el_id_z in eoz {
+            debug!("\n element {:?}", el_id_z.0);
+            let details = self
+                .pane
+                .pane
+                .eo
+                .get_element_details(&el_id_z.0)
+                .expect("impossible");
+            if !*details.vis.borrow() {
+                continue;
+            }
+            if let Some(vis_loc) = ctx.visible_region {
+                if !vis_loc.intersects_dyn_location_set(ctx, &details.loc.borrow()) {
+                    continue;
+                }
+            }
+
+            debug!("ctx {:?}", ctx);
+            let size = el_id_z.1.loc.borrow().l.get_size(ctx);
+            debug!("size {:?}", size);
+            let start_x = el_id_z.1.loc.borrow().l.get_start_x(ctx);
+            let start_y = el_id_z.1.loc.borrow().l.get_start_y(ctx);
+            let end_x = el_id_z.1.loc.borrow().l.get_end_x(ctx);
+            let end_y = el_id_z.1.loc.borrow().l.get_end_y(ctx);
+            debug!("start_x {:?}", start_x);
+            debug!("start_y {:?}", start_y);
+            debug!("end_x {:?}", end_x);
+            debug!("end_y {:?}", end_y);
+
+            let child_ctx = self.pane.pane.eo.get_context_for_el(ctx, &el_id_z.1);
+
+            debug!("child ctx {:?}", child_ctx);
+        }
+        */
+
+        self
+    }
 }
 
 impl Element for WindowPane {
@@ -115,8 +156,33 @@ impl Element for WindowPane {
         let mut resps_ = EventResponses::default();
         let mut just_minimized = false;
         for resp in resps.iter_mut() {
+            let mut adjust_size = None;
+            if let EventResponse::Metadata(key, adj_bz) = resp {
+                if key == CornerAdjuster::ADJUST_SIZE_MD_KEY {
+                    adjust_size = Some(adj_bz);
+                }
+            }
+            if let Some(bz) = adjust_size {
+                // get the adjust size event
+                let adj_size_ev: AdjustSizeEvent = match serde_json::from_slice(bz) {
+                    Ok(v) => v,
+                    Err(_e) => {
+                        // TODO log error
+                        continue;
+                    }
+                };
+                let dx = adj_size_ev.dx;
+                let dy = adj_size_ev.dy;
+                let end_x = self.pane.pane.pane.get_end_x(ctx) + dx;
+                let end_y = self.pane.pane.pane.get_end_y(ctx) + dy;
+                self.pane.pane.set_end_x(DynVal::new_fixed(end_x));
+                self.pane.pane.set_end_y(DynVal::new_fixed(end_y));
+                *resp = EventResponse::None;
+                continue;
+            }
+
             let mut close_window = false;
-            if let EventResponse::Metadata((key, _)) = resp {
+            if let EventResponse::Metadata(key, _) = resp {
                 if key == Self::CLOSE_WINDOW_MD_KEY {
                     close_window = true;
                 }
@@ -128,7 +194,7 @@ impl Element for WindowPane {
             }
 
             let mut maximize_window = false;
-            if let EventResponse::Metadata((key, _)) = resp {
+            if let EventResponse::Metadata(key, _) = resp {
                 if key == Self::MAXIMIZE_WINDOW_MD_KEY {
                     maximize_window = true;
                 }
@@ -188,7 +254,7 @@ impl Element for WindowPane {
             }
 
             let mut minimize_window = false;
-            if let EventResponse::Metadata((key, _)) = resp {
+            if let EventResponse::Metadata(key, _) = resp {
                 if key == Self::MINIMIZE_WINDOW_MD_KEY {
                     minimize_window = true;
                     just_minimized = true;
@@ -419,10 +485,10 @@ impl BasicWindowTopBar {
                 ctx,
                 "x",
                 Box::new(|_, _ctx| {
-                    EventResponse::Metadata((
+                    EventResponse::Metadata(
                         WindowPane::CLOSE_WINDOW_MD_KEY.to_string(),
                         Vec::with_capacity(0),
-                    ))
+                    )
                     .into()
                 }),
             )
@@ -450,10 +516,10 @@ impl BasicWindowTopBar {
                         "□" => "◱".to_string(),
                         _ => "□".to_string(),
                     };
-                    EventResponse::Metadata((
+                    EventResponse::Metadata(
                         WindowPane::MAXIMIZE_WINDOW_MD_KEY.to_string(),
                         Vec::with_capacity(0),
-                    ))
+                    )
                     .into()
                 }),
             )
@@ -475,10 +541,10 @@ impl BasicWindowTopBar {
                 ctx,
                 "ˍ",
                 Box::new(|_, _ctx| {
-                    EventResponse::Metadata((
+                    EventResponse::Metadata(
                         WindowPane::MINIMIZE_WINDOW_MD_KEY.to_string(),
                         Vec::with_capacity(0),
-                    ))
+                    )
                     .into()
                 }),
             )
@@ -494,10 +560,13 @@ impl BasicWindowTopBar {
         }
 
         let title_label = Rc::new(RefCell::new(
-            Label::new(hat, ctx, title).at(DynVal::new_fixed(1), DynVal::new_fixed(0)),
+            Label::new(hat, ctx, title)
+                .with_style(ctx, Style::transparent())
+                .at(DynVal::new_fixed(1), DynVal::new_fixed(0)),
         ));
         let decor_label = Rc::new(RefCell::new(
             Label::new(hat, ctx, "◹")
+                .with_style(ctx, Style::transparent())
                 .at(DynVal::new_flex(1.).minus(2.into()), DynVal::new_fixed(0)),
         ));
         pane.add_element(title_label.clone());
@@ -547,6 +616,138 @@ impl Element for BasicWindowTopBar {
             }
             _ => self.pane.receive_event(ctx, ev),
         }
+    }
+    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
+        self.pane.change_priority(ctx, p)
+    }
+    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        self.pane.drawing(ctx)
+    }
+    fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
+        self.pane.get_attribute(key)
+    }
+    fn set_attribute(&self, key: &str, value: Vec<u8>) {
+        self.pane.set_attribute(key, value)
+    }
+    fn set_upward_propagator(&self, up: Box<dyn Parent>) {
+        self.pane.set_upward_propagator(up)
+    }
+    fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {
+        self.pane.set_hook(kind, el_id, hook)
+    }
+    fn remove_hook(&self, kind: &str, el_id: ElementID) {
+        self.pane.remove_hook(kind, el_id)
+    }
+    fn clear_hooks_by_id(&self, el_id: ElementID) {
+        self.pane.clear_hooks_by_id(el_id)
+    }
+    fn call_hooks_of_kind(&self, kind: &str) {
+        self.pane.call_hooks_of_kind(kind)
+    }
+    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
+        self.pane.get_dyn_location_set()
+    }
+    fn get_visible(&self) -> Rc<RefCell<bool>> {
+        self.pane.get_visible()
+    }
+}
+
+// ------------------------------------------------
+
+/// a small element (one character) that can be used to send resize requests to parent elements
+pub struct CornerAdjuster {
+    pub pane: Pane,
+    pub dragging: Rc<RefCell<bool>>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+pub struct AdjustSizeEvent {
+    pub dx: i32,
+    pub dy: i32,
+}
+
+impl CornerAdjuster {
+    const ADJUST_SIZE_MD_KEY: &'static str = "adjust_size";
+    const Z_INDEX: ZIndex = 200;
+
+    pub fn new(hat: &SortingHat, _ctx: &Context) -> Self {
+        let pane = Pane::new(hat, "resize_corner")
+            .with_dyn_height(1.into())
+            .with_dyn_width(1.into())
+            .with_style(Style::default().with_bg(Color::WHITE).with_fg(Color::BLACK))
+            .with_content(DrawChs2D::from_char(
+                '◢',
+                Style::default()
+                    .with_fg(Color::WHITE)
+                    .with_bg(Color::TRANSPARENT),
+            ));
+        pane.set_z(Self::Z_INDEX);
+        Self {
+            pane,
+            dragging: Rc::new(RefCell::new(false)),
+        }
+    }
+
+    pub fn with_ch(self, ch: DrawCh) -> Self {
+        self.pane.set_content(ch.into());
+        self
+    }
+
+    pub fn at(self, x: DynVal, y: DynVal) -> Self {
+        self.pane.set_at(x, y);
+        self
+    }
+}
+
+impl Element for CornerAdjuster {
+    fn kind(&self) -> &'static str {
+        self.pane.kind()
+    }
+    fn id(&self) -> ElementID {
+        self.pane.id()
+    }
+    fn receivable(&self) -> Vec<(Event, Priority)> {
+        self.pane.receivable()
+    }
+    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        let cur_dragging = *self.dragging.borrow();
+        match ev {
+            Event::Mouse(me) => match me.kind {
+                MouseEventKind::Down(MouseButton::Left) => *self.dragging.borrow_mut() = true,
+                MouseEventKind::Drag(MouseButton::Left) => {}
+                _ => *self.dragging.borrow_mut() = false,
+            },
+            Event::ExternalMouse(me) => match me.kind {
+                MouseEventKind::Drag(MouseButton::Left) if cur_dragging => {
+                    // logic is now relative to the parent context
+                    let Some(ref p_ctx) = ctx.parent_ctx else {
+                        return (false, EventResponses::default());
+                    };
+                    let start_x = self.pane.get_start_x(p_ctx);
+                    let start_y = self.pane.get_start_y(p_ctx);
+                    debug!("\nctx: {:?}", ctx);
+                    let dx = me.column as i32 - start_x;
+                    debug!("me.column {:?}, start_x: {}", me.column, start_x);
+                    let dy = me.row as i32 - start_y;
+                    debug!("me.row {:?}, start_y: {}", me.row, start_y);
+                    let adj_size_ev = AdjustSizeEvent { dx, dy };
+                    let bz = match serde_json::to_vec(&adj_size_ev) {
+                        Ok(v) => v,
+                        Err(_e) => {
+                            // TODO log error
+                            return (false, EventResponses::default());
+                        }
+                    };
+                    return (
+                        true,
+                        EventResponse::Metadata(Self::ADJUST_SIZE_MD_KEY.to_string(), bz).into(),
+                    );
+                }
+                _ => *self.dragging.borrow_mut() = false,
+            },
+            _ => {}
+        }
+        (false, EventResponses::default())
     }
     fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
         self.pane.change_priority(ctx, p)

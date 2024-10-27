@@ -2,8 +2,8 @@ use {
     super::Label,
     crate::{
         event::Event, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal,
-        Element, ElementID, EventResponse, EventResponses, Pane, Priority, ReceivableEventChanges,
-        SortingHat, Style, Parent, ZIndex,
+        Element, ElementID, EventResponse, EventResponses, Pane, Parent, Priority,
+        ReceivableEventChanges, SortingHat, Style, ZIndex,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -671,6 +671,14 @@ impl WBStyles {
             selected_style,
             ready_style,
             unselectable_style,
+        }
+    }
+
+    pub fn transparent() -> WBStyles {
+        WBStyles {
+            selected_style: Style::transparent(),
+            ready_style: Style::transparent(),
+            unselectable_style: Style::transparent(),
         }
     }
 }

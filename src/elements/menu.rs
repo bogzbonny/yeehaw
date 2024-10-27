@@ -1,8 +1,8 @@
 use {
     crate::{
         Color, Context, DrawCh, DrawChPos, DynLocation, DynLocationSet, DynVal, Element, ElementID,
-        Event, EventResponses, Pane, ParentPane, Priority, ReceivableEventChanges, SortingHat,
-        Style, Parent, ZIndex,
+        Event, EventResponses, Pane, Parent, ParentPane, Priority, ReceivableEventChanges,
+        RelMouseEvent, SortingHat, Style, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::collections::HashMap,
@@ -342,7 +342,7 @@ impl MenuBar {
     }
 
     pub fn receive_external_mouse_event(
-        &self, _ctx: &Context, ev: crossterm::event::MouseEvent,
+        &self, _ctx: &Context, ev: RelMouseEvent,
     ) -> (bool, EventResponses) {
         let clicked = matches!(
             ev.kind,
@@ -663,7 +663,7 @@ impl Element for MenuBar {
         for el_details in self.pane.eo.els.borrow().values() {
             // offset pos to location
             let s = el_details.loc.borrow().l.get_size(ctx);
-            let c = Context::new(s, ctx.dur_since_launch)
+            let c = Context::new(s, ctx.dur_since_launch, Some(ctx.clone()))
                 .with_metadata(Self::MENU_STYLE_MD_KEY.to_string(), menu_style_bz.clone());
             let dcps = el_details.el.borrow().drawing(&c);
 

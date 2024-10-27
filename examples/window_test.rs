@@ -43,6 +43,7 @@ async fn main() -> Result<(), Error> {
         ctx_.s.width = 30;
         ctx_.s.height = 20;
         let window = WindowPane::new(&hat_, &ctx_, Rc::new(RefCell::new(el)), &title)
+            .with_corner_adjuster(&hat_, &ctx_)
             .at(DynVal::new_fixed(10), DynVal::new_fixed(10))
             .with_height(DynVal::new_fixed(20))
             .with_width(DynVal::new_fixed(30));
@@ -52,7 +53,7 @@ async fn main() -> Result<(), Error> {
     });
 
     let add_button =
-        Button::new(&hat, &ctx, "add_pane", add_button_click_fn).at(1.into(), 1.into());
+        Button::new(&hat, &ctx, "add_window", add_button_click_fn).at(1.into(), 1.into());
     pp.add_element(Rc::new(RefCell::new(add_button)));
 
     Cui::new(Rc::new(RefCell::new(pp)))?.run().await

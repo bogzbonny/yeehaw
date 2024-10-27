@@ -1,4 +1,4 @@
-use crate::{Context, DynVal};
+use crate::{Context, DynVal, RelMouseEvent};
 
 // ZIndex is the z-index or position in the z-dimension of the element
 // The higher the z-index, further "on top" the element is.
@@ -56,6 +56,15 @@ impl DynLocation {
         } else {
             out as usize
         }
+    }
+
+    pub fn set_at(&mut self, x: DynVal, y: DynVal) {
+        let width = self.get_dyn_width();
+        let height = self.get_dyn_height();
+        self.start_x = x.clone();
+        self.start_y = y.clone();
+        self.end_x = x.plus(width);
+        self.end_y = y.plus(height);
     }
 
     pub fn get_dyn_height(&self) -> DynVal {
@@ -144,6 +153,34 @@ impl DynLocation {
         let x_adj = x_adj.saturating_sub(start_x);
         let y_adj = y_adj.saturating_sub(start_y);
         let mut ev = *ev; // copy
+        ev.column = x_adj;
+        ev.row = y_adj;
+        ev
+    }
+
+    pub fn adjust_mouse_event_external(
+        &self, ctx: &Context, ev: &crossterm::event::MouseEvent,
+    ) -> RelMouseEvent {
+        let (x_adj, y_adj) = (ev.column as i32, ev.row as i32);
+        let start_x = self.get_start_x(ctx);
+        let start_y = self.get_start_y(ctx);
+        let x_adj = x_adj - start_x;
+        let y_adj = y_adj - start_y;
+        let mut ev: RelMouseEvent = (*ev).into(); // copy
+        ev.column = x_adj;
+        ev.row = y_adj;
+        ev
+    }
+
+    // TODO remove dup code with above
+    pub fn adjust_mouse_event_external2(
+        &self, ctx: &Context, mut ev: RelMouseEvent,
+    ) -> RelMouseEvent {
+        let (x_adj, y_adj) = (ev.column, ev.row);
+        let start_x = self.get_start_x(ctx);
+        let start_y = self.get_start_y(ctx);
+        let x_adj = x_adj - start_x;
+        let y_adj = y_adj - start_y;
         ev.column = x_adj;
         ev.row = y_adj;
         ev

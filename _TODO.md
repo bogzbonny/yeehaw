@@ -5,6 +5,7 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+
 01. wierd bug with maximized windows (window_test)
     - create two windows
     - maximize one
@@ -32,6 +33,9 @@
             - with all this information, each time a window maximized or
               minimized itself it should be able to reorient the locations 
               of the other panes if need be.
+
+01. menu_test seems to not select the final final sub menu (hi in diner) 
+01. right click menu is way to large in widget_test
             
 30. reorient minimized window in the parent when there is a resize. 
      - for instance if the minimized windows used the entire bottom 
@@ -45,6 +49,8 @@
            - shouldn't be that complex. Each window could just ensure that the 
            parent pane has this hook registered for resized on each
            minimization.
+
+01. make crate into a workspace
 
 05. borders-pane wrapper
      - option for each of up/down/right/left

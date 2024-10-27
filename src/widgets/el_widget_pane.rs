@@ -2,8 +2,8 @@ use {
     super::{widget::RESP_DEACTIVATE, Selectability, Widget, Widgets},
     crate::{
         Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponse, EventResponses, KeyPossibility, Keyboard as KB, ParentPane, Priority,
-        ReceivableEventChanges, SortingHat, Parent,
+        EventResponse, EventResponses, KeyPossibility, Keyboard as KB, Parent, ParentPane,
+        Priority, ReceivableEventChanges, SortingHat,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -133,7 +133,7 @@ impl WidgetPane {
                         .borrow_mut()
                         .adjust_locations_by(loc.l.start_x.clone(), loc.l.start_y.clone());
                 }
-                EventResponse::Metadata((k, _)) => {
+                EventResponse::Metadata(k, _) => {
                     if k == RESP_DEACTIVATE {
                         let resps_ = self.unselect_selected_widget(ctx);
                         extend_resps.extend(resps_.0);
@@ -336,7 +336,7 @@ impl WidgetPane {
                     continue;
                 }
             }
-            let ev_adj = loc.borrow().l.adjust_mouse_event(ctx, &ev);
+            let ev_adj = loc.borrow().l.adjust_mouse_event_external(ctx, &ev);
             let (_, mut resps_) = w.receive_event(ctx, Event::ExternalMouse(ev_adj));
             self.process_widget_resps(ctx, &mut resps_, i);
             resps.extend(resps_.0);
@@ -388,7 +388,7 @@ impl Element for WidgetPane {
                 return self.capture_key_event(ctx, ke);
             }
             Event::ExternalMouse(me) => {
-                return (false, self.send_external_mouse_event(ctx, me, None));
+                return (false, self.send_external_mouse_event(ctx, me.into(), None));
             }
             Event::Resize => {
                 self.resize_event(ctx);

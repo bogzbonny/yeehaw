@@ -1,8 +1,8 @@
 use {
     crate::{
-        element::ReceivableEventChanges, prioritizer::EventPrioritizer, CommandEvent, Context,
-        DrawChPos, DynLocation, DynLocationSet, Element, ElementID, Event, EventResponse,
-        EventResponses, Parent, Priority, ZIndex,
+        element::ReceivableEventChanges, prioritizer::EventPrioritizer, Context, DrawChPos,
+        DynLocation, DynLocationSet, Element, ElementID, Event, EventResponse, EventResponses,
+        Parent, Priority, RelMouseEvent, ZIndex,
     },
     std::collections::HashMap,
     std::{cell::RefCell, rc::Rc},
@@ -211,7 +211,8 @@ impl ElementOrganizer {
         } else {
             None
         };
-        Context::new(size, higher_ctx.dur_since_launch).with_visible_region(visible_region)
+        Context::new(size, higher_ctx.dur_since_launch, Some(higher_ctx.clone()))
+            .with_visible_region(visible_region)
     }
 
     // Receivable returns all of the key combos and commands registered to this
@@ -490,11 +491,12 @@ impl ElementOrganizer {
         if eoz.is_empty() {
             let mut el_resps = Vec::new();
             for (el_id2, details2) in self.els.borrow().iter() {
-                let child_ctx = self.get_context_for_el(ctx, details2); // XXX this is new make sure this doesn't mess stuff up (test menu)
+                let child_ctx = self.get_context_for_el(ctx, details2);
+                let ev_adj = details2.loc.borrow().l.adjust_mouse_event_external(ctx, ev);
                 let (_, r) = details2
                     .el
                     .borrow_mut()
-                    .receive_event(&child_ctx, Event::ExternalMouse(*ev));
+                    .receive_event(&child_ctx, Event::ExternalMouse(ev_adj));
                 el_resps.push((el_id2.clone(), r));
             }
             return (None, EventResponses::default());
@@ -526,14 +528,15 @@ impl ElementOrganizer {
         // capture the responses
         let mut el_resps = Vec::new();
         for (el_id2, details2) in self.els.borrow().iter() {
-            let child_ctx = self.get_context_for_el(ctx, details2); // XXX this is new make sure this doesn't mess stuff up (test menu)
+            let child_ctx = self.get_context_for_el(ctx, details2);
             if *el_id2 == el_id {
                 continue;
             }
+            let ev_adj = details2.loc.borrow().l.adjust_mouse_event_external(ctx, ev);
             let (_, r) = details2
                 .el
                 .borrow_mut()
-                .receive_event(&child_ctx, Event::ExternalMouse(*ev));
+                .receive_event(&child_ctx, Event::ExternalMouse(ev_adj));
             el_resps.push((el_id2.clone(), r));
         }
 
@@ -548,15 +551,20 @@ impl ElementOrganizer {
 
     // sends the external mouse command to all elements in the organizer
     pub fn external_mouse_event_process(
-        &self, ctx: &Context, ev: &crossterm::event::MouseEvent,
+        &self, ctx: &Context, ev: &RelMouseEvent,
     ) -> EventResponses {
         let mut ev_resps = EventResponses::default();
         for (el_id, details) in self.els.borrow().iter() {
             let child_ctx = self.get_context_for_el(ctx, details);
+            let ev_adj = details
+                .loc
+                .borrow()
+                .l
+                .adjust_mouse_event_external2(ctx, ev.clone());
             let (_, mut r) = details
                 .el
                 .borrow_mut()
-                .receive_event(&child_ctx, Event::ExternalMouse(*ev));
+                .receive_event(&child_ctx, Event::ExternalMouse(ev_adj));
             self.partially_process_ev_resps(ctx, el_id, &mut r);
             ev_resps.extend(r.0);
         }
@@ -618,20 +626,20 @@ impl ElementOrganizer {
 
     // receive_command_event attempts to execute the given command
     //                                                       (captured, resp         )
-    pub fn receive_command_event(&self, ctx: &Context, ev: CommandEvent) -> (bool, EventResponses) {
-        let ev = Event::Command(ev);
-        let Some(el_id) = self.prioritizer.borrow().get_destination_el(&ev) else {
-            return (false, EventResponses::default());
-        };
+    //pub fn receive_command_event(&self, ctx: &Context, ev: CommandEvent) -> (bool, EventResponses) {
+    //    let ev = Event::Command(ev);
+    //    let Some(el_id) = self.prioritizer.borrow().get_destination_el(&ev) else {
+    //        return (false, EventResponses::default());
+    //    };
 
-        let Some(details) = self.get_element_details(&el_id) else {
-            // XXX TODO return error
-            return (false, EventResponses::default());
-        };
-        let child_ctx = self.get_context_for_el(ctx, &details);
-        let (captured, mut resps) = details.el.borrow_mut().receive_event(&child_ctx, ev);
+    //    let Some(details) = self.get_element_details(&el_id) else {
+    //        // XXX TODO return error
+    //        return (false, EventResponses::default());
+    //    };
+    //    let child_ctx = self.get_context_for_el(ctx, &details);
+    //    let (captured, mut resps) = details.el.borrow_mut().receive_event(&child_ctx, ev);
 
-        self.partially_process_ev_resps(ctx, &el_id, &mut resps);
-        (captured, resps)
-    }
+    //    self.partially_process_ev_resps(ctx, &el_id, &mut resps);
+    //    (captured, resps)
+    //}
 }

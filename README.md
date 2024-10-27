@@ -41,6 +41,7 @@ Catering to non- UTF-8 or non- true-color terminals.
  - file viewer
  - file navigator (think nerdtree)
  - image viewer 
+ - windows
  - widgets:
    - figlet fonts 
    - button
@@ -55,23 +56,27 @@ Catering to non- UTF-8 or non- true-color terminals.
    - toggles
 
 ## Planned
- - windows
  - built in terminal
     - https://github.com/a-kenji/tui-term/blob/development/examples/smux.rs
     - easy use of Editor
- - optional mouse pixel support
  - accordion stack container
  - hover comments
  - vertical tabs
  - vim-style command input system (complete with events and routing)
- - interactive debugging TUI application
- - TUI Snapshot Tester
  - ANSI-animation viewer (using extended asc format)
- - TUI Application Builder 
-   - basically drag and drop style element builder
+ - optional mouse pixel support
  - widgets:
    - color selector
    - table 
+ - Interactive debugging TUI application
+ - TUI Snapshot Tester
+   - use a toggle to switch between result/expected
+   - diff view (only show the differences)
+   - eventually allow for multi-stage
+ - TUI Application Builder 
+   - basically drag and drop style element builder
+   - resizing of the view-pane to test TUI pages at different 
+     sizes
 
 ## Tribute
 

@@ -10,7 +10,10 @@ pub enum Event {
     // This is used to receive from a parent, a mouse event that neither it, nor its
     // children, are meant to consume. This is used to tell an element that
     // another element, somewhere in the cui, has received/consumed a mouse event.
-    ExternalMouse(crossterm::event::MouseEvent),
+    //
+    /// NOTE the column and row are the column and row of the mouse event relative
+    /// to the element receiving the event, hence they may be negative.
+    ExternalMouse(RelMouseEvent),
 
     // Used to tell an element that the screen has resized. The element should
     // then adjust all of its children based on the given context
@@ -22,9 +25,43 @@ pub enum Event {
     // Currently only relevant for elements that have an element organizer.
     Refresh,
 
-    Command(CommandEvent),
-
     Custom(String, Vec<u8>), // custom event type with a name and a payload
+}
+
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub struct RelMouseEvent {
+    /// The kind of mouse event that was caused.
+    pub kind: crossterm::event::MouseEventKind,
+    /// The relative column that the event occurred on.
+    pub column: i32,
+    /// The relative row that the event occurred on.
+    pub row: i32,
+    /// The key modifiers active when the event occurred.
+    pub modifiers: crossterm::event::KeyModifiers,
+}
+
+impl From<crossterm::event::MouseEvent> for RelMouseEvent {
+    fn from(me: crossterm::event::MouseEvent) -> Self {
+        RelMouseEvent {
+            kind: me.kind,
+            column: me.column as i32,
+            row: me.row as i32,
+            modifiers: me.modifiers,
+        }
+    }
+}
+
+impl From<RelMouseEvent> for crossterm::event::MouseEvent {
+    fn from(me: RelMouseEvent) -> Self {
+        let column = if me.column < 0 { 0 } else { me.column as u16 };
+        let row = if me.row < 0 { 0 } else { me.row as u16 };
+        crossterm::event::MouseEvent {
+            kind: me.kind,
+            column,
+            row,
+            modifiers: me.modifiers,
+        }
+    }
 }
 
 impl From<KeyPossibility> for Event {
@@ -65,7 +102,6 @@ impl Event {
             Event::ExternalMouse(_) => "EXTERNAL_MOUSE".to_string(),
             Event::Resize => "RESIZE".to_string(),
             Event::Refresh => "REFRESH".to_string(),
-            Event::Command(ev) => "COMMAND=".to_string() + &ev.cmd,
             Event::Custom(name, _) => "CUSTOM=".to_string() + name,
         }
     }
@@ -87,7 +123,7 @@ impl Event {
             (Event::ExternalMouse(eme1), Event::ExternalMouse(eme2)) => eme1 == eme2,
             (Event::Resize, Event::Resize) => true,
             (Event::Refresh, Event::Refresh) => true,
-            (Event::Command(ev1), Event::Command(ev2)) => ev1 == ev2,
+            (Event::Custom(kind1, bz1), Event::Custom(kind2, bz2)) => kind1 == kind2 && bz1 == bz2,
             _ => false,
         }
     }

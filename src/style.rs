@@ -31,6 +31,15 @@ impl Style {
         }
     }
 
+    pub const fn standard() -> Self {
+        Self {
+            fg: Some(Color::WHITE),
+            bg: Some(Color::TRANSPARENT),
+            underline: Some(Color::TRANSPARENT),
+            attr: Attributes::new(),
+        }
+    }
+
     // creates new style from fg, bg with a default style
     pub const fn new(fg: Option<Color>, bg: Option<Color>, underline: Option<Color>) -> Self {
         Self {

@@ -252,7 +252,7 @@ impl DrawChPosVec {
 
 // ----------------------------------------------------
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct DrawChs2D(pub Vec<Vec<DrawCh>>); // y, x
 
 impl Deref for DrawChs2D {
@@ -288,6 +288,12 @@ impl From<Vec<Vec<DrawCh>>> for DrawChs2D {
     }
 }
 
+impl From<DrawCh> for DrawChs2D {
+    fn from(chs: DrawCh) -> DrawChs2D {
+        DrawChs2D(vec![vec![chs]])
+    }
+}
+
 impl DrawChs2D {
     pub fn new(chs: Vec<Vec<DrawCh>>) -> DrawChs2D {
         DrawChs2D(chs)
@@ -313,6 +319,10 @@ impl DrawChs2D {
             chs.push(DrawCh::str_to_draw_chs(line, sty.clone()));
         }
         DrawChs2D(chs)
+    }
+
+    pub fn from_char(ch: char, sty: Style) -> DrawChs2D {
+        DrawChs2D(vec![vec![DrawCh::new(ch, sty.clone())]])
     }
 
     pub fn from_runes(text: &mut [Vec<char>], sty: Style) -> DrawChs2D {

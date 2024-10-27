@@ -3,6 +3,7 @@ pub mod debug; // note, must be first for the macro to work throughout
 
 pub mod ch;
 pub mod color;
+pub mod context;
 pub mod cui;
 pub mod dyn_location;
 pub mod dyn_value;
@@ -20,19 +21,18 @@ pub mod widgets;
 pub use {
     ch::{ChPlus, DrawCh, DrawChPos, DrawChPosVec, DrawChs2D},
     color::{Color, Gradient, RadialGradient, Rgba, TimeGradient},
+    context::Context,
     cui::Cui,
     dyn_location::{DynLocation, DynLocationSet, Loc, Point, Size, ZIndex},
     dyn_value::DynVal,
-    element::{
-        Context, Element, EventResponse, EventResponses, ReceivableEventChanges, Parent,
-    },
+    element::{Element, EventResponse, EventResponses, Parent, ReceivableEventChanges},
     elements::{
         DebugSizePane, FileNavPane, FileViewerPane, HorizontalStack, ImageViewer, MenuBar, Pane,
         PaneScrollable, PaneWithScrollbars, ParentPane, RightClickMenu, Tabs, VerticalStack,
         WindowPane,
     },
     errors::Error,
-    event::{CommandEvent, Event, KeyPossibility},
+    event::{CommandEvent, Event, KeyPossibility, RelMouseEvent},
     keyboard::Keyboard,
     organizer::ElementOrganizer,
     prioritizer::Priority,

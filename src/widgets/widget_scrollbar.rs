@@ -2,8 +2,8 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, KeyPossibility, Keyboard as KB, Priority, ReceivableEventChanges,
-        SortingHat, Style, Parent,
+        EventResponses, KeyPossibility, Keyboard as KB, Parent, Priority, ReceivableEventChanges,
+        RelMouseEvent, SortingHat, Style,
     },
     crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
     std::ops::{Deref, DerefMut},
@@ -826,7 +826,7 @@ impl VerticalScrollbar {
     }
 
     pub fn receive_external_mouse_event(
-        &self, ctx: &Context, ev: MouseEvent,
+        &self, ctx: &Context, ev: RelMouseEvent,
     ) -> (bool, EventResponses) {
         if self.base.get_selectability() == Selectability::Unselectable {
             return (false, EventResponses::default());
@@ -836,7 +836,7 @@ impl VerticalScrollbar {
             return (false, EventResponses::default());
         }
         match ev.kind {
-            MouseEventKind::Drag(MouseButton::Left) => self.drag_while_dragging(ctx, ev),
+            MouseEventKind::Drag(MouseButton::Left) => self.drag_while_dragging(ctx, ev.into()),
             _ => {
                 *self.currently_dragging.borrow_mut() = false;
                 (false, EventResponses::default())
@@ -952,7 +952,7 @@ impl HorizontalScrollbar {
     }
 
     pub fn receive_external_mouse_event(
-        &self, ctx: &Context, ev: MouseEvent,
+        &self, ctx: &Context, ev: RelMouseEvent,
     ) -> (bool, EventResponses) {
         if self.base.get_selectability() == Selectability::Unselectable {
             return (false, EventResponses::default());
@@ -962,7 +962,7 @@ impl HorizontalScrollbar {
             return (false, EventResponses::default());
         }
         match ev.kind {
-            MouseEventKind::Drag(MouseButton::Left) => self.drag_while_dragging(ctx, ev),
+            MouseEventKind::Drag(MouseButton::Left) => self.drag_while_dragging(ctx, ev.into()),
             _ => {
                 *self.currently_dragging.borrow_mut() = false;
                 (false, EventResponses::default())

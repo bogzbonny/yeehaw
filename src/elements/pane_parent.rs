@@ -42,14 +42,12 @@ impl ParentPane {
     }
 
     pub fn at(self, x: DynVal, y: DynVal) -> Self {
-        self.pane.set_start_x(x);
-        self.pane.set_start_y(y);
+        self.set_at(x, y);
         self
     }
 
-    pub fn set_x_y(&self, x: DynVal, y: DynVal) {
-        self.pane.set_start_x(x);
-        self.pane.set_start_y(y);
+    pub fn set_at(&self, x: DynVal, y: DynVal) {
+        self.pane.set_at(x, y);
     }
 
     pub fn set_start_x(&self, x: DynVal) {
