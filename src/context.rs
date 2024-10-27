@@ -34,6 +34,21 @@ impl Context {
         self
     }
 
+    pub fn with_size(mut self, s: Size) -> Self {
+        self.s = s;
+        self
+    }
+
+    pub fn with_height(mut self, h: u16) -> Self {
+        self.s.height = h;
+        self
+    }
+
+    pub fn with_width(mut self, w: u16) -> Self {
+        self.s.width = w;
+        self
+    }
+
     // TODO return error
     pub fn new_context_for_screen_no_dur() -> Context {
         let (xmax, ymax) = crossterm::terminal::size().unwrap();

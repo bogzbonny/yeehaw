@@ -4,8 +4,8 @@ use {
             HorizontalSBPositions, HorizontalScrollbar, VerticalSBPositions, VerticalScrollbar,
         },
         Context, DrawCh, DrawChPos, DrawChPosVec, DynLocationSet, DynVal, Element, ElementID,
-        Event, EventResponses, HorizontalStack, Loc, ParentPane, Priority, ReceivableEventChanges,
-        SortingHat, Style, Parent, VerticalStack,
+        Event, EventResponses, Loc, Parent, ParentPane, Priority, ReceivableEventChanges, Size,
+        SortingHat, Style,
     },
     crossterm::event::{KeyModifiers, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -224,8 +224,10 @@ impl Element for PaneScrollable {
 
 #[derive(Clone)]
 pub struct PaneWithScrollbars {
-    pane: HorizontalStack,
+    pane: ParentPane,
     inner_pane: PaneScrollable,
+
+    pub last_size: Rc<RefCell<Size>>, // needed for knowing when to resize scrollbars
 
     pub x_scrollbar: Rc<RefCell<Option<HorizontalScrollbar>>>,
     pub y_scrollbar: Rc<RefCell<Option<VerticalScrollbar>>>,
@@ -234,105 +236,141 @@ pub struct PaneWithScrollbars {
 }
 
 impl PaneWithScrollbars {
+    pub const KIND: &'static str = "pane_with_scrollbars";
+
     pub fn new(
         hat: &SortingHat, ctx: &Context, width: usize, height: usize,
         x_scrollbar_op: HorizontalSBPositions, y_scrollbar_op: VerticalSBPositions,
     ) -> Self {
-        let pane = HorizontalStack::new(hat);
+        let pane = ParentPane::new(hat, Self::KIND);
         let x_scrollbar = Rc::new(RefCell::new(None));
         let y_scrollbar = Rc::new(RefCell::new(None));
         let corner_decor = Rc::new(RefCell::new(DrawCh::new('⁙', Style::default_const())));
 
         let inner_pane = PaneScrollable::new(hat, width, height);
 
-        let y_scrollbar_size = if matches!(x_scrollbar_op, HorizontalSBPositions::None) {
+        // THERE is a strange issue with the scrollbars here, using the HorizontalScrollbar as an
+        // example:
+        //  - consider the example were both horizontal and vertical scrollbars are present:
+        //     - VerticalSBPositions is ToTheRight
+        //     - HorizontalSBPositions is Below
+        //  - we want the width of the horizontal scrollbar to be the width of the inner_pane
+        //    aka. flex(1.0)-fixed(1).
+        //  - however internally the width kind of needs to be flex(1.0) as when it comes time
+        //    to draw the scrollbar the context is calculated given its provided dimensions
+        //    and thus the drawing would apply the width of flex(1.0)-fixed(1) to the context which has
+        //    already had the fixed(1) subtracted from it, thus resulting in two subtractions.
+        //  - the solution is to have the width as a fixed size, and adjust it with each resize
+
+        let (x_sb_size, x_sc_start_x) = match y_scrollbar_op {
+            VerticalSBPositions::None => (DynVal::new_flex(1.0), DynVal::new_fixed(0)),
+            VerticalSBPositions::ToTheLeft => (
+                DynVal::new_flex(1.)
+                    .minus(1.into())
+                    .get_val(ctx.s.width)
+                    .into(),
+                DynVal::new_fixed(1),
+            ),
+            VerticalSBPositions::ToTheRight => (
+                DynVal::new_flex(1.)
+                    .minus(1.into())
+                    .get_val(ctx.s.width)
+                    .into(),
+                DynVal::new_fixed(0),
+            ),
+        };
+        let x_sb = HorizontalScrollbar::new(hat, x_sb_size, *inner_pane.content_width.borrow());
+        match x_scrollbar_op {
+            HorizontalSBPositions::None => {}
+            HorizontalSBPositions::Above => {
+                x_sb.set_at(x_sc_start_x, DynVal::new_fixed(0));
+            }
+            HorizontalSBPositions::Below => {
+                x_sb.set_at(x_sc_start_x, DynVal::new_flex(1.).minus(1.into()));
+            }
+        }
+
+        let (y_sb_size, y_sc_start_y) = match x_scrollbar_op {
+            HorizontalSBPositions::None => (DynVal::new_flex(1.0), DynVal::new_fixed(0)),
+            HorizontalSBPositions::Above => (
+                DynVal::new_flex(1.)
+                    .minus(1.into())
+                    .get_val(ctx.s.height)
+                    .into(),
+                DynVal::new_fixed(1),
+            ),
+            HorizontalSBPositions::Below => (
+                DynVal::new_flex(1.)
+                    .minus(1.into())
+                    .get_val(ctx.s.height)
+                    .into(),
+                DynVal::new_fixed(0),
+            ),
+        };
+
+        let y_sb = VerticalScrollbar::new(hat, y_sb_size, *inner_pane.content_height.borrow());
+        match y_scrollbar_op {
+            VerticalSBPositions::None => {}
+            VerticalSBPositions::ToTheRight => {
+                y_sb.set_at(DynVal::new_flex(1.).minus(1.into()), y_sc_start_y);
+            }
+            VerticalSBPositions::ToTheLeft => {
+                y_sb.set_at(DynVal::new_fixed(0), y_sc_start_y);
+            }
+        }
+
+        let inner_pane_start_x = if matches!(y_scrollbar_op, VerticalSBPositions::ToTheLeft) {
+            DynVal::new_fixed(1)
+        } else {
+            DynVal::new_fixed(0)
+        };
+        let inner_pane_start_y = if matches!(x_scrollbar_op, HorizontalSBPositions::Above) {
+            DynVal::new_fixed(1)
+        } else {
+            DynVal::new_fixed(0)
+        };
+        let inner_pane_width = if matches!(y_scrollbar_op, VerticalSBPositions::None) {
             DynVal::new_flex(1.0)
         } else {
             DynVal::new_flex(1.0).minus(DynVal::new_fixed(1))
         };
-        let x_scrollbar_size = DynVal::new_flex(1.0);
-
-        let y_sb =
-            VerticalScrollbar::new(hat, y_scrollbar_size, *inner_pane.content_height.borrow());
-        let x_sb =
-            HorizontalScrollbar::new(hat, x_scrollbar_size, *inner_pane.content_width.borrow());
-
-        let inner_pane_ = inner_pane.clone();
-        let hook = Box::new(move |ctx, x| inner_pane_.set_content_x_offset(&ctx, x));
-        *x_sb.position_changed_hook.borrow_mut() = Some(hook);
-
-        let inner_pane_ = inner_pane.clone();
-        let hook = Box::new(move |ctx, y| inner_pane_.set_content_y_offset(&ctx, y));
-        *y_sb.position_changed_hook.borrow_mut() = Some(hook);
-
-        let vs = VerticalStack::new(hat);
-
-        match (y_scrollbar_op, x_scrollbar_op) {
-            (VerticalSBPositions::None, HorizontalSBPositions::None) => {}
-            (VerticalSBPositions::ToTheRight, HorizontalSBPositions::None) => {
-                *y_scrollbar.borrow_mut() = Some(y_sb.clone());
-                pane.push(ctx, Rc::new(RefCell::new(inner_pane.clone())));
-                pane.push(ctx, Rc::new(RefCell::new(y_sb.clone())));
-            }
-            (VerticalSBPositions::ToTheLeft, HorizontalSBPositions::None) => {
-                *y_scrollbar.borrow_mut() = Some(y_sb.clone());
-                pane.push(ctx, Rc::new(RefCell::new(y_sb.clone())));
-                pane.push(ctx, Rc::new(RefCell::new(inner_pane.clone())));
-            }
-            (VerticalSBPositions::None, HorizontalSBPositions::Above) => {
-                *x_scrollbar.borrow_mut() = Some(x_sb.clone());
-                vs.push(ctx, Rc::new(RefCell::new(x_sb.clone())));
-                vs.push(ctx, Rc::new(RefCell::new(inner_pane.clone())));
-                pane.push(ctx, Rc::new(RefCell::new(vs.clone())));
-            }
-            (VerticalSBPositions::None, HorizontalSBPositions::Below) => {
-                *x_scrollbar.borrow_mut() = Some(x_sb.clone());
-                vs.push(ctx, Rc::new(RefCell::new(inner_pane.clone())));
-                vs.push(ctx, Rc::new(RefCell::new(x_sb.clone())));
-                pane.push(ctx, Rc::new(RefCell::new(vs.clone())));
-            }
-            (VerticalSBPositions::ToTheRight, HorizontalSBPositions::Above) => {
-                *y_scrollbar.borrow_mut() = Some(y_sb.clone());
-                *x_scrollbar.borrow_mut() = Some(x_sb.clone());
-                vs.push(ctx, Rc::new(RefCell::new(x_sb.clone())));
-                vs.push(ctx, Rc::new(RefCell::new(inner_pane.clone())));
-                pane.push(ctx, Rc::new(RefCell::new(vs.clone())));
-                pane.push(ctx, Rc::new(RefCell::new(y_sb.clone())));
-            }
-            (VerticalSBPositions::ToTheRight, HorizontalSBPositions::Below) => {
-                *y_scrollbar.borrow_mut() = Some(y_sb.clone());
-                *x_scrollbar.borrow_mut() = Some(x_sb.clone());
-                vs.push(ctx, Rc::new(RefCell::new(inner_pane.clone())));
-                vs.push(ctx, Rc::new(RefCell::new(x_sb.clone())));
-                pane.push(ctx, Rc::new(RefCell::new(vs.clone())));
-                pane.push(ctx, Rc::new(RefCell::new(y_sb.clone())));
-            }
-            (VerticalSBPositions::ToTheLeft, HorizontalSBPositions::Above) => {
-                *y_scrollbar.borrow_mut() = Some(y_sb.clone());
-                *x_scrollbar.borrow_mut() = Some(x_sb.clone());
-                vs.push(ctx, Rc::new(RefCell::new(x_sb.clone())));
-                vs.push(ctx, Rc::new(RefCell::new(inner_pane.clone())));
-                pane.push(ctx, Rc::new(RefCell::new(y_sb.clone())));
-                pane.push(ctx, Rc::new(RefCell::new(vs.clone())));
-            }
-            (VerticalSBPositions::ToTheLeft, HorizontalSBPositions::Below) => {
-                *y_scrollbar.borrow_mut() = Some(y_sb.clone());
-                *x_scrollbar.borrow_mut() = Some(x_sb.clone());
-                vs.push(ctx, Rc::new(RefCell::new(inner_pane.clone())));
-                vs.push(ctx, Rc::new(RefCell::new(x_sb.clone())));
-                pane.push(ctx, Rc::new(RefCell::new(y_sb.clone())));
-                pane.push(ctx, Rc::new(RefCell::new(vs.clone())));
-            }
+        let inner_pane_height = if matches!(x_scrollbar_op, HorizontalSBPositions::None) {
+            DynVal::new_flex(1.0)
+        } else {
+            DynVal::new_flex(1.0).minus(DynVal::new_fixed(1))
         };
 
+        let loc = inner_pane.get_dyn_location_set();
+        loc.borrow_mut().set_start_x(inner_pane_start_x);
+        loc.borrow_mut().set_start_y(inner_pane_start_y);
+        loc.borrow_mut().set_dyn_width(inner_pane_width);
+        loc.borrow_mut().set_dyn_height(inner_pane_height);
+
+        if !matches!(x_scrollbar_op, HorizontalSBPositions::None) {
+            let inner_pane_ = inner_pane.clone();
+            let hook = Box::new(move |ctx, x| inner_pane_.set_content_x_offset(&ctx, x));
+            *x_sb.position_changed_hook.borrow_mut() = Some(hook);
+            *x_scrollbar.borrow_mut() = Some(x_sb.clone());
+            pane.add_element(Rc::new(RefCell::new(x_sb.clone())));
+        }
+
+        if !matches!(y_scrollbar_op, VerticalSBPositions::None) {
+            let inner_pane_ = inner_pane.clone();
+            let hook = Box::new(move |ctx, y| inner_pane_.set_content_y_offset(&ctx, y));
+            *y_sb.position_changed_hook.borrow_mut() = Some(hook);
+            *y_scrollbar.borrow_mut() = Some(y_sb.clone());
+            pane.add_element(Rc::new(RefCell::new(y_sb.clone())));
+        }
+
+        pane.add_element(Rc::new(RefCell::new(inner_pane.clone())));
         inner_pane.change_priority(ctx, Priority::FOCUSED);
         pane.change_priority(ctx, Priority::FOCUSED);
-        vs.change_priority(ctx, Priority::FOCUSED);
 
         Self {
             pane,
             inner_pane,
             x_scrollbar,
+            last_size: Rc::new(RefCell::new(ctx.s)),
             y_scrollbar,
             corner_decor,
         }
@@ -347,6 +385,28 @@ impl PaneWithScrollbars {
     pub fn clear_elements(&self) {
         self.inner_pane.clear_elements();
     }
+
+    pub fn ensure_scrollbar_size(&self, ctx: &Context) {
+        if *self.last_size.borrow() != ctx.s {
+            let x_sb = self.x_scrollbar.borrow();
+            if let Some(x_sb) = x_sb.as_ref() {
+                let w: DynVal = DynVal::new_flex(1.0)
+                    .minus(DynVal::new_fixed(1))
+                    .get_val(ctx.s.width)
+                    .into();
+                x_sb.set_dyn_width(w.clone(), w, None);
+            }
+            let y_sb = self.y_scrollbar.borrow();
+            if let Some(y_sb) = y_sb.as_ref() {
+                let h: DynVal = DynVal::new_flex(1.0)
+                    .minus(DynVal::new_fixed(1))
+                    .get_val(ctx.s.height)
+                    .into();
+                y_sb.set_dyn_height(h.clone(), h, None);
+            }
+            *self.last_size.borrow_mut() = ctx.s;
+        }
+    }
 }
 
 impl Element for PaneWithScrollbars {
@@ -360,6 +420,8 @@ impl Element for PaneWithScrollbars {
         self.pane.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        self.ensure_scrollbar_size(ctx);
+
         let out = self.pane.receive_event_inner(ctx, ev);
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
             sb.external_change(
@@ -381,6 +443,7 @@ impl Element for PaneWithScrollbars {
         self.pane.change_priority(ctx, p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        self.ensure_scrollbar_size(ctx);
         self.pane.drawing(ctx)
     }
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {

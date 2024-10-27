@@ -119,6 +119,12 @@ impl DynVal {
         self.plus.is_empty() && self.plus_min_of.is_empty() && self.plus_max_of.is_empty()
     }
 
+    pub fn flattened(self) -> DynVal {
+        let mut out = self;
+        out.flatten_internal();
+        out
+    }
+
     // simplify the calculation of the DynVal
     // recursive function. Add any plus values to the main value if they are flat
     pub fn flatten_internal(&mut self) {
@@ -265,5 +271,9 @@ pub mod dyn_val_tests {
 
         let sv = DynVal::new_flex(0.5).plus(DynVal::new_fixed(1));
         assert_eq!(6, sv.get_val(10));
+
+        let sv = DynVal::new_flex(1.).minus(DynVal::new_fixed(1));
+        assert_eq!(9, sv.get_val(10));
+        assert_eq!(19, sv.get_val(20));
     }
 }

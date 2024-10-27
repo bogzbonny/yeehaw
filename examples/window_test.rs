@@ -11,7 +11,7 @@ use {
 async fn main() -> Result<(), Error> {
     yeehaw::debug::set_log_file("./debug_test.log".to_string());
     yeehaw::debug::clear();
-    std::env::set_var("RUST_BACKTRACE", "1");
+    //std::env::set_var("RUST_BACKTRACE", "1");
 
     let hat = SortingHat::default();
     let ctx = Context::new_context_for_screen_no_dur();
@@ -83,6 +83,8 @@ async fn main() -> Result<(), Error> {
             //HorizontalSBPositions::None,
             VerticalSBPositions::ToTheRight,
         );
+
+        //let sc_pane = PaneScrollable::new(&hat_, 50, 50);
 
         sc_pane.add_element(Rc::new(RefCell::new(el)));
 

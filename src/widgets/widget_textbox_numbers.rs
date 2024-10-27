@@ -107,8 +107,8 @@ impl NumbersTextBox {
         self
     }
 
-    pub fn at(mut self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.tb = self.tb.at(loc_x, loc_y);
+    pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
+        self.tb.set_at(loc_x, loc_y);
         self
     }
 

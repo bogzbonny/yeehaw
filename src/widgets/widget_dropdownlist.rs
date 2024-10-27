@@ -2,8 +2,8 @@ use {
     super::{Selectability, VerticalScrollbar, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, SortingHat, Style,
-        Parent, ZIndex,
+        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEventChanges, SortingHat,
+        Style, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -136,12 +136,12 @@ impl DropdownList {
         self.scrollbar.set_dyn_height(
             DynVal::new_fixed(height as i32), // view height (same as the dropdown list height)
             DynVal::new_fixed(height.saturating_sub(1) as i32), // scrollbar height (1 less, b/c scrollbar's below the drop-arrow)
-            self.entries.borrow().len(),                        // scrollable domain
+            Some(self.entries.borrow().len()),                  // scrollable domain
         );
         self
     }
 
-    pub fn at(mut self, loc_x: DynVal, loc_y: DynVal) -> Self {
+    pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
         self.base.at(loc_x, loc_y);
         self
     }

@@ -3,19 +3,18 @@ use {
         widgets::{Button, Label, WBStyles},
         Color, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal, Element,
         ElementID, Event, EventResponse, EventResponses, Pane, Parent, ParentPane, Priority,
-        ReceivableEventChanges, SortingHat, Style, VerticalStack, ZIndex,
+        ReceivableEventChanges, Size, SortingHat, Style, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
 };
 
 // TODO border
-// TODO use ◢ in the lower righthand corner for rescaling
 
 // ---------------------------------------------------
 #[derive(Clone)]
 pub struct WindowPane {
-    pub pane: VerticalStack,
+    pub pane: ParentPane,
     pub top_bar: Rc<RefCell<dyn Element>>,
     pub inner: Rc<RefCell<dyn Element>>,
     pub dragging: Rc<RefCell<Option<(u16, u16)>>>, // start location of the drag
@@ -36,13 +35,29 @@ impl WindowPane {
         hat: &SortingHat, ctx: &Context, inner: Rc<RefCell<dyn Element>>, title: &str,
     ) -> Self {
         //let vs = VerticalStack::new_with_kind(hat, Self::KIND).with_style(Style::transparent());
-        let vs = VerticalStack::new_with_kind(hat, Self::KIND).with_transparent();
+        let vs = ParentPane::new(hat, Self::KIND).with_transparent();
         let top_bar = Rc::new(RefCell::new(BasicWindowTopBar::new(
             hat, ctx, title, true, true, true,
         )));
 
-        vs.push(ctx, top_bar.clone());
-        vs.push(ctx, inner.clone());
+        // adjust the inner size to account for the top bar
+        //let top_height = top_bar.borrow().get_dyn_location_set().borrow().l.height(ctx);
+        //let inner_loc = inner.borrow().get_dyn_location_set().borrow().l.clone();
+        //let inner_loc = DynLocation::new(
+        //    DynVal::new_fixed(inner_loc.start_x(ctx)),
+        //    DynVal::new_fixed(inner_loc.start_y(ctx) + top_height),
+        //    DynVal::new_fixed(inner_loc.end_x(ctx)),
+        //    DynVal::new_fixed(inner_loc.end_y(ctx)),
+        //);
+        //inner.borrow().get_dyn_location_set().replace(inner_loc);
+
+        let mut loc = inner.borrow().get_dyn_location_set().borrow().clone();
+        loc.set_start_y(1.into());
+        loc.set_dyn_height(DynVal::new_flex(1.).minus(1.into()));
+        inner.borrow().get_dyn_location_set().replace(loc);
+
+        vs.add_element(top_bar.clone());
+        vs.add_element(inner.clone());
         vs.pane.set_z(Self::Z_INDEX);
 
         Self {
@@ -62,8 +77,8 @@ impl WindowPane {
     }
 
     pub fn with_size(self, w: DynVal, h: DynVal) -> Self {
-        self.pane.pane.pane.set_dyn_width(w);
-        self.pane.pane.pane.set_dyn_height(h);
+        self.pane.pane.set_dyn_width(w);
+        self.pane.pane.set_dyn_height(h);
         self
     }
 
@@ -73,12 +88,12 @@ impl WindowPane {
     }
 
     pub fn with_width(self, w: DynVal) -> Self {
-        self.pane.pane.pane.set_dyn_width(w);
+        self.pane.pane.set_dyn_width(w);
         self
     }
 
     pub fn with_height(self, h: DynVal) -> Self {
-        self.pane.pane.pane.set_dyn_height(h);
+        self.pane.pane.set_dyn_height(h);
         self
     }
 
@@ -87,11 +102,11 @@ impl WindowPane {
             DynVal::new_flex(1.).minus(1.into()),
             DynVal::new_flex(1.).minus(1.into()),
         );
-        self.pane.pane.add_element(Rc::new(RefCell::new(ca)));
+        self.pane.add_element(Rc::new(RefCell::new(ca)));
 
         use crate::organizer::ElDetails;
         let mut eoz: Vec<(ElementID, ElDetails)> = Vec::new();
-        for (el_id, details) in self.pane.pane.eo.els.borrow().iter() {
+        for (el_id, details) in self.pane.eo.els.borrow().iter() {
             eoz.push((el_id.clone(), details.clone()));
         }
 
@@ -173,8 +188,8 @@ impl Element for WindowPane {
                 };
                 let mut dx = adj_size_ev.dx;
                 let mut dy = adj_size_ev.dy;
-                let width = self.pane.pane.pane.get_width(ctx) as i32;
-                let height = self.pane.pane.pane.get_height(ctx) as i32;
+                let width = self.pane.pane.get_width(ctx) as i32;
+                let height = self.pane.pane.get_height(ctx) as i32;
                 if width + dx < 2 {
                     dx = 0
                 }
@@ -182,19 +197,25 @@ impl Element for WindowPane {
                     dy = 0
                 }
 
-                //let end_x = self.pane.pane.pane.get_end_x(ctx) + dx;
-                //let end_y = self.pane.pane.pane.get_end_y(ctx) + dy;
+                //let end_x = self.pane.pane.get_end_x(ctx) + dx;
+                //let end_y = self.pane.pane.get_end_y(ctx) + dy;
                 //self.pane.pane.set_end_x(DynVal::new_fixed(end_x));
                 //self.pane.pane.set_end_y(DynVal::new_fixed(end_y));
 
-                let mut end_x = self.pane.pane.pane.get_dyn_end_x().plus(dx.into());
-                let mut end_y = self.pane.pane.pane.get_dyn_end_y().plus(dy.into());
+                let mut end_x = self.pane.pane.get_dyn_end_x().plus(dx.into());
+                let mut end_y = self.pane.pane.get_dyn_end_y().plus(dy.into());
                 end_x.flatten_internal();
                 end_y.flatten_internal();
                 self.pane.pane.set_end_x(end_x);
                 self.pane.pane.set_end_y(end_y);
 
-                self.pane.normalize_locations(ctx); // need this or else the inner size gets wonky
+                let inner_ctx = ctx.clone().with_size(Size::new(
+                    self.pane.pane.get_width(ctx) as u16,
+                    self.pane.pane.get_height(ctx) as u16 - 1,
+                ));
+
+                let (_, r) = self.inner.borrow().receive_event(&inner_ctx, Event::Resize);
+                resps_.extend(r.0);
 
                 *resp = EventResponse::None;
                 continue;
@@ -241,7 +262,6 @@ impl Element for WindowPane {
                         resps_.extend(r.0);
                         let (_, r) = self.inner.borrow().receive_event(&inner_ctx, Event::Resize);
                         resps_.extend(r.0);
-                        self.pane.normalize_locations(ctx); // need this or else the inner size gets wonky
 
                         self.maximized_restore.replace(None);
                     }
@@ -269,7 +289,6 @@ impl Element for WindowPane {
                         *resp = EventResponse::None;
                         self.maximized_restore.replace(Some(restore_loc));
 
-                        self.pane.normalize_locations(ctx); // need this or else the inner size gets wonky
                         continue;
                     }
                 }
@@ -318,7 +337,6 @@ impl Element for WindowPane {
                 self.inner.borrow().get_visible().replace(false);
                 *resp = EventResponse::None;
                 self.minimized_restore.replace(Some(restore_loc));
-                self.pane.normalize_locations(ctx); // need this or else the inner size gets wonky
                 continue;
             }
         }
@@ -391,10 +409,10 @@ impl Element for WindowPane {
                         let (start_x, start_y) = self.dragging.borrow().expect("impossible");
                         let dx = me.column as i32 - start_x as i32;
                         let dy = me.row as i32 - start_y as i32;
-                        let x1 = self.pane.pane.pane.get_start_x(ctx) + dx;
-                        let y1 = self.pane.pane.pane.get_start_y(ctx) + dy;
-                        let x2 = self.pane.pane.pane.get_end_x(ctx) + dx;
-                        let y2 = self.pane.pane.pane.get_end_y(ctx) + dy;
+                        let x1 = self.pane.pane.get_start_x(ctx) + dx;
+                        let y1 = self.pane.pane.get_start_y(ctx) + dy;
+                        let x2 = self.pane.pane.get_end_x(ctx) + dx;
+                        let y2 = self.pane.pane.get_end_y(ctx) + dy;
 
                         self.pane.pane.set_start_x(DynVal::new_fixed(x1));
                         self.pane.pane.set_start_y(DynVal::new_fixed(y1));
@@ -415,10 +433,10 @@ impl Element for WindowPane {
                             let (start_x, start_y) = (start_x as i32, start_y as i32);
                             let dx = me.column - start_x;
                             let dy = me.row - start_y;
-                            let x1 = self.pane.pane.pane.get_start_x(ctx) + dx;
-                            let y1 = self.pane.pane.pane.get_start_y(ctx) + dy;
-                            let x2 = self.pane.pane.pane.get_end_x(ctx) + dx;
-                            let y2 = self.pane.pane.pane.get_end_y(ctx) + dy;
+                            let x1 = self.pane.pane.get_start_x(ctx) + dx;
+                            let y1 = self.pane.pane.get_start_y(ctx) + dy;
+                            let x2 = self.pane.pane.get_end_x(ctx) + dx;
+                            let y2 = self.pane.pane.get_end_y(ctx) + dy;
                             self.pane.pane.set_start_x(DynVal::new_fixed(x1));
                             self.pane.pane.set_start_y(DynVal::new_fixed(y1));
                             self.pane.pane.set_end_x(DynVal::new_fixed(x2));

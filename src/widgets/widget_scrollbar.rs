@@ -1,7 +1,7 @@
 use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
+        Color, Context, DrawChPos, DrawChs2D, DynLocationSet, DynVal, Element, ElementID, Event,
         EventResponses, KeyPossibility, Keyboard as KB, Parent, Priority, ReceivableEventChanges,
         RelMouseEvent, SortingHat, Style,
     },
@@ -99,12 +99,17 @@ impl VerticalScrollbar {
     }
 
     pub fn set_dyn_height(
-        &self, view_height: DynVal, scrollbar_length: DynVal, scrollable_height: usize,
+        &self,
+        view_height: DynVal,
+        scrollbar_length: DynVal,
+        scrollable_height: Option<usize>, // None = unchanged
     ) {
         *self.scrollable_view_chs.borrow_mut() = view_height;
         self.base.set_dyn_height(scrollbar_length.clone());
         *self.scrollbar_length_chs.borrow_mut() = scrollbar_length;
-        *self.scrollable_domain_chs.borrow_mut() = scrollable_height;
+        if let Some(scrollable_height) = scrollable_height {
+            *self.scrollable_domain_chs.borrow_mut() = scrollable_height;
+        }
     }
 
     // ----------------------------------------------
@@ -115,9 +120,19 @@ impl VerticalScrollbar {
         self
     }
 
-    pub fn at(mut self, loc_x: DynVal, loc_y: DynVal) -> Self {
+    // set the dimensions of the actual scrollbar (note not the view area)
+    pub fn with_scrollbar_length(self, scrollbar_length: DynVal) -> Self {
+        *self.scrollbar_length_chs.borrow_mut() = scrollbar_length;
+        self
+    }
+
+    pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
         self.base.at(loc_x, loc_y);
         self
+    }
+
+    pub fn set_at(&self, loc_x: DynVal, loc_y: DynVal) {
+        self.base.at(loc_x, loc_y);
     }
 
     pub fn to_widgets(self) -> Widgets {
@@ -167,12 +182,17 @@ impl HorizontalScrollbar {
     }
 
     pub fn set_dyn_width(
-        &self, view_width: DynVal, scrollbar_length: DynVal, scrollable_width: usize,
+        &self,
+        view_width: DynVal,
+        scrollbar_length: DynVal,
+        scrollable_width: Option<usize>, // None = unchanged
     ) {
         *self.scrollable_view_chs.borrow_mut() = view_width;
         self.base.set_dyn_width(scrollbar_length.clone());
         *self.scrollbar_length_chs.borrow_mut() = scrollbar_length;
-        *self.scrollable_domain_chs.borrow_mut() = scrollable_width;
+        if let Some(scrollable_width) = scrollable_width {
+            *self.scrollable_domain_chs.borrow_mut() = scrollable_width;
+        }
     }
 
     // ----------------------------------------------
@@ -183,9 +203,20 @@ impl HorizontalScrollbar {
         self
     }
 
-    pub fn at(mut self, loc_x: DynVal, loc_y: DynVal) -> Self {
+    // set the dimensions of the actual scrollbar (note not the view area)
+    pub fn with_scrollbar_length(self, scrollbar_length: DynVal) -> Self {
+        //self.base.set_dyn_width(scrollbar_length.clone());
+        *self.scrollbar_length_chs.borrow_mut() = scrollbar_length;
+        self
+    }
+
+    pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
         self.base.at(loc_x, loc_y);
         self
+    }
+
+    pub fn set_at(&self, loc_x: DynVal, loc_y: DynVal) {
+        self.base.at(loc_x, loc_y);
     }
 
     pub fn to_widgets(self) -> Widgets {
@@ -274,7 +305,7 @@ impl Scrollbar {
 
     // if the Scrollbar currently cannot be used due to insufficient domain.
     pub fn is_currently_unnecessary(&self, p_size: usize) -> bool {
-        *self.scrollable_domain_chs.borrow() as i32
+        (*self.scrollable_domain_chs.borrow() as i32)
             <= self.scrollable_view_chs.borrow().get_val(p_size as u16)
     }
 
@@ -331,7 +362,7 @@ impl Scrollbar {
         let sc_pos = *self.scrollable_position.borrow();
         let sc_dom_chs = *self.scrollable_domain_chs.borrow();
         let sc_view_chs = self.scrollable_view_chs.borrow().get_val(p_size as u16) as usize;
-        sc_pos < sc_dom_chs.saturating_sub(sc_view_chs)
+        sc_pos <= sc_dom_chs.saturating_sub(sc_view_chs)
     }
 
     pub fn scroll_forwards(&self, ctx: &Context, p_size: usize) {
@@ -347,10 +378,10 @@ impl Scrollbar {
         }
     }
 
-    // the scrollbar domain is the total space which the scroll bar may occupy (both
-    // the bar and the empty space above and below it) measured in half-increments.
-    // Each half-increment represents half a character, as the scrollbar may use
-    // half characters to represent its position.
+    // the scrollbar domain is the total space which the scroll bar may occupy (both the actual bar
+    // and the movement space above and below it) measured in half-increments but not including the
+    // arrow spaces. Each half-increment represents half a character, as the scrollbar may use half
+    // characters to represent its position.
     pub fn scrollbar_domain_in_half_increments(&self, p_size: usize) -> usize {
         // minus 2 for the backwards and forwards arrows
         let arrows = if *self.has_arrows.borrow() { 2 } else { 0 };
@@ -360,7 +391,7 @@ impl Scrollbar {
         2 * (sc_len_chs.saturating_sub(arrows))
     }
 
-    pub fn scroll_bar_size_in_half_increments(&self, p_size: usize) -> usize {
+    pub fn scroll_bar_size_and_domain_in_half_increments(&self, p_size: usize) -> (usize, usize) {
         let domain_incr = self.scrollbar_domain_in_half_increments(p_size);
         let percent_viewable = (self.scrollable_view_chs.borrow().get_val(p_size as u16) as f64)
             / (*self.scrollable_domain_chs.borrow() as f64);
@@ -378,21 +409,21 @@ impl Scrollbar {
             scrollbar_incr = domain_incr;
         }
 
-        scrollbar_incr
+        (scrollbar_incr, domain_incr)
     }
 
     // the number of true view characters per full scrollbar character (aka 2
     // half-increments)
     pub fn true_chs_per_scrollbar_character(&self, p_size: usize) -> usize {
-        let scrollbar_incr = self.scroll_bar_size_in_half_increments(p_size);
+        let (scrollbar_incr, _) = self.scroll_bar_size_and_domain_in_half_increments(p_size);
         (self.scrollbar_length_chs.borrow().get_val(p_size as u16) as f64
             / (scrollbar_incr as f64 / 2.0)) as usize
     }
 
     // Get an array of half-increments of the scrollbar domain area
     fn scroll_bar_domain_array_of_half_increments(&self, p_size: usize) -> Vec<bool> {
-        let domain_incr = self.scrollbar_domain_in_half_increments(p_size);
-        let scrollbar_incr = self.scroll_bar_size_in_half_increments(p_size);
+        let (scrollbar_incr, domain_incr) =
+            self.scroll_bar_size_and_domain_in_half_increments(p_size);
 
         // total increments within the scrollbar domain for space above and below the bar
         let total_spacer_incr = domain_incr.saturating_sub(scrollbar_incr);
@@ -646,7 +677,9 @@ impl HorizontalScrollbar {
             .drawing_runes(ctx.get_width().into())
             .iter()
             .collect::<String>();
-        self.base.set_content_from_string(ctx, &h_str);
+        let sty = self.base.get_current_style();
+        let content = DrawChs2D::from_string(h_str, sty);
+        self.base.set_content(content);
         self.base.drawing(ctx)
     }
 }
@@ -971,11 +1004,6 @@ impl HorizontalScrollbar {
     }
 }
 
-// TRANSLATION NOTE, used to be implemented on the scrollbar
-//pub fn set_selectability(&self, ctx: &Context,  s: Selectability) -> EventResponses {
-//    *self.currently_dragging.borrow_mut() = false;
-//    self.base.set_selectability(&ctx, s)
-//}
 impl Widget for VerticalScrollbar {
     fn set_selectability_pre_hook(&self, _: &Context, _: Selectability) -> EventResponses {
         *self.currently_dragging.borrow_mut() = false;
@@ -1096,5 +1124,30 @@ impl Element for HorizontalScrollbar {
     }
     fn get_visible(&self) -> Rc<RefCell<bool>> {
         self.base.get_visible()
+    }
+}
+
+// test
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_scrollbar_drawing() {
+        let w = 10;
+        let sub = 2;
+        let ctx = Context::default().with_height(1).with_width(w);
+        let hat = SortingHat::default();
+        let width = DynVal::new_flex(1.).minus(sub.into());
+        let width_val = width.get_val(ctx.get_width());
+        assert_eq!(width_val, w as i32 - sub);
+        let sb = HorizontalScrollbar::new(&hat, width, w as usize * 2);
+        assert!(*sb.has_arrows.borrow());
+
+        let dr = sb
+            .drawing_runes(ctx.get_width().into())
+            .iter()
+            .collect::<String>();
+        assert_eq!(dr.to_string(), "◀██▌   ▶");
     }
 }

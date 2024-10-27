@@ -4,6 +4,9 @@
 01. alpha not working for bg of debug window in window_test
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+01. SB bug, if setting size to flex(1.).minus(fixed(x)) for each x the scrollbar
+    will actually remove two character spaces (instead of expected 1)
+      - I suspect this has to do with the domain_incr
 
 01. wierd bugs with maximized windows (window_test)
  - HAS TODO WITH STACK PANE:             self.normalize_locations(ctx); helps

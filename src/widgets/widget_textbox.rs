@@ -6,8 +6,8 @@ use {
     crate::{
         elements::menu::{MenuItem, MenuPath, MenuStyle},
         Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Error,
-        Event, EventResponse, EventResponses, KeyPossibility, Keyboard as KB, Priority,
-        ReceivableEventChanges, RightClickMenu, SortingHat, Style, Parent,
+        Event, EventResponse, EventResponses, KeyPossibility, Keyboard as KB, Parent, Priority,
+        ReceivableEventChanges, RightClickMenu, SortingHat, Style,
     },
     crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -216,9 +216,13 @@ impl TextBox {
         self
     }
 
-    pub fn at(mut self, loc_x: DynVal, loc_y: DynVal) -> Self {
+    pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
         self.base.at(loc_x, loc_y);
         self
+    }
+
+    pub fn set_at(&self, loc_x: DynVal, loc_y: DynVal) {
+        self.base.at(loc_x, loc_y);
     }
 
     pub fn with_ch_cursor(self) -> Self {

@@ -338,13 +338,12 @@ impl WidgetBase {
         wb
     }
 
-    pub fn at(&mut self, pos_x: DynVal, pos_y: DynVal) {
-        let width = self.get_dyn_width();
-        let height = self.get_dyn_height();
-        self.set_dyn_start_x(pos_x);
-        self.set_dyn_start_y(pos_y);
-        self.set_dyn_width(width);
-        self.set_dyn_height(height);
+    pub fn at(&self, pos_x: DynVal, pos_y: DynVal) {
+        self.pane
+            .get_dyn_location_set()
+            .borrow_mut()
+            .l
+            .set_at(pos_x, pos_y);
     }
 
     //-------------------------

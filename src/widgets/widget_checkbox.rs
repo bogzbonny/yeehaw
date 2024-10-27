@@ -74,7 +74,7 @@ impl Checkbox {
         self
     }
 
-    pub fn at(mut self, loc_x: DynVal, loc_y: DynVal) -> Self {
+    pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
         self.base.at(loc_x, loc_y);
         self
     }

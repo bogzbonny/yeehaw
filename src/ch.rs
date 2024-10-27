@@ -337,6 +337,25 @@ impl DrawChs2D {
         DrawChs2D(out)
     }
 
+    pub fn from_vec_draw_ch_pos(chs: Vec<DrawChPos>, default_ch: DrawCh) -> DrawChs2D {
+        // get the max x and y
+        let mut max_x = 0;
+        let mut max_y = 0;
+        for ch in chs.iter() {
+            if ch.x > max_x {
+                max_x = ch.x;
+            }
+            if ch.y > max_y {
+                max_y = ch.y;
+            }
+        }
+        let mut out = vec![vec![default_ch.clone(); max_x as usize + 1]; max_y as usize + 1];
+        for ch in chs.iter() {
+            out[ch.y as usize][ch.x as usize] = ch.ch.clone();
+        }
+        DrawChs2D(out)
+    }
+
     pub fn to_draw_ch_pos(&self, start_x: u16, start_y: u16) -> Vec<DrawChPos> {
         let mut out = Vec::new();
         for (y, line) in self.0.iter().enumerate() {

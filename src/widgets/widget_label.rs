@@ -117,12 +117,12 @@ impl Label {
         *self.text.borrow_mut() = text;
     }
 
-    pub fn at(mut self, loc_x: DynVal, loc_y: DynVal) -> Self {
+    pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
         self.base.at(loc_x, loc_y);
         self
     }
 
-    pub fn to_widgets(mut self) -> Widgets {
+    pub fn to_widgets(self) -> Widgets {
         let mut x = self.base.get_dyn_start_x();
         let mut y = self.base.get_dyn_start_y();
         let w = self.base.get_dyn_width();
