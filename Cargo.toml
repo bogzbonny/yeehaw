@@ -21,6 +21,10 @@ arboard = "^3.2.0"
 figlet-rs = "^0.1.5"
 dyn-clone = "^1.0.17"
 
+vt100 = { version = "0.15.2" }
+portable-pty = { version = "0.8.1" }
+bytes = "^1.8.0"
+
 ratatui = "^0.28.0"
 ratatui-image = "^1.0.0"
 image = { version = ">=0.24", default-features = false, features = ["jpeg"] }

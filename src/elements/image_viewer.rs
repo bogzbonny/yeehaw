@@ -1,8 +1,7 @@
 use {
     crate::{
         element::ReceivableEventChanges, Context, DrawChPos, DrawChPosVec, DynLocationSet, DynVal,
-        Element, ElementID, Event, EventResponses, Pane, Priority, SortingHat, Parent,
-        ZIndex,
+        Element, ElementID, Event, EventResponses, Pane, Parent, Priority, SortingHat, ZIndex,
     },
     image::DynamicImage,
     ratatui::widgets::StatefulWidget,
@@ -37,7 +36,7 @@ impl ImageViewer {
         // Create the Protocol which will be used by the widget.
         let st_pro = picker.new_resize_protocol(dyn_img);
         Self {
-            pane: Pane::new(hat, "debug_size_pane"),
+            pane: Pane::new(hat, "image_viewer_pane"),
             //image: Rc::new(RefCell::new(dyn_img)),
             st_pro: Rc::new(RefCell::new(st_pro)),
         }
