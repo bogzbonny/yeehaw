@@ -40,6 +40,8 @@
     - definately has to do with the event not being routed to the menubar as if
       the only item is the menubar then the menu works fine
 
+01. Ensure that HorizontalStack has all the new functions added to VerticalStack
+
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 01. terminal element
@@ -49,8 +51,6 @@
     - uses the $EDITOR env variable
     - execute with something like: "$EDITOR; exit" 
        - however smux doesn't handle exit gracefully, will need to repair
-
-01. Ensure that HorizontalStack has all the new functions added to VerticalStack
 
 01. support taffy as a layout structure.
      - Taffy low-level API (0.6.0 fixes ownership issues I was facing)

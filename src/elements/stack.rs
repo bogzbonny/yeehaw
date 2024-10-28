@@ -164,6 +164,7 @@ pub struct HorizontalStack {
     pub pane: ParentPane,
     #[allow(clippy::type_complexity)]
     pub els: Rc<RefCell<Vec<Rc<RefCell<dyn Element>>>>>,
+    pub last_size: Rc<RefCell<Size>>,
 }
 
 impl HorizontalStack {
@@ -173,6 +174,15 @@ impl HorizontalStack {
         Self {
             pane: ParentPane::new(hat, Self::KIND),
             els: Rc::new(RefCell::new(Vec::new())),
+            last_size: Rc::new(RefCell::new(Size::new(0, 0))),
+        }
+    }
+
+    pub fn new_with_kind(hat: &SortingHat, kind: &'static str) -> Self {
+        Self {
+            pane: ParentPane::new(hat, kind),
+            els: Rc::new(RefCell::new(Vec::new())),
+            last_size: Rc::new(RefCell::new(Size::new(0, 0))),
         }
     }
 
@@ -223,6 +233,17 @@ impl HorizontalStack {
 
     pub fn is_empty(&self) -> bool {
         self.els.borrow().is_empty()
+    }
+
+    pub fn with_style(self, style: Style) -> Self {
+        self.pane.pane.set_style(style);
+        self
+    }
+
+    pub fn with_transparent(self) -> Self {
+        let ch = DrawCh::transparent();
+        self.pane.pane.set_default_ch(ch);
+        self
     }
 
     // get the average value of the elements in the stack
@@ -427,5 +448,119 @@ impl Element for HorizontalStack {
     }
     fn get_visible(&self) -> Rc<RefCell<bool>> {
         self.pane.get_visible()
+    }
+}
+
+// -----------------------------------------------------------------
+
+/// The StackTr is used to ensure feature parity between the VerticalStack and HorizontalStack
+#[allow(dead_code)]
+trait StackTr {
+    const KIND: &'static str;
+    fn new(hat: &SortingHat) -> Self;
+    fn new_with_kind(hat: &SortingHat, kind: &'static str) -> Self;
+    fn push(&self, ctx: &Context, el: Rc<RefCell<dyn Element>>);
+    fn insert(&self, ctx: &Context, idx: usize, el: Rc<RefCell<dyn Element>>);
+    fn remove(&self, ctx: &Context, idx: usize);
+    fn clear(&self);
+    fn len(&self) -> usize;
+    fn get(&self, idx: usize) -> Option<Rc<RefCell<dyn Element>>>;
+    fn is_empty(&self) -> bool;
+    fn with_style(self, style: Style) -> Self;
+    fn with_transparent(self) -> Self;
+    fn sanitize_el_location(el: &Rc<RefCell<dyn Element>>);
+    fn ensure_normalized_sizes(&self, ctx: &Context);
+    fn normalize_locations(&self, ctx: &Context);
+}
+
+impl StackTr for VerticalStack {
+    const KIND: &'static str = "vertical_stack";
+    fn new(hat: &SortingHat) -> Self {
+        VerticalStack::new(hat)
+    }
+    fn new_with_kind(hat: &SortingHat, kind: &'static str) -> Self {
+        VerticalStack::new_with_kind(hat, kind)
+    }
+    fn push(&self, ctx: &Context, el: Rc<RefCell<dyn Element>>) {
+        VerticalStack::push(self, ctx, el)
+    }
+    fn insert(&self, ctx: &Context, idx: usize, el: Rc<RefCell<dyn Element>>) {
+        VerticalStack::insert(self, ctx, idx, el)
+    }
+    fn remove(&self, ctx: &Context, idx: usize) {
+        VerticalStack::remove(self, ctx, idx)
+    }
+    fn clear(&self) {
+        VerticalStack::clear(self)
+    }
+    fn len(&self) -> usize {
+        VerticalStack::len(self)
+    }
+    fn get(&self, idx: usize) -> Option<Rc<RefCell<dyn Element>>> {
+        VerticalStack::get(self, idx)
+    }
+    fn is_empty(&self) -> bool {
+        VerticalStack::is_empty(self)
+    }
+    fn with_style(self, style: Style) -> Self {
+        VerticalStack::with_style(self, style)
+    }
+    fn with_transparent(self) -> Self {
+        VerticalStack::with_transparent(self)
+    }
+    fn sanitize_el_location(el: &Rc<RefCell<dyn Element>>) {
+        VerticalStack::sanitize_el_location(el)
+    }
+    fn ensure_normalized_sizes(&self, ctx: &Context) {
+        VerticalStack::ensure_normalized_sizes(self, ctx)
+    }
+    fn normalize_locations(&self, ctx: &Context) {
+        VerticalStack::normalize_locations(self, ctx)
+    }
+}
+
+impl StackTr for HorizontalStack {
+    const KIND: &'static str = "horizontal_stack";
+    fn new(hat: &SortingHat) -> Self {
+        HorizontalStack::new(hat)
+    }
+    fn new_with_kind(hat: &SortingHat, kind: &'static str) -> Self {
+        HorizontalStack::new_with_kind(hat, kind)
+    }
+    fn push(&self, ctx: &Context, el: Rc<RefCell<dyn Element>>) {
+        HorizontalStack::push(self, ctx, el)
+    }
+    fn insert(&self, ctx: &Context, idx: usize, el: Rc<RefCell<dyn Element>>) {
+        HorizontalStack::insert(self, ctx, idx, el)
+    }
+    fn remove(&self, ctx: &Context, idx: usize) {
+        HorizontalStack::remove(self, ctx, idx)
+    }
+    fn clear(&self) {
+        HorizontalStack::clear(self)
+    }
+    fn len(&self) -> usize {
+        HorizontalStack::len(self)
+    }
+    fn get(&self, idx: usize) -> Option<Rc<RefCell<dyn Element>>> {
+        HorizontalStack::get(self, idx)
+    }
+    fn is_empty(&self) -> bool {
+        HorizontalStack::is_empty(self)
+    }
+    fn with_style(self, style: Style) -> Self {
+        HorizontalStack::with_style(self, style)
+    }
+    fn with_transparent(self) -> Self {
+        HorizontalStack::with_transparent(self)
+    }
+    fn sanitize_el_location(el: &Rc<RefCell<dyn Element>>) {
+        HorizontalStack::sanitize_el_location(el)
+    }
+    fn ensure_normalized_sizes(&self, ctx: &Context) {
+        HorizontalStack::ensure_normalized_sizes(self, ctx)
+    }
+    fn normalize_locations(&self, ctx: &Context) {
+        HorizontalStack::normalize_locations(self, ctx)
     }
 }
