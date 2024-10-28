@@ -1,6 +1,9 @@
 use {
     std::{cell::RefCell, rc::Rc},
-    yeehaw::{Context, Cui, DebugSizePane, Error, MenuBar, SortingHat, VerticalStack},
+    yeehaw::{
+        widgets::{Button, Label},
+        Context, Cui, Error, EventResponses, MenuBar, ParentPane, SortingHat, VerticalStack,
+    },
 };
 
 #[tokio::main]
@@ -16,10 +19,53 @@ async fn main() -> Result<(), Error> {
     let mb = MenuBar::top_menu_bar(&hat)
         .with_height(1.into())
         .with_width(1.0.into());
-    let lower = DebugSizePane::new(&hat)
-        .with_height(1.0.into())
-        .with_width(1.0.into())
+    let lower = ParentPane::new(&hat, "lower")
+        .with_dyn_height(1.0.into())
+        .with_dyn_width(1.0.into())
         .with_z(100);
+
+    let label = Label::new(&hat, &ctx, "label").at(0.into(), 10.into());
+
+    let label_ = label.clone();
+    let btn_a = Button::new(
+        &hat,
+        &ctx,
+        "A",
+        Box::new(move |_, ctx_| {
+            label_.set_text(&ctx_, "Button A clicked".to_string());
+            EventResponses::default()
+        }),
+    )
+    .at(1.into(), 0.into());
+
+    let label_ = label.clone();
+    let btn_b = Button::new(
+        &hat,
+        &ctx,
+        "B",
+        Box::new(move |_, ctx_| {
+            label_.set_text(&ctx_, "Button B clicked".to_string());
+            EventResponses::default()
+        }),
+    )
+    .at(5.into(), 0.into());
+
+    let label_ = label.clone();
+    let btn_c = Button::new(
+        &hat,
+        &ctx,
+        "C",
+        Box::new(move |_, ctx_| {
+            label_.set_text(&ctx_, "Button C clicked".to_string());
+            EventResponses::default()
+        }),
+    )
+    .at(9.into(), 0.into());
+
+    lower.add_element(Rc::new(RefCell::new(label)));
+    lower.add_element(Rc::new(RefCell::new(btn_a)));
+    lower.add_element(Rc::new(RefCell::new(btn_b)));
+    lower.add_element(Rc::new(RefCell::new(btn_c)));
 
     vstack.push(&ctx, Rc::new(RefCell::new(mb.clone())));
     vstack.push(&ctx, Rc::new(RefCell::new(lower)));
@@ -37,4 +83,5 @@ async fn main() -> Result<(), Error> {
     mb.add_item(&hat, &ctx, "diner/yoyo/hi/asgd".to_string(), None);
 
     Cui::new(Rc::new(RefCell::new(vstack)))?.run().await
+    //Cui::new(Rc::new(RefCell::new(mb)))?.run().await
 }

@@ -39,6 +39,8 @@
 
 01. menu_test seems to not select the final final sub menu (hi in diner) 
     - NOT due to 9bdebc2 (HEAD -> main, origin/main) made external mouse events relative
+    - definately has to do with the event not being routed to the menubar as if
+      the only item is the menubar then the menu works fine
 
 05. borders-pane wrapper
      - option for each of up/down/right/left

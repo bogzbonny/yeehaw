@@ -411,10 +411,13 @@ impl MenuBar {
     pub fn extra_locations(&self) -> Vec<DynLocation> {
         let bar_loc = self.get_dyn_location_set().borrow().clone();
         let x = bar_loc.get_dyn_start_x();
-        let y = bar_loc.get_dyn_end_y();
+        let y = bar_loc.get_dyn_start_y();
 
         let mut locs = vec![];
         for details in self.pane.eo.els.borrow().values() {
+            if !*details.vis.borrow() {
+                continue;
+            }
             let mut item_loc = details.loc.borrow().l.clone();
             item_loc.adjust_location_by(x.clone(), y.clone());
             locs.push(item_loc);
