@@ -13,7 +13,6 @@ use {
         Element,
         Error,
         EventResponses,
-        //PaneScrollable,
         PaneWithScrollbars,
         SortingHat,
         WidgetPane,
@@ -35,12 +34,9 @@ async fn main() -> Result<(), Error> {
         200,
         200,
         HorizontalSBPositions::Below,
-        //HorizontalSBPositions::None,
-        //VerticalSBPositions::ToTheRight,
         VerticalSBPositions::ToTheRight,
-        //VerticalSBPositions::None,
     );
-    //let sc_pane = PaneScrollable::new(&hat, 200, 200);
+    //let sc_pane = yeehaw::PaneScrollable::new(&hat, 200, 200);
 
     let el = WidgetPane::new(&hat);
 

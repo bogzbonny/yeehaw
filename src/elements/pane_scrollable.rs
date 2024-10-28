@@ -62,6 +62,10 @@ impl PaneScrollable {
         let y1 = *self.content_offset_y.borrow() as u16;
         let x2 = x1 + ctx.s.width;
         let y2 = y1 + ctx.s.height;
+        //debug!(
+        //    "visible region: \n\tx1: {}, \n\tx2: {}, \n\ty1: {}, \n\ty2: {}",
+        //    x1, x2, y1, y2
+        //);
         let visible_region = Loc::new(x1, x2, y1, y2);
         inner_ctx.visible_region = Some(visible_region);
         inner_ctx

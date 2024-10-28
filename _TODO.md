@@ -29,14 +29,15 @@
          - this makes the buttons and the corner adjuster stop working
       - bug; the top bar is receiving events for top row of the inner
         pane
+01. right click menu is way to large
+    - only in scrollable_panes_test not in widget_test
+    - doesn't occur when the ctx visible region is disabled
+    - choice of visible region seems reasonable
+    - seems to be a part of the drawing routine for pane
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 01. menu_test seems to not select the final final sub menu (hi in diner) 
-    - NOT due to 9bdebc2 (HEAD -> main, origin/main) made external mouse events relative
-
-01. right click menu is way to large
-    - only in scrollable_panes_test not in widget_test
     - NOT due to 9bdebc2 (HEAD -> main, origin/main) made external mouse events relative
 
 05. borders-pane wrapper

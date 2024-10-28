@@ -5,7 +5,7 @@ use crate::{ElementID, Event, Keyboard};
 // the priority of Focused which can only be exceeded if an element is given the
 // Highest priority.
 //
-// XXX change to enum
+// TODO change to enum
 #[derive(Clone, Copy, PartialEq, Eq, Debug, PartialOrd, Ord)]
 pub struct Priority(pub u8);
 

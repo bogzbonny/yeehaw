@@ -447,7 +447,7 @@ impl ElementOrganizer {
     ) -> ReceivableEventChanges {
         let details = self
             .get_element_details(&el_id)
-            .expect("no element for destination id"); // XXX something else
+            .expect("no element for destination id"); // TODO log
 
         let child_ctx = self.get_context_for_el(ctx, &details);
 
@@ -637,7 +637,7 @@ impl ElementOrganizer {
     //    };
 
     //    let Some(details) = self.get_element_details(&el_id) else {
-    //        // XXX TODO return error
+    //        // TODO return error
     //        return (false, EventResponses::default());
     //    };
     //    let child_ctx = self.get_context_for_el(ctx, &details);

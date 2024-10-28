@@ -79,12 +79,6 @@ impl RightClickMenu {
         self.menu.set_visible(true);
         *self.just_created.borrow_mut() = true;
 
-        let loc = self.get_dyn_location_set().borrow().clone();
-        debug!(
-            "RightClickMenu::create_menu_if_right_click: loc: {:#?}",
-            loc
-        );
-
         Some(EventResponse::NewElement(Rc::new(RefCell::new(self.clone()))).into())
     }
 }

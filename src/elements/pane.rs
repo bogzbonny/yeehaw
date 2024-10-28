@@ -340,23 +340,21 @@ impl Element for Pane {
 
         let (xmin, xmax, ymin, ymax) = if let Some(vis_region) = ctx.visible_region {
             (
-                vis_region.start_x as usize,
-                vis_region.end_x as usize,
-                vis_region.start_y as usize,
-                vis_region.end_y as usize,
+                // take the intersection of the visibile region and the elements region
+                (vis_region.start_x as usize).max(0),
+                (vis_region.end_x as usize).min(ctx.s.width as usize),
+                (vis_region.start_y as usize).max(0),
+                (vis_region.end_y as usize).min(ctx.s.height as usize),
             )
         } else {
             (0, ctx.s.width as usize, 0, ctx.s.height as usize)
         };
-        //let (xmin, xmax, ymin, ymax) = (0, ctx.s.width as usize, 0, ctx.s.height as usize);
 
         // convert the Content to DrawChPos
         for y in ymin..ymax {
             for x in xmin..xmax {
                 // default ch being added next is the DefaultCh
                 let mut ch_out = self.default_ch.borrow().clone();
-
-                // TODO XXX allow for negative offsets! currently crashes
 
                 let offset_y = y + *self.content_view_offset_y.borrow();
                 let offset_x = x + *self.content_view_offset_x.borrow();

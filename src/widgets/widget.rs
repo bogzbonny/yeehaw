@@ -205,14 +205,6 @@ impl Widgets {
         }
     }
 
-    // XXX delete post-TRANSLATION
-    //pub fn get_parent_ctx(&self) -> Context {
-    //    if self.0.is_empty() {
-    //        return Context::default();
-    //    }
-    //    (self.0[0].get_parent_ctx()).clone()
-    //}
-
     pub fn with_above_left_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
         self.add_label(ctx, Label::new(hat, ctx, l), LabelPosition::AboveThenLeft);
         self
@@ -601,7 +593,7 @@ impl Element for WidgetBase {
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        let sty = self.get_current_style(); // XXX this is different than standard_pane draw... unless this should be set somewhere else
+        let sty = self.get_current_style(); // NOTE this is different than standard_pane draw... unless this should be set somewhere else
         let h = self.get_height_val(ctx);
         let w = self.get_width_val(ctx);
         let view_offset_y = *self.pane.content_view_offset_y.borrow();
