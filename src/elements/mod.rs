@@ -9,6 +9,7 @@ pub mod pane_parent;
 pub mod pane_scrollable;
 pub mod stack;
 pub mod tabs;
+pub mod terminal;
 pub mod window;
 
 pub use {
@@ -23,5 +24,6 @@ pub use {
     pane_scrollable::{PaneScrollable, PaneWithScrollbars},
     stack::{HorizontalStack, VerticalStack},
     tabs::Tabs,
+    terminal::TerminalPane,
     window::WindowPane,
 };

@@ -12,6 +12,7 @@ pub struct VerticalStack {
     pub pane: ParentPane,
     #[allow(clippy::type_complexity)]
     pub els: Rc<RefCell<Vec<Rc<RefCell<dyn Element>>>>>,
+    pub last_size: Rc<RefCell<Size>>,
 }
 
 impl VerticalStack {
@@ -21,6 +22,7 @@ impl VerticalStack {
         Self {
             pane: ParentPane::new(hat, Self::KIND),
             els: Rc::new(RefCell::new(Vec::new())),
+            last_size: Rc::new(RefCell::new(Size::new(0, 0))),
         }
     }
 
@@ -28,6 +30,7 @@ impl VerticalStack {
         Self {
             pane: ParentPane::new(hat, kind),
             els: Rc::new(RefCell::new(Vec::new())),
+            last_size: Rc::new(RefCell::new(Size::new(0, 0))),
         }
     }
 
@@ -113,6 +116,13 @@ impl VerticalStack {
         loc.set_start_x(0.0.into()); // 0
         loc.set_end_x(1.0.into()); // 100%
         *el.borrow_mut().get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
+    }
+
+    pub fn ensure_normalized_sizes(&self, ctx: &Context) {
+        if *self.last_size.borrow() != ctx.s {
+            self.normalize_locations(ctx);
+            *self.last_size.borrow_mut() = ctx.s;
+        }
     }
 
     // normalize all the locations within the stack
@@ -249,6 +259,13 @@ impl HorizontalStack {
         *el.borrow_mut().get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
     }
 
+    pub fn ensure_normalized_sizes(&self, ctx: &Context) {
+        if *self.last_size.borrow() != ctx.s {
+            self.normalize_locations(ctx);
+            *self.last_size.borrow_mut() = ctx.s;
+        }
+    }
+
     // normalize all the locations within the stack
     pub fn normalize_locations(&self, ctx: &Context) {
         let mut widths: Vec<DynVal> = self
@@ -322,15 +339,15 @@ impl Element for VerticalStack {
         self.pane.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        if ev == Event::Resize {
-            self.normalize_locations(ctx);
-        }
+        self.ensure_normalized_sizes(ctx);
         self.pane.receive_event(ctx, ev.clone())
     }
     fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
+        self.ensure_normalized_sizes(ctx);
         self.pane.change_priority(ctx, p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        self.ensure_normalized_sizes(ctx);
         self.pane.drawing(ctx)
     }
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
@@ -373,15 +390,15 @@ impl Element for HorizontalStack {
         self.pane.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        if ev == Event::Resize {
-            self.normalize_locations(ctx);
-        }
+        self.ensure_normalized_sizes(ctx);
         self.pane.receive_event(ctx, ev.clone())
     }
     fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
+        self.ensure_normalized_sizes(ctx);
         self.pane.change_priority(ctx, p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        self.ensure_normalized_sizes(ctx);
         self.pane.drawing(ctx)
     }
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {

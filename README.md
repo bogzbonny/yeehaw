@@ -72,10 +72,12 @@ Catering to non- UTF-8 or non- true-color terminals.
    - color selector
    - table 
  - Interactive debugging TUI application
+   - https://github.com/eclipse-iceoryx/iceoryx2 
  - TUI Snapshot Tester
    - use a toggle to switch between result/expected
    - diff view (only show the differences)
    - eventually allow for multi-stage
+   - see `script` standard binary
  - TUI Application Builder 
    - basically drag and drop style element builder
    - resizing of the view-pane to test TUI pages at different 

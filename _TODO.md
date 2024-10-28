@@ -35,20 +35,12 @@
     - choice of visible region seems reasonable
     - seems to be a part of the drawing routine for pane
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 01. menu_test seems to not select the final final sub menu (hi in diner) 
     - NOT due to 9bdebc2 (HEAD -> main, origin/main) made external mouse events relative
     - definately has to do with the event not being routed to the menubar as if
       the only item is the menubar then the menu works fine
 
-05. borders-pane wrapper
-     - option for each of up/down/right/left
-        - aka. doesn't need to be fully bordered.
-     - custom up/down/right/left DrawChs AND corner pieces
-     - single/double/bold lines defaults 
-     - built in scrollbars optionally
-     - drag-resizing - drag while on the edge to resize the location
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 01. terminal element
     - https://github.com/a-kenji/tui-term/blob/development/examples/smux.rs
@@ -139,6 +131,22 @@
            parent pane has this hook registered for resized on each
            minimization.
 
+05. borders-pane wrapper
+     - option for each of up/down/right/left
+        - aka. doesn't need to be fully bordered.
+     - custom up/down/right/left DrawChs AND corner pieces
+     - single/double/bold lines defaults 
+     - built in scrollbars optionally
+     - drag-resizing - drag while on the edge to resize the location
+
+05. accordion stack
+     - could have a static exterior dimension in which case one stack element
+       would always have to be open
+     - Optionally could allow for growing and shrinking its total size in which case it
+       could store its size if all the elements where minimized
+     - Each header should remain when the element is open 
+     - optional vertical accordian stack
+
 05. Time Base Events. add a "future event" to a part of the EventResponse. In
     the future event there is a timestamp which says when this event should be
     activated. This can be triggered in the render loop and the event will then
@@ -182,8 +190,7 @@
 
 05. Into<Widgets> Trait which can be applied to each widget builder so that
     .to_widgets() doesn't need to be manually called during construction
-    (applied in add_widget).
-
+    (applied in add_widget)
 
 05. Remove Refresh logic from Elements. currently when an element is destroyed
     or replaced, the parents call some Refresh logic, this should be removed in
