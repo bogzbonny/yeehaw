@@ -102,7 +102,7 @@ async fn main() -> Result<(), Error> {
     let add_button =
         Button::new(&hat, &ctx, "add_window", add_button_click_fn).at(1.into(), 1.into());
     let add_button2 = Button::new(&hat, &ctx, "add_window_scrollable", add_button_scr_click_fn)
-        .at(20.into(), 1.into());
+        .at(15.into(), 1.into());
     pp.add_element(Rc::new(RefCell::new(add_button)));
     pp.add_element(Rc::new(RefCell::new(add_button2)));
 

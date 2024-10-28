@@ -13,23 +13,28 @@ async fn main() -> Result<(), Error> {
     let ctx = Context::new_context_for_screen_no_dur();
 
     let vstack = VerticalStack::new(&hat);
+    let mb = MenuBar::top_menu_bar(&hat)
+        .with_height(1.into())
+        .with_width(1.0.into());
     let lower = DebugSizePane::new(&hat)
         .with_height(1.0.into())
         .with_width(1.0.into())
         .with_z(100);
-    let mb = MenuBar::top_menu_bar(&hat)
-        .with_height(1.into())
-        .with_width(1.0.into());
 
     vstack.push(&ctx, Rc::new(RefCell::new(mb.clone())));
     vstack.push(&ctx, Rc::new(RefCell::new(lower)));
 
     mb.add_item(&hat, &ctx, "hello/asdg/2222/3".to_string(), None);
-    mb.add_item(&hat, &ctx, "hello/asdg/444ll/3adsf3".to_string(), None);
+    mb.add_item(
+        &hat,
+        &ctx,
+        "hello/asdg/444ll/3adsf3/sdlkjf".to_string(),
+        None,
+    );
     mb.add_item(&hat, &ctx, "hello/as33/222222/33".to_string(), None);
     mb.add_item(&hat, &ctx, "world/yo".to_string(), None);
-    mb.add_item(&hat, &ctx, "world/yosdfjldsf/asdkjl".to_string(), None);
-    mb.add_item(&hat, &ctx, "diner/yoyo/hi".to_string(), None);
+    mb.add_item(&hat, &ctx, "world/yosdfjldsffff/asdkjl".to_string(), None);
+    mb.add_item(&hat, &ctx, "diner/yoyo/hi/asgd".to_string(), None);
 
     Cui::new(Rc::new(RefCell::new(vstack)))?.run().await
 }

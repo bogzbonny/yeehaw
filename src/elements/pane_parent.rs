@@ -284,18 +284,24 @@ impl Element for ParentPane {
                 (false, EventResponses::default())
             }
             Event::Mouse(me) => {
-                let (_, resps) = self.eo.mouse_event_process(ctx, &me);
+                let (_, resps) = self
+                    .eo
+                    .mouse_event_process(ctx, &me, Box::new(self.clone()));
                 (true, resps)
             }
             Event::ExternalMouse(me) => {
                 // send the mouse event to all the children
-                (false, self.eo.external_mouse_event_process(ctx, &me))
+                (
+                    false,
+                    self.eo
+                        .external_mouse_event_process(ctx, &me, Box::new(self.clone())),
+                )
             }
             Event::KeyCombo(ke) => {
                 //debug!("ParentPane::receive_key_event: {}, {:?}", self.id(), ke);
                 // convert ke to Vec<crossterm::event::KeyEvent>
                 let ke = ke.into_iter().filter_map(|kp| kp.get_key()).collect();
-                let mep = self.eo.key_events_process(ctx, ke);
+                let mep = self.eo.key_events_process(ctx, ke, Box::new(self.clone()));
                 let Some((_, resps)) = mep else {
                     return (true, EventResponses::default());
                 };
@@ -397,7 +403,7 @@ impl Parent for ParentPane {
         &self, child_el_id: &ElementID, ic: ReceivableEventChanges,
     ) {
         self.eo.process_receivable_event_changes(child_el_id, &ic);
-        if let Some(up) = self.pane.propagator.borrow_mut().deref() {
+        if let Some(up) = self.pane.parent.borrow_mut().deref() {
             up.propagate_receivable_event_changes_upward(&self.id(), ic);
         }
     }

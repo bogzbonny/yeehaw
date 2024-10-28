@@ -283,6 +283,7 @@ impl ElementOrganizer {
     // which owns this element organizer.
     pub fn partially_process_ev_resps(
         &self, _ctx: &Context, el_id: &ElementID, resps: &mut EventResponses,
+        parent: Box<dyn Parent>,
     ) {
         let Some(details) = self.get_element_details(el_id) else {
             // TODO log error
@@ -317,7 +318,8 @@ impl ElementOrganizer {
                             details.loc.borrow().l.start_x.clone(),
                             details.loc.borrow().l.start_y.clone(),
                         );
-                    self.add_element(new_el.clone(), None); // XXX TODO add upward propagator
+                    let parent_ = dyn_clone::clone_box(&*parent);
+                    self.add_element(new_el.clone(), Some(parent_));
                     modified_resp = Some(EventResponse::None);
                 }
                 EventResponse::Destruct => {
@@ -378,7 +380,7 @@ impl ElementOrganizer {
     // - sends the event combo to the element
     // - processes changes to the elements receivable events
     pub fn key_events_process(
-        &self, ctx: &Context, evs: Vec<crossterm::event::KeyEvent>,
+        &self, ctx: &Context, evs: Vec<crossterm::event::KeyEvent>, parent: Box<dyn Parent>,
     ) -> Option<(ElementID, EventResponses)> {
         // determine elementID to send events to
         let evs: Event = evs.into();
@@ -400,7 +402,7 @@ impl ElementOrganizer {
         let child_ctx = self.get_context_for_el(ctx, &el_details);
         let (_, mut resps) = el_details.el.borrow_mut().receive_event(&child_ctx, evs);
 
-        self.partially_process_ev_resps(ctx, &el_id, &mut resps);
+        self.partially_process_ev_resps(ctx, &el_id, &mut resps, parent);
         Some((el_id, resps))
     }
 
@@ -483,7 +485,7 @@ impl ElementOrganizer {
     // - sends the event to the element
     // - processes changes to the element's receivable events
     pub fn mouse_event_process(
-        &self, ctx: &Context, ev: &crossterm::event::MouseEvent,
+        &self, ctx: &Context, ev: &crossterm::event::MouseEvent, parent: Box<dyn Parent>,
     ) -> (Option<ElementID>, EventResponses) {
         let eoz = self.get_el_id_z_order_under_mouse(ctx, ev);
 
@@ -521,7 +523,8 @@ impl ElementOrganizer {
             .el
             .borrow_mut()
             .receive_event(&child_ctx, Event::Mouse(ev_adj));
-        self.partially_process_ev_resps(ctx, &el_id, &mut ev_resps);
+        let parent_ = dyn_clone::clone_box(&*parent);
+        self.partially_process_ev_resps(ctx, &el_id, &mut ev_resps, parent_);
 
         // send the mouse event as an external event to all other elements
         // capture the responses
@@ -542,7 +545,8 @@ impl ElementOrganizer {
         // combine the event responses from the elements that receive the event
         // and all the elements that receive an external event
         for (el_id2, mut resps) in el_resps {
-            self.partially_process_ev_resps(ctx, &el_id2, &mut resps);
+            let parent_ = dyn_clone::clone_box(&*parent);
+            self.partially_process_ev_resps(ctx, &el_id2, &mut resps, parent_);
             ev_resps.extend(resps.0);
         }
         (Some(el_id), ev_resps)
@@ -550,7 +554,7 @@ impl ElementOrganizer {
 
     // sends the external mouse command to all elements in the organizer
     pub fn external_mouse_event_process(
-        &self, ctx: &Context, ev: &RelMouseEvent,
+        &self, ctx: &Context, ev: &RelMouseEvent, parent: Box<dyn Parent>,
     ) -> EventResponses {
         let mut ev_resps = EventResponses::default();
         for (el_id, details) in self.els.borrow().iter() {
@@ -564,7 +568,8 @@ impl ElementOrganizer {
                 .el
                 .borrow_mut()
                 .receive_event(&child_ctx, Event::ExternalMouse(ev_adj));
-            self.partially_process_ev_resps(ctx, el_id, &mut r);
+            let parent_ = dyn_clone::clone_box(&*parent);
+            self.partially_process_ev_resps(ctx, el_id, &mut r, parent_);
             ev_resps.extend(r.0);
         }
         ev_resps

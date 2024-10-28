@@ -65,6 +65,9 @@ Catering to non- UTF-8 or non- true-color terminals.
  - vim-style command input system (complete with events and routing)
  - ANSI-animation viewer (using extended asc format)
  - optional mouse pixel support
+ - wire-connectors
+    - for visualizing routing of information between elements
+    - could be directional or non-directional (aka use an arrow or not)
  - widgets:
    - color selector
    - table 

@@ -18,9 +18,6 @@
       as the minimized window cannot be restored until you shrink the 
       maximized window back.
     - might be a bug with either parent pane or vertical stack
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 01. floating window element
       - TopBar - title, x button, drag to move the whole window
       - restore minimize only on upclick
@@ -30,13 +27,16 @@
         button to not maximized.
       - prevent the window from moving further left than the screen... 
          - this makes the buttons and the corner adjuster stop working
-      DONE ^^^ 
       - bug; the top bar is receiving events for top row of the inner
         pane
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 01. menu_test seems to not select the final final sub menu (hi in diner) 
     - NOT due to 9bdebc2 (HEAD -> main, origin/main) made external mouse events relative
-01. right click menu is way to large in widget_test
+
+01. right click menu is way to large
+    - only in scrollable_panes_test not in widget_test
     - NOT due to 9bdebc2 (HEAD -> main, origin/main) made external mouse events relative
 
 05. borders-pane wrapper

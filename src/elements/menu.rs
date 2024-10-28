@@ -302,7 +302,10 @@ impl MenuBar {
             return (true, EventResponses::default());
         }
 
-        let mep = self.pane.eo.mouse_event_process(ctx, &ev);
+        let mep = self
+            .pane
+            .eo
+            .mouse_event_process(ctx, &ev, Box::new(self.pane.clone()));
         let (Some(el_id), resps) = mep else {
             if clicked {
                 return self.closedown();

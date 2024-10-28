@@ -34,7 +34,7 @@ pub struct Pane {
     // else ever uses it.
     element_priority: Rc<RefCell<Priority>>,
 
-    pub propagator: Rc<RefCell<Option<Box<dyn Parent>>>>,
+    pub parent: Rc<RefCell<Option<Box<dyn Parent>>>>,
 
     #[allow(clippy::type_complexity)]
     pub hooks:
@@ -70,7 +70,7 @@ impl Pane {
             attributes: Rc::new(RefCell::new(HashMap::new())),
             self_evs: Rc::new(RefCell::new(SelfReceivableEvents::default())),
             element_priority: Rc::new(RefCell::new(Priority::UNFOCUSED)),
-            propagator: Rc::new(RefCell::new(None)),
+            parent: Rc::new(RefCell::new(None)),
             hooks: Rc::new(RefCell::new(HashMap::new())),
             content: Rc::new(RefCell::new(DrawChs2D::default())),
             default_ch: Rc::new(RefCell::new(DrawCh::default())),
@@ -261,7 +261,7 @@ impl Pane {
         self.self_evs
             .borrow_mut()
             .update_priority_for_all(Priority::UNFOCUSED);
-        if let Some(propagator) = self.propagator.borrow().as_ref() {
+        if let Some(parent) = self.parent.borrow().as_ref() {
             let rec = ReceivableEventChanges::default()
                 .with_remove_evs(
                     self.self_evs
@@ -273,7 +273,7 @@ impl Pane {
                         .collect(),
                 )
                 .with_evs(self.self_evs.borrow().0.clone());
-            propagator.propagate_receivable_event_changes_upward(&self.id(), rec);
+            parent.propagate_receivable_event_changes_upward(&self.id(), rec);
         }
     }
 
@@ -283,7 +283,7 @@ impl Pane {
         self.self_evs
             .borrow_mut()
             .update_priority_for_all(Priority::FOCUSED);
-        if let Some(propagator) = self.propagator.borrow().as_ref() {
+        if let Some(parent) = self.parent.borrow().as_ref() {
             let rec = ReceivableEventChanges::default()
                 .with_remove_evs(
                     self.self_evs
@@ -295,7 +295,7 @@ impl Pane {
                         .collect(),
                 )
                 .with_evs(self.self_evs.borrow().0.clone());
-            propagator.propagate_receivable_event_changes_upward(&self.id(), rec);
+            parent.propagate_receivable_event_changes_upward(&self.id(), rec);
         }
     }
 }
@@ -397,8 +397,8 @@ impl Element for Pane {
         self.attributes.borrow_mut().insert(key.to_string(), value);
     }
 
-    fn set_upward_propagator(&self, propagator: Box<dyn Parent>) {
-        *self.propagator.borrow_mut() = Some(propagator);
+    fn set_upward_propagator(&self, parent: Box<dyn Parent>) {
+        *self.parent.borrow_mut() = Some(parent);
     }
 
     fn set_hook(

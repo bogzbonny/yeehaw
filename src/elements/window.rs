@@ -9,7 +9,10 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-// TODO border
+// TODO integrate in border pane size-adjustments
+// TODO animation for minimize/restore, should have one frame in the middle
+//      in the middle location between the restore position and start position.
+//      for that animation frame should just be the minimized top-bar
 
 // ---------------------------------------------------
 #[derive(Clone)]
@@ -117,7 +120,23 @@ impl Element for WindowPane {
     }
 
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
+        // Skip sending the event into the pane if the event is a drag event and we're currently
+        // dragging
+        let mut event_to_inner = true;
+        let dragging = self.dragging.borrow().is_some();
+        if dragging {
+            if let Event::Mouse(me) = ev {
+                if let MouseEventKind::Drag(MouseButton::Left) = me.kind {
+                    event_to_inner = false;
+                }
+            }
+        };
+
+        let (captured, mut resps) = if event_to_inner {
+            self.pane.receive_event(ctx, ev.clone())
+        } else {
+            (true, EventResponses::default())
+        };
 
         let mut resps_ = EventResponses::default();
         let mut just_minimized = false;
@@ -335,12 +354,6 @@ impl Element for WindowPane {
                     resps.push(EventResponse::BringToFront)
                 }
 
-                if me.row as usize > top_height {
-                    return (captured, resps);
-                }
-
-                let dragging = self.dragging.borrow().is_some();
-
                 let mr = (*self.minimized_restore.borrow()).clone();
                 match me.kind {
                     MouseEventKind::Up(MouseButton::Left) if !just_minimized && mr.is_some() => {
@@ -377,6 +390,9 @@ impl Element for WindowPane {
                         self.minimized_restore.replace(None);
                     }
                     MouseEventKind::Down(MouseButton::Left) if !dragging && mr.is_none() => {
+                        if me.row as usize >= top_height {
+                            return (captured, resps);
+                        }
                         *self.dragging.borrow_mut() = Some((me.column, me.row));
                     }
                     MouseEventKind::Drag(MouseButton::Left) if dragging && mr.is_none() => {

@@ -155,7 +155,7 @@ pub const POST_LOCATION_CHANGE_HOOK_NAME: &str = "post-location-change";
 
 // ----------------------------------------
 
-pub trait Parent {
+pub trait Parent: dyn_clone::DynClone {
     // The Parent is a trait that a parent element should fulfill which can then be
     // provided to child elements as a means for those child elements to propagate changes upward
     // to their parent (and grand-parents etc.).

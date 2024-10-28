@@ -28,7 +28,7 @@ const ANIMATION_SPEED: Duration = Duration::from_micros(100);
 
 // configuration of a cui zelt instance
 pub struct Cui {
-    eo: ElementOrganizer,
+    cup: CuiParent,
     main_el_id: ElementID,
     kb: Keyboard,
     launch_instant: std::time::Instant,
@@ -43,8 +43,9 @@ pub struct Cui {
 impl Cui {
     pub fn new(main_el: Rc<RefCell<dyn Element>>) -> Result<Cui, Error> {
         let eo = ElementOrganizer::default();
+        let cup = CuiParent::new(eo);
         let cui = Cui {
-            eo: eo.clone(),
+            cup: cup.clone(),
             main_el_id: main_el.borrow().id().clone(),
             kb: Keyboard::default(),
             launch_instant: std::time::Instant::now(),
@@ -62,13 +63,11 @@ impl Cui {
             .borrow_mut()
             .change_priority(&ctx, Priority::FOCUSED);
 
-        let cup = Box::new(CuiParent::new(eo));
-
         // when adding the main element, nil is passed in as the parent
         // this is because the top of the tree is the CUI's main EO and so no parent
         // is necessary
-        cui.eo.add_element(main_el.clone(), Some(cup));
-        cui.eo.refresh(&ctx);
+        cui.cup.eo.add_element(main_el.clone(), Some(Box::new(cup)));
+        cui.cup.eo.refresh(&ctx);
         //debug!("mail_el rec: {:?}", main_el.borrow().receivable());
 
         set_panic_hook_with_closedown();
@@ -111,8 +110,8 @@ impl Cui {
                                     let ctx = Context::new_context_for_screen(self.launch_instant);
                                     let loc = DynLocation::new_fixed(0, ctx.s.width.into(), 0, ctx.s.height.into());
                                     // There should only be one element at index 0 in the upper level EO
-                                    self.eo.update_el_primary_location(self.main_el_id.clone(), loc);
-                                    self.eo.get_element(&self.main_el_id).unwrap().borrow_mut().receive_event(&ctx, Event::Resize{});
+                                    self.cup.eo.update_el_primary_location(self.main_el_id.clone(), loc);
+                                    self.cup.eo.get_element(&self.main_el_id).unwrap().borrow_mut().receive_event(&ctx, Event::Resize{});
                                     self.clear_screen();
                                     self.render()
                                 }
@@ -155,6 +154,7 @@ impl Cui {
         // re-determined within the KeyEventsProcess (inefficient but convenient)
 
         let Some((_, evs)) = self
+            .cup
             .eo
             .prioritizer
             .borrow()
@@ -166,7 +166,11 @@ impl Cui {
         let ctx = Context::new_context_for_screen(self.launch_instant);
         //debug!("cui destination: {:?}", dest);
 
-        let Some((_, resps)) = self.eo.key_events_process(&ctx, evs) else {
+        let Some((_, resps)) =
+            self.cup
+                .eo
+                .key_events_process(&ctx, evs, Box::new(self.cup.clone()))
+        else {
             return false;
         };
 
@@ -183,7 +187,10 @@ impl Cui {
     //                                                                       exit-cui
     pub fn process_event_mouse(&mut self, mouse_ev: ct_event::MouseEvent) -> bool {
         let ctx = Context::new_context_for_screen(self.launch_instant);
-        let (_, resps) = self.eo.mouse_event_process(&ctx, &mouse_ev);
+        let (_, resps) =
+            self.cup
+                .eo
+                .mouse_event_process(&ctx, &mouse_ev, Box::new(self.cup.clone()));
 
         // only check for response for quit
         for resp in resps.iter() {
@@ -218,7 +225,7 @@ impl Cui {
     pub fn render(&mut self) {
         let mut sc = stdout();
         let ctx = Context::new_context_for_screen(self.launch_instant);
-        let chs = self.eo.all_drawing(&ctx);
+        let chs = self.cup.eo.all_drawing(&ctx);
 
         let mut dedup_chs: HashMap<(u16, u16), StyledContent<ChPlus>> = HashMap::new();
         for c in chs {
@@ -267,6 +274,7 @@ impl Cui {
     }
 }
 
+#[derive(Clone)]
 pub struct CuiParent {
     pub eo: ElementOrganizer,
     pub el_store: Rc<RefCell<HashMap<String, Vec<u8>>>>,

@@ -1966,6 +1966,7 @@ dependencies = [
  "arboard",
  "compact_str",
  "crossterm",
+ "dyn-clone",
  "figlet-rs",
  "futures",
  "image",
