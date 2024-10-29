@@ -97,8 +97,8 @@ impl Element for FigletText {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.base.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Box<dyn Parent>) {
-        self.base.set_upward_propagator(up)
+    fn set_parent(&self, up: Box<dyn Parent>) {
+        self.base.set_parent(up)
     }
     fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {
         self.base.set_hook(kind, el_id, hook)

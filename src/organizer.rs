@@ -70,7 +70,7 @@ impl ElementOrganizer {
         // (ex: a sibling initiating a change to inputability, as opposed to this eo
         // passing an event to the child through ReceiveEventKeys)
         if let Some(up) = up {
-            el.borrow_mut().set_upward_propagator(up);
+            el.borrow_mut().set_parent(up);
         }
     }
 

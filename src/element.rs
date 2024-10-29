@@ -92,7 +92,7 @@ pub trait Element {
 
     // Assign a reference to the element's parent through the Parent trait. This is used
     // to pass ReceivableEventChanges to the parent. (see UpwardPropogator for more context)
-    fn set_upward_propagator(&self, up: Box<dyn Parent>);
+    fn set_parent(&self, up: Box<dyn Parent>);
 
     // get/set the scalable location of the widget
     // NOTE these functions should NOT be used to set values, use the set functions below to ensure

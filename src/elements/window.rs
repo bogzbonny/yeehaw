@@ -471,8 +471,8 @@ impl Element for WindowPane {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.pane.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Box<dyn Parent>) {
-        self.pane.set_upward_propagator(up)
+    fn set_parent(&self, up: Box<dyn Parent>) {
+        self.pane.set_parent(up)
     }
     fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {
         self.pane.set_hook(kind, el_id, hook)
@@ -691,8 +691,8 @@ impl Element for BasicWindowTopBar {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.pane.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Box<dyn Parent>) {
-        self.pane.set_upward_propagator(up)
+    fn set_parent(&self, up: Box<dyn Parent>) {
+        self.pane.set_parent(up)
     }
     fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {
         self.pane.set_hook(kind, el_id, hook)
@@ -814,8 +814,8 @@ impl Element for CornerAdjuster {
     fn set_attribute(&self, key: &str, value: Vec<u8>) {
         self.pane.set_attribute(key, value)
     }
-    fn set_upward_propagator(&self, up: Box<dyn Parent>) {
-        self.pane.set_upward_propagator(up)
+    fn set_parent(&self, up: Box<dyn Parent>) {
+        self.pane.set_parent(up)
     }
     fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {
         self.pane.set_hook(kind, el_id, hook)

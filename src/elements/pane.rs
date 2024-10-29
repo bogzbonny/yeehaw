@@ -397,7 +397,7 @@ impl Element for Pane {
         self.attributes.borrow_mut().insert(key.to_string(), value);
     }
 
-    fn set_upward_propagator(&self, parent: Box<dyn Parent>) {
+    fn set_parent(&self, parent: Box<dyn Parent>) {
         *self.parent.borrow_mut() = Some(parent);
     }
 
