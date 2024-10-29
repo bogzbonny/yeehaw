@@ -1,3 +1,9 @@
+use {
+    crate::{prioritizer::Priority, Element},
+    std::ops::{Deref, DerefMut},
+    std::{cell::RefCell, rc::Rc},
+};
+
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Event {
     Mouse(crossterm::event::MouseEvent),
@@ -207,5 +213,222 @@ impl KeyPossibility {
             KeyPossibility::Digits => None,
             KeyPossibility::Anything => None,
         }
+    }
+}
+
+// -------------------------------------------------------------------------------------
+
+#[derive(Default)]
+pub struct EventResponses(pub Vec<EventResponse>);
+
+impl From<EventResponse> for EventResponses {
+    fn from(er: EventResponse) -> EventResponses {
+        EventResponses(vec![er])
+    }
+}
+
+impl Deref for EventResponses {
+    type Target = Vec<EventResponse>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for EventResponses {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl EventResponses {
+    // retrieves only the ReceivableEventChanges from the EventResponses
+    // and concats them together
+    pub fn get_receivable_event_changes(&self) -> ReceivableEventChanges {
+        let mut rec = ReceivableEventChanges::default();
+        for er in &self.0 {
+            if let EventResponse::ReceivableEventChanges(r) = er {
+                rec.concat(r.clone());
+            }
+        }
+        rec
+    }
+}
+
+// EventResponse is used to send information back to the parent that delivered
+// the event to the element
+#[derive(Default)]
+pub enum EventResponse {
+    #[default]
+    None,
+
+    // quit the application
+    Quit,
+
+    // destroy the current element
+    Destruct,
+
+    // bring this element to the front (greatest z-index)
+    BringToFront,
+
+    // create an element, its location will be adjusted
+    // by the elements current location.
+    //
+    // this response can be used to create a window
+    // or when used in conjunction with destruct, it can be used to replace
+    // the current element with another.
+    NewElement(Rc<RefCell<dyn Element>>),
+
+    // arbitrary custom metadatas which can be passed back to the parent
+    //       key,   , value
+    Metadata(String, Vec<u8>),
+
+    // sends a request to the parent to change the extra locations
+    // of the element. TODO refactor to remove this, it should just be taking
+    // place on the element itself, ensure the text box right click menu will work.
+    //ExtraLocations(Vec<DynLocation>),
+
+    // contains priority updates that should be made to the receiver's prioritizer
+    ReceivableEventChanges(ReceivableEventChanges),
+}
+
+impl EventResponse {
+    pub fn has_metadata(&self, key: &str) -> bool {
+        matches!(self, EventResponse::Metadata(k, _) if k == key)
+    }
+
+    // --------------------------------------
+    // ReceivableEventChanges
+
+    //// TRANSLATION NOTE, used to be called remove_evs
+    //pub fn remove(&mut self, evs: Vec<Event>) {
+    //    if let Some(ic) = &mut self.inputability_changes {
+    //        ic.remove_evs(evs);
+    //    } else {
+    //        self.inputability_changes =
+    //            Some(ReceivableEventChanges::default().with_remove_evs(evs));
+    //    }
+    //}
+
+    //pub fn add(&mut self, evs: Vec<(Event, Priority)>) {
+    //    if let Some(ic) = &mut self.inputability_changes {
+    //        ic.set_add_evs(evs);
+    //    } else {
+    //        self.inputability_changes = Some(ReceivableEventChanges::default().with_add_evs(evs));
+    //    }
+    //}
+
+    //pub fn set_rm_receivable_evs(&mut self, evs: Vec<Event>) {
+    //    if let Some(ic) = &mut self.inputability_changes {
+    //        ic.remove = evs;
+    //    } else {
+    //        self.inputability_changes =
+    //            Some(ReceivableEventChanges::default().with_remove_evs(evs));
+    //    }
+    //}
+
+    //pub fn set_add_receivable_evs(&mut self, evs: Vec<(Event, Priority)>) {
+    //    if let Some(ic) = &mut self.inputability_changes {
+    //        ic.add = evs;
+    //    } else {
+    //        self.inputability_changes = Some(ReceivableEventChanges::default().with_add_evs(evs));
+    //    }
+    //}
+
+    //// ----------------------------------------------------------------------------
+
+    ////pub fn concat_inputability_changes(&mut self, ic: ReceivableEventChanges) {
+    //pub fn concat_receivable_event_changes(&mut self, ic: ReceivableEventChanges) {
+    //    if let Some(existing_ic) = &mut self.inputability_changes {
+    //        existing_ic.concat(ic);
+    //    } else {
+    //        self.inputability_changes = Some(ic);
+    //    }
+    //}
+}
+
+// ----------------------------------------------------------------------------
+
+// ReceivableEventChanges is used to update the receivable events of an element
+// registered in the prioritizers of all ancestors
+// NOTE: While processing inputability changes, element organizers remove events
+// BEFORE adding events.
+//
+
+#[derive(Clone, Default, Debug)]
+// TRANSLATION NOTE used to be InputabilityChanges
+pub struct ReceivableEventChanges {
+    pub add: Vec<(Event, Priority)>, // receivable events being added to the element
+
+    // Receivable events to deregistered from an element.
+    // NOTE: one instance of an event being passed up the hierarchy through
+    // RmRecEvs will remove ALL instances of that event from the prioritizer of
+    // every element higher in the hierarchy that processes the
+    // ReceivableEventChanges.
+    pub remove: Vec<Event>,
+}
+
+impl ReceivableEventChanges {
+    pub fn new(add: Vec<(Event, Priority)>, remove: Vec<Event>) -> ReceivableEventChanges {
+        ReceivableEventChanges { add, remove }
+    }
+
+    pub fn with_add_ev(mut self, p: Priority, ev: Event) -> ReceivableEventChanges {
+        self.add.push((ev, p));
+        self
+    }
+
+    pub fn with_add_evs(mut self, evs: Vec<(Event, Priority)>) -> ReceivableEventChanges {
+        self.add.extend(evs);
+        self
+    }
+
+    pub fn with_remove_ev(mut self, ev: Event) -> ReceivableEventChanges {
+        self.remove.push(ev);
+        self
+    }
+
+    pub fn with_remove_evs(mut self, evs: Vec<Event>) -> ReceivableEventChanges {
+        self.remove.extend(evs);
+        self
+    }
+
+    pub fn set_add_ev(&mut self, ev: Event, p: Priority) {
+        self.add.push((ev, p));
+    }
+
+    pub fn set_add_evs(&mut self, evs: Vec<(Event, Priority)>) {
+        self.add.extend(evs);
+    }
+
+    pub fn set_add_evs_single_priority(&mut self, evs: Vec<Event>, pr: Priority) {
+        for ev in evs {
+            self.add.push((ev, pr));
+        }
+    }
+
+    pub fn set_remove_ev(&mut self, ev: Event) {
+        self.remove.push(ev);
+    }
+
+    pub fn set_remove_evs(&mut self, evs: Vec<Event>) {
+        self.remove.extend(evs);
+    }
+
+    pub fn update_priority_for_ev(&mut self, ev: Event, p: Priority) {
+        self.remove.push(ev.clone());
+        self.add.push((ev, p));
+    }
+
+    pub fn update_priority_for_evs(&mut self, evs: Vec<Event>, p: Priority) {
+        for ev in evs {
+            self.remove.push(ev.clone());
+            self.add.push((ev, p));
+        }
+    }
+
+    pub fn concat(&mut self, rec: ReceivableEventChanges) {
+        self.remove.extend(rec.remove);
+        self.add.extend(rec.add);
     }
 }

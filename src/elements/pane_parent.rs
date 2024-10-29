@@ -1,8 +1,8 @@
 use {
     crate::{
-        element::ReceivableEventChanges, Context, DrawCh, DrawChPos, DynLocation, DynLocationSet,
-        DynVal, Element, ElementID, ElementOrganizer, Event, EventResponses, Pane, Parent,
-        Priority, SortingHat, Style, ZIndex,
+        Context, DrawCh, DrawChPos, DynLocation, DynLocationSet, DynVal, Element, ElementID,
+        ElementOrganizer, Event, EventResponses, Pane, Parent, Priority, ReceivableEventChanges,
+        SortingHat, Style, ZIndex,
     },
     std::collections::HashMap,
     std::{

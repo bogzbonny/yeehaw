@@ -1,6 +1,6 @@
 use {
     crate::{
-        element::ReceivableEventChanges, widgets::TextBox, Context, DrawChPos, DynLocationSet,
+        ReceivableEventChanges, widgets::TextBox, Context, DrawChPos, DynLocationSet,
         DynVal, Element, ElementID, Event, EventResponses, Priority, SortingHat, Parent,
         WidgetPane,
     },

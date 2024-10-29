@@ -1,6 +1,6 @@
 use {
     crate::{
-        element::ReceivableEventChanges, Context, DrawChPos, DrawChPosVec, DynLocationSet, DynVal,
+        ReceivableEventChanges, Context, DrawChPos, DrawChPosVec, DynLocationSet, DynVal,
         Element, ElementID, Event, EventResponses, Pane, Parent, Priority, SortingHat, ZIndex,
     },
     image::DynamicImage,

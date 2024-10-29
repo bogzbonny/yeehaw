@@ -1,6 +1,6 @@
 use {
     crate::{
-        element::ReceivableEventChanges, prioritizer::EventPrioritizer, Context, DrawChPos,
+        ReceivableEventChanges, prioritizer::EventPrioritizer, Context, DrawChPos,
         DynLocation, DynLocationSet, Element, ElementID, Event, EventResponse, EventResponses,
         Parent, Priority, RelMouseEvent, ZIndex,
     },

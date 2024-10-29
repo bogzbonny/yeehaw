@@ -1,6 +1,6 @@
 use {
     crate::{
-        element::ReceivableEventChanges, Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal,
+        ReceivableEventChanges, Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal,
         Element, ElementID, Event, EventResponses, Keyboard as KB, Pane, Priority, SortingHat,
         Style, Parent,
     },
