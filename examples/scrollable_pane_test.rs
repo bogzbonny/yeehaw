@@ -26,7 +26,8 @@ async fn main() -> Result<(), Error> {
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let hat = SortingHat::default();
-    let ctx = Context::new_context_for_screen_no_dur();
+    let (exit_tx, exit_recv) = tokio::sync::watch::channel(false);
+    let ctx = Context::new_context_for_screen_no_dur(exit_recv.clone());
 
     let sc_pane = PaneWithScrollbars::new(
         &hat,
@@ -177,5 +178,7 @@ async fn main() -> Result<(), Error> {
 
     sc_pane.add_element(Rc::new(RefCell::new(el)));
 
-    Cui::new(Rc::new(RefCell::new(sc_pane)))?.run().await
+    Cui::new(Rc::new(RefCell::new(sc_pane)), exit_tx, exit_recv)?
+        .run()
+        .await
 }

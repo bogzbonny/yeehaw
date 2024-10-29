@@ -17,6 +17,7 @@ use {
     std::collections::HashMap,
     std::io::{stdout, Write},
     std::{cell::RefCell, rc::Rc},
+    tokio::sync::watch::{Receiver, Sender},
     tokio::time::{self, Duration},
 };
 
@@ -38,12 +39,13 @@ pub struct Cui {
     //                            x  , y
     pub sc_last_flushed: HashMap<(u16, u16), StyledContent<ChPlus>>,
 
-    pub exit_recv: tokio::sync::watch::Receiver<bool>, // true if exit
+    pub exit_recv: Receiver<bool>, // true if exit
 }
 
 impl Cui {
-    pub fn new(main_el: Rc<RefCell<dyn Element>>) -> Result<Cui, Error> {
-        let (exit_tx, exit_recv) = tokio::sync::watch::channel(false);
+    pub fn new(
+        main_el: Rc<RefCell<dyn Element>>, exit_tx: Sender<bool>, exit_recv: Receiver<bool>,
+    ) -> Result<Cui, Error> {
         let eo = ElementOrganizer::default();
         let cup = CuiParent::new(eo, exit_tx.clone());
         let cui = Cui {
@@ -138,6 +140,11 @@ impl Cui {
                 },
             };
         }
+    }
+
+    // context for initialization.
+    pub fn context(&self) -> Context {
+        Context::new_context_for_screen_no_dur(self.exit_recv.clone())
     }
 
     pub fn close(&mut self) -> Result<(), Error> {

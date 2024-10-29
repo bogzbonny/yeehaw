@@ -32,7 +32,8 @@ async fn main() -> Result<(), Error> {
     };
 
     let hat = SortingHat::default();
-    let ctx = Context::new_context_for_screen_no_dur();
+    let (exit_tx, exit_recv) = tokio::sync::watch::channel(false);
+    let ctx = Context::new_context_for_screen_no_dur(exit_recv.clone());
 
     let vstack = VerticalStack::new(&hat);
     //let mut widget_pane = WidgetPane::new(&hat).with_height(DynVal::new_flex_with_max_fixed(0., 3));
@@ -71,5 +72,7 @@ async fn main() -> Result<(), Error> {
         .to_widgets();
     widget_pane.add_widgets(add_button);
 
-    Cui::new(Rc::new(RefCell::new(vstack)))?.run().await
+    Cui::new(Rc::new(RefCell::new(vstack)), exit_tx, exit_recv)?
+        .run()
+        .await
 }

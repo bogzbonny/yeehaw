@@ -46,6 +46,8 @@
 
 01. make parent Not an Option in Pane
 
+01. make window automatically focus when it's selected
+
 01. terminal element
     - https://github.com/a-kenji/tui-term/blob/development/examples/smux.rs
 
@@ -63,6 +65,8 @@
               cmd.cwd(cwd);
           }
 
+01. proper shutdown of other threads in terminal pane (terminal_test doesn't
+    completely shut down).
 
 01. support taffy as a layout structure.
      - Taffy low-level API (0.6.0 fixes ownership issues I was facing)

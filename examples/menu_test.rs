@@ -13,7 +13,8 @@ async fn main() -> Result<(), Error> {
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let hat = SortingHat::default();
-    let ctx = Context::new_context_for_screen_no_dur();
+    let (exit_tx, exit_recv) = tokio::sync::watch::channel(false);
+    let ctx = Context::new_context_for_screen_no_dur(exit_recv.clone());
 
     let vstack = VerticalStack::new(&hat);
     let mb = MenuBar::top_menu_bar(&hat)
@@ -82,6 +83,7 @@ async fn main() -> Result<(), Error> {
     mb.add_item(&hat, &ctx, "world/yosdfjldsffff/asdkjl".to_string(), None);
     mb.add_item(&hat, &ctx, "diner/yoyo/hi/asgd".to_string(), None);
 
-    Cui::new(Rc::new(RefCell::new(vstack)))?.run().await
-    //Cui::new(Rc::new(RefCell::new(mb)))?.run().await
+    Cui::new(Rc::new(RefCell::new(vstack)), exit_tx, exit_recv)?
+        .run()
+        .await
 }

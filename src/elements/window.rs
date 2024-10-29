@@ -351,6 +351,7 @@ impl Element for WindowPane {
         match ev {
             Event::Mouse(me) => {
                 if let MouseEventKind::Down(_) = me.kind {
+                    self.pane.pane.focus();
                     resps.push(EventResponse::BringToFront)
                 }
 

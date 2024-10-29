@@ -30,21 +30,6 @@ pub struct TerminalPane {
 }
 
 impl TerminalPane {
-    pub fn with_height(self, h: DynVal) -> Self {
-        self.pane.set_dyn_height(h);
-        self
-    }
-
-    pub fn with_width(self, w: DynVal) -> Self {
-        self.pane.set_dyn_width(w);
-        self
-    }
-
-    pub fn with_z(self, z: ZIndex) -> Self {
-        self.pane.set_z(z);
-        self
-    }
-
     pub fn new(hat: &SortingHat, ctx: &Context) -> Self {
         let cwd = std::env::current_dir().unwrap();
         let mut cmd = CommandBuilder::new_default_prog();
@@ -58,28 +43,28 @@ impl TerminalPane {
 
     pub fn new_with_builder(hat: &SortingHat, ctx: &Context, cmd: CommandBuilder) -> Self {
         let size = ctx.s;
-        let pane = Pane::new(hat, "terminal_pane");
+        let pane =
+            Pane::new(hat, "terminal_pane").with_self_receivable_events(Self::receivable_events());
 
         let pty_system = native_pty_system();
         let pty_pair = pty_system
             .openpty(PtySize {
-                rows: size.height - 2,
-                cols: size.width - 2,
+                rows: size.height,
+                cols: size.width,
                 pixel_width: 0,
                 pixel_height: 0,
             })
             .unwrap();
-        let parser = Arc::new(RwLock::new(vt100::Parser::new(
-            size.height - 2,
-            size.width - 2,
-            0,
-        )));
+        let parser = Arc::new(RwLock::new(vt100::Parser::new(size.height, size.width, 0)));
 
         let exit = Arc::new(RwLock::new(false));
         let exit_ = exit.clone();
+        let mut child = pty_pair.slave.spawn_command(cmd).unwrap();
+        let mut killer = child.clone_killer();
         spawn_blocking(move || {
-            let mut child = pty_pair.slave.spawn_command(cmd).unwrap();
-            let _ = child.wait(); // ignore exit status
+            // ignore exit status
+            // NOTE this wait can be killed by the killer
+            let _ = child.wait();
             drop(pty_pair.slave);
             *exit_.write().unwrap() = true;
         });
@@ -87,12 +72,21 @@ impl TerminalPane {
         let mut reader = pty_pair.master.try_clone_reader().unwrap();
         let parser_ = parser.clone();
 
+        let exit_recv = ctx.exit_recv.clone();
         tokio::spawn(async move {
             let mut processed_buf = Vec::new();
             let mut buf = [0u8; 8192];
             loop {
+                if let Some(ref exit_recv) = exit_recv {
+                    if *exit_recv.borrow() {
+                        // if the channel has true then should exit
+                        killer.kill().unwrap();
+                        break;
+                    }
+                }
                 let size = reader.read(&mut buf).unwrap();
                 if size == 0 {
+                    killer.kill().unwrap();
                     break;
                 }
                 processed_buf.extend_from_slice(&buf[..size]);
@@ -121,6 +115,25 @@ impl TerminalPane {
             exit,
         }
     }
+
+    pub fn receivable_events() -> Vec<(Event, Priority)> {
+        vec![(KeyPossibility::Anything.into(), Priority::FOCUSED)]
+    }
+
+    pub fn with_height(self, h: DynVal) -> Self {
+        self.pane.set_dyn_height(h);
+        self
+    }
+
+    pub fn with_width(self, w: DynVal) -> Self {
+        self.pane.set_dyn_width(w);
+        self
+    }
+
+    pub fn with_z(self, z: ZIndex) -> Self {
+        self.pane.set_z(z);
+        self
+    }
 }
 
 impl Element for TerminalPane {
@@ -147,12 +160,12 @@ impl Element for TerminalPane {
                 self.parser
                     .write()
                     .unwrap()
-                    .set_size(ctx.s.height - 2, ctx.s.width - 2);
+                    .set_size(ctx.s.height, ctx.s.width);
                 self.master_pty
                     .borrow()
                     .resize(PtySize {
-                        rows: ctx.s.height - 2,
-                        cols: ctx.s.width - 2,
+                        rows: ctx.s.height,
+                        cols: ctx.s.width,
                         pixel_width: 0,
                         pixel_height: 0,
                     })

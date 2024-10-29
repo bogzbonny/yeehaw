@@ -3,7 +3,7 @@ use {
     yeehaw::{
         widgets::{Button, HorizontalSBPositions, VerticalSBPositions},
         ChPlus, Color, Context, Cui, DebugSizePane, DrawCh, DynVal, Error, EventResponse,
-        PaneWithScrollbars, ParentPane, SortingHat, Style, WindowPane,
+        PaneWithScrollbars, ParentPane, SortingHat, Style, TerminalPane, WindowPane,
     },
 };
 
@@ -14,7 +14,8 @@ async fn main() -> Result<(), Error> {
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let hat = SortingHat::default();
-    let ctx = Context::new_context_for_screen_no_dur();
+    let (exit_tx, exit_recv) = tokio::sync::watch::channel(false);
+    let ctx = Context::new_context_for_screen_no_dur(exit_recv.clone());
 
     let pp = ParentPane::new(&hat, "parent_pane")
         .with_dyn_height(1.0.into())
@@ -99,12 +100,38 @@ async fn main() -> Result<(), Error> {
         resp.into()
     });
 
+    let hat_ = hat.clone();
+    let counter_ = counter.clone();
+    let add_term_click_fn = Box::new(move |_, mut ctx_: Context| {
+        ctx_.s.width = 30;
+        ctx_.s.height = 20;
+        let title = format!("Pane {}", *counter_.borrow());
+        let el = TerminalPane::new(&hat_, &ctx_)
+            .with_width(DynVal::new_flex(1.))
+            .with_height(DynVal::new_flex(1.));
+
+        *counter_.borrow_mut() += 1;
+        let window = WindowPane::new(&hat_, &ctx_, Rc::new(RefCell::new(el)), &title)
+            .with_corner_adjuster(&hat_, &ctx_)
+            .at(DynVal::new_fixed(10), DynVal::new_fixed(10))
+            .with_height(DynVal::new_fixed(20))
+            .with_width(DynVal::new_fixed(30));
+
+        let resp = EventResponse::NewElement(Rc::new(RefCell::new(window)));
+        resp.into()
+    });
+
     let add_button =
         Button::new(&hat, &ctx, "add_window", add_button_click_fn).at(1.into(), 1.into());
     let add_button2 = Button::new(&hat, &ctx, "add_window_scrollable", add_button_scr_click_fn)
         .at(15.into(), 1.into());
+    let add_button3 =
+        Button::new(&hat, &ctx, "add_terminal_window", add_term_click_fn).at(40.into(), 1.into());
     pp.add_element(Rc::new(RefCell::new(add_button)));
     pp.add_element(Rc::new(RefCell::new(add_button2)));
+    pp.add_element(Rc::new(RefCell::new(add_button3)));
 
-    Cui::new(Rc::new(RefCell::new(pp)))?.run().await
+    Cui::new(Rc::new(RefCell::new(pp)), exit_tx, exit_recv)?
+        .run()
+        .await
 }

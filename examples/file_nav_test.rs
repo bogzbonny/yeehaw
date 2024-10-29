@@ -20,7 +20,8 @@ async fn main() -> Result<(), Error> {
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let hat = SortingHat::default();
-    let ctx = Context::new_context_for_screen_no_dur();
+    let (exit_tx, exit_recv) = tokio::sync::watch::channel(false);
+    let ctx = Context::new_context_for_screen_no_dur(exit_recv.clone());
 
     let hstack = HorizontalStack::new(&hat);
     let vstack2 = VerticalStack::new(&hat);
@@ -43,6 +44,7 @@ async fn main() -> Result<(), Error> {
 
     hstack.push(&ctx, Rc::new(RefCell::new(nav.clone())));
     hstack.push(&ctx, Rc::new(RefCell::new(vstack2.clone())));
-
-    Cui::new(Rc::new(RefCell::new(hstack)))?.run().await
+    Cui::new(Rc::new(RefCell::new(hstack)), exit_tx, exit_recv)?
+        .run()
+        .await
 }

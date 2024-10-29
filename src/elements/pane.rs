@@ -255,12 +255,12 @@ impl Pane {
         *self.element_priority.borrow()
     }
 
-    // defocus all prioritized events
-    pub fn unfocus(&self) {
-        *self.element_priority.borrow_mut() = Priority::UNFOCUSED;
+    // focus all prioritized events
+    pub fn focus(&self) {
+        *self.element_priority.borrow_mut() = Priority::FOCUSED;
         self.self_evs
             .borrow_mut()
-            .update_priority_for_all(Priority::UNFOCUSED);
+            .update_priority_for_all(Priority::FOCUSED);
         if let Some(parent) = self.parent.borrow().as_ref() {
             let rec = ReceivableEventChanges::default()
                 .with_remove_evs(
@@ -278,12 +278,12 @@ impl Pane {
         }
     }
 
-    // focus all prioritized events
-    pub fn focus(&self) {
-        *self.element_priority.borrow_mut() = Priority::FOCUSED;
+    // defocus all prioritized events
+    pub fn unfocus(&self) {
+        *self.element_priority.borrow_mut() = Priority::UNFOCUSED;
         self.self_evs
             .borrow_mut()
-            .update_priority_for_all(Priority::FOCUSED);
+            .update_priority_for_all(Priority::UNFOCUSED);
         if let Some(parent) = self.parent.borrow().as_ref() {
             let rec = ReceivableEventChanges::default()
                 .with_remove_evs(

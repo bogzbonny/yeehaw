@@ -143,6 +143,7 @@ pub enum KeyPossibility {
     Key(crossterm::event::KeyEvent),
     Chars,  // any char
     Digits, // any digit
+    Anything,
 }
 
 impl From<crossterm::event::KeyEvent> for KeyPossibility {
@@ -173,6 +174,7 @@ impl KeyPossibility {
                 }
             }
             KeyPossibility::Digits => matches!(key_p, KeyPossibility::Digits),
+            KeyPossibility::Anything => true,
         }
     }
 
@@ -188,6 +190,7 @@ impl KeyPossibility {
                 };
                 c.is_ascii_digit()
             }
+            KeyPossibility::Anything => true,
         }
     }
 
@@ -202,6 +205,7 @@ impl KeyPossibility {
             }
             KeyPossibility::Chars => None,
             KeyPossibility::Digits => None,
+            KeyPossibility::Anything => None,
         }
     }
 }
