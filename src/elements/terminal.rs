@@ -1,25 +1,32 @@
 use {
     crate::{
-        element::ReceivableEventChanges, Context, DrawChPos, DynLocationSet, DynVal, Element,
-        ElementID, Event, EventResponses, KeyPossibility, Pane, Parent, Priority, SortingHat,
-        ZIndex,
+        element::ReceivableEventChanges, ChPlus, Color, Context, DrawCh, DrawChPos, DynLocationSet,
+        DynVal, Element, ElementID, Event, EventResponse, EventResponses, KeyPossibility, Pane,
+        Parent, Priority, SortingHat, Style, ZIndex,
     },
+    compact_str::CompactString,
     crossterm::event::{KeyCode, KeyEvent, KeyModifiers},
     portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtySize},
-    std::{cell::RefCell, rc::Rc},
     std::{
-        io::{self, BufWriter, Read, Write},
+        cell::RefCell,
+        io::{BufWriter, Read, Write},
+        rc::Rc,
         sync::{Arc, RwLock},
     },
     tokio::task::spawn_blocking,
 };
 
+// TODO graceful shutdown of tokio tasks
+
 #[derive(Clone)]
 pub struct TerminalPane {
     pub pane: Pane,
-    parser: Arc<RwLock<vt100::Parser>>,
-    master_pty: Rc<RefCell<Box<dyn MasterPty>>>,
-    writer: Rc<RefCell<BufWriter<Box<dyn Write + std::marker::Send>>>>,
+    pub parser: Arc<RwLock<vt100::Parser>>,
+    pub master_pty: Rc<RefCell<Box<dyn MasterPty>>>,
+    pub writer: Rc<RefCell<BufWriter<Box<dyn Write + std::marker::Send>>>>,
+    pub hide_cursor: Rc<RefCell<bool>>,
+    pub cursor: Rc<RefCell<DrawCh>>,
+    pub exit: Arc<RwLock<bool>>,
 }
 
 impl TerminalPane {
@@ -38,15 +45,18 @@ impl TerminalPane {
         self
     }
 
-    pub fn new(hat: &SortingHat, ctx: &Context, cmd: CommandBuilder) -> io::Result<Self> {
-        //let cwd = std::env::current_dir().unwrap();
-        //let mut cmd = CommandBuilder::new_default_prog();
-        //cmd.cwd(cwd);
+    pub fn new(hat: &SortingHat, ctx: &Context) -> Self {
+        let cwd = std::env::current_dir().unwrap();
+        let mut cmd = CommandBuilder::new_default_prog();
+        cmd.cwd(cwd);
+        Self::new_with_builder(hat, ctx, cmd)
         //let mut cmd = CommandBuilder::new("nvim");
         //if let Ok(cwd) = std::env::current_dir() {
         //    cmd.cwd(cwd);
         //}
+    }
 
+    pub fn new_with_builder(hat: &SortingHat, ctx: &Context, cmd: CommandBuilder) -> Self {
         let size = ctx.s;
         let pane = Pane::new(hat, "terminal_pane");
 
@@ -65,20 +75,18 @@ impl TerminalPane {
             0,
         )));
 
-        // XXX need a runtime from context
+        let exit = Arc::new(RwLock::new(false));
+        let exit_ = exit.clone();
         spawn_blocking(move || {
             let mut child = pty_pair.slave.spawn_command(cmd).unwrap();
             let _ = child.wait(); // ignore exit status
             drop(pty_pair.slave);
-            println!("Child process exited");
-
-            // XXX need to destruct this pane now... introduce a arc
-            // rw exit variable
+            *exit_.write().unwrap() = true;
         });
 
         let mut reader = pty_pair.master.try_clone_reader().unwrap();
         let parser_ = parser.clone();
-        // XXX need a runtime from context
+
         tokio::spawn(async move {
             let mut processed_buf = Vec::new();
             let mut buf = [0u8; 8192];
@@ -98,12 +106,20 @@ impl TerminalPane {
         // NOTE can only take the writer once
         let writer = BufWriter::new(pty_pair.master.take_writer().unwrap());
 
-        Ok(Self {
+        let cur = DrawCh::new(
+            ChPlus::Transparent,
+            Style::default().with_fg(Color::BLACK).with_bg(Color::WHITE),
+        );
+
+        Self {
             pane,
             parser,
             master_pty: Rc::new(RefCell::new(pty_pair.master)),
             writer: Rc::new(RefCell::new(writer)),
-        })
+            hide_cursor: Rc::new(RefCell::new(false)),
+            cursor: Rc::new(RefCell::new(cur)),
+            exit,
+        }
     }
 }
 
@@ -118,6 +134,9 @@ impl Element for TerminalPane {
         self.pane.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        if *self.exit.read().unwrap() {
+            return (false, EventResponse::Destruct.into());
+        }
         match ev {
             Event::KeyCombo(ref keys) => {
                 if let KeyPossibility::Key(key) = &keys[0] {
@@ -149,15 +168,72 @@ impl Element for TerminalPane {
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        if *self.exit.read().unwrap() {
+            if let Some(ref parent) = *self.pane.parent.borrow() {
+                parent.propagate_responses_upward(&self.id(), EventResponse::Destruct.into());
+            }
+            return Vec::with_capacity(0);
+        }
         //let mut cursor = Cursor::default();
         //cursor.hide();
+        let mut out = vec![];
 
-        let screen = self.parser.read().unwrap().screen();
-        //let pseudo_term = PseudoTerminal::new(screen).cursor(cursor);
+        let sc = self.parser.read().unwrap();
+        let screen = sc.screen();
 
-        // XXX need to draw the screen
+        //pub fn handle<S: Screen>(term: &PseudoTerminal<S>, area: Rect, buf: &mut Buffer) {
+        let cols = ctx.s.width;
+        let rows = ctx.s.height;
 
-        self.pane.drawing(ctx)
+        // The screen is made out of rows of cells
+        for row in 0..rows {
+            for col in 0..cols {
+                if row > ctx.s.height || col > ctx.s.width {
+                    continue;
+                }
+
+                if let Some(screen_cell) = screen.cell(row, col) {
+                    let fg = screen_cell.fgcolor();
+                    let bg = screen_cell.bgcolor();
+                    let ch = if screen_cell.has_contents() {
+                        ChPlus::Str(CompactString::new(screen_cell.contents()))
+                    } else {
+                        ChPlus::Str(" ".into())
+                    };
+                    let fg: Color = fg.into();
+                    let bg: Color = bg.into();
+                    let mut sty = Style::default().with_fg(fg).with_bg(bg);
+                    if screen_cell.bold() {
+                        sty.attr.bold = true;
+                    }
+                    if screen_cell.italic() {
+                        sty.attr.italic = true;
+                    }
+                    if screen_cell.underline() {
+                        sty.attr.underlined = true;
+                    }
+                    if screen_cell.inverse() {
+                        sty.attr.reverse = true;
+                    }
+                    out.push(DrawChPos {
+                        ch: DrawCh::new(ch, sty),
+                        x: col,
+                        y: row,
+                    });
+                }
+            }
+        }
+
+        if !*self.hide_cursor.borrow() {
+            let (y, x) = screen.cursor_position();
+            out.push(DrawChPos {
+                ch: self.cursor.borrow().clone(),
+                x,
+                y,
+            });
+        }
+
+        out
     }
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
         self.pane.get_attribute(key)

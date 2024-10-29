@@ -398,13 +398,12 @@ impl Parent for ParentPane {
     //
     // NOTE this function should be extended from if the parent pane is used as a base for a more
     // complex element. As the developer you should be fulfilling the
-    // propagate_receivable_event_changes_upward function directly.
-    fn propagate_receivable_event_changes_upward(
-        &self, child_el_id: &ElementID, ic: ReceivableEventChanges,
-    ) {
-        self.eo.process_receivable_event_changes(child_el_id, &ic);
+    // propagate_responses_upward function directly.
+    fn propagate_responses_upward(&self, child_el_id: &ElementID, mut resps: EventResponses) {
+        self.eo
+            .partially_process_ev_resps(child_el_id, &mut resps, Box::new(self.clone()));
         if let Some(up) = self.pane.parent.borrow_mut().deref() {
-            up.propagate_receivable_event_changes_upward(&self.id(), ic);
+            up.propagate_responses_upward(&self.id(), resps);
         }
     }
 

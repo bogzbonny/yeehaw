@@ -1,8 +1,8 @@
 use {
     crate::{
         element::ReceivableEventChanges, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation,
-        DynLocationSet, DynVal, Element, ElementID, Event, EventResponses, Parent, Priority,
-        SortingHat, Style, ZIndex,
+        DynLocationSet, DynVal, Element, ElementID, Event, EventResponse, EventResponses, Parent,
+        Priority, SortingHat, Style, ZIndex,
     },
     std::{
         collections::HashMap,
@@ -273,7 +273,8 @@ impl Pane {
                         .collect(),
                 )
                 .with_evs(self.self_evs.borrow().0.clone());
-            parent.propagate_receivable_event_changes_upward(&self.id(), rec);
+            let resps = EventResponse::ReceivableEventChanges(rec);
+            parent.propagate_responses_upward(&self.id(), resps.into());
         }
     }
 
@@ -295,7 +296,8 @@ impl Pane {
                         .collect(),
                 )
                 .with_evs(self.self_evs.borrow().0.clone());
-            parent.propagate_receivable_event_changes_upward(&self.id(), rec);
+            let resps = EventResponse::ReceivableEventChanges(rec);
+            parent.propagate_responses_upward(&self.id(), resps.into());
         }
     }
 }

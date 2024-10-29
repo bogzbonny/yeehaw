@@ -32,6 +32,17 @@ impl From<CrosstermColor> for Color {
     }
 }
 
+impl From<vt100::Color> for Color {
+    #[inline]
+    fn from(value: vt100::Color) -> Self {
+        match value {
+            vt100::Color::Default => Self::ANSI(CrosstermColor::Reset),
+            vt100::Color::Idx(i) => Self::ANSI(CrosstermColor::AnsiValue(i)),
+            vt100::Color::Rgb(r, g, b) => Self::Rgba(Rgba::new(r, g, b)),
+        }
+    }
+}
+
 impl Color {
     pub const fn new(r: u8, g: u8, b: u8) -> Color {
         Color::Rgba(Rgba::new(r, g, b))

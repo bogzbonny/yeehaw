@@ -211,7 +211,12 @@ impl ElementOrganizer {
         } else {
             None
         };
-        Context::new(size, higher_ctx.dur_since_launch).with_visible_region(visible_region)
+        Context::new(
+            size,
+            higher_ctx.dur_since_launch,
+            higher_ctx.exit_recv.clone(),
+        )
+        .with_visible_region(visible_region)
     }
 
     // Receivable returns all of the key combos and commands registered to this
@@ -282,8 +287,7 @@ impl ElementOrganizer {
     // in the element organizer. Further processing may be required by the element
     // which owns this element organizer.
     pub fn partially_process_ev_resps(
-        &self, _ctx: &Context, el_id: &ElementID, resps: &mut EventResponses,
-        parent: Box<dyn Parent>,
+        &self, el_id: &ElementID, resps: &mut EventResponses, parent: Box<dyn Parent>,
     ) {
         let Some(details) = self.get_element_details(el_id) else {
             // TODO log error
@@ -402,7 +406,7 @@ impl ElementOrganizer {
         let child_ctx = self.get_context_for_el(ctx, &el_details);
         let (_, mut resps) = el_details.el.borrow_mut().receive_event(&child_ctx, evs);
 
-        self.partially_process_ev_resps(ctx, &el_id, &mut resps, parent);
+        self.partially_process_ev_resps(&el_id, &mut resps, parent);
         Some((el_id, resps))
     }
 
@@ -524,7 +528,7 @@ impl ElementOrganizer {
             .borrow_mut()
             .receive_event(&child_ctx, Event::Mouse(ev_adj));
         let parent_ = dyn_clone::clone_box(&*parent);
-        self.partially_process_ev_resps(ctx, &el_id, &mut ev_resps, parent_);
+        self.partially_process_ev_resps(&el_id, &mut ev_resps, parent_);
 
         // send the mouse event as an external event to all other elements
         // capture the responses
@@ -546,7 +550,7 @@ impl ElementOrganizer {
         // and all the elements that receive an external event
         for (el_id2, mut resps) in el_resps {
             let parent_ = dyn_clone::clone_box(&*parent);
-            self.partially_process_ev_resps(ctx, &el_id2, &mut resps, parent_);
+            self.partially_process_ev_resps(&el_id2, &mut resps, parent_);
             ev_resps.extend(resps.0);
         }
         (Some(el_id), ev_resps)
@@ -569,7 +573,7 @@ impl ElementOrganizer {
                 .borrow_mut()
                 .receive_event(&child_ctx, Event::ExternalMouse(ev_adj));
             let parent_ = dyn_clone::clone_box(&*parent);
-            self.partially_process_ev_resps(ctx, el_id, &mut r, parent_);
+            self.partially_process_ev_resps(el_id, &mut r, parent_);
             ev_resps.extend(r.0);
         }
         ev_resps

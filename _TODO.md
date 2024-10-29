@@ -44,6 +44,8 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+01. make parent Not an Option in Pane
+
 01. terminal element
     - https://github.com/a-kenji/tui-term/blob/development/examples/smux.rs
 

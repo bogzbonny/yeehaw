@@ -1,8 +1,7 @@
 use {
     crate::{
-        element::ReceivableEventChanges, keyboard::Keyboard, ChPlus, Context, DynLocation,
-        DynLocationSet, Element, ElementID, ElementOrganizer, Error, Event, EventResponse, Parent,
-        Priority,
+        keyboard::Keyboard, ChPlus, Context, DynLocation, DynLocationSet, Element, ElementID,
+        ElementOrganizer, Error, Event, EventResponse, EventResponses, Parent, Priority,
     },
     crossterm::{
         cursor,
@@ -38,12 +37,15 @@ pub struct Cui {
     // last flushed internal screen, used to determine what needs to be flushed next
     //                            x  , y
     pub sc_last_flushed: HashMap<(u16, u16), StyledContent<ChPlus>>,
+
+    pub exit_recv: tokio::sync::watch::Receiver<bool>, // true if exit
 }
 
 impl Cui {
     pub fn new(main_el: Rc<RefCell<dyn Element>>) -> Result<Cui, Error> {
+        let (exit_tx, exit_recv) = tokio::sync::watch::channel(false);
         let eo = ElementOrganizer::default();
-        let cup = CuiParent::new(eo);
+        let cup = CuiParent::new(eo, exit_tx.clone());
         let cui = Cui {
             cup: cup.clone(),
             main_el_id: main_el.borrow().id().clone(),
@@ -51,10 +53,11 @@ impl Cui {
             launch_instant: std::time::Instant::now(),
             kill_on_ctrl_c: true,
             sc_last_flushed: HashMap::new(),
+            exit_recv: exit_recv.clone(),
         };
 
         // add the element here after the location has been created
-        let ctx = Context::new_context_for_screen_no_dur();
+        let ctx = Context::new_context_for_screen_no_dur(exit_recv);
         let loc = DynLocation::new_fixed(0, ctx.s.width.into(), 0, ctx.s.height.into());
         let loc = DynLocationSet::new(loc, vec![], 0);
         main_el.borrow_mut().set_dyn_location_set(loc);
@@ -107,7 +110,7 @@ impl Cui {
                                 }
 
                                 CTEvent::Resize(_, _) => {
-                                    let ctx = Context::new_context_for_screen(self.launch_instant);
+                                    let ctx = Context::new_context_for_screen(self.launch_instant, self.exit_recv.clone());
                                     let loc = DynLocation::new_fixed(0, ctx.s.width.into(), 0, ctx.s.height.into());
                                     // There should only be one element at index 0 in the upper level EO
                                     self.cup.eo.update_el_primary_location(self.main_el_id.clone(), loc);
@@ -120,6 +123,13 @@ impl Cui {
                         }
                         Some(Err(e)) => println!("Error: {e:?}\r"),
                         None => break,
+                    }
+                }
+
+                // exit
+                _ = self.exit_recv.changed().fuse() => {
+                    if *self.exit_recv.borrow() {
+                        break;
                     }
                 }
 
@@ -163,7 +173,7 @@ impl Cui {
             //debug!("no dest");
             return false;
         };
-        let ctx = Context::new_context_for_screen(self.launch_instant);
+        let ctx = Context::new_context_for_screen(self.launch_instant, self.exit_recv.clone());
         //debug!("cui destination: {:?}", dest);
 
         let Some((_, resps)) =
@@ -174,31 +184,19 @@ impl Cui {
             return false;
         };
 
-        // only check for response for quit
-        for resp in resps.iter() {
-            if matches!(resp, EventResponse::Quit | EventResponse::Destruct) {
-                return true;
-            }
-        }
-        false
+        process_event_resps(resps, None)
     }
 
     // process_event_mouse handles mouse events
     //                                                                       exit-cui
     pub fn process_event_mouse(&mut self, mouse_ev: ct_event::MouseEvent) -> bool {
-        let ctx = Context::new_context_for_screen(self.launch_instant);
+        let ctx = Context::new_context_for_screen(self.launch_instant, self.exit_recv.clone());
         let (_, resps) =
             self.cup
                 .eo
                 .mouse_event_process(&ctx, &mouse_ev, Box::new(self.cup.clone()));
 
-        // only check for response for quit
-        for resp in resps.iter() {
-            if matches!(resp, EventResponse::Quit | EventResponse::Destruct) {
-                return true;
-            }
-        }
-        false
+        process_event_resps(resps, None)
     }
 
     pub fn clear_screen(&mut self) {
@@ -224,7 +222,7 @@ impl Cui {
     // lower down the tree.
     pub fn render(&mut self) {
         let mut sc = stdout();
-        let ctx = Context::new_context_for_screen(self.launch_instant);
+        let ctx = Context::new_context_for_screen(self.launch_instant, self.exit_recv.clone());
         let chs = self.cup.eo.all_drawing(&ctx);
 
         let mut dedup_chs: HashMap<(u16, u16), StyledContent<ChPlus>> = HashMap::new();
@@ -274,17 +272,34 @@ impl Cui {
     }
 }
 
+pub fn process_event_resps(
+    resps: EventResponses, exit_tx: Option<tokio::sync::watch::Sender<bool>>,
+) -> bool {
+    // only check for response for quit
+    for resp in resps.iter() {
+        if matches!(resp, EventResponse::Quit | EventResponse::Destruct) {
+            if let Some(exit_tx) = exit_tx {
+                exit_tx.send(true).unwrap();
+            }
+            return true; // quit
+        }
+    }
+    false
+}
+
 #[derive(Clone)]
 pub struct CuiParent {
     pub eo: ElementOrganizer,
     pub el_store: Rc<RefCell<HashMap<String, Vec<u8>>>>,
+    pub exit_tx: tokio::sync::watch::Sender<bool>,
 }
 
 impl CuiParent {
-    pub fn new(eo: ElementOrganizer) -> CuiParent {
+    pub fn new(eo: ElementOrganizer, exit_tx: tokio::sync::watch::Sender<bool>) -> CuiParent {
         CuiParent {
             eo,
             el_store: Rc::new(RefCell::new(HashMap::new())),
+            exit_tx,
         }
     }
 }
@@ -297,11 +312,11 @@ impl Parent for CuiParent {
     // in inputability to the cui's ElementOrganizer, it must hold a reference to
     // the CUI and  be able to call this function (as opposed to calling it on an
     // Element, as a child normally would in the rest of the tree).
-    fn propagate_receivable_event_changes_upward(
-        &self, child_el_id: &ElementID, rec: ReceivableEventChanges,
-    ) {
+    fn propagate_responses_upward(&self, child_el_id: &ElementID, mut resps: EventResponses) {
         // process changes in element organizer
-        self.eo.process_receivable_event_changes(child_el_id, &rec);
+        self.eo
+            .partially_process_ev_resps(child_el_id, &mut resps, Box::new(self.clone()));
+        process_event_resps(resps, Some(self.exit_tx.clone()));
     }
 
     fn get_store_item(&self, key: &str) -> Option<Vec<u8>> {

@@ -28,8 +28,8 @@ pub use {
     element::{Element, EventResponse, EventResponses, Parent, ReceivableEventChanges},
     elements::{
         DebugSizePane, FileNavPane, FileViewerPane, HorizontalStack, ImageViewer, MenuBar, Pane,
-        PaneScrollable, PaneWithScrollbars, ParentPane, RightClickMenu, Tabs, VerticalStack,
-        WindowPane,
+        PaneScrollable, PaneWithScrollbars, ParentPane, RightClickMenu, Tabs, TerminalPane,
+        VerticalStack, WindowPane,
     },
     errors::Error,
     event::{CommandEvent, Event, KeyPossibility, RelMouseEvent},
