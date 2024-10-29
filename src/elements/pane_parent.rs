@@ -113,9 +113,9 @@ impl ParentPane {
         self
     }
 
-    pub fn add_element(&self, el: Rc<RefCell<dyn Element>>) {
+    pub fn add_element(&self, el: Rc<RefCell<dyn Element>>) -> ReceivableEventChanges {
         self.eo
-            .add_element(el.clone(), Some(Box::new(self.clone())));
+            .add_element(el.clone(), Some(Box::new(self.clone())))
     }
 
     pub fn remove_element(&self, el_id: &ElementID) {

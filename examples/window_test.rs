@@ -3,7 +3,8 @@ use {
     yeehaw::{
         widgets::{Button, HorizontalSBPositions, VerticalSBPositions},
         ChPlus, Color, Context, Cui, DebugSizePane, DrawCh, DynVal, Error, EventResponse,
-        PaneWithScrollbars, ParentPane, SortingHat, Style, TerminalPane, WindowPane,
+        EventResponses, PaneWithScrollbars, ParentPane, SortingHat, Style, TerminalPane,
+        WindowPane,
     },
 };
 
@@ -102,6 +103,7 @@ async fn main() -> Result<(), Error> {
 
     let hat_ = hat.clone();
     let counter_ = counter.clone();
+    let pp_ = pp.clone();
     let add_term_click_fn = Box::new(move |_, mut ctx_: Context| {
         ctx_.s.width = 30;
         ctx_.s.height = 20;
@@ -116,10 +118,19 @@ async fn main() -> Result<(), Error> {
             .at(DynVal::new_fixed(10), DynVal::new_fixed(10))
             .with_height(DynVal::new_fixed(20))
             .with_width(DynVal::new_fixed(30));
+
+        // NOTE I'm doing this here instead of passing this through the
+        // buttons event response because I want to call this windows focus()
+        // function after it's been added to the parent pane. (which can't be done here
+        // if I pass it through the event response)
+        let rec = pp_.add_element(Rc::new(RefCell::new(window.clone())));
+        pp_.pane
+            .propagate_responses_upward(EventResponse::ReceivableEventChanges(rec).into());
         window.pane.pane.focus();
 
-        let resp = EventResponse::NewElement(Rc::new(RefCell::new(window)));
-        resp.into()
+        //let resp = EventResponse::NewElement(Rc::new(RefCell::new(window)));
+        //resp.into()
+        EventResponses::default()
     });
 
     let add_button =

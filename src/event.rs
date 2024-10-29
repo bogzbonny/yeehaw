@@ -283,11 +283,6 @@ pub enum EventResponse {
     //       key,   , value
     Metadata(String, Vec<u8>),
 
-    // sends a request to the parent to change the extra locations
-    // of the element. TODO refactor to remove this, it should just be taking
-    // place on the element itself, ensure the text box right click menu will work.
-    //ExtraLocations(Vec<DynLocation>),
-
     // contains priority updates that should be made to the receiver's prioritizer
     ReceivableEventChanges(ReceivableEventChanges),
 }
@@ -296,55 +291,6 @@ impl EventResponse {
     pub fn has_metadata(&self, key: &str) -> bool {
         matches!(self, EventResponse::Metadata(k, _) if k == key)
     }
-
-    // --------------------------------------
-    // ReceivableEventChanges
-
-    //// TRANSLATION NOTE, used to be called remove_evs
-    //pub fn remove(&mut self, evs: Vec<Event>) {
-    //    if let Some(ic) = &mut self.inputability_changes {
-    //        ic.remove_evs(evs);
-    //    } else {
-    //        self.inputability_changes =
-    //            Some(ReceivableEventChanges::default().with_remove_evs(evs));
-    //    }
-    //}
-
-    //pub fn add(&mut self, evs: Vec<(Event, Priority)>) {
-    //    if let Some(ic) = &mut self.inputability_changes {
-    //        ic.set_add_evs(evs);
-    //    } else {
-    //        self.inputability_changes = Some(ReceivableEventChanges::default().with_add_evs(evs));
-    //    }
-    //}
-
-    //pub fn set_rm_receivable_evs(&mut self, evs: Vec<Event>) {
-    //    if let Some(ic) = &mut self.inputability_changes {
-    //        ic.remove = evs;
-    //    } else {
-    //        self.inputability_changes =
-    //            Some(ReceivableEventChanges::default().with_remove_evs(evs));
-    //    }
-    //}
-
-    //pub fn set_add_receivable_evs(&mut self, evs: Vec<(Event, Priority)>) {
-    //    if let Some(ic) = &mut self.inputability_changes {
-    //        ic.add = evs;
-    //    } else {
-    //        self.inputability_changes = Some(ReceivableEventChanges::default().with_add_evs(evs));
-    //    }
-    //}
-
-    //// ----------------------------------------------------------------------------
-
-    ////pub fn concat_inputability_changes(&mut self, ic: ReceivableEventChanges) {
-    //pub fn concat_receivable_event_changes(&mut self, ic: ReceivableEventChanges) {
-    //    if let Some(existing_ic) = &mut self.inputability_changes {
-    //        existing_ic.concat(ic);
-    //    } else {
-    //        self.inputability_changes = Some(ic);
-    //    }
-    //}
 }
 
 // ----------------------------------------------------------------------------
@@ -353,7 +299,6 @@ impl EventResponse {
 // registered in the prioritizers of all ancestors
 // NOTE: While processing inputability changes, element organizers remove events
 // BEFORE adding events.
-//
 
 #[derive(Clone, Default, Debug)]
 // TRANSLATION NOTE used to be InputabilityChanges

@@ -1,8 +1,8 @@
 use {
     crate::{
-        ReceivableEventChanges, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation,
-        DynLocationSet, DynVal, Element, ElementID, Event, EventResponse, EventResponses, Parent,
-        Priority, SortingHat, Style, ZIndex,
+        Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal, Element,
+        ElementID, Event, EventResponse, EventResponses, Parent, Priority, ReceivableEventChanges,
+        SortingHat, Style, ZIndex,
     },
     std::{
         collections::HashMap,
@@ -253,6 +253,12 @@ impl Pane {
 
     pub fn get_element_priority(&self) -> Priority {
         *self.element_priority.borrow()
+    }
+
+    pub fn propagate_responses_upward(&self, resps: EventResponses) {
+        if let Some(parent) = self.parent.borrow().as_ref() {
+            parent.propagate_responses_upward(&self.id(), resps);
+        }
     }
 
     // focus all prioritized events
