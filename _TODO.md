@@ -47,6 +47,8 @@
 
 01. make window automatically focus when it's selected
 
+01. make window top bar slightly lighter when it's focused
+
 01. terminal element
     - https://github.com/a-kenji/tui-term/blob/development/examples/smux.rs
     - doesn't exit properly

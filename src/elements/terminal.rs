@@ -16,6 +16,9 @@ use {
     tokio::task::spawn_blocking,
 };
 
+// TODO update to using termwiz instead of vt100
+//      https://docs.rs/termwiz/latest/termwiz/
+//      https://github.com/wez/wezterm/blob/main/termwiz/examples/widgets_nested.rs
 // TODO graceful shutdown of tokio tasks
 
 #[derive(Clone)]
@@ -214,7 +217,7 @@ impl Element for TerminalPane {
                     let ch = if screen_cell.has_contents() {
                         ChPlus::Str(CompactString::new(screen_cell.contents()))
                     } else {
-                        ChPlus::Str(" ".into())
+                        ChPlus::Char(' ')
                     };
                     let fg: Color = fg.into();
                     let bg: Color = bg.into();
