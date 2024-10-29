@@ -281,9 +281,9 @@ impl EventResponse {
 
     //pub fn add(&mut self, evs: Vec<(Event, Priority)>) {
     //    if let Some(ic) = &mut self.inputability_changes {
-    //        ic.add_evs(evs);
+    //        ic.set_add_evs(evs);
     //    } else {
-    //        self.inputability_changes = Some(ReceivableEventChanges::default().with_evs(evs));
+    //        self.inputability_changes = Some(ReceivableEventChanges::default().with_add_evs(evs));
     //    }
     //}
 
@@ -300,7 +300,7 @@ impl EventResponse {
     //    if let Some(ic) = &mut self.inputability_changes {
     //        ic.add = evs;
     //    } else {
-    //        self.inputability_changes = Some(ReceivableEventChanges::default().with_evs(evs));
+    //        self.inputability_changes = Some(ReceivableEventChanges::default().with_add_evs(evs));
     //    }
     //}
 
@@ -337,12 +337,12 @@ pub struct ReceivableEventChanges {
 }
 
 impl ReceivableEventChanges {
-    pub fn with_ev(mut self, p: Priority, ev: Event) -> ReceivableEventChanges {
+    pub fn with_add_ev(mut self, p: Priority, ev: Event) -> ReceivableEventChanges {
         self.add.push((ev, p));
         self
     }
 
-    pub fn with_evs(mut self, evs: Vec<(Event, Priority)>) -> ReceivableEventChanges {
+    pub fn with_add_evs(mut self, evs: Vec<(Event, Priority)>) -> ReceivableEventChanges {
         self.add.extend(evs);
         self
     }
@@ -357,25 +357,25 @@ impl ReceivableEventChanges {
         self
     }
 
-    pub fn add_ev(&mut self, ev: Event, p: Priority) {
+    pub fn set_add_ev(&mut self, ev: Event, p: Priority) {
         self.add.push((ev, p));
     }
 
-    pub fn add_evs(&mut self, evs: Vec<(Event, Priority)>) {
+    pub fn set_add_evs(&mut self, evs: Vec<(Event, Priority)>) {
         self.add.extend(evs);
     }
 
-    pub fn add_evs_single_priority(&mut self, evs: Vec<Event>, pr: Priority) {
+    pub fn set_add_evs_single_priority(&mut self, evs: Vec<Event>, pr: Priority) {
         for ev in evs {
             self.add.push((ev, pr));
         }
     }
 
-    pub fn remove_ev(&mut self, ev: Event) {
+    pub fn set_remove_ev(&mut self, ev: Event) {
         self.remove.push(ev);
     }
 
-    pub fn remove_evs(&mut self, evs: Vec<Event>) {
+    pub fn set_remove_evs(&mut self, evs: Vec<Event>) {
         self.remove.extend(evs);
     }
 

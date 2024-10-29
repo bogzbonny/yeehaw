@@ -39,10 +39,14 @@ impl WindowPane {
         hat: &SortingHat, ctx: &Context, inner: Rc<RefCell<dyn Element>>, title: &str,
     ) -> Self {
         //let vs = VerticalStack::new_with_kind(hat, Self::KIND).with_style(Style::transparent());
-        let vs = ParentPane::new(hat, Self::KIND).with_transparent();
+        let pane = ParentPane::new(hat, Self::KIND).with_transparent();
         let top_bar = Rc::new(RefCell::new(BasicWindowTopBar::new(
             hat, ctx, title, true, true, true,
         )));
+        debug!(
+            "***********************************new window pane, pane priority: {}",
+            pane.pane.get_element_priority()
+        );
 
         // adjust the inner size to account for the top bar
         let mut loc = inner.borrow().get_dyn_location_set().borrow().clone();
@@ -50,12 +54,12 @@ impl WindowPane {
         loc.set_dyn_height(DynVal::new_flex(1.).minus(1.into()));
         inner.borrow().get_dyn_location_set().replace(loc);
 
-        vs.add_element(top_bar.clone());
-        vs.add_element(inner.clone());
-        vs.pane.set_z(Self::Z_INDEX);
+        pane.add_element(top_bar.clone());
+        pane.add_element(inner.clone());
+        pane.pane.set_z(Self::Z_INDEX);
 
         Self {
-            pane: vs,
+            pane,
             top_bar,
             inner,
             dragging: Rc::new(RefCell::new(None)),
@@ -120,6 +124,7 @@ impl Element for WindowPane {
     }
 
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        debug!("Window({}) receive_event_inner: {:?}", self.id(), ev);
         // Skip sending the event into the pane if the event is a drag event and we're currently
         // dragging
         let mut event_to_inner = true;

@@ -45,6 +45,7 @@ impl TerminalPane {
         let size = ctx.s;
         let pane =
             Pane::new(hat, "terminal_pane").with_self_receivable_events(Self::receivable_events());
+        //pane.focus();
 
         let pty_system = native_pty_system();
         let pty_pair = pty_system
@@ -118,6 +119,7 @@ impl TerminalPane {
 
     pub fn receivable_events() -> Vec<(Event, Priority)> {
         vec![(KeyPossibility::Anything.into(), Priority::FOCUSED)]
+        //vec![(KeyPossibility::Chars.into(), Priority::FOCUSED)]
     }
 
     pub fn with_height(self, h: DynVal) -> Self {
@@ -147,6 +149,7 @@ impl Element for TerminalPane {
         self.pane.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        debug!("TerminalPane({}) receive_event_inner: {:?}", self.id(), ev);
         if *self.exit.read().unwrap() {
             return (false, EventResponse::Destruct.into());
         }

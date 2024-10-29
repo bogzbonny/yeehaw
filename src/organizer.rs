@@ -44,7 +44,9 @@ impl ElDetails {
 }
 
 impl ElementOrganizer {
-    pub fn add_element(&self, el: Rc<RefCell<dyn Element>>, up: Option<Box<dyn Parent>>) {
+    pub fn add_element(
+        &self, el: Rc<RefCell<dyn Element>>, parent: Option<Box<dyn Parent>>,
+    ) -> ReceivableEventChanges {
         // assign the new element id
         let el_id = el.borrow().id().clone();
 
@@ -69,9 +71,10 @@ impl ElementOrganizer {
         // initiated by an element other than the parent (via this element organizer)
         // (ex: a sibling initiating a change to inputability, as opposed to this eo
         // passing an event to the child through ReceiveEventKeys)
-        if let Some(up) = up {
-            el.borrow_mut().set_parent(up);
+        if let Some(parent) = parent {
+            el.borrow_mut().set_parent(parent);
         }
+        ReceivableEventChanges::default().with_add_evs(receivable_evs)
     }
 
     pub fn remove_element(&self, el_id: &ElementID) -> ReceivableEventChanges {
@@ -323,14 +326,14 @@ impl ElementOrganizer {
                             details.loc.borrow().l.start_y.clone(),
                         );
                     let parent_ = dyn_clone::clone_box(&*parent);
-                    self.add_element(new_el.clone(), Some(parent_));
-                    modified_resp = Some(EventResponse::None);
+                    let rec = self.add_element(new_el.clone(), Some(parent_));
+                    modified_resp = Some(EventResponse::ReceivableEventChanges(rec));
                 }
                 EventResponse::Destruct => {
-                    let ic = self.remove_element(el_id);
+                    let rec = self.remove_element(el_id);
                     // NOTE no need to process the receivable event changes here,
                     // they've already been removed in the above call
-                    modified_resp = Some(EventResponse::ReceivableEventChanges(ic));
+                    modified_resp = Some(EventResponse::ReceivableEventChanges(rec));
                 }
                 EventResponse::BringToFront => {
                     self.set_el_to_top(el_id);
@@ -375,7 +378,7 @@ impl ElementOrganizer {
     //    // register all events of new element to the prioritizers
     //    let new_evs = new_el.borrow().receivable();
     //    self.prioritizer.borrow_mut().include(&new_el_id, &new_evs);
-    //    ic.add_evs(new_evs);
+    //    ic.set_add_evs(new_evs);
     //    ic
     //}
 

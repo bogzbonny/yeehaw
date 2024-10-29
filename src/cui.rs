@@ -100,7 +100,7 @@ impl Cui {
                         Some(Ok(ev)) => {
                             match ev {
                                 CTEvent::Key(key_ev) => {
-                                    //debug!("cui Key event: {:?}", key_ev);
+                                    debug!("cui Key event: {:?}", key_ev);
                                     if self.process_event_key(key_ev) {
                                         break;
                                     }

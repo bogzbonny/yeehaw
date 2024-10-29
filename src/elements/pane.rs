@@ -272,7 +272,7 @@ impl Pane {
                         .map(|(ev, _)| ev.clone())
                         .collect(),
                 )
-                .with_evs(self.self_evs.borrow().0.clone());
+                .with_add_evs(self.self_evs.borrow().0.clone());
             let resps = EventResponse::ReceivableEventChanges(rec);
             parent.propagate_responses_upward(&self.id(), resps.into());
         }
@@ -295,7 +295,7 @@ impl Pane {
                         .map(|(ev, _)| ev.clone())
                         .collect(),
                 )
-                .with_evs(self.self_evs.borrow().0.clone());
+                .with_add_evs(self.self_evs.borrow().0.clone());
             let resps = EventResponse::ReceivableEventChanges(rec);
             parent.propagate_responses_upward(&self.id(), resps.into());
         }
@@ -332,7 +332,7 @@ impl Element for Pane {
             pef.1 = p;
         }
         *self.element_priority.borrow_mut() = p;
-        let rec = ReceivableEventChanges::default().with_evs(self.self_evs.borrow().0.clone());
+        let rec = ReceivableEventChanges::default().with_add_evs(self.self_evs.borrow().0.clone());
         rec
     }
 

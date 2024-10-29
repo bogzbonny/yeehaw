@@ -116,6 +116,7 @@ async fn main() -> Result<(), Error> {
             .at(DynVal::new_fixed(10), DynVal::new_fixed(10))
             .with_height(DynVal::new_fixed(20))
             .with_width(DynVal::new_fixed(30));
+        window.pane.pane.focus();
 
         let resp = EventResponse::NewElement(Rc::new(RefCell::new(window)));
         resp.into()

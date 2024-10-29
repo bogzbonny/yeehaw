@@ -41,10 +41,10 @@
       the only item is the menubar then the menu works fine
 
 01. Ensure that HorizontalStack has all the new functions added to VerticalStack
+01. WONT DO - makes things to confusing. make parent Not an Option in Pane
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-01. make parent Not an Option in Pane
 
 01. make window automatically focus when it's selected
 
