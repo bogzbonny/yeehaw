@@ -66,7 +66,7 @@ impl Cui {
         main_el.borrow_mut().set_visible(true);
         main_el
             .borrow_mut()
-            .change_priority(&ctx, Priority::FOCUSED);
+            .change_priority(&ctx, Priority::Focused);
 
         // when adding the main element, nil is passed in as the parent
         // this is because the top of the tree is the CUI's main EO and so no parent
@@ -100,7 +100,7 @@ impl Cui {
                         Some(Ok(ev)) => {
                             match ev {
                                 CTEvent::Key(key_ev) => {
-                                    debug!("cui Key event: {:?}", key_ev);
+                                    //debug!("cui Key event: {:?}", key_ev);
                                     if self.process_event_key(key_ev) {
                                         break;
                                     }
@@ -335,7 +335,7 @@ impl Parent for CuiParent {
     }
 
     fn get_priority(&self) -> Priority {
-        Priority::FOCUSED
+        Priority::Focused
     }
 }
 

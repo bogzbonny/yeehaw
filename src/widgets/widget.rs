@@ -318,7 +318,7 @@ impl WidgetBase {
     ) -> Self {
         let evs = receivable_events
             .drain(..)
-            .map(|ev| (ev, Priority::FOCUSED))
+            .map(|ev| (ev, Priority::Focused))
             .collect();
         let pane = Pane::new(hat, kind).with_self_receivable_events(evs);
 

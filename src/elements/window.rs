@@ -43,10 +43,10 @@ impl WindowPane {
         let top_bar = Rc::new(RefCell::new(BasicWindowTopBar::new(
             hat, ctx, title, true, true, true,
         )));
-        debug!(
-            "***********************************new window pane, pane priority: {}",
-            pane.pane.get_element_priority()
-        );
+        //debug!(
+        //    "***********************************new window pane, pane priority: {}",
+        //    pane.pane.get_element_priority()
+        //);
 
         // adjust the inner size to account for the top bar
         let mut loc = inner.borrow().get_dyn_location_set().borrow().clone();
@@ -124,7 +124,7 @@ impl Element for WindowPane {
     }
 
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        debug!("Window({}) receive_event_inner: {:?}", self.id(), ev);
+        //debug!("Window({}) receive_event_inner: {:?}", self.id(), ev);
         // Skip sending the event into the pane if the event is a drag event and we're currently
         // dragging
         let mut event_to_inner = true;

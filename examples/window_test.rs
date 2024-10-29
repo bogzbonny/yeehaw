@@ -1,8 +1,9 @@
 use {
     std::{cell::RefCell, rc::Rc},
     yeehaw::{
+        debug,
         widgets::{Button, HorizontalSBPositions, VerticalSBPositions},
-        ChPlus, Color, Context, Cui, DebugSizePane, DrawCh, DynVal, Error, EventResponse,
+        ChPlus, Color, Context, Cui, DebugSizePane, DrawCh, DynVal, Element, Error, EventResponse,
         EventResponses, PaneWithScrollbars, ParentPane, SortingHat, Style, TerminalPane,
         WindowPane,
     },
@@ -12,7 +13,7 @@ use {
 async fn main() -> Result<(), Error> {
     yeehaw::debug::set_log_file("./debug_test.log".to_string());
     yeehaw::debug::clear();
-    //std::env::set_var("RUST_BACKTRACE", "1");
+    unsafe { std::env::set_var("RUST_BACKTRACE", "1") };
 
     let hat = SortingHat::default();
     let (exit_tx, exit_recv) = tokio::sync::watch::channel(false);
@@ -124,9 +125,12 @@ async fn main() -> Result<(), Error> {
         // function after it's been added to the parent pane. (which can't be done here
         // if I pass it through the event response)
         let rec = pp_.add_element(Rc::new(RefCell::new(window.clone())));
+        //debug!("0pp rec: {:?}", pp_.receivable());
         pp_.pane
             .propagate_responses_upward(EventResponse::ReceivableEventChanges(rec).into());
+        //debug!("1pp rec: {:?}", pp_.receivable());
         window.pane.pane.focus();
+        //debug!("2pp rec: {:?}", pp_.receivable());
 
         //let resp = EventResponse::NewElement(Rc::new(RefCell::new(window)));
         //resp.into()

@@ -210,13 +210,13 @@ impl Element for ParentPane {
     // TODO verify that this code is or isn't used anywhere
     //                                               (captured, resp         )
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        debug!("ParentPane({}) receive_event_inner: {:?}", self.id(), ev);
-        debug!(
-            "ParentPane({}) (self.priority: {}) receivable: {:?}",
-            self.id(),
-            self.pane.get_element_priority(),
-            self.receivable()
-        );
+        //debug!("ParentPane({}) receive_event_inner: {:?}", self.id(), ev);
+        //debug!(
+        //    "ParentPane({}) (self.priority: {}) receivable: {:?}",
+        //    self.id(),
+        //    self.pane.get_element_priority(),
+        //    self.receivable()
+        //);
 
         match ev {
             Event::Refresh => {

@@ -367,8 +367,8 @@ impl PaneWithScrollbars {
         }
 
         pane.add_element(Rc::new(RefCell::new(inner_pane.clone())));
-        inner_pane.change_priority(ctx, Priority::FOCUSED);
-        pane.change_priority(ctx, Priority::FOCUSED);
+        inner_pane.change_priority(ctx, Priority::Focused);
+        pane.change_priority(ctx, Priority::Focused);
 
         Self {
             pane,

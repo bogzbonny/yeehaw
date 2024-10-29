@@ -49,6 +49,7 @@
 
 01. terminal element
     - https://github.com/a-kenji/tui-term/blob/development/examples/smux.rs
+    - doesn't exit properly
 
 01. editor element
     - uses the $EDITOR env variable

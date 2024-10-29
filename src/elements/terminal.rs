@@ -1,8 +1,8 @@
 use {
     crate::{
-        ReceivableEventChanges, ChPlus, Color, Context, DrawCh, DrawChPos, DynLocationSet,
-        DynVal, Element, ElementID, Event, EventResponse, EventResponses, KeyPossibility, Pane,
-        Parent, Priority, SortingHat, Style, ZIndex,
+        ChPlus, Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID,
+        Event, EventResponse, EventResponses, KeyPossibility, Pane, Parent, Priority,
+        ReceivableEventChanges, SortingHat, Style, ZIndex,
     },
     compact_str::CompactString,
     crossterm::event::{KeyCode, KeyEvent, KeyModifiers},
@@ -118,8 +118,8 @@ impl TerminalPane {
     }
 
     pub fn receivable_events() -> Vec<(Event, Priority)> {
-        vec![(KeyPossibility::Anything.into(), Priority::FOCUSED)]
-        //vec![(KeyPossibility::Chars.into(), Priority::FOCUSED)]
+        vec![(KeyPossibility::Anything.into(), Priority::Focused)]
+        //vec![(KeyPossibility::Chars.into(), Priority::Focused)]
     }
 
     pub fn with_height(self, h: DynVal) -> Self {
@@ -149,7 +149,7 @@ impl Element for TerminalPane {
         self.pane.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        debug!("TerminalPane({}) receive_event_inner: {:?}", self.id(), ev);
+        //debug!("TerminalPane({}) receive_event_inner: {:?}", self.id(), ev);
         if *self.exit.read().unwrap() {
             return (false, EventResponse::Destruct.into());
         }

@@ -69,7 +69,7 @@ impl Pane {
             id: Rc::new(RefCell::new(hat.create_element_id(kind))),
             attributes: Rc::new(RefCell::new(HashMap::new())),
             self_evs: Rc::new(RefCell::new(SelfReceivableEvents::default())),
-            element_priority: Rc::new(RefCell::new(Priority::UNFOCUSED)),
+            element_priority: Rc::new(RefCell::new(Priority::Unfocused)),
             parent: Rc::new(RefCell::new(None)),
             hooks: Rc::new(RefCell::new(HashMap::new())),
             content: Rc::new(RefCell::new(DrawChs2D::default())),
@@ -263,11 +263,12 @@ impl Pane {
 
     // focus all prioritized events
     pub fn focus(&self) {
-        *self.element_priority.borrow_mut() = Priority::FOCUSED;
+        *self.element_priority.borrow_mut() = Priority::Focused;
         self.self_evs
             .borrow_mut()
-            .update_priority_for_all(Priority::FOCUSED);
+            .update_priority_for_all(Priority::Focused);
         if let Some(parent) = self.parent.borrow().as_ref() {
+            debug!("pane focus has parent");
             let rec = ReceivableEventChanges::default()
                 .with_remove_evs(
                     self.self_evs
@@ -286,10 +287,10 @@ impl Pane {
 
     // defocus all prioritized events
     pub fn unfocus(&self) {
-        *self.element_priority.borrow_mut() = Priority::UNFOCUSED;
+        *self.element_priority.borrow_mut() = Priority::Unfocused;
         self.self_evs
             .borrow_mut()
-            .update_priority_for_all(Priority::UNFOCUSED);
+            .update_priority_for_all(Priority::Unfocused);
         if let Some(parent) = self.parent.borrow().as_ref() {
             let rec = ReceivableEventChanges::default()
                 .with_remove_evs(

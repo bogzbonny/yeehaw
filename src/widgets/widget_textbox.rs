@@ -240,7 +240,7 @@ impl TextBox {
 
         let evs = Self::editable_receivable_events()
             .drain(..)
-            .map(|ev| (ev, Priority::FOCUSED))
+            .map(|ev| (ev, Priority::Focused))
             .collect();
         self.base.set_receivable_events(evs);
         self
@@ -250,7 +250,7 @@ impl TextBox {
         *self.editable.borrow_mut() = false;
         let evs = Self::non_editable_receivable_events()
             .drain(..)
-            .map(|ev| (ev, Priority::FOCUSED))
+            .map(|ev| (ev, Priority::Focused))
             .collect();
         self.base.set_receivable_events(evs);
         self

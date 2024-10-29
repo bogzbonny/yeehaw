@@ -1,8 +1,8 @@
 use {
     crate::{
-        ReceivableEventChanges, prioritizer::EventPrioritizer, Context, DrawChPos,
-        DynLocation, DynLocationSet, Element, ElementID, Event, EventResponse, EventResponses,
-        Parent, Priority, RelMouseEvent, ZIndex,
+        prioritizer::EventPrioritizer, Context, DrawChPos, DynLocation, DynLocationSet, Element,
+        ElementID, Event, EventResponse, EventResponses, Parent, Priority, ReceivableEventChanges,
+        RelMouseEvent, ZIndex,
     },
     std::collections::HashMap,
     std::{cell::RefCell, rc::Rc},
@@ -303,20 +303,6 @@ impl ElementOrganizer {
 
         for r in resps.0.iter_mut() {
             match r {
-                //EventResponse::ExtraLocations(extra) => {
-                //    // adjust extra locations to be relative to the given element
-                //    let mut adj_extra_locs = Vec::new();
-                //    for mut l in extra.clone() {
-                //        l.adjust_location_by(
-                //            details.loc.borrow().l.start_x.clone(),
-                //            details.loc.borrow().l.start_y.clone(),
-                //        );
-                //        adj_extra_locs.push(l.clone());
-                //    }
-
-                //    // update extra locations
-                //    self.update_el_extra_locations(el_id.clone(), adj_extra_locs);
-                //}
                 EventResponse::NewElement(new_el) => {
                     // adjust the location of the window to be relative to the given element and adds the element
                     // to the element organizer
@@ -343,7 +329,7 @@ impl ElementOrganizer {
                     *r = EventResponse::None;
                 }
                 EventResponse::ReceivableEventChanges(ref mut rec) => {
-                    self.process_receivable_event_changes(el_id, &rec);
+                    self.process_receivable_event_changes(el_id, rec);
 
                     // Modify the ReceivableEventChanges to reflect the perceived priorities
                     // of the parent element. Required as this EventResponse is being passed
@@ -409,16 +395,16 @@ impl ElementOrganizer {
     ) -> Vec<(Event, Priority)> {
         let mut perceived_pes = vec![];
         #[allow(clippy::comparison_chain)]
-        if parent_pr == Priority::UNFOCUSED {
+        if parent_pr == Priority::Unfocused {
             for child in real_pes {
-                perceived_pes.push((child.0, Priority::UNFOCUSED));
+                perceived_pes.push((child.0, Priority::Unfocused));
             }
             // leave the children alone! they're fine
-        } else if parent_pr < Priority::UNFOCUSED {
+        } else if parent_pr < Priority::Unfocused {
             // "Focused or greater"
             for child in real_pes {
                 let pr = match true {
-                    _ if child.1 == Priority::UNFOCUSED => Priority::UNFOCUSED,
+                    _ if child.1 == Priority::Unfocused => Priority::Unfocused,
                     _ if child.1 < parent_pr => child.1,
                     _ => parent_pr,
                 };

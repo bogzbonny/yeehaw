@@ -4,26 +4,21 @@ use crate::{ElementID, Event, Keyboard};
 // key strokes as they come in. When an element is in focus it should be given
 // the priority of Focused which can only be exceeded if an element is given the
 // Highest priority.
-//
-// TODO change to enum
 #[derive(Clone, Copy, PartialEq, Eq, Debug, PartialOrd, Ord)]
-pub struct Priority(pub u8);
-
-impl Priority {
-    pub const HIGHEST: Priority = Priority(0);
-    pub const ABOVE_FOCUSED: Priority = Priority(1);
-    pub const FOCUSED: Priority = Priority(2);
-    pub const UNFOCUSED: Priority = Priority(3);
+pub enum Priority {
+    Highest,
+    AboveFocused,
+    Focused,
+    Unfocused,
 }
 
 impl std::fmt::Display for Priority {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self.0 {
-            0 => write!(f, "HIGHEST"),
-            1 => write!(f, "ABOVE_FOCUSED"),
-            2 => write!(f, "FOCUSED"),
-            3 => write!(f, "UNFOCUSED"),
-            _ => write!(f, "OTHER({})", self.0),
+        match self {
+            Priority::Highest => write!(f, "Highest"),
+            Priority::AboveFocused => write!(f, "AboveFocused"),
+            Priority::Focused => write!(f, "Focused"),
+            Priority::Unfocused => write!(f, "Unfocused"),
         }
     }
 }
@@ -77,31 +72,27 @@ impl PriorityIdEvent {
 impl EventPrioritizer {
     // are there any priority events already registered with the same priority and
     // event (independant of the event prioritizers element id).
-    pub fn has_priority_ev(&self, priority_ev: &[(Event, Priority)]) -> Option<(Event, Priority)> {
+    pub fn has_priority_ev(&self, priority_ev: &(Event, Priority)) -> bool {
         for pec in self.0.iter() {
-            for p in priority_ev.iter() {
-                if p.0 == pec.event && p.1 == pec.priority {
-                    return Some((p.0.clone(), p.1));
-                }
+            if priority_ev.0 == pec.event && priority_ev.1 == pec.priority {
+                return true;
             }
         }
-        None
+        false
     }
 
     pub fn include(&mut self, id: &ElementID, priority_ev: &Vec<(Event, Priority)>) {
-        // check for priority overloading.
-        // Panic if two children have registered the same ev/cmd at the same
-        // priority. If false the event will be sent to the ev/cmd to which happens
-        // to be first in the prioritizer
-        #[cfg(debug_assertions)]
-        if let Some((ev, pr)) = self.has_priority_ev(priority_ev) {
-            panic!(
-                "EvPrioritizer found at least 2 events registered to different elements with the
-                same priority. \n\tregistering-id: {id}\n\tpr: {pr}\n\tev: {ev:?}",
-            );
-        }
-
         for pe in priority_ev {
+            // check for priority overloading.
+            // Panic if two children have registered the same ev/cmd at the same priority
+            // (excluding Unfocused). If false the event will be sent to the ev/cmd to which
+            // happens to be first in the prioritizer
+            #[cfg(debug_assertions)]
+            if pe.1 != Priority::Unfocused && self.has_priority_ev(pe) {
+                panic!("EvPrioritizer found at least 2 events registered to different elements with the \
+                       same priority. \n\tregistering-id: {id}\n\tpr: {}\n\tev: {:?}", pe.1, pe.0)
+            }
+
             let peie = PriorityIdEvent::new(pe.1, id.clone(), pe.0.clone());
             self.0.push(peie);
             self.0.sort();
@@ -147,7 +138,7 @@ impl EventPrioritizer {
         &self, kb: &mut Keyboard,
     ) -> Option<(ElementID, Vec<crossterm::event::KeyEvent>)> {
         for priority_id_event in self.0.iter() {
-            if priority_id_event.priority == Priority::UNFOCUSED {
+            if priority_id_event.priority == Priority::Unfocused {
                 break;
             }
             let Event::KeyCombo(ref ekc) = priority_id_event.event else {
@@ -166,7 +157,7 @@ impl EventPrioritizer {
         // loop through all events registered by elements (PriorityIdEvent's)
         // and check if the input_ev matches any of them
         for priority_id_event in self.0.iter() {
-            if priority_id_event.priority == Priority::UNFOCUSED {
+            if priority_id_event.priority == Priority::Unfocused {
                 // since the ev prioritizer is sorted by priority, there is no point
                 // in continuing to loop through the rest of the events as elements
                 // with a priority of unfocused will never be sent events

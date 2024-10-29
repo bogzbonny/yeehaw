@@ -38,7 +38,7 @@ impl WidgetPane {
             .pane
             .self_evs
             .borrow_mut()
-            .push_many_at_priority(Self::default_receivable_events(), Priority::FOCUSED);
+            .push_many_at_priority(Self::default_receivable_events(), Priority::Focused);
         wp
     }
 
@@ -400,7 +400,7 @@ impl Element for WidgetPane {
     }
 
     fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
-        let mut rec = if p == Priority::UNFOCUSED {
+        let mut rec = if p == Priority::Unfocused {
             self.unselect_selected_widget_process_resp(ctx)
         } else {
             ReceivableEventChanges::default()
