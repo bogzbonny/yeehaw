@@ -126,78 +126,10 @@ impl ParentPane {
         self.eo.clear_elements();
     }
 
-    // generate_perceived_priorities generates the "perceived priorities" of the
-    // provided events. It receives a function which can then use each perceived
-    // priority however it needs to.
-    //
-    // **IMPORTANT NOTE**
-    //
-    // The "perceived priorities" are the effective priorities of an element FROM
-    // the perspective of an element two or more levels ABOVE the element in the tree.
-    //
-    // Relative priorities between the children elements of a parent element
-    // should be perserved. To ensure this, the priorities of children should
-    // never be modified but instead interpreted as "perceived priorities".
-    //
-    //	EXAMPLE:	  	Element 0 (ABOVE_FOCUSED)
-    //				  	  evA (ABOVE_FOCUSED)     ┐
-    //				      evB (ABOVE_FOCUSED)     ├─perceived-priorities
-    //				      evC (ABOVE_FOCUSED)     │
-    //		              evD (HIGHEST_FOCUS)     ┘
-    //			                 │
-    //				 	Element 1
-    //				  	  evA (ABOVE_FOCUSED)
-    //				  	  evB (FOCUSED)
-    //				      evC (UNFOCUSED)
-    //				      evD (HIGHEST_FOCUS)
-    //	            ┌────────────┴───────────┐
-    //		   	Element 2                Element 3
-    //		   	 evA (ABOVE_FOCUSED)      evC (UNFOCUSED)
-    //		   	 evB (FOCUSED)            evD (HIGHEST_FOCUS)
-    //
-    // This function does not modify the priorities of any child element, but
-    // instead generates the "perceived priorities" in the following way:
-    //  1. If the input priority (pr) is UNFOCUSED:
-    //     - simply interpret all the childrens' priorities as unfocused.
-    //     (everything set in the ic will be unfocused).
-    //  2. if the input priority (pr) is FOCUSED or greater:
-    //     - individually interpret each child's Receivable Event priority as
-    //     the greatest of either the input priority to this function (pr),
-    //     or the child event's current priority.
-    //
-    // INPUTS
-    //   - The real_pes is the real priority events of the child element.
-    //   - The parent_pr is the priority that the parent element is being changed to
-    //   - The perceived_pes is the perceived priority events of a child element for
-    //     this element for this element's parent (the grandparent of the child).
-    pub fn generate_perceived_priorities(
-        &self, parent_pr: Priority, real_pes: Vec<(Event, Priority)>,
-    ) -> Vec<(Event, Priority)> {
-        let mut perceived_pes = vec![];
-        #[allow(clippy::comparison_chain)]
-        if parent_pr == Priority::UNFOCUSED {
-            for child in real_pes {
-                perceived_pes.push((child.0, Priority::UNFOCUSED));
-            }
-            // leave the children alone! they're fine
-        } else if parent_pr < Priority::UNFOCUSED {
-            // "Focused or greater"
-            for child in real_pes {
-                let pr = match true {
-                    _ if child.1 == Priority::UNFOCUSED => Priority::UNFOCUSED,
-                    _ if child.1 < parent_pr => child.1,
-                    _ => parent_pr,
-                };
-                perceived_pes.push((child.0, pr));
-            }
-        }
-        perceived_pes
-    }
-
     pub fn perceived_priorities_of_eo(&self) -> Vec<(Event, Priority)> {
         let pr = self.pane.get_element_priority();
         let pes = self.eo.receivable(); // registered receivable events
-        self.generate_perceived_priorities(pr, pes)
+        ElementOrganizer::generate_perceived_priorities(pr, pes)
     }
 
     pub fn change_priority_for_el(
@@ -341,7 +273,7 @@ impl Element for ParentPane {
         // update the perceived priorities of the children
         for (_, el_details) in self.eo.els.borrow().iter() {
             let pes = el_details.el.borrow().receivable(); // self evs (and child eo's evs)
-            for pe in self.generate_perceived_priorities(pr, pes) {
+            for pe in ElementOrganizer::generate_perceived_priorities(pr, pes) {
                 ic.update_priority_for_ev(pe.0, pe.1);
             }
         }
@@ -421,5 +353,9 @@ impl Parent for ParentPane {
 
     fn set_store_item(&self, key: &str, value: Vec<u8>) {
         self.el_store.borrow_mut().insert(key.to_string(), value);
+    }
+
+    fn get_priority(&self) -> Priority {
+        self.pane.get_element_priority()
     }
 }

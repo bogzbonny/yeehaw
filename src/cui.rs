@@ -333,6 +333,10 @@ impl Parent for CuiParent {
     fn set_store_item(&self, key: &str, value: Vec<u8>) {
         self.el_store.borrow_mut().insert(key.to_string(), value);
     }
+
+    fn get_priority(&self) -> Priority {
+        Priority::FOCUSED
+    }
 }
 
 pub fn sc_startup() -> Result<(), Error> {

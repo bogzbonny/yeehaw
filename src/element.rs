@@ -183,6 +183,8 @@ pub trait Parent: dyn_clone::DynClone {
 
     fn get_store_item(&self, key: &str) -> Option<Vec<u8>>;
     fn set_store_item(&self, key: &str, value: Vec<u8>);
+
+    fn get_priority(&self) -> Priority;
 }
 
 // ----------------------------------------------------------------------------
@@ -327,16 +329,21 @@ impl EventResponse {
 #[derive(Clone, Default, Debug)]
 // TRANSLATION NOTE used to be InputabilityChanges
 pub struct ReceivableEventChanges {
+    pub add: Vec<(Event, Priority)>, // receivable events being added to the element
+
     // Receivable events to deregistered from an element.
     // NOTE: one instance of an event being passed up the hierarchy through
     // RmRecEvs will remove ALL instances of that event from the prioritizer of
     // every element higher in the hierarchy that processes the
     // ReceivableEventChanges.
     pub remove: Vec<Event>,
-    pub add: Vec<(Event, Priority)>, // receivable events being added to the element
 }
 
 impl ReceivableEventChanges {
+    pub fn new(add: Vec<(Event, Priority)>, remove: Vec<Event>) -> ReceivableEventChanges {
+        ReceivableEventChanges { add, remove }
+    }
+
     pub fn with_add_ev(mut self, p: Priority, ev: Event) -> ReceivableEventChanges {
         self.add.push((ev, p));
         self

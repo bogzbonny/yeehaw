@@ -281,14 +281,18 @@ impl ElementOrganizer {
     // write func to remove/add evCombos and commands from EvPrioritizer and
     // CommandPrioritizer, using the ReceivableEventChanges struct
     /*pub fn process_changes_to_inputability(*/
-    pub fn process_receivable_event_changes(&self, el_id: &ElementID, ic: &ReceivableEventChanges) {
-        self.prioritizer.borrow_mut().remove(el_id, &ic.remove);
-        self.prioritizer.borrow_mut().include(el_id, &ic.add);
+    pub fn process_receivable_event_changes(
+        &self, el_id: &ElementID, rec: &ReceivableEventChanges,
+    ) {
+        self.prioritizer.borrow_mut().remove(el_id, &rec.remove);
+        self.prioritizer.borrow_mut().include(el_id, &rec.add);
     }
 
     // Partially process the event response for whatever is possible to be processed
     // in the element organizer. Further processing may be required by the element
     // which owns this element organizer.
+    //
+    // NOTE this function modifies the event responses in place
     pub fn partially_process_ev_resps(
         &self, el_id: &ElementID, resps: &mut EventResponses, parent: Box<dyn Parent>,
     ) {
@@ -298,7 +302,6 @@ impl ElementOrganizer {
         };
 
         for r in resps.0.iter_mut() {
-            let mut modified_resp: Option<EventResponse> = None;
             match r {
                 //EventResponse::ExtraLocations(extra) => {
                 //    // adjust extra locations to be relative to the given element
@@ -327,27 +330,102 @@ impl ElementOrganizer {
                         );
                     let parent_ = dyn_clone::clone_box(&*parent);
                     let rec = self.add_element(new_el.clone(), Some(parent_));
-                    modified_resp = Some(EventResponse::ReceivableEventChanges(rec));
+                    *r = EventResponse::ReceivableEventChanges(rec);
                 }
                 EventResponse::Destruct => {
                     let rec = self.remove_element(el_id);
                     // NOTE no need to process the receivable event changes here,
                     // they've already been removed in the above call
-                    modified_resp = Some(EventResponse::ReceivableEventChanges(rec));
+                    *r = EventResponse::ReceivableEventChanges(rec);
                 }
                 EventResponse::BringToFront => {
                     self.set_el_to_top(el_id);
-                    modified_resp = Some(EventResponse::None);
+                    *r = EventResponse::None;
                 }
-                EventResponse::ReceivableEventChanges(rec) => {
-                    self.process_receivable_event_changes(el_id, rec);
+                EventResponse::ReceivableEventChanges(ref mut rec) => {
+                    self.process_receivable_event_changes(el_id, &rec);
+
+                    // Modify the ReceivableEventChanges to reflect the perceived priorities
+                    // of the parent element. Required as this EventResponse is being passed
+                    // up the chain further to the next parent element.
+
+                    // TODO could remove clones and drain each vec.
+                    let add_ =
+                        Self::generate_perceived_priorities(parent.get_priority(), rec.add.clone());
+                    let rec_for_higher = ReceivableEventChanges::new(add_, rec.remove.clone());
+                    *r = EventResponse::ReceivableEventChanges(rec_for_higher);
                 }
                 _ => {}
             }
-            if let Some(mr) = modified_resp {
-                *r = mr;
+        }
+    }
+
+    // generate_perceived_priorities generates the "perceived priorities" of the
+    // provided events. It receives a function which can then use each perceived
+    // priority however it needs to.
+    //
+    // **IMPORTANT NOTE**
+    //
+    // The "perceived priorities" are the effective priorities of an element FROM
+    // the perspective of an element two or more levels ABOVE the element in the tree.
+    //
+    // Relative priorities between the children elements of a parent element
+    // should be perserved. To ensure this, the priorities of children should
+    // never be modified but instead interpreted as "perceived priorities".
+    //
+    //	EXAMPLE:	  	Element 0 (ABOVE_FOCUSED)
+    //				  	  evA (ABOVE_FOCUSED)     ┐
+    //				      evB (ABOVE_FOCUSED)     ├─perceived-priorities
+    //				      evC (ABOVE_FOCUSED)     │
+    //		              evD (HIGHEST_FOCUS)     ┘
+    //			                 │
+    //				 	Element 1
+    //				  	  evA (ABOVE_FOCUSED)
+    //				  	  evB (FOCUSED)
+    //				      evC (UNFOCUSED)
+    //				      evD (HIGHEST_FOCUS)
+    //	            ┌────────────┴───────────┐
+    //		   	Element 2                Element 3
+    //		   	 evA (ABOVE_FOCUSED)      evC (UNFOCUSED)
+    //		   	 evB (FOCUSED)            evD (HIGHEST_FOCUS)
+    //
+    // This function does not modify the priorities of any child element, but
+    // instead generates the "perceived priorities" in the following way:
+    //  1. If the input priority (pr) is UNFOCUSED:
+    //     - simply interpret all the childrens' priorities as unfocused.
+    //     (everything set in the ic will be unfocused).
+    //  2. if the input priority (pr) is FOCUSED or greater:
+    //     - individually interpret each child's Receivable Event priority as
+    //     the greatest of either the input priority to this function (pr),
+    //     or the child event's current priority.
+    //
+    // INPUTS
+    //   - The real_pes is the real priority events of the child element.
+    //   - The parent_pr is the priority that the parent element is being changed to
+    //   - The perceived_pes is the perceived priority events of a child element for
+    //     this element for this element's parent (the grandparent of the child).
+    pub fn generate_perceived_priorities(
+        parent_pr: Priority, real_pes: Vec<(Event, Priority)>,
+    ) -> Vec<(Event, Priority)> {
+        let mut perceived_pes = vec![];
+        #[allow(clippy::comparison_chain)]
+        if parent_pr == Priority::UNFOCUSED {
+            for child in real_pes {
+                perceived_pes.push((child.0, Priority::UNFOCUSED));
+            }
+            // leave the children alone! they're fine
+        } else if parent_pr < Priority::UNFOCUSED {
+            // "Focused or greater"
+            for child in real_pes {
+                let pr = match true {
+                    _ if child.1 == Priority::UNFOCUSED => Priority::UNFOCUSED,
+                    _ if child.1 < parent_pr => child.1,
+                    _ => parent_pr,
+                };
+                perceived_pes.push((child.0, pr));
             }
         }
+        perceived_pes
     }
 
     // Replaces the element at the given ID with a new element
