@@ -218,7 +218,7 @@ impl KeyPossibility {
 
 // -------------------------------------------------------------------------------------
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct EventResponses(pub Vec<EventResponse>);
 
 impl From<EventResponse> for EventResponses {
@@ -285,6 +285,22 @@ pub enum EventResponse {
 
     // contains priority updates that should be made to the receiver's prioritizer
     ReceivableEventChanges(ReceivableEventChanges),
+}
+
+impl std::fmt::Debug for EventResponse {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            EventResponse::None => write!(f, "EventResponse::None"),
+            EventResponse::Quit => write!(f, "EventResponse::Quit"),
+            EventResponse::Destruct => write!(f, "EventResponse::Destruct"),
+            EventResponse::BringToFront => write!(f, "EventResponse::BringToFront"),
+            EventResponse::NewElement(_) => write!(f, "EventResponse::NewElement"),
+            EventResponse::Metadata(k, v) => write!(f, "EventResponse::Metadata({}, {:?})", k, v),
+            EventResponse::ReceivableEventChanges(rec) => {
+                write!(f, "EventResponse::ReceivableEventChanges({:?})", rec)
+            }
+        }
+    }
 }
 
 impl EventResponse {

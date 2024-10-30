@@ -203,20 +203,6 @@ impl Element for WindowPane {
                         ),
                     );
                     resps_.extend(r.0);
-
-                    //let mut top_bar_ctx = ctx.clone();
-                    //top_bar_ctx.s.height = 1;
-
-                    //let mut inner_ctx = ctx.clone();
-                    //inner_ctx.s.height -= 1;
-
-                    //let (_, r) = self
-                    //    .top_bar
-                    //    .borrow()
-                    //    .receive_event(&top_bar_ctx, Event::Resize);
-                    //resps_.extend(r.0);
-                    //let (_, r) = self.inner.borrow().receive_event(&inner_ctx, Event::Resize);
-                    //resps_.extend(r.0);
                 }
 
                 *resp = EventResponse::None;
@@ -461,6 +447,17 @@ impl Element for WindowPane {
         }
 
         resps.extend(resps_.0);
+
+        // check if the inner pane has been removed from the parent in which case close this window
+        if self
+            .pane
+            .eo
+            .get_element(&self.inner.borrow().id())
+            .is_none()
+        {
+            resps.push(EventResponse::Destruct);
+        }
+
         (captured, resps)
     }
 
@@ -468,7 +465,24 @@ impl Element for WindowPane {
         self.pane.change_priority(ctx, p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        self.pane.drawing(ctx)
+        let out = self.pane.drawing(ctx);
+
+        // check if the inner pane has been removed from the parent in which case close this window
+        // NOTE this happens with terminal
+        if self
+            .pane
+            .eo
+            .get_element(&self.inner.borrow().id())
+            .is_none()
+        {
+            //resps.push(EventResponse::Destruct);
+            self.pane
+                .pane
+                .propagate_responses_upward(EventResponse::Destruct.into());
+            Vec::with_capacity(0)
+        } else {
+            out
+        }
     }
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
         self.pane.get_attribute(key)

@@ -125,7 +125,6 @@ async fn main() -> Result<(), Error> {
         // function after it's been added to the parent pane. (which can't be done here
         // if I pass it through the event response)
         //window.pane.pane.focus();
-        window.pane.pane.focus();
         let rec = pp_.add_element(Rc::new(RefCell::new(window.clone())));
         //debug!("0pp rec: {:?}", pp_.receivable());
         pp_.pane

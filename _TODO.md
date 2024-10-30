@@ -42,16 +42,18 @@
 
 01. Ensure that HorizontalStack has all the new functions added to VerticalStack
 01. WONT DO - makes things to confusing. make parent Not an Option in Pane
+01. terminal element
+    - https://github.com/a-kenji/tui-term/blob/development/examples/smux.rs
+    - doesn't close window when exit is executed
+01. make window automatically focus when it's selected
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-01. make window automatically focus when it's selected
+01. multiple terminal windows focus and panic 
 
 01. make window top bar slightly lighter when it's focused
 
-01. terminal element
-    - https://github.com/a-kenji/tui-term/blob/development/examples/smux.rs
-    - doesn't exit properly
+01. file nav test seems not to work?
 
 01. editor element
     - uses the $EDITOR env variable
@@ -66,6 +68,13 @@
           if let Ok(cwd) = std::env::current_dir() {
               cmd.cwd(cwd);
           }
+       - use the editor with a temp file - check after each event for updates to
+         that file
+       - consider closeable vs non-closeable version of this widget
+          - I guess if you wanted an Editor to NOT close, when you closed the
+            editor the Pane should be replaced with just the containing text 
+              - OR could take a snapshot right when the editor opens
+                and use that snapshot except maybe make it a bit more pale
 
 01. proper shutdown of other threads in terminal pane (terminal_test doesn't
     completely shut down).

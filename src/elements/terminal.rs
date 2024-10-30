@@ -1,3 +1,7 @@
+// Original inspiration for this element taken from:
+// https://github.com/a-kenji/tui-term/blob/development/examples/smux.rs
+// (MIT LICENSE)
+
 use {
     crate::{
         ChPlus, Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID,
@@ -16,9 +20,10 @@ use {
     tokio::task::spawn_blocking,
 };
 
-// TODO update to using termwiz instead of vt100
+// TODO use termwiz instead of vt100
 //      https://docs.rs/termwiz/latest/termwiz/
 //      https://github.com/wez/wezterm/blob/main/termwiz/examples/widgets_nested.rs
+
 // TODO graceful shutdown of tokio tasks
 
 #[derive(Clone)]
