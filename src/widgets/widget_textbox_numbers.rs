@@ -247,8 +247,8 @@ impl Element for NumbersTextBox {
         }
     }
 
-    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
-        self.tb.change_priority(ctx, p)
+    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
+        self.tb.change_priority( p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.tb.drawing(ctx)

@@ -1038,8 +1038,8 @@ impl Element for VerticalScrollbar {
         }
     }
 
-    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
-        self.base.change_priority(ctx, p)
+    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
+        self.base.change_priority( p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.drawing_(ctx)
@@ -1092,8 +1092,8 @@ impl Element for HorizontalScrollbar {
         }
     }
 
-    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
-        self.base.change_priority(ctx, p)
+    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
+        self.base.change_priority( p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.drawing_(ctx)

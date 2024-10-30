@@ -85,8 +85,8 @@ impl Element for FigletText {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         self.base.receive_event(ctx, ev)
     }
-    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
-        self.base.change_priority(ctx, p)
+    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
+        self.base.change_priority( p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.base.drawing(ctx)

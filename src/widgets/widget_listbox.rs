@@ -564,8 +564,8 @@ impl Element for ListBox {
         (false, EventResponses::default())
     }
 
-    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
-        self.base.change_priority(ctx, p)
+    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
+        self.base.change_priority( p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.update_highlighting(ctx); // this can probably happen in a more targeted way

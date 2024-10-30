@@ -246,7 +246,9 @@ pub enum EventResponse {
     BringToFront,
 
     // defocus all other elements
-    DefocusOthers,
+    UnfocusOthers,
+
+    Focus, // focus this element
 
     // create an element, its location will be adjusted
     // by the elements current location.
@@ -273,7 +275,8 @@ impl std::fmt::Debug for EventResponse {
             EventResponse::Quit => write!(f, "EventResponse::Quit"),
             EventResponse::Destruct => write!(f, "EventResponse::Destruct"),
             EventResponse::BringToFront => write!(f, "EventResponse::BringToFront"),
-            EventResponse::DefocusOthers => write!(f, "EventResponse::DefocusOthers"),
+            EventResponse::UnfocusOthers => write!(f, "EventResponse::UnfocusOthers"),
+            EventResponse::Focus => write!(f, "EventResponse::Focus"),
             EventResponse::NewElement(el, resp) => write!(
                 f,
                 "EventResponse::NewElement id: {:?}, resp: {:?}",
@@ -339,25 +342,25 @@ impl ReceivableEventChanges {
         self
     }
 
-    pub fn set_add_ev(&mut self, ev: Event, p: Priority) {
+    pub fn push_add_ev(&mut self, ev: Event, p: Priority) {
         self.add.push((ev, p));
     }
 
-    pub fn set_add_evs(&mut self, evs: Vec<(Event, Priority)>) {
+    pub fn push_add_evs(&mut self, evs: Vec<(Event, Priority)>) {
         self.add.extend(evs);
     }
 
-    pub fn set_add_evs_single_priority(&mut self, evs: Vec<Event>, pr: Priority) {
+    pub fn push_add_evs_single_priority(&mut self, evs: Vec<Event>, pr: Priority) {
         for ev in evs {
             self.add.push((ev, pr));
         }
     }
 
-    pub fn set_remove_ev(&mut self, ev: Event) {
+    pub fn push_remove_ev(&mut self, ev: Event) {
         self.remove.push(ev);
     }
 
-    pub fn set_remove_evs(&mut self, evs: Vec<Event>) {
+    pub fn push_remove_evs(&mut self, evs: Vec<Event>) {
         self.remove.extend(evs);
     }
 

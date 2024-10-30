@@ -367,9 +367,8 @@ impl Element for VerticalStack {
         self.ensure_normalized_sizes(ctx);
         self.pane.receive_event(ctx, ev.clone())
     }
-    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
-        self.ensure_normalized_sizes(ctx);
-        self.pane.change_priority(ctx, p)
+    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
+        self.pane.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.ensure_normalized_sizes(ctx);
@@ -418,9 +417,8 @@ impl Element for HorizontalStack {
         self.ensure_normalized_sizes(ctx);
         self.pane.receive_event(ctx, ev.clone())
     }
-    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
-        self.ensure_normalized_sizes(ctx);
-        self.pane.change_priority(ctx, p)
+    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
+        self.pane.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.ensure_normalized_sizes(ctx);

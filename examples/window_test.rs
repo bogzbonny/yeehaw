@@ -174,19 +174,24 @@ async fn main() -> Result<(), Error> {
         // buttons event response because I want to call this windows focus()
         // function after it's been added to the parent pane. (which can't be done here
         // if I pass it through the event response)
-        all_windows_.borrow().iter().for_each(|w: &WindowPane| {
-            w.pane.unfocus();
-        });
-        all_windows_.borrow_mut().push(window.clone());
-        let rec = pp_.add_element(Box::new(window.clone()));
-        window.pane.focus();
-        let resps = vec![
-            EventResponse::ReceivableEventChanges(rec),
-            EventResponse::BringToFront,
-        ];
-        window.pane.pane.propagate_responses_upward(resps.into());
+        //all_windows_.borrow().iter().for_each(|w: &WindowPane| {
+        //    w.pane.unfocus();
+        //});
+        //all_windows_.borrow_mut().push(window.clone());
+        //let rec = pp_.add_element(Box::new(window.clone()));
+        //window.pane.focus();
+        //let resps = vec![
+        //    EventResponse::ReceivableEventChanges(rec),
+        //    EventResponse::BringToFront,
+        //];
+        //window.pane.pane.propagate_responses_upward(resps.into());
 
-        EventResponses::default()
+        let inner_resps = vec![
+            EventResponse::BringToFront,
+            EventResponse::UnfocusOthers,
+            EventResponse::Focus,
+        ];
+        EventResponse::NewElement(Box::new(window.clone()), Some(inner_resps.into())).into()
     });
 
     let add_button =

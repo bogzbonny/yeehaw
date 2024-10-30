@@ -294,8 +294,8 @@ impl Element for Button {
         (false, EventResponses::default())
     }
 
-    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
-        self.base.change_priority(ctx, p)
+    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
+        self.base.change_priority( p)
     }
     fn drawing(&self, _ctx: &Context) -> Vec<DrawChPos> {
         self.button_drawing().to_draw_ch_pos(0, 0)

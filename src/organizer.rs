@@ -281,7 +281,6 @@ impl ElementOrganizer {
 
     // write func to remove/add evCombos and commands from EvPrioritizer and
     // CommandPrioritizer, using the ReceivableEventChanges struct
-    /*pub fn process_changes_to_inputability(*/
     pub fn process_receivable_event_changes(
         &self, el_id: &ElementID, rec: &ReceivableEventChanges,
     ) {
@@ -305,6 +304,42 @@ impl ElementOrganizer {
         let mut extend_resps = EventResponses::default();
         for r in resps.0.iter_mut() {
             match r {
+                EventResponse::None => {}
+                EventResponse::Quit => {}
+                EventResponse::Metadata(_, _) => {}
+                EventResponse::Destruct => {
+                    let rec = self.remove_element(el_id);
+                    // NOTE no need to process the receivable event changes here,
+                    // they've already been removed in the above call
+                    *r = EventResponse::ReceivableEventChanges(rec);
+                }
+                EventResponse::BringToFront => {
+                    self.set_el_to_top(el_id);
+                    *r = EventResponse::None;
+                }
+                EventResponse::UnfocusOthers => {
+                    for (el_id_, _) in self.els.borrow().iter() {
+                        if el_id_ != el_id {
+                            let rec = self.change_priority_for_el(el_id_, Priority::Unfocused);
+                            let add_ = Self::generate_perceived_priorities(
+                                parent.get_priority(),
+                                rec.add.clone(),
+                            );
+                            let rec_for_higher =
+                                ReceivableEventChanges::new(add_, rec.remove.clone());
+                            extend_resps
+                                .push(EventResponse::ReceivableEventChanges(rec_for_higher));
+                        }
+                    }
+                    *r = EventResponse::None;
+                }
+                EventResponse::Focus => {
+                    let rec = self.change_priority_for_el(el_id, Priority::Focused);
+                    let add_ =
+                        Self::generate_perceived_priorities(parent.get_priority(), rec.add.clone());
+                    let rec_for_higher = ReceivableEventChanges::new(add_, rec.remove.clone());
+                    *r = EventResponse::ReceivableEventChanges(rec_for_higher);
+                }
                 EventResponse::NewElement(new_el, ref mut new_el_resps) => {
                     // adjust the location of the window to be relative to the given element and adds the element
                     // to the element organizer
@@ -322,16 +357,6 @@ impl ElementOrganizer {
                     }
                     *r = EventResponse::ReceivableEventChanges(rec);
                 }
-                EventResponse::Destruct => {
-                    let rec = self.remove_element(el_id);
-                    // NOTE no need to process the receivable event changes here,
-                    // they've already been removed in the above call
-                    *r = EventResponse::ReceivableEventChanges(rec);
-                }
-                EventResponse::BringToFront => {
-                    self.set_el_to_top(el_id);
-                    *r = EventResponse::None;
-                }
                 EventResponse::ReceivableEventChanges(ref mut rec) => {
                     self.process_receivable_event_changes(el_id, rec);
 
@@ -348,7 +373,6 @@ impl ElementOrganizer {
                     let rec_for_higher = ReceivableEventChanges::new(add_, rec.remove.clone());
                     *r = EventResponse::ReceivableEventChanges(rec_for_higher);
                 }
-                _ => {}
             }
         }
         resps.extend(extend_resps.0.drain(..));
@@ -510,23 +534,24 @@ impl ElementOrganizer {
         //debug!("post-refresh prioritizer: {:?}", self.prioritizer.borrow());
     }
 
-    // change_priority_for_el updates a child element (el_id) to a new priority. It does
+    // change_priority_for_el updates a child element to a new priority. It does
     // this by asking the child element to return its registered events w/
     // priorities updated to a given priority.
     pub fn change_priority_for_el(
-        &self, ctx: &Context, el_id: ElementID, pr: Priority,
+        &self, el_id: &ElementID, pr: Priority,
     ) -> ReceivableEventChanges {
         let details = self
-            .get_element_details(&el_id)
+            .get_element_details(el_id)
             .expect("no element for destination id"); // TODO log
 
-        let child_ctx = self.get_context_for_el(ctx, &details);
+        //let child_ctx = self.get_context_for_el(higher_ctx, &details);
+        //let rec = details.el.change_priority(&child_ctx, pr);
 
         // NOTE these changes are the changes for
         // THIS element organizer (not the child element)
-        let changes = details.el.change_priority(&child_ctx, pr);
-        self.process_receivable_event_changes(&el_id, &changes);
-        changes
+        let rec = details.el.change_priority(pr);
+        self.process_receivable_event_changes(el_id, &rec);
+        rec
     }
 
     // get_el_id_z_order_under_mouse returns a list of all Elements whose locations
@@ -708,7 +733,7 @@ impl ElementOrganizer {
     //    let child_ctx = self.get_context_for_el(ctx, &details);
     //    let (captured, mut resps) = details.el.borrow_mut().receive_event(&child_ctx, ev);
 
-    //    self.partially_process_ev_resps(ctx, &el_id, &mut resps);
+    //    self.partially_process_ev_resps(&el_id, &mut resps);
     //    (captured, resps)
     //}
 }

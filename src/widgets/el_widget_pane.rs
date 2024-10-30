@@ -402,14 +402,15 @@ impl Element for WidgetPane {
         self.pane.receive_event(ctx, ev)
     }
 
-    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
-        let mut rec = if p == Priority::Unfocused {
-            self.unselect_selected_widget_process_resp(ctx)
-        } else {
-            ReceivableEventChanges::default()
-        };
-        rec.concat(self.pane.change_priority(ctx, p));
-        rec
+    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
+        //let mut rec = if p == Priority::Unfocused {
+        //    self.unselect_selected_widget_process_resp(ctx)
+        //} else {
+        //ReceivableEventChanges::default()
+        //};
+        //rec.concat(self.pane.change_priority( p));
+        //rec
+        self.pane.change_priority(p)
     }
 
     // TODO can integrate in once trait upcasting is available

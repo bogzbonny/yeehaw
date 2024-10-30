@@ -647,8 +647,8 @@ impl Element for MenuBar {
         }
     }
 
-    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
-        self.pane.change_priority(ctx, p)
+    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
+        self.pane.change_priority( p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         if !*self.get_visible().borrow() {
@@ -740,8 +740,8 @@ impl Element for MenuItem {
         }
     }
 
-    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
-        self.pane.change_priority(ctx, p)
+    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
+        self.pane.change_priority( p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         if !*self.get_visible().borrow() {

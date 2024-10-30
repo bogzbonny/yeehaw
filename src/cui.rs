@@ -64,7 +64,7 @@ impl Cui {
         let loc = DynLocationSet::new(loc, vec![], 0);
         main_el.set_dyn_location_set(loc);
         main_el.set_visible(true);
-        main_el.change_priority(&ctx, Priority::Focused);
+        main_el.change_priority(Priority::Focused);
 
         // when adding the main element, nil is passed in as the parent
         // this is because the top of the tree is the CUI's main EO and so no parent

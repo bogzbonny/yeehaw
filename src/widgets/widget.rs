@@ -85,11 +85,11 @@ pub trait Widget: Element {
             Selectability::Selected => {
                 self.set_attr_selectability(s); // NOTE needs to happen before the next line or
                                                 // else receivable will return the wrong value
-                rec.set_add_evs(self.receivable())
+                rec.push_add_evs(self.receivable())
             }
             Selectability::Ready | Selectability::Unselectable => {
                 if let Selectability::Selected = attr_sel {
-                    rec.set_remove_evs(
+                    rec.push_remove_evs(
                         self.receivable().iter().map(|(ev, _)| ev.clone()).collect(),
                     );
                 }
@@ -590,8 +590,8 @@ impl Element for WidgetBase {
         (false, EventResponses::default())
     }
 
-    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
-        self.pane.change_priority(ctx, p)
+    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
+        self.pane.change_priority( p)
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {

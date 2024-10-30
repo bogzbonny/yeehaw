@@ -53,7 +53,7 @@ pub trait Element: dyn_clone::DynClone {
     //
     // In all cases the reponse of this function is intended to be passed to the element's
     // parent's event prioritizer.
-    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges;
+    fn change_priority(&self, p: Priority) -> ReceivableEventChanges;
 
     // Get the element's full drawing for the provided context.
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos>;

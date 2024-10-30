@@ -176,8 +176,8 @@ impl Element for FileNavPane {
         }
         (true, EventResponses::default())
     }
-    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
-        self.pane.change_priority(ctx, p)
+    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
+        self.pane.change_priority( p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.update_content(ctx);

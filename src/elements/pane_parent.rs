@@ -131,49 +131,48 @@ impl ParentPane {
         ElementOrganizer::generate_perceived_priorities(pr, pes)
     }
 
-    pub fn change_priority_for_el(
-        &self, ctx: &Context, el_id: ElementID, p: Priority,
-    ) -> ReceivableEventChanges {
-        let mut ic = self.eo.change_priority_for_el(ctx, el_id, p);
-        let mut to_add = vec![];
-
-        // Check if any of the ic.remove match pane.self_evs. If so, add those events to
-        // the ic.add.
-        //
-        // NOTE: this is necessary because:
-        // 1. An event passed in the ic.remove will remove ALL instances of an
-        // event registered to the ElementOrganizer (eo) of the parent of this
-        // element. This is true because all events in the parent of this element
-        // are registered with the ID of THIS element.
-        //    e.g. if EventX is being passed in the ic.remove and EventX occurs
-        //    twice in the prioritizer of the EO of the parent of this element, BOTH
-        //    instances of EventX will be removed when the EO processes the
-        //    ReceivableEventChanges.
-        // 2. If this element has registered EventX as a SelfEv and EventX is also
-        // passed up in the ic.remove, then EventX will be removed from the parent
-        // organizer and this element will no longer be able to recieve EventX even
-        // though it still wants to.
-        //
-        // NOTE: Leaving the remove event in the ic.remove removes artifacts further
-        // up the tree. i.e, if we simply remove the event from the ic.remove, then
-        // the parent of this element will have an artifact registration for an
-        // event that serves no purpose.
-        //
-        // NOTE: If there are duplicate events in the ic.remove, then the
-        // following code will add duplicate events to the ic.add. This will
-        // result in duplicate events registered with the same priority and ID in
-        // this element's parent. This seems harmless and is probably more efficient
-        // than checking for duplicates.
-        for rm in ic.remove.iter() {
-            for self_ev in self.pane.self_evs.borrow().0.iter() {
-                if *rm == self_ev.0 {
-                    to_add.push((self_ev.0.clone(), self_ev.1));
-                }
-            }
-        }
-        ic.set_add_evs(to_add);
-        ic
-    }
+    //pub fn change_priority_for_el(
+    //    &self, ctx: &Context, el_id: ElementID, p: Priority,
+    //) -> ReceivableEventChanges {
+    //    let mut ic = self.eo.change_priority_for_el(ctx, el_id, p);
+    //    let mut to_add = vec![];
+    //    // Check if any of the ic.remove match pane.self_evs. If so, add those events to
+    //    // the ic.add.
+    //    //
+    //    // NOTE: this is necessary because:
+    //    // 1. An event passed in the ic.remove will remove ALL instances of an
+    //    // event registered to the ElementOrganizer (eo) of the parent of this
+    //    // element. This is true because all events in the parent of this element
+    //    // are registered with the ID of THIS element.
+    //    //    e.g. if EventX is being passed in the ic.remove and EventX occurs
+    //    //    twice in the prioritizer of the EO of the parent of this element, BOTH
+    //    //    instances of EventX will be removed when the EO processes the
+    //    //    ReceivableEventChanges.
+    //    // 2. If this element has registered EventX as a SelfEv and EventX is also
+    //    // passed up in the ic.remove, then EventX will be removed from the parent
+    //    // organizer and this element will no longer be able to recieve EventX even
+    //    // though it still wants to.
+    //    //
+    //    // NOTE: Leaving the remove event in the ic.remove removes artifacts further
+    //    // up the tree. i.e, if we simply remove the event from the ic.remove, then
+    //    // the parent of this element will have an artifact registration for an
+    //    // event that serves no purpose.
+    //    //
+    //    // NOTE: If there are duplicate events in the ic.remove, then the
+    //    // following code will add duplicate events to the ic.add. This will
+    //    // result in duplicate events registered with the same priority and ID in
+    //    // this element's parent. This seems harmless and is probably more efficient
+    //    // than checking for duplicates.
+    //    for rm in ic.remove.iter() {
+    //        for self_ev in self.pane.self_evs.borrow().0.iter() {
+    //            if *rm == self_ev.0 {
+    //                to_add.push((self_ev.0.clone(), self_ev.1));
+    //            }
+    //        }
+    //    }
+    //    ic.push_add_evs(to_add);
+    //    ic
+    //}
 
     // -------------------------------------
     // Element functions
@@ -298,21 +297,21 @@ impl Element for ParentPane {
     //     priorities" are the effective priority FROM the perspective of the
     //     element ABOVE this element in the tree.
 
-    fn change_priority(&self, ctx: &Context, pr: Priority) -> ReceivableEventChanges {
+    fn change_priority(&self, pr: Priority) -> ReceivableEventChanges {
         // first change the priority of the self evs. These are "this elements
         // priority changes". NO changes should be made to the childen,
         // the perceived priorities of the children should be interpreted.
-        let mut ic = self.pane.change_priority(ctx, pr);
+        let mut rec = self.pane.change_priority( pr);
 
         // update the perceived priorities of the children
         for (_, el_details) in self.eo.els.borrow().iter() {
             let pes = el_details.el.receivable(); // self evs (and child eo's evs)
             for pe in ElementOrganizer::generate_perceived_priorities(pr, pes) {
-                ic.update_priority_for_ev(pe.0, pe.1);
+                rec.update_priority_for_ev(pe.0, pe.1);
             }
         }
 
-        ic
+        rec
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {

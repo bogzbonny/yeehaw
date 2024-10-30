@@ -178,8 +178,8 @@ impl Element for PaneScrollable {
         }
     }
 
-    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
-        self.pane.change_priority(ctx, p)
+    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
+        self.pane.change_priority( p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let inner_ctx = self.inner_ctx(ctx);
@@ -367,8 +367,8 @@ impl PaneWithScrollbars {
         }
 
         pane.add_element(Box::new(inner_pane.clone()));
-        inner_pane.change_priority(ctx, Priority::Focused);
-        pane.change_priority(ctx, Priority::Focused);
+        inner_pane.change_priority( Priority::Focused);
+        pane.change_priority( Priority::Focused);
 
         Self {
             pane,
@@ -443,8 +443,8 @@ impl Element for PaneWithScrollbars {
         }
         out
     }
-    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
-        self.pane.change_priority(ctx, p)
+    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
+        self.pane.change_priority( p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.ensure_scrollbar_size(ctx);

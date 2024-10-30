@@ -1,14 +1,20 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+
 01. multiple terminal windows focus and panic 
     - I THINK because the ParentPane isn't focusing/defocusing so
       not the receivable events are changing only what's registered to the 
       ParentPane.pane which is nothing?!
     - okay - how do we make the window REfocus when it's selected again??!
-      - do we change priority to use priority + Z-index??
+      - do we change priority to use priority + Z-index?? NOPE
       - do we send back a new event to the Parent to "unfocus all other elements"
-        then refocus this element
+        then refocus this element YUP
+      - We need ctx on change priority BECAUSE for widgets, changing priority
+        means deselecting other widgets which means they need 
+
+
+    
 
 01. window_test scrollable_windows seem to scroll 1 too far!
 

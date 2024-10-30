@@ -337,7 +337,7 @@ impl Element for Pane {
     // as to update the priority of all commands registered to this element.
     // The element iterates through its registered cmds/evCombos, and returns a
     // priority change request for each one.
-    fn change_priority(&self, _: &Context, p: Priority) -> ReceivableEventChanges {
+    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
         // update the priority of all registered events
         for pef in self.self_evs.borrow_mut().iter_mut() {
             pef.1 = p;

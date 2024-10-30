@@ -442,8 +442,8 @@ impl Element for DropdownList {
         (false, EventResponses::default())
     }
 
-    fn change_priority(&self, ctx: &Context, p: Priority) -> ReceivableEventChanges {
-        self.base.change_priority(ctx, p)
+    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
+        self.base.change_priority( p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.base.set_content_from_string(ctx, &self.text(ctx));
