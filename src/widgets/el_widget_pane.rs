@@ -123,15 +123,18 @@ impl WidgetPane {
         for resp in resps.0.iter_mut() {
             let mut modified_resp = None;
             match resp {
-                EventResponse::NewElement(new_el) => {
+                // NOTE currently only new element extra responses are not processed!!!
+                //      all this widget functionality needs to be refactored to reuse the
+                //      organizer
+                EventResponse::NewElement(new_el, _) => {
                     // adjust right click menu location to the widget
                     // location which made the request
                     let loc = self.widgets.borrow()[widget_index].1.borrow().clone();
                     new_el
-                        .borrow()
                         .get_dyn_location_set()
                         .borrow_mut()
                         .adjust_locations_by(loc.l.start_x.clone(), loc.l.start_y.clone());
+                    new_el.set_parent(Box::new(self.pane.clone()));
                 }
                 EventResponse::Metadata(k, _) => {
                     if k == RESP_DEACTIVATE {

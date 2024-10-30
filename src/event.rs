@@ -1,7 +1,6 @@
 use {
     crate::{prioritizer::Priority, Element},
     std::ops::{Deref, DerefMut},
-    std::{cell::RefCell, rc::Rc},
 };
 
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -218,40 +217,15 @@ impl KeyPossibility {
 
 // -------------------------------------------------------------------------------------
 
-#[derive(Default, Debug)]
-pub struct EventResponses(pub Vec<EventResponse>);
-
-impl From<EventResponse> for EventResponses {
-    fn from(er: EventResponse) -> EventResponses {
-        EventResponses(vec![er])
+impl From<Box<dyn Element>> for EventResponse {
+    fn from(el: Box<dyn Element>) -> EventResponse {
+        EventResponse::NewElement(el, None)
     }
 }
 
-impl Deref for EventResponses {
-    type Target = Vec<EventResponse>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for EventResponses {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl EventResponses {
-    // retrieves only the ReceivableEventChanges from the EventResponses
-    // and concats them together
-    pub fn get_receivable_event_changes(&self) -> ReceivableEventChanges {
-        let mut rec = ReceivableEventChanges::default();
-        for er in &self.0 {
-            if let EventResponse::ReceivableEventChanges(r) = er {
-                rec.concat(r.clone());
-            }
-        }
-        rec
+impl From<()> for EventResponse {
+    fn from(_: ()) -> EventResponse {
+        EventResponse::None
     }
 }
 
@@ -271,13 +245,18 @@ pub enum EventResponse {
     // bring this element to the front (greatest z-index)
     BringToFront,
 
+    // defocus all other elements
+    DefocusOthers,
+
     // create an element, its location will be adjusted
     // by the elements current location.
     //
     // this response can be used to create a window
     // or when used in conjunction with destruct, it can be used to replace
     // the current element with another.
-    NewElement(Rc<RefCell<dyn Element>>),
+    // Additionally EventResponses can be passed with the new element,
+    // these EventResponses are then considered to have come from the new element
+    NewElement(Box<(dyn Element)>, Option<EventResponses>),
 
     // arbitrary custom metadatas which can be passed back to the parent
     //       key,   , value
@@ -294,7 +273,13 @@ impl std::fmt::Debug for EventResponse {
             EventResponse::Quit => write!(f, "EventResponse::Quit"),
             EventResponse::Destruct => write!(f, "EventResponse::Destruct"),
             EventResponse::BringToFront => write!(f, "EventResponse::BringToFront"),
-            EventResponse::NewElement(_) => write!(f, "EventResponse::NewElement"),
+            EventResponse::DefocusOthers => write!(f, "EventResponse::DefocusOthers"),
+            EventResponse::NewElement(el, resp) => write!(
+                f,
+                "EventResponse::NewElement id: {:?}, resp: {:?}",
+                el.id(),
+                resp
+            ),
             EventResponse::Metadata(k, v) => write!(f, "EventResponse::Metadata({}, {:?})", k, v),
             EventResponse::ReceivableEventChanges(rec) => {
                 write!(f, "EventResponse::ReceivableEventChanges({:?})", rec)
@@ -391,5 +376,54 @@ impl ReceivableEventChanges {
     pub fn concat(&mut self, rec: ReceivableEventChanges) {
         self.remove.extend(rec.remove);
         self.add.extend(rec.add);
+    }
+}
+
+#[derive(Default, Debug)]
+pub struct EventResponses(pub Vec<EventResponse>);
+
+impl From<EventResponse> for EventResponses {
+    fn from(er: EventResponse) -> EventResponses {
+        EventResponses(vec![er])
+    }
+}
+
+impl From<Vec<EventResponse>> for EventResponses {
+    fn from(v: Vec<EventResponse>) -> EventResponses {
+        EventResponses(v)
+    }
+}
+
+impl From<()> for EventResponses {
+    fn from(_: ()) -> EventResponses {
+        EventResponses::default()
+    }
+}
+
+impl Deref for EventResponses {
+    type Target = Vec<EventResponse>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for EventResponses {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl EventResponses {
+    // retrieves only the ReceivableEventChanges from the EventResponses
+    // and concats them together
+    pub fn get_receivable_event_changes(&self) -> ReceivableEventChanges {
+        let mut rec = ReceivableEventChanges::default();
+        for er in &self.0 {
+            if let EventResponse::ReceivableEventChanges(r) = er {
+                rec.concat(r.clone());
+            }
+        }
+        rec
     }
 }

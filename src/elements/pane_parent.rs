@@ -1,8 +1,8 @@
 use {
     crate::{
         Context, DrawCh, DrawChPos, DynLocation, DynLocationSet, DynVal, Element, ElementID,
-        ElementOrganizer, Event, EventResponses, Pane, Parent, Priority, ReceivableEventChanges,
-        SortingHat, Style, ZIndex,
+        ElementOrganizer, Event, EventResponse, EventResponses, Pane, Parent, Priority,
+        ReceivableEventChanges, SortingHat, Style, ZIndex,
     },
     std::collections::HashMap,
     std::{
@@ -113,9 +113,8 @@ impl ParentPane {
         self
     }
 
-    pub fn add_element(&self, el: Rc<RefCell<dyn Element>>) -> ReceivableEventChanges {
-        self.eo
-            .add_element(el.clone(), Some(Box::new(self.clone())))
+    pub fn add_element(&self, el: Box<dyn Element>) -> ReceivableEventChanges {
+        self.eo.add_element(el, Some(Box::new(self.clone())))
     }
 
     pub fn remove_element(&self, el_id: &ElementID) {
@@ -180,13 +179,48 @@ impl ParentPane {
     // Element functions
 
     //pub fn get_element_by_id(&self, el_id: &ElementID) -> Option<Rc<RefCell<dyn Element>>> {
-    pub fn get_element(&self, el_id: &ElementID) -> Option<Rc<RefCell<dyn Element>>> {
+    pub fn get_element(&self, el_id: &ElementID) -> Option<Box<dyn Element>> {
         self.eo.get_element(el_id)
     }
 
     // TRANSLATION: SetZIndexForElement set_z_index_for_element
     pub fn update_el_z_index(&self, el_id: &ElementID, z: ZIndex) {
         self.eo.update_el_z_index(el_id, z);
+    }
+
+    pub fn focus(&self) {
+        *self.pane.element_priority.borrow_mut() = Priority::Focused;
+        self.pane
+            .self_evs
+            .borrow_mut()
+            .update_priority_for_all(Priority::Focused);
+
+        if let Some(parent) = self.pane.parent.borrow().as_ref() {
+            debug!("ParentPane::focus: has parent");
+            let rec = self.receivable();
+            let rec = ReceivableEventChanges::default()
+                .with_remove_evs(rec.iter().map(|(ev, _)| ev.clone()).collect())
+                .with_add_evs(rec);
+            let resps = EventResponse::ReceivableEventChanges(rec);
+            parent.propagate_responses_upward(&self.id(), resps.into());
+        }
+    }
+
+    pub fn unfocus(&self) {
+        *self.pane.element_priority.borrow_mut() = Priority::Unfocused;
+        self.pane
+            .self_evs
+            .borrow_mut()
+            .update_priority_for_all(Priority::Unfocused);
+
+        if let Some(parent) = self.pane.parent.borrow().as_ref() {
+            let rec = self.receivable();
+            let rec = ReceivableEventChanges::default()
+                .with_remove_evs(rec.iter().map(|(ev, _)| ev.clone()).collect())
+                .with_add_evs(rec);
+            let resps = EventResponse::ReceivableEventChanges(rec);
+            parent.propagate_responses_upward(&self.id(), resps.into());
+        }
     }
 }
 
@@ -272,7 +306,7 @@ impl Element for ParentPane {
 
         // update the perceived priorities of the children
         for (_, el_details) in self.eo.els.borrow().iter() {
-            let pes = el_details.el.borrow().receivable(); // self evs (and child eo's evs)
+            let pes = el_details.el.receivable(); // self evs (and child eo's evs)
             for pe in ElementOrganizer::generate_perceived_priorities(pr, pes) {
                 ic.update_priority_for_ev(pe.0, pe.1);
             }

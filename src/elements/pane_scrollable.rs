@@ -40,7 +40,7 @@ impl PaneScrollable {
         }
     }
 
-    pub fn add_element(&self, el: Rc<RefCell<dyn Element>>) {
+    pub fn add_element(&self, el: Box<dyn Element>) {
         self.pane.add_element(el.clone());
     }
 
@@ -355,7 +355,7 @@ impl PaneWithScrollbars {
             let hook = Box::new(move |ctx, x| inner_pane_.set_content_x_offset(&ctx, x));
             *x_sb.position_changed_hook.borrow_mut() = Some(hook);
             *x_scrollbar.borrow_mut() = Some(x_sb.clone());
-            pane.add_element(Rc::new(RefCell::new(x_sb.clone())));
+            pane.add_element(Box::new(x_sb.clone()));
         }
 
         if !matches!(y_scrollbar_op, VerticalSBPositions::None) {
@@ -363,10 +363,10 @@ impl PaneWithScrollbars {
             let hook = Box::new(move |ctx, y| inner_pane_.set_content_y_offset(&ctx, y));
             *y_sb.position_changed_hook.borrow_mut() = Some(hook);
             *y_scrollbar.borrow_mut() = Some(y_sb.clone());
-            pane.add_element(Rc::new(RefCell::new(y_sb.clone())));
+            pane.add_element(Box::new(y_sb.clone()));
         }
 
-        pane.add_element(Rc::new(RefCell::new(inner_pane.clone())));
+        pane.add_element(Box::new(inner_pane.clone()));
         inner_pane.change_priority(ctx, Priority::Focused);
         pane.change_priority(ctx, Priority::Focused);
 
@@ -380,7 +380,7 @@ impl PaneWithScrollbars {
         }
     }
 
-    pub fn add_element(&self, el: Rc<RefCell<dyn Element>>) {
+    pub fn add_element(&self, el: Box<dyn Element>) {
         self.inner_pane.add_element(el.clone());
     }
     pub fn remove_element(&self, el_id: &ElementID) {

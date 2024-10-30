@@ -11,7 +11,7 @@ use {
 pub struct VerticalStack {
     pub pane: ParentPane,
     #[allow(clippy::type_complexity)]
-    pub els: Rc<RefCell<Vec<Rc<RefCell<dyn Element>>>>>,
+    pub els: Rc<RefCell<Vec<Box<dyn Element>>>>,
     pub last_size: Rc<RefCell<Size>>,
 }
 
@@ -36,14 +36,14 @@ impl VerticalStack {
 
     // add an element to the end of the stack resizing the other elements
     // in order to fit the new element
-    pub fn push(&self, ctx: &Context, el: Rc<RefCell<dyn Element>>) {
+    pub fn push(&self, ctx: &Context, el: Box<dyn Element>) {
         Self::sanitize_el_location(&el);
         self.els.borrow_mut().push(el.clone());
         self.normalize_locations(ctx);
         self.pane.add_element(el);
     }
 
-    pub fn insert(&self, ctx: &Context, idx: usize, el: Rc<RefCell<dyn Element>>) {
+    pub fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>) {
         Self::sanitize_el_location(&el);
         self.els.borrow_mut().insert(idx, el.clone());
         self.normalize_locations(ctx);
@@ -53,7 +53,7 @@ impl VerticalStack {
     pub fn remove(&self, ctx: &Context, idx: usize) {
         let el = self.els.borrow_mut().remove(idx);
         self.normalize_locations(ctx);
-        self.pane.remove_element(&el.borrow().id());
+        self.pane.remove_element(&el.id());
     }
 
     pub fn clear(&self) {
@@ -65,7 +65,7 @@ impl VerticalStack {
         self.els.borrow().len()
     }
 
-    pub fn get(&self, idx: usize) -> Option<Rc<RefCell<dyn Element>>> {
+    pub fn get(&self, idx: usize) -> Option<Box<dyn Element>> {
         self.els.borrow().get(idx).cloned()
     }
 
@@ -101,8 +101,7 @@ impl VerticalStack {
         let avg = els
             .iter()
             .map(|el| {
-                el.borrow()
-                    .get_dyn_location_set()
+                el.get_dyn_location_set()
                     .borrow()
                     .get_height_val(&virtual_context)
             })
@@ -112,13 +111,13 @@ impl VerticalStack {
         DynVal::new_flex(avg_flex)
     }
 
-    fn sanitize_el_location(el: &Rc<RefCell<dyn Element>>) {
-        let mut loc = el.borrow().get_dyn_location_set().borrow().clone();
+    fn sanitize_el_location(el: &Box<dyn Element>) {
+        let mut loc = el.get_dyn_location_set().borrow().clone();
 
         // ignore the x-dimension everything must fit fully
         loc.set_start_x(0.0.into()); // 0
         loc.set_end_x(1.0.into()); // 100%
-        *el.borrow_mut().get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
+        *el.get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
     }
 
     pub fn ensure_normalized_sizes(&self, ctx: &Context) {
@@ -134,7 +133,7 @@ impl VerticalStack {
             .els
             .borrow()
             .iter()
-            .map(|el| el.borrow().get_dyn_location_set().borrow().get_dyn_height())
+            .map(|el| el.get_dyn_location_set().borrow().get_dyn_height())
             .collect();
 
         Self::normalize_heights_to_context(ctx, &mut heights);
@@ -153,10 +152,10 @@ impl VerticalStack {
     pub fn adjust_locations_for_heights(&self, heights: &[DynVal]) {
         let mut y = DynVal::new_fixed(0);
         for (el, height) in self.els.borrow().iter().zip(heights.iter()) {
-            let mut loc = el.borrow().get_dyn_location_set().borrow().clone();
+            let mut loc = el.get_dyn_location_set().borrow().clone();
             loc.set_start_y(y.clone());
             loc.set_dyn_height(height.clone());
-            *el.borrow_mut().get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
+            *el.get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
             y = y.plus(height.clone());
         }
     }
@@ -166,7 +165,7 @@ impl VerticalStack {
 pub struct HorizontalStack {
     pub pane: ParentPane,
     #[allow(clippy::type_complexity)]
-    pub els: Rc<RefCell<Vec<Rc<RefCell<dyn Element>>>>>,
+    pub els: Rc<RefCell<Vec<Box<dyn Element>>>>,
     pub last_size: Rc<RefCell<Size>>,
 }
 
@@ -201,14 +200,14 @@ impl HorizontalStack {
 
     // add an element to the end of the stack resizing the other elements
     // in order to fit the new element
-    pub fn push(&self, ctx: &Context, el: Rc<RefCell<dyn Element>>) {
+    pub fn push(&self, ctx: &Context, el: Box<dyn Element>) {
         Self::sanitize_el_location(&el);
         self.els.borrow_mut().push(el.clone());
         self.normalize_locations(ctx);
         self.pane.add_element(el);
     }
 
-    pub fn insert(&self, ctx: &Context, idx: usize, el: Rc<RefCell<dyn Element>>) {
+    pub fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>) {
         Self::sanitize_el_location(&el);
         self.els.borrow_mut().insert(idx, el.clone());
         self.normalize_locations(ctx);
@@ -218,7 +217,7 @@ impl HorizontalStack {
     pub fn remove(&self, ctx: &Context, idx: usize) {
         let el = self.els.borrow_mut().remove(idx);
         self.normalize_locations(ctx);
-        self.pane.remove_element(&el.borrow().id());
+        self.pane.remove_element(&el.id());
     }
 
     pub fn clear(&self) {
@@ -230,7 +229,7 @@ impl HorizontalStack {
         self.els.borrow().len()
     }
 
-    pub fn get(&self, idx: usize) -> Option<Rc<RefCell<dyn Element>>> {
+    pub fn get(&self, idx: usize) -> Option<Box<dyn Element>> {
         self.els.borrow().get(idx).cloned()
     }
 
@@ -266,8 +265,7 @@ impl HorizontalStack {
         let avg = els
             .iter()
             .map(|el| {
-                el.borrow()
-                    .get_dyn_location_set()
+                el.get_dyn_location_set()
                     .borrow()
                     .get_width_val(&virtual_context)
             })
@@ -277,13 +275,13 @@ impl HorizontalStack {
         DynVal::new_flex(avg_flex)
     }
 
-    fn sanitize_el_location(el: &Rc<RefCell<dyn Element>>) {
-        let mut loc = el.borrow().get_dyn_location_set().borrow().clone();
+    fn sanitize_el_location(el: &Box<dyn Element>) {
+        let mut loc = el.get_dyn_location_set().borrow().clone();
 
         // ignore the y-dimension everything must fit fully
         loc.set_start_y(0.0.into()); // 0
         loc.set_end_y(1.0.into()); // 100%
-        *el.borrow_mut().get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
+        *el.get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
     }
 
     pub fn ensure_normalized_sizes(&self, ctx: &Context) {
@@ -299,7 +297,7 @@ impl HorizontalStack {
             .els
             .borrow()
             .iter()
-            .map(|el| el.borrow().get_dyn_location_set().borrow().get_dyn_width())
+            .map(|el| el.get_dyn_location_set().borrow().get_dyn_width())
             .collect();
 
         Self::normalize_widths_to_context(ctx, &mut widths);
@@ -318,10 +316,10 @@ impl HorizontalStack {
     pub fn adjust_locations_for_widths(&self, widths: &[DynVal]) {
         let mut x = DynVal::new_fixed(0);
         for (el, width) in self.els.borrow().iter().zip(widths.iter()) {
-            let mut loc = el.borrow().get_dyn_location_set().borrow().clone();
+            let mut loc = el.get_dyn_location_set().borrow().clone();
             loc.set_start_x(x.clone());
             loc.set_dyn_width(width.clone());
-            *el.borrow_mut().get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
+            *el.get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
             x = x.plus(width.clone());
         }
     }
@@ -465,16 +463,16 @@ trait StackTr {
     const KIND: &'static str;
     fn new(hat: &SortingHat) -> Self;
     fn new_with_kind(hat: &SortingHat, kind: &'static str) -> Self;
-    fn push(&self, ctx: &Context, el: Rc<RefCell<dyn Element>>);
-    fn insert(&self, ctx: &Context, idx: usize, el: Rc<RefCell<dyn Element>>);
+    fn push(&self, ctx: &Context, el: Box<dyn Element>);
+    fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>);
     fn remove(&self, ctx: &Context, idx: usize);
     fn clear(&self);
     fn len(&self) -> usize;
-    fn get(&self, idx: usize) -> Option<Rc<RefCell<dyn Element>>>;
+    fn get(&self, idx: usize) -> Option<Box<dyn Element>>;
     fn is_empty(&self) -> bool;
     fn with_style(self, style: Style) -> Self;
     fn with_transparent(self) -> Self;
-    fn sanitize_el_location(el: &Rc<RefCell<dyn Element>>);
+    fn sanitize_el_location(el: &Box<dyn Element>);
     fn ensure_normalized_sizes(&self, ctx: &Context);
     fn normalize_locations(&self, ctx: &Context);
 }
@@ -487,10 +485,10 @@ impl StackTr for VerticalStack {
     fn new_with_kind(hat: &SortingHat, kind: &'static str) -> Self {
         VerticalStack::new_with_kind(hat, kind)
     }
-    fn push(&self, ctx: &Context, el: Rc<RefCell<dyn Element>>) {
+    fn push(&self, ctx: &Context, el: Box<dyn Element>) {
         VerticalStack::push(self, ctx, el)
     }
-    fn insert(&self, ctx: &Context, idx: usize, el: Rc<RefCell<dyn Element>>) {
+    fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>) {
         VerticalStack::insert(self, ctx, idx, el)
     }
     fn remove(&self, ctx: &Context, idx: usize) {
@@ -502,7 +500,7 @@ impl StackTr for VerticalStack {
     fn len(&self) -> usize {
         VerticalStack::len(self)
     }
-    fn get(&self, idx: usize) -> Option<Rc<RefCell<dyn Element>>> {
+    fn get(&self, idx: usize) -> Option<Box<dyn Element>> {
         VerticalStack::get(self, idx)
     }
     fn is_empty(&self) -> bool {
@@ -514,7 +512,7 @@ impl StackTr for VerticalStack {
     fn with_transparent(self) -> Self {
         VerticalStack::with_transparent(self)
     }
-    fn sanitize_el_location(el: &Rc<RefCell<dyn Element>>) {
+    fn sanitize_el_location(el: &Box<dyn Element>) {
         VerticalStack::sanitize_el_location(el)
     }
     fn ensure_normalized_sizes(&self, ctx: &Context) {
@@ -533,10 +531,10 @@ impl StackTr for HorizontalStack {
     fn new_with_kind(hat: &SortingHat, kind: &'static str) -> Self {
         HorizontalStack::new_with_kind(hat, kind)
     }
-    fn push(&self, ctx: &Context, el: Rc<RefCell<dyn Element>>) {
+    fn push(&self, ctx: &Context, el: Box<dyn Element>) {
         HorizontalStack::push(self, ctx, el)
     }
-    fn insert(&self, ctx: &Context, idx: usize, el: Rc<RefCell<dyn Element>>) {
+    fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>) {
         HorizontalStack::insert(self, ctx, idx, el)
     }
     fn remove(&self, ctx: &Context, idx: usize) {
@@ -548,7 +546,7 @@ impl StackTr for HorizontalStack {
     fn len(&self) -> usize {
         HorizontalStack::len(self)
     }
-    fn get(&self, idx: usize) -> Option<Rc<RefCell<dyn Element>>> {
+    fn get(&self, idx: usize) -> Option<Box<dyn Element>> {
         HorizontalStack::get(self, idx)
     }
     fn is_empty(&self) -> bool {
@@ -560,7 +558,7 @@ impl StackTr for HorizontalStack {
     fn with_transparent(self) -> Self {
         HorizontalStack::with_transparent(self)
     }
-    fn sanitize_el_location(el: &Rc<RefCell<dyn Element>>) {
+    fn sanitize_el_location(el: &Box<dyn Element>) {
         HorizontalStack::sanitize_el_location(el)
     }
     fn ensure_normalized_sizes(&self, ctx: &Context) {

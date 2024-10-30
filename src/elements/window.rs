@@ -18,8 +18,8 @@ use {
 #[derive(Clone)]
 pub struct WindowPane {
     pub pane: ParentPane,
-    pub top_bar: Rc<RefCell<dyn Element>>,
-    pub inner: Rc<RefCell<dyn Element>>,
+    pub top_bar: Box<dyn Element>,
+    pub inner: Box<dyn Element>,
     pub dragging: Rc<RefCell<Option<(u16, u16)>>>, // start location of the drag
     pub maximized_restore: Rc<RefCell<Option<DynLocation>>>,
     pub minimized_restore: Rc<RefCell<Option<DynLocation>>>,
@@ -35,24 +35,20 @@ impl WindowPane {
     const WINDOW_MINIMIZE_RESTORE_EV_KEY: &'static str = "window_minimize_restore";
     const WINDOW_RESET_MAXIMIZER_EV_KEY: &'static str = "window_reset_maximizer";
     pub const Z_INDEX: ZIndex = 50;
-    pub fn new(
-        hat: &SortingHat, ctx: &Context, inner: Rc<RefCell<dyn Element>>, title: &str,
-    ) -> Self {
+    pub fn new(hat: &SortingHat, ctx: &Context, inner: Box<dyn Element>, title: &str) -> Self {
         //let vs = VerticalStack::new_with_kind(hat, Self::KIND).with_style(Style::transparent());
         let pane = ParentPane::new(hat, Self::KIND).with_transparent();
-        let top_bar = Rc::new(RefCell::new(BasicWindowTopBar::new(
-            hat, ctx, title, true, true, true,
-        )));
+        let top_bar = Box::new(BasicWindowTopBar::new(hat, ctx, title, true, true, true));
         //debug!(
         //    "***********************************new window pane, pane priority: {}",
         //    pane.pane.get_element_priority()
         //);
 
         // adjust the inner size to account for the top bar
-        let mut loc = inner.borrow().get_dyn_location_set().borrow().clone();
+        let mut loc = inner.get_dyn_location_set().borrow().clone();
         loc.set_start_y(1.into());
         loc.set_dyn_height(DynVal::new_flex(1.).minus(1.into()));
-        inner.borrow().get_dyn_location_set().replace(loc);
+        inner.get_dyn_location_set().replace(loc);
 
         pane.add_element(top_bar.clone());
         pane.add_element(inner.clone());
@@ -100,7 +96,7 @@ impl WindowPane {
             DynVal::new_flex(1.).minus(1.into()),
             DynVal::new_flex(1.).minus(1.into()),
         );
-        self.pane.add_element(Rc::new(RefCell::new(ca)));
+        self.pane.add_element(Box::new(ca));
 
         use crate::organizer::ElDetails;
         let mut eoz: Vec<(ElementID, ElDetails)> = Vec::new();
@@ -189,13 +185,13 @@ impl Element for WindowPane {
                     self.pane.pane.get_height(ctx) as u16 - 1,
                 ));
 
-                let (_, r) = self.inner.borrow().receive_event(&inner_ctx, Event::Resize);
+                let (_, r) = self.inner.receive_event(&inner_ctx, Event::Resize);
                 resps_.extend(r.0);
 
                 // reset the maximizer button
                 if self.maximized_restore.borrow().is_some() {
                     self.maximized_restore.replace(None);
-                    let (_, r) = self.top_bar.borrow().receive_event(
+                    let (_, r) = self.top_bar.receive_event(
                         &Context::default(),
                         Event::Custom(
                             Self::WINDOW_RESET_MAXIMIZER_EV_KEY.to_string(),
@@ -243,12 +239,9 @@ impl Element for WindowPane {
 
                         self.pane.pane.set_dyn_location(restore_loc);
 
-                        let (_, r) = self
-                            .top_bar
-                            .borrow()
-                            .receive_event(&top_bar_ctx, Event::Resize);
+                        let (_, r) = self.top_bar.receive_event(&top_bar_ctx, Event::Resize);
                         resps_.extend(r.0);
-                        let (_, r) = self.inner.borrow().receive_event(&inner_ctx, Event::Resize);
+                        let (_, r) = self.inner.receive_event(&inner_ctx, Event::Resize);
                         resps_.extend(r.0);
 
                         self.maximized_restore.replace(None);
@@ -264,12 +257,9 @@ impl Element for WindowPane {
                         let mut inner_ctx = ctx.clone();
                         inner_ctx.s.height -= 1;
 
-                        let (_, r) = self
-                            .top_bar
-                            .borrow()
-                            .receive_event(&top_bar_ctx, Event::Resize);
+                        let (_, r) = self.top_bar.receive_event(&top_bar_ctx, Event::Resize);
                         resps_.extend(r.0);
-                        let (_, r) = self.inner.borrow().receive_event(&inner_ctx, Event::Resize);
+                        let (_, r) = self.inner.receive_event(&inner_ctx, Event::Resize);
                         resps_.extend(r.0);
 
                         self.maximized_restore.replace(Some(restore_loc));
@@ -303,7 +293,7 @@ impl Element for WindowPane {
                 pane_ctx.s.width = minimize_width;
 
                 // send an event telling the top bar to hide its buttons
-                let (_, r) = self.top_bar.borrow().receive_event(
+                let (_, r) = self.top_bar.receive_event(
                     &pane_ctx,
                     Event::Custom(
                         Self::WINDOW_MINIMIZE_EV_KEY.to_string(),
@@ -313,12 +303,9 @@ impl Element for WindowPane {
                 resps_.extend(r.0);
 
                 // resize events
-                let (_, r) = self
-                    .top_bar
-                    .borrow()
-                    .receive_event(&pane_ctx, Event::Resize);
+                let (_, r) = self.top_bar.receive_event(&pane_ctx, Event::Resize);
                 resps_.extend(r.0);
-                self.inner.borrow().get_visible().replace(false);
+                self.inner.get_visible().replace(false);
                 *resp = EventResponse::None;
                 self.minimized_restore.replace(Some(restore_loc));
                 continue;
@@ -330,13 +317,7 @@ impl Element for WindowPane {
         //    return (captured, resps);
         //}
 
-        let top_height = self
-            .top_bar
-            .borrow()
-            .get_dyn_location_set()
-            .borrow()
-            .l
-            .height(ctx);
+        let top_height = self.top_bar.get_dyn_location_set().borrow().l.height(ctx);
 
         // process dragging
         match ev {
@@ -363,7 +344,7 @@ impl Element for WindowPane {
                         self.pane.pane.set_dyn_location(restore_loc);
 
                         // send an event telling the top bar to hide its buttons
-                        let (_, r) = self.top_bar.borrow().receive_event(
+                        let (_, r) = self.top_bar.receive_event(
                             &pane_ctx,
                             Event::Custom(
                                 Self::WINDOW_MINIMIZE_RESTORE_EV_KEY.to_string(),
@@ -372,12 +353,9 @@ impl Element for WindowPane {
                         );
                         resps_.extend(r.0);
 
-                        let (_, r) = self
-                            .top_bar
-                            .borrow()
-                            .receive_event(&top_bar_ctx, Event::Resize);
+                        let (_, r) = self.top_bar.receive_event(&top_bar_ctx, Event::Resize);
                         resps_.extend(r.0);
-                        self.inner.borrow().get_visible().replace(true);
+                        self.inner.get_visible().replace(true);
 
                         self.minimized_restore.replace(None);
                     }
@@ -449,12 +427,7 @@ impl Element for WindowPane {
         resps.extend(resps_.0);
 
         // check if the inner pane has been removed from the parent in which case close this window
-        if self
-            .pane
-            .eo
-            .get_element(&self.inner.borrow().id())
-            .is_none()
-        {
+        if self.pane.eo.get_element(&self.inner.id()).is_none() {
             resps.push(EventResponse::Destruct);
         }
 
@@ -469,12 +442,7 @@ impl Element for WindowPane {
 
         // check if the inner pane has been removed from the parent in which case close this window
         // NOTE this happens with terminal
-        if self
-            .pane
-            .eo
-            .get_element(&self.inner.borrow().id())
-            .is_none()
-        {
+        if self.pane.eo.get_element(&self.inner.id()).is_none() {
             //resps.push(EventResponse::Destruct);
             self.pane
                 .pane
@@ -513,11 +481,12 @@ impl Element for WindowPane {
     }
 }
 
+#[derive(Clone)]
 pub struct BasicWindowTopBar {
     pub pane: ParentPane,
-    pub maximizer_button: Rc<RefCell<Option<Rc<RefCell<Button>>>>>,
-    pub title: Rc<RefCell<Label>>,
-    pub minimized_decor: Rc<RefCell<Label>>,
+    pub maximizer_button: Rc<RefCell<Option<Box<Button>>>>,
+    pub title: Box<Label>,
+    pub minimized_decor: Box<Label>,
 }
 
 impl BasicWindowTopBar {
@@ -565,7 +534,7 @@ impl BasicWindowTopBar {
                 DynVal::new_flex(1.).minus(button_rhs_spaces.into()),
                 DynVal::new_fixed(0),
             );
-            pane.add_element(Rc::new(RefCell::new(close_button)));
+            pane.add_element(Box::new(close_button));
             button_rhs_spaces += 2;
         }
 
@@ -597,7 +566,7 @@ impl BasicWindowTopBar {
                 DynVal::new_flex(1.).minus(button_rhs_spaces.into()),
                 DynVal::new_fixed(0),
             );
-            let b = Rc::new(RefCell::new(maximize_button));
+            let b = Box::new(maximize_button);
             pane.add_element(b.clone());
             maximizer_button = Some(b);
             button_rhs_spaces += 2;
@@ -624,22 +593,22 @@ impl BasicWindowTopBar {
                 DynVal::new_flex(1.).minus(button_rhs_spaces.into()),
                 DynVal::new_fixed(0),
             );
-            pane.add_element(Rc::new(RefCell::new(minimize_button)));
+            pane.add_element(Box::new(minimize_button));
         }
 
-        let title_label = Rc::new(RefCell::new(
+        let title_label = Box::new(
             Label::new(hat, ctx, title)
                 .with_style(ctx, Style::transparent())
                 .at(DynVal::new_fixed(1), DynVal::new_fixed(0)),
-        ));
-        let decor_label = Rc::new(RefCell::new(
+        );
+        let decor_label = Box::new(
             Label::new(hat, ctx, "◹")
                 .with_style(ctx, Style::transparent())
                 .at(DynVal::new_flex(1.).minus(2.into()), DynVal::new_fixed(0)),
-        ));
+        );
         pane.add_element(title_label.clone());
         pane.add_element(decor_label.clone());
-        decor_label.borrow().get_visible().replace(false);
+        decor_label.get_visible().replace(false);
 
         Self {
             pane,
@@ -652,20 +621,19 @@ impl BasicWindowTopBar {
     /// useful for minimization
     pub fn minimize(&self) {
         self.pane.eo.set_all_visibility(false);
-        self.title.borrow().get_visible().replace(true);
-        self.minimized_decor.borrow().get_visible().replace(true);
+        self.title.get_visible().replace(true);
+        self.minimized_decor.get_visible().replace(true);
     }
 
     /// useful for restore after minimization
     pub fn minimize_restore(&self) {
         self.pane.eo.set_all_visibility(true);
-        self.minimized_decor.borrow().get_visible().replace(false);
+        self.minimized_decor.get_visible().replace(false);
     }
 
     pub fn reset_maximizer_button(&self) {
         let maximizer_button = self.maximizer_button.borrow_mut();
         if let Some(mb) = maximizer_button.as_ref() {
-            let mb = mb.borrow_mut();
             mb.text.replace("□".to_string());
         }
     }
@@ -736,6 +704,7 @@ impl Element for BasicWindowTopBar {
 // ------------------------------------------------
 
 /// a small element (one character) that can be used to send resize requests to parent elements
+#[derive(Clone)]
 pub struct CornerAdjuster {
     pub pane: Pane,
     pub dragging: Rc<RefCell<bool>>,

@@ -79,7 +79,7 @@ impl RightClickMenu {
         self.menu.set_visible(true);
         *self.just_created.borrow_mut() = true;
 
-        Some(EventResponse::NewElement(Rc::new(RefCell::new(self.clone()))).into())
+        Some(EventResponse::NewElement(Box::new(self.clone()), None).into())
     }
 }
 

@@ -6,9 +6,11 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
+dyn_clone::clone_trait_object!(Element);
+
 // Element is the base interface which all viewable elements are
 // expected to fulfill
-pub trait Element {
+pub trait Element: dyn_clone::DynClone {
     // TODO consider removing kind
     fn kind(&self) -> &'static str; // a name for the kind of the element
 
@@ -156,6 +158,8 @@ pub const PRE_LOCATION_CHANGE_HOOK_NAME: &str = "pre-location-change";
 pub const POST_LOCATION_CHANGE_HOOK_NAME: &str = "post-location-change";
 
 // ----------------------------------------
+
+dyn_clone::clone_trait_object!(Parent);
 
 pub trait Parent: dyn_clone::DynClone {
     // The Parent is a trait that a parent element should fulfill which can then be

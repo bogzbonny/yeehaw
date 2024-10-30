@@ -44,13 +44,13 @@ pub struct Cui {
 
 impl Cui {
     pub fn new(
-        main_el: Rc<RefCell<dyn Element>>, exit_tx: Sender<bool>, exit_recv: Receiver<bool>,
+        main_el: Box<dyn Element>, exit_tx: Sender<bool>, exit_recv: Receiver<bool>,
     ) -> Result<Cui, Error> {
         let eo = ElementOrganizer::default();
         let cup = CuiParent::new(eo, exit_tx.clone());
         let cui = Cui {
             cup: cup.clone(),
-            main_el_id: main_el.borrow().id().clone(),
+            main_el_id: main_el.id().clone(),
             kb: Keyboard::default(),
             launch_instant: std::time::Instant::now(),
             kill_on_ctrl_c: true,
@@ -62,11 +62,9 @@ impl Cui {
         let ctx = Context::new_context_for_screen_no_dur(exit_recv);
         let loc = DynLocation::new_fixed(0, ctx.s.width.into(), 0, ctx.s.height.into());
         let loc = DynLocationSet::new(loc, vec![], 0);
-        main_el.borrow_mut().set_dyn_location_set(loc);
-        main_el.borrow_mut().set_visible(true);
-        main_el
-            .borrow_mut()
-            .change_priority(&ctx, Priority::Focused);
+        main_el.set_dyn_location_set(loc);
+        main_el.set_visible(true);
+        main_el.change_priority(&ctx, Priority::Focused);
 
         // when adding the main element, nil is passed in as the parent
         // this is because the top of the tree is the CUI's main EO and so no parent
@@ -116,7 +114,7 @@ impl Cui {
                                     let loc = DynLocation::new_fixed(0, ctx.s.width.into(), 0, ctx.s.height.into());
                                     // There should only be one element at index 0 in the upper level EO
                                     self.cup.eo.update_el_primary_location(self.main_el_id.clone(), loc);
-                                    self.cup.eo.get_element(&self.main_el_id).unwrap().borrow_mut().receive_event(&ctx, Event::Resize{});
+                                    self.cup.eo.get_element(&self.main_el_id).unwrap().receive_event(&ctx, Event::Resize{});
                                     self.clear_screen();
                                     self.render()
                                 }

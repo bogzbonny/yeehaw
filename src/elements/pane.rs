@@ -32,7 +32,7 @@ pub struct Pane {
     // TODO this is only used currently by the ParentPane,
     // consider moving this field into the ParentPane, if nothing
     // else ever uses it.
-    element_priority: Rc<RefCell<Priority>>,
+    pub element_priority: Rc<RefCell<Priority>>,
 
     pub parent: Rc<RefCell<Option<Box<dyn Parent>>>>,
 
@@ -257,6 +257,7 @@ impl Pane {
 
     pub fn propagate_responses_upward(&self, resps: EventResponses) {
         if let Some(parent) = self.parent.borrow().as_ref() {
+            debug!("pane propagate_responses_upward has parent");
             parent.propagate_responses_upward(&self.id(), resps);
         }
     }
@@ -280,6 +281,7 @@ impl Pane {
                         .collect(),
                 )
                 .with_add_evs(self.self_evs.borrow().0.clone());
+            debug!("\trec: {:?}", rec);
             let resps = EventResponse::ReceivableEventChanges(rec);
             parent.propagate_responses_upward(&self.id(), resps.into());
         }
@@ -292,6 +294,7 @@ impl Pane {
             .borrow_mut()
             .update_priority_for_all(Priority::Unfocused);
         if let Some(parent) = self.parent.borrow().as_ref() {
+            debug!("pane unfocus has parent");
             let rec = ReceivableEventChanges::default()
                 .with_remove_evs(
                     self.self_evs
@@ -303,6 +306,7 @@ impl Pane {
                         .collect(),
                 )
                 .with_add_evs(self.self_evs.borrow().0.clone());
+            debug!("\trec: {:?}", rec);
             let resps = EventResponse::ReceivableEventChanges(rec);
             parent.propagate_responses_upward(&self.id(), resps.into());
         }
@@ -530,8 +534,8 @@ impl SelfReceivableEvents {
     }
 
     pub fn update_priority_for_all(&mut self, p: Priority) {
-        for i in 0..self.0.len() {
-            self.0[i].1 = p;
+        for i in self.0.iter_mut() {
+            i.1 = p;
         }
     }
 }

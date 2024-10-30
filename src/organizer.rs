@@ -19,7 +19,7 @@ pub struct ElementOrganizer {
 // element details
 #[derive(Clone)]
 pub struct ElDetails {
-    pub el: Rc<RefCell<dyn Element>>,
+    pub el: Box<dyn Element>,
 
     // NOTE we keep references to the location and visibility within the element
     // rather than just calling into tht element each time to reduce locking.
@@ -28,9 +28,9 @@ pub struct ElDetails {
 }
 
 impl ElDetails {
-    pub fn new(el: Rc<RefCell<dyn Element>>) -> Self {
-        let loc = el.borrow().get_dyn_location_set().clone();
-        let vis = el.borrow().get_visible().clone();
+    pub fn new(el: Box<dyn Element>) -> Self {
+        let loc = el.get_dyn_location_set().clone();
+        let vis = el.get_visible().clone();
         Self { el, loc, vis }
     }
 
@@ -45,25 +45,15 @@ impl ElDetails {
 
 impl ElementOrganizer {
     pub fn add_element(
-        &self, el: Rc<RefCell<dyn Element>>, parent: Option<Box<dyn Parent>>,
+        &self, el: Box<dyn Element>, parent: Option<Box<dyn Parent>>,
     ) -> ReceivableEventChanges {
         // assign the new element id
-        let el_id = el.borrow().id().clone();
+        let el_id = el.id().clone();
 
-        let z = el.borrow().get_dyn_location_set().borrow().z;
+        let z = el.get_dyn_location_set().borrow().z;
 
         // put it at the top of the z-dim (pushing everything else down))
         self.update_el_z_index(&el_id, z);
-
-        let el_details = ElDetails::new(el.clone());
-        self.els.borrow_mut().insert(el_id.clone(), el_details);
-
-        // add the elements recievable events and commands to the prioritizer
-        let receivable_evs = el.borrow().receivable();
-        //debug!("add_element: receivable_evs: {:?}", receivable_evs);
-        self.prioritizer
-            .borrow_mut()
-            .include(&el_id, &receivable_evs);
 
         // give the child element a reference to the parent (the up passed in as an
         // input)
@@ -72,8 +62,19 @@ impl ElementOrganizer {
         // (ex: a sibling initiating a change to inputability, as opposed to this eo
         // passing an event to the child through ReceiveEventKeys)
         if let Some(parent) = parent {
-            el.borrow_mut().set_parent(parent);
+            el.set_parent(parent);
         }
+
+        // add the elements recievable events and commands to the prioritizer
+        let receivable_evs = el.receivable();
+        //debug!("add_element: receivable_evs: {:?}", receivable_evs);
+        self.prioritizer
+            .borrow_mut()
+            .include(&el_id, &receivable_evs);
+
+        let el_details = ElDetails::new(el);
+        self.els.borrow_mut().insert(el_id.clone(), el_details);
+
         ReceivableEventChanges::default().with_add_evs(receivable_evs)
     }
 
@@ -98,7 +99,7 @@ impl ElementOrganizer {
 
     // get_element_by_id returns the element registered under the given id in the eo
     //pub fn get_element_by_id(&self, el_id: &ElementID) -> Option<Rc<RefCell<dyn Element>>> {
-    pub fn get_element(&self, el_id: &ElementID) -> Option<Rc<RefCell<dyn Element>>> {
+    pub fn get_element(&self, el_id: &ElementID) -> Option<Box<dyn Element>> {
         self.els.borrow().get(el_id).map(|ed| ed.el.clone())
     }
 
@@ -227,7 +228,7 @@ impl ElementOrganizer {
     pub fn receivable(&self) -> Vec<(Event, Priority)> {
         let mut out = Vec::new();
         for details in self.els.borrow().values() {
-            let pr_evs = details.el.borrow().receivable();
+            let pr_evs = details.el.receivable();
             out.extend(pr_evs);
         }
         out
@@ -265,7 +266,7 @@ impl ElementOrganizer {
             }
 
             let child_ctx = self.get_context_for_el(ctx, &el_id_z.1);
-            let mut dcps = details.el.borrow().drawing(&child_ctx);
+            let mut dcps = details.el.drawing(&child_ctx);
             for dcp in &mut dcps {
                 dcp.update_colors_for_time_and_pos(ctx);
             }
@@ -301,21 +302,24 @@ impl ElementOrganizer {
             return;
         };
 
+        let mut extend_resps = EventResponses::default();
         for r in resps.0.iter_mut() {
             match r {
-                EventResponse::NewElement(new_el) => {
+                EventResponse::NewElement(new_el, ref mut new_el_resps) => {
                     // adjust the location of the window to be relative to the given element and adds the element
                     // to the element organizer
                     new_el
-                        .borrow()
                         .get_dyn_location_set()
                         .borrow_mut()
                         .adjust_locations_by(
                             details.loc.borrow().l.start_x.clone(),
                             details.loc.borrow().l.start_y.clone(),
                         );
-                    let parent_ = dyn_clone::clone_box(&*parent);
-                    let rec = self.add_element(new_el.clone(), Some(parent_));
+                    let rec = self.add_element(new_el.clone(), Some(parent.clone()));
+                    if let Some(new_el_resps) = new_el_resps {
+                        self.partially_process_ev_resps(&new_el.id(), new_el_resps, parent.clone());
+                        extend_resps.extend(new_el_resps.0.drain(..));
+                    }
                     *r = EventResponse::ReceivableEventChanges(rec);
                 }
                 EventResponse::Destruct => {
@@ -334,8 +338,11 @@ impl ElementOrganizer {
                     // Modify the ReceivableEventChanges to reflect the perceived priorities
                     // of the parent element. Required as this EventResponse is being passed
                     // up the chain further to the next parent element.
-
                     // TODO could remove clones and drain each vec.
+
+                    // NOTE this code breaks the file_nav_test commented out
+                    // XXX
+
                     let add_ =
                         Self::generate_perceived_priorities(parent.get_priority(), rec.add.clone());
                     let rec_for_higher = ReceivableEventChanges::new(add_, rec.remove.clone());
@@ -344,6 +351,7 @@ impl ElementOrganizer {
                 _ => {}
             }
         }
+        resps.extend(extend_resps.0.drain(..));
     }
 
     // generate_perceived_priorities generates the "perceived priorities" of the
@@ -471,7 +479,7 @@ impl ElementOrganizer {
 
         // send EventKeys to element w/ context
         let child_ctx = self.get_context_for_el(ctx, &el_details);
-        let (_, mut resps) = el_details.el.borrow_mut().receive_event(&child_ctx, evs);
+        let (_, mut resps) = el_details.el.receive_event(&child_ctx, evs);
 
         self.partially_process_ev_resps(&el_id, &mut resps, parent);
         Some((el_id, resps))
@@ -492,19 +500,11 @@ impl ElementOrganizer {
         // refresh all children
         for (_, details) in self.els.borrow().iter() {
             let el_ctx = self.get_context_for_el(ctx, details);
-            let _ = details
-                .el
-                .borrow_mut()
-                .receive_event(&el_ctx, Event::Refresh);
-            let _ = details
-                .el
-                .borrow_mut()
-                .receive_event(&el_ctx, Event::Resize);
+            let _ = details.el.receive_event(&el_ctx, Event::Refresh);
+            let _ = details.el.receive_event(&el_ctx, Event::Resize);
 
-            let pe = details.el.borrow().receivable();
-            self.prioritizer
-                .borrow_mut()
-                .include(&details.el.borrow().id(), &pe)
+            let pe = details.el.receivable();
+            self.prioritizer.borrow_mut().include(&details.el.id(), &pe)
         }
 
         //debug!("post-refresh prioritizer: {:?}", self.prioritizer.borrow());
@@ -524,7 +524,7 @@ impl ElementOrganizer {
 
         // NOTE these changes are the changes for
         // THIS element organizer (not the child element)
-        let changes = details.el.borrow_mut().change_priority(&child_ctx, pr);
+        let changes = details.el.change_priority(&child_ctx, pr);
         self.process_receivable_event_changes(&el_id, &changes);
         changes
     }
@@ -567,7 +567,6 @@ impl ElementOrganizer {
                 let ev_adj = details2.loc.borrow().l.adjust_mouse_event_external(ctx, ev);
                 let (_, r) = details2
                     .el
-                    .borrow_mut()
                     .receive_event(&child_ctx, Event::ExternalMouse(ev_adj));
                 el_resps.push((el_id2.clone(), r));
             }
@@ -590,10 +589,7 @@ impl ElementOrganizer {
         let ev_adj = details.loc.borrow().l.adjust_mouse_event(ctx, ev);
 
         // send mouse event to element
-        let (_, mut ev_resps) = details
-            .el
-            .borrow_mut()
-            .receive_event(&child_ctx, Event::Mouse(ev_adj));
+        let (_, mut ev_resps) = details.el.receive_event(&child_ctx, Event::Mouse(ev_adj));
         let parent_ = dyn_clone::clone_box(&*parent);
         self.partially_process_ev_resps(&el_id, &mut ev_resps, parent_);
 
@@ -608,7 +604,6 @@ impl ElementOrganizer {
             let ev_adj = details2.loc.borrow().l.adjust_mouse_event_external(ctx, ev);
             let (_, r) = details2
                 .el
-                .borrow_mut()
                 .receive_event(&child_ctx, Event::ExternalMouse(ev_adj));
             el_resps.push((el_id2.clone(), r));
         }
@@ -637,7 +632,6 @@ impl ElementOrganizer {
                 .adjust_mouse_event_external2(ctx, ev.clone());
             let (_, mut r) = details
                 .el
-                .borrow_mut()
                 .receive_event(&child_ctx, Event::ExternalMouse(ev_adj));
             let parent_ = dyn_clone::clone_box(&*parent);
             self.partially_process_ev_resps(el_id, &mut r, parent_);
@@ -679,7 +673,7 @@ impl ElementOrganizer {
         // increment z-index of the element
         self.els
             .borrow_mut()
-            .entry(el_details.el.borrow().id().clone())
+            .entry(el_details.el.id().clone())
             .and_modify(|ed| ed.loc.borrow_mut().z = z + 1);
     }
 

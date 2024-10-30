@@ -1,8 +1,8 @@
 use {
     crate::{
         Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, ParentPane, Priority, ReceivableEventChanges, SortingHat, Style,
-        Parent, VerticalStack,
+        EventResponses, Parent, ParentPane, Priority, ReceivableEventChanges, SortingHat, Style,
+        VerticalStack,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -17,7 +17,7 @@ use {
 pub struct TabsTop {
     pub pane: ParentPane,
     #[allow(clippy::type_complexity)]
-    pub els: Rc<RefCell<Vec<Rc<RefCell<dyn Element>>>>>,
+    pub els: Rc<RefCell<Vec<Box<dyn Element>>>>,
     pub names: Rc<RefCell<Vec<String>>>, // the tab names
 
     pub selected: Rc<RefCell<Option<usize>>>, // the selected tab
@@ -32,7 +32,7 @@ impl TabsTop {
 
     #[allow(clippy::type_complexity)]
     pub fn new(
-        hat: &SortingHat, els: Rc<RefCell<Vec<Rc<RefCell<dyn Element>>>>>, names: Vec<String>,
+        hat: &SortingHat, els: Rc<RefCell<Vec<Box<dyn Element>>>>, names: Vec<String>,
     ) -> Self {
         let tt = Self {
             pane: ParentPane::new(hat, Self::KIND),
@@ -173,7 +173,7 @@ pub struct Tabs {
     pub pane: VerticalStack,
     pub tabs_top: TabsTop,
     #[allow(clippy::type_complexity)]
-    pub els: Rc<RefCell<Vec<Rc<RefCell<dyn Element>>>>>,
+    pub els: Rc<RefCell<Vec<Box<dyn Element>>>>,
 }
 
 impl Tabs {
@@ -183,7 +183,7 @@ impl Tabs {
         let tabs_top = TabsTop::new(hat, Rc::new(RefCell::new(Vec::new())), Vec::new());
         let pane = VerticalStack::new(hat);
         pane.pane.pane.set_kind(Self::KIND);
-        pane.push(ctx, Rc::new(RefCell::new(tabs_top.clone())));
+        pane.push(ctx, Box::new(tabs_top.clone()));
         Self {
             pane,
             tabs_top,
@@ -193,14 +193,14 @@ impl Tabs {
 
     // add an element to the end of the stack resizing the other elements
     // in order to fit the new element
-    pub fn push<S: Into<String>>(&self, _ctx: &Context, el: Rc<RefCell<dyn Element>>, name: S) {
+    pub fn push<S: Into<String>>(&self, _ctx: &Context, el: Box<dyn Element>, name: S) {
         Self::sanitize_el_location(&el);
         self.els.borrow_mut().push(el.clone());
         self.tabs_top.names.borrow_mut().push(name.into());
     }
 
     pub fn insert<S: Into<String>>(
-        &self, _ctx: &Context, idx: usize, el: Rc<RefCell<dyn Element>>, name: S,
+        &self, _ctx: &Context, idx: usize, el: Box<dyn Element>, name: S,
     ) {
         Self::sanitize_el_location(&el);
         self.els.borrow_mut().insert(idx, el.clone());
@@ -215,23 +215,23 @@ impl Tabs {
         self.els.borrow_mut().clear();
     }
 
-    fn sanitize_el_location(el: &Rc<RefCell<dyn Element>>) {
-        let mut loc = el.borrow().get_dyn_location_set().borrow().clone();
+    fn sanitize_el_location(el: &Box<dyn Element>) {
+        let mut loc = el.get_dyn_location_set().borrow().clone();
         loc.set_start_x(0.0.into()); // 0
         loc.set_end_x(1.0.into()); // 100%
         loc.set_start_y(0.0.into()); // 0
         loc.set_end_y(1.0.into()); // 100%
-        *el.borrow_mut().get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
+        *el.get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
     }
 
     pub fn set_tab_view_pane(&self, ctx: &Context, idx: Option<usize>) {
         if let Some(el) = self.pane.get(1) {
-            el.borrow().set_visible(false);
+            el.set_visible(false);
             self.pane.remove(ctx, 1);
         }
         if let Some(idx) = idx {
             if let Some(el) = self.els.borrow().get(idx) {
-                el.borrow().set_visible(true);
+                el.set_visible(true);
                 self.pane.push(ctx, el.clone());
             }
         }

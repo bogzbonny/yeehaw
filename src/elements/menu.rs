@@ -233,7 +233,7 @@ impl MenuBar {
         };
         item.set_dyn_location_set(loc);
         item.set_visible(vis);
-        self.pane.add_element(Rc::new(RefCell::new(item.clone())));
+        self.pane.add_element(Box::new(item.clone()));
         self.menu_items.borrow_mut().insert(item.id(), item.clone());
         self.menu_items_order.borrow_mut().push(item);
 
@@ -671,7 +671,7 @@ impl Element for MenuBar {
             let s = el_details.loc.borrow().l.get_size(ctx);
             let c = Context::new(s, ctx.dur_since_launch, ctx.exit_recv.clone())
                 .with_metadata(Self::MENU_STYLE_MD_KEY.to_string(), menu_style_bz.clone());
-            let dcps = el_details.el.borrow().drawing(&c);
+            let dcps = el_details.el.drawing(&c);
 
             for mut dcp in dcps {
                 dcp.adjust_by_dyn_location(ctx, &el_details.loc.borrow().l);

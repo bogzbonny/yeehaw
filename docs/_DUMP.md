@@ -1,4 +1,52 @@
 
+05. use .flf (figlet font) format instead of custom megatext
+     - https://docs.rs/figlet-rs/latest/figlet_rs/
+01. alpha not working for bg of debug window in window_test
+01. SB bug, if setting size to flex(1.).minus(fixed(x)) for each x the scrollbar
+    will actually remove two character spaces (instead of expected 1)
+      - I suspect this has to do with the domain_incr
+01. wierd bugs with maximized windows (window_test)
+ - HAS TODO WITH STACK PANE:             self.normalize_locations(ctx); helps
+    - Also when adjusting up the CornerAdjuster gets higher!
+       - seems to be only in the y dir not the x-dir
+       - seems to be in x and y for scrollable pane inside window
+    - create two windows
+    - maximize one
+    - minimize one
+    - the maximized one will not draw on top of the minimized windows 
+      however it likely is receiving the events for the entire screen 
+      as the minimized window cannot be restored until you shrink the 
+      maximized window back.
+    - might be a bug with either parent pane or vertical stack
+01. floating window element
+      - TopBar - title, x button, drag to move the whole window
+      - restore minimize only on upclick
+      - lower righthand triangle for resizing
+      - test with scrollable pane
+      - when maximized, if the corner adjustor is used, then reset the maxizer
+        button to not maximized.
+      - prevent the window from moving further left than the screen... 
+         - this makes the buttons and the corner adjuster stop working
+      - bug; the top bar is receiving events for top row of the inner
+        pane
+01. right click menu is way to large
+    - only in scrollable_panes_test not in widget_test
+    - doesn't occur when the ctx visible region is disabled
+    - choice of visible region seems reasonable
+    - seems to be a part of the drawing routine for pane
+
+01. menu_test seems to not select the final final sub menu (hi in diner) 
+    - NOT due to 9bdebc2 (HEAD -> main, origin/main) made external mouse events relative
+    - definately has to do with the event not being routed to the menubar as if
+      the only item is the menubar then the menu works fine
+
+01. Ensure that HorizontalStack has all the new functions added to VerticalStack
+01. WONT DO - makes things to confusing. make parent Not an Option in Pane
+01. terminal element
+    - https://github.com/a-kenji/tui-term/blob/development/examples/smux.rs
+    - doesn't close window when exit is executed
+01. make window automatically focus when it's selected
+01. BringToFront a new window when it's created
 
 01. tab key not working to go between widgets in pane_scrollable_test (nor
     escape?) - works for scrollablepane now, but not for pane_with_scrollbars
