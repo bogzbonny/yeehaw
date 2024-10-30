@@ -1,6 +1,5 @@
 use {
     //std::env,
-    std::{cell::RefCell, rc::Rc},
     yeehaw::{
         Color, Cui, DynVal, Error, /*Gradient,*/ RadialGradient, SortingHat, TimeGradient,
         WidgetPane,
@@ -87,7 +86,5 @@ async fn main() -> Result<(), Error> {
     let el = WidgetPane::new(&hat).with_bg_color(el_bg);
 
     let (exit_tx, exit_recv) = tokio::sync::watch::channel(false);
-    Cui::new(Rc::new(RefCell::new(el)), exit_tx, exit_recv)?
-        .run()
-        .await
+    Cui::new(Box::new(el), exit_tx, exit_recv)?.run().await
 }

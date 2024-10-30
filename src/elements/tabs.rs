@@ -194,7 +194,7 @@ impl Tabs {
     // add an element to the end of the stack resizing the other elements
     // in order to fit the new element
     pub fn push<S: Into<String>>(&self, _ctx: &Context, el: Box<dyn Element>, name: S) {
-        Self::sanitize_el_location(&el);
+        Self::sanitize_el_location(&*el);
         self.els.borrow_mut().push(el.clone());
         self.tabs_top.names.borrow_mut().push(name.into());
     }
@@ -202,7 +202,7 @@ impl Tabs {
     pub fn insert<S: Into<String>>(
         &self, _ctx: &Context, idx: usize, el: Box<dyn Element>, name: S,
     ) {
-        Self::sanitize_el_location(&el);
+        Self::sanitize_el_location(&*el);
         self.els.borrow_mut().insert(idx, el.clone());
         self.tabs_top.names.borrow_mut().insert(idx, name.into());
     }
@@ -215,7 +215,7 @@ impl Tabs {
         self.els.borrow_mut().clear();
     }
 
-    fn sanitize_el_location(el: &Box<dyn Element>) {
+    fn sanitize_el_location(el: &dyn Element) {
         let mut loc = el.get_dyn_location_set().borrow().clone();
         loc.set_start_x(0.0.into()); // 0
         loc.set_end_x(1.0.into()); // 100%

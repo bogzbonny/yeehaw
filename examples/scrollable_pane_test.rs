@@ -1,6 +1,5 @@
 use {
     //std::env,
-    std::{cell::RefCell, rc::Rc},
     yeehaw::{
         //debug,
         widgets::{
@@ -176,9 +175,7 @@ async fn main() -> Result<(), Error> {
         .to_widgets(&hat, &ctx);
     el.add_widgets(ntb);
 
-    sc_pane.add_element(Rc::new(RefCell::new(el)));
+    sc_pane.add_element(Box::new(el));
 
-    Cui::new(Rc::new(RefCell::new(sc_pane)), exit_tx, exit_recv)?
-        .run()
-        .await
+    Cui::new(Box::new(sc_pane), exit_tx, exit_recv)?.run().await
 }

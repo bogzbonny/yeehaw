@@ -1,16 +1,13 @@
-use {
-    std::{cell::RefCell, rc::Rc},
-    yeehaw::{
-        //debug,
-        Context,
-        Cui,
-        Error,
-        FileNavPane,
-        FileViewerPane,
-        HorizontalStack,
-        SortingHat,
-        VerticalStack,
-    },
+use yeehaw::{
+    //debug,
+    Context,
+    Cui,
+    Error,
+    FileNavPane,
+    FileViewerPane,
+    HorizontalStack,
+    SortingHat,
+    VerticalStack,
 };
 
 #[tokio::main]
@@ -37,14 +34,12 @@ async fn main() -> Result<(), Error> {
             vstack2_.remove(&ctx_, 0);
         }
         nav_.pane.unfocus();
-        let viewer = Rc::new(RefCell::new(FileViewerPane::new(&hat_, &ctx_, path)));
+        let viewer = Box::new(FileViewerPane::new(&hat_, &ctx_, path));
         vstack2_.push(&ctx_, viewer);
     });
     nav.set_open_fn(open_fn);
 
-    hstack.push(&ctx, Rc::new(RefCell::new(nav.clone())));
-    hstack.push(&ctx, Rc::new(RefCell::new(vstack2.clone())));
-    Cui::new(Rc::new(RefCell::new(hstack)), exit_tx, exit_recv)?
-        .run()
-        .await
+    hstack.push(&ctx, Box::new(nav.clone()));
+    hstack.push(&ctx, Box::new(vstack2.clone()));
+    Cui::new(Box::new(hstack), exit_tx, exit_recv)?.run().await
 }

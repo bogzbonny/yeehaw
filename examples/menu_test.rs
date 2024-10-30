@@ -1,9 +1,6 @@
-use {
-    std::{cell::RefCell, rc::Rc},
-    yeehaw::{
-        widgets::{Button, Label},
-        Context, Cui, Error, EventResponses, MenuBar, ParentPane, SortingHat, VerticalStack,
-    },
+use yeehaw::{
+    widgets::{Button, Label},
+    Context, Cui, Error, EventResponses, MenuBar, ParentPane, SortingHat, VerticalStack,
 };
 
 #[tokio::main]
@@ -63,13 +60,13 @@ async fn main() -> Result<(), Error> {
     )
     .at(9.into(), 0.into());
 
-    lower.add_element(Rc::new(RefCell::new(label)));
-    lower.add_element(Rc::new(RefCell::new(btn_a)));
-    lower.add_element(Rc::new(RefCell::new(btn_b)));
-    lower.add_element(Rc::new(RefCell::new(btn_c)));
+    lower.add_element(Box::new(label));
+    lower.add_element(Box::new(btn_a));
+    lower.add_element(Box::new(btn_b));
+    lower.add_element(Box::new(btn_c));
 
-    vstack.push(&ctx, Rc::new(RefCell::new(mb.clone())));
-    vstack.push(&ctx, Rc::new(RefCell::new(lower)));
+    vstack.push(&ctx, Box::new(mb.clone()));
+    vstack.push(&ctx, Box::new(lower));
 
     mb.add_item(&hat, &ctx, "hello/asdg/2222/3".to_string(), None);
     mb.add_item(
@@ -83,7 +80,5 @@ async fn main() -> Result<(), Error> {
     mb.add_item(&hat, &ctx, "world/yosdfjldsffff/asdkjl".to_string(), None);
     mb.add_item(&hat, &ctx, "diner/yoyo/hi/asgd".to_string(), None);
 
-    Cui::new(Rc::new(RefCell::new(vstack)), exit_tx, exit_recv)?
-        .run()
-        .await
+    Cui::new(Box::new(vstack), exit_tx, exit_recv)?.run().await
 }

@@ -37,14 +37,14 @@ impl VerticalStack {
     // add an element to the end of the stack resizing the other elements
     // in order to fit the new element
     pub fn push(&self, ctx: &Context, el: Box<dyn Element>) {
-        Self::sanitize_el_location(&el);
+        Self::sanitize_el_location(&*el);
         self.els.borrow_mut().push(el.clone());
         self.normalize_locations(ctx);
         self.pane.add_element(el);
     }
 
     pub fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>) {
-        Self::sanitize_el_location(&el);
+        Self::sanitize_el_location(&*el);
         self.els.borrow_mut().insert(idx, el.clone());
         self.normalize_locations(ctx);
         self.pane.add_element(el);
@@ -111,7 +111,7 @@ impl VerticalStack {
         DynVal::new_flex(avg_flex)
     }
 
-    fn sanitize_el_location(el: &Box<dyn Element>) {
+    fn sanitize_el_location(el: &dyn Element) {
         let mut loc = el.get_dyn_location_set().borrow().clone();
 
         // ignore the x-dimension everything must fit fully
@@ -201,14 +201,14 @@ impl HorizontalStack {
     // add an element to the end of the stack resizing the other elements
     // in order to fit the new element
     pub fn push(&self, ctx: &Context, el: Box<dyn Element>) {
-        Self::sanitize_el_location(&el);
+        Self::sanitize_el_location(&*el);
         self.els.borrow_mut().push(el.clone());
         self.normalize_locations(ctx);
         self.pane.add_element(el);
     }
 
     pub fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>) {
-        Self::sanitize_el_location(&el);
+        Self::sanitize_el_location(&*el);
         self.els.borrow_mut().insert(idx, el.clone());
         self.normalize_locations(ctx);
         self.pane.add_element(el);
@@ -275,7 +275,7 @@ impl HorizontalStack {
         DynVal::new_flex(avg_flex)
     }
 
-    fn sanitize_el_location(el: &Box<dyn Element>) {
+    fn sanitize_el_location(el: &dyn Element) {
         let mut loc = el.get_dyn_location_set().borrow().clone();
 
         // ignore the y-dimension everything must fit fully
@@ -472,7 +472,7 @@ trait StackTr {
     fn is_empty(&self) -> bool;
     fn with_style(self, style: Style) -> Self;
     fn with_transparent(self) -> Self;
-    fn sanitize_el_location(el: &Box<dyn Element>);
+    fn sanitize_el_location(el: &dyn Element);
     fn ensure_normalized_sizes(&self, ctx: &Context);
     fn normalize_locations(&self, ctx: &Context);
 }
@@ -512,7 +512,7 @@ impl StackTr for VerticalStack {
     fn with_transparent(self) -> Self {
         VerticalStack::with_transparent(self)
     }
-    fn sanitize_el_location(el: &Box<dyn Element>) {
+    fn sanitize_el_location(el: &dyn Element) {
         VerticalStack::sanitize_el_location(el)
     }
     fn ensure_normalized_sizes(&self, ctx: &Context) {
@@ -558,7 +558,7 @@ impl StackTr for HorizontalStack {
     fn with_transparent(self) -> Self {
         HorizontalStack::with_transparent(self)
     }
-    fn sanitize_el_location(el: &Box<dyn Element>) {
+    fn sanitize_el_location(el: &dyn Element) {
         HorizontalStack::sanitize_el_location(el)
     }
     fn ensure_normalized_sizes(&self, ctx: &Context) {

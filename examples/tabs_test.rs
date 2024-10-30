@@ -1,14 +1,11 @@
-use {
-    std::{cell::RefCell, rc::Rc},
-    yeehaw::{
-        //debug,
-        Context,
-        Cui,
-        DebugSizePane,
-        Error,
-        SortingHat,
-        Tabs,
-    },
+use yeehaw::{
+    //debug,
+    Context,
+    Cui,
+    DebugSizePane,
+    Error,
+    SortingHat,
+    Tabs,
 };
 
 #[tokio::main]
@@ -26,12 +23,10 @@ async fn main() -> Result<(), Error> {
     let el2 = DebugSizePane::new(&hat).with_text("tab 2".to_string());
     let el3 = DebugSizePane::new(&hat).with_text("tab 3".to_string());
 
-    tabs.push(&ctx, Rc::new(RefCell::new(el1)), "tab 1");
-    tabs.push(&ctx, Rc::new(RefCell::new(el2)), "tab 2");
-    tabs.push(&ctx, Rc::new(RefCell::new(el3)), "tab 3");
+    tabs.push(&ctx, Box::new(el1), "tab 1");
+    tabs.push(&ctx, Box::new(el2), "tab 2");
+    tabs.push(&ctx, Box::new(el3), "tab 3");
     tabs.select(&ctx, 0);
 
-    Cui::new(Rc::new(RefCell::new(tabs)), exit_tx, exit_recv)?
-        .run()
-        .await
+    Cui::new(Box::new(tabs), exit_tx, exit_recv)?.run().await
 }

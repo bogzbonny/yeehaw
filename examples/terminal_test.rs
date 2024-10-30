@@ -1,7 +1,4 @@
-use {
-    std::{cell::RefCell, rc::Rc},
-    yeehaw::{Context, Cui, Error, SortingHat, TerminalPane},
-};
+use yeehaw::{Context, Cui, Error, SortingHat, TerminalPane};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -15,7 +12,5 @@ async fn main() -> Result<(), Error> {
 
     let pane = TerminalPane::new(&hat, &ctx);
 
-    Cui::new(Rc::new(RefCell::new(pane)), exit_tx, exit_recv)?
-        .run()
-        .await
+    Cui::new(Box::new(pane), exit_tx, exit_recv)?.run().await
 }

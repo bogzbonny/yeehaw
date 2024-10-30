@@ -1,23 +1,19 @@
-use {
-    //std::env,
-    std::{cell::RefCell, rc::Rc},
-    yeehaw::{
-        //debug,
-        widgets::{
-            widget_button::ButtonSides, Button, Checkbox, DropdownList, FigletText, Label, ListBox,
-            NumbersTextBox, RadioButtons, TextBox, Toggle, WBStyles,
-        },
-        Color,
-        Context,
-        Cui,
-        DynVal,
-        Element,
-        Error,
-        EventResponses,
-        Gradient,
-        SortingHat,
-        WidgetPane,
+use yeehaw::{
+    //debug,
+    widgets::{
+        widget_button::ButtonSides, Button, Checkbox, DropdownList, FigletText, Label, ListBox,
+        NumbersTextBox, RadioButtons, TextBox, Toggle, WBStyles,
     },
+    Color,
+    Context,
+    Cui,
+    DynVal,
+    Element,
+    Error,
+    EventResponses,
+    Gradient,
+    SortingHat,
+    WidgetPane,
 };
 
 #[tokio::main]
@@ -186,7 +182,5 @@ async fn main() -> Result<(), Error> {
         .to_widgets(&hat, &ctx);
     el.add_widgets(ntb);
 
-    Cui::new(Rc::new(RefCell::new(el)), exit_tx, exit_recv)?
-        .run()
-        .await
+    Cui::new(Box::new(el), exit_tx, exit_recv)?.run().await
 }

@@ -1,10 +1,23 @@
 use {
     std::{cell::RefCell, rc::Rc},
     yeehaw::{
-        debug,
+        //debug,
         widgets::{Button, HorizontalSBPositions, VerticalSBPositions},
-        ChPlus, Color, Context, Cui, DebugSizePane, DrawCh, DynVal, Element, Error, EventResponse,
-        EventResponses, PaneWithScrollbars, ParentPane, SortingHat, Style, TerminalPane,
+        ChPlus,
+        Color,
+        Context,
+        Cui,
+        DebugSizePane,
+        DrawCh,
+        DynVal,
+        Error,
+        EventResponse,
+        EventResponses,
+        PaneWithScrollbars,
+        ParentPane,
+        SortingHat,
+        Style,
+        TerminalPane,
         WindowPane,
     },
 };
@@ -51,7 +64,7 @@ async fn main() -> Result<(), Error> {
             .with_style(Style::default().with_bg(bg).with_fg(Color::BLACK));
 
         *counter_.borrow_mut() += 1;
-        let window = WindowPane::new(&hat_, &ctx_, Rc::new(RefCell::new(el)), &title)
+        let window = WindowPane::new(&hat_, &ctx_, Box::new(el), &title)
             .with_corner_adjuster(&hat_, &ctx_)
             .at(DynVal::new_fixed(10), DynVal::new_fixed(10))
             .with_height(DynVal::new_fixed(20))
@@ -65,7 +78,7 @@ async fn main() -> Result<(), Error> {
             w.pane.unfocus();
         });
         all_windows_.borrow_mut().push(window.clone());
-        let rec = pp_.add_element(Rc::new(RefCell::new(window.clone())));
+        let rec = pp_.add_element(Box::new(window.clone()));
         window.pane.focus();
         let resps = vec![
             EventResponse::ReceivableEventChanges(rec),
@@ -110,10 +123,10 @@ async fn main() -> Result<(), Error> {
 
         //let sc_pane = PaneScrollable::new(&hat_, 50, 50);
 
-        sc_pane.add_element(Rc::new(RefCell::new(el)));
+        sc_pane.add_element(Box::new(el));
 
         *counter_.borrow_mut() += 1;
-        let window = WindowPane::new(&hat_, &ctx_, Rc::new(RefCell::new(sc_pane)), &title)
+        let window = WindowPane::new(&hat_, &ctx_, Box::new(sc_pane), &title)
             .with_corner_adjuster(&hat_, &ctx_)
             .at(DynVal::new_fixed(10), DynVal::new_fixed(10))
             .with_height(DynVal::new_fixed(20))
@@ -127,7 +140,7 @@ async fn main() -> Result<(), Error> {
             w.pane.unfocus();
         });
         all_windows_.borrow_mut().push(window.clone());
-        let rec = pp_.add_element(Rc::new(RefCell::new(window.clone())));
+        let rec = pp_.add_element(Box::new(window.clone()));
         window.pane.focus();
         let resps = vec![
             EventResponse::ReceivableEventChanges(rec),
@@ -151,7 +164,7 @@ async fn main() -> Result<(), Error> {
             .with_height(DynVal::new_flex(1.));
 
         *counter_.borrow_mut() += 1;
-        let window = WindowPane::new(&hat_, &ctx_, Rc::new(RefCell::new(el)), &title)
+        let window = WindowPane::new(&hat_, &ctx_, Box::new(el), &title)
             .with_corner_adjuster(&hat_, &ctx_)
             .at(DynVal::new_fixed(10), DynVal::new_fixed(10))
             .with_height(DynVal::new_fixed(20))
@@ -165,7 +178,7 @@ async fn main() -> Result<(), Error> {
             w.pane.unfocus();
         });
         all_windows_.borrow_mut().push(window.clone());
-        let rec = pp_.add_element(Rc::new(RefCell::new(window.clone())));
+        let rec = pp_.add_element(Box::new(window.clone()));
         window.pane.focus();
         let resps = vec![
             EventResponse::ReceivableEventChanges(rec),
@@ -182,11 +195,9 @@ async fn main() -> Result<(), Error> {
         .at(15.into(), 1.into());
     let add_button3 =
         Button::new(&hat, &ctx, "add_terminal_window", add_term_click_fn).at(40.into(), 1.into());
-    pp.add_element(Rc::new(RefCell::new(add_button)));
-    pp.add_element(Rc::new(RefCell::new(add_button2)));
-    pp.add_element(Rc::new(RefCell::new(add_button3)));
+    pp.add_element(Box::new(add_button));
+    pp.add_element(Box::new(add_button2));
+    pp.add_element(Box::new(add_button3));
 
-    Cui::new(Rc::new(RefCell::new(pp)), exit_tx, exit_recv)?
-        .run()
-        .await
+    Cui::new(Box::new(pp), exit_tx, exit_recv)?.run().await
 }
