@@ -6,8 +6,8 @@ use crate::{ElementID, Event, Keyboard};
 // Highest priority.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, PartialOrd, Ord)]
 pub enum Priority {
-    Highest,
-    AboveFocused,
+    //Highest,
+    //AboveFocused,
     Focused,
     Unfocused,
 }
@@ -15,8 +15,8 @@ pub enum Priority {
 impl std::fmt::Display for Priority {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Priority::Highest => write!(f, "Highest"),
-            Priority::AboveFocused => write!(f, "AboveFocused"),
+            //Priority::Highest => write!(f, "Highest"),
+            //Priority::AboveFocused => write!(f, "AboveFocused"),
             Priority::Focused => write!(f, "Focused"),
             Priority::Unfocused => write!(f, "Unfocused"),
         }

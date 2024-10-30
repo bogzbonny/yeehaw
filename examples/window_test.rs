@@ -12,7 +12,6 @@ use {
         DynVal,
         Error,
         EventResponse,
-        EventResponses,
         PaneWithScrollbars,
         ParentPane,
         SortingHat,
@@ -38,13 +37,8 @@ async fn main() -> Result<(), Error> {
 
     let counter = Rc::new(RefCell::new(0));
 
-    let all_windows = Rc::new(RefCell::new(Vec::new()));
-
     let hat_ = hat.clone();
     let counter_ = counter.clone();
-    let pp_ = pp.clone();
-    let all_windows_ = all_windows.clone();
-    //let pp_ = pp.clone();
     let add_button_click_fn = Box::new(move |_, mut ctx_: Context| {
         ctx_.s.width = 30;
         ctx_.s.height = 20;
@@ -70,29 +64,16 @@ async fn main() -> Result<(), Error> {
             .with_height(DynVal::new_fixed(20))
             .with_width(DynVal::new_fixed(30));
 
-        // NOTE I'm doing this here instead of passing this through the
-        // buttons event response because I want to call this windows focus()
-        // function after it's been added to the parent pane. (which can't be done here
-        // if I pass it through the event response)
-        all_windows_.borrow().iter().for_each(|w: &WindowPane| {
-            w.pane.unfocus();
-        });
-        all_windows_.borrow_mut().push(window.clone());
-        let rec = pp_.add_element(Box::new(window.clone()));
-        window.pane.focus();
-        let resps = vec![
-            EventResponse::ReceivableEventChanges(rec),
+        let inner_resps = vec![
             EventResponse::BringToFront,
+            EventResponse::UnfocusOthers,
+            EventResponse::Focus,
         ];
-        window.pane.pane.propagate_responses_upward(resps.into());
-
-        EventResponses::default()
+        EventResponse::NewElement(Box::new(window.clone()), Some(inner_resps.into())).into()
     });
 
     let hat_ = hat.clone();
     let counter_ = counter.clone();
-    let pp_ = pp.clone();
-    let all_windows_ = all_windows.clone();
     let add_button_scr_click_fn = Box::new(move |_, mut ctx_: Context| {
         ctx_.s.width = 30;
         ctx_.s.height = 20;
@@ -132,29 +113,16 @@ async fn main() -> Result<(), Error> {
             .with_height(DynVal::new_fixed(20))
             .with_width(DynVal::new_fixed(30));
 
-        // NOTE I'm doing this here instead of passing this through the
-        // buttons event response because I want to call this windows focus()
-        // function after it's been added to the parent pane. (which can't be done here
-        // if I pass it through the event response)
-        all_windows_.borrow().iter().for_each(|w: &WindowPane| {
-            w.pane.unfocus();
-        });
-        all_windows_.borrow_mut().push(window.clone());
-        let rec = pp_.add_element(Box::new(window.clone()));
-        window.pane.focus();
-        let resps = vec![
-            EventResponse::ReceivableEventChanges(rec),
+        let inner_resps = vec![
             EventResponse::BringToFront,
+            EventResponse::UnfocusOthers,
+            EventResponse::Focus,
         ];
-        window.pane.pane.propagate_responses_upward(resps.into());
-
-        EventResponses::default()
+        EventResponse::NewElement(Box::new(window.clone()), Some(inner_resps.into())).into()
     });
 
     let hat_ = hat.clone();
     let counter_ = counter.clone();
-    let pp_ = pp.clone();
-    let all_windows_ = all_windows.clone();
     let add_term_click_fn = Box::new(move |_, mut ctx_: Context| {
         ctx_.s.width = 30;
         ctx_.s.height = 20;
@@ -169,22 +137,6 @@ async fn main() -> Result<(), Error> {
             .at(DynVal::new_fixed(10), DynVal::new_fixed(10))
             .with_height(DynVal::new_fixed(20))
             .with_width(DynVal::new_fixed(30));
-
-        // NOTE I'm doing this here instead of passing this through the
-        // buttons event response because I want to call this windows focus()
-        // function after it's been added to the parent pane. (which can't be done here
-        // if I pass it through the event response)
-        //all_windows_.borrow().iter().for_each(|w: &WindowPane| {
-        //    w.pane.unfocus();
-        //});
-        //all_windows_.borrow_mut().push(window.clone());
-        //let rec = pp_.add_element(Box::new(window.clone()));
-        //window.pane.focus();
-        //let resps = vec![
-        //    EventResponse::ReceivableEventChanges(rec),
-        //    EventResponse::BringToFront,
-        //];
-        //window.pane.pane.propagate_responses_upward(resps.into());
 
         let inner_resps = vec![
             EventResponse::BringToFront,

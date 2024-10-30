@@ -323,8 +323,10 @@ impl Element for WindowPane {
         match ev {
             Event::Mouse(me) => {
                 if let MouseEventKind::Down(_) = me.kind {
-                    self.pane.pane.focus();
-                    resps.push(EventResponse::BringToFront)
+                    //self.pane.pane.focus();
+                    resps.push(EventResponse::BringToFront);
+                    resps.push(EventResponse::UnfocusOthers);
+                    resps.push(EventResponse::Focus);
                 }
 
                 let mr = (*self.minimized_restore.borrow()).clone();
@@ -435,7 +437,7 @@ impl Element for WindowPane {
     }
 
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.pane.change_priority( p)
+        self.pane.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let out = self.pane.drawing(ctx);
@@ -667,7 +669,7 @@ impl Element for BasicWindowTopBar {
         }
     }
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.pane.change_priority( p)
+        self.pane.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.pane.drawing(ctx)
@@ -791,7 +793,7 @@ impl Element for CornerAdjuster {
         (false, EventResponses::default())
     }
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.pane.change_priority( p)
+        self.pane.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.pane.drawing(ctx)

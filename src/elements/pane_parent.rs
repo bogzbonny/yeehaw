@@ -195,8 +195,8 @@ impl ParentPane {
             .update_priority_for_all(Priority::Focused);
 
         if let Some(parent) = self.pane.parent.borrow().as_ref() {
-            debug!("ParentPane::focus: has parent");
             let rec = self.receivable();
+            debug!("ParentPane::focus: has parent. rec: {:?}", rec);
             let rec = ReceivableEventChanges::default()
                 .with_remove_evs(rec.iter().map(|(ev, _)| ev.clone()).collect())
                 .with_add_evs(rec);
@@ -301,7 +301,7 @@ impl Element for ParentPane {
         // first change the priority of the self evs. These are "this elements
         // priority changes". NO changes should be made to the childen,
         // the perceived priorities of the children should be interpreted.
-        let mut rec = self.pane.change_priority( pr);
+        let mut rec = self.pane.change_priority(pr);
 
         // update the perceived priorities of the children
         for (_, el_details) in self.eo.els.borrow().iter() {

@@ -325,8 +325,8 @@ impl ElementOrganizer {
                                 parent.get_priority(),
                                 rec.add.clone(),
                             );
-                            let rec_for_higher =
-                                ReceivableEventChanges::new(add_, rec.remove.clone());
+                            let remove_ = add_.iter().map(|a| a.0.clone()).collect();
+                            let rec_for_higher = ReceivableEventChanges::new(add_, remove_);
                             extend_resps
                                 .push(EventResponse::ReceivableEventChanges(rec_for_higher));
                         }
@@ -337,8 +337,15 @@ impl ElementOrganizer {
                     let rec = self.change_priority_for_el(el_id, Priority::Focused);
                     let add_ =
                         Self::generate_perceived_priorities(parent.get_priority(), rec.add.clone());
-                    let rec_for_higher = ReceivableEventChanges::new(add_, rec.remove.clone());
-                    *r = EventResponse::ReceivableEventChanges(rec_for_higher);
+                    let remove_ = add_.iter().map(|a| a.0.clone()).collect();
+                    let rec_for_higher = ReceivableEventChanges::new(add_, remove_);
+
+                    // NOTE this needs to be added to extend_resps instead of just to *r as
+                    // if UnfocusOthers is called then it is placed in extend_resps and
+                    // will be processed after this *r (AND if this rec_for_higher contains
+                    // duplicate events, they will be removed by the UnfocusOthers call)
+                    extend_resps.push(EventResponse::ReceivableEventChanges(rec_for_higher));
+                    *r = EventResponse::None;
                 }
                 EventResponse::NewElement(new_el, ref mut new_el_resps) => {
                     // adjust the location of the window to be relative to the given element and adds the element
@@ -370,7 +377,8 @@ impl ElementOrganizer {
 
                     let add_ =
                         Self::generate_perceived_priorities(parent.get_priority(), rec.add.clone());
-                    let rec_for_higher = ReceivableEventChanges::new(add_, rec.remove.clone());
+                    let remove_ = add_.iter().map(|a| a.0.clone()).collect();
+                    let rec_for_higher = ReceivableEventChanges::new(add_, remove_);
                     *r = EventResponse::ReceivableEventChanges(rec_for_higher);
                 }
             }
@@ -419,7 +427,7 @@ impl ElementOrganizer {
     //
     // INPUTS
     //   - The real_pes is the real priority events of the child element.
-    //   - The parent_pr is the priority that the parent element is being changed to
+    //   - The parent_pr is the priority of the parent element
     //   - The perceived_pes is the perceived priority events of a child element for
     //     this element for this element's parent (the grandparent of the child).
     pub fn generate_perceived_priorities(
@@ -432,8 +440,7 @@ impl ElementOrganizer {
                 perceived_pes.push((child.0, Priority::Unfocused));
             }
             // leave the children alone! they're fine
-        } else if parent_pr < Priority::Unfocused {
-            // "Focused or greater"
+        } else {
             for child in real_pes {
                 let pr = match true {
                     _ if child.1 == Priority::Unfocused => Priority::Unfocused,

@@ -163,6 +163,11 @@ impl Element for TerminalPane {
         }
         match ev {
             Event::KeyCombo(ref keys) => {
+                debug!(
+                    "TerminalPane({}) receive_event_inner: {:?}",
+                    self.id(),
+                    keys
+                );
                 if let KeyPossibility::Key(key) = &keys[0] {
                     handle_pane_key_event(self, key);
                 }
@@ -188,7 +193,7 @@ impl Element for TerminalPane {
     }
 
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.pane.change_priority( p)
+        self.pane.change_priority(p)
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {

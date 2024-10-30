@@ -1,7 +1,4 @@
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
 01. multiple terminal windows focus and panic 
     - I THINK because the ParentPane isn't focusing/defocusing so
       not the receivable events are changing only what's registered to the 
@@ -13,8 +10,7 @@
       - We need ctx on change priority BECAUSE for widgets, changing priority
         means deselecting other widgets which means they need 
 
-
-    
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 01. window_test scrollable_windows seem to scroll 1 too far!
 
