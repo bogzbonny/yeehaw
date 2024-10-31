@@ -1,10 +1,26 @@
 use {
     crate::{
-        widgets::TextBox, Context, DrawCh, DrawChPos, DrawChs2D, DynLocationSet, DynVal, Element,
-        ElementID, Event, EventResponses, Parent, ParentPane, Priority, ReceivableEventChanges,
-        SortingHat, Style, TerminalPane, ZIndex,
+        //widgets::TextBox,
+        Context,
+        DrawCh,
+        DrawChPos,
+        //DrawChs2D,
+        DynLocationSet,
+        DynVal,
+        Element,
+        ElementID,
+        Event,
+        EventResponses,
+        Parent,
+        ParentPane,
+        Priority,
+        ReceivableEventChanges,
+        SortingHat,
+        //Style,
+        //TerminalPane,
+        ZIndex,
     },
-    portable_pty::CommandBuilder,
+    //portable_pty::CommandBuilder,
     std::{cell::RefCell, rc::Rc},
 };
 
@@ -23,13 +39,18 @@ impl TermEditorPane {
         let editor: Option<String> = std::env::var("EDITOR").ok();
         let pane = ParentPane::new(hat, Self::KIND);
 
-        let out = Self {
+        //let out = Self {
+        //    pane,
+        //    editor,
+        //    text: Rc::new(RefCell::new(String::new())),
+        //};
+        //out.open_editor();
+        //out
+        Self {
             pane,
             editor,
             text: Rc::new(RefCell::new(String::new())),
-        };
-        //out.open_editor();
-        out
+        }
     }
 
     //pub fn open_editor(&self) {
