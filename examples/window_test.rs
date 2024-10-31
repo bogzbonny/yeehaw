@@ -28,8 +28,7 @@ async fn main() -> Result<(), Error> {
     unsafe { std::env::set_var("RUST_BACKTRACE", "1") };
 
     let hat = SortingHat::default();
-    let (exit_tx, exit_recv) = tokio::sync::watch::channel(false);
-    let ctx = Context::new_context_for_screen_no_dur(exit_recv.clone());
+    let ctx = Context::new_context_for_screen_no_dur();
 
     let pp = ParentPane::new(&hat, "parent_pane")
         .with_dyn_height(1.0.into())
@@ -156,5 +155,5 @@ async fn main() -> Result<(), Error> {
     pp.add_element(Box::new(add_button2));
     pp.add_element(Box::new(add_button3));
 
-    Cui::new(Box::new(pp), exit_tx, exit_recv)?.run().await
+    Cui::new(Box::new(pp))?.run().await
 }

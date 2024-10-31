@@ -221,6 +221,10 @@ impl ParentPane {
             parent.propagate_responses_upward(&self.id(), resps.into());
         }
     }
+
+    pub fn exit(&self, ctx: &Context) {
+        self.eo.exit_all(ctx);
+    }
 }
 
 impl Element for ParentPane {
@@ -279,6 +283,10 @@ impl Element for ParentPane {
                     return (true, EventResponses::default());
                 };
                 (true, resps)
+            }
+            Event::Exit => {
+                self.eo.exit_all(ctx);
+                (false, EventResponses::default())
             }
             _ => self.pane.receive_event(ctx, ev),
         }

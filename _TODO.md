@@ -10,6 +10,11 @@
       - We need ctx on change priority BECAUSE for widgets, changing priority
         means deselecting other widgets which means they need 
 
+01. window x button is killing ALL the terminal windows
+
+01. proper shutdown of other threads in terminal pane (terminal_test doesn't
+    completely shut down).
+
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 01. window_test scrollable_windows seem to scroll 1 too far!
@@ -42,9 +47,6 @@
             editor the Pane should be replaced with just the containing text 
               - OR could take a snapshot right when the editor opens
                 and use that snapshot except maybe make it a bit more pale
-
-01. proper shutdown of other threads in terminal pane (terminal_test doesn't
-    completely shut down).
 
 01. support taffy as a layout structure.
      - Taffy low-level API (0.6.0 fixes ownership issues I was facing)

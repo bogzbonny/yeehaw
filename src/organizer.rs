@@ -215,12 +215,7 @@ impl ElementOrganizer {
         } else {
             None
         };
-        Context::new(
-            size,
-            higher_ctx.dur_since_launch,
-            higher_ctx.exit_recv.clone(),
-        )
-        .with_visible_region(visible_region)
+        Context::new(size, higher_ctx.dur_since_launch).with_visible_region(visible_region)
     }
 
     // Receivable returns all of the key combos and commands registered to this
@@ -308,6 +303,9 @@ impl ElementOrganizer {
                 EventResponse::Quit => {}
                 EventResponse::Metadata(_, _) => {}
                 EventResponse::Destruct => {
+                    // send down an exit event to the element about to be destroyed
+                    let _ = details.el.receive_event(&Context::default(), Event::Exit);
+
                     let rec = self.remove_element(el_id);
                     // NOTE no need to process the receivable event changes here,
                     // they've already been removed in the above call
@@ -670,6 +668,13 @@ impl ElementOrganizer {
             ev_resps.extend(r.0);
         }
         ev_resps
+    }
+
+    pub fn exit_all(&self, ctx: &Context) {
+        for (_, details) in self.els.borrow().iter() {
+            let child_ctx = self.get_context_for_el(ctx, details);
+            let _ = details.el.receive_event(&child_ctx, Event::Exit);
+        }
     }
 
     // get_el_id_at_z_index returns the element-id at the given z index, or None if

@@ -1,7 +1,6 @@
 use {
     crate::{Loc, Size},
     std::collections::HashMap,
-    tokio::sync::watch::Receiver,
 };
 
 // Context is a struct which contains information about the current context of a
@@ -18,20 +17,15 @@ pub struct Context {
     pub visible_region: Option<Loc>, // the visible region of the element
     //                      key , value
     pub metadata: HashMap<String, Vec<u8>>,
-    // true when the program should exit
-    pub exit_recv: Option<Receiver<bool>>,
 }
 
 impl Context {
-    pub fn new(
-        s: Size, dur_since_launch: std::time::Duration, exit_recv: Option<Receiver<bool>>,
-    ) -> Context {
+    pub fn new(s: Size, dur_since_launch: std::time::Duration) -> Context {
         Context {
             s,
             dur_since_launch,
             visible_region: None,
             metadata: HashMap::new(),
-            exit_recv,
         }
     }
 
@@ -56,28 +50,24 @@ impl Context {
     }
 
     // TODO return error
-    pub fn new_context_for_screen_no_dur(exit_recv: Receiver<bool>) -> Context {
+    pub fn new_context_for_screen_no_dur() -> Context {
         let (xmax, ymax) = crossterm::terminal::size().unwrap();
         Context {
             s: Size::new(xmax, ymax),
             dur_since_launch: std::time::Duration::default(),
             visible_region: None,
             metadata: HashMap::new(),
-            exit_recv: Some(exit_recv),
         }
     }
 
     // TODO return error
-    pub fn new_context_for_screen(
-        launch_instant: std::time::Instant, exit_recv: Receiver<bool>,
-    ) -> Context {
+    pub fn new_context_for_screen(launch_instant: std::time::Instant) -> Context {
         let (xmax, ymax) = crossterm::terminal::size().unwrap();
         Context {
             s: Size::new(xmax, ymax),
             dur_since_launch: launch_instant.elapsed(),
             visible_region: None,
             metadata: HashMap::new(),
-            exit_recv: Some(exit_recv),
         }
     }
 

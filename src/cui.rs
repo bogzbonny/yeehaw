@@ -38,16 +38,14 @@ pub struct Cui {
     // last flushed internal screen, used to determine what needs to be flushed next
     //                            x  , y
     pub sc_last_flushed: HashMap<(u16, u16), StyledContent<ChPlus>>,
-
     pub exit_recv: Receiver<bool>, // true if exit
 }
 
 impl Cui {
-    pub fn new(
-        main_el: Box<dyn Element>, exit_tx: Sender<bool>, exit_recv: Receiver<bool>,
-    ) -> Result<Cui, Error> {
+    pub fn new(main_el: Box<dyn Element>) -> Result<Cui, Error> {
+        let (exit_tx, exit_recv) = tokio::sync::watch::channel(false);
         let eo = ElementOrganizer::default();
-        let cup = CuiParent::new(eo, exit_tx.clone());
+        let cup = CuiParent::new(eo, exit_tx);
         let cui = Cui {
             cup: cup.clone(),
             main_el_id: main_el.id().clone(),
@@ -55,11 +53,11 @@ impl Cui {
             launch_instant: std::time::Instant::now(),
             kill_on_ctrl_c: true,
             sc_last_flushed: HashMap::new(),
-            exit_recv: exit_recv.clone(),
+            exit_recv,
         };
 
         // add the element here after the location has been created
-        let ctx = Context::new_context_for_screen_no_dur(exit_recv);
+        let ctx = Context::new_context_for_screen_no_dur();
         let loc = DynLocation::new_fixed(0, ctx.s.width.into(), 0, ctx.s.height.into());
         let loc = DynLocationSet::new(loc, vec![], 0);
         main_el.set_dyn_location_set(loc);
@@ -110,7 +108,7 @@ impl Cui {
                                 }
 
                                 CTEvent::Resize(_, _) => {
-                                    let ctx = Context::new_context_for_screen(self.launch_instant, self.exit_recv.clone());
+                                    let ctx = Context::new_context_for_screen(self.launch_instant);
                                     let loc = DynLocation::new_fixed(0, ctx.s.width.into(), 0, ctx.s.height.into());
                                     // There should only be one element at index 0 in the upper level EO
                                     self.cup.eo.update_el_primary_location(self.main_el_id.clone(), loc);
@@ -142,7 +140,7 @@ impl Cui {
 
     // context for initialization.
     pub fn context(&self) -> Context {
-        Context::new_context_for_screen_no_dur(self.exit_recv.clone())
+        Context::new_context_for_screen_no_dur()
     }
 
     pub fn close(&mut self) -> Result<(), Error> {
@@ -155,6 +153,7 @@ impl Cui {
         self.kb.add_ev(key_ev);
 
         if key_ev == Keyboard::KEY_CTRL_C && self.kill_on_ctrl_c {
+            self.cup.eo.exit_all(&Context::default());
             return true;
         }
 
@@ -178,7 +177,7 @@ impl Cui {
             //debug!("no dest");
             return false;
         };
-        let ctx = Context::new_context_for_screen(self.launch_instant, self.exit_recv.clone());
+        let ctx = Context::new_context_for_screen(self.launch_instant);
         //debug!("cui destination: {:?}", dest);
 
         let Some((_, resps)) =
@@ -195,7 +194,7 @@ impl Cui {
     // process_event_mouse handles mouse events
     //                                                                       exit-cui
     pub fn process_event_mouse(&mut self, mouse_ev: ct_event::MouseEvent) -> bool {
-        let ctx = Context::new_context_for_screen(self.launch_instant, self.exit_recv.clone());
+        let ctx = Context::new_context_for_screen(self.launch_instant);
         let (_, resps) =
             self.cup
                 .eo
@@ -227,7 +226,7 @@ impl Cui {
     // lower down the tree.
     pub fn render(&mut self) {
         let mut sc = stdout();
-        let ctx = Context::new_context_for_screen(self.launch_instant, self.exit_recv.clone());
+        let ctx = Context::new_context_for_screen(self.launch_instant);
         let chs = self.cup.eo.all_drawing(&ctx);
 
         let mut dedup_chs: HashMap<(u16, u16), StyledContent<ChPlus>> = HashMap::new();
@@ -296,11 +295,11 @@ pub fn process_event_resps(
 pub struct CuiParent {
     pub eo: ElementOrganizer,
     pub el_store: Rc<RefCell<HashMap<String, Vec<u8>>>>,
-    pub exit_tx: tokio::sync::watch::Sender<bool>,
+    pub exit_tx: Sender<bool>,
 }
 
 impl CuiParent {
-    pub fn new(eo: ElementOrganizer, exit_tx: tokio::sync::watch::Sender<bool>) -> CuiParent {
+    pub fn new(eo: ElementOrganizer, exit_tx: Sender<bool>) -> CuiParent {
         CuiParent {
             eo,
             el_store: Rc::new(RefCell::new(HashMap::new())),

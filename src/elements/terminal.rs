@@ -10,7 +10,7 @@ use {
     },
     compact_str::CompactString,
     crossterm::event::{KeyCode, KeyEvent, KeyModifiers},
-    portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtySize},
+    portable_pty::{native_pty_system, ChildKiller, CommandBuilder, MasterPty, PtySize},
     std::{
         cell::RefCell,
         io::{BufWriter, Read, Write},
@@ -35,6 +35,10 @@ pub struct TerminalPane {
     pub hide_cursor: Rc<RefCell<bool>>,
     pub cursor: Rc<RefCell<DrawCh>>,
     pub exit: Arc<RwLock<bool>>,
+
+    // the exiters
+    pub pty_killer: Rc<RefCell<Box<dyn ChildKiller>>>,
+    pub task_jh: Rc<RefCell<tokio::task::JoinHandle<()>>>,
 }
 
 impl TerminalPane {
@@ -69,7 +73,8 @@ impl TerminalPane {
         let exit = Arc::new(RwLock::new(false));
         let exit_ = exit.clone();
         let mut child = pty_pair.slave.spawn_command(cmd).unwrap();
-        let mut killer = child.clone_killer();
+        let killer = child.clone_killer();
+        let mut killer_ = child.clone_killer();
         spawn_blocking(move || {
             // ignore exit status
             // NOTE this wait can be killed by the killer
@@ -81,21 +86,14 @@ impl TerminalPane {
         let mut reader = pty_pair.master.try_clone_reader().unwrap();
         let parser_ = parser.clone();
 
-        let exit_recv = ctx.exit_recv.clone();
-        tokio::spawn(async move {
+        let task_jh = tokio::spawn(async move {
+            debug!("Terminal 2nd thread started");
             let mut processed_buf = Vec::new();
             let mut buf = [0u8; 8192];
             loop {
-                if let Some(ref exit_recv) = exit_recv {
-                    if *exit_recv.borrow() {
-                        // if the channel has true then should exit
-                        killer.kill().unwrap();
-                        break;
-                    }
-                }
                 let size = reader.read(&mut buf).unwrap();
                 if size == 0 {
-                    killer.kill().unwrap();
+                    killer_.kill().unwrap();
                     break;
                 }
                 processed_buf.extend_from_slice(&buf[..size]);
@@ -104,6 +102,7 @@ impl TerminalPane {
                 // Clear the processed portion of the buffer
                 processed_buf.clear();
             }
+            debug!("Terminal 2st thread complete")
         });
 
         // NOTE can only take the writer once
@@ -122,6 +121,8 @@ impl TerminalPane {
             hide_cursor: Rc::new(RefCell::new(false)),
             cursor: Rc::new(RefCell::new(cur)),
             exit,
+            pty_killer: Rc::new(RefCell::new(killer)),
+            task_jh: Rc::new(RefCell::new(task_jh)),
         }
     }
 
@@ -186,6 +187,10 @@ impl Element for TerminalPane {
                         pixel_height: 0,
                     })
                     .unwrap();
+            }
+            Event::Exit => {
+                self.pty_killer.borrow_mut().kill().unwrap(); // this should set self.exit to true
+                self.task_jh.borrow_mut().abort();
             }
             _ => {}
         }

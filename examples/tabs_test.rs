@@ -15,8 +15,7 @@ async fn main() -> Result<(), Error> {
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let hat = SortingHat::default();
-    let (exit_tx, exit_recv) = tokio::sync::watch::channel(false);
-    let ctx = Context::new_context_for_screen_no_dur(exit_recv.clone());
+    let ctx = Context::new_context_for_screen_no_dur();
 
     let tabs = Tabs::new(&hat, &ctx);
     let el1 = DebugSizePane::new(&hat).with_text("tab 1".to_string());
@@ -28,5 +27,5 @@ async fn main() -> Result<(), Error> {
     tabs.push(&ctx, Box::new(el3), "tab 3");
     tabs.select(&ctx, 0);
 
-    Cui::new(Box::new(tabs), exit_tx, exit_recv)?.run().await
+    Cui::new(Box::new(tabs))?.run().await
 }

@@ -24,6 +24,9 @@ pub enum Event {
     // then adjust all of its children based on the given context
     Resize,
 
+    // A signal to an element that it should closedown.
+    Exit,
+
     // Refresh resets an element's organizer's prioritizers as well as triggering a
     // Resize event in all children. This essentially refreshes the state of the
     // element organizer.
@@ -107,6 +110,7 @@ impl Event {
             Event::ExternalMouse(_) => "EXTERNAL_MOUSE".to_string(),
             Event::Resize => "RESIZE".to_string(),
             Event::Refresh => "REFRESH".to_string(),
+            Event::Exit => "EXIT".to_string(),
             Event::Custom(name, _) => "CUSTOM=".to_string() + name,
         }
     }
