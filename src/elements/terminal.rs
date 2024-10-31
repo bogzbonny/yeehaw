@@ -10,6 +10,7 @@ use {
     },
     compact_str::CompactString,
     crossterm::event::{KeyCode, KeyEvent, KeyModifiers},
+    // lazy
     portable_pty::{native_pty_system, ChildKiller, CommandBuilder, MasterPty, PtySize},
     std::{
         cell::RefCell,
@@ -38,7 +39,6 @@ pub struct TerminalPane {
 
     // the exiters
     pub pty_killer: Rc<RefCell<Box<dyn ChildKiller>>>,
-    pub task_jh: Rc<RefCell<tokio::task::JoinHandle<()>>>,
 }
 
 impl TerminalPane {
@@ -57,7 +57,6 @@ impl TerminalPane {
         let size = ctx.s;
         let pane =
             Pane::new(hat, "terminal_pane").with_self_receivable_events(Self::receivable_events());
-        //pane.focus();
 
         let pty_system = native_pty_system();
         let pty_pair = pty_system
@@ -86,33 +85,23 @@ impl TerminalPane {
         let mut reader = pty_pair.master.try_clone_reader().unwrap();
         let parser_ = parser.clone();
 
-        let id = pane.id();
-        let task_jh = tokio::spawn(async move {
-            debug!("Terminal 2nd thread started");
+        spawn_blocking(move || {
+            //debug!("Terminal 2nd thread started");
             let mut processed_buf = Vec::new();
             let mut buf = [0u8; 8192];
-            //let mut buf = [0u8; 16384];
-            //8192*2==16384
             loop {
-                debug!("0 el_id: {}", id);
                 let size = reader.read(&mut buf).unwrap();
-                debug!("1 el_id: {}", id);
                 if size == 0 {
                     //killer_.kill().unwrap();
-                    debug!("1.1 el_id: {}", id);
                     break;
                 }
-                debug!("2 el_id: {}", id);
                 processed_buf.extend_from_slice(&buf[..size]);
-                debug!("3 el_id: {}", id);
                 parser_.write().unwrap().process(&processed_buf);
-                debug!("4 el_id: {}", id);
 
                 // Clear the processed portion of the buffer
                 processed_buf.clear();
-                debug!("5 el_id: {}", id);
             }
-            debug!("Terminal 2st thread complete")
+            //debug!("Terminal 2st thread complete")
         });
 
         // NOTE can only take the writer once
@@ -132,7 +121,6 @@ impl TerminalPane {
             cursor: Rc::new(RefCell::new(cur)),
             exit,
             pty_killer: Rc::new(RefCell::new(killer)),
-            task_jh: Rc::new(RefCell::new(task_jh)),
         }
     }
 
@@ -199,8 +187,7 @@ impl Element for TerminalPane {
                     .unwrap();
             }
             Event::Exit => {
-                self.pty_killer.borrow_mut().kill().unwrap(); // this should set self.exit to true
-                self.task_jh.borrow_mut().abort();
+                self.pty_killer.borrow_mut().kill().unwrap();
             }
             _ => {}
         }

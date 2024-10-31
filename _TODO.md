@@ -14,14 +14,15 @@
 
 01. proper shutdown of other threads in terminal pane (terminal_test doesn't
     completely shut down).
+01. masterpty likes to die after 10 readers have been created
+     - maybe should use more slaves?
+     - needed to use spawn_blocking
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 01. window_test scrollable_windows seem to scroll 1 too far!
 
 01. make window top bar slightly lighter when it's focused
-
-01. masterpty likes to die after 10 readers have been created
 
 01. file nav test seems not to work?
      - commit 10a47dd broke it
