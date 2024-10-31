@@ -1,8 +1,8 @@
 use {
     crate::{
-        ReceivableEventChanges, Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal,
-        Element, ElementID, Event, EventResponses, Keyboard as KB, Pane, Priority, SortingHat,
-        Style, Parent,
+        Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
+        EventResponses, Keyboard as KB, Pane, Parent, Priority, ReceivableEventChanges, SortingHat,
+        Style,
     },
     std::{
         cell::RefCell,
@@ -23,7 +23,7 @@ pub struct FileNavPane {
     pub highlight_position: Rc<RefCell<usize>>,
     pub offset: Rc<RefCell<usize>>,
     #[allow(clippy::type_complexity)]
-    pub file_enter_hook: Rc<RefCell<Box<dyn FnMut(PathBuf)>>>,
+    pub file_enter_hook: Rc<RefCell<Box<dyn FnMut(Context, PathBuf) -> EventResponses>>>,
 }
 
 #[derive(Clone)]
@@ -89,13 +89,15 @@ impl FileNavPane {
             nav_items: Rc::new(RefCell::new(nav_items)),
             highlight_position: Rc::new(RefCell::new(1)),
             offset: Rc::new(RefCell::new(0)),
-            file_enter_hook: Rc::new(RefCell::new(Box::new(|_path| {}))),
+            file_enter_hook: Rc::new(RefCell::new(Box::new(|_ctx, _path| {
+                EventResponses::default()
+            }))),
         };
         out.update_content(ctx);
         out
     }
 
-    pub fn set_open_fn(&self, file_enter_hook: Box<dyn FnMut(PathBuf)>) {
+    pub fn set_open_fn(&self, file_enter_hook: Box<dyn FnMut(Context, PathBuf) -> EventResponses>) {
         *self.file_enter_hook.borrow_mut() = file_enter_hook;
     }
 
@@ -157,9 +159,10 @@ impl Element for FileNavPane {
                     }
                 }
                 _ if ke[0].matches_key(&KB::KEY_ENTER) => {
-                    let ni = {
+                    let (ni, resps) = {
                         let nav_items = self.nav_items.borrow().clone();
                         self.nav_items.borrow_mut()[*self.highlight_position.borrow()].enter(
+                            ctx,
                             &nav_items,
                             &mut self.file_enter_hook.borrow_mut(),
                             *self.highlight_position.borrow(),
@@ -168,6 +171,7 @@ impl Element for FileNavPane {
                     if let Some(ni) = ni {
                         *self.nav_items.borrow_mut() = ni;
                     }
+                    return (true, resps);
                 }
                 _ => {}
             },
@@ -177,7 +181,7 @@ impl Element for FileNavPane {
         (true, EventResponses::default())
     }
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.pane.change_priority( p)
+        self.pane.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.update_content(ctx);
@@ -240,16 +244,22 @@ impl NavItem {
     }
 
     pub fn enter(
-        &mut self, nis: &NavItems, file_enter_hook: &mut Box<dyn FnMut(PathBuf)>,
+        &mut self, ctx: &Context, nis: &NavItems,
+        file_enter_hook: &mut Box<dyn FnMut(Context, PathBuf) -> EventResponses>,
         highlight_position: usize,
-    ) -> Option<NavItems> {
+    ) -> (Option<NavItems>, EventResponses) {
         match self {
-            NavItem::File(f) => f.enter(file_enter_hook),
-            NavItem::Folder(f) => return Some(f.enter(nis, highlight_position)),
+            NavItem::File(f) => return (None, f.enter(ctx, file_enter_hook)),
+            NavItem::Folder(f) => {
+                return (
+                    Some(f.enter(nis, highlight_position)),
+                    EventResponses::default(),
+                )
+            }
             NavItem::TopDir(_f) => {}
             NavItem::UpDir(_f) => {}
         }
-        None
+        (None, EventResponses::default())
     }
 
     pub fn indentation(&self) -> usize {
@@ -327,8 +337,11 @@ impl File {
     }
 
     // Execute the file enter hook
-    pub fn enter(&self, file_enter_hook: &mut Box<dyn FnMut(PathBuf)>) {
-        file_enter_hook(self.path.clone());
+    pub fn enter(
+        &self, ctx: &Context,
+        file_enter_hook: &mut Box<dyn FnMut(Context, PathBuf) -> EventResponses>,
+    ) -> EventResponses {
+        file_enter_hook(ctx.clone(), self.path.clone())
     }
 
     pub fn draw(&self, default_ch: DrawCh, width: usize) -> Vec<DrawCh> {

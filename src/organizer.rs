@@ -46,7 +46,7 @@ impl ElDetails {
 impl ElementOrganizer {
     pub fn add_element(
         &self, el: Box<dyn Element>, parent: Option<Box<dyn Parent>>,
-    ) -> ReceivableEventChanges {
+    ) -> EventResponse {
         // assign the new element id
         let el_id = el.id().clone();
 
@@ -67,7 +67,6 @@ impl ElementOrganizer {
 
         // add the elements recievable events and commands to the prioritizer
         let receivable_evs = el.receivable();
-        //debug!("add_element: receivable_evs: {:?}", receivable_evs);
         self.prioritizer
             .borrow_mut()
             .include(&el_id, &receivable_evs);
@@ -75,21 +74,24 @@ impl ElementOrganizer {
         let el_details = ElDetails::new(el);
         self.els.borrow_mut().insert(el_id.clone(), el_details);
 
-        ReceivableEventChanges::default().with_add_evs(receivable_evs)
+        let rec = ReceivableEventChanges::default().with_add_evs(receivable_evs);
+        EventResponse::ReceivableEventChanges(rec)
     }
 
-    pub fn remove_element(&self, el_id: &ElementID) -> ReceivableEventChanges {
+    pub fn remove_element(&self, el_id: &ElementID) -> EventResponse {
         self.els.borrow_mut().remove(el_id);
         let rm_evs = self.prioritizer.borrow_mut().remove_entire_element(el_id);
-        ReceivableEventChanges::default().with_remove_evs(rm_evs)
+        let rec = ReceivableEventChanges::default().with_remove_evs(rm_evs);
+        EventResponse::ReceivableEventChanges(rec)
     }
 
     // removes all elements from the element organizer
-    pub fn clear_elements(&self) -> ReceivableEventChanges {
+    pub fn clear_elements(&self) -> EventResponse {
         self.els.borrow_mut().clear();
         let pes = self.receivable().drain(..).map(|(e, _)| e).collect();
         *self.prioritizer.borrow_mut() = EventPrioritizer::default();
-        ReceivableEventChanges::default().with_remove_evs(pes)
+        let rec = ReceivableEventChanges::default().with_remove_evs(pes);
+        EventResponse::ReceivableEventChanges(rec)
     }
 
     // get_element_by_id returns the element registered under the given id in the eo
@@ -294,10 +296,10 @@ impl ElementOrganizer {
                         let _ = details.el.receive_event(&Context::default(), Event::Exit);
                     }
 
-                    let rec = self.remove_element(el_id);
+                    let resp_ = self.remove_element(el_id);
                     // NOTE no need to process the receivable event changes here,
                     // they've already been removed in the above call
-                    *r = EventResponse::ReceivableEventChanges(rec);
+                    *r = resp_;
                 }
                 EventResponse::BringToFront => {
                     self.set_el_to_top(el_id);
@@ -343,7 +345,7 @@ impl ElementOrganizer {
                             details.loc.borrow().l.start_x.clone(),
                             details.loc.borrow().l.start_y.clone(),
                         );
-                    let rec = self.add_element(new_el.clone(), Some(parent.clone()));
+                    let resp_ = self.add_element(new_el.clone(), Some(parent.clone()));
                     if let Some(new_el_resps) = new_el_resps {
                         self.partially_process_ev_resps(
                             ctx,
@@ -353,7 +355,7 @@ impl ElementOrganizer {
                         );
                         extend_resps.extend(new_el_resps.0.drain(..));
                     }
-                    *r = EventResponse::ReceivableEventChanges(rec);
+                    *r = resp_;
                 }
                 EventResponse::ReceivableEventChanges(ref mut rec) => {
                     self.process_receivable_event_changes(el_id, rec);

@@ -100,6 +100,16 @@ impl Pane {
         *self.kind.borrow_mut() = kind;
     }
 
+    pub fn focused(self) -> Pane {
+        *self.element_priority.borrow_mut() = Priority::Focused;
+        self
+    }
+
+    pub fn unfocused(self) -> Pane {
+        *self.element_priority.borrow_mut() = Priority::Unfocused;
+        self
+    }
+
     pub fn with_z(self, z: ZIndex) -> Pane {
         self.loc.borrow_mut().set_z(z);
         self

@@ -28,7 +28,7 @@ pub struct ParentPane {
 
 impl ParentPane {
     pub fn new(hat: &SortingHat, kind: &'static str) -> Self {
-        let pane = Pane::new(hat, kind);
+        let pane = Pane::new(hat, kind).focused();
         ParentPane {
             pane,
             eo: ElementOrganizer::default(),
@@ -113,16 +113,30 @@ impl ParentPane {
         self
     }
 
-    pub fn add_element(&self, el: Box<dyn Element>) -> ReceivableEventChanges {
+    pub fn focused(self) -> Self {
+        *self.pane.element_priority.borrow_mut() = Priority::Focused;
+        self
+    }
+
+    pub fn unfocused(self) -> Self {
+        *self.pane.element_priority.borrow_mut() = Priority::Unfocused;
+        self
+    }
+
+    pub fn add_element(&self, el: Box<dyn Element>) -> EventResponse {
         self.eo.add_element(el, Some(Box::new(self.clone())))
     }
 
-    pub fn remove_element(&self, el_id: &ElementID) {
-        self.eo.remove_element(el_id);
+    pub fn remove_element(&self, el_id: &ElementID) -> EventResponse {
+        self.eo.remove_element(el_id)
     }
 
-    pub fn clear_elements(&self) {
-        self.eo.clear_elements();
+    pub fn clear_elements(&self) -> EventResponse {
+        self.eo.clear_elements()
+    }
+
+    pub fn has_elements(&self) -> bool {
+        !self.eo.els.borrow().is_empty()
     }
 
     pub fn perceived_priorities_of_eo(&self) -> Vec<(Event, Priority)> {

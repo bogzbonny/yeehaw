@@ -1,8 +1,8 @@
 use {
     crate::{
         Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Parent, ParentPane, Priority, ReceivableEventChanges, Size, SortingHat,
-        Style,
+        EventResponse, EventResponses, Parent, ParentPane, Priority, ReceivableEventChanges, Size,
+        SortingHat, Style,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -36,29 +36,29 @@ impl VerticalStack {
 
     // add an element to the end of the stack resizing the other elements
     // in order to fit the new element
-    pub fn push(&self, ctx: &Context, el: Box<dyn Element>) {
+    pub fn push(&self, ctx: &Context, el: Box<dyn Element>) -> EventResponse {
         Self::sanitize_el_location(&*el);
         self.els.borrow_mut().push(el.clone());
         self.normalize_locations(ctx);
-        self.pane.add_element(el);
+        self.pane.add_element(el)
     }
 
-    pub fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>) {
+    pub fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>) -> EventResponse {
         Self::sanitize_el_location(&*el);
         self.els.borrow_mut().insert(idx, el.clone());
         self.normalize_locations(ctx);
-        self.pane.add_element(el);
+        self.pane.add_element(el)
     }
 
-    pub fn remove(&self, ctx: &Context, idx: usize) {
+    pub fn remove(&self, ctx: &Context, idx: usize) -> EventResponse {
         let el = self.els.borrow_mut().remove(idx);
         self.normalize_locations(ctx);
-        self.pane.remove_element(&el.id());
+        self.pane.remove_element(&el.id())
     }
 
-    pub fn clear(&self) {
+    pub fn clear(&self) -> EventResponse {
         self.els.borrow_mut().clear();
-        self.pane.clear_elements();
+        self.pane.clear_elements()
     }
 
     pub fn len(&self) -> usize {
@@ -196,29 +196,29 @@ impl HorizontalStack {
 
     // add an element to the end of the stack resizing the other elements
     // in order to fit the new element
-    pub fn push(&self, ctx: &Context, el: Box<dyn Element>) {
+    pub fn push(&self, ctx: &Context, el: Box<dyn Element>) -> EventResponse {
         Self::sanitize_el_location(&*el);
         self.els.borrow_mut().push(el.clone());
         self.normalize_locations(ctx);
-        self.pane.add_element(el);
+        self.pane.add_element(el)
     }
 
-    pub fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>) {
+    pub fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>) -> EventResponse {
         Self::sanitize_el_location(&*el);
         self.els.borrow_mut().insert(idx, el.clone());
         self.normalize_locations(ctx);
-        self.pane.add_element(el);
+        self.pane.add_element(el)
     }
 
-    pub fn remove(&self, ctx: &Context, idx: usize) {
+    pub fn remove(&self, ctx: &Context, idx: usize) -> EventResponse {
         let el = self.els.borrow_mut().remove(idx);
         self.normalize_locations(ctx);
-        self.pane.remove_element(&el.id());
+        self.pane.remove_element(&el.id())
     }
 
-    pub fn clear(&self) {
+    pub fn clear(&self) -> EventResponse {
         self.els.borrow_mut().clear();
-        self.pane.clear_elements();
+        self.pane.clear_elements()
     }
 
     pub fn len(&self) -> usize {
@@ -453,10 +453,10 @@ trait StackTr {
     const KIND: &'static str;
     fn new(hat: &SortingHat) -> Self;
     fn new_with_kind(hat: &SortingHat, kind: &'static str) -> Self;
-    fn push(&self, ctx: &Context, el: Box<dyn Element>);
-    fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>);
-    fn remove(&self, ctx: &Context, idx: usize);
-    fn clear(&self);
+    fn push(&self, ctx: &Context, el: Box<dyn Element>) -> EventResponse;
+    fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>) -> EventResponse;
+    fn remove(&self, ctx: &Context, idx: usize) -> EventResponse;
+    fn clear(&self) -> EventResponse;
     fn len(&self) -> usize;
     fn get(&self, idx: usize) -> Option<Box<dyn Element>>;
     fn is_empty(&self) -> bool;
@@ -475,16 +475,16 @@ impl StackTr for VerticalStack {
     fn new_with_kind(hat: &SortingHat, kind: &'static str) -> Self {
         VerticalStack::new_with_kind(hat, kind)
     }
-    fn push(&self, ctx: &Context, el: Box<dyn Element>) {
+    fn push(&self, ctx: &Context, el: Box<dyn Element>) -> EventResponse {
         VerticalStack::push(self, ctx, el)
     }
-    fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>) {
+    fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>) -> EventResponse {
         VerticalStack::insert(self, ctx, idx, el)
     }
-    fn remove(&self, ctx: &Context, idx: usize) {
+    fn remove(&self, ctx: &Context, idx: usize) -> EventResponse {
         VerticalStack::remove(self, ctx, idx)
     }
-    fn clear(&self) {
+    fn clear(&self) -> EventResponse {
         VerticalStack::clear(self)
     }
     fn len(&self) -> usize {
@@ -521,16 +521,16 @@ impl StackTr for HorizontalStack {
     fn new_with_kind(hat: &SortingHat, kind: &'static str) -> Self {
         HorizontalStack::new_with_kind(hat, kind)
     }
-    fn push(&self, ctx: &Context, el: Box<dyn Element>) {
+    fn push(&self, ctx: &Context, el: Box<dyn Element>) -> EventResponse {
         HorizontalStack::push(self, ctx, el)
     }
-    fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>) {
+    fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>) -> EventResponse {
         HorizontalStack::insert(self, ctx, idx, el)
     }
-    fn remove(&self, ctx: &Context, idx: usize) {
+    fn remove(&self, ctx: &Context, idx: usize) -> EventResponse {
         HorizontalStack::remove(self, ctx, idx)
     }
-    fn clear(&self) {
+    fn clear(&self) -> EventResponse {
         HorizontalStack::clear(self)
     }
     fn len(&self) -> usize {

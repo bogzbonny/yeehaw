@@ -367,10 +367,8 @@ impl Scrollbar {
 
     pub fn scroll_forwards(&self, ctx: &Context, p_size: usize) {
         if !self.can_scroll_forwards(p_size) {
-            debug!("cannot scroll forwards");
             return;
         }
-        debug!("scroll_forwards");
         *self.scrollable_position.borrow_mut() += 1;
         //if let Some(hook) = self.position_changed_hook.borrow().as_ref() {
         //    hook.borrow_mut()(ctx.clone(), *self.scrollable_position.borrow());

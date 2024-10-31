@@ -942,12 +942,36 @@ impl TextBox {
                 let resp = self.correct_offsets(ctx, w);
                 return (true, resp.into());
             }
+            MouseEventKind::ScrollLeft
+                if ev.modifiers == KeyModifiers::NONE
+                    && selectedness == Selectability::Selected =>
+            {
+                let w = self.get_wrapped(ctx);
+                let Some(new_pos) = w.get_cursor_left_position(cursor_pos) else {
+                    return (true, EventResponses::default());
+                };
+                self.set_cursor_pos(ctx, new_pos);
+                let resp = self.correct_offsets(ctx, w);
+                return (true, resp.into());
+            }
             MouseEventKind::ScrollDown
                 if ev.modifiers == KeyModifiers::SHIFT
                     && selectedness == Selectability::Selected =>
             {
                 let w = self.get_wrapped(ctx);
                 let Some(new_pos) = w.get_cursor_left_position(cursor_pos) else {
+                    return (true, EventResponses::default());
+                };
+                self.set_cursor_pos(ctx, new_pos);
+                let resp = self.correct_offsets(ctx, w);
+                return (true, resp.into());
+            }
+            MouseEventKind::ScrollRight
+                if ev.modifiers == KeyModifiers::NONE
+                    && selectedness == Selectability::Selected =>
+            {
+                let w = self.get_wrapped(ctx);
+                let Some(new_pos) = w.get_cursor_right_position(cursor_pos) else {
                     return (true, EventResponses::default());
                 };
                 self.set_cursor_pos(ctx, new_pos);

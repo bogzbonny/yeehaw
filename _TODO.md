@@ -19,14 +19,13 @@
      - needed to use spawn_blocking
 01. make window top bar slightly lighter when it's focused
 01. window_test scrollable_windows seem to scroll 1 too far!
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 01. file nav test seems not to work?
      - commit 10a47dd broke it
        - keyboard command nolonger passed up
        - see lines 342 in organizer.rs - which to me make sense however break
          this example
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 01. editor element
     - uses the $EDITOR env variable
