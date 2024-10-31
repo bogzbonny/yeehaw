@@ -48,12 +48,14 @@ Catering to non- UTF-8 or non- true-color terminals.
    - checkbox
    - dropdown-list
    - label
-   - listbox
+   - listbox (optional multi-entry)
    - radio-buttons
    - scrollbars
    - textbox (editable) 
+   - numbers textbox
    - titles
-   - toggles
+   - toggle (yes -> no) 
+   - generalized label decorators on all widgets
 
 ## Planned
  - built in terminal

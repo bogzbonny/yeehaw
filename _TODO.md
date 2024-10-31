@@ -17,12 +17,13 @@
 01. masterpty likes to die after 10 readers have been created
      - maybe should use more slaves?
      - needed to use spawn_blocking
+01. make window top bar slightly lighter when it's focused
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-01. window_test scrollable_windows seem to scroll 1 too far!
+01. bar
 
-01. make window top bar slightly lighter when it's focused
+01. window_test scrollable_windows seem to scroll 1 too far!
 
 01. file nav test seems not to work?
      - commit 10a47dd broke it
@@ -48,7 +49,7 @@
        - consider closeable vs non-closeable version of this widget
           - I guess if you wanted an Editor to NOT close, when you closed the
             editor the Pane should be replaced with just the containing text 
-              - OR could take a snapshot right when the editor opens
+              - OR could take a snapshot right when the editor exits
                 and use that snapshot except maybe make it a bit more pale
 
 01. support taffy as a layout structure.
@@ -205,6 +206,38 @@
 
 10. vertical tabs (like brave)
 
+10. widget slider bars / track bars
+   ██████████████████━━━━━━━━━━━━━━   ╋   ╋ 1
+                                      ┃   ┃
+   ━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━   ╋   ╋ 2
+                                      ┃   ┃
+   ██████████╋━━━━━━━━━━━━━━━━━━━━━  ▶╋   ╋ 3
+                                      ┃  ▶┃
+   ━━━━━━━━━━╋██████████████╋━━━━━━   ╋   ╋ 4
+                                      ┃   ┃
+   ══════════╪═════════════════════   ╋   ╋ 5
+                                      ┃   ┃
+   ══════════╪██████████████╪══════   ╋   ╋ 6 
+                                      ┃   ┃
+   ══════════╪▓▓▓▓▓▓▓▓▓▓▓▓▓▓╪══════   ╋   ╋ 7 
+
+   ━━━━━━━━━● 
+      ●━━━━━━━━━━━━━━━━━━━━● 
+
+
+10. progress bar
+    - optionally with an embedded word
+    - use a gradient color! 
+
+10. feature: hover comments
+
+10. widget: date selector
+
+10. widget: color selector
+10. widget: table (see ratatui)
+10. button: visualize button being clicked
+10. TGIF
+
 10. When the keyboard is matching an event combo provided to it, it should be
     recording a partial match (and a suggested maximum wait time to recheck for
     priority to this combo whether to wait the time before checking for other
@@ -238,7 +271,7 @@
          then if the mouse scroll event is not captured then send it to the
          scrollable pane.
 
-10. Simplify WidgetPane type to little more than a ParentPane
+10. Simplify ElWidgetPane type to little more than a ParentPane
      - using the ParentPane store to hold index of the currently selected widget 
 
 10. integrate in trait upcasting for Widget Type once available (remove
@@ -285,3 +318,9 @@
 
 40. jexer custom mouse types (requires image support, and mouse pixel tracking) 
 
+40. Scrollbar bug: when dragging scrollbar with mouse, will drag good for a bit
+    then close to the end it just moves all the way to the maximum
+
+50. LOW PRIORITY CAN JUST USE $EDITOR widget: vim-style textbox
+     - with two scrollbars the mode can be placed in 
+       the decorations area!
