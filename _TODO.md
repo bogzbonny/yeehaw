@@ -18,10 +18,9 @@
      - maybe should use more slaves?
      - needed to use spawn_blocking
 01. make window top bar slightly lighter when it's focused
+01. window_test scrollable_windows seem to scroll 1 too far!
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-01. window_test scrollable_windows seem to scroll 1 too far!
 
 01. file nav test seems not to work?
      - commit 10a47dd broke it

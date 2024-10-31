@@ -331,6 +331,13 @@ impl Scrollbar {
         }
     }
 
+    pub fn can_scroll_forwards(&self, p_size: usize) -> bool {
+        let sc_pos = *self.scrollable_position.borrow();
+        let sc_dom_chs = *self.scrollable_domain_chs.borrow();
+        let sc_view_chs = self.scrollable_view_chs.borrow().get_val(p_size as u16) as usize;
+        sc_pos < sc_dom_chs.saturating_sub(sc_view_chs)
+    }
+
     pub fn jump_scroll_backwards(&self, ctx: &Context, p_size: usize) {
         let pos = self
             .scrollable_position
@@ -358,17 +365,12 @@ impl Scrollbar {
         }
     }
 
-    pub fn can_scroll_forwards(&self, p_size: usize) -> bool {
-        let sc_pos = *self.scrollable_position.borrow();
-        let sc_dom_chs = *self.scrollable_domain_chs.borrow();
-        let sc_view_chs = self.scrollable_view_chs.borrow().get_val(p_size as u16) as usize;
-        sc_pos <= sc_dom_chs.saturating_sub(sc_view_chs)
-    }
-
     pub fn scroll_forwards(&self, ctx: &Context, p_size: usize) {
         if !self.can_scroll_forwards(p_size) {
+            debug!("cannot scroll forwards");
             return;
         }
+        debug!("scroll_forwards");
         *self.scrollable_position.borrow_mut() += 1;
         //if let Some(hook) = self.position_changed_hook.borrow().as_ref() {
         //    hook.borrow_mut()(ctx.clone(), *self.scrollable_position.borrow());
@@ -1039,7 +1041,7 @@ impl Element for VerticalScrollbar {
     }
 
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.base.change_priority( p)
+        self.base.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.drawing_(ctx)
@@ -1093,7 +1095,7 @@ impl Element for HorizontalScrollbar {
     }
 
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.base.change_priority( p)
+        self.base.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.drawing_(ctx)

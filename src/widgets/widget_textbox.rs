@@ -421,7 +421,7 @@ impl TextBox {
                 _ => panic!("impossible"),
             };
 
-            let hsb = HorizontalScrollbar::new(hat, w, self.base.content_width())
+            let hsb = HorizontalScrollbar::new(hat, w, self.x_new_domain_chs())
                 .at(x, y2)
                 .with_styles(Self::STYLE_SCROLLBAR);
 
@@ -561,6 +561,16 @@ impl TextBox {
         (s, line_num_width + 1) // +1 for the extra space after the digits
     }
 
+    // takes into account the width of the line numbers textbox
+    pub fn x_new_domain_chs(&self) -> usize {
+        let lnw = if let Some(ln_tb) = self.line_number_tb.borrow().as_ref() {
+            ln_tb.base.content_width()
+        } else {
+            0
+        };
+        self.base.content_width() + lnw
+    }
+
     // NOTE the resp is sent in to potentially modify the offsets from numbers tb
     pub fn correct_offsets(&self, ctx: &Context, w: WrChs) -> EventResponse {
         let (x, y) = w.cursor_x_and_y(self.get_cursor_pos());
@@ -590,7 +600,7 @@ impl TextBox {
             ln_tb.base.set_content_y_offset(ctx, y_offset);
         }
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
-            sb.external_change(ctx, x_offset, self.base.content_width());
+            sb.external_change(ctx, x_offset, self.x_new_domain_chs());
         }
         resp
     }
@@ -723,7 +733,7 @@ impl TextBox {
                 sb.external_change(ctx, y_offset, self.base.content_height());
             }
             if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
-                sb.external_change(ctx, x_offset, self.base.content_width());
+                sb.external_change(ctx, x_offset, self.x_new_domain_chs());
             }
             return (true, EventResponses::default());
         }
@@ -1024,7 +1034,7 @@ impl Element for TextBox {
     }
 
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.base.change_priority( p)
+        self.base.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let w = self.get_wrapped(ctx);
