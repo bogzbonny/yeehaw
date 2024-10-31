@@ -21,8 +21,6 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-01. bar
-
 01. window_test scrollable_windows seem to scroll 1 too far!
 
 01. file nav test seems not to work?
@@ -223,11 +221,39 @@
 
    ━━━━━━━━━● 
       ●━━━━━━━━━━━━━━━━━━━━● 
+   ━━━━━━━━❍─────────────────────── 
+   ▁▂▃▄▅▆▇
 
+
+10. Dial
+    - if there are labels could bold the one which is selected
+   __    __    __    __    __    __    __    __ 
+  ╱° ╲  ╱ °╲  ╱  ⚬  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ⚬  ╲
+  ╲__╱  ╲__╱  ╲__╱  ╲__°  ╲_⚬╱  ╲⚬_╱  °__╱  ╲__╱  
+                   
+One letter labels
+   A__B      A__B       A__B       A__B 
+ H ╱° ╲ C  H ╱  ⚬ C   H ╱  ╲ C   H ╱° ╲ C
+ G ╲__╱ D  G ╲__╱ D   G ╲__° D   G ╲__╱ D              
+   F  E      F  E       F  E       F  E  
+               
+          OptionH __ OptionA
+         OptionG ╱° ╲ OptionB
+         OptionF ╲__╱ OptionC
+          OptionE    OptionD
+
+         OptionH      OptionA
+                ⟍ __ ⟋ 
+       OptionG - ╱° ╲ - OptionB
+       OptionF - ╲__╱ - OptionC
+                ⟋    ⟍
+         OptionE      OptionD
 
 10. progress bar
     - optionally with an embedded word
     - use a gradient color! 
+    - imagine that the progressbar was just a gradient changing around a box
+      border
 
 10. feature: hover comments
 
