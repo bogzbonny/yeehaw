@@ -448,7 +448,7 @@ impl Element for WindowPane {
             //resps.push(EventResponse::Destruct);
             self.pane
                 .pane
-                .propagate_responses_upward(EventResponse::Destruct.into());
+                .propagate_responses_upward(ctx.parent_context(), EventResponse::Destruct.into());
             Vec::with_capacity(0)
         } else {
             out

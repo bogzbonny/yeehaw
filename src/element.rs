@@ -185,7 +185,9 @@ pub trait Parent: dyn_clone::DynClone {
     //fn propagate_receivable_event_changes_upward(
     //    &self, child_el_id: &ElementID, rec: ReceivableEventChanges,
     //);
-    fn propagate_responses_upward(&self, child_el_id: &ElementID, resps: EventResponses);
+    fn propagate_responses_upward(
+        &self, parent_ctx: Option<&Context>, child_el_id: &ElementID, resps: EventResponses,
+    );
 
     fn get_store_item(&self, key: &str) -> Option<Vec<u8>>;
     fn set_store_item(&self, key: &str, value: Vec<u8>);

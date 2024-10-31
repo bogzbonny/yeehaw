@@ -74,7 +74,7 @@ impl TerminalPane {
         let exit_ = exit.clone();
         let mut child = pty_pair.slave.spawn_command(cmd).unwrap();
         let killer = child.clone_killer();
-        let mut killer_ = child.clone_killer();
+        //let mut killer_ = child.clone_killer();
         spawn_blocking(move || {
             // ignore exit status
             // NOTE this wait can be killed by the killer
@@ -86,21 +86,31 @@ impl TerminalPane {
         let mut reader = pty_pair.master.try_clone_reader().unwrap();
         let parser_ = parser.clone();
 
+        let id = pane.id();
         let task_jh = tokio::spawn(async move {
             debug!("Terminal 2nd thread started");
             let mut processed_buf = Vec::new();
             let mut buf = [0u8; 8192];
+            //let mut buf = [0u8; 16384];
+            //8192*2==16384
             loop {
+                debug!("0 el_id: {}", id);
                 let size = reader.read(&mut buf).unwrap();
+                debug!("1 el_id: {}", id);
                 if size == 0 {
-                    killer_.kill().unwrap();
+                    //killer_.kill().unwrap();
+                    debug!("1.1 el_id: {}", id);
                     break;
                 }
+                debug!("2 el_id: {}", id);
                 processed_buf.extend_from_slice(&buf[..size]);
+                debug!("3 el_id: {}", id);
                 parser_.write().unwrap().process(&processed_buf);
+                debug!("4 el_id: {}", id);
 
                 // Clear the processed portion of the buffer
                 processed_buf.clear();
+                debug!("5 el_id: {}", id);
             }
             debug!("Terminal 2st thread complete")
         });
@@ -204,7 +214,11 @@ impl Element for TerminalPane {
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         if *self.exit.read().unwrap() {
             if let Some(ref parent) = *self.pane.parent.borrow() {
-                parent.propagate_responses_upward(&self.id(), EventResponse::Destruct.into());
+                parent.propagate_responses_upward(
+                    ctx.parent_context(),
+                    &self.id(),
+                    EventResponse::Destruct.into(),
+                );
             }
             return Vec::with_capacity(0);
         }

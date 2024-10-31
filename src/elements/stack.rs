@@ -93,8 +93,7 @@ impl VerticalStack {
             return 1.0.into();
         }
         let virtual_size = 1000;
-        let virtual_context =
-            Context::new(Size::new(virtual_size, virtual_size), ctx.dur_since_launch);
+        let virtual_context = ctx.clone().with_size(Size::new(virtual_size, virtual_size));
         let avg = els
             .iter()
             .map(|el| {
@@ -254,8 +253,7 @@ impl HorizontalStack {
             return 1.0.into();
         }
         let virtual_size = 1000;
-        let virtual_context =
-            Context::new(Size::new(virtual_size, virtual_size), ctx.dur_since_launch);
+        let virtual_context = ctx.clone().with_size(Size::new(virtual_size, virtual_size));
         let avg = els
             .iter()
             .map(|el| {

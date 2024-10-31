@@ -200,24 +200,6 @@ impl ElementOrganizer {
         self.update_el_z_index(el_id, z + 1);
     }
 
-    // get_context_for_el_id returns the context for the element registered under the given id
-    pub fn get_context_for_el(&self, higher_ctx: &Context, el_details: &ElDetails) -> Context {
-        let size = el_details.loc.borrow().l.get_size(higher_ctx);
-        let visible_region = if let Some(mut vr) = higher_ctx.visible_region {
-            // make the visible region relative to the el
-            let el_x = el_details.loc.borrow().l.get_start_x(higher_ctx) as u16;
-            let el_y = el_details.loc.borrow().l.get_start_y(higher_ctx) as u16;
-            vr.start_x = vr.start_x.saturating_sub(el_x);
-            vr.end_x = vr.end_x.saturating_sub(el_x);
-            vr.start_y = vr.start_y.saturating_sub(el_y);
-            vr.end_y = vr.end_y.saturating_sub(el_y);
-            Some(vr)
-        } else {
-            None
-        };
-        Context::new(size, higher_ctx.dur_since_launch).with_visible_region(visible_region)
-    }
-
     // Receivable returns all of the key combos and commands registered to this
     // element organizer, along with their priorities
     pub fn receivable(&self) -> Vec<(Event, Priority)> {
@@ -260,7 +242,7 @@ impl ElementOrganizer {
                 }
             }
 
-            let child_ctx = self.get_context_for_el(ctx, &el_id_z.1);
+            let child_ctx = ctx.child_context(&el_id_z.1.loc.borrow().l);
             let mut dcps = details.el.drawing(&child_ctx);
             for dcp in &mut dcps {
                 dcp.update_colors_for_time_and_pos(ctx);
@@ -289,7 +271,8 @@ impl ElementOrganizer {
     //
     // NOTE this function modifies the event responses in place
     pub fn partially_process_ev_resps(
-        &self, el_id: &ElementID, resps: &mut EventResponses, parent: Box<dyn Parent>,
+        &self, ctx: Option<&Context>, el_id: &ElementID, resps: &mut EventResponses,
+        parent: Box<dyn Parent>,
     ) {
         let Some(details) = self.get_element_details(el_id) else {
             // TODO log error
@@ -304,7 +287,12 @@ impl ElementOrganizer {
                 EventResponse::Metadata(_, _) => {}
                 EventResponse::Destruct => {
                     // send down an exit event to the element about to be destroyed
-                    let _ = details.el.receive_event(&Context::default(), Event::Exit);
+
+                    if let Some(ctx) = ctx {
+                        let _ = details.el.receive_event(ctx, Event::Exit);
+                    } else {
+                        let _ = details.el.receive_event(&Context::default(), Event::Exit);
+                    }
 
                     let rec = self.remove_element(el_id);
                     // NOTE no need to process the receivable event changes here,
@@ -357,7 +345,12 @@ impl ElementOrganizer {
                         );
                     let rec = self.add_element(new_el.clone(), Some(parent.clone()));
                     if let Some(new_el_resps) = new_el_resps {
-                        self.partially_process_ev_resps(&new_el.id(), new_el_resps, parent.clone());
+                        self.partially_process_ev_resps(
+                            ctx,
+                            &new_el.id(),
+                            new_el_resps,
+                            parent.clone(),
+                        );
                         extend_resps.extend(new_el_resps.0.drain(..));
                     }
                     *r = EventResponse::ReceivableEventChanges(rec);
@@ -507,10 +500,10 @@ impl ElementOrganizer {
             .expect("no element for destination id");
 
         // send EventKeys to element w/ context
-        let child_ctx = self.get_context_for_el(ctx, &el_details);
+        let child_ctx = ctx.child_context(&el_details.loc.borrow().l);
         let (_, mut resps) = el_details.el.receive_event(&child_ctx, evs);
 
-        self.partially_process_ev_resps(&el_id, &mut resps, parent);
+        self.partially_process_ev_resps(Some(ctx), &el_id, &mut resps, parent);
         Some((el_id, resps))
     }
 
@@ -528,7 +521,7 @@ impl ElementOrganizer {
 
         // refresh all children
         for (_, details) in self.els.borrow().iter() {
-            let el_ctx = self.get_context_for_el(ctx, details);
+            let el_ctx = ctx.child_context(&details.loc.borrow().l);
             let _ = details.el.receive_event(&el_ctx, Event::Refresh);
             let _ = details.el.receive_event(&el_ctx, Event::Resize);
 
@@ -593,7 +586,7 @@ impl ElementOrganizer {
         if eoz.is_empty() {
             let mut el_resps = Vec::new();
             for (el_id2, details2) in self.els.borrow().iter() {
-                let child_ctx = self.get_context_for_el(ctx, details2);
+                let child_ctx = ctx.child_context(&details2.loc.borrow().l);
                 let ev_adj = details2.loc.borrow().l.adjust_mouse_event_external(ctx, ev);
                 let (_, r) = details2
                     .el
@@ -613,7 +606,7 @@ impl ElementOrganizer {
         let details = self
             .get_element_details(&el_id)
             .expect("no element for destination id");
-        let child_ctx = self.get_context_for_el(ctx, &details);
+        let child_ctx = ctx.child_context(&details.loc.borrow().l);
 
         // adjust event to the relative position of the element
         let ev_adj = details.loc.borrow().l.adjust_mouse_event(ctx, ev);
@@ -621,13 +614,13 @@ impl ElementOrganizer {
         // send mouse event to element
         let (_, mut ev_resps) = details.el.receive_event(&child_ctx, Event::Mouse(ev_adj));
         let parent_ = dyn_clone::clone_box(&*parent);
-        self.partially_process_ev_resps(&el_id, &mut ev_resps, parent_);
+        self.partially_process_ev_resps(Some(ctx), &el_id, &mut ev_resps, parent_);
 
         // send the mouse event as an external event to all other elements
         // capture the responses
         let mut el_resps = Vec::new();
         for (el_id2, details2) in self.els.borrow().iter() {
-            let child_ctx = self.get_context_for_el(ctx, details2);
+            let child_ctx = ctx.child_context(&details2.loc.borrow().l);
             if *el_id2 == el_id {
                 continue;
             }
@@ -642,7 +635,7 @@ impl ElementOrganizer {
         // and all the elements that receive an external event
         for (el_id2, mut resps) in el_resps {
             let parent_ = dyn_clone::clone_box(&*parent);
-            self.partially_process_ev_resps(&el_id2, &mut resps, parent_);
+            self.partially_process_ev_resps(Some(ctx), &el_id2, &mut resps, parent_);
             ev_resps.extend(resps.0);
         }
         (Some(el_id), ev_resps)
@@ -654,7 +647,7 @@ impl ElementOrganizer {
     ) -> EventResponses {
         let mut ev_resps = EventResponses::default();
         for (el_id, details) in self.els.borrow().iter() {
-            let child_ctx = self.get_context_for_el(ctx, details);
+            let child_ctx = ctx.child_context(&details.loc.borrow().l);
             let ev_adj = details
                 .loc
                 .borrow()
@@ -664,7 +657,7 @@ impl ElementOrganizer {
                 .el
                 .receive_event(&child_ctx, Event::ExternalMouse(ev_adj));
             let parent_ = dyn_clone::clone_box(&*parent);
-            self.partially_process_ev_resps(el_id, &mut r, parent_);
+            self.partially_process_ev_resps(Some(ctx), el_id, &mut r, parent_);
             ev_resps.extend(r.0);
         }
         ev_resps
@@ -672,7 +665,7 @@ impl ElementOrganizer {
 
     pub fn exit_all(&self, ctx: &Context) {
         for (_, details) in self.els.borrow().iter() {
-            let child_ctx = self.get_context_for_el(ctx, details);
+            let child_ctx = ctx.child_context(&details.loc.borrow().l);
             let _ = details.el.receive_event(&child_ctx, Event::Exit);
         }
     }

@@ -255,15 +255,17 @@ impl Pane {
         *self.element_priority.borrow()
     }
 
-    pub fn propagate_responses_upward(&self, resps: EventResponses) {
+    pub fn propagate_responses_upward(&self, parent_ctx: Option<&Context>, resps: EventResponses) {
         if let Some(parent) = self.parent.borrow().as_ref() {
             debug!("pane propagate_responses_upward has parent");
-            parent.propagate_responses_upward(&self.id(), resps);
+            let next_parent_ctx =
+                if let Some(ctx) = parent_ctx { ctx.parent_context() } else { None };
+            parent.propagate_responses_upward(next_parent_ctx, &self.id(), resps);
         }
     }
 
     // focus all prioritized events
-    pub fn focus(&self) {
+    pub fn focus(&self, ctx: &Context) {
         *self.element_priority.borrow_mut() = Priority::Focused;
         self.self_evs
             .borrow_mut()
@@ -283,12 +285,12 @@ impl Pane {
                 .with_add_evs(self.self_evs.borrow().0.clone());
             debug!("\trec: {:?}", rec);
             let resps = EventResponse::ReceivableEventChanges(rec);
-            parent.propagate_responses_upward(&self.id(), resps.into());
+            parent.propagate_responses_upward(ctx.parent_context(), &self.id(), resps.into());
         }
     }
 
     // defocus all prioritized events
-    pub fn unfocus(&self) {
+    pub fn unfocus(&self, ctx: &Context) {
         *self.element_priority.borrow_mut() = Priority::Unfocused;
         self.self_evs
             .borrow_mut()
@@ -308,7 +310,7 @@ impl Pane {
                 .with_add_evs(self.self_evs.borrow().0.clone());
             debug!("\trec: {:?}", rec);
             let resps = EventResponse::ReceivableEventChanges(rec);
-            parent.propagate_responses_upward(&self.id(), resps.into());
+            parent.propagate_responses_upward(ctx.parent_context(), &self.id(), resps.into());
         }
     }
 }

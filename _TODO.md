@@ -21,6 +21,8 @@
 
 01. make window top bar slightly lighter when it's focused
 
+01. masterpty likes to die after 10 readers have been created
+
 01. file nav test seems not to work?
      - commit 10a47dd broke it
        - keyboard command nolonger passed up

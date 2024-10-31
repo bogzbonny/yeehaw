@@ -187,7 +187,7 @@ impl ParentPane {
         self.eo.update_el_z_index(el_id, z);
     }
 
-    pub fn focus(&self) {
+    pub fn focus(&self, ctx: &Context) {
         *self.pane.element_priority.borrow_mut() = Priority::Focused;
         self.pane
             .self_evs
@@ -201,11 +201,11 @@ impl ParentPane {
                 .with_remove_evs(rec.iter().map(|(ev, _)| ev.clone()).collect())
                 .with_add_evs(rec);
             let resps = EventResponse::ReceivableEventChanges(rec);
-            parent.propagate_responses_upward(&self.id(), resps.into());
+            parent.propagate_responses_upward(ctx.parent_context(), &self.id(), resps.into());
         }
     }
 
-    pub fn unfocus(&self) {
+    pub fn unfocus(&self, ctx: &Context) {
         *self.pane.element_priority.borrow_mut() = Priority::Unfocused;
         self.pane
             .self_evs
@@ -218,7 +218,7 @@ impl ParentPane {
                 .with_remove_evs(rec.iter().map(|(ev, _)| ev.clone()).collect())
                 .with_add_evs(rec);
             let resps = EventResponse::ReceivableEventChanges(rec);
-            parent.propagate_responses_upward(&self.id(), resps.into());
+            parent.propagate_responses_upward(ctx.parent_context(), &self.id(), resps.into());
         }
     }
 
@@ -380,11 +380,19 @@ impl Parent for ParentPane {
     // NOTE this function should be extended from if the parent pane is used as a base for a more
     // complex element. As the developer you should be fulfilling the
     // propagate_responses_upward function directly.
-    fn propagate_responses_upward(&self, child_el_id: &ElementID, mut resps: EventResponses) {
-        self.eo
-            .partially_process_ev_resps(child_el_id, &mut resps, Box::new(self.clone()));
+    fn propagate_responses_upward(
+        &self, parent_ctx: Option<&Context>, child_el_id: &ElementID, mut resps: EventResponses,
+    ) {
+        self.eo.partially_process_ev_resps(
+            parent_ctx,
+            child_el_id,
+            &mut resps,
+            Box::new(self.clone()),
+        );
         if let Some(up) = self.pane.parent.borrow_mut().deref() {
-            up.propagate_responses_upward(&self.id(), resps);
+            let next_parent_ctx =
+                if let Some(ctx) = parent_ctx { ctx.parent_context() } else { None };
+            up.propagate_responses_upward(next_parent_ctx, &self.id(), resps);
         }
     }
 

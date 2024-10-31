@@ -668,10 +668,10 @@ impl Element for MenuBar {
         // draw each menu item
         for el_details in self.pane.eo.els.borrow().values() {
             // offset pos to location
-            let s = el_details.loc.borrow().l.get_size(ctx);
-            let c = Context::new(s, ctx.dur_since_launch)
+            let child_ctx = ctx
+                .child_context(&el_details.loc.borrow().l)
                 .with_metadata(Self::MENU_STYLE_MD_KEY.to_string(), menu_style_bz.clone());
-            let dcps = el_details.el.drawing(&c);
+            let dcps = el_details.el.drawing(&child_ctx);
 
             for mut dcp in dcps {
                 dcp.adjust_by_dyn_location(ctx, &el_details.loc.borrow().l);

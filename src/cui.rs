@@ -316,10 +316,16 @@ impl Parent for CuiParent {
     // in inputability to the cui's ElementOrganizer, it must hold a reference to
     // the CUI and  be able to call this function (as opposed to calling it on an
     // Element, as a child normally would in the rest of the tree).
-    fn propagate_responses_upward(&self, child_el_id: &ElementID, mut resps: EventResponses) {
+    fn propagate_responses_upward(
+        &self, parent_ctx: Option<&Context>, child_el_id: &ElementID, mut resps: EventResponses,
+    ) {
         // process changes in element organizer
-        self.eo
-            .partially_process_ev_resps(child_el_id, &mut resps, Box::new(self.clone()));
+        self.eo.partially_process_ev_resps(
+            parent_ctx,
+            child_el_id,
+            &mut resps,
+            Box::new(self.clone()),
+        );
         process_event_resps(resps, Some(self.exit_tx.clone()));
     }
 
