@@ -15,7 +15,7 @@ use {
         ParentPane,
         Priority,
         ReceivableEventChanges,
-        SortingHat,
+
         //Style,
         //TerminalPane,
         ZIndex,
@@ -35,9 +35,9 @@ pub struct TermEditorPane {
 impl TermEditorPane {
     pub const KIND: &'static str = "term_editor_pane";
 
-    pub fn new(hat: &SortingHat, _ctx: &Context) -> Self {
+    pub fn new(ctx: &Context) -> Self {
         let editor: Option<String> = std::env::var("EDITOR").ok();
-        let pane = ParentPane::new(hat, Self::KIND);
+        let pane = ParentPane::new(ctx, Self::KIND);
 
         //let out = Self {
         //    pane,
@@ -61,14 +61,14 @@ impl TermEditorPane {
     //                cmd.cwd(cwd);
     //            }
     //            let term = TerminalPane::new_with_builder(
-    //                self.pane.hat.clone(),
+    //                self.pane.ctx.clone(),
     //                self.pane.ctx.clone(),
     //                cmd,
     //            );
     //            self.pane.add_element(Box::new(term));
     //        }
     //        None => {
-    //            let tb = TextBox::new(self.pane.hat.clone(), self.pane.ctx.clone());
+    //            let tb = TextBox::new(self.pane.ctx.clone(), self.pane.ctx.clone());
 
     //            self.pane.add_element(Box::new(term));
     //        }

@@ -3,7 +3,7 @@ use {
     crate::{
         Color, Context, DrawChPos, DrawChs2D, DynLocationSet, DynVal, Element, ElementID, Event,
         EventResponses, KeyPossibility, Keyboard as KB, Parent, Priority, ReceivableEventChanges,
-        RelMouseEvent, SortingHat, Style,
+        RelMouseEvent, Style,
     },
     crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
     std::ops::{Deref, DerefMut},
@@ -67,9 +67,9 @@ impl VerticalScrollbar {
     pub fn default_receivable_events() -> Vec<Event> {
         vec![KB::KEY_UP.into(), KB::KEY_DOWN.into(), KB::KEY_SPACE.into()]
     }
-    pub fn new(hat: &SortingHat, scrollable_view_height: DynVal, scrollable_height: usize) -> Self {
+    pub fn new(ctx: &Context, scrollable_view_height: DynVal, scrollable_height: usize) -> Self {
         let wb = WidgetBase::new(
-            hat,
+            ctx,
             Self::KIND,
             DynVal::new_fixed(1),
             scrollable_view_height.clone(),
@@ -150,9 +150,9 @@ impl HorizontalScrollbar {
     pub fn default_receivable_events() -> Vec<Event> {
         vec![KB::KEY_LEFT.into(), KB::KEY_RIGHT.into()]
     }
-    pub fn new(hat: &SortingHat, scrollable_view_width: DynVal, scrollable_width: usize) -> Self {
+    pub fn new(ctx: &Context, scrollable_view_width: DynVal, scrollable_width: usize) -> Self {
         let wb = WidgetBase::new(
-            hat,
+            ctx,
             Self::KIND,
             scrollable_view_width.clone(),
             DynVal::new_fixed(1),
@@ -1137,11 +1137,11 @@ mod tests {
         let w = 10;
         let sub = 2;
         let ctx = Context::default().with_height(1).with_width(w);
-        let hat = SortingHat::default();
+
         let width = DynVal::new_flex(1.).minus(sub.into());
         let width_val = width.get_val(ctx.get_width());
         assert_eq!(width_val, w as i32 - sub);
-        let sb = HorizontalScrollbar::new(&hat, width, w as usize * 2);
+        let sb = HorizontalScrollbar::new(&ctx, width, w as usize * 2);
         assert!(*sb.has_arrows.borrow());
 
         let dr = sb

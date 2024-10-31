@@ -1,8 +1,7 @@
 use {
     crate::{
         Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Pane, Parent, Priority, ReceivableEventChanges, SortingHat,
-        Style,
+        EventResponses, Keyboard as KB, Pane, Parent, Priority, ReceivableEventChanges, Style,
     },
     std::{
         cell::RefCell,
@@ -63,9 +62,9 @@ impl FileNavPane {
         ]
     }
 
-    pub fn new(hat: &SortingHat, ctx: &Context, dir: PathBuf) -> Self {
+    pub fn new(ctx: &Context, dir: PathBuf) -> Self {
         let styles = FileNavStyle::default();
-        let pane = Pane::new(hat, "file_nav_pane");
+        let pane = Pane::new(ctx, "file_nav_pane");
         let up_dir = UpDir::new(".. (up a dir)".to_string(), styles.up_dir.clone(), 0);
         let top_dir = TopDir::new(
             Folder::new(dir, styles.folder.clone(), styles.file.clone(), 0, true),

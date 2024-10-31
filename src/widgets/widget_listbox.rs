@@ -5,8 +5,7 @@ use {
     },
     crate::{
         Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, SortingHat, Style,
-        Parent,
+        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEventChanges, Style,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -81,7 +80,7 @@ impl ListBox {
     }
 
     pub fn new(
-        hat: &SortingHat, ctx: &Context, entries: Vec<String>,
+        ctx: &Context, entries: Vec<String>,
         selection_made_fn: Box<dyn FnMut(Context, Vec<String>) -> EventResponses>,
     ) -> Self {
         let max_entry_width = entries
@@ -93,7 +92,7 @@ impl ListBox {
         let max_lines_per_entry = entries.iter().map(|r| r.lines().count()).max().unwrap_or(0);
 
         let wb = WidgetBase::new(
-            hat,
+            ctx,
             Self::KIND,
             DynVal::new_fixed(max_entry_width as i32),
             DynVal::new_fixed(line_count),
@@ -183,7 +182,7 @@ impl ListBox {
         self
     }
 
-    pub fn to_widgets(self, hat: &SortingHat) -> Widgets {
+    pub fn to_widgets(self, ctx: &Context) -> Widgets {
         let position = *self.scrollbar_options.borrow();
         if let VerticalSBPositions::None = position {
             return Widgets(vec![Box::new(self)]);
@@ -191,7 +190,7 @@ impl ListBox {
         let height = self.base.get_dyn_height();
         let content_height = self.base.content_height();
         let mut sb =
-            VerticalScrollbar::new(hat, height, content_height).with_styles(Self::STYLE_SCROLLBAR);
+            VerticalScrollbar::new(ctx, height, content_height).with_styles(Self::STYLE_SCROLLBAR);
         if let VerticalSBPositions::ToTheLeft = position {
             sb = sb.at(
                 self.base.get_dyn_start_x().minus_fixed(1),
@@ -565,7 +564,7 @@ impl Element for ListBox {
     }
 
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.base.change_priority( p)
+        self.base.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.update_highlighting(ctx); // this can probably happen in a more targeted way

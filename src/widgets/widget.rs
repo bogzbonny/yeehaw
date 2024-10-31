@@ -3,7 +3,7 @@ use {
     crate::{
         event::Event, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal,
         Element, ElementID, EventResponse, EventResponses, Pane, Parent, Priority,
-        ReceivableEventChanges, SortingHat, Style, ZIndex,
+        ReceivableEventChanges, Style, ZIndex,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -198,64 +198,62 @@ impl Widgets {
         self.0.push(Box::new(l.at(x, y)));
     }
 
-    pub fn with_label(self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
+    pub fn with_label(self, ctx: &Context, l: &str) -> Self {
         // label to the right if a width of 1 otherwise label the top left
         if self.overall_loc().width(ctx) == 1 {
-            self.with_right_top_label(hat, ctx, l)
+            self.with_right_top_label(ctx, l)
         } else {
-            self.with_above_left_label(hat, ctx, l)
+            self.with_above_left_label(ctx, l)
         }
     }
 
-    pub fn with_above_left_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
-        self.add_label(ctx, Label::new(hat, ctx, l), LabelPosition::AboveThenLeft);
+    pub fn with_above_left_label(mut self, ctx: &Context, l: &str) -> Self {
+        self.add_label(ctx, Label::new(ctx, l), LabelPosition::AboveThenLeft);
         self
     }
 
-    pub fn with_above_right_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
-        self.add_label(ctx, Label::new(hat, ctx, l), LabelPosition::AboveThenRight);
+    pub fn with_above_right_label(mut self, ctx: &Context, l: &str) -> Self {
+        self.add_label(ctx, Label::new(ctx, l), LabelPosition::AboveThenRight);
         self
     }
 
-    pub fn with_below_left_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
-        self.add_label(ctx, Label::new(hat, ctx, l), LabelPosition::BelowThenLeft);
+    pub fn with_below_left_label(mut self, ctx: &Context, l: &str) -> Self {
+        self.add_label(ctx, Label::new(ctx, l), LabelPosition::BelowThenLeft);
         self
     }
 
-    pub fn with_below_right_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
-        self.add_label(ctx, Label::new(hat, ctx, l), LabelPosition::BelowThenRight);
+    pub fn with_below_right_label(mut self, ctx: &Context, l: &str) -> Self {
+        self.add_label(ctx, Label::new(ctx, l), LabelPosition::BelowThenRight);
         self
     }
 
-    pub fn with_left_top_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
-        self.add_label(ctx, Label::new(hat, ctx, l), LabelPosition::LeftThenTop);
+    pub fn with_left_top_label(mut self, ctx: &Context, l: &str) -> Self {
+        self.add_label(ctx, Label::new(ctx, l), LabelPosition::LeftThenTop);
         self
     }
 
-    pub fn with_left_bottom_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
-        self.add_label(ctx, Label::new(hat, ctx, l), LabelPosition::LeftThenBottom);
+    pub fn with_left_bottom_label(mut self, ctx: &Context, l: &str) -> Self {
+        self.add_label(ctx, Label::new(ctx, l), LabelPosition::LeftThenBottom);
         self
     }
 
-    pub fn with_right_top_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
-        self.add_label(ctx, Label::new(hat, ctx, l), LabelPosition::RightThenTop);
+    pub fn with_right_top_label(mut self, ctx: &Context, l: &str) -> Self {
+        self.add_label(ctx, Label::new(ctx, l), LabelPosition::RightThenTop);
         self
     }
 
-    pub fn with_right_bottom_label(mut self, hat: &SortingHat, ctx: &Context, l: &str) -> Self {
-        self.add_label(ctx, Label::new(hat, ctx, l), LabelPosition::RightThenBottom);
+    pub fn with_right_bottom_label(mut self, ctx: &Context, l: &str) -> Self {
+        self.add_label(ctx, Label::new(ctx, l), LabelPosition::RightThenBottom);
         self
     }
 
     // ---------------
     // vertical labels
 
-    pub fn with_left_top_vertical_label(
-        mut self, hat: &SortingHat, ctx: &Context, l: &str,
-    ) -> Self {
+    pub fn with_left_top_vertical_label(mut self, ctx: &Context, l: &str) -> Self {
         self.add_label(
             ctx,
-            Label::new(hat, ctx, l)
+            Label::new(ctx, l)
                 .with_rotated_text()
                 .with_down_justification(),
             LabelPosition::LeftThenTop,
@@ -263,12 +261,10 @@ impl Widgets {
         self
     }
 
-    pub fn with_left_bottom_vertical_label(
-        mut self, hat: &SortingHat, ctx: &Context, l: &str,
-    ) -> Self {
+    pub fn with_left_bottom_vertical_label(mut self, ctx: &Context, l: &str) -> Self {
         self.add_label(
             ctx,
-            Label::new(hat, ctx, l)
+            Label::new(ctx, l)
                 .with_rotated_text()
                 .with_up_justification(),
             LabelPosition::LeftThenBottom,
@@ -276,12 +272,10 @@ impl Widgets {
         self
     }
 
-    pub fn with_right_top_vertical_label(
-        mut self, hat: &SortingHat, ctx: &Context, l: &str,
-    ) -> Self {
+    pub fn with_right_top_vertical_label(mut self, ctx: &Context, l: &str) -> Self {
         self.add_label(
             ctx,
-            Label::new(hat, ctx, l)
+            Label::new(ctx, l)
                 .with_rotated_text()
                 .with_down_justification(),
             LabelPosition::RightThenTop,
@@ -289,12 +283,10 @@ impl Widgets {
         self
     }
 
-    pub fn with_right_bottom_vertical_label(
-        mut self, hat: &SortingHat, ctx: &Context, l: &str,
-    ) -> Self {
+    pub fn with_right_bottom_vertical_label(mut self, ctx: &Context, l: &str) -> Self {
         self.add_label(
             ctx,
-            Label::new(hat, ctx, l)
+            Label::new(ctx, l)
                 .with_rotated_text()
                 .with_up_justification(),
             LabelPosition::RightThenBottom,
@@ -313,14 +305,14 @@ pub struct WidgetBase {
 
 impl WidgetBase {
     pub fn new(
-        hat: &SortingHat, kind: &'static str, width: DynVal, height: DynVal, sty: WBStyles,
+        ctx: &Context, kind: &'static str, width: DynVal, height: DynVal, sty: WBStyles,
         mut receivable_events: Vec<Event>,
     ) -> Self {
         let evs = receivable_events
             .drain(..)
             .map(|ev| (ev, Priority::Focused))
             .collect();
-        let pane = Pane::new(hat, kind).with_self_receivable_events(evs);
+        let pane = Pane::new(ctx, kind).with_self_receivable_events(evs);
 
         let wb = Self {
             pane,
@@ -591,7 +583,7 @@ impl Element for WidgetBase {
     }
 
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.pane.change_priority( p)
+        self.pane.change_priority(p)
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {

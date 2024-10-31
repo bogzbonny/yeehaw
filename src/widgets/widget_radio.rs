@@ -2,8 +2,7 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, SortingHat, Style,
-        Parent,
+        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEventChanges, Style,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -53,10 +52,10 @@ impl RadioButtons {
         ]
     }
 
-    pub fn new(hat: &SortingHat, radios: Vec<String>) -> Self {
+    pub fn new(ctx: &Context, radios: Vec<String>) -> Self {
         let max_width = radios.iter().map(|r| r.chars().count()).max().unwrap_or(0) as i32 + 1; // +1 for the radio button
         let wb = WidgetBase::new(
-            hat,
+            ctx,
             Self::KIND,
             DynVal::new_fixed(max_width),
             DynVal::new_fixed(radios.len() as i32), // TODO change for multiline support
@@ -181,7 +180,7 @@ impl Element for RadioButtons {
     }
 
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.base.change_priority( p)
+        self.base.change_priority(p)
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {

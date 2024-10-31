@@ -2,7 +2,7 @@ use {
     crate::{
         Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
         EventResponse, EventResponses, Parent, ParentPane, Priority, ReceivableEventChanges, Size,
-        SortingHat, Style,
+        Style,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -18,17 +18,17 @@ pub struct VerticalStack {
 impl VerticalStack {
     const KIND: &'static str = "vertical_stack";
 
-    pub fn new(hat: &SortingHat) -> Self {
+    pub fn new(ctx: &Context) -> Self {
         Self {
-            pane: ParentPane::new(hat, Self::KIND),
+            pane: ParentPane::new(ctx, Self::KIND),
             els: Rc::new(RefCell::new(Vec::new())),
             last_size: Rc::new(RefCell::new(Size::new(0, 0))),
         }
     }
 
-    pub fn new_with_kind(hat: &SortingHat, kind: &'static str) -> Self {
+    pub fn new_with_kind(ctx: &Context, kind: &'static str) -> Self {
         Self {
-            pane: ParentPane::new(hat, kind),
+            pane: ParentPane::new(ctx, kind),
             els: Rc::new(RefCell::new(Vec::new())),
             last_size: Rc::new(RefCell::new(Size::new(0, 0))),
         }
@@ -168,17 +168,17 @@ pub struct HorizontalStack {
 impl HorizontalStack {
     const KIND: &'static str = "horizontal_stack";
 
-    pub fn new(hat: &SortingHat) -> Self {
+    pub fn new(ctx: &Context) -> Self {
         Self {
-            pane: ParentPane::new(hat, Self::KIND),
+            pane: ParentPane::new(ctx, Self::KIND),
             els: Rc::new(RefCell::new(Vec::new())),
             last_size: Rc::new(RefCell::new(Size::new(0, 0))),
         }
     }
 
-    pub fn new_with_kind(hat: &SortingHat, kind: &'static str) -> Self {
+    pub fn new_with_kind(ctx: &Context, kind: &'static str) -> Self {
         Self {
-            pane: ParentPane::new(hat, kind),
+            pane: ParentPane::new(ctx, kind),
             els: Rc::new(RefCell::new(Vec::new())),
             last_size: Rc::new(RefCell::new(Size::new(0, 0))),
         }
@@ -451,8 +451,8 @@ impl Element for HorizontalStack {
 #[allow(dead_code)]
 trait StackTr {
     const KIND: &'static str;
-    fn new(hat: &SortingHat) -> Self;
-    fn new_with_kind(hat: &SortingHat, kind: &'static str) -> Self;
+    fn new(ctx: &Context) -> Self;
+    fn new_with_kind(ctx: &Context, kind: &'static str) -> Self;
     fn push(&self, ctx: &Context, el: Box<dyn Element>) -> EventResponse;
     fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>) -> EventResponse;
     fn remove(&self, ctx: &Context, idx: usize) -> EventResponse;
@@ -469,11 +469,11 @@ trait StackTr {
 
 impl StackTr for VerticalStack {
     const KIND: &'static str = "vertical_stack";
-    fn new(hat: &SortingHat) -> Self {
-        VerticalStack::new(hat)
+    fn new(ctx: &Context) -> Self {
+        VerticalStack::new(ctx)
     }
-    fn new_with_kind(hat: &SortingHat, kind: &'static str) -> Self {
-        VerticalStack::new_with_kind(hat, kind)
+    fn new_with_kind(ctx: &Context, kind: &'static str) -> Self {
+        VerticalStack::new_with_kind(ctx, kind)
     }
     fn push(&self, ctx: &Context, el: Box<dyn Element>) -> EventResponse {
         VerticalStack::push(self, ctx, el)
@@ -515,11 +515,11 @@ impl StackTr for VerticalStack {
 
 impl StackTr for HorizontalStack {
     const KIND: &'static str = "horizontal_stack";
-    fn new(hat: &SortingHat) -> Self {
-        HorizontalStack::new(hat)
+    fn new(ctx: &Context) -> Self {
+        HorizontalStack::new(ctx)
     }
-    fn new_with_kind(hat: &SortingHat, kind: &'static str) -> Self {
-        HorizontalStack::new_with_kind(hat, kind)
+    fn new_with_kind(ctx: &Context, kind: &'static str) -> Self {
+        HorizontalStack::new_with_kind(ctx, kind)
     }
     fn push(&self, ctx: &Context, el: Box<dyn Element>) -> EventResponse {
         HorizontalStack::push(self, ctx, el)

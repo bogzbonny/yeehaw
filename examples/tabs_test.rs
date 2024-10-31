@@ -1,10 +1,9 @@
 use yeehaw::{
     //debug,
-    Context,
     Cui,
     DebugSizePane,
     Error,
-    SortingHat,
+
     Tabs,
 };
 
@@ -14,18 +13,17 @@ async fn main() -> Result<(), Error> {
     //yeehaw::debug::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
-    let hat = SortingHat::default();
-    let ctx = Context::new_context_for_screen_no_dur();
+    let (mut cui, ctx) = Cui::new()?;
 
-    let tabs = Tabs::new(&hat, &ctx);
-    let el1 = DebugSizePane::new(&hat).with_text("tab 1".to_string());
-    let el2 = DebugSizePane::new(&hat).with_text("tab 2".to_string());
-    let el3 = DebugSizePane::new(&hat).with_text("tab 3".to_string());
+    let tabs = Tabs::new(&ctx);
+    let el1 = DebugSizePane::new(&ctx).with_text("tab 1".to_string());
+    let el2 = DebugSizePane::new(&ctx).with_text("tab 2".to_string());
+    let el3 = DebugSizePane::new(&ctx).with_text("tab 3".to_string());
 
     tabs.push(&ctx, Box::new(el1), "tab 1");
     tabs.push(&ctx, Box::new(el2), "tab 2");
     tabs.push(&ctx, Box::new(el3), "tab 3");
     tabs.select(&ctx, 0);
 
-    Cui::new(Box::new(tabs))?.run().await
+    cui.run(Box::new(tabs)).await
 }

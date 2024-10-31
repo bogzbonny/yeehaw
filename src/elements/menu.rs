@@ -2,7 +2,7 @@ use {
     crate::{
         Color, Context, DrawCh, DrawChPos, DynLocation, DynLocationSet, DynVal, Element, ElementID,
         Event, EventResponses, Pane, Parent, ParentPane, Priority, ReceivableEventChanges,
-        RelMouseEvent, SortingHat, Style, ZIndex,
+        RelMouseEvent, Style, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::collections::HashMap,
@@ -72,8 +72,8 @@ impl MenuBar {
     const Z_INDEX: ZIndex = 100; // very frontward
     const MENU_STYLE_MD_KEY: &'static str = "menu_style";
 
-    pub fn top_menu_bar(hat: &SortingHat) -> Self {
-        let pane = ParentPane::new(hat, MenuBar::KIND).with_z(MenuBar::Z_INDEX);
+    pub fn top_menu_bar(ctx: &Context) -> Self {
+        let pane = ParentPane::new(ctx, MenuBar::KIND).with_z(MenuBar::Z_INDEX);
         MenuBar {
             pane,
             horizontal_bar: Rc::new(RefCell::new(true)),
@@ -88,8 +88,8 @@ impl MenuBar {
         }
     }
 
-    pub fn right_click_menu(hat: &SortingHat) -> Self {
-        let pane = ParentPane::new(hat, MenuBar::KIND).with_z(MenuBar::Z_INDEX);
+    pub fn right_click_menu(ctx: &Context) -> Self {
+        let pane = ParentPane::new(ctx, MenuBar::KIND).with_z(MenuBar::Z_INDEX);
         MenuBar {
             pane,
             horizontal_bar: Rc::new(RefCell::new(false)),
@@ -120,46 +120,46 @@ impl MenuBar {
     }
 
     // unselectable item as decoration
-    pub fn add_decor(&self, hat: &SortingHat, ctx: &Context, menu_path: String) {
+    pub fn add_decor(&self, ctx: &Context, menu_path: String) {
         let mp = MenuPath(menu_path);
-        self.ensure_folders(hat, ctx, mp.clone());
-        let item = MenuItem::new(hat, mp).with_unselectable();
+        self.ensure_folders(ctx, mp.clone());
+        let item = MenuItem::new(ctx, mp).with_unselectable();
         self.add_item_inner(ctx, item);
     }
 
     pub fn add_item(
-        &self, hat: &SortingHat, ctx: &Context, menu_path: String,
+        &self, ctx: &Context, menu_path: String,
         click_fn: Option<Box<dyn FnMut(Context) -> EventResponses>>,
     ) {
         let mp = MenuPath(menu_path);
-        self.ensure_folders(hat, ctx, mp.clone());
-        let item = MenuItem::new(hat, mp).with_click_fn(click_fn);
+        self.ensure_folders(ctx, mp.clone());
+        let item = MenuItem::new(ctx, mp).with_click_fn(click_fn);
         self.add_item_inner(ctx, item);
     }
 
     pub fn with_item(
-        self, hat: &SortingHat, ctx: &Context, menu_path: String,
+        self, ctx: &Context, menu_path: String,
         click_fn: Option<Box<dyn FnMut(Context) -> EventResponses>>,
     ) -> Self {
-        self.add_item(hat, ctx, menu_path, click_fn);
+        self.add_item(ctx, menu_path, click_fn);
         self
     }
 
-    pub fn set_items(&self, hat: &SortingHat, ctx: &Context, items: Vec<MenuItem>) {
+    pub fn set_items(&self, ctx: &Context, items: Vec<MenuItem>) {
         for item in items {
-            self.ensure_folders(hat, ctx, item.path.borrow().clone());
+            self.ensure_folders(ctx, item.path.borrow().clone());
             self.add_item_inner(ctx, item);
         }
     }
 
     // ensure or create all folders leading to the final menu path
-    pub fn ensure_folders(&self, hat: &SortingHat, ctx: &Context, menu_path: MenuPath) {
+    pub fn ensure_folders(&self, ctx: &Context, menu_path: MenuPath) {
         let folders = menu_path.folders();
         for i in 0..folders.len() {
             let folder_path = folders[..=i].join("/");
             if !self.contains_menu_item(MenuPath(folder_path.clone())) {
                 let path = MenuPath(folder_path);
-                let item = MenuItem::new_folder(hat, path);
+                let item = MenuItem::new_folder(ctx, path);
                 self.add_item_inner(ctx, item);
             }
         }
@@ -550,8 +550,8 @@ pub struct MenuItem {
 impl MenuItem {
     pub const KIND: &'static str = "menu_item";
 
-    pub fn new(hat: &SortingHat, path: MenuPath) -> Self {
-        let pane = Pane::new(hat, MenuItem::KIND).with_z(MenuBar::Z_INDEX);
+    pub fn new(ctx: &Context, path: MenuPath) -> Self {
+        let pane = Pane::new(ctx, MenuItem::KIND).with_z(MenuBar::Z_INDEX);
         MenuItem {
             pane,
             path: Rc::new(RefCell::new(path)),
@@ -563,8 +563,8 @@ impl MenuItem {
         }
     }
 
-    pub fn new_folder(hat: &SortingHat, path: MenuPath) -> Self {
-        let item = MenuItem::new(hat, path);
+    pub fn new_folder(ctx: &Context, path: MenuPath) -> Self {
+        let item = MenuItem::new(ctx, path);
         *item.is_folder.borrow_mut() = true;
         item
     }

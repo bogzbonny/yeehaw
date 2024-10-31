@@ -1,6 +1,6 @@
 use yeehaw::{
     widgets::{Button, Label},
-    Context, Cui, Error, EventResponses, MenuBar, ParentPane, SortingHat, VerticalStack,
+    Cui, Error, EventResponses, MenuBar, ParentPane, VerticalStack,
 };
 
 #[tokio::main]
@@ -9,23 +9,21 @@ async fn main() -> Result<(), Error> {
     //yeehaw::debug::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
-    let hat = SortingHat::default();
-    let ctx = Context::new_context_for_screen_no_dur();
+    let (mut cui, ctx) = Cui::new()?;
 
-    let vstack = VerticalStack::new(&hat);
-    let mb = MenuBar::top_menu_bar(&hat)
+    let vstack = VerticalStack::new(&ctx);
+    let mb = MenuBar::top_menu_bar(&ctx)
         .with_height(1.into())
         .with_width(1.0.into());
-    let lower = ParentPane::new(&hat, "lower")
+    let lower = ParentPane::new(&ctx, "lower")
         .with_dyn_height(1.0.into())
         .with_dyn_width(1.0.into())
         .with_z(100);
 
-    let label = Label::new(&hat, &ctx, "label").at(0.into(), 10.into());
+    let label = Label::new(&ctx, "label").at(0.into(), 10.into());
 
     let label_ = label.clone();
     let btn_a = Button::new(
-        &hat,
         &ctx,
         "A",
         Box::new(move |_, ctx_| {
@@ -37,7 +35,6 @@ async fn main() -> Result<(), Error> {
 
     let label_ = label.clone();
     let btn_b = Button::new(
-        &hat,
         &ctx,
         "B",
         Box::new(move |_, ctx_| {
@@ -49,7 +46,6 @@ async fn main() -> Result<(), Error> {
 
     let label_ = label.clone();
     let btn_c = Button::new(
-        &hat,
         &ctx,
         "C",
         Box::new(move |_, ctx_| {
@@ -67,17 +63,12 @@ async fn main() -> Result<(), Error> {
     vstack.push(&ctx, Box::new(mb.clone()));
     vstack.push(&ctx, Box::new(lower));
 
-    mb.add_item(&hat, &ctx, "hello/asdg/2222/3".to_string(), None);
-    mb.add_item(
-        &hat,
-        &ctx,
-        "hello/asdg/444ll/3adsf3/sdlkjf".to_string(),
-        None,
-    );
-    mb.add_item(&hat, &ctx, "hello/as33/222222/33".to_string(), None);
-    mb.add_item(&hat, &ctx, "world/yo".to_string(), None);
-    mb.add_item(&hat, &ctx, "world/yosdfjldsffff/asdkjl".to_string(), None);
-    mb.add_item(&hat, &ctx, "diner/yoyo/hi/asgd".to_string(), None);
+    mb.add_item(&ctx, "hello/asdg/2222/3".to_string(), None);
+    mb.add_item(&ctx, "hello/asdg/444ll/3adsf3/sdlkjf".to_string(), None);
+    mb.add_item(&ctx, "hello/as33/222222/33".to_string(), None);
+    mb.add_item(&ctx, "world/yo".to_string(), None);
+    mb.add_item(&ctx, "world/yosdfjldsffff/asdkjl".to_string(), None);
+    mb.add_item(&ctx, "diner/yoyo/hi/asgd".to_string(), None);
 
-    Cui::new(Box::new(vstack))?.run().await
+    cui.run(Box::new(vstack)).await
 }

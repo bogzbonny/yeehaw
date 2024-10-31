@@ -1,8 +1,7 @@
 use {
     crate::{
-        ReceivableEventChanges, widgets::TextBox, Context, DrawChPos, DynLocationSet,
-        DynVal, Element, ElementID, Event, EventResponses, Priority, SortingHat, Parent,
-        WidgetPane,
+        widgets::TextBox, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
+        EventResponses, Parent, Priority, ReceivableEventChanges, WidgetPane,
     },
     std::path::PathBuf,
     std::{cell::RefCell, rc::Rc},
@@ -15,11 +14,11 @@ pub struct FileViewerPane {
 }
 
 impl FileViewerPane {
-    pub fn new(hat: &SortingHat, ctx: &Context, file_path: PathBuf) -> FileViewerPane {
+    pub fn new(ctx: &Context, file_path: PathBuf) -> FileViewerPane {
         let content = std::fs::read_to_string(file_path).unwrap();
 
-        let pane = WidgetPane::new(hat);
-        let tb = TextBox::new(hat, ctx, content)
+        let pane = WidgetPane::new(ctx);
+        let tb = TextBox::new(ctx, content)
             .with_width(DynVal::new_flex(1.))
             .with_height(DynVal::new_flex(1.))
             .with_right_scrollbar()
@@ -27,7 +26,7 @@ impl FileViewerPane {
             .editable()
             .with_no_wordwrap()
             .at(DynVal::new_fixed(0), DynVal::new_fixed(0))
-            .to_widgets(hat, ctx);
+            .to_widgets(ctx);
         pane.add_widgets(tb);
 
         FileViewerPane { pane }
@@ -48,7 +47,7 @@ impl Element for FileViewerPane {
         self.pane.receive_event(ctx, ev.clone())
     }
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.pane.change_priority( p)
+        self.pane.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.pane.drawing(ctx)

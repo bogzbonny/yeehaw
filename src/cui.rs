@@ -2,6 +2,7 @@ use {
     crate::{
         keyboard::Keyboard, ChPlus, Context, DynLocation, DynLocationSet, Element, ElementID,
         ElementOrganizer, Error, Event, EventResponse, EventResponses, Parent, Priority,
+        SortingHat,
     },
     crossterm::{
         cursor,
@@ -42,13 +43,14 @@ pub struct Cui {
 }
 
 impl Cui {
-    pub fn new(main_el: Box<dyn Element>) -> Result<Cui, Error> {
+    pub fn new() -> Result<(Cui, Context), Error> {
         let (exit_tx, exit_recv) = tokio::sync::watch::channel(false);
         let eo = ElementOrganizer::default();
-        let cup = CuiParent::new(eo, exit_tx);
+        let hat = SortingHat::default();
+        let cup = CuiParent::new(hat, eo, exit_tx);
         let cui = Cui {
-            cup: cup.clone(),
-            main_el_id: main_el.id().clone(),
+            cup,
+            main_el_id: "".to_string(),
             kb: Keyboard::default(),
             launch_instant: std::time::Instant::now(),
             kill_on_ctrl_c: true,
@@ -56,8 +58,18 @@ impl Cui {
             exit_recv,
         };
 
+        let ctx = Context::new_context_for_screen_no_dur(&cui.cup.hat);
+        Ok((cui, ctx))
+    }
+
+    pub fn context(&self) -> Context {
+        Context::new_context_for_screen(self.launch_instant, &self.cup.hat)
+    }
+
+    pub async fn run(&mut self, main_el: Box<dyn Element>) -> Result<(), Error> {
+        self.main_el_id = main_el.id();
         // add the element here after the location has been created
-        let ctx = Context::new_context_for_screen_no_dur();
+        let ctx = Context::new_context_for_screen_no_dur(&self.cup.hat);
         let loc = DynLocation::new_fixed(0, ctx.s.width.into(), 0, ctx.s.height.into());
         let loc = DynLocationSet::new(loc, vec![], 0);
         main_el.set_dyn_location_set(loc);
@@ -67,15 +79,11 @@ impl Cui {
         // when adding the main element, nil is passed in as the parent
         // this is because the top of the tree is the CUI's main EO and so no parent
         // is necessary
-        cui.cup.eo.add_element(main_el.clone(), Some(Box::new(cup)));
-        cui.cup.eo.refresh(&ctx);
-        //debug!("mail_el rec: {:?}", main_el.borrow().receivable());
+        self.cup
+            .eo
+            .add_element(main_el.clone(), Some(Box::new(self.cup.clone())));
+        self.cup.eo.refresh(&ctx);
 
-        set_panic_hook_with_closedown();
-        Ok(cui)
-    }
-
-    pub async fn run(&mut self) -> Result<(), Error> {
         sc_startup()?;
         self.launch().await;
         sc_closedown()?;
@@ -108,7 +116,7 @@ impl Cui {
                                 }
 
                                 CTEvent::Resize(_, _) => {
-                                    let ctx = Context::new_context_for_screen(self.launch_instant);
+                                    let ctx = self.context();
                                     let loc = DynLocation::new_fixed(0, ctx.s.width.into(), 0, ctx.s.height.into());
                                     // There should only be one element at index 0 in the upper level EO
                                     self.cup.eo.update_el_primary_location(self.main_el_id.clone(), loc);
@@ -136,11 +144,6 @@ impl Cui {
                 },
             };
         }
-    }
-
-    // context for initialization.
-    pub fn context(&self) -> Context {
-        Context::new_context_for_screen_no_dur()
     }
 
     pub fn close(&mut self) -> Result<(), Error> {
@@ -177,7 +180,7 @@ impl Cui {
             //debug!("no dest");
             return false;
         };
-        let ctx = Context::new_context_for_screen(self.launch_instant);
+        let ctx = self.context();
         //debug!("cui destination: {:?}", dest);
 
         let Some((_, resps)) =
@@ -194,7 +197,7 @@ impl Cui {
     // process_event_mouse handles mouse events
     //                                                                       exit-cui
     pub fn process_event_mouse(&mut self, mouse_ev: ct_event::MouseEvent) -> bool {
-        let ctx = Context::new_context_for_screen(self.launch_instant);
+        let ctx = self.context();
         let (_, resps) =
             self.cup
                 .eo
@@ -226,7 +229,7 @@ impl Cui {
     // lower down the tree.
     pub fn render(&mut self) {
         let mut sc = stdout();
-        let ctx = Context::new_context_for_screen(self.launch_instant);
+        let ctx = self.context();
         let chs = self.cup.eo.all_drawing(&ctx);
 
         let mut dedup_chs: HashMap<(u16, u16), StyledContent<ChPlus>> = HashMap::new();
@@ -293,14 +296,16 @@ pub fn process_event_resps(
 
 #[derive(Clone)]
 pub struct CuiParent {
+    pub hat: SortingHat,
     pub eo: ElementOrganizer,
     pub el_store: Rc<RefCell<HashMap<String, Vec<u8>>>>,
     pub exit_tx: Sender<bool>,
 }
 
 impl CuiParent {
-    pub fn new(eo: ElementOrganizer, exit_tx: Sender<bool>) -> CuiParent {
+    pub fn new(hat: SortingHat, eo: ElementOrganizer, exit_tx: Sender<bool>) -> CuiParent {
         CuiParent {
+            hat,
             eo,
             el_store: Rc::new(RefCell::new(HashMap::new())),
             exit_tx,
@@ -343,6 +348,7 @@ impl Parent for CuiParent {
 }
 
 pub fn sc_startup() -> Result<(), Error> {
+    set_panic_hook_with_closedown();
     let mut sc = stdout();
     execute!(
         sc,

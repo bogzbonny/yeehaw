@@ -2,8 +2,7 @@ use {
     super::{Selectability, VerticalScrollbar, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEventChanges, SortingHat,
-        Style, ZIndex,
+        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEventChanges, Style, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -67,18 +66,18 @@ impl DropdownList {
     }
 
     pub fn new(
-        hat: &SortingHat, _ctx: &Context, entries: Vec<String>,
+        ctx: &Context, entries: Vec<String>,
         selection_made_fn: Box<dyn FnMut(Context, String) -> EventResponses>,
     ) -> Self {
         let wb = WidgetBase::new(
-            hat,
+            ctx,
             Self::KIND,
             DynVal::new_fixed(0), // NOTE width is set later
             DynVal::new_fixed(1),
             Self::STYLE,
             Self::default_receivable_events(),
         );
-        let sb = VerticalScrollbar::new(hat, DynVal::new_fixed(0), 0)
+        let sb = VerticalScrollbar::new(ctx, DynVal::new_fixed(0), 0)
             .without_arrows()
             .with_styles(Self::STYLE_SCROLLBAR);
 
@@ -443,7 +442,7 @@ impl Element for DropdownList {
     }
 
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.base.change_priority( p)
+        self.base.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.base.set_content_from_string(ctx, &self.text(ctx));

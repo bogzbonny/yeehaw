@@ -3,7 +3,7 @@ use {
     crate::{
         Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
         EventResponse, EventResponses, KeyPossibility, Keyboard as KB, Parent, ParentPane,
-        Priority, ReceivableEventChanges, SortingHat,
+        Priority, ReceivableEventChanges,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -28,9 +28,9 @@ impl WidgetPane {
         ]
     }
 
-    pub fn new(hat: &SortingHat) -> Self {
+    pub fn new(ctx: &Context) -> Self {
         let wp = WidgetPane {
-            pane: ParentPane::new(hat, Self::KIND),
+            pane: ParentPane::new(ctx, Self::KIND),
             widgets: Rc::new(RefCell::new(Vec::new())),
             active_widget_index: Rc::new(RefCell::new(None)),
         };

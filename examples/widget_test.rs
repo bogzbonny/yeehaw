@@ -5,14 +5,13 @@ use yeehaw::{
         NumbersTextBox, RadioButtons, TextBox, Toggle, WBStyles,
     },
     Color,
-    Context,
     Cui,
     DynVal,
     Element,
     Error,
     EventResponses,
     Gradient,
-    SortingHat,
+
     WidgetPane,
 };
 
@@ -22,12 +21,11 @@ async fn main() -> Result<(), Error> {
     yeehaw::debug::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
-    let hat = SortingHat::default();
-    let ctx = Context::new_context_for_screen_no_dur();
+    let (mut cui, ctx) = Cui::new()?;
 
-    let el = WidgetPane::new(&hat);
+    let el = WidgetPane::new(&ctx);
 
-    let l1 = Label::new(&hat, &ctx, "some label");
+    let l1 = Label::new(&ctx, "some label");
 
     let l = l1
         .clone()
@@ -42,40 +40,35 @@ async fn main() -> Result<(), Error> {
         l1.set_text(&ctx_, t);
         EventResponses::default()
     });
-    let button = Button::new(&hat, &ctx, "click me", button_click_fn)
+    let button = Button::new(&ctx, "click me", button_click_fn)
         .with_description("a button!".to_string())
         .at(DynVal::new_flex(0.25), DynVal::new_flex(0.25))
         .to_widgets()
-        .with_label(&hat, &ctx, "button-label");
+        .with_label(&ctx, "button-label");
     el.add_widgets(button);
 
-    let button2 = Button::new(
-        &hat,
-        &ctx,
-        "button2",
-        Box::new(|_, _| EventResponses::default()),
-    )
-    .with_description("a button!".to_string())
-    .with_sides(ButtonSides::default())
-    .at(DynVal::new_flex(0.25), DynVal::new_flex(0.29))
-    .to_widgets();
+    let button2 = Button::new(&ctx, "button2", Box::new(|_, _| EventResponses::default()))
+        .with_description("a button!".to_string())
+        .with_sides(ButtonSides::default())
+        .at(DynVal::new_flex(0.25), DynVal::new_flex(0.29))
+        .to_widgets();
 
     el.add_widgets(button2);
 
-    let cb = Checkbox::new(&hat)
+    let cb = Checkbox::new(&ctx)
         .at(DynVal::new_flex(0.1), DynVal::new_flex(0.1))
         .to_widgets()
-        .with_label(&hat, &ctx, "check me");
+        .with_label(&ctx, "check me");
     el.add_widgets(cb);
 
-    let cb2 = Checkbox::new(&hat)
+    let cb2 = Checkbox::new(&ctx)
         .at(DynVal::new_flex(0.1), DynVal::new_flex(0.1).plus_fixed(1))
         .to_widgets()
-        .with_label(&hat, &ctx, "check me2");
+        .with_label(&ctx, "check me2");
     el.add_widgets(cb2);
 
     let rbs = RadioButtons::new(
-        &hat,
+        &ctx,
         vec![
             "radio1".to_string(),
             "radio2".to_string(),
@@ -92,7 +85,6 @@ async fn main() -> Result<(), Error> {
     mtext_sty.unselectable_style.fg = Some(Color::Gradient(gr));
 
     let mtext = FigletText::new(
-        &hat,
         &ctx,
         "HELLO, WERLD!",
         figlet_rs::FIGfont::from_content(std::include_str!("../assets/figlet/ANSI_Shadow.flf"))
@@ -107,7 +99,6 @@ async fn main() -> Result<(), Error> {
     // sun runes: ★
 
     let toggle = Toggle::new(
-        &hat,
         &ctx,
         " ★ ".to_string(),
         " ⏾ ".to_string(),
@@ -122,20 +113,15 @@ async fn main() -> Result<(), Error> {
         .map(|i| format!("entry {}", i))
         .collect::<Vec<String>>();
 
-    let dropdown = DropdownList::new(
-        &hat,
-        &ctx,
-        dd_entries,
-        Box::new(|_, _| EventResponses::default()),
-    )
-    .with_max_expanded_height(10)
-    .with_width(
-        DynVal::default()
-            .plus_max_of(DynVal::new_flex(0.2))
-            .plus_max_of(DynVal::new_fixed(12)),
-    )
-    .at(DynVal::new_flex(0.1), DynVal::new_flex(0.8))
-    .to_widgets();
+    let dropdown = DropdownList::new(&ctx, dd_entries, Box::new(|_, _| EventResponses::default()))
+        .with_max_expanded_height(10)
+        .with_width(
+            DynVal::default()
+                .plus_max_of(DynVal::new_flex(0.2))
+                .plus_max_of(DynVal::new_fixed(12)),
+        )
+        .at(DynVal::new_flex(0.1), DynVal::new_flex(0.8))
+        .to_widgets();
     el.add_widgets(dropdown);
 
     let ld_entries = (1..=10)
@@ -143,43 +129,34 @@ async fn main() -> Result<(), Error> {
         .collect::<Vec<String>>();
 
     use yeehaw::widgets::widget_listbox::SelectionMode;
-    let listbox = ListBox::new(
-        &hat,
-        &ctx,
-        ld_entries,
-        Box::new(|_, _| EventResponses::default()),
-    )
-    .with_selection_mode(&ctx, SelectionMode::UpTo(3))
-    .with_width(&ctx, DynVal::new_fixed(10))
-    .with_height(&ctx, DynVal::new_fixed(5))
-    .with_scrollbar()
-    .at(DynVal::new_flex(0.5), DynVal::new_flex(0.1))
-    .to_widgets(&hat);
+    let listbox = ListBox::new(&ctx, ld_entries, Box::new(|_, _| EventResponses::default()))
+        .with_selection_mode(&ctx, SelectionMode::UpTo(3))
+        .with_width(&ctx, DynVal::new_fixed(10))
+        .with_height(&ctx, DynVal::new_fixed(5))
+        .with_scrollbar()
+        .at(DynVal::new_flex(0.5), DynVal::new_flex(0.1))
+        .to_widgets(&ctx);
     el.add_widgets(listbox);
 
-    let tb = TextBox::new(
-        &hat,
-        &ctx,
-        "hellllllllllllllllllllllllllo\nworld".to_string(),
-    )
-    .with_width(DynVal::new_fixed(20))
-    .with_height(DynVal::new_fixed(10))
-    .with_line_numbers()
-    .with_right_scrollbar()
-    .with_lower_scrollbar()
-    .editable()
-    .with_no_wordwrap()
-    .at(DynVal::new_fixed(70), DynVal::new_fixed(6))
-    .to_widgets(&hat, &ctx);
+    let tb = TextBox::new(&ctx, "hellllllllllllllllllllllllllo\nworld".to_string())
+        .with_width(DynVal::new_fixed(20))
+        .with_height(DynVal::new_fixed(10))
+        .with_line_numbers()
+        .with_right_scrollbar()
+        .with_lower_scrollbar()
+        .editable()
+        .with_no_wordwrap()
+        .at(DynVal::new_fixed(70), DynVal::new_fixed(6))
+        .to_widgets(&ctx);
 
     el.add_widgets(tb);
 
-    let ntb = NumbersTextBox::new(&hat, &ctx, 0)
+    let ntb = NumbersTextBox::new(&ctx, 0)
         .with_min(-10)
         .with_max(10)
         .at(DynVal::new_flex(0.75), DynVal::new_flex(0.5))
-        .to_widgets(&hat, &ctx);
+        .to_widgets(&ctx);
     el.add_widgets(ntb);
 
-    Cui::new(Box::new(el))?.run().await
+    cui.run(Box::new(el)).await
 }

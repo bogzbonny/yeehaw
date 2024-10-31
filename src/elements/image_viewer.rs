@@ -1,7 +1,7 @@
 use {
     crate::{
-        ReceivableEventChanges, Context, DrawChPos, DrawChPosVec, DynLocationSet, DynVal,
-        Element, ElementID, Event, EventResponses, Pane, Parent, Priority, SortingHat, ZIndex,
+        Context, DrawChPos, DrawChPosVec, DynLocationSet, DynVal, Element, ElementID, Event,
+        EventResponses, Pane, Parent, Priority, ReceivableEventChanges, ZIndex,
     },
     image::DynamicImage,
     ratatui::widgets::StatefulWidget,
@@ -20,7 +20,7 @@ pub struct ImageViewer {
 }
 
 impl ImageViewer {
-    pub fn new(hat: &SortingHat, img_path: &str) -> Self {
+    pub fn new(ctx: &Context, img_path: &str) -> Self {
         let dyn_img = image::ImageReader::open(img_path)
             .unwrap()
             .decode()
@@ -36,13 +36,13 @@ impl ImageViewer {
         // Create the Protocol which will be used by the widget.
         let st_pro = picker.new_resize_protocol(dyn_img);
         Self {
-            pane: Pane::new(hat, "image_viewer_pane"),
+            pane: Pane::new(ctx, "image_viewer_pane"),
             //image: Rc::new(RefCell::new(dyn_img)),
             st_pro: Rc::new(RefCell::new(st_pro)),
         }
     }
 
-    pub fn new_from_dyn_image(hat: &SortingHat, dyn_img: DynamicImage) -> Self {
+    pub fn new_from_dyn_image(ctx: &Context, dyn_img: DynamicImage) -> Self {
         let Ok(mut picker) = Picker::from_termios() else {
             panic!("Could not create picker");
         };
@@ -53,7 +53,7 @@ impl ImageViewer {
         // Create the Protocol which will be used by the widget.
         let st_pro = picker.new_resize_protocol(dyn_img);
         Self {
-            pane: Pane::new(hat, "debug_size_pane"),
+            pane: Pane::new(ctx, "debug_size_pane"),
             //image: Rc::new(RefCell::new(dyn_img)),
             st_pro: Rc::new(RefCell::new(st_pro)),
         }
@@ -89,7 +89,7 @@ impl Element for ImageViewer {
         self.pane.receive_event(ctx, ev.clone())
     }
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.pane.change_priority( p)
+        self.pane.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let area = ratatui::layout::Rect::new(0, 0, ctx.s.width, ctx.s.height);

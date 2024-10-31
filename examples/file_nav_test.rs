@@ -1,36 +1,25 @@
 use yeehaw::{
-    //debug,
-    Context,
-    Cui,
-    Error,
-    EventResponses,
-    FileNavPane,
-    FileViewerPane,
-    HorizontalStack,
-    ParentPane,
-    SortingHat,
+    Cui, Error, EventResponses, FileNavPane, FileViewerPane, HorizontalStack, ParentPane,
 };
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    yeehaw::debug::set_log_file("./debug_test.log".to_string());
-    yeehaw::debug::clear();
+    //yeehaw::debug::set_log_file("./debug_test.log".to_string());
+    //yeehaw::debug::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
-    let hat = SortingHat::default();
-    let ctx = Context::new_context_for_screen_no_dur();
+    let (mut cui, ctx) = Cui::new()?;
 
-    let hstack = HorizontalStack::new(&hat);
+    let hstack = HorizontalStack::new(&ctx);
 
     // NOTE here the ParentPane effectively acts as a box.
     // if we don't use indirection then open_fn deadlocks
-    let panebox = ParentPane::new(&hat, "box");
+    let panebox = ParentPane::new(&ctx, "box");
 
-    let nav = FileNavPane::new(&hat, &ctx, std::env::current_dir().unwrap());
+    let nav = FileNavPane::new(&ctx, std::env::current_dir().unwrap());
 
     let nav_ = nav.clone();
     let panebox_ = panebox.clone();
-    let hat_ = hat.clone();
     let outer_ctx = ctx.clone();
     let open_fn = Box::new(move |ctx, path| {
         if !panebox_.has_elements() {
@@ -38,7 +27,7 @@ async fn main() -> Result<(), Error> {
         }
 
         nav_.pane.unfocus(&ctx); // the only time which the inner ctx is relavent here
-        let viewer = Box::new(FileViewerPane::new(&hat_, &outer_ctx, path));
+        let viewer = Box::new(FileViewerPane::new(&outer_ctx, path));
         let resp = panebox_.add_element(viewer).into();
         panebox_
             .pane
@@ -50,5 +39,5 @@ async fn main() -> Result<(), Error> {
 
     hstack.push(&ctx, Box::new(nav.clone()));
     hstack.push(&ctx, Box::new(panebox.clone()));
-    Cui::new(Box::new(hstack))?.run().await
+    cui.run(Box::new(hstack)).await
 }

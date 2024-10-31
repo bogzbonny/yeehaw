@@ -1,8 +1,7 @@
 use {
     crate::{
         Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Parent, ParentPane, Priority, ReceivableEventChanges, SortingHat, Style,
-        VerticalStack,
+        EventResponses, Parent, ParentPane, Priority, ReceivableEventChanges, Style, VerticalStack,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -31,11 +30,9 @@ impl TabsTop {
     const KIND: &'static str = "tabs_top";
 
     #[allow(clippy::type_complexity)]
-    pub fn new(
-        hat: &SortingHat, els: Rc<RefCell<Vec<Box<dyn Element>>>>, names: Vec<String>,
-    ) -> Self {
+    pub fn new(ctx: &Context, els: Rc<RefCell<Vec<Box<dyn Element>>>>, names: Vec<String>) -> Self {
         let tt = Self {
-            pane: ParentPane::new(hat, Self::KIND),
+            pane: ParentPane::new(ctx, Self::KIND),
             els,
             names: Rc::new(RefCell::new(names)),
             selected: Rc::new(RefCell::new(None)),
@@ -109,7 +106,7 @@ impl Element for TabsTop {
         self.pane.receive_event(ctx, ev)
     }
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.pane.change_priority( p)
+        self.pane.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         // set the names of the tabs
@@ -179,9 +176,9 @@ pub struct Tabs {
 impl Tabs {
     const KIND: &'static str = "tabs";
 
-    pub fn new(hat: &SortingHat, ctx: &Context) -> Self {
-        let tabs_top = TabsTop::new(hat, Rc::new(RefCell::new(Vec::new())), Vec::new());
-        let pane = VerticalStack::new(hat);
+    pub fn new(ctx: &Context) -> Self {
+        let tabs_top = TabsTop::new(ctx, Rc::new(RefCell::new(Vec::new())), Vec::new());
+        let pane = VerticalStack::new(ctx);
         pane.pane.pane.set_kind(Self::KIND);
         pane.push(ctx, Box::new(tabs_top.clone()));
         Self {
@@ -263,7 +260,7 @@ impl Element for Tabs {
         out
     }
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.pane.change_priority( p)
+        self.pane.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.pane.drawing(ctx)

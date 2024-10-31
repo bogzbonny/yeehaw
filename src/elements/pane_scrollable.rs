@@ -5,7 +5,7 @@ use {
         },
         Context, DrawCh, DrawChPos, DrawChPosVec, DynLocationSet, DynVal, Element, ElementID,
         Event, EventResponses, Loc, Parent, ParentPane, Priority, ReceivableEventChanges, Size,
-        SortingHat, Style,
+        Style,
     },
     crossterm::event::{KeyModifiers, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -29,9 +29,9 @@ pub struct PaneScrollable {
 impl PaneScrollable {
     pub const KIND: &'static str = "pane_scrollable";
 
-    pub fn new(hat: &SortingHat, width: usize, height: usize) -> Self {
+    pub fn new(ctx: &Context, width: usize, height: usize) -> Self {
         Self {
-            pane: ParentPane::new(hat, Self::KIND),
+            pane: ParentPane::new(ctx, Self::KIND),
             content_width: Rc::new(RefCell::new(width)),
             content_height: Rc::new(RefCell::new(height)),
             content_offset_x: Rc::new(RefCell::new(0)),
@@ -247,15 +247,15 @@ impl PaneWithScrollbars {
     pub const KIND: &'static str = "pane_with_scrollbars";
 
     pub fn new(
-        hat: &SortingHat, ctx: &Context, width: usize, height: usize,
-        x_scrollbar_op: HorizontalSBPositions, y_scrollbar_op: VerticalSBPositions,
+        ctx: &Context, width: usize, height: usize, x_scrollbar_op: HorizontalSBPositions,
+        y_scrollbar_op: VerticalSBPositions,
     ) -> Self {
-        let pane = ParentPane::new(hat, Self::KIND);
+        let pane = ParentPane::new(ctx, Self::KIND);
         let x_scrollbar = Rc::new(RefCell::new(None));
         let y_scrollbar = Rc::new(RefCell::new(None));
         let corner_decor = Rc::new(RefCell::new(DrawCh::new('⁙', Style::default_const())));
 
-        let inner_pane = PaneScrollable::new(hat, width, height);
+        let inner_pane = PaneScrollable::new(ctx, width, height);
 
         // THERE is a strange issue with the scrollbars here, using the HorizontalScrollbar as an
         // example:
@@ -287,7 +287,7 @@ impl PaneWithScrollbars {
                 DynVal::new_fixed(0),
             ),
         };
-        let x_sb = HorizontalScrollbar::new(hat, x_sb_size, *inner_pane.content_width.borrow());
+        let x_sb = HorizontalScrollbar::new(ctx, x_sb_size, *inner_pane.content_width.borrow());
         match x_scrollbar_op {
             HorizontalSBPositions::None => {}
             HorizontalSBPositions::Above => {
@@ -316,7 +316,7 @@ impl PaneWithScrollbars {
             ),
         };
 
-        let y_sb = VerticalScrollbar::new(hat, y_sb_size, *inner_pane.content_height.borrow());
+        let y_sb = VerticalScrollbar::new(ctx, y_sb_size, *inner_pane.content_height.borrow());
         match y_scrollbar_op {
             VerticalSBPositions::None => {}
             VerticalSBPositions::ToTheRight => {

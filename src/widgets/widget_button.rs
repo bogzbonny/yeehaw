@@ -2,8 +2,7 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Color, Context, DrawChPos, DrawChs2D, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEventChanges, SortingHat,
-        Style,
+        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEventChanges, Style,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -166,11 +165,10 @@ impl Button {
     }
 
     pub fn new(
-        hat: &SortingHat, _ctx: &Context, text: &str,
-        clicked_fn: Box<dyn FnMut(Button, Context) -> EventResponses>,
+        ctx: &Context, text: &str, clicked_fn: Box<dyn FnMut(Button, Context) -> EventResponses>,
     ) -> Self {
         let wb = WidgetBase::new(
-            hat,
+            ctx,
             Self::KIND,
             DynVal::new_fixed(text.chars().count() as i32 + 2), // + 2 for sides
             DynVal::new_fixed(1),
@@ -295,7 +293,7 @@ impl Element for Button {
     }
 
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.base.change_priority( p)
+        self.base.change_priority(p)
     }
     fn drawing(&self, _ctx: &Context) -> Vec<DrawChPos> {
         self.button_drawing().to_draw_ch_pos(0, 0)

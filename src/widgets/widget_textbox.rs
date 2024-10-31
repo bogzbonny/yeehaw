@@ -7,7 +7,7 @@ use {
         elements::menu::{MenuItem, MenuPath, MenuStyle},
         Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Error,
         Event, EventResponse, EventResponses, KeyPossibility, Keyboard as KB, Parent, Priority,
-        ReceivableEventChanges, RightClickMenu, SortingHat, Style,
+        ReceivableEventChanges, RightClickMenu, Style,
     },
     crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -107,10 +107,10 @@ impl TextBox {
         ]
     }
 
-    pub fn new(hat: &SortingHat, ctx: &Context, text: String) -> Self {
+    pub fn new(ctx: &Context, text: String) -> Self {
         let (width, height) = common::get_text_size(&text);
         let wb = WidgetBase::new(
-            hat,
+            ctx,
             Self::KIND,
             DynVal::new_fixed(width as i32),
             DynVal::new_fixed(height as i32),
@@ -145,20 +145,19 @@ impl TextBox {
         let tb1 = tb.clone();
         let tb2 = tb.clone();
         let tb3 = tb.clone();
-        let rcm = RightClickMenu::new(hat, MenuStyle::default()).with_menu_items(
-            hat,
+        let rcm = RightClickMenu::new(ctx, MenuStyle::default()).with_menu_items(
             ctx,
             vec![
-                MenuItem::new(hat, MenuPath("Cut".to_string())).with_click_fn(Some(Box::new(
+                MenuItem::new(ctx, MenuPath("Cut".to_string())).with_click_fn(Some(Box::new(
                     move |ctx| tb1.cut_to_clipboard(&ctx).unwrap(),
                 ))),
-                MenuItem::new(hat, MenuPath("Copy".to_string())).with_click_fn(Some(Box::new(
+                MenuItem::new(ctx, MenuPath("Copy".to_string())).with_click_fn(Some(Box::new(
                     move |_ctx| {
                         tb2.copy_to_clipboard().unwrap();
                         EventResponses::default()
                     },
                 ))),
-                MenuItem::new(hat, MenuPath("Paste".to_string())).with_click_fn(Some(Box::new(
+                MenuItem::new(ctx, MenuPath("Paste".to_string())).with_click_fn(Some(Box::new(
                     move |ctx| tb3.paste_from_clipboard(&ctx).unwrap(),
                 ))),
             ],
@@ -325,7 +324,7 @@ impl TextBox {
         self
     }
 
-    pub fn to_widgets(mut self, hat: &SortingHat, ctx: &Context) -> Widgets {
+    pub fn to_widgets(mut self, ctx: &Context) -> Widgets {
         let (x, y) = (self.base.get_dyn_start_x(), self.base.get_dyn_start_y());
         let (h, w) = (self.base.get_dyn_height(), self.base.get_dyn_width());
         let mut out: Vec<Box<dyn Widget>> = vec![];
@@ -335,7 +334,7 @@ impl TextBox {
 
             // create the line numbers textbox
             let (lns, lnw) = self.get_line_numbers(ctx);
-            let ln_tb = TextBox::new(hat, ctx, lns)
+            let ln_tb = TextBox::new(ctx, lns)
                 .at(x.clone(), y.clone())
                 .with_width(DynVal::new_fixed(lnw as i32))
                 .with_height(h.clone())
@@ -362,7 +361,7 @@ impl TextBox {
         let no_y_sb = matches!(y_sb_op, VerticalSBPositions::None);
         let no_x_sb = matches!(x_sb_op, HorizontalSBPositions::None);
         if !no_y_sb && !no_x_sb {
-            let cd = Label::new(hat, ctx, &(self.corner_decor.borrow().ch.to_string()))
+            let cd = Label::new(ctx, &(self.corner_decor.borrow().ch.to_string()))
                 .with_style(ctx, self.corner_decor.borrow().style.clone());
             let (cd_x, cd_y) = match (y_sb_op, x_sb_op) {
                 (VerticalSBPositions::ToTheLeft, HorizontalSBPositions::Above) => {
@@ -389,7 +388,7 @@ impl TextBox {
                 VerticalSBPositions::ToTheRight => x.clone().plus(w.clone()),
                 _ => panic!("impossible"),
             };
-            let vsb = VerticalScrollbar::new(hat, h.clone(), self.base.content_height())
+            let vsb = VerticalScrollbar::new(ctx, h.clone(), self.base.content_height())
                 .at(x2, y.clone())
                 .with_styles(Self::STYLE_SCROLLBAR);
 
@@ -421,7 +420,7 @@ impl TextBox {
                 _ => panic!("impossible"),
             };
 
-            let hsb = HorizontalScrollbar::new(hat, w, self.x_new_domain_chs())
+            let hsb = HorizontalScrollbar::new(ctx, w, self.x_new_domain_chs())
                 .at(x, y2)
                 .with_styles(Self::STYLE_SCROLLBAR);
 

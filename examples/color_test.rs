@@ -1,9 +1,6 @@
 use {
     //std::env,
-    yeehaw::{
-        Color, Cui, DynVal, Error, /*Gradient,*/ RadialGradient, SortingHat, TimeGradient,
-        WidgetPane,
-    },
+    yeehaw::{Color, Cui, DynVal, Error, /*Gradient,*/ RadialGradient, TimeGradient, WidgetPane,},
 };
 
 #[tokio::main]
@@ -12,7 +9,7 @@ async fn main() -> Result<(), Error> {
     //yeehaw::debug::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
-    let hat = SortingHat::default();
+    let (mut cui, ctx) = Cui::new()?;
 
     let time_gr = vec![
         (std::time::Duration::from_secs(0), Color::RED),
@@ -83,7 +80,7 @@ async fn main() -> Result<(), Error> {
         grad: rgrad,
     });
 
-    let el = WidgetPane::new(&hat).with_bg_color(el_bg);
+    let el = WidgetPane::new(&ctx).with_bg_color(el_bg);
 
-    Cui::new(Box::new(el))?.run().await
+    cui.run(Box::new(el)).await
 }

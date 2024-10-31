@@ -2,7 +2,7 @@ use {
     crate::{
         Context, DrawCh, DrawChPos, DynLocation, DynLocationSet, DynVal, Element, ElementID,
         ElementOrganizer, Event, EventResponse, EventResponses, Pane, Parent, Priority,
-        ReceivableEventChanges, SortingHat, Style, ZIndex,
+        ReceivableEventChanges, Style, ZIndex,
     },
     std::collections::HashMap,
     std::{
@@ -27,8 +27,8 @@ pub struct ParentPane {
 }
 
 impl ParentPane {
-    pub fn new(hat: &SortingHat, kind: &'static str) -> Self {
-        let pane = Pane::new(hat, kind).focused();
+    pub fn new(ctx: &Context, kind: &'static str) -> Self {
+        let pane = Pane::new(ctx, kind).focused();
         ParentPane {
             pane,
             eo: ElementOrganizer::default(),

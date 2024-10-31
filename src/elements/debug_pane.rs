@@ -1,8 +1,7 @@
 use {
     crate::{
-        ReceivableEventChanges, Context, DrawCh, DrawChPos, DrawChs2D, DynLocationSet,
-        DynVal, Element, ElementID, Event, EventResponses, Pane, Parent, Priority, SortingHat,
-        Style, ZIndex,
+        Context, DrawCh, DrawChPos, DrawChs2D, DynLocationSet, DynVal, Element, ElementID, Event,
+        EventResponses, Pane, Parent, Priority, ReceivableEventChanges, Style, ZIndex,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -16,9 +15,9 @@ pub struct DebugSizePane {
 }
 
 impl DebugSizePane {
-    pub fn new(hat: &SortingHat) -> DebugSizePane {
+    pub fn new(ctx: &Context) -> DebugSizePane {
         DebugSizePane {
-            pane: Pane::new(hat, "debug_size_pane"),
+            pane: Pane::new(ctx, "debug_size_pane"),
             sty: Rc::new(RefCell::new(Style::default())),
             text: Rc::new(RefCell::new(String::new())),
         }
@@ -69,7 +68,7 @@ impl Element for DebugSizePane {
         self.pane.receive_event(ctx, ev.clone())
     }
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.pane.change_priority( p)
+        self.pane.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let size = ctx.s;

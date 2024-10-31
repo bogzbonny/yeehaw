@@ -2,7 +2,7 @@ use {
     crate::{
         Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal, Element,
         ElementID, Event, EventResponse, EventResponses, Parent, Priority, ReceivableEventChanges,
-        SortingHat, Style, ZIndex,
+        Style, ZIndex,
     },
     std::{
         collections::HashMap,
@@ -17,7 +17,7 @@ use {
 pub struct Pane {
     kind: Rc<RefCell<&'static str>>,
 
-    id: Rc<RefCell<String>>, // element-id as assigned by the sorting-hat
+    id: Rc<RefCell<String>>, // element-id as assigned by the sorting-ctx
 
     attributes: Rc<RefCell<HashMap<String, Vec<u8>>>>,
 
@@ -63,10 +63,10 @@ impl Pane {
     // to the standard pane, as the standard pane is only boilerplate.
     pub const KIND: &'static str = "standard_pane";
 
-    pub fn new(hat: &SortingHat, kind: &'static str) -> Pane {
+    pub fn new(ctx: &Context, kind: &'static str) -> Pane {
         Pane {
             kind: Rc::new(RefCell::new(kind)),
-            id: Rc::new(RefCell::new(hat.create_element_id(kind))),
+            id: Rc::new(RefCell::new(ctx.hat.create_element_id(kind))),
             attributes: Rc::new(RefCell::new(HashMap::new())),
             self_evs: Rc::new(RefCell::new(SelfReceivableEvents::default())),
             element_priority: Rc::new(RefCell::new(Priority::Unfocused)),

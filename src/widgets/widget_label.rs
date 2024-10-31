@@ -2,7 +2,7 @@ use {
     super::{common, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
-        Parent, Priority, ReceivableEventChanges, SortingHat, Style,
+        Parent, Priority, ReceivableEventChanges, Style,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -34,10 +34,10 @@ pub static LABEL_STYLE: WBStyles = WBStyles {
 impl Label {
     const KIND: &'static str = "widget_label";
 
-    pub fn new(hat: &SortingHat, ctx: &Context, text: &str) -> Self {
+    pub fn new(ctx: &Context, text: &str) -> Self {
         let (w, h) = common::get_text_size(text);
         let wb = WidgetBase::new(
-            hat,
+            ctx,
             Self::KIND,
             DynVal::new_fixed(w as i32),
             DynVal::new_fixed(h as i32),
@@ -157,7 +157,7 @@ impl Element for Label {
         self.base.receive_event(ctx, ev)
     }
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.base.change_priority( p)
+        self.base.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.base.drawing(ctx)

@@ -2,8 +2,7 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, SortingHat, Style,
-        Parent,
+        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEventChanges, Style,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -45,11 +44,11 @@ impl Toggle {
     }
 
     pub fn new(
-        hat: &SortingHat, ctx: &Context, left: String, right: String,
+        ctx: &Context, left: String, right: String,
         toggeld_fn: Box<dyn FnMut(Context, String) -> EventResponses>,
     ) -> Self {
         let wb = WidgetBase::new(
-            hat,
+            ctx,
             Self::KIND,
             DynVal::new_fixed(left.chars().count() as i32 + right.chars().count() as i32),
             DynVal::new_fixed(1),
@@ -171,7 +170,7 @@ impl Element for Toggle {
     }
 
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.base.change_priority( p)
+        self.base.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         // need to re set the content in order to reflect active style

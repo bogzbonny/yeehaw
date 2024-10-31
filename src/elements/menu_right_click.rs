@@ -3,7 +3,7 @@ use {
         elements::menu::{MenuItem, MenuStyle},
         Context, DrawChPos, DynLocation, DynLocationSet, DynVal, Element, ElementID, Event,
         EventResponse, EventResponses, MenuBar, Parent, Point, Priority, ReceivableEventChanges,
-        SortingHat, ZIndex,
+        ZIndex,
     },
     crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -32,8 +32,8 @@ impl RightClickMenu {
     pub const MENU_POSITION_MD_KEY: &'static str = "menu_position";
     pub const Z_INDEX: ZIndex = 100;
 
-    pub fn new(hat: &SortingHat, sty: MenuStyle) -> Self {
-        let menu = MenuBar::right_click_menu(hat).with_menu_style(sty);
+    pub fn new(ctx: &Context, sty: MenuStyle) -> Self {
+        let menu = MenuBar::right_click_menu(ctx).with_menu_style(sty);
         Self {
             menu,
             pos: Rc::new(RefCell::new(Point::default())),
@@ -41,8 +41,8 @@ impl RightClickMenu {
         }
     }
 
-    pub fn with_menu_items(self, hat: &SortingHat, ctx: &Context, items: Vec<MenuItem>) -> Self {
-        self.menu.set_items(hat, ctx, items);
+    pub fn with_menu_items(self, ctx: &Context, items: Vec<MenuItem>) -> Self {
+        self.menu.set_items(ctx, items);
         self
     }
 
@@ -126,7 +126,7 @@ impl Element for RightClickMenu {
     }
 
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.menu.change_priority( p)
+        self.menu.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.menu.drawing(ctx)

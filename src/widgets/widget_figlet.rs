@@ -2,7 +2,7 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, DrawChs2D, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Priority, ReceivableEventChanges, SortingHat, Style, Parent,
+        EventResponses, Parent, Priority, ReceivableEventChanges, Style,
     },
     figlet_rs::FIGfont,
     std::{cell::RefCell, rc::Rc},
@@ -18,11 +18,11 @@ pub struct FigletText {
 impl FigletText {
     const KIND: &'static str = "widget_megatext";
 
-    pub fn new(hat: &SortingHat, ctx: &Context, text: &str, font: FIGfont) -> Self {
+    pub fn new(ctx: &Context, text: &str, font: FIGfont) -> Self {
         let Some(fig_text) = font.convert(text) else {
             return FigletText {
                 base: WidgetBase::new(
-                    hat,
+                    ctx,
                     Self::KIND,
                     DynVal::new_fixed(0),
                     DynVal::new_fixed(0),
@@ -38,7 +38,7 @@ impl FigletText {
         let size = content.size();
 
         let wb = WidgetBase::new(
-            hat,
+            ctx,
             Self::KIND,
             DynVal::new_fixed(size.width as i32),
             DynVal::new_fixed(size.height as i32),
@@ -86,7 +86,7 @@ impl Element for FigletText {
         self.base.receive_event(ctx, ev)
     }
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.base.change_priority( p)
+        self.base.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.base.drawing(ctx)

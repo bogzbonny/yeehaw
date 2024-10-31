@@ -3,7 +3,7 @@ use {
         widgets::{Button, Label, WBStyles},
         Color, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal, Element,
         ElementID, Event, EventResponse, EventResponses, Pane, Parent, ParentPane, Priority,
-        ReceivableEventChanges, Size, SortingHat, Style, ZIndex,
+        ReceivableEventChanges, Size, Style, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -35,10 +35,10 @@ impl WindowPane {
     const WINDOW_MINIMIZE_RESTORE_EV_KEY: &'static str = "window_minimize_restore";
     const WINDOW_RESET_MAXIMIZER_EV_KEY: &'static str = "window_reset_maximizer";
     pub const Z_INDEX: ZIndex = 50;
-    pub fn new(hat: &SortingHat, ctx: &Context, inner: Box<dyn Element>, title: &str) -> Self {
+    pub fn new(ctx: &Context, inner: Box<dyn Element>, title: &str) -> Self {
         //let vs = VerticalStack::new_with_kind(hat, Self::KIND).with_style(Style::transparent());
-        let pane = ParentPane::new(hat, Self::KIND).with_transparent();
-        let top_bar = Box::new(BasicWindowTopBar::new(hat, ctx, title, true, true, true));
+        let pane = ParentPane::new(ctx, Self::KIND).with_transparent();
+        let top_bar = Box::new(BasicWindowTopBar::new(ctx, title, true, true, true));
         //debug!(
         //    "***********************************new window pane, pane priority: {}",
         //    pane.pane.get_element_priority()
@@ -91,8 +91,8 @@ impl WindowPane {
         self
     }
 
-    pub fn with_corner_adjuster(self, hat: &SortingHat, ctx: &Context) -> Self {
-        let ca = CornerAdjuster::new(hat, ctx).at(
+    pub fn with_corner_adjuster(self, ctx: &Context) -> Self {
+        let ca = CornerAdjuster::new(ctx).at(
             DynVal::new_flex(1.).minus(1.into()),
             DynVal::new_flex(1.).minus(1.into()),
         );
@@ -493,10 +493,10 @@ pub struct BasicWindowTopBar {
 
 impl BasicWindowTopBar {
     pub fn new(
-        hat: &SortingHat, ctx: &Context, title: &str, close_button: bool, maximize_button: bool,
+        ctx: &Context, title: &str, close_button: bool, maximize_button: bool,
         minimize_button: bool,
     ) -> Self {
-        let pane = ParentPane::new(hat, "basic_window_top_bar")
+        let pane = ParentPane::new(ctx, "basic_window_top_bar")
             .with_dyn_height(DynVal::new_fixed(1))
             .with_dyn_width(DynVal::new_flex(1.))
             .with_style(Style::default().with_bg(Color::WHITE).with_fg(Color::BLACK));
@@ -517,7 +517,6 @@ impl BasicWindowTopBar {
 
         if close_button {
             let close_button = Button::new(
-                hat,
                 ctx,
                 "x",
                 Box::new(|_, _ctx| {
@@ -543,7 +542,6 @@ impl BasicWindowTopBar {
         let mut maximizer_button = None;
         if maximize_button {
             let maximize_button = Button::new(
-                hat,
                 ctx,
                 "□",
                 Box::new(|btn, _ctx| {
@@ -576,7 +574,6 @@ impl BasicWindowTopBar {
 
         if minimize_button {
             let minimize_button = Button::new(
-                hat,
                 ctx,
                 "ˍ",
                 Box::new(|_, _ctx| {
@@ -599,12 +596,12 @@ impl BasicWindowTopBar {
         }
 
         let title_label = Box::new(
-            Label::new(hat, ctx, title)
+            Label::new(ctx, title)
                 .with_style(ctx, Style::transparent())
                 .at(DynVal::new_fixed(1), DynVal::new_fixed(0)),
         );
         let decor_label = Box::new(
-            Label::new(hat, ctx, "◹")
+            Label::new(ctx, "◹")
                 .with_style(ctx, Style::transparent())
                 .at(DynVal::new_flex(1.).minus(2.into()), DynVal::new_fixed(0)),
         );
@@ -722,8 +719,8 @@ impl CornerAdjuster {
     const ADJUST_SIZE_MD_KEY: &'static str = "adjust_size";
     const Z_INDEX: ZIndex = 200;
 
-    pub fn new(hat: &SortingHat, _ctx: &Context) -> Self {
-        let pane = Pane::new(hat, "resize_corner")
+    pub fn new(ctx: &Context) -> Self {
+        let pane = Pane::new(ctx, "resize_corner")
             .with_dyn_height(1.into())
             .with_dyn_width(1.into())
             .with_style(Style::default().with_bg(Color::WHITE).with_fg(Color::BLACK))

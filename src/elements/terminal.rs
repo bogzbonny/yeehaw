@@ -6,7 +6,7 @@ use {
     crate::{
         ChPlus, Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID,
         Event, EventResponse, EventResponses, KeyPossibility, Pane, Parent, Priority,
-        ReceivableEventChanges, SortingHat, Style, ZIndex,
+        ReceivableEventChanges, Style, ZIndex,
     },
     compact_str::CompactString,
     crossterm::event::{KeyCode, KeyEvent, KeyModifiers},
@@ -42,17 +42,17 @@ pub struct TerminalPane {
 }
 
 impl TerminalPane {
-    pub fn new(hat: &SortingHat, ctx: &Context) -> Self {
+    pub fn new(ctx: &Context) -> Self {
         let cwd = std::env::current_dir().unwrap();
         let mut cmd = CommandBuilder::new_default_prog();
         cmd.cwd(cwd);
-        Self::new_with_builder(hat, ctx, cmd)
+        Self::new_with_builder(ctx, cmd)
     }
 
-    pub fn new_with_builder(hat: &SortingHat, ctx: &Context, cmd: CommandBuilder) -> Self {
+    pub fn new_with_builder(ctx: &Context, cmd: CommandBuilder) -> Self {
         let size = ctx.s;
         let pane =
-            Pane::new(hat, "terminal_pane").with_self_receivable_events(Self::receivable_events());
+            Pane::new(ctx, "terminal_pane").with_self_receivable_events(Self::receivable_events());
 
         let pty_system = native_pty_system();
         let pty_pair = pty_system

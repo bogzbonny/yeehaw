@@ -1,5 +1,5 @@
 use {
-    crate::{DynLocation, Loc, Size},
+    crate::{DynLocation, Loc, Size, SortingHat},
     std::collections::HashMap,
 };
 
@@ -18,19 +18,46 @@ pub struct Context {
     //                      key , value
     pub metadata: HashMap<String, Vec<u8>>,
     pub parent_ctx: Option<Box<Context>>,
+    pub hat: SortingHat,
 }
 
 impl Context {
-    pub fn new(
-        s: Size, dur_since_launch: std::time::Duration, visible_region: Option<Loc>,
-        metadata: HashMap<String, Vec<u8>>, parent_ctx: Box<Context>,
-    ) -> Context {
+    //pub fn new(
+    //    s: Size, dur_since_launch: std::time::Duration, visible_region: Option<Loc>,
+    //    metadata: HashMap<String, Vec<u8>>, parent_ctx: Box<Context>,
+    //) -> Context {
+    //    Context {
+    //        s,
+    //        dur_since_launch,
+    //        visible_region,
+    //        metadata,
+    //        parent_ctx: Some(parent_ctx),
+    //    }
+    //}
+
+    // TODO return error
+    pub fn new_context_for_screen_no_dur(hat: &SortingHat) -> Context {
+        let (xmax, ymax) = crossterm::terminal::size().unwrap();
         Context {
-            s,
-            dur_since_launch,
-            visible_region,
-            metadata,
-            parent_ctx: Some(parent_ctx),
+            s: Size::new(xmax, ymax),
+            dur_since_launch: std::time::Duration::default(),
+            visible_region: None,
+            metadata: HashMap::new(),
+            parent_ctx: None,
+            hat: hat.clone(),
+        }
+    }
+
+    // TODO return error
+    pub fn new_context_for_screen(launch_instant: std::time::Instant, hat: &SortingHat) -> Context {
+        let (xmax, ymax) = crossterm::terminal::size().unwrap();
+        Context {
+            s: Size::new(xmax, ymax),
+            dur_since_launch: launch_instant.elapsed(),
+            visible_region: None,
+            metadata: HashMap::new(),
+            parent_ctx: None,
+            hat: hat.clone(),
         }
     }
 
@@ -50,13 +77,14 @@ impl Context {
         } else {
             None
         };
-        Context::new(
-            size,
-            self.dur_since_launch,
+        Context {
+            s: size,
+            dur_since_launch: self.dur_since_launch,
             visible_region,
-            self.metadata.clone(),
-            Box::new(self.clone()),
-        )
+            metadata: self.metadata.clone(),
+            parent_ctx: Some(Box::new(self.clone())),
+            hat: self.hat.clone(),
+        }
     }
 
     pub fn parent_context(&self) -> Option<&Context> {
@@ -81,30 +109,6 @@ impl Context {
     pub fn with_width(mut self, w: u16) -> Self {
         self.s.width = w;
         self
-    }
-
-    // TODO return error
-    pub fn new_context_for_screen_no_dur() -> Context {
-        let (xmax, ymax) = crossterm::terminal::size().unwrap();
-        Context {
-            s: Size::new(xmax, ymax),
-            dur_since_launch: std::time::Duration::default(),
-            visible_region: None,
-            metadata: HashMap::new(),
-            parent_ctx: None,
-        }
-    }
-
-    // TODO return error
-    pub fn new_context_for_screen(launch_instant: std::time::Instant) -> Context {
-        let (xmax, ymax) = crossterm::terminal::size().unwrap();
-        Context {
-            s: Size::new(xmax, ymax),
-            dur_since_launch: launch_instant.elapsed(),
-            visible_region: None,
-            metadata: HashMap::new(),
-            parent_ctx: None,
-        }
     }
 
     pub fn with_metadata(mut self, key: String, md: Vec<u8>) -> Self {

@@ -2,8 +2,7 @@ use {
     super::{Button, Selectability, TextBox, WBStyles, Widget, Widgets},
     crate::{
         Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
-        KeyPossibility, Keyboard as KB, Parent, Priority, ReceivableEventChanges, SortingHat,
-        Style,
+        KeyPossibility, Keyboard as KB, Parent, Priority, ReceivableEventChanges, Style,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -36,9 +35,8 @@ impl NumbersTextBox {
         ]
     }
 
-    pub fn new(hat: &SortingHat, ctx: &Context, starting_value: i64) -> Self {
-        let tb =
-            TextBox::new(hat, ctx, format!("{}", starting_value)).with_width(DynVal::new_fixed(5));
+    pub fn new(ctx: &Context, starting_value: i64) -> Self {
+        let tb = TextBox::new(ctx, format!("{}", starting_value)).with_width(DynVal::new_fixed(5));
         Self {
             tb,
             value: Rc::new(RefCell::new(starting_value)),
@@ -112,7 +110,7 @@ impl NumbersTextBox {
         self
     }
 
-    pub fn to_widgets(&self, hat: &SortingHat, ctx: &Context) -> Widgets {
+    pub fn to_widgets(&self, ctx: &Context) -> Widgets {
         let (x, y) = (
             self.tb.base.get_dyn_start_x(),
             self.tb.base.get_dyn_start_y(),
@@ -123,7 +121,6 @@ impl NumbersTextBox {
             let incr = *self.button_increment.borrow();
             let self_ = self.clone();
             let up_btn = Button::new(
-                hat,
                 ctx,
                 "▲",
                 Box::new(move |_, ctx| {
@@ -135,7 +132,6 @@ impl NumbersTextBox {
             .basic_button(None);
             let self_ = self.clone();
             let down_btn = Button::new(
-                hat,
                 ctx,
                 "▼",
                 Box::new(move |_, ctx| {
@@ -248,7 +244,7 @@ impl Element for NumbersTextBox {
     }
 
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.tb.change_priority( p)
+        self.tb.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.tb.drawing(ctx)

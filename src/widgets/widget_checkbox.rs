@@ -2,7 +2,7 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Attributes, Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Priority, ReceivableEventChanges, SortingHat, Style,
+        EventResponses, Keyboard as KB, Priority, ReceivableEventChanges,  Style,
         Parent,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -41,9 +41,9 @@ impl Checkbox {
         vec![KB::KEY_ENTER.into()] // when "active" hitting enter will click the button
     }
 
-    pub fn new(hat: &SortingHat) -> Self {
+    pub fn new(ctx: &Context) -> Self {
         let wb = WidgetBase::new(
-            hat,
+            ctx,
             Self::KIND,
             DynVal::new_fixed(1),
             DynVal::new_fixed(1),

@@ -1,14 +1,5 @@
 use yeehaw::{
-    //debug,
-    widgets::Button,
-    Context,
-    Cui,
-    DebugSizePane,
-    Error,
-    EventResponses,
-    HorizontalStack,
-    SortingHat,
-    VerticalStack,
+    widgets::Button, Cui, DebugSizePane, Error, EventResponses, HorizontalStack, VerticalStack,
     WidgetPane,
 };
 
@@ -18,13 +9,12 @@ async fn main() -> Result<(), Error> {
     //yeehaw::debug::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
-    let hat = SortingHat::default();
-    let ctx = Context::new_context_for_screen_no_dur();
+    let (mut cui, ctx) = Cui::new()?;
 
-    let vstack = VerticalStack::new(&hat);
-    //let mut widget_pane = WidgetPane::new(&hat).with_height(DynVal::new_flex_with_max_fixed(0., 3));
-    let widget_pane = WidgetPane::new(&hat).with_height(3.into());
-    let hstack = HorizontalStack::new(&hat).with_height(1.0.into());
+    let vstack = VerticalStack::new(&ctx);
+    //let mut widget_pane = WidgetPane::new(&ctx).with_height(DynVal::new_flex_with_max_fixed(0., 3));
+    let widget_pane = WidgetPane::new(&ctx).with_height(3.into());
+    let hstack = HorizontalStack::new(&ctx).with_height(1.0.into());
     vstack.push(&ctx, Box::new(widget_pane.clone()));
     vstack.push(&ctx, Box::new(hstack.clone()));
 
@@ -35,22 +25,22 @@ async fn main() -> Result<(), Error> {
         }
         EventResponses::default()
     });
-    let remove_button = Button::new(&hat, &ctx, "remove_pane", remove_button_click_fn)
+    let remove_button = Button::new(&ctx, "remove_pane", remove_button_click_fn)
         .at(13.into(), 1.into())
         .to_widgets();
     widget_pane.add_widgets(remove_button);
 
     let hstack_ = hstack.clone();
-    let hat_ = hat.clone();
-    let add_button_click_fn = Box::new(move |_, ctx_| {
-        let el = DebugSizePane::new(&hat_).with_width(hstack_.avg_width(&ctx_));
+    let ctx_ = ctx.clone();
+    let add_button_click_fn = Box::new(move |_, _| {
+        let el = DebugSizePane::new(&ctx_).with_width(hstack_.avg_width(&ctx_));
         hstack_.push(&ctx_, Box::new(el));
         EventResponses::default()
     });
-    let add_button = Button::new(&hat, &ctx, "add_pane", add_button_click_fn)
+    let add_button = Button::new(&ctx, "add_pane", add_button_click_fn)
         .at(1.into(), 1.into())
         .to_widgets();
     widget_pane.add_widgets(add_button);
 
-    Cui::new(Box::new(vstack))?.run().await
+    cui.run(Box::new(vstack)).await
 }
