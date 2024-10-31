@@ -47,10 +47,6 @@ impl TerminalPane {
         let mut cmd = CommandBuilder::new_default_prog();
         cmd.cwd(cwd);
         Self::new_with_builder(hat, ctx, cmd)
-        //let mut cmd = CommandBuilder::new("nvim");
-        //if let Ok(cwd) = std::env::current_dir() {
-        //    cmd.cwd(cwd);
-        //}
     }
 
     pub fn new_with_builder(hat: &SortingHat, ctx: &Context, cmd: CommandBuilder) -> Self {

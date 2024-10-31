@@ -30,9 +30,6 @@
 01. editor element
     - uses the $EDITOR env variable
     - execute with something like: "$EDITOR; exit" 
-       - however smux doesn't handle exit gracefully, will need to repair
-       - exit is signalled when child is dropped from master_pty
-          - line 191 smux.rs
        - looks like we won't even need to use the "exit" command 
          if we use the command builder... it will close at the end
          of the command!
