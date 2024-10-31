@@ -6,8 +6,7 @@
 based applications, with the goal of presenting as much information as cleanly
 as possible. 
 
-# Reasons Why You Want Your Application to be Text-Based
-
+**Reasons why you need your application to be text-based:**
 1) it's the only way you'll ever be cool again
 2) they're conceptually straightforward, it's just a grid 
 3) they're rapidly iterable during development
@@ -30,7 +29,8 @@ Elements are only required to have spatial awareness within the confines which
 have been assigned to them from parent elements.  
 
 ### Non-objectives
-Catering to non- UTF-8 or non- true-color terminals.
+ - Catering to non-UTF-8 or non-true-color terminals.
+ - Minor performance improvements at the cost of developer ergonomics
 
 ## Existing Elements:
  - tabs 
@@ -42,6 +42,7 @@ Catering to non- UTF-8 or non- true-color terminals.
  - file navigator (think nerdtree)
  - image viewer 
  - windows
+ - terminal
  - widgets:
    - figlet fonts 
    - button
@@ -58,11 +59,8 @@ Catering to non- UTF-8 or non- true-color terminals.
    - generalized label decorators on all widgets
 
 ## Planned
- - built in terminal
-    - https://github.com/a-kenji/tui-term/blob/development/examples/smux.rs
-    - easy use of Editor
  - accordion stack container
- - hover comments
+ - hover comments anywhere
  - vertical tabs
  - vim-style command input system (complete with events and routing)
  - ANSI-animation viewer (using extended asc format)
@@ -74,16 +72,19 @@ Catering to non- UTF-8 or non- true-color terminals.
    - color selector
    - table 
  - Interactive debugging TUI application
-   - https://github.com/eclipse-iceoryx/iceoryx2 
+   - use https://github.com/eclipse-iceoryx/iceoryx2 for communication
  - TUI Snapshot Tester
    - use a toggle to switch between result/expected
    - diff view (only show the differences)
    - eventually allow for multi-stage
    - see `script` standard binary
  - TUI Application Builder 
-   - basically drag and drop style element builder
+   - basically drag and drop style element builder - with a "Code Copy" button
    - resizing of the view-pane to test TUI pages at different 
      sizes
+   - preview mode where you could actually interact with all the elements
+   - eventually the ability to load in code for an existing element then 
+     play around with the sub-elements
 
 ## Tribute
 

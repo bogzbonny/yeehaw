@@ -2,12 +2,6 @@
                                                                                              
    KEYBOARD EVENT                                                                            
                                                                                              
-                                                                                             
-                                                                                             
-                                                                                             
-                                                                                             
-                                                                                             
-                                                                                             
     CUI                                                                                      
     - relays events to elements                                                               
     - responsible for the top element                                                        

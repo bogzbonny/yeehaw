@@ -237,10 +237,10 @@ One letter labels
  G ╲__╱ D  G ╲__╱ D   G ╲__° D   G ╲__╱ D              
    F  E      F  E       F  E       F  E  
                
-          OptionH __ OptionA
-         OptionG ╱° ╲ OptionB
-         OptionF ╲__╱ OptionC
-          OptionE    OptionD
+           OptionH __ OptionA
+         OptionG  ╱° ╲  OptionB
+         OptionF  ╲__╱  OptionC
+           OptionE    OptionD
 
          OptionH      OptionA
                 ⟍ __ ⟋ 
