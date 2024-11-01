@@ -36,13 +36,10 @@ impl WindowPane {
     const WINDOW_RESET_MAXIMIZER_EV_KEY: &'static str = "window_reset_maximizer";
     pub const Z_INDEX: ZIndex = 50;
     pub fn new(ctx: &Context, inner: Box<dyn Element>, title: &str) -> Self {
-        //let vs = VerticalStack::new_with_kind(hat, Self::KIND).with_style(Style::transparent());
-        let pane = ParentPane::new(ctx, Self::KIND).with_transparent();
+        let pane = ParentPane::new(ctx, Self::KIND)
+            .with_transparent()
+            .unfocused();
         let top_bar = Box::new(BasicWindowTopBar::new(ctx, title, true, true, true));
-        //debug!(
-        //    "***********************************new window pane, pane priority: {}",
-        //    pane.pane.get_element_priority()
-        //);
 
         // adjust the inner size to account for the top bar
         let mut loc = inner.get_dyn_location_set().borrow().clone();

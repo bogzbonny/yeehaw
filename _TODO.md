@@ -28,8 +28,11 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+
 01. file_nav_test broken
-01. widget_test term window broken (double registers) 
+    file_nav_test broken by bbd32af
+01. window_test term window broken (double registers) 
+    window_test broken by cca0752
 
 01. terminal editor logic should not check for editor closure during drawing but use a hook!
 
