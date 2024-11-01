@@ -27,6 +27,10 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+01. terminal editor logic should not check for editor closure during drawing but use a hook!
+    
+01. textbox greyed out initial message ("type here...") 
+
 01. editor element
     - uses the $EDITOR env variable
     - execute with something like: "$EDITOR; exit" 
@@ -45,7 +49,6 @@
               - OR could take a snapshot right when the editor exits
                 and use that snapshot except maybe make it a bit more pale
 
-01. textbox greyed out initial message ("type here...") 
 
 01. support taffy as a layout structure.
      - Taffy low-level API (0.6.0 fixes ownership issues I was facing)

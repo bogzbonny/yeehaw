@@ -457,9 +457,14 @@ impl WidgetBase {
 
     // sets content from string
     pub fn set_content_from_string(&self, ctx: &Context, s: &str) {
+        let sty = self.get_current_style();
+        self.set_content_from_string_with_style(ctx, s, sty)
+    }
+
+    // sets content from string
+    pub fn set_content_from_string_with_style(&self, ctx: &Context, s: &str, sty: Style) {
         let lines = s.split('\n');
         let mut rs: Vec<Vec<char>> = Vec::new();
-        let sty = self.get_current_style();
 
         let mut width = self.get_width_val(ctx);
         let mut height = self.get_height_val(ctx);

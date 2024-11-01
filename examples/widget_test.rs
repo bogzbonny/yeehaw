@@ -151,6 +151,17 @@ async fn main() -> Result<(), Error> {
 
     el.add_widgets(tb);
 
+    let tb_with_grey = TextBox::new(&ctx, "")
+        .with_width(DynVal::new_fixed(18))
+        .with_height(DynVal::new_fixed(1))
+        .editable()
+        .with_text_when_empty("enter text here")
+        .with_no_wordwrap()
+        .at(DynVal::new_flex(0.25), DynVal::new_fixed(6))
+        .to_widgets(&ctx);
+
+    el.add_widgets(tb_with_grey);
+
     let ntb = NumbersTextBox::new(&ctx, 0)
         .with_min(-10)
         .with_max(10)

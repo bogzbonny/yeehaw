@@ -24,6 +24,8 @@ use {
 pub struct TextBox {
     pub base: WidgetBase,
     pub text: Rc<RefCell<Vec<char>>>,
+    pub text_when_empty: Rc<RefCell<String>>, // greyed out text when the textbox is empty
+    pub text_when_empty_fg: Rc<RefCell<Color>>,
     pub ch_cursor: Rc<RefCell<bool>>, // whether or not this tb has a ch cursor
     pub editable: Rc<RefCell<bool>>,  // whether or not this tb can be edited
     pub wordwrap: Rc<RefCell<bool>>,  // whether or not to wrap text
@@ -122,6 +124,8 @@ impl TextBox {
         let tb = TextBox {
             base: wb,
             text: Rc::new(RefCell::new(text.chars().collect())),
+            text_when_empty: Rc::new(RefCell::new("".to_string())),
+            text_when_empty_fg: Rc::new(RefCell::new(Color::GREY6)),
             wordwrap: Rc::new(RefCell::new(true)),
             line_numbered: Rc::new(RefCell::new(false)),
             ch_cursor: Rc::new(RefCell::new(true)),
@@ -194,6 +198,16 @@ impl TextBox {
 
     pub fn with_right_click_menu(self, rcm: RightClickMenu) -> Self {
         *self.right_click_menu.borrow_mut() = Some(rcm);
+        self
+    }
+
+    pub fn with_text_when_empty<S: Into<String>>(self, text: S) -> Self {
+        *self.text_when_empty.borrow_mut() = text.into();
+        self
+    }
+
+    pub fn with_text_when_empty_fg(self, fg: Color) -> Self {
+        *self.text_when_empty_fg.borrow_mut() = fg;
         self
     }
 
@@ -1063,7 +1077,23 @@ impl Element for TextBox {
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let w = self.get_wrapped(ctx);
         let wrapped = w.wrapped_string();
-        self.base.set_content_from_string(ctx, &wrapped);
+
+        debug!("wrapped.len() = {}", wrapped.len());
+        if wrapped.len() == 1
+            && *self.ch_cursor.borrow()
+            && self.base.get_selectability() != Selectability::Selected
+        {
+            debug!("TextBox::drawing: wrapped string is empty");
+            // set greyed out text
+            let text = self.text_when_empty.borrow();
+            let mut sty = self.base.get_current_style();
+            sty.fg = Some(self.text_when_empty_fg.borrow().clone());
+            self.base
+                .set_content_from_string_with_style(ctx, &text, sty);
+            return self.base.drawing(ctx);
+        } else {
+            self.base.set_content_from_string(ctx, &wrapped);
+        }
 
         // set styles from hooks
         if let Some(hook) = &mut *self.position_style_hook.borrow_mut() {

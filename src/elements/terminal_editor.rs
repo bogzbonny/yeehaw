@@ -16,6 +16,9 @@ use {
 
 // TODO make into a selectible widget once widget is refactored into element
 
+/// NOTE this is not the most secure thing as it uses temp files to store the text
+/// but it is the easiest way to get a text editor in a terminal
+/// this editor should not be used for passwords
 // displays the size
 #[derive(Clone)]
 pub struct TermEditorPane {
@@ -177,19 +180,6 @@ impl Element for TermEditorPane {
         }
 
         let (captured, resps) = self.pane.receive_event(ctx, ev.clone());
-
-        // check for changes to the tempfile
-        //for resp in resps.iter_mut() {
-        //    let destruct = matches!(resp, EventResponse::Destruct);
-        //    if destruct {
-        //        if let Some(tempfile) = self.tempfile.borrow().as_ref() {
-        //            let tmpfile_path = tempfile.path().to_str().unwrap().to_string();
-        //            let file_contents = std::fs::read_to_string(tmpfile_path).unwrap();
-        //            self.text.replace(Some(file_contents.clone()));
-        //            self.text_changed_hook.borrow_mut()(ctx.clone(), file_contents);
-        //        }
-        //    }
-        //}
 
         (captured, resps)
     }
