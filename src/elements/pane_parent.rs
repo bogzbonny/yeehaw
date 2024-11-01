@@ -201,6 +201,11 @@ impl ParentPane {
         self.eo.update_el_z_index(el_id, z);
     }
 
+    // NOTE this name was chosen to distinguish itself from propagate_responses_upward
+    pub fn send_responses_upward(&self, ctx: &Context, resps: EventResponses) {
+        self.pane.send_responses_upward(ctx, resps);
+    }
+
     pub fn focus(&self, ctx: &Context) {
         *self.pane.element_priority.borrow_mut() = Priority::Focused;
         self.pane
@@ -208,14 +213,14 @@ impl ParentPane {
             .borrow_mut()
             .update_priority_for_all(Priority::Focused);
 
-        if let Some(parent) = self.pane.parent.borrow().as_ref() {
+        if self.pane.parent.borrow().is_some() {
             let rec = self.receivable();
             debug!("ParentPane::focus: has parent. rec: {:?}", rec);
             let rec = ReceivableEventChanges::default()
                 .with_remove_evs(rec.iter().map(|(ev, _)| ev.clone()).collect())
                 .with_add_evs(rec);
             let resps = EventResponse::ReceivableEventChanges(rec);
-            parent.propagate_responses_upward(ctx.parent_context(), &self.id(), resps.into());
+            self.send_responses_upward(ctx, resps.into());
         }
     }
 
@@ -226,13 +231,13 @@ impl ParentPane {
             .borrow_mut()
             .update_priority_for_all(Priority::Unfocused);
 
-        if let Some(parent) = self.pane.parent.borrow().as_ref() {
+        if self.pane.parent.borrow().is_some() {
             let rec = self.receivable();
             let rec = ReceivableEventChanges::default()
                 .with_remove_evs(rec.iter().map(|(ev, _)| ev.clone()).collect())
                 .with_add_evs(rec);
             let resps = EventResponse::ReceivableEventChanges(rec);
-            parent.propagate_responses_upward(ctx.parent_context(), &self.id(), resps.into());
+            self.send_responses_upward(ctx, resps.into());
         }
     }
 }
@@ -327,6 +332,10 @@ impl Element for ParentPane {
 }
 
 impl Parent for ParentPane {
+    // DO NOT CALL THIS FUNCTION DIRECTLY
+    // This function is intended for internal propogation ONLY if you need to propogate changes
+    // use the function: send_responses_upward
+    //
     // Passes changes to inputability to this element's parent element. If
     // updateThisElementsPrioritizers is TRUE then this element's prioritizers should be updated
     // using the given IC. This should be set to false when an upwards propagation is being
@@ -347,8 +356,10 @@ impl Parent for ParentPane {
     // NOTE this function should be extended from if the parent pane is used as a base for a more
     // complex element. As the developer you should be fulfilling the
     // propagate_responses_upward function directly.
+    //
+    // NOTE the parent_ctx is the correct context for THIS parent pane.
     fn propagate_responses_upward(
-        &self, parent_ctx: Option<&Context>, child_el_id: &ElementID, mut resps: EventResponses,
+        &self, parent_ctx: &Context, child_el_id: &ElementID, mut resps: EventResponses,
     ) {
         self.eo.partially_process_ev_resps(
             parent_ctx,
@@ -356,10 +367,10 @@ impl Parent for ParentPane {
             &mut resps,
             Box::new(self.clone()),
         );
-        if let Some(up) = self.pane.parent.borrow_mut().deref() {
-            let next_parent_ctx =
-                if let Some(ctx) = parent_ctx { ctx.parent_context() } else { None };
-            up.propagate_responses_upward(next_parent_ctx, &self.id(), resps);
+        if let Some(parent) = self.pane.parent.borrow_mut().deref() {
+            if let Some(next_parent_ctx) = parent_ctx.parent_context() {
+                parent.propagate_responses_upward(next_parent_ctx, &self.id(), resps);
+            }
         }
     }
 

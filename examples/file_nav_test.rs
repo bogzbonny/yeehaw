@@ -29,9 +29,7 @@ async fn main() -> Result<(), Error> {
         nav_.pane.unfocus(&ctx); // the only time which the inner ctx is relavent here
         let viewer = Box::new(FileViewerPane::new(&outer_ctx, path));
         let resp = panebox_.add_element(viewer).into();
-        panebox_
-            .pane
-            .propagate_responses_upward(Some(&outer_ctx), resp);
+        panebox_.pane.send_responses_upward(&outer_ctx, resp);
 
         EventResponses::default()
     });

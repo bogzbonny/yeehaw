@@ -1,6 +1,7 @@
 use {
-    crate::{DynLocation, Loc, Size, SortingHat},
+    crate::{DynLocation, Event, Loc, Size, SortingHat},
     std::collections::HashMap,
+    tokio::sync::mpsc::Sender,
 };
 
 // Context is a struct which contains information about the current context of a
@@ -10,7 +11,7 @@ use {
 //
 // Additionally, metadata may be addended to the context to pass additional
 // arbitrary information.
-#[derive(Default, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct Context {
     pub s: Size,
     pub dur_since_launch: std::time::Duration,
@@ -19,6 +20,7 @@ pub struct Context {
     pub metadata: HashMap<String, Vec<u8>>,
     pub parent_ctx: Option<Box<Context>>,
     pub hat: SortingHat,
+    pub ev_tx: Sender<Event>,
 }
 
 impl Context {
@@ -36,7 +38,7 @@ impl Context {
     //}
 
     // TODO return error
-    pub fn new_context_for_screen_no_dur(hat: &SortingHat) -> Context {
+    pub fn new_context_for_screen_no_dur(hat: &SortingHat, ev_tx: Sender<Event>) -> Context {
         let (xmax, ymax) = crossterm::terminal::size().unwrap();
         Context {
             s: Size::new(xmax, ymax),
@@ -45,11 +47,14 @@ impl Context {
             metadata: HashMap::new(),
             parent_ctx: None,
             hat: hat.clone(),
+            ev_tx,
         }
     }
 
     // TODO return error
-    pub fn new_context_for_screen(launch_instant: std::time::Instant, hat: &SortingHat) -> Context {
+    pub fn new_context_for_screen(
+        launch_instant: std::time::Instant, hat: &SortingHat, ev_tx: Sender<Event>,
+    ) -> Context {
         let (xmax, ymax) = crossterm::terminal::size().unwrap();
         Context {
             s: Size::new(xmax, ymax),
@@ -58,6 +63,7 @@ impl Context {
             metadata: HashMap::new(),
             parent_ctx: None,
             hat: hat.clone(),
+            ev_tx,
         }
     }
 
@@ -84,6 +90,7 @@ impl Context {
             metadata: self.metadata.clone(),
             parent_ctx: Some(Box::new(self.clone())),
             hat: self.hat.clone(),
+            ev_tx: self.ev_tx.clone(),
         }
     }
 

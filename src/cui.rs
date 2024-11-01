@@ -63,18 +63,18 @@ impl Cui {
             ev_recv,
         };
 
-        let ctx = Context::new_context_for_screen_no_dur(&cui.cup.hat);
+        let ctx = Context::new_context_for_screen_no_dur(&cui.cup.hat, cui.cup.ev_tx.clone());
         Ok((cui, ctx))
     }
 
     pub fn context(&self) -> Context {
-        Context::new_context_for_screen(self.launch_instant, &self.cup.hat)
+        Context::new_context_for_screen(self.launch_instant, &self.cup.hat, self.cup.ev_tx.clone())
     }
 
     pub async fn run(&mut self, main_el: Box<dyn Element>) -> Result<(), Error> {
         self.main_el_id = main_el.id();
         // add the element here after the location has been created
-        let ctx = Context::new_context_for_screen_no_dur(&self.cup.hat);
+        let ctx = Context::new_context_for_screen_no_dur(&self.cup.hat, self.cup.ev_tx.clone());
         let loc = DynLocation::new_fixed(0, ctx.s.width.into(), 0, ctx.s.height.into());
         let loc = DynLocationSet::new(loc, vec![], 0);
         main_el.set_dyn_location_set(loc);
@@ -329,16 +329,16 @@ impl CuiParent {
     }
 }
 
+// NOTE: It is necessary for the CUI to fulfill the Parent interface
+// as it is the top of the element tree, despite it not itself being an element
+// (it does not fulfill the Element interface). For the MainEl to pass changes
+// in inputability to the cui's ElementOrganizer, it must hold a reference to
+// the CUI and  be able to call this function (as opposed to calling it on an
+// Element, as a child normally would in the rest of the tree).
 impl Parent for CuiParent {
     // Receives the final upward propagation of changes to inputability
-    // NOTE: It is necessary for the CUI to fulfill the Parent interface
-    // as it is the top of the element tree, despite it not itself being an element
-    // (it does not fulfill the Element interface). For the MainEl to pass changes
-    // in inputability to the cui's ElementOrganizer, it must hold a reference to
-    // the CUI and  be able to call this function (as opposed to calling it on an
-    // Element, as a child normally would in the rest of the tree).
     fn propagate_responses_upward(
-        &self, parent_ctx: Option<&Context>, child_el_id: &ElementID, mut resps: EventResponses,
+        &self, parent_ctx: &Context, child_el_id: &ElementID, mut resps: EventResponses,
     ) {
         // process changes in element organizer
         self.eo.partially_process_ev_resps(

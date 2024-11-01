@@ -185,6 +185,9 @@ impl Element for WindowPane {
                     self.pane.pane.get_height(ctx) as u16 - 1,
                 ));
 
+                let mut top_bar_ctx = ctx.clone();
+                top_bar_ctx.s.height = 1;
+
                 let (_, r) = self.inner.receive_event(&inner_ctx, Event::Resize);
                 resps_.extend(r.0);
 
@@ -192,7 +195,7 @@ impl Element for WindowPane {
                 if self.maximized_restore.borrow().is_some() {
                     self.maximized_restore.replace(None);
                     let (_, r) = self.top_bar.receive_event(
-                        &Context::default(),
+                        &top_bar_ctx,
                         Event::Custom(
                             Self::WINDOW_RESET_MAXIMIZER_EV_KEY.to_string(),
                             Vec::with_capacity(0),
@@ -445,10 +448,9 @@ impl Element for WindowPane {
         // check if the inner pane has been removed from the parent in which case close this window
         // NOTE this happens with terminal
         if self.pane.eo.get_element(&self.inner.id()).is_none() {
-            //resps.push(EventResponse::Destruct);
             self.pane
                 .pane
-                .propagate_responses_upward(ctx.parent_context(), EventResponse::Destruct.into());
+                .send_responses_upward(ctx, EventResponse::Destruct.into());
             Vec::with_capacity(0)
         } else {
             out

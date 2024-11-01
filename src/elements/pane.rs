@@ -265,12 +265,12 @@ impl Pane {
         *self.element_priority.borrow()
     }
 
-    pub fn propagate_responses_upward(&self, parent_ctx: Option<&Context>, resps: EventResponses) {
+    // NOTE this name was chosen to distinguish itself from propagate_responses_upward
+    pub fn send_responses_upward(&self, ctx: &Context, resps: EventResponses) {
         if let Some(parent) = self.parent.borrow().as_ref() {
-            debug!("pane propagate_responses_upward has parent");
-            let next_parent_ctx =
-                if let Some(ctx) = parent_ctx { ctx.parent_context() } else { None };
-            parent.propagate_responses_upward(next_parent_ctx, &self.id(), resps);
+            if let Some(parent_ctx) = ctx.parent_context() {
+                parent.propagate_responses_upward(parent_ctx, &self.id(), resps);
+            }
         }
     }
 
@@ -280,8 +280,8 @@ impl Pane {
         self.self_evs
             .borrow_mut()
             .update_priority_for_all(Priority::Focused);
-        if let Some(parent) = self.parent.borrow().as_ref() {
-            debug!("pane focus has parent");
+        if self.parent.borrow().is_some() {
+            //debug!("pane focus has parent");
             let rec = ReceivableEventChanges::default()
                 .with_remove_evs(
                     self.self_evs
@@ -293,9 +293,9 @@ impl Pane {
                         .collect(),
                 )
                 .with_add_evs(self.self_evs.borrow().0.clone());
-            debug!("\trec: {:?}", rec);
+            //debug!("\trec: {:?}", rec);
             let resps = EventResponse::ReceivableEventChanges(rec);
-            parent.propagate_responses_upward(ctx.parent_context(), &self.id(), resps.into());
+            self.send_responses_upward(ctx, resps.into());
         }
     }
 
@@ -305,8 +305,8 @@ impl Pane {
         self.self_evs
             .borrow_mut()
             .update_priority_for_all(Priority::Unfocused);
-        if let Some(parent) = self.parent.borrow().as_ref() {
-            debug!("pane unfocus has parent");
+        if self.parent.borrow().is_some() {
+            //debug!("pane unfocus has parent");
             let rec = ReceivableEventChanges::default()
                 .with_remove_evs(
                     self.self_evs
@@ -318,9 +318,9 @@ impl Pane {
                         .collect(),
                 )
                 .with_add_evs(self.self_evs.borrow().0.clone());
-            debug!("\trec: {:?}", rec);
+            //debug!("\trec: {:?}", rec);
             let resps = EventResponse::ReceivableEventChanges(rec);
-            parent.propagate_responses_upward(ctx.parent_context(), &self.id(), resps.into());
+            self.send_responses_upward(ctx, resps.into());
         }
     }
 }

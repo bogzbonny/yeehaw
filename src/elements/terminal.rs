@@ -196,13 +196,8 @@ impl Element for TerminalPane {
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         if *self.exit.read().unwrap() {
-            if let Some(ref parent) = *self.pane.parent.borrow() {
-                parent.propagate_responses_upward(
-                    ctx.parent_context(),
-                    &self.id(),
-                    EventResponse::Destruct.into(),
-                );
-            }
+            self.pane
+                .send_responses_upward(ctx, EventResponse::Destruct.into());
             return Vec::with_capacity(0);
         }
         //let mut cursor = Cursor::default();

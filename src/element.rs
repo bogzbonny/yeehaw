@@ -162,6 +162,10 @@ pub const POST_LOCATION_CHANGE_HOOK_NAME: &str = "post-location-change";
 dyn_clone::clone_trait_object!(Parent);
 
 pub trait Parent: dyn_clone::DynClone {
+    // DO NOT CALL THIS FUNCTION DIRECTLY
+    // This function is intended for internal propogation ONLY if you need to propogate changes
+    // use the function: send_responses_upward found in Pane and ParentPane
+    //
     // The Parent is a trait that a parent element should fulfill which can then be
     // provided to child elements as a means for those child elements to propagate changes upward
     // to their parent (and grand-parents etc.).
@@ -186,7 +190,7 @@ pub trait Parent: dyn_clone::DynClone {
     //    &self, child_el_id: &ElementID, rec: ReceivableEventChanges,
     //);
     fn propagate_responses_upward(
-        &self, parent_ctx: Option<&Context>, child_el_id: &ElementID, resps: EventResponses,
+        &self, parent_ctx: &Context, child_el_id: &ElementID, resps: EventResponses,
     );
 
     fn get_store_item(&self, key: &str) -> Option<Vec<u8>>;
