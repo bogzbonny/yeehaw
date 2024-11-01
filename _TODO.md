@@ -180,10 +180,8 @@
        destination to also subscribe to the hook. USE HOOKS!
 
 05. create builder types for each widget. 
-     - annoying to send in the ctx and hat objects each time.
      - sometimes there are fields in the widget that are only 
        used for the creation of the widget, and not for the widget itself.
-     - combine hat and ctx objects for widget creation. 
 
 05. Into<Widgets> Trait which can be applied to each widget builder so that
     .to_widgets() doesn't need to be manually called during construction
@@ -222,6 +220,7 @@
 
 10. Dial
     - if there are labels could bold the one which is selected
+    - could provide continious value if pixel mode enabled
    __    __    __    __    __    __    __    __ 
   ╱° ╲  ╱ °╲  ╱  ⚬  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ⚬  ╲
   ╲__╱  ╲__╱  ╲__╱  ╲__°  ╲_⚬╱  ╲⚬_╱  °__╱  ╲__╱  
@@ -231,24 +230,49 @@ One letter labels
  H ╱° ╲ C  H ╱  ⚬ C   H ╱  ╲ C   H ╱° ╲ C
  G ╲__╱ D  G ╲__╱ D   G ╲__° D   G ╲__╱ D              
    F  E      F  E       F  E       F  E  
-               
+
            OptionH __ OptionA
          OptionG  ╱° ╲  OptionB
          OptionF  ╲__╱  OptionC
            OptionE    OptionD
 
-         OptionH      OptionA
+           OptionH  OptionA
                 ⟍ __ ⟋ 
-       OptionG - ╱° ╲ - OptionB
-       OptionF - ╲__╱ - OptionC
-                ⟋    ⟍
-         OptionE      OptionD
+       OptionG - ╱  ╲ - OptionB
+       OptionF - °__╱ - OptionC
+                ⟋    ⟍ 
+           OptionE  OptionD
+
+            OptionH  OptionA
+         OptionK.⟍ __ ⟋ .OptionB
+       OptionJ -  ╱  ╲  - OptionC
+       OptionI -  ⚬__╱  - OptionD    // can use lower then upper dots on these positions
+         OptionH´⟋    ⟍ `OptionE
+            OptionG  OptionF
+
+            OptionH  OptionA
+         OptionK   __    OptionB
+       OptionJ    ╱  ╲    OptionC
+       OptionI    °__╱    OptionD
+         OptionH         OptionE
+            OptionG  OptionF
 
 10. progress bar
     - optionally with an embedded word
     - use a gradient color! 
     - imagine that the progressbar was just a gradient changing around a box
       border
+
+10. Loading fidgets spinners
+    - 🌑🌒🌓🌔🌕🌖🌗🌘
+    - braile movers
+    - block movers of a few varieties
+      - these guy movers▁▂▃▄▅▆▇
+      - https://symbl.cc/en/unicode/blocks/block-elements/
+    - something with the sand timers 
+    - ◐◓◑◒
+    - △▷▽◁
+    - ◥◢◣◤
 
 10. feature: hover comments
 
