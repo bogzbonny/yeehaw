@@ -107,7 +107,8 @@ impl TextBox {
         ]
     }
 
-    pub fn new(ctx: &Context, text: String) -> Self {
+    pub fn new<S: Into<String>>(ctx: &Context, text: S) -> Self {
+        let text = text.into();
         let (width, height) = common::get_text_size(&text);
         let wb = WidgetBase::new(
             ctx,

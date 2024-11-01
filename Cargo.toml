@@ -20,6 +20,7 @@ serde_json = "^1.0.124"
 arboard = "^3.2.0"
 figlet-rs = "^0.1.5"
 dyn-clone = "^1.0.17"
+tempfile = "3"
 
 vt100 = { version = "0.15.2" }
 portable-pty = { version = "0.8.1" }
@@ -30,3 +31,4 @@ ratatui-image = "^1.0.0"
 image = { version = ">=0.24", default-features = false, features = ["jpeg"] }
 
 compact_str = "^0.8.0"
+

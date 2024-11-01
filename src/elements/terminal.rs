@@ -158,11 +158,11 @@ impl Element for TerminalPane {
         }
         match ev {
             Event::KeyCombo(ref keys) => {
-                debug!(
-                    "TerminalPane({}) receive_event_inner: {:?}",
-                    self.id(),
-                    keys
-                );
+                //debug!(
+                //    "TerminalPane({}) receive_event_inner: {:?}",
+                //    self.id(),
+                //    keys
+                //);
                 if let KeyPossibility::Key(key) = &keys[0] {
                     handle_pane_key_event(self, key);
                 }

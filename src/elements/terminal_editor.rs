@@ -1,82 +1,121 @@
 use {
     crate::{
-        //widgets::TextBox,
-        Context,
-        DrawCh,
-        DrawChPos,
-        //DrawChs2D,
-        DynLocationSet,
-        DynVal,
-        Element,
-        ElementID,
-        Event,
-        EventResponses,
-        Parent,
-        ParentPane,
-        Priority,
-        ReceivableEventChanges,
-
-        //Style,
-        //TerminalPane,
-        ZIndex,
+        widgets::{Label, TextBox},
+        Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
+        EventResponse, EventResponses, Parent, ParentPane, Priority, ReceivableEventChanges,
+        TerminalPane, ZIndex,
     },
-    //portable_pty::CommandBuilder,
+    crossterm::event::{MouseButton, MouseEventKind},
+    portable_pty::CommandBuilder,
     std::{cell::RefCell, rc::Rc},
 };
+
+// TODO remove or kill exit_on_return
+// TODO nicer top bar during non-editing / styles
+// TODO implement/test editor missing case
+
+// TODO make into a selectible widget once widget is refactored into element
 
 // displays the size
 #[derive(Clone)]
 pub struct TermEditorPane {
     pub pane: ParentPane,
     pub editor: Option<String>,
-    pub text: Rc<RefCell<String>>,
+    pub title: Rc<RefCell<String>>, // title for the textbox also used for tempfile suffix
+    pub text: Rc<RefCell<Option<String>>>,
+    pub tempfile: Rc<RefCell<Option<tempfile::NamedTempFile>>>,
+
+    // if the tempfile was just created (and thus the text is empty)
+    pub just_created: Rc<RefCell<bool>>,
+
+    // XXX isn't used
+    // if set to true, this element will destruct on save
+    // otherwise the element is replaced with the text
+    // until it is next opened.
+    pub exit_on_return: Rc<RefCell<bool>>,
+
+    pub clicked_down: Rc<RefCell<bool>>, // activated when mouse is clicked down while over button
+
+    pub text_changed_hook: Rc<RefCell<TextChangedHook>>,
 }
+
+pub type TextChangedHook = Box<dyn FnMut(Context, String) -> EventResponses>;
 
 impl TermEditorPane {
     pub const KIND: &'static str = "term_editor_pane";
 
-    pub fn new(ctx: &Context) -> Self {
+    pub fn new<S: Into<String>>(ctx: &Context, title: S) -> Self {
         let editor: Option<String> = std::env::var("EDITOR").ok();
         let pane = ParentPane::new(ctx, Self::KIND);
 
-        //let out = Self {
-        //    pane,
-        //    editor,
-        //    text: Rc::new(RefCell::new(String::new())),
-        //};
-        //out.open_editor();
-        //out
-        Self {
+        let out = Self {
             pane,
             editor,
-            text: Rc::new(RefCell::new(String::new())),
+            title: Rc::new(RefCell::new(title.into())),
+            text: Rc::new(RefCell::new(None)),
+            tempfile: Rc::new(RefCell::new(None)),
+            just_created: Rc::new(RefCell::new(true)),
+            exit_on_return: Rc::new(RefCell::new(false)),
+            clicked_down: Rc::new(RefCell::new(false)),
+            text_changed_hook: Rc::new(RefCell::new(Box::new(|_, _| EventResponses::default()))),
+        };
+        let _ = out.open_editor(ctx); // ignore resp
+        out
+    }
+
+    pub fn open_editor(&self, ctx: &Context) -> EventResponse {
+        let text = self.text.borrow().clone();
+        match self.editor {
+            Some(ref editor) => {
+                let mut cmd = CommandBuilder::new(editor);
+
+                let prefix = format!("{}_", self.title.borrow());
+                let tempfile = tempfile::Builder::new()
+                    .prefix(prefix.as_str())
+                    .tempfile()
+                    .unwrap();
+                // set the tempfile contents to the text
+                if let Some(text) = text {
+                    std::fs::write(tempfile.path(), text).unwrap();
+                }
+
+                let tempfile_path = tempfile.path().to_str().unwrap().to_string();
+                cmd.arg(tempfile_path.clone());
+                self.tempfile.replace(Some(tempfile));
+                self.just_created.replace(true);
+
+                if let Ok(cwd) = std::env::current_dir() {
+                    cmd.cwd(cwd);
+                }
+                let term = TerminalPane::new_with_builder(ctx, cmd);
+                self.pane.add_element(Box::new(term))
+            }
+            None => {
+                let text = text.unwrap_or_else(|| {
+                    "No editor found (please set your $EDITOR environment var)".to_string()
+                });
+                let tb = TextBox::new(ctx, text)
+                    .with_width(DynVal::new_flex(1.))
+                    .with_height(DynVal::new_flex(1.))
+                    .with_no_wordwrap()
+                    .at(DynVal::new_fixed(0), DynVal::new_fixed(0));
+
+                self.pane.add_element(Box::new(tb))
+            }
         }
     }
 
-    //pub fn open_editor(&self) {
-    //    match self.editor {
-    //        Some(ref editor) => {
-    //            let mut cmd = CommandBuilder::new(editor);
-    //            if let Ok(cwd) = std::env::current_dir() {
-    //                cmd.cwd(cwd);
-    //            }
-    //            let term = TerminalPane::new_with_builder(
-    //                self.pane.ctx.clone(),
-    //                self.pane.ctx.clone(),
-    //                cmd,
-    //            );
-    //            self.pane.add_element(Box::new(term));
-    //        }
-    //        None => {
-    //            let tb = TextBox::new(self.pane.ctx.clone(), self.pane.ctx.clone());
+    pub fn with_text_changed_hook(self, hook: TextChangedHook) -> Self {
+        *self.text_changed_hook.borrow_mut() = hook;
+        self
+    }
 
-    //            self.pane.add_element(Box::new(term));
-    //        }
-    //    }
-    //}
+    pub fn set_text_changed_hook(&self, hook: TextChangedHook) {
+        *self.text_changed_hook.borrow_mut() = hook;
+    }
 
     pub fn with_text(self, text: String) -> Self {
-        *self.text.borrow_mut() = text;
+        *self.text.borrow_mut() = Some(text);
         self
     }
 
@@ -92,6 +131,11 @@ impl TermEditorPane {
 
     pub fn with_width(self, w: DynVal) -> Self {
         self.pane.set_dyn_width(w);
+        self
+    }
+
+    pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
+        self.pane.set_at(loc_x, loc_y);
         self
     }
 
@@ -112,13 +156,82 @@ impl Element for TermEditorPane {
         self.pane.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        self.pane.receive_event(ctx, ev.clone())
+        if self.tempfile.borrow().is_none() {
+            // activate the editor on click
+            let clicked_down = *self.clicked_down.borrow();
+            if let Event::Mouse(me) = ev {
+                match me.kind {
+                    MouseEventKind::Down(MouseButton::Left) => {
+                        *self.clicked_down.borrow_mut() = true;
+                        return (true, EventResponses::default());
+                    }
+                    MouseEventKind::Up(MouseButton::Left) if clicked_down => {
+                        self.pane.clear_elements();
+                        let resp = self.open_editor(ctx);
+                        return (true, resp.into());
+                    }
+                    _ => {}
+                }
+            }
+            *self.clicked_down.borrow_mut() = false;
+        }
+
+        let (captured, resps) = self.pane.receive_event(ctx, ev.clone());
+
+        // check for changes to the tempfile
+        //for resp in resps.iter_mut() {
+        //    let destruct = matches!(resp, EventResponse::Destruct);
+        //    if destruct {
+        //        if let Some(tempfile) = self.tempfile.borrow().as_ref() {
+        //            let tmpfile_path = tempfile.path().to_str().unwrap().to_string();
+        //            let file_contents = std::fs::read_to_string(tmpfile_path).unwrap();
+        //            self.text.replace(Some(file_contents.clone()));
+        //            self.text_changed_hook.borrow_mut()(ctx.clone(), file_contents);
+        //        }
+        //    }
+        //}
+
+        (captured, resps)
     }
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
         self.pane.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        self.pane.drawing(ctx)
+        let out = self.pane.drawing(ctx);
+
+        // check for changes to the tempfile each draw
+        if let Some(tempfile) = self.tempfile.borrow().as_ref() {
+            let tempfile_path = tempfile.path().to_str().unwrap().to_string();
+            let Ok(file_contents) = std::fs::read_to_string(tempfile_path) else {
+                return out;
+            };
+            let old_text = self.text.borrow().clone();
+
+            if old_text.as_deref() != Some(file_contents.as_str()) {
+                let is_empty = file_contents.is_empty();
+                if !*self.just_created.borrow() {
+                    self.text.replace(Some(file_contents.clone()));
+                    self.text_changed_hook.borrow_mut()(ctx.clone(), file_contents);
+                }
+                if *self.just_created.borrow() && !is_empty {
+                    *self.just_created.borrow_mut() = false;
+                }
+            }
+        }
+
+        if !self.pane.has_elements() {
+            debug!("pane has no elements");
+            //if !*self.exit_on_return.borrow() {
+            //*resp = EventResponse::None;
+            //} else {
+            self.tempfile.borrow_mut().take();
+            let text = self.text.borrow().clone().unwrap_or_default();
+            let label = Label::new(ctx, &text).at(DynVal::new_fixed(0), DynVal::new_fixed(0));
+            self.pane.add_element(Box::new(label));
+            //*resp = EventResponse::NewElement(Box::new(label), None);
+            //}
+        }
+        out
     }
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
         self.pane.get_attribute(key)

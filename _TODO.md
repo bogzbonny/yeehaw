@@ -45,6 +45,8 @@
               - OR could take a snapshot right when the editor exits
                 and use that snapshot except maybe make it a bit more pale
 
+01. textbox greyed out initial message ("type here...") 
+
 01. support taffy as a layout structure.
      - Taffy low-level API (0.6.0 fixes ownership issues I was facing)
      - I THINK it only makes sense to only use taffy optionally within an

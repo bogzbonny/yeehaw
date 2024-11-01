@@ -138,7 +138,7 @@ async fn main() -> Result<(), Error> {
         .to_widgets(&ctx);
     el.add_widgets(listbox);
 
-    let tb = TextBox::new(&ctx, "hellllllllllllllllllllllllllo\nworld".to_string())
+    let tb = TextBox::new(&ctx, "hellllllllllllllllllllllllllo\nworld")
         .with_width(DynVal::new_fixed(20))
         .with_height(DynVal::new_fixed(10))
         .with_line_numbers()
