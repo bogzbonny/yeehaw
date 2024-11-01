@@ -235,10 +235,6 @@ impl ParentPane {
             parent.propagate_responses_upward(ctx.parent_context(), &self.id(), resps.into());
         }
     }
-
-    pub fn exit(&self, ctx: &Context) {
-        self.eo.exit_all(ctx);
-    }
 }
 
 impl Element for ParentPane {
@@ -261,49 +257,7 @@ impl Element for ParentPane {
     // TODO verify that this code is or isn't used anywhere
     //                                               (captured, resp         )
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        //debug!("ParentPane({}) receive_event_inner: {:?}", self.id(), ev);
-        //debug!(
-        //    "ParentPane({}) (self.priority: {}) receivable: {:?}",
-        //    self.id(),
-        //    self.pane.get_element_priority(),
-        //    self.receivable()
-        //);
-
-        match ev {
-            Event::Refresh => {
-                self.eo.refresh(ctx);
-                (false, EventResponses::default())
-            }
-            Event::Mouse(me) => {
-                let (_, resps) = self
-                    .eo
-                    .mouse_event_process(ctx, &me, Box::new(self.clone()));
-                (true, resps)
-            }
-            Event::ExternalMouse(me) => {
-                // send the mouse event to all the children
-                (
-                    false,
-                    self.eo
-                        .external_mouse_event_process(ctx, &me, Box::new(self.clone())),
-                )
-            }
-            Event::KeyCombo(ke) => {
-                //debug!("ParentPane::receive_key_event: {}, {:?}", self.id(), ke);
-                // convert ke to Vec<crossterm::event::KeyEvent>
-                let ke = ke.into_iter().filter_map(|kp| kp.get_key()).collect();
-                let mep = self.eo.key_events_process(ctx, ke, Box::new(self.clone()));
-                let Some((_, resps)) = mep else {
-                    return (true, EventResponses::default());
-                };
-                (true, resps)
-            }
-            Event::Exit => {
-                self.eo.exit_all(ctx);
-                (false, EventResponses::default())
-            }
-            _ => self.pane.receive_event(ctx, ev),
-        }
+        self.eo.event_process(ctx, ev, Box::new(self.clone()))
     }
 
     // ChangePriority returns a priority change (InputabilityChanges) to its
@@ -318,7 +272,6 @@ impl Element for ParentPane {
     //     (aka the results of the child's Receivable() function) The "perceived
     //     priorities" are the effective priority FROM the perspective of the
     //     element ABOVE this element in the tree.
-
     fn change_priority(&self, pr: Priority) -> ReceivableEventChanges {
         // first change the priority of the self evs. These are "this elements
         // priority changes". NO changes should be made to the childen,

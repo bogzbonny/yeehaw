@@ -24,12 +24,11 @@
        - keyboard command nolonger passed up
        - see lines 342 in organizer.rs - which to me make sense however break
          this example
+01. textbox greyed out initial message ("type here...") 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 01. terminal editor logic should not check for editor closure during drawing but use a hook!
-    
-01. textbox greyed out initial message ("type here...") 
 
 01. editor element
     - uses the $EDITOR env variable
@@ -37,10 +36,6 @@
        - looks like we won't even need to use the "exit" command 
          if we use the command builder... it will close at the end
          of the command!
-         let mut cmd = CommandBuilder::new("nvim");
-          if let Ok(cwd) = std::env::current_dir() {
-              cmd.cwd(cwd);
-          }
        - use the editor with a temp file - check after each event for updates to
          that file
        - consider closeable vs non-closeable version of this widget
@@ -203,7 +198,7 @@
 10. vertical tabs (like brave)
 
 10. widget slider bars / track bars
-   ██████████████████━━━━━━━━━━━━━━   ╋   ╋ 1
+   ██████████████████━━━━━━━━━━━━━━   ┳   ┳ 1
                                       ┃   ┃
    ━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━   ╋   ╋ 2
                                       ┃   ┃
@@ -215,7 +210,7 @@
                                       ┃   ┃
    ══════════╪██████████████╪══════   ╋   ╋ 6 
                                       ┃   ┃
-   ══════════╪▓▓▓▓▓▓▓▓▓▓▓▓▓▓╪══════   ╋   ╋ 7 
+   ══════════╪▓▓▓▓▓▓▓▓▓▓▓▓▓▓╪══════   ┻   ┻ 7 
 
    ━━━━━━━━━● 
       ●━━━━━━━━━━━━━━━━━━━━● 

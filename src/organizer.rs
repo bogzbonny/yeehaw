@@ -478,16 +478,52 @@ impl ElementOrganizer {
     //    ic
     //}
 
+    pub fn event_process(
+        &self, ctx: &Context, ev: Event, parent: Box<dyn Parent>,
+    ) -> (bool, EventResponses) {
+        match ev {
+            Event::KeyCombo(ke) => {
+                let mep = self.key_event_process(ctx, Event::KeyCombo(ke), parent);
+                let Some((_, resps)) = mep else {
+                    return (false, EventResponses::default());
+                };
+                (true, resps)
+            }
+            Event::Mouse(me) => {
+                let (_, resps) = self.mouse_event_process(ctx, &me, parent);
+                (true, resps)
+            }
+            Event::ExternalMouse(me) => {
+                // send the mouse event to all the children
+                let resp = self.external_mouse_event_process(ctx, &me, parent);
+                (false, resp)
+            }
+            Event::Refresh => {
+                self.refresh(ctx);
+                (false, EventResponses::default())
+            }
+            Event::Exit | Event::Resize | Event::Custom(_, _) => {
+                self.propogate_event_to_all(ctx, ev, parent)
+            }
+        }
+    }
+
     // key_events_process:
     // - determines the appropriate element to send key events to
     // - sends the event combo to the element
     // - processes changes to the elements receivable events
-    pub fn key_events_process(
+    pub fn key_ct_events_process(
         &self, ctx: &Context, evs: Vec<crossterm::event::KeyEvent>, parent: Box<dyn Parent>,
     ) -> Option<(ElementID, EventResponses)> {
-        // determine elementID to send events to
         let evs: Event = evs.into();
-        let el_id = self.prioritizer.borrow().get_destination_el(&evs);
+        self.key_event_process(ctx, evs, parent)
+    }
+
+    pub fn key_event_process(
+        &self, ctx: &Context, ev: Event, parent: Box<dyn Parent>,
+    ) -> Option<(ElementID, EventResponses)> {
+        // determine elementID to send events to
+        let el_id = self.prioritizer.borrow().get_destination_el(&ev);
 
         let el_id = match el_id {
             Some(e) => e,
@@ -503,10 +539,27 @@ impl ElementOrganizer {
 
         // send EventKeys to element w/ context
         let child_ctx = ctx.child_context(&el_details.loc.borrow().l);
-        let (_, mut resps) = el_details.el.receive_event(&child_ctx, evs);
+        let (_, mut resps) = el_details.el.receive_event(&child_ctx, ev);
 
         self.partially_process_ev_resps(Some(ctx), &el_id, &mut resps, parent);
         Some((el_id, resps))
+    }
+
+    pub fn propogate_event_to_all(
+        &self, ctx: &Context, ev: Event, parent: Box<dyn Parent>,
+    ) -> (bool, EventResponses) {
+        // reset prioritizers
+        *self.prioritizer.borrow_mut() = EventPrioritizer::default();
+
+        // refresh all children
+        let mut resps = EventResponses::default();
+        for (el_id, details) in self.els.borrow().iter() {
+            let el_ctx = ctx.child_context(&details.loc.borrow().l);
+            let (_, mut resps_) = details.el.receive_event(&el_ctx, ev.clone());
+            self.partially_process_ev_resps(Some(ctx), &el_id, &mut resps, parent.clone());
+            resps.extend(resps_.0.drain(..));
+        }
+        (true, resps)
     }
 
     // refresh does the following:
@@ -530,8 +583,6 @@ impl ElementOrganizer {
             let pe = details.el.receivable();
             self.prioritizer.borrow_mut().include(&details.el.id(), &pe)
         }
-
-        //debug!("post-refresh prioritizer: {:?}", self.prioritizer.borrow());
     }
 
     // change_priority_for_el updates a child element to a new priority. It does
@@ -663,13 +714,6 @@ impl ElementOrganizer {
             ev_resps.extend(r.0);
         }
         ev_resps
-    }
-
-    pub fn exit_all(&self, ctx: &Context) {
-        for (_, details) in self.els.borrow().iter() {
-            let child_ctx = ctx.child_context(&details.loc.borrow().l);
-            let _ = details.el.receive_event(&child_ctx, Event::Exit);
-        }
     }
 
     // get_el_id_at_z_index returns the element-id at the given z index, or None if

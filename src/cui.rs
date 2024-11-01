@@ -18,7 +18,8 @@ use {
     std::collections::HashMap,
     std::io::{stdout, Write},
     std::{cell::RefCell, rc::Rc},
-    tokio::sync::watch::{Receiver, Sender},
+    tokio::sync::mpsc::{Receiver as MpscReceiver, Sender as MpscSender},
+    tokio::sync::watch::{Receiver as WatchReceiver, Sender as WatchSender},
     tokio::time::{self, Duration},
 };
 
@@ -39,15 +40,18 @@ pub struct Cui {
     // last flushed internal screen, used to determine what needs to be flushed next
     //                            x  , y
     pub sc_last_flushed: HashMap<(u16, u16), StyledContent<ChPlus>>,
-    pub exit_recv: Receiver<bool>, // true if exit
+    pub exit_recv: WatchReceiver<bool>, // true if exit
+    pub ev_recv: MpscReceiver<Event>,   // event receiver for internally generated events
 }
 
 impl Cui {
     pub fn new() -> Result<(Cui, Context), Error> {
         let (exit_tx, exit_recv) = tokio::sync::watch::channel(false);
+        let (ev_tx, ev_recv) = tokio::sync::mpsc::channel::<Event>(10); // no idea if this buffer size is right or wrong
+
         let eo = ElementOrganizer::default();
         let hat = SortingHat::default();
-        let cup = CuiParent::new(hat, eo, exit_tx);
+        let cup = CuiParent::new(hat, eo, exit_tx, ev_tx);
         let cui = Cui {
             cup,
             main_el_id: "".to_string(),
@@ -56,6 +60,7 @@ impl Cui {
             kill_on_ctrl_c: true,
             sc_last_flushed: HashMap::new(),
             exit_recv,
+            ev_recv,
         };
 
         let ctx = Context::new_context_for_screen_no_dur(&cui.cup.hat);
@@ -132,6 +137,13 @@ impl Cui {
                     }
                 }
 
+                Some(ev_res) = self.ev_recv.recv() => {
+                    let (_, resps) = self.cup.eo.event_process(&self.context(), ev_res, Box::new(self.cup.clone()));
+                    if process_event_resps(resps, None) {
+                        break;
+                    }
+                }
+
                 // exit
                 _ = self.exit_recv.changed().fuse() => {
                     if *self.exit_recv.borrow() {
@@ -156,7 +168,9 @@ impl Cui {
         self.kb.add_ev(key_ev);
 
         if key_ev == Keyboard::KEY_CTRL_C && self.kill_on_ctrl_c {
-            self.cup.eo.exit_all(&Context::default());
+            self.cup
+                .eo
+                .event_process(&self.context(), Event::Exit, Box::new(self.cup.clone()));
             return true;
         }
 
@@ -186,7 +200,7 @@ impl Cui {
         let Some((_, resps)) =
             self.cup
                 .eo
-                .key_events_process(&ctx, evs, Box::new(self.cup.clone()))
+                .key_ct_events_process(&ctx, evs, Box::new(self.cup.clone()))
         else {
             return false;
         };
@@ -279,9 +293,7 @@ impl Cui {
     }
 }
 
-pub fn process_event_resps(
-    resps: EventResponses, exit_tx: Option<tokio::sync::watch::Sender<bool>>,
-) -> bool {
+pub fn process_event_resps(resps: EventResponses, exit_tx: Option<WatchSender<bool>>) -> bool {
     // only check for response for quit
     for resp in resps.iter() {
         if matches!(resp, EventResponse::Quit | EventResponse::Destruct) {
@@ -299,16 +311,20 @@ pub struct CuiParent {
     pub hat: SortingHat,
     pub eo: ElementOrganizer,
     pub el_store: Rc<RefCell<HashMap<String, Vec<u8>>>>,
-    pub exit_tx: Sender<bool>,
+    pub exit_tx: WatchSender<bool>,
+    pub ev_tx: MpscSender<Event>, // event senter for internally generated events
 }
 
 impl CuiParent {
-    pub fn new(hat: SortingHat, eo: ElementOrganizer, exit_tx: Sender<bool>) -> CuiParent {
+    pub fn new(
+        hat: SortingHat, eo: ElementOrganizer, exit_tx: WatchSender<bool>, ev_tx: MpscSender<Event>,
+    ) -> CuiParent {
         CuiParent {
             hat,
             eo,
             el_store: Rc::new(RefCell::new(HashMap::new())),
             exit_tx,
+            ev_tx,
         }
     }
 }

@@ -5,9 +5,9 @@ use {
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Event {
-    Mouse(crossterm::event::MouseEvent),
-
     KeyCombo(Vec<KeyPossibility>),
+
+    Mouse(crossterm::event::MouseEvent),
 
     // The ExternalMouseEvent is send to all elements
     // who are not considered to be the "Receiver" of the event
