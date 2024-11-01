@@ -274,26 +274,14 @@ impl Pane {
         }
     }
 
+    pub fn has_parent(&self) -> bool {
+        self.parent.borrow().is_some()
+    }
+
     // focus all prioritized events
     pub fn focus(&self, ctx: &Context) {
-        *self.element_priority.borrow_mut() = Priority::Focused;
-        self.self_evs
-            .borrow_mut()
-            .update_priority_for_all(Priority::Focused);
-        if self.parent.borrow().is_some() {
-            //debug!("pane focus has parent");
-            let rec = ReceivableEventChanges::default()
-                .with_remove_evs(
-                    self.self_evs
-                        .borrow()
-                        .0
-                        .clone()
-                        .iter()
-                        .map(|(ev, _)| ev.clone())
-                        .collect(),
-                )
-                .with_add_evs(self.self_evs.borrow().0.clone());
-            //debug!("\trec: {:?}", rec);
+        let rec = self.change_priority(Priority::Focused);
+        if self.has_parent() {
             let resps = EventResponse::ReceivableEventChanges(rec);
             self.send_responses_upward(ctx, resps.into());
         }
@@ -301,24 +289,8 @@ impl Pane {
 
     // defocus all prioritized events
     pub fn unfocus(&self, ctx: &Context) {
-        *self.element_priority.borrow_mut() = Priority::Unfocused;
-        self.self_evs
-            .borrow_mut()
-            .update_priority_for_all(Priority::Unfocused);
-        if self.parent.borrow().is_some() {
-            //debug!("pane unfocus has parent");
-            let rec = ReceivableEventChanges::default()
-                .with_remove_evs(
-                    self.self_evs
-                        .borrow()
-                        .0
-                        .clone()
-                        .iter()
-                        .map(|(ev, _)| ev.clone())
-                        .collect(),
-                )
-                .with_add_evs(self.self_evs.borrow().0.clone());
-            //debug!("\trec: {:?}", rec);
+        let rec = self.change_priority(Priority::Unfocused);
+        if self.has_parent() {
             let resps = EventResponse::ReceivableEventChanges(rec);
             self.send_responses_upward(ctx, resps.into());
         }
@@ -355,8 +327,7 @@ impl Element for Pane {
             pef.1 = p;
         }
         *self.element_priority.borrow_mut() = p;
-        let rec = ReceivableEventChanges::default().with_add_evs(self.self_evs.borrow().0.clone());
-        rec
+        self.self_evs.borrow().to_recievable_event_changes()
     }
 
     // Drawing compiles all of the DrawChPos necessary to draw this element
@@ -549,5 +520,12 @@ impl SelfReceivableEvents {
         for i in self.0.iter_mut() {
             i.1 = p;
         }
+    }
+
+    pub fn to_recievable_event_changes(&self) -> ReceivableEventChanges {
+        let remove_evs = self.0.iter().map(|(ev, _)| ev.clone()).collect();
+        ReceivableEventChanges::default()
+            .with_add_evs(self.0.clone())
+            .with_remove_evs(remove_evs)
     }
 }

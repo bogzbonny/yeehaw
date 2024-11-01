@@ -28,6 +28,9 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+01. file_nav_test broken
+01. widget_test term window broken (double registers) 
+
 01. terminal editor logic should not check for editor closure during drawing but use a hook!
 
 01. editor element

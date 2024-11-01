@@ -302,17 +302,17 @@ impl ElementOrganizer {
                 }
                 EventResponse::UnfocusOthers => {
                     for (el_id_, _) in self.els.borrow().iter() {
-                        if el_id_ != el_id {
-                            let rec = self.change_priority_for_el(el_id_, Priority::Unfocused);
-                            let add_ = Self::generate_perceived_priorities(
-                                parent.get_priority(),
-                                rec.add.clone(),
-                            );
-                            let remove_ = add_.iter().map(|a| a.0.clone()).collect();
-                            let rec_for_higher = ReceivableEventChanges::new(add_, remove_);
-                            extend_resps
-                                .push(EventResponse::ReceivableEventChanges(rec_for_higher));
+                        if el_id_ == el_id {
+                            continue;
                         }
+                        let rec = self.change_priority_for_el(el_id_, Priority::Unfocused);
+                        let add_ = Self::generate_perceived_priorities(
+                            parent.get_priority(),
+                            rec.add.clone(),
+                        );
+                        let remove_ = add_.iter().map(|a| a.0.clone()).collect();
+                        let rec_for_higher = ReceivableEventChanges::new(add_, remove_);
+                        extend_resps.push(EventResponse::ReceivableEventChanges(rec_for_higher));
                     }
                     *r = EventResponse::None;
                 }
@@ -551,7 +551,7 @@ impl ElementOrganizer {
         for (el_id, details) in self.els.borrow().iter() {
             let el_ctx = ctx.child_context(&details.loc.borrow().l);
             let (_, mut resps_) = details.el.receive_event(&el_ctx, ev.clone());
-            self.partially_process_ev_resps(ctx, &el_id, &mut resps, parent.clone());
+            self.partially_process_ev_resps(ctx, el_id, &mut resps, parent.clone());
             resps.extend(resps_.0.drain(..));
         }
         (true, resps)
@@ -579,6 +579,15 @@ impl ElementOrganizer {
             self.prioritizer.borrow_mut().include(&details.el.id(), &pe)
         }
     }
+
+    //pub fn change_priority_for_all(&self, pr: Priority) -> ReceivableEventChanges {
+    //    let mut resps = ReceivableEventChanges::default();
+    //    for (el_id, _) in self.els.borrow().iter() {
+    //        let rec = self.change_priority_for_el(el_id, pr);
+    //        resps.extend(rec);
+    //    }
+    //    resps
+    //}
 
     // change_priority_for_el updates a child element to a new priority. It does
     // this by asking the child element to return its registered events w/

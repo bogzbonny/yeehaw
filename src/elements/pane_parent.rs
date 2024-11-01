@@ -207,35 +207,16 @@ impl ParentPane {
     }
 
     pub fn focus(&self, ctx: &Context) {
-        *self.pane.element_priority.borrow_mut() = Priority::Focused;
-        self.pane
-            .self_evs
-            .borrow_mut()
-            .update_priority_for_all(Priority::Focused);
-
-        if self.pane.parent.borrow().is_some() {
-            let rec = self.receivable();
-            debug!("ParentPane::focus: has parent. rec: {:?}", rec);
-            let rec = ReceivableEventChanges::default()
-                .with_remove_evs(rec.iter().map(|(ev, _)| ev.clone()).collect())
-                .with_add_evs(rec);
+        let rec = self.change_priority(Priority::Focused);
+        if self.pane.has_parent() {
             let resps = EventResponse::ReceivableEventChanges(rec);
             self.send_responses_upward(ctx, resps.into());
         }
     }
 
     pub fn unfocus(&self, ctx: &Context) {
-        *self.pane.element_priority.borrow_mut() = Priority::Unfocused;
-        self.pane
-            .self_evs
-            .borrow_mut()
-            .update_priority_for_all(Priority::Unfocused);
-
-        if self.pane.parent.borrow().is_some() {
-            let rec = self.receivable();
-            let rec = ReceivableEventChanges::default()
-                .with_remove_evs(rec.iter().map(|(ev, _)| ev.clone()).collect())
-                .with_add_evs(rec);
+        let rec = self.change_priority(Priority::Unfocused);
+        if self.pane.has_parent() {
             let resps = EventResponse::ReceivableEventChanges(rec);
             self.send_responses_upward(ctx, resps.into());
         }
@@ -269,7 +250,7 @@ impl Element for ParentPane {
     // parent organizer so as to update the priority of all events registered to
     // this element.
     //
-    // NOTE: The priority changes (ic) that this parent pane sends up is the
+    // NOTE: The receivable event changes (rec) that this parent pane sends up is the
     // combination of:
     //   - this element's priority changes (the SelfEvs, aka the
     //     Self Receivable Events)
@@ -283,7 +264,7 @@ impl Element for ParentPane {
         // the perceived priorities of the children should be interpreted.
         let mut rec = self.pane.change_priority(pr);
 
-        // update the perceived priorities of the children
+        // update the perceived priorities of the children and update the prioritizer
         for (_, el_details) in self.eo.els.borrow().iter() {
             let pes = el_details.el.receivable(); // self evs (and child eo's evs)
             for pe in ElementOrganizer::generate_perceived_priorities(pr, pes) {

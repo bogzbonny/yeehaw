@@ -380,7 +380,7 @@ impl ReceivableEventChanges {
         }
     }
 
-    pub fn concat(&mut self, rec: ReceivableEventChanges) {
+    pub fn extend(&mut self, rec: ReceivableEventChanges) {
         self.remove.extend(rec.remove);
         self.add.extend(rec.add);
     }
@@ -428,7 +428,7 @@ impl EventResponses {
         let mut rec = ReceivableEventChanges::default();
         for er in &self.0 {
             if let EventResponse::ReceivableEventChanges(r) = er {
-                rec.concat(r.clone());
+                rec.extend(r.clone());
             }
         }
         rec
