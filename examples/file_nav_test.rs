@@ -4,8 +4,8 @@ use yeehaw::{
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    //yeehaw::debug::set_log_file("./debug_test.log".to_string());
-    //yeehaw::debug::clear();
+    yeehaw::debug::set_log_file("./debug_test.log".to_string());
+    yeehaw::debug::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let (mut cui, ctx) = Cui::new()?;
@@ -17,6 +17,7 @@ async fn main() -> Result<(), Error> {
     let panebox = ParentPane::new(&ctx, "box");
 
     let nav = FileNavPane::new(&ctx, std::env::current_dir().unwrap());
+    nav.pane.focus(&ctx);
 
     let nav_ = nav.clone();
     let panebox_ = panebox.clone();

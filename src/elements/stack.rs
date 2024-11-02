@@ -406,6 +406,7 @@ impl Element for HorizontalStack {
         self.pane.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        debug!("HorizontalStack::receive_event_inner: ev={:?}", ev);
         self.ensure_normalized_sizes(ctx);
         self.pane.receive_event(ctx, ev.clone())
     }

@@ -25,14 +25,13 @@
        - see lines 342 in organizer.rs - which to me make sense however break
          this example
 01. textbox greyed out initial message ("type here...") 
+01. window_test term window broken (double registers) 
+    window_test broken by cca0752
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
 01. file_nav_test broken
     file_nav_test broken by bbd32af
-01. window_test term window broken (double registers) 
-    window_test broken by cca0752
 
 01. terminal editor logic should not check for editor closure during drawing but use a hook!
 
@@ -50,6 +49,27 @@
               - OR could take a snapshot right when the editor exits
                 and use that snapshot except maybe make it a bit more pale
 
+01. Snapshot tui Tester (just call this tui-tester, binary: tuit (lol)) 
+     - always multi-stage
+       - record each action then take a snapshot, however don't save the
+         snapshot if it's the same as the previous snapshot. 
+       - Option to record with all time indices (slower to test)  
+       - Option to just take a snapshot every X ms.
+         - or Option to just record a screen change when it happens on its own?
+     - Binary Mode or Yeehaw Mode (start with Yeehaw Mode)
+     - Integrate into regular testing
+     - TUI ideally we should keep everything in one window.
+       -  
+       - diff view (only show the differences)
+       - use a toggle to switch between result/expected/diff
+       - toggle to switch on and off the mouse
+       - top: Button Run
+       - playback: stack 
+         left                                right
+         scrollable pane with the actual     events playback
+     - Other similar:
+       - "script" standard binary
+       - microsoft has something
 
 01. support taffy as a layout structure.
      - Taffy low-level API (0.6.0 fixes ownership issues I was facing)

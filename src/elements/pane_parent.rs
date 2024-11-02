@@ -243,6 +243,18 @@ impl Element for ParentPane {
     // TODO verify that this code is or isn't used anywhere
     //                                               (captured, resp         )
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        //debug!(
+        //    "ParentPane({})::receive_event_inner: ev={:?}\n\t\treceivable={:#?}",
+        //    self.id(),
+        //    ev,
+        //    self.receivable()
+        //);
+        debug!(
+            "ParentPane({})::receive_event_inner: ev={:?}",
+            self.id(),
+            ev,
+        );
+
         self.eo.event_process(ctx, ev, Box::new(self.clone()))
     }
 

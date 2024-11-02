@@ -478,7 +478,10 @@ impl ElementOrganizer {
     ) -> (bool, EventResponses) {
         match ev {
             Event::KeyCombo(ke) => {
-                let mep = self.key_event_process(ctx, Event::KeyCombo(ke), parent);
+                let ke = ke.into_iter().filter_map(|k| k.get_key()).collect();
+                let mep = self.key_ct_events_process(ctx, ke, parent);
+
+                //let mep = self.key_event_process(ctx, Event::KeyCombo(ke), parent);
                 let Some((_, resps)) = mep else {
                     return (false, EventResponses::default());
                 };
@@ -523,6 +526,7 @@ impl ElementOrganizer {
         let el_id = match el_id {
             Some(e) => e,
             None => {
+                debug!("no element for destination id. ev: {:?}", ev);
                 return None;
             }
         };
