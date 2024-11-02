@@ -343,12 +343,9 @@ impl Parent for CuiParent {
         &self, parent_ctx: &Context, child_el_id: &ElementID, mut resps: EventResponses,
     ) {
         // process changes in element organizer
-        self.eo.partially_process_ev_resps(
-            parent_ctx,
-            child_el_id,
-            &mut resps,
-            Box::new(self.clone()),
-        );
+        let b: Box<dyn Parent> = Box::new(self.clone());
+        self.eo
+            .partially_process_ev_resps(parent_ctx, child_el_id, &mut resps, &b);
         process_event_resps(resps, Some(self.exit_tx.clone()));
     }
 

@@ -354,12 +354,9 @@ impl Parent for ParentPane {
     fn propagate_responses_upward(
         &self, parent_ctx: &Context, child_el_id: &ElementID, mut resps: EventResponses,
     ) {
-        self.eo.partially_process_ev_resps(
-            parent_ctx,
-            child_el_id,
-            &mut resps,
-            Box::new(self.clone()),
-        );
+        let b: Box<dyn Parent> = Box::new(self.clone());
+        self.eo
+            .partially_process_ev_resps(parent_ctx, child_el_id, &mut resps, &b);
         if let Some(parent) = self.pane.parent.borrow_mut().deref() {
             if let Some(next_parent_ctx) = parent_ctx.parent_context() {
                 parent.propagate_responses_upward(next_parent_ctx, &self.id(), resps);
