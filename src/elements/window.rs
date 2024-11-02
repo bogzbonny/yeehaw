@@ -103,39 +103,10 @@ impl WindowPane {
 
         self
     }
-}
 
-impl Element for WindowPane {
-    fn kind(&self) -> &'static str {
-        self.pane.kind()
-    }
-    fn id(&self) -> ElementID {
-        self.pane.id()
-    }
-    fn receivable(&self) -> SelfReceivableEvents {
-        self.pane.receivable()
-    }
-
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        //debug!("Window({}) receive_event_inner: {:?}", self.id(), ev);
-        // Skip sending the event into the pane if the event is a drag event and we're currently
-        // dragging
-        let mut event_to_inner = true;
-        let dragging = self.dragging.borrow().is_some();
-        if dragging {
-            if let Event::Mouse(me) = ev {
-                if let MouseEventKind::Drag(MouseButton::Left) = me.kind {
-                    event_to_inner = false;
-                }
-            }
-        };
-
-        let (captured, mut resps) = if event_to_inner {
-            self.pane.receive_event(ctx, ev.clone())
-        } else {
-            (true, EventResponses::default())
-        };
-
+    // partially process the resp for the inner elements of the window
+    //                                                                                 just-minimized
+    pub fn partially_process_inner_resp(&self, ctx: &Context, resps: &mut EventResponses) -> bool {
         let mut resps_ = EventResponses::default();
         let mut just_minimized = false;
         for resp in resps.iter_mut() {
@@ -311,17 +282,17 @@ impl Element for WindowPane {
                 continue;
             }
         }
+        resps.extend(resps_.0);
+        just_minimized
+    }
 
-        // Won't work until mouse capturing is reformatted
-        //if captured {
-        //    return (captured, resps);
-        //}
-
-        let top_height = self.top_bar.get_dyn_location_set().borrow().l.height(ctx);
-
-        // process dragging
+    pub fn process_dragging(
+        &self, ctx: &Context, ev: &Event, dragging: bool, just_minimized: bool,
+        captured: &mut bool, resps: &mut EventResponses,
+    ) {
         match ev {
             Event::Mouse(me) => {
+                *captured = true;
                 if let MouseEventKind::Down(_) = me.kind {
                     //self.pane.pane.focus();
                     resps.push(EventResponse::BringToFront);
@@ -353,17 +324,18 @@ impl Element for WindowPane {
                                 Vec::with_capacity(0),
                             ),
                         );
-                        resps_.extend(r.0);
+                        resps.extend(r.0);
 
                         let (_, r) = self.top_bar.receive_event(&top_bar_ctx, Event::Resize);
-                        resps_.extend(r.0);
+                        resps.extend(r.0);
                         self.inner.get_visible().replace(true);
 
                         self.minimized_restore.replace(None);
                     }
                     MouseEventKind::Down(MouseButton::Left) if !dragging && mr.is_none() => {
+                        let top_height = self.top_bar.get_dyn_location_set().borrow().l.height(ctx);
                         if me.row as usize >= top_height {
-                            return (captured, resps);
+                            return;
                         }
                         *self.dragging.borrow_mut() = Some((me.column, me.row));
                     }
@@ -425,8 +397,54 @@ impl Element for WindowPane {
             }
             _ => {}
         }
+    }
+}
 
-        resps.extend(resps_.0);
+impl Element for WindowPane {
+    fn kind(&self) -> &'static str {
+        self.pane.kind()
+    }
+    fn id(&self) -> ElementID {
+        self.pane.id()
+    }
+    fn receivable(&self) -> SelfReceivableEvents {
+        self.pane.receivable()
+    }
+
+    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        //debug!("Window({}) receive_event_inner: {:?}", self.id(), ev);
+
+        // Skip sending the event into the pane if the event is a drag event and we're currently
+        // dragging
+        let mut event_to_inner = true;
+        let dragging = self.dragging.borrow().is_some();
+        if dragging {
+            if let Event::Mouse(me) = ev {
+                if let MouseEventKind::Drag(MouseButton::Left) = me.kind {
+                    event_to_inner = false;
+                }
+            }
+        };
+
+        let (mut captured, mut resps) = if event_to_inner {
+            self.pane.receive_event(ctx, ev.clone())
+        } else {
+            (false, EventResponses::default())
+        };
+        let just_minimized = self.partially_process_inner_resp(ctx, &mut resps);
+        if captured {
+            return (captured, resps);
+        }
+
+        // process dragging
+        self.process_dragging(
+            ctx,
+            &ev,
+            dragging,
+            just_minimized,
+            &mut captured,
+            &mut resps,
+        );
 
         // check if the inner pane has been removed from the parent in which case close this window
         if self.pane.eo.get_element(&self.inner.id()).is_none() {

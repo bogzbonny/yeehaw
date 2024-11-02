@@ -666,7 +666,7 @@ impl ElementOrganizer {
 
             // send mouse event to the element
             let (captured, mut resps_) = details.el.receive_event(&child_ctx, Event::Mouse(ev_adj));
-            self.partially_process_ev_resps(ctx, el_id, &mut resps, &parent);
+            self.partially_process_ev_resps(ctx, el_id, &mut resps_, &parent);
             resps.extend(resps_.0.drain(..));
 
             if !captured {

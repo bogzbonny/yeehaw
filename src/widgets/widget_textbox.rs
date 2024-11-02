@@ -714,7 +714,7 @@ impl TextBox {
         Ok(resps)
     }
 
-    pub fn receive_key_event(&self, ev: Vec<KeyEvent>, ctx: &Context) -> (bool, EventResponses) {
+    pub fn receive_key_event(&self, ctx: &Context, ev: Vec<KeyEvent>) -> (bool, EventResponses) {
         if self.base.get_selectability() != Selectability::Selected || ev.is_empty() {
             return (false, EventResponses::default());
         }
@@ -1060,7 +1060,7 @@ impl Element for TextBox {
 
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
-            Event::KeyCombo(ke) => self.receive_key_event(ke, ctx),
+            Event::KeyCombo(ke) => self.receive_key_event(ctx, ke),
             Event::Mouse(me) => self.receive_mouse_event(ctx, me),
             _ => (false, EventResponses::default()),
         }

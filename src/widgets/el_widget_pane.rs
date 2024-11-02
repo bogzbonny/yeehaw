@@ -247,7 +247,7 @@ impl WidgetPane {
     // Returns true if one of the Widgets captures the events
     pub fn capture_key_event(
         &self, ctx: &Context, ev: Vec<KeyEvent>,
-        /*(captured, resp    )*/
+        /*(captured, resp     )*/
     ) -> (bool, EventResponses) {
         if ev.is_empty() {
             return (false, EventResponses::default());
@@ -283,7 +283,7 @@ impl WidgetPane {
         &self,
         ctx: &Context,
         ev: crossterm::event::MouseEvent,
-        //(captured, resp    )
+        //(captured, resp     )
     ) -> (bool, EventResponses) {
         let mut clicked = false;
         if let MouseEventKind::Up(MouseButton::Left) = ev.kind {
