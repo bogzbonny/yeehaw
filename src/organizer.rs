@@ -358,10 +358,6 @@ impl ElementOrganizer {
                     // of the parent element. Required as this EventResponse is being passed
                     // up the chain further to the next parent element.
                     // TODO could remove clones and drain each vec.
-
-                    // NOTE this code breaks the file_nav_test commented out
-                    // XXX
-
                     let add_ = Self::generate_perceived_priorities(
                         parent.get_priority(),
                         rec.add.clone().into(),
@@ -478,12 +474,9 @@ impl ElementOrganizer {
         &self, ctx: &Context, ev: Event, parent: Box<dyn Parent>,
     ) -> (bool, EventResponses) {
         match ev {
-            Event::KeyCombo(ke) => {
-                let mep = self.key_event_process(ctx, Event::KeyCombo(ke), parent);
-                let Some((_el_id, resps)) = mep else {
-                    return (false, EventResponses::default());
-                };
-                (true, resps)
+            Event::KeyCombo(_) | Event::Custom(_, _) => {
+                let (el_id, resps) = self.routed_event_process(ctx, ev, parent);
+                (el_id.is_some(), resps)
             }
             Event::Mouse(me) => {
                 let (el_id, resps) = self.mouse_event_process(ctx, &me, parent);
@@ -495,51 +488,45 @@ impl ElementOrganizer {
                 (false, resp) // never capture
             }
             Event::Initialize => {
-                self.initialize(ctx, parent);
-                (false, EventResponses::default()) // never capture
+                let resps = self.initialize(ctx, parent);
+                (false, resps) // never capture
             }
-            Event::Exit | Event::Resize | Event::Custom(_, _) => {
-                self.propogate_event_to_all(ctx, ev, parent)
-            }
+            Event::Exit | Event::Resize => self.propogate_event_to_all(ctx, ev, parent),
         }
     }
 
-    // key_events_process:
-    // - determines the appropriate element to send key events to
-    // - sends the event combo to the element
-    // - processes changes to the elements receivable events
-    pub fn key_ct_events_process(
-        &self, ctx: &Context, evs: Vec<crossterm::event::KeyEvent>, parent: Box<dyn Parent>,
-    ) -> Option<(ElementID, EventResponses)> {
-        let evs: Event = evs.into();
-        self.key_event_process(ctx, evs, parent)
-    }
-
-    pub fn key_event_process(
+    // routed_event_process:
+    // - determines the appropriate element to send the event to then sends the event
+    //    - if the event isn't captured then send it to the next element able to receive this event
+    //      (ordered by priority)
+    // - partially processes changes to the elements receivable events
+    // NOTE elements may choose to not capture events in order to continue sending the
+    //      event to the next element in the chain
+    pub fn routed_event_process(
         &self, ctx: &Context, ev: Event, parent: Box<dyn Parent>,
-    ) -> Option<(ElementID, EventResponses)> {
-        // determine elementID to send events to
-        let el_id = self.prioritizer.borrow().get_destination_el(&ev);
+    ) -> (Option<ElementID>, EventResponses) {
+        // determine element_id to send events to
+        let el_ids = self.prioritizer.borrow().get_destination_el(&ev);
 
-        let el_id = match el_id {
-            Some(e) => e,
-            None => {
-                //debug!("no element for destination id. ev: {:?}", ev);
-                return None;
+        let mut resps = EventResponses::default();
+        let mut capturing_el_id = None;
+        for el_id in el_ids {
+            let el_details = self
+                .get_element_details(&el_id)
+                .expect("no element for destination id in routed_event_process");
+
+            let child_ctx = ctx.child_context(&el_details.loc.borrow().l);
+            let (captured, mut resps_) = el_details.el.receive_event(&child_ctx, ev.clone());
+
+            self.partially_process_ev_resps(ctx, &el_id, &mut resps, &parent);
+            resps.extend(resps_.0.drain(..));
+
+            if captured {
+                capturing_el_id = Some(el_id);
+                break;
             }
-        };
-
-        // get element
-        let el_details = self
-            .get_element_details(&el_id)
-            .expect("no element for destination id");
-
-        // send EventKeys to element w/ context
-        let child_ctx = ctx.child_context(&el_details.loc.borrow().l);
-        let (_, mut resps) = el_details.el.receive_event(&child_ctx, ev);
-
-        self.partially_process_ev_resps(ctx, &el_id, &mut resps, &parent);
-        Some((el_id, resps))
+        }
+        (capturing_el_id, resps)
     }
 
     pub fn propogate_event_to_all(
@@ -555,7 +542,7 @@ impl ElementOrganizer {
             self.partially_process_ev_resps(ctx, el_id, &mut resps, &parent);
             resps.extend(resps_.0.drain(..));
         }
-        (true, resps)
+        (false, resps)
     }
 
     // initialize updates the prioritizers essentially refreshing the state of the element organizer.

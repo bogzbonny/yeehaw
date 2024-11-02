@@ -199,13 +199,10 @@ impl Cui {
         let ctx = self.context();
         //debug!("cui destination: {:?}", dest);
 
-        let Some((_, resps)) =
+        let (_, resps) =
             self.cup
                 .eo
-                .key_ct_events_process(&ctx, evs, Box::new(self.cup.clone()))
-        else {
-            return false;
-        };
+                .routed_event_process(&ctx, evs.into(), Box::new(self.cup.clone()));
 
         process_event_resps(resps, None)
     }

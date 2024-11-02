@@ -160,10 +160,10 @@ impl EventPrioritizer {
         None
     }
 
-    // XXX should change to a vec
     // GetDestinationEl returns the id of the element that should
     // receive the given event.
-    pub fn get_destination_el(&self, input_ev: &Event) -> Option<ElementID> {
+    pub fn get_destination_el(&self, input_ev: &Event) -> Vec<ElementID> {
+        let mut dests = vec![];
         // loop through all events registered by elements (PriorityIdEvent's)
         // and check if the input_ev matches any of them
         for priority_id_event in self.0.iter() {
@@ -176,9 +176,9 @@ impl EventPrioritizer {
 
             // check if event registered w/ element matches the input_ev
             if priority_id_event.event.matches(input_ev) {
-                return Some(priority_id_event.id.clone());
+                dests.push(priority_id_event.id.clone());
             }
         }
-        None
+        dests
     }
 }

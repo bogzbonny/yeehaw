@@ -28,7 +28,7 @@ pub trait Element: dyn_clone::DynClone {
     // to a child. The element is expected to return a response to the event, along with any
     // changes receivable events. When the event is captured, the element is expected to returns
     // captured=true.
-    //                                                   (captured, response     )
+    //                                                      (captured, response     )
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses);
 
     fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {

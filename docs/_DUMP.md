@@ -118,7 +118,7 @@
     activate the rcm 
 30. refactor: remove ExtraLocations from EventResponse
 05. menu.rs: 
-        // XXX this should just be loc width (post refactor of dyn_location to element)
+        // this should just be loc width (post refactor of dyn_location to element)
 01. Hooks 
      - HashMap(HookKind, Vec(ElementID, fn Hook))
      - register_hook

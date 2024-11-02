@@ -155,8 +155,10 @@ impl Element for TerminalPane {
         if *self.exit.read().unwrap() {
             return (false, EventResponse::Destruct.into());
         }
+        let mut captured = false;
         match ev {
             Event::KeyCombo(ref keys) => {
+                captured = true;
                 //debug!(
                 //    "TerminalPane({}) receive_event_inner: {:?}",
                 //    self.id(),
@@ -184,7 +186,7 @@ impl Element for TerminalPane {
             }
             _ => {}
         }
-        self.pane.receive_event(ctx, ev.clone())
+        (captured, EventResponses::default())
     }
 
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
