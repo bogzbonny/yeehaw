@@ -273,6 +273,7 @@ impl ElementOrganizer {
     // which owns this element organizer.
     //
     // NOTE this function modifies the event responses in place
+    #[allow(clippy::borrowed_box)]
     pub fn partially_process_ev_resps(
         &self, ctx: &Context, el_id: &ElementID, resps: &mut EventResponses,
         parent: &Box<dyn Parent>,
@@ -642,7 +643,7 @@ impl ElementOrganizer {
     pub fn mouse_event_process(
         &self, ctx: &Context, ev: &crossterm::event::MouseEvent, parent: Box<dyn Parent>,
     ) -> (Option<ElementID>, EventResponses) {
-        let eoz = self.get_el_id_z_order_under_mouse(ctx, ev);
+        let mut eoz = self.get_el_id_z_order_under_mouse(ctx, ev);
 
         if eoz.is_empty() {
             let mut el_resps = Vec::new();
@@ -657,6 +658,58 @@ impl ElementOrganizer {
             return (None, EventResponses::default());
         }
 
+        let mut resps = EventResponses::default();
+
+        // reverse sort the elements by z-index (highest-z to lowest-z)
+        eoz.sort_by(|a, b| b.1.cmp(&a.1));
+        let mut capturing_el_id = None;
+        let mut i = 0;
+        loop {
+            let Some((el_id, _)) = eoz.get(i) else {
+                break; // past the end of the list
+            };
+
+            let details = self
+                .get_element_details(el_id)
+                .expect("no element for destination id");
+            let child_ctx = ctx.child_context(&details.loc.borrow().l);
+
+            // adjust event to the relative position of the element
+            let ev_adj = details.loc.borrow().l.adjust_mouse_event(ctx, ev);
+
+            // send mouse event to the element
+            let (captured, mut resps_) = details.el.receive_event(&child_ctx, Event::Mouse(ev_adj));
+            self.partially_process_ev_resps(ctx, el_id, &mut resps, &parent);
+            resps.extend(resps_.0.drain(..));
+
+            if !captured {
+                // proceed to the next element
+                i += 1;
+                continue;
+            }
+
+            capturing_el_id = Some(el_id.clone());
+            break;
+        }
+
+        // send the mouse event as an external event to all other elements
+        // capture the responses
+        for (el_id2, details2) in self.els.borrow().iter() {
+            if let Some(ref capturing_el_id) = capturing_el_id {
+                if capturing_el_id == el_id2 {
+                    continue;
+                }
+            }
+            let child_ctx = ctx.child_context(&details2.loc.borrow().l);
+            let ev_adj = details2.loc.borrow().l.adjust_mouse_event_external(ctx, ev);
+            let (_, mut resps_) = details2
+                .el
+                .receive_event(&child_ctx, Event::ExternalMouse(ev_adj));
+            self.partially_process_ev_resps(ctx, el_id2, &mut resps_, &parent);
+            resps.extend(resps_.0.drain(..));
+        }
+
+        /*
         // get the highest-z element from the eoz list
         let max_z = eoz
             .iter()
@@ -690,14 +743,15 @@ impl ElementOrganizer {
                 .receive_event(&child_ctx, Event::ExternalMouse(ev_adj));
             el_resps.push((el_id2.clone(), r));
         }
-
         // combine the event responses from the elements that receive the event
         // and all the elements that receive an external event
         for (el_id2, mut resps) in el_resps {
             self.partially_process_ev_resps(ctx, &el_id2, &mut resps, &parent);
             ev_resps.extend(resps.0);
         }
-        (Some(el_id), ev_resps)
+        */
+
+        (capturing_el_id, resps)
     }
 
     // sends the external mouse command to all elements in the organizer
