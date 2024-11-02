@@ -32,10 +32,8 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
-
 01. terminal editor logic should not check for editor closure during drawing but use a hook!
-
+    
 01. editor element
     - uses the $EDITOR env variable
     - execute with something like: "$EDITOR; exit" 
@@ -50,8 +48,25 @@
               - OR could take a snapshot right when the editor exits
                 and use that snapshot except maybe make it a bit more pale
 
-01. window shadow! :)  ... Element shadow?!!!!!!!
-     - element shadow could be a wrapper kinda like the border
+01. fg color alpha channel should be able to choose between the either taking
+    from the bg color or the fg of the character below
+     - would need to calculate the bg color first then
+    Maybe to make things open-ended we could have these kinds of alpha:
+    bg-alpha    from: lower-bg, lower-fg
+    fg/ul-alpha from: lower-bg, lower-fg, upper-bg
+    NOTE we can't allow for the bg to be alpha on the upper-fg or else 
+         we have a computational loop which would be annoying to resolve
+    These options should exist in the Style and not the Color. 
+       
+pub struct Style {
+    pub fg: Option<(Color, FgTranspSrc)>,
+    pub bg: Option<(Color, BgTranspSrc)>,
+    pub underline: Option<(Color, FgTranspSrc)>,
+    pub attr: Attributes,
+}
+
+01. window shadow!
+     - bg color transparent, fg color transparent TO bg color 
 
 01. Snapshot tui Tester (just call this tui-tester, binary: tuit (lol)) 
      - always multi-stage
@@ -339,13 +354,12 @@ One letter labels
       scrollpane if it is not over a textbox widget but routed to the textbox
       widget if the the event takes place over the widget AND the priority of
       the widget is greater than the priority of the scrollpane
-    - it would be cool to integrate in better capture event logic too, if the
-      mouse event is NOT captured, send the event to the next priority down. 
+    - integrate in better capture event logic, if the mouse event is NOT
+      captured, send the event to the next priority down. 
        - this could potentially also be applied to the accomplish the scroll
          situation as described above.. first send the event to the inner pane,
          then if the mouse scroll event is not captured then send it to the
          scrollable pane.
-    - Mouse clicks inside the shadow should pass through to the element under
 
 10. Simplify ElWidgetPane type to little more than a ParentPane
      - using the ParentPane store to hold index of the currently selected widget 

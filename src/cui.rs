@@ -129,6 +129,8 @@ impl Cui {
                                     self.clear_screen();
                                     self.render()
                                 }
+                                CTEvent::FocusGained => {}   // may eventually support
+                                CTEvent::FocusLost => {}
                                 _ => {}
                             }
                         }
