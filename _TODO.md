@@ -27,39 +27,11 @@
 01. textbox greyed out initial message ("type here...") 
 01. window_test term window broken (double registers) 
     window_test broken by cca0752
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 01. file_nav_test broken
     file_nav_test broken by bbd32af
 
-NOT WOKRING:
-HorizontalStack::receive_event_inner: ev=Refresh
-ParentPane(horizontal_stack_0)::receive_event_inner: ev=Refresh
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-FileNav(file_nav_pane_0)::receive_event_inner: ev=Refresh
-FileNav(file_nav_pane_0)::receive_event_inner: ev=Resize
-ParentPane(box_0)::receive_event_inner: ev=Refresh
-ParentPane(box_0)::receive_event_inner: ev=Resize
-
-HorizontalStack::receive_event_inner: ev=Resize
-ParentPane(horizontal_stack_0)::receive_event_inner: ev=Resize
-FileNav(file_nav_pane_0)::receive_event_inner: ev=Resize
-ParentPane(box_0)::receive_event_inner: ev=Resize
-
-
-WORKING
-HorizontalStack::receive_event_inner: ev=Refresh
-ParentPane(horizontal_stack_0)::receive_event_inner: ev=Refresh
-
-FileNav(file_nav_pane_0)::receive_event_inner: ev=Refresh
-FileNav(file_nav_pane_0)::receive_event_inner: ev=Resize
-
-ParentPane(box_0)::receive_event_inner: ev=Refresh
-ParentPane(box_0)::receive_event_inner: ev=Resize
-
-HorizontalStack::receive_event_inner: ev=Resize
-ParentPane(horizontal_stack_0)::receive_event_inner: ev=Resize
 
 
 01. terminal editor logic should not check for editor closure during drawing but use a hook!
@@ -77,6 +49,9 @@ ParentPane(horizontal_stack_0)::receive_event_inner: ev=Resize
             editor the Pane should be replaced with just the containing text 
               - OR could take a snapshot right when the editor exits
                 and use that snapshot except maybe make it a bit more pale
+
+01. window shadow! :)  ... Element shadow?!!!!!!!
+     - element shadow could be a wrapper kinda like the border
 
 01. Snapshot tui Tester (just call this tui-tester, binary: tuit (lol)) 
      - always multi-stage
@@ -370,6 +345,7 @@ One letter labels
          situation as described above.. first send the event to the inner pane,
          then if the mouse scroll event is not captured then send it to the
          scrollable pane.
+    - Mouse clicks inside the shadow should pass through to the element under
 
 10. Simplify ElWidgetPane type to little more than a ParentPane
      - using the ParentPane store to hold index of the currently selected widget 
