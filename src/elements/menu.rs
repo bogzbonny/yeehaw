@@ -2,7 +2,7 @@ use {
     crate::{
         Color, Context, DrawCh, DrawChPos, DynLocation, DynLocationSet, DynVal, Element, ElementID,
         Event, EventResponses, Pane, Parent, ParentPane, Priority, ReceivableEventChanges,
-        RelMouseEvent, Style, ZIndex,
+        RelMouseEvent, SelfReceivableEvents, Style, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::collections::HashMap,
@@ -635,7 +635,7 @@ impl Element for MenuBar {
     fn id(&self) -> ElementID {
         self.pane.id()
     }
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         self.pane.receivable()
     }
 
@@ -716,7 +716,7 @@ impl Element for MenuItem {
     fn id(&self) -> ElementID {
         self.pane.id()
     }
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         self.pane.receivable()
     }
 

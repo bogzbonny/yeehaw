@@ -6,7 +6,7 @@ use {
     crate::{
         ChPlus, Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID,
         Event, EventResponse, EventResponses, KeyPossibility, Pane, Parent, Priority,
-        ReceivableEventChanges, Style, ZIndex,
+        ReceivableEventChanges, SelfReceivableEvents, Style, ZIndex,
     },
     compact_str::CompactString,
     crossterm::event::{KeyCode, KeyEvent, KeyModifiers},
@@ -148,7 +148,7 @@ impl Element for TerminalPane {
     fn id(&self) -> ElementID {
         self.pane.id()
     }
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         self.pane.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {

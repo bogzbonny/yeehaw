@@ -2,7 +2,7 @@ use {
     crate::{
         prioritizer::EventPrioritizer, Context, DrawChPos, DynLocation, DynLocationSet, Element,
         ElementID, Event, EventResponse, EventResponses, Parent, Priority, ReceivableEventChanges,
-        RelMouseEvent, ZIndex,
+        RelMouseEvent, SelfReceivableEvents, ZIndex,
     },
     std::collections::HashMap,
     std::{cell::RefCell, rc::Rc},
@@ -74,7 +74,7 @@ impl ElementOrganizer {
         let el_details = ElDetails::new(el);
         self.els.borrow_mut().insert(el_id.clone(), el_details);
 
-        let rec = ReceivableEventChanges::default().with_add_evs(receivable_evs);
+        let rec = ReceivableEventChanges::default().with_add_evs(receivable_evs.0);
         EventResponse::ReceivableEventChanges(rec)
     }
 
@@ -204,13 +204,13 @@ impl ElementOrganizer {
 
     // Receivable returns all of the key combos and commands registered to this
     // element organizer, along with their priorities
-    pub fn receivable(&self) -> Vec<(Event, Priority)> {
+    pub fn receivable(&self) -> SelfReceivableEvents {
         let mut out = Vec::new();
         for details in self.els.borrow().values() {
             let pr_evs = details.el.receivable();
-            out.extend(pr_evs);
+            out.extend(pr_evs.0);
         }
-        out
+        out.into()
     }
 
     // AllDrawing executes Drawing functions on all elements in the element
@@ -263,8 +263,9 @@ impl ElementOrganizer {
     pub fn process_receivable_event_changes(
         &self, el_id: &ElementID, rec: &ReceivableEventChanges,
     ) {
-        self.prioritizer.borrow_mut().remove(el_id, &rec.remove);
-        self.prioritizer.borrow_mut().include(el_id, &rec.add);
+        self.prioritizer
+            .borrow_mut()
+            .process_receivable_event_changes(el_id, rec);
     }
 
     // Partially process the event response for whatever is possible to be processed
@@ -308,20 +309,22 @@ impl ElementOrganizer {
                         let rec = self.change_priority_for_el(el_id_, Priority::Unfocused);
                         let add_ = Self::generate_perceived_priorities(
                             parent.get_priority(),
-                            rec.add.clone(),
+                            rec.add.clone().into(),
                         );
                         let remove_ = add_.iter().map(|a| a.0.clone()).collect();
-                        let rec_for_higher = ReceivableEventChanges::new(add_, remove_);
+                        let rec_for_higher = ReceivableEventChanges::new(add_.0, remove_);
                         extend_resps.push(EventResponse::ReceivableEventChanges(rec_for_higher));
                     }
                     *r = EventResponse::None;
                 }
                 EventResponse::Focus => {
                     let rec = self.change_priority_for_el(el_id, Priority::Focused);
-                    let add_ =
-                        Self::generate_perceived_priorities(parent.get_priority(), rec.add.clone());
+                    let add_ = Self::generate_perceived_priorities(
+                        parent.get_priority(),
+                        rec.add.clone().into(),
+                    );
                     let remove_ = add_.iter().map(|a| a.0.clone()).collect();
-                    let rec_for_higher = ReceivableEventChanges::new(add_, remove_);
+                    let rec_for_higher = ReceivableEventChanges::new(add_.0, remove_);
 
                     // NOTE this needs to be added to extend_resps instead of just to *r as
                     // if UnfocusOthers is called then it is placed in extend_resps and
@@ -363,10 +366,12 @@ impl ElementOrganizer {
                     // NOTE this code breaks the file_nav_test commented out
                     // XXX
 
-                    let add_ =
-                        Self::generate_perceived_priorities(parent.get_priority(), rec.add.clone());
+                    let add_ = Self::generate_perceived_priorities(
+                        parent.get_priority(),
+                        rec.add.clone().into(),
+                    );
                     let remove_ = add_.iter().map(|a| a.0.clone()).collect();
-                    let rec_for_higher = ReceivableEventChanges::new(add_, remove_);
+                    let rec_for_higher = ReceivableEventChanges::new(add_.0, remove_);
                     *r = EventResponse::ReceivableEventChanges(rec_for_higher);
                 }
             }
@@ -419,17 +424,17 @@ impl ElementOrganizer {
     //   - The perceived_pes is the perceived priority events of a child element for
     //     this element for this element's parent (the grandparent of the child).
     pub fn generate_perceived_priorities(
-        parent_pr: Priority, real_pes: Vec<(Event, Priority)>,
-    ) -> Vec<(Event, Priority)> {
+        parent_pr: Priority, real_pes: SelfReceivableEvents,
+    ) -> SelfReceivableEvents {
         let mut perceived_pes = vec![];
         #[allow(clippy::comparison_chain)]
         if parent_pr == Priority::Unfocused {
-            for child in real_pes {
+            for child in real_pes.0 {
                 perceived_pes.push((child.0, Priority::Unfocused));
             }
             // leave the children alone! they're fine
         } else {
-            for child in real_pes {
+            for child in real_pes.0 {
                 let pr = match true {
                     _ if child.1 == Priority::Unfocused => Priority::Unfocused,
                     _ if child.1 < parent_pr => child.1,
@@ -438,7 +443,7 @@ impl ElementOrganizer {
                 perceived_pes.push((child.0, pr));
             }
         }
-        perceived_pes
+        perceived_pes.into()
     }
 
     // Replaces the element at the given ID with a new element
@@ -497,7 +502,7 @@ impl ElementOrganizer {
                 (false, resp)
             }
             Event::Refresh => {
-                self.refresh(ctx);
+                self.refresh(ctx, parent);
                 (false, EventResponses::default())
             }
             Event::Exit | Event::Resize | Event::Custom(_, _) => {
@@ -561,27 +566,27 @@ impl ElementOrganizer {
         (true, resps)
     }
 
-    // refresh does the following:
-    // - updates prioritizers
-    // - triggers a resize event in all children.
-    // This essentially refreshes the state of the element organizer.
+    // refresh updates the prioritizers essentially refreshing the state of the element organizer.
     //
-    // NOTE: the refresh allows for less meticulous construction of the
-    // main.go file. Elements can be added in whatever order, so long as
-    // your_main_el.refresh() is called after all elements are added.
-    pub fn refresh(&self, ctx: &Context) {
+    // NOTE: the refresh allows for less meticulous construction of the main.go file. Elements can
+    // be added in whatever order, so long as your_main_el.refresh() is called after all elements
+    // are added.
+    pub fn refresh(&self, ctx: &Context, parent: Box<dyn Parent>) -> EventResponses {
         // reset prioritizers
         *self.prioritizer.borrow_mut() = EventPrioritizer::default();
 
         // refresh all children
+        let mut resps = EventResponses::default();
         for (_, details) in self.els.borrow().iter() {
             let el_ctx = ctx.child_context(&details.loc.borrow().l);
-            let _ = details.el.receive_event(&el_ctx, Event::Refresh);
-            let _ = details.el.receive_event(&el_ctx, Event::Resize);
+            let (_, mut resp_) = details.el.receive_event(&el_ctx, Event::Refresh);
+            self.partially_process_ev_resps(ctx, &details.el.id(), &mut resp_, parent.clone());
+            resps.extend(resp_.0.drain(..));
 
-            let pe = details.el.receivable();
-            self.prioritizer.borrow_mut().include(&details.el.id(), &pe)
+            let rec = details.el.receivable().to_receivable_event_changes();
+            self.process_receivable_event_changes(&details.el.id(), &rec);
         }
+        resps
     }
 
     //pub fn change_priority_for_all(&self, pr: Priority) -> ReceivableEventChanges {

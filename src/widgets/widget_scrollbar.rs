@@ -3,7 +3,7 @@ use {
     crate::{
         Color, Context, DrawChPos, DrawChs2D, DynLocationSet, DynVal, Element, ElementID, Event,
         EventResponses, KeyPossibility, Keyboard as KB, Parent, Priority, ReceivableEventChanges,
-        RelMouseEvent, Style,
+        RelMouseEvent, SelfReceivableEvents, Style,
     },
     crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
     std::ops::{Deref, DerefMut},
@@ -1025,7 +1025,7 @@ impl Element for VerticalScrollbar {
     fn id(&self) -> ElementID {
         self.base.id()
     }
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         self.base.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
@@ -1079,7 +1079,7 @@ impl Element for HorizontalScrollbar {
     fn id(&self) -> ElementID {
         self.base.id()
     }
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         self.base.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {

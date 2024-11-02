@@ -2,7 +2,8 @@ use {
     super::{Selectability, VerticalScrollbar, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEventChanges, Style, ZIndex,
+        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEventChanges,
+        SelfReceivableEvents, Style, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -286,7 +287,7 @@ impl Element for DropdownList {
     fn id(&self) -> ElementID {
         self.base.id()
     }
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         self.base.receivable()
     }
 

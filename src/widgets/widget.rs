@@ -3,7 +3,7 @@ use {
     crate::{
         event::Event, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal,
         Element, ElementID, EventResponse, EventResponses, Pane, Parent, Priority,
-        ReceivableEventChanges, Style, ZIndex,
+        ReceivableEventChanges, SelfReceivableEvents, Style, ZIndex,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -85,7 +85,7 @@ pub trait Widget: Element {
             Selectability::Selected => {
                 self.set_attr_selectability(s); // NOTE needs to happen before the next line or
                                                 // else receivable will return the wrong value
-                rec.push_add_evs(self.receivable())
+                rec.push_add_evs(self.receivable().0)
             }
             Selectability::Ready | Selectability::Unselectable => {
                 if let Selectability::Selected = attr_sel {
@@ -574,12 +574,12 @@ impl Element for WidgetBase {
     }
 
     // default implementation of Receivable, only receive when widget is active
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         let attr_sel = self.get_attr_selectability();
         if let Selectability::Selected = attr_sel {
             self.pane.receivable()
         } else {
-            Vec::new()
+            SelfReceivableEvents::default()
         }
     }
 

@@ -2,8 +2,8 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Attributes, Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Priority, ReceivableEventChanges,  Style,
-        Parent,
+        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEventChanges,
+        SelfReceivableEvents, Style,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -109,7 +109,7 @@ impl Element for Checkbox {
     fn id(&self) -> ElementID {
         self.base.id()
     }
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         self.base.receivable()
     }
 
@@ -147,7 +147,7 @@ impl Element for Checkbox {
     }
 
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.base.change_priority( p)
+        self.base.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         // need to re set the content in order to reflect active style

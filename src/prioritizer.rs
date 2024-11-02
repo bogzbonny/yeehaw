@@ -1,4 +1,4 @@
-use crate::{ElementID, Event, Keyboard};
+use crate::{ElementID, Event, Keyboard, ReceivableEventChanges};
 
 // Priority is a rank to determine which element should be receiving user
 // key strokes as they come in. When an element is in focus it should be given
@@ -70,6 +70,15 @@ impl PriorityIdEvent {
 }
 
 impl EventPrioritizer {
+    // write func to remove/add evCombos and commands from EvPrioritizer and
+    // CommandPrioritizer, using the ReceivableEventChanges struct
+    pub fn process_receivable_event_changes(
+        &mut self, el_id: &ElementID, rec: &ReceivableEventChanges,
+    ) {
+        self.remove(el_id, &rec.remove);
+        self.include(el_id, &rec.add);
+    }
+
     // are there any priority events already registered with the same priority and
     // event (independant of the event prioritizers element id).
     pub fn has_priority_ev(&self, priority_ev: &(Event, Priority)) -> bool {

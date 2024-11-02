@@ -1,7 +1,8 @@
 use {
     crate::{
         Context, DrawChPos, DrawChPosVec, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Pane, Parent, Priority, ReceivableEventChanges, ZIndex,
+        EventResponses, Pane, Parent, Priority, ReceivableEventChanges, SelfReceivableEvents,
+        ZIndex,
     },
     image::DynamicImage,
     ratatui::widgets::StatefulWidget,
@@ -82,7 +83,7 @@ impl Element for ImageViewer {
     fn id(&self) -> ElementID {
         self.pane.id()
     }
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         self.pane.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {

@@ -33,6 +33,35 @@
 01. file_nav_test broken
     file_nav_test broken by bbd32af
 
+NOT WOKRING:
+HorizontalStack::receive_event_inner: ev=Refresh
+ParentPane(horizontal_stack_0)::receive_event_inner: ev=Refresh
+
+FileNav(file_nav_pane_0)::receive_event_inner: ev=Refresh
+FileNav(file_nav_pane_0)::receive_event_inner: ev=Resize
+ParentPane(box_0)::receive_event_inner: ev=Refresh
+ParentPane(box_0)::receive_event_inner: ev=Resize
+
+HorizontalStack::receive_event_inner: ev=Resize
+ParentPane(horizontal_stack_0)::receive_event_inner: ev=Resize
+FileNav(file_nav_pane_0)::receive_event_inner: ev=Resize
+ParentPane(box_0)::receive_event_inner: ev=Resize
+
+
+WORKING
+HorizontalStack::receive_event_inner: ev=Refresh
+ParentPane(horizontal_stack_0)::receive_event_inner: ev=Refresh
+
+FileNav(file_nav_pane_0)::receive_event_inner: ev=Refresh
+FileNav(file_nav_pane_0)::receive_event_inner: ev=Resize
+
+ParentPane(box_0)::receive_event_inner: ev=Refresh
+ParentPane(box_0)::receive_event_inner: ev=Resize
+
+HorizontalStack::receive_event_inner: ev=Resize
+ParentPane(horizontal_stack_0)::receive_event_inner: ev=Resize
+
+
 01. terminal editor logic should not check for editor closure during drawing but use a hook!
 
 01. editor element

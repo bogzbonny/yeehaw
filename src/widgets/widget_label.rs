@@ -2,7 +2,7 @@ use {
     super::{common, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
-        Parent, Priority, ReceivableEventChanges, Style,
+        Parent, Priority, ReceivableEventChanges, SelfReceivableEvents, Style,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -150,7 +150,7 @@ impl Element for Label {
     fn id(&self) -> ElementID {
         self.base.id()
     }
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         self.base.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {

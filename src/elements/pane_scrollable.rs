@@ -4,8 +4,8 @@ use {
             HorizontalSBPositions, HorizontalScrollbar, VerticalSBPositions, VerticalScrollbar,
         },
         Context, DrawCh, DrawChPos, DrawChPosVec, DynLocationSet, DynVal, Element, ElementID,
-        Event, EventResponses, Loc, Parent, ParentPane, Priority, ReceivableEventChanges, Size,
-        Style,
+        Event, EventResponses, Loc, Parent, ParentPane, Priority, ReceivableEventChanges,
+        SelfReceivableEvents, Size, Style,
     },
     crossterm::event::{KeyModifiers, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -122,7 +122,7 @@ impl Element for PaneScrollable {
     fn id(&self) -> ElementID {
         self.pane.id()
     }
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         self.pane.receivable()
     }
 
@@ -424,7 +424,7 @@ impl Element for PaneWithScrollbars {
     fn id(&self) -> ElementID {
         self.pane.id()
     }
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         self.pane.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {

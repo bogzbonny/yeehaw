@@ -3,7 +3,7 @@ use {
     crate::{
         Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
         EventResponse, EventResponses, KeyPossibility, Keyboard as KB, Parent, ParentPane,
-        Priority, ReceivableEventChanges,
+        Priority, ReceivableEventChanges, SelfReceivableEvents,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -58,7 +58,11 @@ impl WidgetPane {
     }
 
     pub fn add_widget(&self, w: Box<dyn Widget>) {
-        self.pane.pane.self_evs.borrow_mut().extend(w.receivable());
+        self.pane
+            .pane
+            .self_evs
+            .borrow_mut()
+            .extend(w.receivable().0);
         w.get_dyn_location_set().borrow_mut().set_z(w.get_z_index());
         let loc = w.get_dyn_location_set();
         //self.pane.add_element(Rc::new(RefCell::new(w))); // TODO add to the element organizer
@@ -365,20 +369,20 @@ impl Element for WidgetPane {
 
     // Returns the widget organizer's receivable events along
     // with the standard pane's self events.
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         // all of the events returned by the widget organizer are set to
         // focused because WO.Receivable only returns the events associated with
         // widget that is currently active.
 
         let wpes = match *self.active_widget_index.borrow() {
             Some(i) => self.widgets.borrow()[i].0.receivable(),
-            None => Vec::new(),
+            None => SelfReceivableEvents::default(),
         };
 
         // Add the widget pane's self events. These are default receivable events of the widget
         // organizer
         let mut rec = self.pane.receivable();
-        rec.extend(wpes);
+        rec.extend(wpes.0);
         rec
     }
 

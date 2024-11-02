@@ -3,7 +3,7 @@ use {
         widgets::{Label, TextBox},
         Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
         EventResponse, EventResponses, Parent, ParentPane, Priority, ReceivableEventChanges,
-        TerminalPane, ZIndex,
+        SelfReceivableEvents, TerminalPane, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     portable_pty::CommandBuilder,
@@ -155,7 +155,7 @@ impl Element for TermEditorPane {
     fn id(&self) -> ElementID {
         self.pane.id()
     }
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         self.pane.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {

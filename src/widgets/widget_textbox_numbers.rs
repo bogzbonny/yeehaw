@@ -2,7 +2,8 @@ use {
     super::{Button, Selectability, TextBox, WBStyles, Widget, Widgets},
     crate::{
         Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
-        KeyPossibility, Keyboard as KB, Parent, Priority, ReceivableEventChanges, Style,
+        KeyPossibility, Keyboard as KB, Parent, Priority, ReceivableEventChanges,
+        SelfReceivableEvents, Style,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -207,7 +208,7 @@ impl Element for NumbersTextBox {
     fn id(&self) -> ElementID {
         self.tb.id()
     }
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         self.tb.receivable()
     }
 

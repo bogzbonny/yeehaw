@@ -1,8 +1,8 @@
 use {
     crate::{
         Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponse, EventResponses, Parent, ParentPane, Priority, ReceivableEventChanges, Size,
-        Style,
+        EventResponse, EventResponses, Parent, ParentPane, Priority, ReceivableEventChanges,
+        SelfReceivableEvents, Size, Style,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -352,7 +352,7 @@ impl Element for VerticalStack {
     fn id(&self) -> ElementID {
         self.pane.id()
     }
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         self.pane.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
@@ -402,7 +402,7 @@ impl Element for HorizontalStack {
     fn id(&self) -> ElementID {
         self.pane.id()
     }
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         self.pane.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {

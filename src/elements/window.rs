@@ -3,7 +3,7 @@ use {
         widgets::{Button, Label, WBStyles},
         Color, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal, Element,
         ElementID, Event, EventResponse, EventResponses, Pane, Parent, ParentPane, Priority,
-        ReceivableEventChanges, Size, Style, ZIndex,
+        ReceivableEventChanges, SelfReceivableEvents, Size, Style, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -112,7 +112,7 @@ impl Element for WindowPane {
     fn id(&self) -> ElementID {
         self.pane.id()
     }
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         self.pane.receivable()
     }
 
@@ -644,7 +644,7 @@ impl Element for BasicWindowTopBar {
     fn id(&self) -> ElementID {
         self.pane.id()
     }
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         self.pane.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
@@ -754,7 +754,7 @@ impl Element for CornerAdjuster {
     fn id(&self) -> ElementID {
         self.pane.id()
     }
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         self.pane.receivable()
     }
     fn receive_event_inner(&self, _ctx: &Context, ev: Event) -> (bool, EventResponses) {

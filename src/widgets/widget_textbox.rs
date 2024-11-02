@@ -7,7 +7,7 @@ use {
         elements::menu::{MenuItem, MenuPath, MenuStyle},
         Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Error,
         Event, EventResponse, EventResponses, KeyPossibility, Keyboard as KB, Parent, Priority,
-        ReceivableEventChanges, RightClickMenu, Style,
+        ReceivableEventChanges, RightClickMenu, SelfReceivableEvents, Style,
     },
     crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -1059,7 +1059,7 @@ impl Element for TextBox {
     fn id(&self) -> ElementID {
         self.base.id()
     }
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         self.base.receivable()
     }
 

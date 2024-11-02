@@ -2,7 +2,7 @@ use {
     crate::{
         Context, DrawCh, DrawChPos, DynLocation, DynLocationSet, DynVal, Element, ElementID,
         ElementOrganizer, Event, EventResponse, EventResponses, Pane, Parent, Priority,
-        ReceivableEventChanges, Style, ZIndex,
+        ReceivableEventChanges, SelfReceivableEvents, Style, ZIndex,
     },
     std::collections::HashMap,
     std::{
@@ -139,7 +139,7 @@ impl ParentPane {
         !self.eo.els.borrow().is_empty()
     }
 
-    pub fn perceived_priorities_of_eo(&self) -> Vec<(Event, Priority)> {
+    pub fn perceived_priorities_of_eo(&self) -> SelfReceivableEvents {
         let pr = self.pane.get_element_priority();
         let pes = self.eo.receivable(); // registered receivable events
         ElementOrganizer::generate_perceived_priorities(pr, pes)
@@ -232,10 +232,10 @@ impl Element for ParentPane {
         self.pane.id()
     }
 
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         let mut pes = self.perceived_priorities_of_eo();
-        pes.extend(self.pane.receivable());
-        pes
+        pes.extend(self.pane.receivable().0);
+        pes.into()
     }
 
     // primarily a placeholder function. An element using the parent pane should
@@ -279,7 +279,7 @@ impl Element for ParentPane {
         // update the perceived priorities of the children and update the prioritizer
         for (_, el_details) in self.eo.els.borrow().iter() {
             let pes = el_details.el.receivable(); // self evs (and child eo's evs)
-            for pe in ElementOrganizer::generate_perceived_priorities(pr, pes) {
+            for pe in ElementOrganizer::generate_perceived_priorities(pr, pes).0 {
                 rec.update_priority_for_ev(pe.0, pe.1);
             }
         }

@@ -1,7 +1,8 @@
 use {
     crate::{
         Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Pane, Parent, Priority, ReceivableEventChanges, Style,
+        EventResponses, Keyboard as KB, Pane, Parent, Priority, ReceivableEventChanges,
+        SelfReceivableEvents, Style,
     },
     std::{
         cell::RefCell,
@@ -127,13 +128,11 @@ impl Element for FileNavPane {
     fn id(&self) -> ElementID {
         self.pane.id()
     }
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         self.pane.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         debug!("FileNav({})::receive_event_inner: ev={:?}", self.id(), ev);
-
-        self.pane.receive_event(ctx, ev.clone());
 
         match ev {
             Event::KeyCombo(ke) => match true {

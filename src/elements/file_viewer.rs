@@ -1,7 +1,7 @@
 use {
     crate::{
         widgets::TextBox, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Parent, Priority, ReceivableEventChanges, WidgetPane,
+        EventResponses, Parent, Priority, ReceivableEventChanges, SelfReceivableEvents, WidgetPane,
     },
     std::path::PathBuf,
     std::{cell::RefCell, rc::Rc},
@@ -40,7 +40,7 @@ impl Element for FileViewerPane {
     fn id(&self) -> ElementID {
         self.pane.id()
     }
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         self.pane.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {

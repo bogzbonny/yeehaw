@@ -1,7 +1,7 @@
 use {
     crate::{
         prioritizer::Priority, Context, DrawChPos, DynLocationSet, ElementID, Event,
-        EventResponses, ReceivableEventChanges,
+        EventResponses, ReceivableEventChanges, SelfReceivableEvents,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -22,7 +22,7 @@ pub trait Element: dyn_clone::DynClone {
     //
     // NOTE in this current design, elements are always routed mouse events independently of
     // whether or not they are receivable according to this function.
-    fn receivable(&self) -> Vec<(Event, Priority)>;
+    fn receivable(&self) -> SelfReceivableEvents;
 
     // Receive an event from a parent. The receiving element may consume the event and/or pass it
     // to a child. The element is expected to return a response to the event, along with any

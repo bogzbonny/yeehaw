@@ -434,3 +434,100 @@ impl EventResponses {
         rec
     }
 }
+
+// -------------------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// The SelfReceivableEvents are used to manage events and associated functions
+// registered directly to an element (AND NOT to that elements children!). They
+// are similar to the EvPrioritizer, but they are used to manage the events and
+// commands that are registered locally to this specific element.
+// (The EvPrioritizer and CmdPrioritizer are used to manage the events and
+// commands that are registered to an element's
+// children in the ElementOrganizer).
+// NOTE: these fulfill a similar function to the prioritizers
+// in that they manage inclusion/removal more cleanly and can be sorted
+#[derive(Clone, Default)]
+pub struct SelfReceivableEvents(pub Vec<(Event, Priority)>);
+
+impl Deref for SelfReceivableEvents {
+    type Target = Vec<(Event, Priority)>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for SelfReceivableEvents {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl From<Vec<(Event, Priority)>> for SelfReceivableEvents {
+    fn from(v: Vec<(Event, Priority)>) -> SelfReceivableEvents {
+        SelfReceivableEvents(v)
+    }
+}
+
+impl SelfReceivableEvents {
+    // TRANSLATION NewSelfReceivableEventsFromPrioritizableEv new_self_receivable_events_from_prioritizable_ev
+    pub fn new_from_priority_events(p: Priority, evs: Vec<Event>) -> SelfReceivableEvents {
+        SelfReceivableEvents(evs.into_iter().map(|ev| (ev, p)).collect())
+    }
+
+    // TRANSLATION Include include
+    pub fn push(&mut self, ev: Event, p: Priority) {
+        self.0.push((ev, p))
+    }
+
+    pub fn push_many_at_priority(&mut self, evs: Vec<Event>, p: Priority) {
+        for ev in evs {
+            self.push(ev, p)
+        }
+    }
+
+    // TRANSLATION IncludeMany include_many
+    pub fn extend(&mut self, evs: Vec<(Event, Priority)>) {
+        self.0.extend(evs)
+    }
+
+    pub fn remove(&mut self, ev: Event) {
+        self.0.retain(|(e, _)| e != &ev)
+    }
+
+    pub fn remove_many(&mut self, evs: Vec<Event>) {
+        self.0.retain(|(e, _)| !evs.contains(e))
+    }
+
+    // update_priority_for_ev updates the priority of the given event
+    // registered directly to this element
+    // TRANSLATION UpdatePriorityForEvCombo update_priority_for_ev_combo
+    pub fn update_priority_for_ev(&mut self, ev: Event, p: Priority) {
+        for i in 0..self.0.len() {
+            if self.0[i].0 != ev {
+                continue;
+            }
+            self.0[i].1 = p;
+            break;
+        }
+    }
+
+    pub fn update_priority_for_evs(&mut self, evs: Vec<Event>, p: Priority) {
+        for ev in evs {
+            self.update_priority_for_ev(ev, p)
+        }
+    }
+
+    pub fn update_priority_for_all(&mut self, p: Priority) {
+        for i in self.0.iter_mut() {
+            i.1 = p;
+        }
+    }
+
+    pub fn to_receivable_event_changes(&self) -> ReceivableEventChanges {
+        let remove_evs = self.0.iter().map(|(ev, _)| ev.clone()).collect();
+        ReceivableEventChanges::default()
+            .with_add_evs(self.0.clone())
+            .with_remove_evs(remove_evs)
+    }
+}

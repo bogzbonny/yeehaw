@@ -3,7 +3,7 @@ use {
         elements::menu::{MenuItem, MenuStyle},
         Context, DrawChPos, DynLocation, DynLocationSet, DynVal, Element, ElementID, Event,
         EventResponse, EventResponses, MenuBar, Parent, Point, Priority, ReceivableEventChanges,
-        ZIndex,
+        SelfReceivableEvents, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -90,7 +90,7 @@ impl Element for RightClickMenu {
     fn id(&self) -> ElementID {
         self.menu.id()
     }
-    fn receivable(&self) -> Vec<(Event, Priority)> {
+    fn receivable(&self) -> SelfReceivableEvents {
         self.menu.receivable()
     }
 
