@@ -2,7 +2,7 @@ use {
     super::{Button, Selectability, TextBox, WBStyles, Widget, Widgets},
     crate::{
         Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
-        KeyPossibility, Keyboard as KB, Parent, Priority, ReceivableEventChanges,
+        KeyPossibility, Keyboard as KB, Parent, Priority, ReceivableEvent, ReceivableEventChanges,
         SelfReceivableEvents, Style,
     },
     std::{cell::RefCell, rc::Rc},
@@ -23,7 +23,7 @@ pub struct NumbersTextBox {
 
 impl NumbersTextBox {
     // for number textboxes which are editable
-    pub fn editable_receivable_events() -> Vec<Event> {
+    pub fn editable_receivable_events() -> Vec<ReceivableEvent> {
         vec![
             KeyPossibility::Chars.into(),
             KB::KEY_BACKSPACE.into(),
@@ -220,21 +220,21 @@ impl Element for NumbersTextBox {
                 }
 
                 match true {
-                    _ if ke[0].matches_key(&KB::KEY_UP) => {
+                    _ if ke[0] == KB::KEY_UP => {
                         let old_value = *self.value.borrow();
                         self.change_value(ctx, old_value + *self.button_increment.borrow());
                         (true, EventResponses::default())
                     }
-                    _ if ke[0].matches_key(&KB::KEY_DOWN) => {
+                    _ if ke[0] == KB::KEY_DOWN => {
                         let old_value = *self.value.borrow();
                         self.change_value(ctx, old_value - *self.button_increment.borrow());
                         (true, EventResponses::default())
                     }
-                    _ if ke[0].matches_key(&KB::KEY_ENTER) => {
+                    _ if ke[0] == KB::KEY_ENTER => {
                         self.update_value_from_tb(ctx);
                         (true, EventResponses::default())
                     }
-                    _ if ke[0].matches_key(&KB::KEY_SHIFT_ENTER) => {
+                    _ if ke[0] == KB::KEY_SHIFT_ENTER => {
                         (true, EventResponses::default())
                     }
                     _ => self.tb.receive_event(ctx, ev),

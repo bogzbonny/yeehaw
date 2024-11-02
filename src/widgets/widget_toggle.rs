@@ -2,7 +2,7 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEventChanges,
+        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEvent, ReceivableEventChanges,
         SelfReceivableEvents, Style,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -34,7 +34,7 @@ impl Toggle {
     const DEFAULT_SELECTED_STY: Style =
         Style::new(Some(Color::BLACK), Some(Color::LIGHT_BLUE), None);
 
-    pub fn default_receivable_events() -> Vec<Event> {
+    pub fn default_receivable_events() -> Vec<ReceivableEvent> {
         vec![
             KB::KEY_ENTER.into(),
             KB::KEY_LEFT.into(),
@@ -122,16 +122,16 @@ impl Element for Toggle {
                     return (false, EventResponses::default());
                 }
                 match true {
-                    _ if ke[0].matches_key(&KB::KEY_ENTER) => {
+                    _ if ke[0] == KB::KEY_ENTER => {
                         return (true, self.perform_toggle(ctx));
                     }
-                    _ if ke[0].matches_key(&KB::KEY_LEFT) || ke[0].matches_key(&KB::KEY_H) => {
+                    _ if ke[0] == KB::KEY_LEFT || ke[0] == KB::KEY_H => {
                         if !*self.left_selected.borrow() {
                             return (true, self.perform_toggle(ctx));
                         }
                         return (true, EventResponses::default());
                     }
-                    _ if ke[0].matches_key(&KB::KEY_RIGHT) || ke[0].matches_key(&KB::KEY_L) => {
+                    _ if ke[0] == KB::KEY_RIGHT || ke[0] == KB::KEY_L => {
                         if *self.left_selected.borrow() {
                             return (true, self.perform_toggle(ctx));
                         }

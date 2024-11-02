@@ -1,4 +1,4 @@
-use crate::{ElementID, Event, Keyboard, ReceivableEventChanges};
+use crate::{ElementID, Event, Keyboard, ReceivableEvent, ReceivableEventChanges};
 
 // Priority is a rank to determine which element should be receiving user
 // key strokes as they come in. When an element is in focus it should be given
@@ -47,7 +47,7 @@ pub struct EventPrioritizer(Vec<PriorityIdEvent>);
 pub struct PriorityIdEvent {
     pub priority: Priority,
     pub id: ElementID,
-    pub event: Event,
+    pub event: ReceivableEvent,
 }
 impl Ord for PriorityIdEvent {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
@@ -60,7 +60,7 @@ impl PartialOrd for PriorityIdEvent {
     }
 }
 impl PriorityIdEvent {
-    pub fn new(priority: Priority, id: ElementID, event: Event) -> PriorityIdEvent {
+    pub fn new(priority: Priority, id: ElementID, event: ReceivableEvent) -> PriorityIdEvent {
         PriorityIdEvent {
             priority,
             id,
@@ -81,7 +81,7 @@ impl EventPrioritizer {
 
     // are there any priority events already registered with the same priority and
     // event (independant of the event prioritizers element id).
-    pub fn has_priority_ev(&self, priority_ev: &(Event, Priority)) -> bool {
+    pub fn has_priority_ev(&self, priority_ev: &(ReceivableEvent, Priority)) -> bool {
         for pec in self.0.iter() {
             if priority_ev.0 == pec.event && priority_ev.1 == pec.priority {
                 return true;
@@ -90,7 +90,7 @@ impl EventPrioritizer {
         false
     }
 
-    pub fn include(&mut self, id: &ElementID, priority_ev: &Vec<(Event, Priority)>) {
+    pub fn include(&mut self, id: &ElementID, priority_ev: &Vec<(ReceivableEvent, Priority)>) {
         for pe in priority_ev {
             // check for priority overloading.
             // Panic if two children have registered the same ev/cmd at the same priority
@@ -113,7 +113,7 @@ impl EventPrioritizer {
     //
     // NOTE: Every event in the input slice will remove ALL instances of that event
     // from the prioritizer.
-    pub fn remove(&mut self, id: &ElementID, evs: &[Event]) {
+    pub fn remove(&mut self, id: &ElementID, evs: &[ReceivableEvent]) {
         self.0.retain(|priority_id_event| {
             if id != &priority_id_event.id {
                 return true;
@@ -124,7 +124,7 @@ impl EventPrioritizer {
     }
 
     // removes all the registered events for the given id, returns the removed events
-    pub fn remove_entire_element(&mut self, id: &ElementID) -> Vec<Event> {
+    pub fn remove_entire_element(&mut self, id: &ElementID) -> Vec<ReceivableEvent> {
         let mut removed = vec![];
         self.0.retain(|priority_id_event| {
             if id != &priority_id_event.id {
@@ -150,7 +150,7 @@ impl EventPrioritizer {
             if priority_id_event.priority == Priority::Unfocused {
                 break;
             }
-            let Event::KeyCombo(ref ekc) = priority_id_event.event else {
+            let ReceivableEvent::KeyCombo(ref ekc) = priority_id_event.event else {
                 continue;
             };
             if let Some(eks) = kb.matches(ekc, true) {
@@ -160,18 +160,19 @@ impl EventPrioritizer {
         None
     }
 
+    // XXX should change to a vec
     // GetDestinationEl returns the id of the element that should
     // receive the given event.
     pub fn get_destination_el(&self, input_ev: &Event) -> Option<ElementID> {
         // loop through all events registered by elements (PriorityIdEvent's)
         // and check if the input_ev matches any of them
         for priority_id_event in self.0.iter() {
-            if priority_id_event.priority == Priority::Unfocused {
-                // since the ev prioritizer is sorted by priority, there is no point
-                // in continuing to loop through the rest of the events as elements
-                // with a priority of unfocused will never be sent events
-                break;
-            }
+            //if priority_id_event.priority == Priority::Unfocused {
+            //    // since the ev prioritizer is sorted by priority, there is no point
+            //    // in continuing to loop through the rest of the events as elements
+            //    // with a priority of unfocused will never be sent events
+            //    break;
+            //}
 
             // check if event registered w/ element matches the input_ev
             if priority_id_event.event.matches(input_ev) {

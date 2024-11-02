@@ -479,27 +479,24 @@ impl ElementOrganizer {
     ) -> (bool, EventResponses) {
         match ev {
             Event::KeyCombo(ke) => {
-                let ke = ke.into_iter().filter_map(|k| k.get_key()).collect();
-                let mep = self.key_ct_events_process(ctx, ke, parent);
-
-                //let mep = self.key_event_process(ctx, Event::KeyCombo(ke), parent);
-                let Some((_, resps)) = mep else {
+                let mep = self.key_event_process(ctx, Event::KeyCombo(ke), parent);
+                let Some((_el_id, resps)) = mep else {
                     return (false, EventResponses::default());
                 };
                 (true, resps)
             }
             Event::Mouse(me) => {
-                let (_, resps) = self.mouse_event_process(ctx, &me, parent);
-                (true, resps)
+                let (el_id, resps) = self.mouse_event_process(ctx, &me, parent);
+                (el_id.is_some(), resps)
             }
             Event::ExternalMouse(me) => {
                 // send the mouse event to all the children
                 let resp = self.external_mouse_event_process(ctx, &me, parent);
-                (false, resp)
+                (false, resp) // never capture
             }
             Event::Initialize => {
-                self.refresh(ctx, parent);
-                (false, EventResponses::default())
+                self.initialize(ctx, parent);
+                (false, EventResponses::default()) // never capture
             }
             Event::Exit | Event::Resize | Event::Custom(_, _) => {
                 self.propogate_event_to_all(ctx, ev, parent)
@@ -527,7 +524,7 @@ impl ElementOrganizer {
         let el_id = match el_id {
             Some(e) => e,
             None => {
-                debug!("no element for destination id. ev: {:?}", ev);
+                //debug!("no element for destination id. ev: {:?}", ev);
                 return None;
             }
         };
@@ -551,7 +548,6 @@ impl ElementOrganizer {
         // reset prioritizers
         *self.prioritizer.borrow_mut() = EventPrioritizer::default();
 
-        // refresh all children
         let mut resps = EventResponses::default();
         for (el_id, details) in self.els.borrow().iter() {
             let el_ctx = ctx.child_context(&details.loc.borrow().l);
@@ -562,16 +558,16 @@ impl ElementOrganizer {
         (true, resps)
     }
 
-    // refresh updates the prioritizers essentially refreshing the state of the element organizer.
+    // initialize updates the prioritizers essentially refreshing the state of the element organizer.
     //
     // NOTE: the refresh allows for less meticulous construction of the main.go file. Elements can
     // be added in whatever order, so long as your_main_el.refresh() is called after all elements
     // are added.
-    pub fn refresh(&self, ctx: &Context, parent: Box<dyn Parent>) -> EventResponses {
+    pub fn initialize(&self, ctx: &Context, parent: Box<dyn Parent>) -> EventResponses {
         // reset prioritizers
         *self.prioritizer.borrow_mut() = EventPrioritizer::default();
 
-        // refresh all children
+        // initialize all children
         let mut resps = EventResponses::default();
         for (_, details) in self.els.borrow().iter() {
             let el_ctx = ctx.child_context(&details.loc.borrow().l);
@@ -584,15 +580,6 @@ impl ElementOrganizer {
         }
         resps
     }
-
-    //pub fn change_priority_for_all(&self, pr: Priority) -> ReceivableEventChanges {
-    //    let mut resps = ReceivableEventChanges::default();
-    //    for (el_id, _) in self.els.borrow().iter() {
-    //        let rec = self.change_priority_for_el(el_id, pr);
-    //        resps.extend(rec);
-    //    }
-    //    resps
-    //}
 
     // change_priority_for_el updates a child element to a new priority. It does
     // this by asking the child element to return its registered events w/
@@ -709,48 +696,6 @@ impl ElementOrganizer {
             resps.extend(resps_.0.drain(..));
         }
 
-        /*
-        // get the highest-z element from the eoz list
-        let max_z = eoz
-            .iter()
-            .max_by_key(|(_, z)| *z)
-            .expect("impossible as eoz is not empty");
-        let el_id = max_z.0.clone();
-
-        let details = self
-            .get_element_details(&el_id)
-            .expect("no element for destination id");
-        let child_ctx = ctx.child_context(&details.loc.borrow().l);
-
-        // adjust event to the relative position of the element
-        let ev_adj = details.loc.borrow().l.adjust_mouse_event(ctx, ev);
-
-        // send mouse event to element
-        let (_, mut ev_resps) = details.el.receive_event(&child_ctx, Event::Mouse(ev_adj));
-        self.partially_process_ev_resps(ctx, &el_id, &mut ev_resps, &parent);
-
-        // send the mouse event as an external event to all other elements
-        // capture the responses
-        let mut el_resps = Vec::new();
-        for (el_id2, details2) in self.els.borrow().iter() {
-            let child_ctx = ctx.child_context(&details2.loc.borrow().l);
-            if *el_id2 == el_id {
-                continue;
-            }
-            let ev_adj = details2.loc.borrow().l.adjust_mouse_event_external(ctx, ev);
-            let (_, r) = details2
-                .el
-                .receive_event(&child_ctx, Event::ExternalMouse(ev_adj));
-            el_resps.push((el_id2.clone(), r));
-        }
-        // combine the event responses from the elements that receive the event
-        // and all the elements that receive an external event
-        for (el_id2, mut resps) in el_resps {
-            self.partially_process_ev_resps(ctx, &el_id2, &mut resps, &parent);
-            ev_resps.extend(resps.0);
-        }
-        */
-
         (capturing_el_id, resps)
     }
 
@@ -827,23 +772,4 @@ impl ElementOrganizer {
             .entry(el_id)
             .and_modify(|ed| *ed.vis.borrow_mut() = visible);
     }
-
-    // receive_command_event attempts to execute the given command
-    //                                                       (captured, resp         )
-    //pub fn receive_command_event(&self, ctx: &Context, ev: CommandEvent) -> (bool, EventResponses) {
-    //    let ev = Event::Command(ev);
-    //    let Some(el_id) = self.prioritizer.borrow().get_destination_el(&ev) else {
-    //        return (false, EventResponses::default());
-    //    };
-
-    //    let Some(details) = self.get_element_details(&el_id) else {
-    //        // TODO return error
-    //        return (false, EventResponses::default());
-    //    };
-    //    let child_ctx = self.get_context_for_el(ctx, &details);
-    //    let (captured, mut resps) = details.el.borrow_mut().receive_event(&child_ctx, ev);
-
-    //    self.partially_process_ev_resps(&el_id, &mut resps);
-    //    (captured, resps)
-    //}
 }

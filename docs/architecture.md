@@ -1,3 +1,10 @@
+
+## Event Routing
+
+ -  Events which are not "captured" keep getting routed to other elements.
+
+
+
 ```
                                                                                              
    KEYBOARD EVENT                                                                            

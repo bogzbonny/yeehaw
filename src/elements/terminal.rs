@@ -120,9 +120,8 @@ impl TerminalPane {
         }
     }
 
-    pub fn receivable_events() -> Vec<(Event, Priority)> {
-        vec![(KeyPossibility::Anything.into(), Priority::Focused)]
-        //vec![(KeyPossibility::Chars.into(), Priority::Focused)]
+    pub fn receivable_events() -> SelfReceivableEvents {
+        vec![(KeyPossibility::Anything.into(), Priority::Focused)].into()
     }
 
     pub fn with_height(self, h: DynVal) -> Self {
@@ -163,9 +162,7 @@ impl Element for TerminalPane {
                 //    self.id(),
                 //    keys
                 //);
-                if let KeyPossibility::Key(key) = &keys[0] {
-                    handle_pane_key_event(self, key);
-                }
+                handle_pane_key_event(self, &keys[0]); // handle empty case?
             }
             Event::Resize => {
                 self.parser

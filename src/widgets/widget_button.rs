@@ -2,7 +2,7 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Color, Context, DrawChPos, DrawChs2D, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEventChanges,
+        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEvent, ReceivableEventChanges,
         SelfReceivableEvents, Style,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -89,7 +89,7 @@ impl Button {
         unselectable_style: Style::new(Some(Color::BLACK), Some(Color::GREY15), None),
     };
 
-    pub fn default_receivable_events() -> Vec<Event> {
+    pub fn default_receivable_events() -> Vec<ReceivableEvent> {
         vec![KB::KEY_ENTER.into()] // when "active" hitting enter will click the button
     }
 
@@ -261,7 +261,7 @@ impl Element for Button {
                 if self.base.get_selectability() != Selectability::Selected || ke.is_empty() {
                     return (false, EventResponses::default());
                 }
-                if ke[0].matches_key(&KB::KEY_ENTER) {
+                if ke[0] == KB::KEY_ENTER {
                     return (true, self.click(ctx));
                 }
             }

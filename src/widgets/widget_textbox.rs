@@ -7,9 +7,9 @@ use {
         elements::menu::{MenuItem, MenuPath, MenuStyle},
         Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Error,
         Event, EventResponse, EventResponses, KeyPossibility, Keyboard as KB, Parent, Priority,
-        ReceivableEventChanges, RightClickMenu, SelfReceivableEvents, Style,
+        ReceivableEvent, ReceivableEventChanges, RightClickMenu, SelfReceivableEvents, Style,
     },
-    crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
+    crossterm::event::{KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
 };
 
@@ -78,7 +78,7 @@ impl TextBox {
     const DEFAULT_CURSOR_STYLE: Style = Style::new(None, Some(Color::BLUE), None);
 
     // for textboxes which are editable
-    pub fn editable_receivable_events() -> Vec<Event> {
+    pub fn editable_receivable_events() -> Vec<ReceivableEvent> {
         vec![
             KeyPossibility::Chars.into(),
             KB::KEY_BACKSPACE.into(),
@@ -96,7 +96,7 @@ impl TextBox {
     }
 
     // non-editable textboxes can still scroll
-    pub fn non_editable_receivable_events() -> Vec<Event> {
+    pub fn non_editable_receivable_events() -> Vec<ReceivableEvent> {
         vec![
             KB::KEY_LEFT.into(),
             KB::KEY_RIGHT.into(),
@@ -251,22 +251,20 @@ impl TextBox {
 
     pub fn editable(self) -> Self {
         *self.editable.borrow_mut() = true;
-
-        let evs = Self::editable_receivable_events()
-            .drain(..)
-            .map(|ev| (ev, Priority::Focused))
-            .collect();
-        self.base.set_receivable_events(evs);
+        let sre = SelfReceivableEvents::new_from_receivable_events(
+            Priority::Focused,
+            Self::editable_receivable_events(),
+        );
+        self.base.set_receivable_events(sre);
         self
     }
 
     pub fn non_editable(self) -> Self {
-        *self.editable.borrow_mut() = false;
-        let evs = Self::non_editable_receivable_events()
-            .drain(..)
-            .map(|ev| (ev, Priority::Focused))
-            .collect();
-        self.base.set_receivable_events(evs);
+        let sre = SelfReceivableEvents::new_from_receivable_events(
+            Priority::Focused,
+            Self::non_editable_receivable_events(),
+        );
+        self.base.set_receivable_events(sre);
         self
     }
 
@@ -716,25 +714,23 @@ impl TextBox {
         Ok(resps)
     }
 
-    pub fn receive_key_event(
-        &self, ev: Vec<KeyPossibility>, ctx: &Context,
-    ) -> (bool, EventResponses) {
+    pub fn receive_key_event(&self, ev: Vec<KeyEvent>, ctx: &Context) -> (bool, EventResponses) {
         if self.base.get_selectability() != Selectability::Selected || ev.is_empty() {
             return (false, EventResponses::default());
         }
 
         if !*self.ch_cursor.borrow() {
             match true {
-                _ if ev[0].matches_key(&KB::KEY_LEFT) || ev[0].matches_key(&KB::KEY_H) => {
+                _ if ev[0] == KB::KEY_LEFT || ev[0] == KB::KEY_H => {
                     self.base.scroll_left(ctx);
                 }
-                _ if ev[0].matches_key(&KB::KEY_RIGHT) || ev[0].matches_key(&KB::KEY_L) => {
+                _ if ev[0] == KB::KEY_RIGHT || ev[0] == KB::KEY_L => {
                     self.base.scroll_right(ctx);
                 }
-                _ if ev[0].matches_key(&KB::KEY_DOWN) || ev[0].matches_key(&KB::KEY_J) => {
+                _ if ev[0] == KB::KEY_DOWN || ev[0] == KB::KEY_J => {
                     self.base.scroll_down(ctx);
                 }
-                _ if ev[0].matches_key(&KB::KEY_UP) || ev[0].matches_key(&KB::KEY_K) => {
+                _ if ev[0] == KB::KEY_UP || ev[0] == KB::KEY_K => {
                     self.base.scroll_up(ctx);
                 }
                 _ => {}
@@ -758,7 +754,7 @@ impl TextBox {
 
         let mut resps = EventResponses::default();
         match true {
-            _ if ev[0].matches_key(&KB::KEY_SHIFT_LEFT) => {
+            _ if ev[0] == KB::KEY_SHIFT_LEFT => {
                 visual_mode_event = true;
                 if !visual_mode {
                     *self.visual_mode.borrow_mut() = true;
@@ -771,7 +767,7 @@ impl TextBox {
                 }
             }
 
-            _ if ev[0].matches_key(&KB::KEY_SHIFT_RIGHT) => {
+            _ if ev[0] == KB::KEY_SHIFT_RIGHT => {
                 visual_mode_event = true;
                 if !visual_mode {
                     *self.visual_mode.borrow_mut() = true;
@@ -784,7 +780,7 @@ impl TextBox {
                 }
             }
 
-            _ if ev[0].matches_key(&KB::KEY_SHIFT_UP) => {
+            _ if ev[0] == KB::KEY_SHIFT_UP => {
                 visual_mode_event = true;
                 if !visual_mode {
                     *self.visual_mode.borrow_mut() = true;
@@ -797,7 +793,7 @@ impl TextBox {
                 }
             }
 
-            _ if ev[0].matches_key(&KB::KEY_SHIFT_DOWN) => {
+            _ if ev[0] == KB::KEY_SHIFT_DOWN => {
                 visual_mode_event = true;
                 if !visual_mode {
                     *self.visual_mode.borrow_mut() = true;
@@ -810,7 +806,7 @@ impl TextBox {
                 }
             }
 
-            _ if ev[0].matches_key(&KB::KEY_LEFT) => {
+            _ if ev[0] == KB::KEY_LEFT => {
                 if cursor_pos > 0 && cursor_pos <= self.text.borrow().len() {
                     // do not move left if at the beginning of a line
                     if self.text.borrow()[cursor_pos - 1] != '\n' {
@@ -821,7 +817,7 @@ impl TextBox {
                 }
             }
 
-            _ if ev[0].matches_key(&KB::KEY_RIGHT) => {
+            _ if ev[0] == KB::KEY_RIGHT => {
                 // don't allow moving to the next line
                 if cursor_pos < self.text.borrow().len() && self.text.borrow()[cursor_pos] != '\n' {
                     self.incr_cursor_pos(ctx, 1);
@@ -830,7 +826,7 @@ impl TextBox {
                 }
             }
 
-            _ if ev[0].matches_key(&KB::KEY_UP) => {
+            _ if ev[0] == KB::KEY_UP => {
                 let w = self.get_wrapped(ctx);
                 if let Some(new_pos) = w.get_cursor_above_position(cursor_pos) {
                     self.set_cursor_pos(ctx, new_pos);
@@ -838,7 +834,7 @@ impl TextBox {
                 }
             }
 
-            _ if ev[0].matches_key(&KB::KEY_DOWN) => {
+            _ if ev[0] == KB::KEY_DOWN => {
                 let w = self.get_wrapped(ctx);
                 if let Some(new_pos) = w.get_cursor_below_position(cursor_pos) {
                     self.set_cursor_pos(ctx, new_pos);
@@ -846,40 +842,39 @@ impl TextBox {
                 }
             }
 
-            _ if *self.editable.borrow() && ev[0].matches(&KeyPossibility::Chars) => {
-                if let Some(r) = ev[0].get_char() {
-                    let mut rs = self.text.borrow().clone();
-                    rs.splice(cursor_pos..cursor_pos, std::iter::once(r));
-                    *self.text.borrow_mut() = rs;
-                    self.incr_cursor_pos(ctx, 1);
-                    let w = self.get_wrapped(ctx);
+            _ if *self.editable.borrow() && KeyPossibility::Chars.matches_key(&ev[0]) => {
+                let r: String = format!("{}", ev[0].code);
+                let mut rs = self.text.borrow().clone();
+                rs.splice(cursor_pos..cursor_pos, r.chars());
+                *self.text.borrow_mut() = rs;
+                self.incr_cursor_pos(ctx, 1);
+                let w = self.get_wrapped(ctx);
 
-                    // NOTE-1: must call SetContentFromString to update the content
-                    // before updating the offset or else the offset amount may not
-                    // exist in the content and the widget base will reject the new
-                    // offset
-                    self.base.set_content_from_string(ctx, &w.wrapped_string());
-                    let resp = self.correct_offsets(ctx, w);
+                // NOTE-1: must call SetContentFromString to update the content
+                // before updating the offset or else the offset amount may not
+                // exist in the content and the widget base will reject the new
+                // offset
+                self.base.set_content_from_string(ctx, &w.wrapped_string());
+                let resp = self.correct_offsets(ctx, w);
 
-                    if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
-                        resps = hook(ctx.clone(), self.get_text());
-                    }
-                    resps.push(resp);
+                if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
+                    resps = hook(ctx.clone(), self.get_text());
                 }
+                resps.push(resp);
             }
 
             // NOTE useless for now keeping for future reference for vim keybindings
             // (META not logged by many terminals)
-            //_ if ev[0].matches_key(&KB::KEY_META_C) => {
+            //_ if ev[0] == KB::KEY_META_C => {
             //    _ = self.copy_to_clipboard(); // TODO log error
             //}
-            //_ if *self.editable.borrow() && ev[0].matches_key(&KB::KEY_META_V) => {
+            //_ if *self.editable.borrow() && ev[0] == KB::KEY_META_V => {
             //    // TODO log error case
             //    if let Ok(r) = self.paste_from_clipboard(ctx) {
             //        resps = r
             //    }
             //}
-            _ if *self.editable.borrow() && (ev[0].matches_key(&KB::KEY_BACKSPACE)) => {
+            _ if *self.editable.borrow() && (ev[0] == KB::KEY_BACKSPACE) => {
                 if visual_mode {
                     resps = self.delete_visual_selection(ctx);
                 } else if cursor_pos > 0 {
@@ -897,7 +892,7 @@ impl TextBox {
                 }
             }
 
-            _ if *self.editable.borrow() && ev[0].matches_key(&KB::KEY_ENTER) => {
+            _ if *self.editable.borrow() && ev[0] == KB::KEY_ENTER => {
                 let mut rs = self.text.borrow().clone();
                 rs.splice(cursor_pos..cursor_pos, std::iter::once('\n'));
                 *self.text.borrow_mut() = rs;

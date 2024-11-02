@@ -2,10 +2,10 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Color, Context, DrawChPos, DrawChs2D, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, KeyPossibility, Keyboard as KB, Parent, Priority, ReceivableEventChanges,
+        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEvent, ReceivableEventChanges,
         RelMouseEvent, SelfReceivableEvents, Style,
     },
-    crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
+    crossterm::event::{KeyEvent, MouseButton, MouseEvent, MouseEventKind},
     std::ops::{Deref, DerefMut},
     std::{cell::RefCell, cmp::Ordering, rc::Rc},
 };
@@ -64,7 +64,7 @@ pub enum HorizontalSBPositions {
 
 impl VerticalScrollbar {
     const KIND: &'static str = "widget_vertical_scrollbar";
-    pub fn default_receivable_events() -> Vec<Event> {
+    pub fn default_receivable_events() -> Vec<ReceivableEvent> {
         vec![KB::KEY_UP.into(), KB::KEY_DOWN.into(), KB::KEY_SPACE.into()]
     }
     pub fn new(ctx: &Context, scrollable_view_height: DynVal, scrollable_height: usize) -> Self {
@@ -147,7 +147,7 @@ impl VerticalScrollbar {
 
 impl HorizontalScrollbar {
     const KIND: &'static str = "widget_horizontal_scrollbar";
-    pub fn default_receivable_events() -> Vec<Event> {
+    pub fn default_receivable_events() -> Vec<ReceivableEvent> {
         vec![KB::KEY_LEFT.into(), KB::KEY_RIGHT.into()]
     }
     pub fn new(ctx: &Context, scrollable_view_width: DynVal, scrollable_width: usize) -> Self {
@@ -698,23 +698,21 @@ impl HorizontalScrollbar {
 }
 
 impl VerticalScrollbar {
-    pub fn receive_key_event(
-        &self, ev: Vec<KeyPossibility>, ctx: &Context,
-    ) -> (bool, EventResponses) {
+    pub fn receive_key_event(&self, ev: Vec<KeyEvent>, ctx: &Context) -> (bool, EventResponses) {
         if self.base.get_selectability() != Selectability::Selected || ev.is_empty() {
             return (false, EventResponses::default());
         }
 
         match true {
-            _ if ev[0].matches_key(&KB::KEY_UP) => {
+            _ if ev[0] == KB::KEY_UP => {
                 self.scroll_backwards(ctx);
                 (true, EventResponses::default())
             }
-            _ if ev[0].matches_key(&KB::KEY_DOWN) => {
+            _ if ev[0] == KB::KEY_DOWN => {
                 self.scroll_forwards(ctx, ctx.get_height().into());
                 (true, EventResponses::default())
             }
-            _ if ev[0].matches_key(&KB::KEY_SPACE) => {
+            _ if ev[0] == KB::KEY_SPACE => {
                 self.jump_scroll_forwards(ctx, ctx.get_height().into());
                 (true, EventResponses::default())
             }
@@ -724,19 +722,17 @@ impl VerticalScrollbar {
 }
 
 impl HorizontalScrollbar {
-    pub fn receive_key_event(
-        &self, ev: Vec<KeyPossibility>, ctx: &Context,
-    ) -> (bool, EventResponses) {
+    pub fn receive_key_event(&self, ev: Vec<KeyEvent>, ctx: &Context) -> (bool, EventResponses) {
         if self.base.get_selectability() != Selectability::Selected || ev.is_empty() {
             return (false, EventResponses::default());
         }
 
         match true {
-            _ if ev[0].matches_key(&KB::KEY_LEFT) => {
+            _ if ev[0] == KB::KEY_LEFT => {
                 self.scroll_backwards(ctx);
                 (true, EventResponses::default())
             }
-            _ if ev[0].matches_key(&KB::KEY_RIGHT) => {
+            _ if ev[0] == KB::KEY_RIGHT => {
                 self.scroll_forwards(ctx, ctx.get_width().into());
                 (true, EventResponses::default())
             }
@@ -1136,7 +1132,11 @@ mod tests {
     fn test_scrollbar_drawing() {
         let w = 10;
         let sub = 2;
-        let ctx = Context::default().with_height(1).with_width(w);
+        let hat = crate::SortingHat::default();
+        let (ev_tx, _) = tokio::sync::mpsc::channel(1);
+        let ctx = Context::new_context_for_screen_no_dur(&hat, ev_tx)
+            .with_height(1)
+            .with_width(w);
 
         let width = DynVal::new_flex(1.).minus(sub.into());
         let width_val = width.get_val(ctx.get_width());

@@ -2,10 +2,10 @@ use {
     super::{widget::RESP_DEACTIVATE, Selectability, Widget, Widgets},
     crate::{
         Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponse, EventResponses, KeyPossibility, Keyboard as KB, Parent, ParentPane,
-        Priority, ReceivableEventChanges, SelfReceivableEvents,
+        EventResponse, EventResponses, Keyboard as KB, Parent, ParentPane, Priority,
+        ReceivableEvent, ReceivableEventChanges, SelfReceivableEvents,
     },
-    crossterm::event::{MouseButton, MouseEventKind},
+    crossterm::event::{KeyEvent, MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
 };
 
@@ -20,7 +20,7 @@ pub struct WidgetPane {
 impl WidgetPane {
     pub const KIND: &'static str = "widget_pane";
 
-    pub fn default_receivable_events() -> Vec<Event> {
+    pub fn default_receivable_events() -> Vec<ReceivableEvent> {
         vec![
             KB::KEY_ESC.into(),
             KB::KEY_TAB.into(),
@@ -246,22 +246,22 @@ impl WidgetPane {
 
     // Returns true if one of the Widgets captures the events
     pub fn capture_key_event(
-        &self, ctx: &Context, ev: Vec<KeyPossibility>,
+        &self, ctx: &Context, ev: Vec<KeyEvent>,
         /*(captured, resp    )*/
     ) -> (bool, EventResponses) {
         if ev.is_empty() {
             return (false, EventResponses::default());
         }
         match true {
-            _ if ev[0].matches_key(&KB::KEY_ESC) => {
+            _ if ev[0] == KB::KEY_ESC => {
                 let resps = self.unselect_selected_widget(ctx);
                 return (true, resps);
             }
-            _ if ev[0].matches_key(&KB::KEY_TAB) => {
+            _ if ev[0] == KB::KEY_TAB => {
                 let resps = self.switch_to_next_widget(ctx);
                 return (true, resps);
             }
-            _ if ev[0].matches_key(&KB::KEY_BACKTAB) => {
+            _ if ev[0] == KB::KEY_BACKTAB => {
                 let resps = self.switch_to_prev_widget(ctx);
                 return (true, resps);
             }

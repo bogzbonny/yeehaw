@@ -87,7 +87,7 @@ impl Cui {
         self.cup
             .eo
             .add_element(main_el.clone(), Some(Box::new(self.cup.clone())));
-        self.cup.eo.refresh(&ctx, Box::new(self.cup.clone()));
+        self.cup.eo.initialize(&ctx, Box::new(self.cup.clone()));
 
         sc_startup()?;
         self.launch().await;

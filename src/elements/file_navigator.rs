@@ -1,8 +1,8 @@
 use {
     crate::{
         Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Pane, Parent, Priority, ReceivableEventChanges,
-        SelfReceivableEvents, Style,
+        EventResponses, Keyboard as KB, Pane, Parent, Priority, ReceivableEvent,
+        ReceivableEventChanges, SelfReceivableEvents, Style,
     },
     std::{
         cell::RefCell,
@@ -53,7 +53,7 @@ impl Default for FileNavStyle {
 impl FileNavPane {
     const INDENT_SIZE: usize = 2;
 
-    pub fn default_receivable_events() -> Vec<Event> {
+    pub fn default_receivable_events() -> Vec<ReceivableEvent> {
         vec![
             KB::KEY_ENTER.into(),
             KB::KEY_UP.into(),
@@ -136,7 +136,7 @@ impl Element for FileNavPane {
 
         match ev {
             Event::KeyCombo(ke) => match true {
-                _ if ke[0].matches_key(&KB::KEY_J) || ke[0].matches_key(&KB::KEY_DOWN) => {
+                _ if ke[0] == KB::KEY_J || ke[0] == KB::KEY_DOWN => {
                     if *self.highlight_position.borrow() < (*self.nav_items.borrow()).len() - 1 {
                         *self.highlight_position.borrow_mut() += 1;
                     }
@@ -148,7 +148,7 @@ impl Element for FileNavPane {
                         *self.offset.borrow_mut() += 1;
                     }
                 }
-                _ if ke[0].matches_key(&KB::KEY_K) || ke[0].matches_key(&KB::KEY_UP) => {
+                _ if ke[0] == KB::KEY_K || ke[0] == KB::KEY_UP => {
                     if *self.highlight_position.borrow() > 0 {
                         *self.highlight_position.borrow_mut() -= 1;
                     }
@@ -158,7 +158,7 @@ impl Element for FileNavPane {
                         *self.offset.borrow_mut() -= 1;
                     }
                 }
-                _ if ke[0].matches_key(&KB::KEY_ENTER) => {
+                _ if ke[0] == KB::KEY_ENTER => {
                     let (ni, resps) = {
                         let nav_items = self.nav_items.borrow().clone();
                         self.nav_items.borrow_mut()[*self.highlight_position.borrow()].enter(

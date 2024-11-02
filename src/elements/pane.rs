@@ -249,13 +249,13 @@ impl Pane {
         self
     }
 
-    pub fn with_self_receivable_events(self, evs: Vec<(Event, Priority)>) -> Pane {
-        *self.self_evs.borrow_mut() = SelfReceivableEvents(evs);
+    pub fn with_self_receivable_events(self, evs: SelfReceivableEvents) -> Pane {
+        *self.self_evs.borrow_mut() = evs;
         self
     }
 
-    pub fn set_self_receivable_events(&self, evs: Vec<(Event, Priority)>) {
-        *self.self_evs.borrow_mut() = SelfReceivableEvents(evs);
+    pub fn set_self_receivable_events(&self, evs: SelfReceivableEvents) {
+        *self.self_evs.borrow_mut() = evs;
     }
 
     // -----------------------

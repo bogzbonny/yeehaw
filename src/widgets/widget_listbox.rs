@@ -5,7 +5,7 @@ use {
     },
     crate::{
         Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEventChanges,
+        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEvent, ReceivableEventChanges,
         SelfReceivableEvents, Style,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -69,7 +69,7 @@ impl ListBox {
     const STYLE_CURSOR_OVER_SELECTED: Style =
         Style::new(Some(Color::WHITE), Some(Color::BLUE), None);
 
-    pub fn default_receivable_events() -> Vec<Event> {
+    pub fn default_receivable_events() -> Vec<ReceivableEvent> {
         vec![
             KB::KEY_ENTER.into(),
             KB::KEY_DOWN.into(),
@@ -454,7 +454,7 @@ impl Element for ListBox {
                     return (false, EventResponses::default());
                 }
                 return match true {
-                    _ if ke[0].matches_key(&KB::KEY_SPACE) => {
+                    _ if ke[0] == KB::KEY_SPACE => {
                         if let Some(sb) = self.scrollbar.borrow().as_ref() {
                             if sb.get_selectability() != Selectability::Selected {
                                 sb.set_selectability(ctx, Selectability::Selected);
@@ -464,15 +464,15 @@ impl Element for ListBox {
                             (true, EventResponses::default())
                         }
                     }
-                    _ if ke[0].matches_key(&KB::KEY_DOWN) || ke[0].matches_key(&KB::KEY_J) => {
+                    _ if ke[0] == KB::KEY_DOWN || ke[0] == KB::KEY_J => {
                         self.cursor_down(ctx);
                         (true, EventResponses::default())
                     }
-                    _ if ke[0].matches_key(&KB::KEY_UP) || ke[0].matches_key(&KB::KEY_K) => {
+                    _ if ke[0] == KB::KEY_UP || ke[0] == KB::KEY_K => {
                         self.cursor_up(ctx);
                         (true, EventResponses::default())
                     }
-                    _ if ke[0].matches_key(&KB::KEY_ENTER) => {
+                    _ if ke[0] == KB::KEY_ENTER => {
                         let Some(cursor) = *self.cursor.borrow() else {
                             return (true, EventResponses::default());
                         };

@@ -2,7 +2,7 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Attributes, Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEventChanges,
+        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEvent, ReceivableEventChanges,
         SelfReceivableEvents, Style,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -37,7 +37,7 @@ impl Checkbox {
             .with_attr(Attributes::new().with_bold()),
     };
 
-    pub fn default_receivable_events() -> Vec<Event> {
+    pub fn default_receivable_events() -> Vec<ReceivableEvent> {
         vec![KB::KEY_ENTER.into()] // when "active" hitting enter will click the button
     }
 
@@ -120,7 +120,7 @@ impl Element for Checkbox {
                 if self.base.get_selectability() != Selectability::Selected || ke.is_empty() {
                     return (false, EventResponses::default());
                 }
-                if ke[0].matches_key(&KB::KEY_ENTER) {
+                if ke[0] == KB::KEY_ENTER {
                     return (true, self.click(ctx));
                 }
             }

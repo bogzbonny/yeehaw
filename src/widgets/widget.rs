@@ -2,7 +2,7 @@ use {
     super::Label,
     crate::{
         event::Event, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal,
-        Element, ElementID, EventResponse, EventResponses, Pane, Parent, Priority,
+        Element, ElementID, EventResponse, EventResponses, Pane, Parent, Priority, ReceivableEvent,
         ReceivableEventChanges, SelfReceivableEvents, Style, ZIndex,
     },
     std::{cell::RefCell, rc::Rc},
@@ -306,13 +306,11 @@ pub struct WidgetBase {
 impl WidgetBase {
     pub fn new(
         ctx: &Context, kind: &'static str, width: DynVal, height: DynVal, sty: WBStyles,
-        mut receivable_events: Vec<Event>,
+        receivable_events: Vec<ReceivableEvent>,
     ) -> Self {
-        let evs = receivable_events
-            .drain(..)
-            .map(|ev| (ev, Priority::Focused))
-            .collect();
-        let pane = Pane::new(ctx, kind).with_self_receivable_events(evs);
+        let sre =
+            SelfReceivableEvents::new_from_receivable_events(Priority::Focused, receivable_events);
+        let pane = Pane::new(ctx, kind).with_self_receivable_events(sre);
 
         let wb = Self {
             pane,
@@ -334,7 +332,7 @@ impl WidgetBase {
 
     //-------------------------
 
-    pub fn set_receivable_events(&self, evs: Vec<(Event, Priority)>) {
+    pub fn set_receivable_events(&self, evs: SelfReceivableEvents) {
         self.pane.set_self_receivable_events(evs)
     }
 

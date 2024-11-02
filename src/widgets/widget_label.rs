@@ -2,7 +2,7 @@ use {
     super::{common, Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
-        Parent, Priority, ReceivableEventChanges, SelfReceivableEvents, Style,
+        Parent, Priority, ReceivableEvent, ReceivableEventChanges, SelfReceivableEvents, Style,
     },
     std::{cell::RefCell, rc::Rc},
 };
@@ -23,7 +23,7 @@ pub enum LabelJustification {
 }
 
 // when "active" hitting enter will click the button
-pub static LABEL_EV_COMBOS: Vec<Event> = Vec::new();
+pub static LABEL_EV_COMBOS: Vec<ReceivableEvent> = Vec::new();
 
 pub static LABEL_STYLE: WBStyles = WBStyles {
     selected_style: Style::standard(),

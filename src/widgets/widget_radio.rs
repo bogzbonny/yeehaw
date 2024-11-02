@@ -2,7 +2,7 @@ use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
         Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEventChanges,
+        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEvent, ReceivableEventChanges,
         SelfReceivableEvents, Style,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -44,7 +44,7 @@ impl RadioButtons {
         unselectable_style: Style::new(Some(Color::GREY13), None, None),
     };
 
-    pub fn default_receivable_events() -> Vec<Event> {
+    pub fn default_receivable_events() -> Vec<ReceivableEvent> {
         vec![
             KB::KEY_UP.into(),
             KB::KEY_DOWN.into(),
@@ -121,7 +121,7 @@ impl Element for RadioButtons {
                 }
 
                 match true {
-                    _ if ke[0].matches_key(&KB::KEY_DOWN) || ke[0].matches_key(&KB::KEY_J) => {
+                    _ if ke[0] == KB::KEY_DOWN || ke[0] == KB::KEY_J => {
                         if *self.selected.borrow() < self.radios.borrow().len() - 1 {
                             *self.selected.borrow_mut() += 1;
                             let sel_i = *self.selected.borrow();
@@ -131,7 +131,7 @@ impl Element for RadioButtons {
                             return (true, resp);
                         }
                     }
-                    _ if ke[0].matches_key(&KB::KEY_UP) || ke[0].matches_key(&KB::KEY_K) => {
+                    _ if ke[0] == KB::KEY_UP || ke[0] == KB::KEY_K => {
                         if *self.selected.borrow() > 0 {
                             *self.selected.borrow_mut() -= 1;
                             let sel_i = *self.selected.borrow();

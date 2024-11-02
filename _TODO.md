@@ -32,6 +32,8 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+01. seperate out Event from ReceivableEvent
+
 01. terminal editor logic should not check for editor closure during drawing but use a hook!
     
 01. editor element
