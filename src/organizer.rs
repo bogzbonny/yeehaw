@@ -497,7 +497,7 @@ impl ElementOrganizer {
                 let resp = self.external_mouse_event_process(ctx, &me, parent);
                 (false, resp)
             }
-            Event::Refresh => {
+            Event::Initialize => {
                 self.refresh(ctx, parent);
                 (false, EventResponses::default())
             }
@@ -575,7 +575,7 @@ impl ElementOrganizer {
         let mut resps = EventResponses::default();
         for (_, details) in self.els.borrow().iter() {
             let el_ctx = ctx.child_context(&details.loc.borrow().l);
-            let (_, mut resp_) = details.el.receive_event(&el_ctx, Event::Refresh);
+            let (_, mut resp_) = details.el.receive_event(&el_ctx, Event::Initialize);
             self.partially_process_ev_resps(ctx, &details.el.id(), &mut resp_, &parent);
             resps.extend(resp_.0.drain(..));
 

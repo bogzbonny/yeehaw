@@ -400,7 +400,7 @@ impl Element for WidgetPane {
             Event::Resize => {
                 self.resize_event(ctx);
             }
-            Event::Refresh => {}
+            Event::Initialize => {}
             _ => {}
         }
         self.pane.receive_event(ctx, ev)

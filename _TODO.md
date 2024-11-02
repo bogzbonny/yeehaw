@@ -232,8 +232,8 @@ pub struct Style {
     .to_widgets() doesn't need to be manually called during construction
     (applied in add_widget)
 
-05. Remove Refresh logic from Elements. currently when an element is destroyed
-    or replaced, the parents call some Refresh logic, this should be removed in
+05. Remove Initialize logic from Elements. currently when an element is destroyed
+    or replaced, the parents call some Initialize logic, this should be removed in
     favour of specifically removing the priorities by the element id of the
     element being destroyed or replaced
      - is this still an issue?
@@ -355,11 +355,11 @@ One letter labels
       widget if the the event takes place over the widget AND the priority of
       the widget is greater than the priority of the scrollpane
     - integrate in better capture event logic, if the mouse event is NOT
-      captured, send the event to the next priority down. 
+      captured, send the event to the next priority down. [DONE]
        - this could potentially also be applied to the accomplish the scroll
          situation as described above.. first send the event to the inner pane,
          then if the mouse scroll event is not captured then send it to the
-         scrollable pane.
+         scrollable pane. - maybe then wouldn't need the mouse event logic??
 
 10. Simplify ElWidgetPane type to little more than a ParentPane
      - using the ParentPane store to hold index of the currently selected widget 

@@ -27,11 +27,9 @@ pub enum Event {
     // A signal to an element that it should closedown.
     Exit,
 
-    // Refresh resets an element's organizer's prioritizers as well as triggering a
-    // Resize event in all children. This essentially refreshes the state of the
-    // element organizer.
-    // Currently only relevant for elements that have an element organizer.
-    Refresh,
+    // The Initialize event resets an element's organizer's prioritizers. This essentially
+    // refreshes the state of the element organizer for elements which have an organizer.
+    Initialize,
 
     Custom(String, Vec<u8>), // custom event type with a name and a payload
 }
@@ -109,7 +107,7 @@ impl Event {
             }
             Event::ExternalMouse(_) => "EXTERNAL_MOUSE".to_string(),
             Event::Resize => "RESIZE".to_string(),
-            Event::Refresh => "REFRESH".to_string(),
+            Event::Initialize => "REFRESH".to_string(),
             Event::Exit => "EXIT".to_string(),
             Event::Custom(name, _) => "CUSTOM=".to_string() + name,
         }
@@ -131,7 +129,7 @@ impl Event {
             }
             (Event::ExternalMouse(eme1), Event::ExternalMouse(eme2)) => eme1 == eme2,
             (Event::Resize, Event::Resize) => true,
-            (Event::Refresh, Event::Refresh) => true,
+            (Event::Initialize, Event::Initialize) => true,
             (Event::Custom(kind1, bz1), Event::Custom(kind2, bz2)) => kind1 == kind2 && bz1 == bz2,
             _ => false,
         }

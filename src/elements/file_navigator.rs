@@ -175,7 +175,7 @@ impl Element for FileNavPane {
                 }
                 _ => {}
             },
-            Event::Refresh => {}
+            Event::Initialize => {}
             _ => {}
         }
         (true, EventResponses::default())
