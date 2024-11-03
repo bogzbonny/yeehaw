@@ -119,6 +119,16 @@ pub enum Selectability {
     Unselectable, // unselectable
 }
 
+impl std::fmt::Display for Selectability {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Selectability::Selected => write!(f, "Selected"),
+            Selectability::Ready => write!(f, "Ready"),
+            Selectability::Unselectable => write!(f, "Unselectable"),
+        }
+    }
+}
+
 // label positions
 //      1  2
 //     5████7
@@ -409,7 +419,7 @@ impl WidgetBase {
 
     pub fn scroll_up(&self, ctx: &Context) {
         let view_offset_y = *self.pane.content_view_offset_y.borrow();
-        self.set_content_y_offset(ctx, view_offset_y - 1);
+        self.set_content_y_offset(ctx, view_offset_y.saturating_sub(1));
     }
 
     pub fn scroll_down(&self, ctx: &Context) {
@@ -419,7 +429,7 @@ impl WidgetBase {
 
     pub fn scroll_left(&self, ctx: &Context) {
         let view_offset_x = *self.pane.content_view_offset_x.borrow();
-        self.set_content_x_offset(ctx, view_offset_x - 1);
+        self.set_content_x_offset(ctx, view_offset_x.saturating_sub(1));
     }
 
     pub fn scroll_right(&self, ctx: &Context) {

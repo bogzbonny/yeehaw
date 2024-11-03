@@ -1,8 +1,7 @@
 use {
     crate::{
-        widgets::{Label, TextBox},
-        Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponse, EventResponses, Parent, ParentPane, Priority, ReceivableEventChanges,
+        widgets::TextBox, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID,
+        Event, EventResponse, EventResponses, Parent, ParentPane, Priority, ReceivableEventChanges,
         SelfReceivableEvents, TerminalPane, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
@@ -10,32 +9,28 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-// TODO remove or kill exit_on_return
-// TODO nicer top bar during non-editing / styles
 // TODO implement/test editor missing case
+// TODO something nicer when not being edited
 
 // TODO make into a selectible widget once widget is refactored into element
 
 /// NOTE this is not the most secure thing as it uses temp files to store the text
 /// but it is the easiest way to get a text editor in a terminal
-/// this editor should not be used for passwords
-// displays the size
+/// this editor should not be used for passwords.
 #[derive(Clone)]
 pub struct TermEditorPane {
     pub pane: ParentPane,
-    pub editor: Option<String>,
+    pub editor: Option<String>,     // the $EDITOR environment variable
     pub title: Rc<RefCell<String>>, // title for the textbox also used for tempfile suffix
+
     pub text: Rc<RefCell<Option<String>>>,
+
     pub tempfile: Rc<RefCell<Option<tempfile::NamedTempFile>>>,
+
+    pub non_editing_textbox: Rc<RefCell<TextBox>>, // the textbox when not being edited for viewing the text
 
     // if the tempfile was just created (and thus the text is empty)
     pub just_created: Rc<RefCell<bool>>,
-
-    // XXX isn't used
-    // if set to true, this element will destruct on save
-    // otherwise the element is replaced with the text
-    // until it is next opened.
-    pub exit_on_return: Rc<RefCell<bool>>,
 
     pub clicked_down: Rc<RefCell<bool>>, // activated when mouse is clicked down while over button
 
@@ -49,21 +44,40 @@ impl TermEditorPane {
 
     pub fn new<S: Into<String>>(ctx: &Context, title: S) -> Self {
         let editor: Option<String> = std::env::var("EDITOR").ok();
+        Self::new_with_custom_editor(ctx, title, editor)
+    }
+
+    // use this if you want to specify a mandatory editor or use an alternative
+    // environment variable
+    pub fn new_with_custom_editor<S: Into<String>>(
+        ctx: &Context, title: S, editor: Option<String>,
+    ) -> Self {
         let pane = ParentPane::new(ctx, Self::KIND);
 
-        let out = Self {
+        let non_editing_textbox = TextBox::new(ctx, "")
+            .with_width(DynVal::new_flex(1.))
+            .with_height(DynVal::new_flex(1.))
+            .with_wordwrap()
+            .non_editable()
+            .with_right_click_menu(None)
+            .at(DynVal::new_fixed(0), DynVal::new_fixed(0));
+
+        //use crate::widgets::Widget;
+        //non_editing_textbox
+        //    .base
+        //    .set_selectability(ctx, crate::widgets::Selectability::Selected);
+
+        Self {
             pane,
             editor,
             title: Rc::new(RefCell::new(title.into())),
             text: Rc::new(RefCell::new(None)),
             tempfile: Rc::new(RefCell::new(None)),
+            non_editing_textbox: Rc::new(RefCell::new(non_editing_textbox)),
             just_created: Rc::new(RefCell::new(true)),
-            exit_on_return: Rc::new(RefCell::new(false)),
             clicked_down: Rc::new(RefCell::new(false)),
             text_changed_hook: Rc::new(RefCell::new(Box::new(|_, _| EventResponses::default()))),
-        };
-        let _ = out.open_editor(ctx); // ignore resp
-        out
+        }
     }
 
     pub fn open_editor(&self, ctx: &Context) -> EventResponse {
@@ -77,8 +91,8 @@ impl TermEditorPane {
                     .prefix(prefix.as_str())
                     .tempfile()
                     .unwrap();
-                // set the tempfile contents to the text
                 if let Some(text) = text {
+                    // set the tempfile contents to the text
                     std::fs::write(tempfile.path(), text).unwrap();
                 }
 
@@ -120,6 +134,15 @@ impl TermEditorPane {
     pub fn with_text(self, text: String) -> Self {
         *self.text.borrow_mut() = Some(text);
         self
+    }
+
+    pub fn with_non_editing_textbox(self, tb: TextBox) -> Self {
+        self.non_editing_textbox.replace(tb);
+        self
+    }
+
+    pub fn set_non_editing_textbox(&self, tb: TextBox) {
+        self.non_editing_textbox.replace(tb);
     }
 
     pub fn with_height(self, h: DynVal) -> Self {
@@ -181,6 +204,20 @@ impl Element for TermEditorPane {
 
         let (captured, resps) = self.pane.receive_event(ctx, ev.clone());
 
+        if !self.pane.has_elements() {
+            debug!("pane has no elements");
+            self.tempfile.borrow_mut().take();
+            let text = self.text.borrow().clone().unwrap_or_default();
+            self.non_editing_textbox.borrow().set_text(text);
+            let non_editing_textbox = self.non_editing_textbox.borrow().clone();
+            //use crate::widgets::Widget;
+            //non_editing_textbox
+            //    .base
+            //    .set_selectability(ctx, crate::widgets::Selectability::Selected);
+
+            self.pane.add_element(Box::new(non_editing_textbox));
+        }
+
         (captured, resps)
     }
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
@@ -209,18 +246,6 @@ impl Element for TermEditorPane {
             }
         }
 
-        if !self.pane.has_elements() {
-            debug!("pane has no elements");
-            //if !*self.exit_on_return.borrow() {
-            //*resp = EventResponse::None;
-            //} else {
-            self.tempfile.borrow_mut().take();
-            let text = self.text.borrow().clone().unwrap_or_default();
-            let label = Label::new(ctx, &text).at(DynVal::new_fixed(0), DynVal::new_fixed(0));
-            self.pane.add_element(Box::new(label));
-            //*resp = EventResponse::NewElement(Box::new(label), None);
-            //}
-        }
         out
     }
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
