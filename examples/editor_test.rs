@@ -10,7 +10,8 @@ async fn main() -> Result<(), Error> {
 
     let el = ParentPane::new(&ctx, "main").with_style(Style::default().with_bg(Color::GREY5));
 
-    let editor = TermEditorPane::new(&ctx, "EDITOR")
+    //let editor = TermEditorPane::new(&ctx, "EDITOR")
+    let editor = TermEditorPane::new_with_custom_editor(&ctx, "EDITOR", None)
         .with_height(30.into())
         .with_width(30.into())
         .at(1.into(), 1.into());

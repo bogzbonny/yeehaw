@@ -10,7 +10,7 @@ use {
 };
 
 // TODO implement/test editor missing case
-// TODO something nicer when not being edited
+// save / revert buttons
 
 // TODO make into a selectible widget once widget is refactored into element
 
@@ -20,7 +20,8 @@ use {
 #[derive(Clone)]
 pub struct TermEditorPane {
     pub pane: ParentPane,
-    pub editor: Option<String>,     // the $EDITOR environment variable
+    pub editor: Option<String>, // the $EDITOR environment variable
+    pub editor_not_found_text: Rc<RefCell<String>>, // text to display if the editor is not found
     pub title: Rc<RefCell<String>>, // title for the textbox also used for tempfile suffix
 
     pub text: Rc<RefCell<Option<String>>>,
@@ -62,14 +63,12 @@ impl TermEditorPane {
             .with_right_click_menu(None)
             .at(DynVal::new_fixed(0), DynVal::new_fixed(0));
 
-        //use crate::widgets::Widget;
-        //non_editing_textbox
-        //    .base
-        //    .set_selectability(ctx, crate::widgets::Selectability::Selected);
-
         Self {
             pane,
             editor,
+            editor_not_found_text: Rc::new(RefCell::new(
+                "No editor found (please set your $EDITOR environment var)".into(),
+            )),
             title: Rc::new(RefCell::new(title.into())),
             text: Rc::new(RefCell::new(None)),
             tempfile: Rc::new(RefCell::new(None)),
@@ -108,14 +107,16 @@ impl TermEditorPane {
                 self.pane.add_element(Box::new(term))
             }
             None => {
-                let text = text.unwrap_or_else(|| {
-                    "No editor found (please set your $EDITOR environment var)".to_string()
-                });
-                let tb = TextBox::new(ctx, text)
+                let start_text = self.editor_not_found_text.borrow().clone();
+                let tb = TextBox::new(ctx, "")
+                    .with_text_when_empty(start_text)
                     .with_width(DynVal::new_flex(1.))
                     .with_height(DynVal::new_flex(1.))
                     .with_no_wordwrap()
                     .at(DynVal::new_fixed(0), DynVal::new_fixed(0));
+
+                use crate::widgets::Widget;
+                tb.set_selectability(ctx, crate::widgets::Selectability::Selected);
 
                 self.pane.add_element(Box::new(tb))
             }
@@ -210,10 +211,6 @@ impl Element for TermEditorPane {
             let text = self.text.borrow().clone().unwrap_or_default();
             self.non_editing_textbox.borrow().set_text(text);
             let non_editing_textbox = self.non_editing_textbox.borrow().clone();
-            //use crate::widgets::Widget;
-            //non_editing_textbox
-            //    .base
-            //    .set_selectability(ctx, crate::widgets::Selectability::Selected);
 
             self.pane.add_element(Box::new(non_editing_textbox));
         }

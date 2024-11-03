@@ -44,7 +44,7 @@
          of the command!
        - use the editor with a temp file - check after each event for updates to
          that file
-       - consider closeable vs non-closeable version of this widget
+       - WONT DO consider closeable vs non-closeable version of this widget
           - I guess if you wanted an Editor to NOT close, when you closed the
             editor the Pane should be replaced with just the containing text 
               - OR could take a snapshot right when the editor exits

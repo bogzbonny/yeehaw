@@ -925,10 +925,6 @@ impl TextBox {
         }
 
         let selectedness = self.base.get_selectability();
-        debug!(
-            "TextBox mouse, selectedness: {selectedness}, event: {:?}",
-            ev
-        );
         let cursor_pos = self.get_cursor_pos();
         match ev.kind {
             MouseEventKind::ScrollDown
