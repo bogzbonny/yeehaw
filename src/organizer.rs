@@ -517,8 +517,7 @@ impl ElementOrganizer {
 
             let child_ctx = ctx.child_context(&el_details.loc.borrow().l);
             let (captured, mut resps_) = el_details.el.receive_event(&child_ctx, ev.clone());
-
-            self.partially_process_ev_resps(ctx, &el_id, &mut resps, &parent);
+            self.partially_process_ev_resps(ctx, &el_id, &mut resps_, &parent);
             resps.extend(resps_.0.drain(..));
 
             if captured {
@@ -539,7 +538,7 @@ impl ElementOrganizer {
         for (el_id, details) in self.els.borrow().iter() {
             let el_ctx = ctx.child_context(&details.loc.borrow().l);
             let (_, mut resps_) = details.el.receive_event(&el_ctx, ev.clone());
-            self.partially_process_ev_resps(ctx, el_id, &mut resps, &parent);
+            self.partially_process_ev_resps(ctx, el_id, &mut resps_, &parent);
             resps.extend(resps_.0.drain(..));
         }
         (false, resps)
@@ -690,7 +689,7 @@ impl ElementOrganizer {
     pub fn external_mouse_event_process(
         &self, ctx: &Context, ev: &RelMouseEvent, parent: Box<dyn Parent>,
     ) -> EventResponses {
-        let mut ev_resps = EventResponses::default();
+        let mut resps = EventResponses::default();
         for (el_id, details) in self.els.borrow().iter() {
             let child_ctx = ctx.child_context(&details.loc.borrow().l);
             let ev_adj = details
@@ -698,13 +697,13 @@ impl ElementOrganizer {
                 .borrow()
                 .l
                 .adjust_mouse_event_external2(ctx, ev.clone());
-            let (_, mut r) = details
+            let (_, mut resps_) = details
                 .el
                 .receive_event(&child_ctx, Event::ExternalMouse(ev_adj));
-            self.partially_process_ev_resps(ctx, el_id, &mut r, &parent);
-            ev_resps.extend(r.0);
+            self.partially_process_ev_resps(ctx, el_id, &mut resps_, &parent);
+            resps.extend(resps_.0);
         }
-        ev_resps
+        resps
     }
 
     // get_el_id_at_z_index returns the element-id at the given z index, or None if

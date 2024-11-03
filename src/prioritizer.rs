@@ -175,7 +175,7 @@ impl EventPrioritizer {
             //}
 
             // check if event registered w/ element matches the input_ev
-            if priority_id_event.event.matches(input_ev) {
+            if priority_id_event.event.matches(input_ev) && !dests.contains(&priority_id_event.id) {
                 dests.push(priority_id_event.id.clone());
             }
         }

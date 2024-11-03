@@ -6,7 +6,7 @@ use {
     crate::{
         ChPlus, Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID,
         Event, EventResponse, EventResponses, KeyPossibility, Pane, Parent, Priority,
-        ReceivableEventChanges, SelfReceivableEvents, Style, ZIndex,
+        ReceivableEvent, ReceivableEventChanges, SelfReceivableEvents, Style, ZIndex,
     },
     compact_str::CompactString,
     crossterm::event::{KeyCode, KeyEvent, KeyModifiers},
@@ -35,13 +35,13 @@ pub struct TerminalPane {
     pub writer: Rc<RefCell<BufWriter<Box<dyn Write + std::marker::Send>>>>,
     pub hide_cursor: Rc<RefCell<bool>>,
     pub cursor: Rc<RefCell<DrawCh>>,
-    pub exit: Arc<RwLock<bool>>,
 
-    // the exiters
     pub pty_killer: Rc<RefCell<Box<dyn ChildKiller>>>,
 }
 
 impl TerminalPane {
+    pub const KIND: &'static str = "terminal_pane";
+
     pub fn new(ctx: &Context) -> Self {
         let cwd = std::env::current_dir().unwrap();
         let mut cmd = CommandBuilder::new_default_prog();
@@ -51,8 +51,7 @@ impl TerminalPane {
 
     pub fn new_with_builder(ctx: &Context, cmd: CommandBuilder) -> Self {
         let size = ctx.s;
-        let pane =
-            Pane::new(ctx, "terminal_pane").with_self_receivable_events(Self::receivable_events());
+        let pane = Pane::new(ctx, Self::KIND);
 
         let pty_system = native_pty_system();
         let pty_pair = pty_system
@@ -65,17 +64,20 @@ impl TerminalPane {
             .unwrap();
         let parser = Arc::new(RwLock::new(vt100::Parser::new(size.height, size.width, 0)));
 
-        let exit = Arc::new(RwLock::new(false));
-        let exit_ = exit.clone();
         let mut child = pty_pair.slave.spawn_command(cmd).unwrap();
         let killer = child.clone_killer();
-        //let mut killer_ = child.clone_killer();
+        let ev_tx_ = ctx.ev_tx.clone();
+        let n = Self::custom_destruct_event_name(pane.id());
         spawn_blocking(move || {
             // ignore exit status
             // NOTE this wait can be killed by the killer
             let _ = child.wait();
             drop(pty_pair.slave);
-            *exit_.write().unwrap() = true;
+
+            // here blocking send will generate an error if the
+            // TUI is closed by the time this send is called, which
+            // is not a problem, so ignore this error.
+            let _ = ev_tx_.blocking_send(Event::Custom(n, Vec::with_capacity(0)));
         });
 
         let mut reader = pty_pair.master.try_clone_reader().unwrap();
@@ -108,20 +110,32 @@ impl TerminalPane {
             Style::default().with_fg(Color::BLACK).with_bg(Color::WHITE),
         );
 
-        Self {
+        let out = Self {
             pane,
             parser,
             master_pty: Rc::new(RefCell::new(pty_pair.master)),
             writer: Rc::new(RefCell::new(writer)),
             hide_cursor: Rc::new(RefCell::new(false)),
             cursor: Rc::new(RefCell::new(cur)),
-            exit,
             pty_killer: Rc::new(RefCell::new(killer)),
-        }
+        };
+        out.pane.set_self_receivable_events(out.receivable_events());
+        out
     }
 
-    pub fn receivable_events() -> SelfReceivableEvents {
-        vec![(KeyPossibility::Anything.into(), Priority::Focused)].into()
+    pub fn receivable_events(&self) -> SelfReceivableEvents {
+        vec![
+            (KeyPossibility::Anything.into(), Priority::Focused),
+            (
+                ReceivableEvent::Custom(Self::custom_destruct_event_name(self.id())),
+                Priority::Focused,
+            ),
+        ]
+        .into()
+    }
+
+    pub fn custom_destruct_event_name(id: ElementID) -> String {
+        format!("destruct_{id}")
     }
 
     pub fn with_height(self, h: DynVal) -> Self {
@@ -151,20 +165,10 @@ impl Element for TerminalPane {
         self.pane.receivable()
     }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        //debug!("TerminalPane({}) receive_event_inner: {:?}", self.id(), ev);
-        if *self.exit.read().unwrap() {
-            return (false, EventResponse::Destruct.into());
-        }
-        let mut captured = false;
         match ev {
             Event::KeyCombo(ref keys) => {
-                captured = true;
-                //debug!(
-                //    "TerminalPane({}) receive_event_inner: {:?}",
-                //    self.id(),
-                //    keys
-                //);
-                handle_pane_key_event(self, &keys[0]); // handle empty case?
+                let captured = handle_pane_key_event(self, &keys[0]); // handle empty case?
+                return (captured, EventResponses::default());
             }
             Event::Resize => {
                 self.parser
@@ -182,11 +186,18 @@ impl Element for TerminalPane {
                     .unwrap();
             }
             Event::Exit => {
-                self.pty_killer.borrow_mut().kill().unwrap();
+                // this will error is the pty_killer has already been killed
+                // ignore the error
+                let _ = self.pty_killer.borrow_mut().kill();
+            }
+            Event::Custom(name, _) => {
+                if name == Self::custom_destruct_event_name(self.id()) {
+                    return (true, EventResponse::Destruct.into());
+                }
             }
             _ => {}
         }
-        (captured, EventResponses::default())
+        (false, EventResponses::default())
     }
 
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
@@ -194,19 +205,11 @@ impl Element for TerminalPane {
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        if *self.exit.read().unwrap() {
-            self.pane
-                .send_responses_upward(ctx, EventResponse::Destruct.into());
-            return Vec::with_capacity(0);
-        }
-        //let mut cursor = Cursor::default();
-        //cursor.hide();
         let mut out = vec![];
 
         let sc = self.parser.read().unwrap();
         let screen = sc.screen();
 
-        //pub fn handle<S: Screen>(term: &PseudoTerminal<S>, area: Rect, buf: &mut Buffer) {
         let cols = ctx.s.width;
         let rows = ctx.s.height;
 
@@ -289,7 +292,7 @@ impl Element for TerminalPane {
     }
 }
 
-pub fn handle_pane_key_event(pane: &TerminalPane, key: &KeyEvent) {
+pub fn handle_pane_key_event(pane: &TerminalPane, key: &KeyEvent) -> bool {
     let input_bytes = match key.code {
         KeyCode::Char(ch) => {
             let mut send = vec![ch as u8];
@@ -336,9 +339,17 @@ pub fn handle_pane_key_event(pane: &TerminalPane, key: &KeyEvent) {
         KeyCode::Delete => vec![27, 91, 51, 126],
         KeyCode::Insert => vec![27, 91, 50, 126],
         KeyCode::Esc => vec![27],
-        _ => return,
+        _ => return true, // ignore key but still capture
     };
 
-    pane.writer.borrow_mut().write_all(&input_bytes).unwrap();
-    pane.writer.borrow_mut().flush().unwrap();
+    // if there is an error here, the pty has been closed, therefor do not capture the event. this
+    // could happen in the split second between the pty being closed and the exit event being
+    // received by this terminal pane.
+    if pane.writer.borrow_mut().write_all(&input_bytes).is_err() {
+        return false;
+    }
+    if pane.writer.borrow_mut().flush().is_err() {
+        return false;
+    }
+    true
 }

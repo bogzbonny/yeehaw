@@ -431,6 +431,14 @@ impl Element for WindowPane {
         } else {
             (false, EventResponses::default())
         };
+
+        // check if the inner pane has been removed from the parent in which case close this window
+        // NOTE this happens with terminal
+        if self.pane.eo.get_element(&self.inner.id()).is_none() {
+            resps.push(EventResponse::Destruct);
+            return (true, resps);
+        }
+
         let just_minimized = self.partially_process_inner_resp(ctx, &mut resps);
         if captured {
             return (captured, resps);
@@ -458,18 +466,7 @@ impl Element for WindowPane {
         self.pane.change_priority(p)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        let out = self.pane.drawing(ctx);
-
-        // check if the inner pane has been removed from the parent in which case close this window
-        // NOTE this happens with terminal
-        if self.pane.eo.get_element(&self.inner.id()).is_none() {
-            self.pane
-                .pane
-                .send_responses_upward(ctx, EventResponse::Destruct.into());
-            Vec::with_capacity(0)
-        } else {
-            out
-        }
+        self.pane.drawing(ctx)
     }
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
         self.pane.get_attribute(key)
