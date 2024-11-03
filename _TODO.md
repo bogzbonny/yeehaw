@@ -32,10 +32,9 @@
 01. 12a753e breaks widget_test and window_test
 01. seperate out Event from ReceivableEvent
 01. terminal editor logic should not check for editor closure during drawing but use a hook!
+01. window_resize not working
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-01. window_resize not working
     
 01. editor element
     - uses the $EDITOR env variable

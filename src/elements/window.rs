@@ -774,12 +774,16 @@ impl Element for CornerAdjuster {
     }
     fn receive_event_inner(&self, _ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let cur_dragging = *self.dragging.borrow();
+        let mut captured = false;
         match ev {
-            Event::Mouse(me) => match me.kind {
-                MouseEventKind::Down(MouseButton::Left) => *self.dragging.borrow_mut() = true,
-                MouseEventKind::Drag(MouseButton::Left) => {}
-                _ => *self.dragging.borrow_mut() = false,
-            },
+            Event::Mouse(me) => {
+                captured = true;
+                match me.kind {
+                    MouseEventKind::Down(MouseButton::Left) => *self.dragging.borrow_mut() = true,
+                    MouseEventKind::Drag(MouseButton::Left) => {}
+                    _ => *self.dragging.borrow_mut() = false,
+                }
+            }
             Event::ExternalMouse(me) => match me.kind {
                 MouseEventKind::Drag(MouseButton::Left) if cur_dragging => {
                     let dx = me.column;
@@ -801,7 +805,7 @@ impl Element for CornerAdjuster {
             },
             _ => {}
         }
-        (false, EventResponses::default())
+        (captured, EventResponses::default())
     }
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
         self.pane.change_priority(p)
