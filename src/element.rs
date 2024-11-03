@@ -3,6 +3,7 @@ use {
         prioritizer::Priority, Context, DrawChPos, DynLocationSet, ElementID, Event,
         EventResponses, ReceivableEventChanges, SelfReceivableEvents,
     },
+    dyn_clone::DynClone,
     std::{cell::RefCell, rc::Rc},
 };
 
@@ -10,7 +11,7 @@ dyn_clone::clone_trait_object!(Element);
 
 // Element is the base interface which all viewable elements are
 // expected to fulfill
-pub trait Element: dyn_clone::DynClone {
+pub trait Element: DynClone {
     // TODO consider removing kind
     fn kind(&self) -> &'static str; // a name for the kind of the element
 
@@ -81,7 +82,7 @@ pub trait Element: dyn_clone::DynClone {
     fn set_hook(
         &self,
         kind: &str,
-        el_id: ElementID,
+        el_id: ElementID, // element-id of the element registering the hook to THIS element
         //                  kind, hooked element
         hook: Box<dyn FnMut(&str, Box<dyn Element>)>,
     );

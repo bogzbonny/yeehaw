@@ -35,6 +35,54 @@
 01. window_resize not working
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+WIDGET RECALL
+ - deleted ElWidgetPane for a new type ParentPaneWithSelectibility
+    - basically the parentpane with tab capturing
+    - using the ParentPane store to hold index of the currently selected widget 
+    - would just need to specify each element as either "selectible" or "not"
+      when it gets added to the widget macro
+ - move Widgets -> Elements (basically only used for labels)
+ - Remove "Unselectable type" from selectibility which will just be the regular element
+ - Test if each trait has has selectibility by use of the attributes
+ - Selectibility Hook
+    - this one is a bit harder maybe we have to introduce hooks on 
+      arbitrary attribute setting. The existing hook structure should
+      be able to hold hooks of this variety 
+    - could maybe do something funny where the hook is actually set to 
+      the name of the attribute KEY plus a prefix! thus allowing the hook
+      system to specify the exact type of the hook.
+
+05. create builder types for each widget. 
+     - sometimes there are fields in the widget that are only 
+       used for the creation of the widget, and not for the widget itself.
+
+05. Into<Widgets> Trait which can be applied to each widget builder so that
+    .to_widgets() doesn't need to be manually called during construction
+    (applied in add_widget)
+
+
+_____________
+
+30. figure out a nicer way of inheriting element functions from the above
+    element besides lots of boilerplate, probably though the use of a macro
+      - maybe? https://github.com/datapture/hereditary
+      - maybe https://docs.rs/delegate/latest/delegate/
+      - gpt query:
+      help me write a rust macro which will implement a trait from the first 
+      field in a struct which will already implement this trait. The macro
+      should allow you to override function implementations, only functions
+      which are not written in the macro will be generated based off of the
+      first struct field.
+followup
+is it possible or not possible to way to make this macro automatically take the
+first field of MyStruct rather than having to manually input it in the macro. If
+it is possible what would that look like 
+     - see macro_brainstorm.md
+
+10. integrate in trait upcasting for Widget Type once available (remove
+    el_widget_pane drawing functionality in favour of the parent pane draw).
+    https://github.com/rust-lang/rust/issues/65991
     
 01. editor element
     - uses the $EDITOR env variable
@@ -69,6 +117,8 @@ pub struct Style {
 
 01. window shadow!
      - bg color transparent, fg color transparent TO bg color 
+
+01. make crate into a workspace
 
 01. Snapshot tui Tester (just call this tui-tester, binary: tuit (lol)) 
      - always multi-stage
@@ -194,8 +244,6 @@ pub struct Style {
     replicate a heartbeat for a element, or to simulate a visual effect such as
     a button click (useful for button when Enter key is hit).
 
-01. make crate into a workspace
-
 05. I think that in widget_test the textarea is passing in a width that is 1 to
     small! - once you move the cursor the scrollbar changes size ever so
     slightly
@@ -219,26 +267,6 @@ pub struct Style {
       - when an entire line is used it should be able to be draggable to effect
         the size of the element
 
-05. Subscription based events on common objects. 
-     - like leptos. any element could subscribe to an object (with any other
-       element can change). When that object changes it would send out events to
-       any other elements which subscribed to it... OR maybe it would just make
-       sense to use hooks this way you don't need all the parents of the
-       destination to also subscribe to the hook. USE HOOKS!
-
-05. create builder types for each widget. 
-     - sometimes there are fields in the widget that are only 
-       used for the creation of the widget, and not for the widget itself.
-
-05. Into<Widgets> Trait which can be applied to each widget builder so that
-    .to_widgets() doesn't need to be manually called during construction
-    (applied in add_widget)
-
-05. Remove Initialize logic from Elements. currently when an element is destroyed
-    or replaced, the parents call some Initialize logic, this should be removed in
-    favour of specifically removing the priorities by the element id of the
-    element being destroyed or replaced
-     - is this still an issue?
 
 10. introduce errors, remove all unwraps
 
@@ -319,6 +347,7 @@ One letter labels
     - something with the sand timers 
     - ◐◓◑◒
     - △▷▽◁
+    - ◢◥◤◣
     - ◥◢◣◤
 
 10. feature: hover comments
@@ -363,16 +392,6 @@ One letter labels
          then if the mouse scroll event is not captured then send it to the
          scrollable pane. - maybe then wouldn't need the mouse event logic??
 
-10. Simplify ElWidgetPane type to little more than a ParentPane
-     - using the ParentPane store to hold index of the currently selected widget 
-
-10. integrate in trait upcasting for Widget Type once available (remove
-    el_widget_pane drawing functionality in favour of the parent pane draw).
-    https://github.com/rust-lang/rust/issues/65991
-
-30. figure out a nicer way of inheriting element functions from the above
-    element besides lots of boilerplate, probably though the use of a macro
-
 20. Add another cargo repo like AssertCmd for tui
      name: TuiTester?
      - https://github.com/aschey/tui-tester
@@ -388,7 +407,6 @@ One letter labels
      - use the .ans format (such as
        https://terminalroot.com/use-ms-paint-directly-in-terminal/) uses. 
        this format can be viewed in the terminal with "cat my_ansi_image.ans"
-
 
 30. irregular gradient lines
     - OUTWARD
@@ -412,6 +430,16 @@ One letter labels
 
 40. Scrollbar bug: when dragging scrollbar with mouse, will drag good for a bit
     then close to the end it just moves all the way to the maximum
+
+40. Subscription based events on common objects. 
+     - like leptos. any element could subscribe to an object (with any other
+       element can change). When that object changes it would send out events to
+       any other elements which subscribed to it... OR maybe it would just make
+       sense to use hooks this way you don't need all the parents of the
+       destination to also subscribe to the hook. USE HOOKS!
+       - Actually could be really easy with the Event Router - could use Custom
+         Event
+       - question is: what events should actually be broadcast?
 
 50. LOW PRIORITY CAN JUST USE $EDITOR widget: vim-style textbox
      - with two scrollbars the mode can be placed in 
