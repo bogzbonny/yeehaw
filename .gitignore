@@ -1,2 +1,3 @@
-/target
-/debug_test.log
+target
+Cargo.lock
+debug_test.log

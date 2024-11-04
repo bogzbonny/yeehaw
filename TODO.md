@@ -74,11 +74,20 @@ _____________
       should allow you to override function implementations, only functions
       which are not written in the macro will be generated based off of the
       first struct field.
+help me write a rust macro which will implement a trait from the first 
+      field in a struct which will already implement this trait. The macro
+      should allow you to override function implementations, only functions
+      which are not written in the macro will be generated based off of the
+      first struct field. These Overriding functions may have a `&self` field as their first argument
 followup
 is it possible or not possible to way to make this macro automatically take the
 first field of MyStruct rather than having to manually input it in the macro. If
 it is possible what would that look like 
      - see macro_brainstorm.md
+
+help me program a rust procedural macro which adds 2 functions (named
+"my_function1" and "my_function2") to a Trait impl block if either of functions
+doesn't exist in that Trait impl block that this macro is applied too
 
 10. integrate in trait upcasting for Widget Type once available (remove
     el_widget_pane drawing functionality in favour of the parent pane draw).

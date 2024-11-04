@@ -6,6 +6,7 @@ use {
     },
     image::DynamicImage,
     ratatui::widgets::StatefulWidget,
+    //ratatui::widgets::StatefulWidget;
     ratatui_image::{picker::Picker, protocol::StatefulProtocol, Resize, StatefulImage},
     std::{cell::RefCell, rc::Rc},
 };
@@ -98,6 +99,7 @@ impl Element for ImageViewer {
         //let st_image = StatefulImage::new(None)
         //    .resize(Resize::Fit(Some(image::imageops::FilterType::Nearest)));
         let st_image = StatefulImage::new(None).resize(Resize::Crop(None));
+
         st_image.render(area, &mut buffer, &mut self.st_pro.borrow_mut());
         let out: DrawChPosVec = buffer.into();
         out.0

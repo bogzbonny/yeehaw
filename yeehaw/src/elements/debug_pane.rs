@@ -55,6 +55,25 @@ impl DebugSizePane {
     }
 }
 
+use yeehaw_derive::impl_element_from;
+
+//fn kind(&self) -> &'static str {
+//    self.pane.kind()
+//}
+#[impl_element_from(pane)]
+impl Element for DebugSizePane {
+    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        let size = ctx.s;
+        let s = format!("{}x{} {}", size.width, size.height, self.text.borrow());
+        let sty = self.sty.borrow().clone();
+        let content = DrawChs2D::from_string(s, sty);
+        self.pane.set_content(content);
+        self.pane.drawing(ctx)
+    }
+}
+
+/*
+
 impl Element for DebugSizePane {
     fn kind(&self) -> &'static str {
         self.pane.kind()
@@ -107,3 +126,4 @@ impl Element for DebugSizePane {
         self.pane.get_visible()
     }
 }
+*/
