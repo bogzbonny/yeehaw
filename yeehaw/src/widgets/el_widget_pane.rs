@@ -53,7 +53,7 @@ impl WidgetPane {
     }
 
     pub fn with_bg_color(self, c: Color) -> Self {
-        self.pane.pane.default_ch.borrow_mut().style.bg = Some(c);
+        self.pane.pane.default_ch.borrow_mut().style.set_bg(c);
         self
     }
 

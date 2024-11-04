@@ -6,10 +6,39 @@ use {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug, Default)]
 pub struct Style {
-    pub fg: Option<Color>,
-    pub bg: Option<Color>,
-    pub underline: Option<Color>,
+    pub fg: Option<(Color, FgTranspSrc)>,
+    pub bg: Option<(Color, BgTranspSrc)>,
+    pub underline: Option<(Color, UlTranspSrc)>,
     pub attr: Attributes,
+}
+
+// source of the underlying color for fg colors
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug, Default)]
+pub enum FgTranspSrc {
+    #[default]
+    LowerFg,
+    LowerBg,
+    LowerUl,
+    ThisBg, // the bg color of the same cell
+}
+
+// source of the underlying color for underline colors
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug, Default)]
+pub enum UlTranspSrc {
+    LowerFg,
+    LowerBg,
+    #[default]
+    LowerUl,
+    ThisBg, // the bg color of the same cell
+}
+
+// source of the underlying color for bg colors
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug, Default)]
+pub enum BgTranspSrc {
+    LowerFg,
+    #[default]
+    LowerBg,
+    LowerUl,
 }
 
 impl Style {
@@ -24,44 +53,44 @@ impl Style {
 
     pub const fn transparent() -> Self {
         Self {
-            fg: Some(Color::TRANSPARENT),
-            bg: Some(Color::TRANSPARENT),
-            underline: Some(Color::TRANSPARENT),
+            fg: Some((Color::TRANSPARENT, FgTranspSrc::LowerFg)),
+            bg: Some((Color::TRANSPARENT, BgTranspSrc::LowerBg)),
+            underline: Some((Color::TRANSPARENT, UlTranspSrc::LowerUl)),
             attr: Attributes::new(),
         }
     }
 
     pub const fn standard() -> Self {
         Self {
-            fg: Some(Color::WHITE),
-            bg: Some(Color::TRANSPARENT),
-            underline: Some(Color::TRANSPARENT),
+            fg: Some((Color::WHITE, FgTranspSrc::LowerFg)),
+            bg: Some((Color::TRANSPARENT, BgTranspSrc::LowerBg)),
+            underline: Some((Color::TRANSPARENT, UlTranspSrc::LowerUl)),
             attr: Attributes::new(),
         }
     }
 
     // creates new style from fg, bg with a default style
-    pub const fn new(fg: Option<Color>, bg: Option<Color>, underline: Option<Color>) -> Self {
+    pub const fn new_const(fg: Color, bg: Color) -> Self {
         Self {
-            fg,
-            bg,
-            underline,
+            fg: Some((fg, FgTranspSrc::LowerFg)),
+            bg: Some((bg, BgTranspSrc::LowerBg)),
+            underline: None,
             attr: Attributes::new(),
         }
     }
 
     pub fn with_fg(mut self, fg: Color) -> Self {
-        self.fg = Some(fg);
+        self.fg = Some((fg, FgTranspSrc::default()));
         self
     }
 
     pub fn with_bg(mut self, bg: Color) -> Self {
-        self.bg = Some(bg);
+        self.bg = Some((bg, BgTranspSrc::default()));
         self
     }
 
     pub fn with_underline(mut self, underline: Color) -> Self {
-        self.underline = Some(underline);
+        self.underline = Some((underline, UlTranspSrc::default()));
         self
     }
 
@@ -71,13 +100,13 @@ impl Style {
     }
 
     pub fn set_fg(&mut self, fg: Color) {
-        self.fg = Some(fg);
+        self.fg = Some((fg, FgTranspSrc::default()));
     }
     pub fn set_bg(&mut self, bg: Color) {
-        self.bg = Some(bg);
+        self.bg = Some((bg, BgTranspSrc::default()));
     }
     pub fn set_underline(&mut self, underline: Color) {
-        self.underline = Some(underline);
+        self.underline = Some((underline, UlTranspSrc::default()));
     }
     pub fn set_attr(&mut self, attr: Attributes) {
         self.attr = attr;
@@ -85,13 +114,13 @@ impl Style {
 
     pub fn update_colors_for_time_and_pos(&mut self, ctx: &Context, x: u16, y: u16) {
         if let Some(fg) = self.fg.as_mut() {
-            fg.update_color(ctx, x, y);
+            fg.0.update_color(ctx, x, y);
         }
         if let Some(bg) = self.bg.as_mut() {
-            bg.update_color(ctx, x, y);
+            bg.0.update_color(ctx, x, y);
         }
         if let Some(underline) = self.underline.as_mut() {
-            underline.update_color(ctx, x, y);
+            underline.0.update_color(ctx, x, y);
         }
     }
 }
@@ -99,8 +128,8 @@ impl Style {
 impl From<(Color, Color)> for Style {
     fn from((fg, bg): (Color, Color)) -> Self {
         Self {
-            fg: Some(fg),
-            bg: Some(bg),
+            fg: Some((fg, FgTranspSrc::LowerFg)),
+            bg: Some((bg, BgTranspSrc::LowerBg)),
             underline: None,
             attr: Attributes::new(),
         }
@@ -110,15 +139,17 @@ impl From<(Color, Color)> for Style {
 impl From<ratatui::buffer::Cell> for Style {
     fn from(cell: ratatui::buffer::Cell) -> Self {
         Self {
-            fg: Some(cell.fg.into()),
-            bg: Some(cell.bg.into()),
-            underline: Some(cell.underline_color.into()),
+            fg: Some((cell.fg.into(), FgTranspSrc::default())),
+            bg: Some((cell.bg.into(), BgTranspSrc::default())),
+            underline: Some((cell.underline_color.into(), UlTranspSrc::default())),
             attr: cell.modifier.into(),
         }
     }
 }
 
-// mirroring the crossterm Attributes
+/// Attributes applied to the text
+// bitflags are not used here to help future proof this struct.
+// It's doubtful it would make a significant difference in performance.
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Debug, Eq, Default)]
 pub struct Attributes {
     pub bold: bool,

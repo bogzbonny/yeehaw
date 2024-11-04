@@ -39,9 +39,9 @@ impl RadioButtons {
     const KIND: &'static str = "widget_radio";
 
     const STYLE: WBStyles = WBStyles {
-        selected_style: Style::new(Some(Color::LIGHT_YELLOW2), None, None),
-        ready_style: Style::new(Some(Color::WHITE), None, None),
-        unselectable_style: Style::new(Some(Color::GREY13), None, None),
+        selected_style: Style::new_const(Color::LIGHT_YELLOW2, Color::TRANSPARENT),
+        ready_style: Style::new_const(Color::WHITE, Color::TRANSPARENT),
+        unselectable_style: Style::new_const(Color::GREY13, Color::TRANSPARENT),
     };
 
     pub fn default_receivable_events() -> Vec<ReceivableEvent> {

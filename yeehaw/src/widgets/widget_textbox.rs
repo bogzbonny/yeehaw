@@ -64,18 +64,18 @@ impl TextBox {
     const KIND: &'static str = "widget_textbox";
 
     const STYLE: WBStyles = WBStyles {
-        selected_style: Style::new(Some(Color::BLACK), Some(Color::WHITE), None),
-        ready_style: Style::new(Some(Color::BLACK), Some(Color::GREY13), None),
-        unselectable_style: Style::new(Some(Color::BLACK), Some(Color::GREY15), None),
+        selected_style: Style::new_const(Color::BLACK, Color::WHITE),
+        ready_style: Style::new_const(Color::BLACK, Color::GREY13),
+        unselectable_style: Style::new_const(Color::BLACK, Color::GREY15),
     };
 
     const STYLE_SCROLLBAR: WBStyles = WBStyles {
-        selected_style: Style::new(Some(Color::WHITE), Some(Color::GREY13), None),
-        ready_style: Style::new(Some(Color::WHITE), Some(Color::GREY13), None),
-        unselectable_style: Style::new(Some(Color::WHITE), Some(Color::GREY13), None),
+        selected_style: Style::new_const(Color::WHITE, Color::GREY13),
+        ready_style: Style::new_const(Color::WHITE, Color::GREY13),
+        unselectable_style: Style::new_const(Color::WHITE, Color::GREY13),
     };
 
-    const DEFAULT_CURSOR_STYLE: Style = Style::new(None, Some(Color::BLUE), None);
+    const DEFAULT_CURSOR_STYLE: Style = Style::new_const(Color::WHITE, Color::BLUE);
 
     // for textboxes which are editable
     pub fn editable_receivable_events() -> Vec<ReceivableEvent> {
@@ -1115,7 +1115,7 @@ impl Element for TextBox {
             // set greyed out text
             let text = self.text_when_empty.borrow();
             let mut sty = self.base.get_current_style();
-            sty.fg = Some(self.text_when_empty_fg.borrow().clone());
+            sty.set_fg(self.text_when_empty_fg.borrow().clone());
             self.base
                 .set_content_from_string_with_style(ctx, &text, sty);
             return self.base.drawing(ctx);

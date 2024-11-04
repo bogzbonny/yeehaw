@@ -1,5 +1,43 @@
+01. make crate into a workspace
+
+10. WONT DO integrate in trait upcasting for Widget Type once available (remove
+    el_widget_pane drawing functionality in favour of the parent pane draw).
+    https://github.com/rust-lang/rust/issues/65991
+
+01. editor element
+    - uses the $EDITOR env variable
+    - execute with something like: "$EDITOR; exit" 
+       - looks like we won't even need to use the "exit" command 
+         if we use the command builder... it will close at the end
+         of the command!
+       - use the editor with a temp file - check after each event for updates to
+         that file
+       - WONT DO consider closeable vs non-closeable version of this widget
+          - I guess if you wanted an Editor to NOT close, when you closed the
+            editor the Pane should be replaced with just the containing text 
+              - OR could take a snapshot right when the editor exits
+                and use that snapshot except maybe make it a bit more pale
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+01. fg color alpha channel should be able to choose between the either taking
+    from the bg color or the fg of the character below
+     - would need to calculate the bg color first then
+    Maybe to make things open-ended we could have these kinds of alpha:
+    bg-alpha    from: lower-bg, lower-fg
+    fg/ul-alpha from: lower-bg, lower-fg, upper-bg
+    NOTE we can't allow for the bg to be alpha on the upper-fg or else 
+         we have a computational loop which would be annoying to resolve
+    These options should exist in the Style and not the Color. 
+pub struct Style {
+    pub fg: Option<(Color, FgTranspSrc)>,
+    pub bg: Option<(Color, BgTranspSrc)>,
+    pub underline: Option<(Color, FgTranspSrc)>,
+    pub attr: Attributes,
+}
+
+01. window shadow!
+     - bg color transparent, fg color transparent TO bg color 
 
 WIDGET RECALL
  - deleted ElWidgetPane for a new type ParentPaneWithSelectibility
@@ -17,57 +55,14 @@ WIDGET RECALL
     - could maybe do something funny where the hook is actually set to 
       the name of the attribute KEY plus a prefix! thus allowing the hook
       system to specify the exact type of the hook.
-
 05. create builder types for each widget. 
      - sometimes there are fields in the widget that are only 
        used for the creation of the widget, and not for the widget itself.
-
 05. Into<Widgets> Trait which can be applied to each widget builder so that
     .to_widgets() doesn't need to be manually called during construction
     (applied in add_widget)
 
-_____________
-
-
-10. integrate in trait upcasting for Widget Type once available (remove
-    el_widget_pane drawing functionality in favour of the parent pane draw).
-    https://github.com/rust-lang/rust/issues/65991
-    
-01. editor element
-    - uses the $EDITOR env variable
-    - execute with something like: "$EDITOR; exit" 
-       - looks like we won't even need to use the "exit" command 
-         if we use the command builder... it will close at the end
-         of the command!
-       - use the editor with a temp file - check after each event for updates to
-         that file
-       - WONT DO consider closeable vs non-closeable version of this widget
-          - I guess if you wanted an Editor to NOT close, when you closed the
-            editor the Pane should be replaced with just the containing text 
-              - OR could take a snapshot right when the editor exits
-                and use that snapshot except maybe make it a bit more pale
-
-01. fg color alpha channel should be able to choose between the either taking
-    from the bg color or the fg of the character below
-     - would need to calculate the bg color first then
-    Maybe to make things open-ended we could have these kinds of alpha:
-    bg-alpha    from: lower-bg, lower-fg
-    fg/ul-alpha from: lower-bg, lower-fg, upper-bg
-    NOTE we can't allow for the bg to be alpha on the upper-fg or else 
-         we have a computational loop which would be annoying to resolve
-    These options should exist in the Style and not the Color. 
-       
-pub struct Style {
-    pub fg: Option<(Color, FgTranspSrc)>,
-    pub bg: Option<(Color, BgTranspSrc)>,
-    pub underline: Option<(Color, FgTranspSrc)>,
-    pub attr: Attributes,
-}
-
-01. window shadow!
-     - bg color transparent, fg color transparent TO bg color 
-
-01. make crate into a workspace
+01. terminal_editor - get the no-editor elements hooked up.
 
 01. Snapshot tui Tester (just call this tui-tester, binary: tuit (lol)) 
      - always multi-stage

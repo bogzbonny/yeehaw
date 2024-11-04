@@ -40,7 +40,7 @@ pub use {
     organizer::ElementOrganizer,
     prioritizer::Priority,
     sorting_hat::{ElementID, SortingHat},
-    style::{Attributes, Style},
+    style::{Attributes, BgTranspSrc, FgTranspSrc, Style, UlTranspSrc},
     widgets::WidgetPane,
 };
 

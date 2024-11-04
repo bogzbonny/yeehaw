@@ -52,22 +52,22 @@ impl ListBox {
     const KIND: &'static str = "widget_listbox";
 
     const STYLE: WBStyles = WBStyles {
-        selected_style: Style::new(Some(Color::BLACK), Some(Color::YELLOW), None),
-        ready_style: Style::new(Some(Color::BLACK), Some(Color::WHITE), None),
-        unselectable_style: Style::new(Some(Color::BLACK), Some(Color::GREY13), None),
+        selected_style: Style::new_const(Color::BLACK, Color::YELLOW),
+        ready_style: Style::new_const(Color::BLACK, Color::WHITE),
+        unselectable_style: Style::new_const(Color::BLACK, Color::GREY13),
     };
 
     const STYLE_SCROLLBAR: WBStyles = WBStyles {
-        selected_style: Style::new(Some(Color::WHITE), Some(Color::GREY13), None),
-        ready_style: Style::new(Some(Color::WHITE), Some(Color::GREY13), None),
-        unselectable_style: Style::new(Some(Color::WHITE), Some(Color::GREY13), None),
+        selected_style: Style::new_const(Color::WHITE, Color::GREY13),
+        ready_style: Style::new_const(Color::WHITE, Color::GREY13),
+        unselectable_style: Style::new_const(Color::WHITE, Color::GREY13),
     };
 
-    const STYLE_ITEM_SELECTED: Style = Style::new(Some(Color::WHITE), Some(Color::NAVY), None);
+    const STYLE_ITEM_SELECTED: Style = Style::new_const(Color::WHITE, Color::NAVY);
     const STYLE_CURSOR_OVER_UNSELECTED: Style =
-        Style::new(Some(Color::BLACK), Some(Color::LIGHT_BLUE), None);
+        Style::new_const(Color::BLACK, Color::LIGHT_BLUE);
     const STYLE_CURSOR_OVER_SELECTED: Style =
-        Style::new(Some(Color::WHITE), Some(Color::BLUE), None);
+        Style::new_const(Color::WHITE, Color::BLUE);
 
     pub fn default_receivable_events() -> Vec<ReceivableEvent> {
         vec![

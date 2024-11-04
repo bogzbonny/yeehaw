@@ -298,9 +298,9 @@ pub enum SBRelPosition {
 
 impl Scrollbar {
     const STYLE: WBStyles = WBStyles {
-        selected_style: Style::new(Some(Color::BLACK), Some(Color::LIGHT_YELLOW2), None),
-        ready_style: Style::new(Some(Color::WHITE), Some(Color::GREY13), None),
-        unselectable_style: Style::new(Some(Color::WHITE), Some(Color::GREY13), None),
+        selected_style: Style::new_const(Color::BLACK, Color::LIGHT_YELLOW2),
+        ready_style: Style::new_const(Color::WHITE, Color::GREY13),
+        unselectable_style: Style::new_const(Color::WHITE, Color::GREY13),
     };
 
     // if the Scrollbar currently cannot be used due to insufficient domain.

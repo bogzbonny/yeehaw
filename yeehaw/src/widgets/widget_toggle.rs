@@ -25,14 +25,14 @@ impl Toggle {
     const KIND: &'static str = "widget_button";
 
     const STYLE: WBStyles = WBStyles {
-        selected_style: Style::new(Some(Color::BLACK), Some(Color::LIGHT_YELLOW2), None),
-        ready_style: Style::new(Some(Color::BLACK), Some(Color::WHITE), None),
-        unselectable_style: Style::new(Some(Color::BLACK), Some(Color::GREY13), None),
+        selected_style: Style::new_const(Color::BLACK, Color::LIGHT_YELLOW2),
+        ready_style: Style::new_const(Color::BLACK, Color::WHITE),
+        unselectable_style: Style::new_const(Color::BLACK, Color::GREY13),
     };
 
     // for the selected toggle
     const DEFAULT_SELECTED_STY: Style =
-        Style::new(Some(Color::BLACK), Some(Color::LIGHT_BLUE), None);
+        Style::new_const(Color::BLACK, Color::LIGHT_BLUE);
 
     pub fn default_receivable_events() -> Vec<ReceivableEvent> {
         vec![

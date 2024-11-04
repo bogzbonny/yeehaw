@@ -33,23 +33,21 @@ impl DropdownList {
     const KIND: &'static str = "widget_dropdownlist";
 
     const STYLE: WBStyles = WBStyles {
-        selected_style: Style::new(Some(Color::BLACK), Some(Color::YELLOW), None),
-        ready_style: Style::new(Some(Color::BLACK), Some(Color::WHITE), None),
-        unselectable_style: Style::new(Some(Color::BLACK), Some(Color::GREY13), None),
+        selected_style: Style::new_const(Color::BLACK, Color::YELLOW),
+        ready_style: Style::new_const(Color::BLACK, Color::WHITE),
+        unselectable_style: Style::new_const(Color::BLACK, Color::GREY13),
     };
 
     const STYLE_SCROLLBAR: WBStyles = WBStyles {
-        selected_style: Style::new(Some(Color::WHITE), Some(Color::GREY13), None),
-        ready_style: Style::new(Some(Color::WHITE), Some(Color::GREY13), None),
-        unselectable_style: Style::new(Some(Color::WHITE), Some(Color::GREY13), None),
+        selected_style: Style::new_const(Color::WHITE, Color::GREY13),
+        ready_style: Style::new_const(Color::WHITE, Color::GREY13),
+        unselectable_style: Style::new_const(Color::WHITE, Color::GREY13),
     };
 
-    const STYLE_DD_CURSOR: Style = Style::new(None, Some(Color::BLUE), None);
+    const STYLE_DD_CURSOR: Style = Style::new_const(Color::WHITE, Color::BLUE);
 
-    const DEFAULT_DROPDOWN_ARROW: DrawCh = DrawCh::const_new(
-        '▼',
-        Style::new(Some(Color::BLACK), Some(Color::GREY13), None),
-    );
+    const DEFAULT_DROPDOWN_ARROW: DrawCh =
+        DrawCh::const_new('▼', Style::new_const(Color::BLACK, Color::GREY13));
 
     // needs to be slightly above other widgets to select properly
     // if widgets overlap

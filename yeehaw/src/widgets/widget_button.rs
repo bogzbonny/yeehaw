@@ -84,9 +84,9 @@ impl Button {
     const KIND: &'static str = "widget_button";
 
     const STYLE: WBStyles = WBStyles {
-        selected_style: Style::new(Some(Color::BLACK), Some(Color::LIGHT_YELLOW2), None),
-        ready_style: Style::new(Some(Color::BLACK), Some(Color::WHITE), None),
-        unselectable_style: Style::new(Some(Color::BLACK), Some(Color::GREY15), None),
+        selected_style: Style::new_const(Color::BLACK, Color::LIGHT_YELLOW2),
+        ready_style: Style::new_const(Color::BLACK, Color::WHITE),
+        unselectable_style: Style::new_const(Color::BLACK, Color::GREY15),
     };
 
     pub fn default_receivable_events() -> Vec<ReceivableEvent> {
@@ -139,7 +139,7 @@ impl Button {
                             .with_bg(Color::TRANSPARENT)
                             .with_fg(c),
                         None => {
-                            let fg = text_sty.bg.clone().unwrap_or_default().darken();
+                            let fg = text_sty.bg.clone().unwrap_or_default().0.darken();
                             Style::default_const()
                                 .with_bg(Color::TRANSPARENT)
                                 .with_fg(fg)

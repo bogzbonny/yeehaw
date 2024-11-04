@@ -1,5 +1,5 @@
 use {
-    crate::{Context, DynLocation, Size, Style},
+    crate::{BgTranspSrc, Context, DynLocation, FgTranspSrc, Size, Style, UlTranspSrc},
     anyhow::{anyhow, Error},
     compact_str::CompactString,
     crossterm::style::{ContentStyle, StyledContent},
@@ -157,24 +157,33 @@ impl DrawChPos {
             prev.style().background_color,
         );
 
-        let fg = self
-            .ch
-            .style
-            .fg
-            .clone()
-            .map(|fg| fg.to_crossterm_color(ctx, prev_fg, self.x, self.y));
-        let bg = self
-            .ch
-            .style
-            .bg
-            .clone()
-            .map(|bg| bg.to_crossterm_color(ctx, prev_bg, self.x, self.y));
-        let ul = self
-            .ch
-            .style
-            .underline
-            .clone()
-            .map(|ul| ul.to_crossterm_color(ctx, prev_ul, self.x, self.y));
+        let bg = self.ch.style.bg.clone().map(|bg| {
+            let transp_src = match bg.1 {
+                BgTranspSrc::LowerFg => prev_fg,
+                BgTranspSrc::LowerBg => prev_bg,
+                BgTranspSrc::LowerUl => prev_ul,
+            };
+            bg.0.to_crossterm_color(ctx, transp_src, self.x, self.y)
+        });
+
+        let fg = self.ch.style.fg.clone().map(|fg| {
+            let transp_src = match fg.1 {
+                FgTranspSrc::LowerFg => prev_fg,
+                FgTranspSrc::LowerBg => prev_bg,
+                FgTranspSrc::LowerUl => prev_ul,
+                FgTranspSrc::ThisBg => bg,
+            };
+            fg.0.to_crossterm_color(ctx, transp_src, self.x, self.y)
+        });
+        let ul = self.ch.style.underline.clone().map(|ul| {
+            let transp_src = match ul.1 {
+                UlTranspSrc::LowerFg => prev_fg,
+                UlTranspSrc::LowerBg => prev_bg,
+                UlTranspSrc::LowerUl => prev_ul,
+                UlTranspSrc::ThisBg => bg,
+            };
+            ul.0.to_crossterm_color(ctx, transp_src, self.x, self.y)
+        });
 
         let cs = ContentStyle {
             foreground_color: fg,

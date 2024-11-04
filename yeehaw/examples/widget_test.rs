@@ -82,7 +82,7 @@ async fn main() -> Result<(), Error> {
     let mut mtext_sty = WBStyles::default();
     let mut gr = Gradient::x_grad_rainbow(5);
     gr.angle_deg = 60.;
-    mtext_sty.unselectable_style.fg = Some(Color::Gradient(gr));
+    mtext_sty.unselectable_style.set_fg(Color::Gradient(gr));
 
     let mtext = FigletText::new(
         &ctx,
