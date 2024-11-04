@@ -667,6 +667,11 @@ impl CornerAdjuster {
         }
     }
 
+    pub fn with_styles(self, sty: Style) -> Self {
+        self.pane.set_content(DrawChs2D::from_char('◢', sty));
+        self
+    }
+
     pub fn with_ch(self, ch: DrawCh) -> Self {
         self.pane.set_content(ch.into());
         self

@@ -7,6 +7,7 @@ pub mod menu_right_click;
 pub mod pane;
 pub mod pane_parent;
 pub mod pane_scrollable;
+pub mod shadow;
 pub mod stack;
 pub mod tabs;
 pub mod terminal;
@@ -23,6 +24,7 @@ pub use {
     pane::Pane,
     pane_parent::ParentPane,
     pane_scrollable::{PaneScrollable, PaneWithScrollbars},
+    shadow::Shadowed,
     stack::{HorizontalStack, VerticalStack},
     tabs::Tabs,
     terminal::TerminalPane,

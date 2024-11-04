@@ -321,6 +321,10 @@ impl DrawChs2D {
         DrawChs2D(out)
     }
 
+    pub fn new_empty_for_context(ctx: &Context, sty: Style) -> DrawChs2D {
+        DrawChs2D::new_empty_of_size(ctx.s.width as usize, ctx.s.height as usize, sty)
+    }
+
     pub fn from_string(text: String, sty: Style) -> DrawChs2D {
         let lines = text.split('\n');
         let mut chs = Vec::new();
@@ -391,6 +395,16 @@ impl DrawChs2D {
 
     pub fn size(&self) -> Size {
         Size::new(self.width() as u16, self.height() as u16)
+    }
+
+    pub fn set_ch(&mut self, x: usize, y: usize, ch: DrawCh) {
+        let Some(line) = self.0.get_mut(y) else {
+            return;
+        };
+        let Some(chplus) = line.get_mut(x) else {
+            return;
+        };
+        *chplus = ch;
     }
 
     // TODO rename concat_right

@@ -1,6 +1,6 @@
 use {
     crate::{
-        Context, DrawCh, DrawChPos, DynLocation, DynLocationSet, DynVal, Element, ElementID,
+        Color, Context, DrawCh, DrawChPos, DynLocation, DynLocationSet, DynVal, Element, ElementID,
         ElementOrganizer, Event, EventResponse, EventResponses, Pane, Parent, Priority,
         ReceivableEventChanges, SelfReceivableEvents, Style, ZIndex,
     },
@@ -88,6 +88,11 @@ impl ParentPane {
 
     pub fn with_kind(self, kind: &'static str) -> Self {
         self.pane.set_kind(kind);
+        self
+    }
+
+    pub fn with_bg_color(self, c: Color) -> Self {
+        self.pane.default_ch.borrow_mut().style.set_bg(c);
         self
     }
 

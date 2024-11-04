@@ -80,17 +80,38 @@ impl Style {
     }
 
     pub fn with_fg(mut self, fg: Color) -> Self {
-        self.fg = Some((fg, FgTranspSrc::default()));
+        self.set_fg(fg);
         self
     }
 
     pub fn with_bg(mut self, bg: Color) -> Self {
-        self.bg = Some((bg, BgTranspSrc::default()));
+        self.set_bg(bg);
         self
     }
 
     pub fn with_underline(mut self, underline: Color) -> Self {
         self.underline = Some((underline, UlTranspSrc::default()));
+        self
+    }
+
+    pub fn with_bg_transp_src(mut self, bg_transp_src: BgTranspSrc) -> Self {
+        if let Some(bg) = self.bg.as_mut() {
+            bg.1 = bg_transp_src;
+        }
+        self
+    }
+
+    pub fn with_fg_transp_src(mut self, fg_transp_src: FgTranspSrc) -> Self {
+        if let Some(fg) = self.fg.as_mut() {
+            fg.1 = fg_transp_src;
+        }
+        self
+    }
+
+    pub fn with_ul_transp_src(mut self, ul_transp_src: UlTranspSrc) -> Self {
+        if let Some(ul) = self.underline.as_mut() {
+            ul.1 = ul_transp_src;
+        }
         self
     }
 
@@ -100,13 +121,23 @@ impl Style {
     }
 
     pub fn set_fg(&mut self, fg: Color) {
-        self.fg = Some((fg, FgTranspSrc::default()));
+        match self.fg {
+            Some(ref mut fg_) => fg_.0 = fg,
+            None => self.fg = Some((fg, FgTranspSrc::default())),
+        }
     }
     pub fn set_bg(&mut self, bg: Color) {
-        self.bg = Some((bg, BgTranspSrc::default()));
+        match self.bg {
+            Some(ref mut bg_) => bg_.0 = bg,
+            None => self.bg = Some((bg, BgTranspSrc::default())),
+        }
     }
+
     pub fn set_underline(&mut self, underline: Color) {
-        self.underline = Some((underline, UlTranspSrc::default()));
+        match self.underline {
+            Some(ref mut underline_) => underline_.0 = underline,
+            None => self.underline = Some((underline, UlTranspSrc::default())),
+        }
     }
     pub fn set_attr(&mut self, attr: Attributes) {
         self.attr = attr;

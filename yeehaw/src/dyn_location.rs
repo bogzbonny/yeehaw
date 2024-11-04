@@ -167,8 +167,8 @@ impl DynLocation {
         let x_adj = x_adj - start_x;
         let y_adj = y_adj - start_y;
         let mut ev: RelMouseEvent = (*ev).into(); // copy
-        ev.column = x_adj;
-        ev.row = y_adj;
+        ev.column = x_adj.clamp(-1000, 1000); // for bugs when dragging off screen
+        ev.row = y_adj.clamp(-1000, 1000);
         ev
     }
 
@@ -181,8 +181,8 @@ impl DynLocation {
         let start_y = self.get_start_y(ctx);
         let x_adj = x_adj - start_x;
         let y_adj = y_adj - start_y;
-        ev.column = x_adj;
-        ev.row = y_adj;
+        ev.column = x_adj.clamp(-1000, 1000); // for bugs when dragging off screen
+        ev.row = y_adj.clamp(-1000, 1000);
         ev
     }
 
@@ -236,6 +236,10 @@ impl DynLocationSet {
     pub fn with_location(mut self, l: DynLocation) -> DynLocationSet {
         self.l = l;
         self
+    }
+
+    pub fn set_location(&mut self, l: DynLocation) {
+        self.l = l;
     }
 
     pub fn with_extra(mut self, extra: Vec<DynLocation>) -> DynLocationSet {

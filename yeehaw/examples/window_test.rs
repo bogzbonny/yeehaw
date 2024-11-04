@@ -17,20 +17,22 @@ use {
         Style,
         TerminalPane,
         WindowPane,
+        *,
     },
 };
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    //yeehaw::debug::set_log_file("./debug_test.log".to_string());
-    //yeehaw::debug::clear();
+    yeehaw::debug::set_log_file("./debug_test.log".to_string());
+    yeehaw::debug::clear();
     //unsafe { std::env::set_var("RUST_BACKTRACE", "1") };
 
     let (mut cui, ctx) = Cui::new()?;
 
     let pp = ParentPane::new(&ctx, "parent_pane")
         .with_dyn_height(1.0.into())
-        .with_dyn_width(1.0.into());
+        .with_dyn_width(1.0.into())
+        .with_bg_color(Color::BLUE);
 
     let counter = Rc::new(RefCell::new(0));
 
@@ -94,7 +96,6 @@ async fn main() -> Result<(), Error> {
             50,
             50,
             HorizontalSBPositions::Below,
-            //HorizontalSBPositions::None,
             VerticalSBPositions::ToTheRight,
         );
 
@@ -105,16 +106,24 @@ async fn main() -> Result<(), Error> {
         *counter_.borrow_mut() += 1;
         let window = WindowPane::new(&ctx_, Box::new(sc_pane), &title)
             .with_corner_adjuster(&ctx_)
-            .at(DynVal::new_fixed(10), DynVal::new_fixed(10))
             .with_height(DynVal::new_fixed(20))
-            .with_width(DynVal::new_fixed(30));
+            .with_width(DynVal::new_fixed(30))
+            .at(DynVal::new_fixed(10), DynVal::new_fixed(10));
+
+        let shadow_color = Color::new_with_alpha(50, 50, 50, 100);
+        let window_with_shadow =
+            Shadowed::thick_with_color(&ctx_, Box::new(window.clone()), shadow_color);
 
         let inner_resps = vec![
             EventResponse::BringToFront,
             EventResponse::UnfocusOthers,
             EventResponse::Focus,
         ];
-        EventResponse::NewElement(Box::new(window.clone()), Some(inner_resps.into())).into()
+        EventResponse::NewElement(
+            Box::new(window_with_shadow.clone()),
+            Some(inner_resps.into()),
+        )
+        .into()
     });
 
     let mut ctx_ = ctx.clone();

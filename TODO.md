@@ -18,8 +18,6 @@
               - OR could take a snapshot right when the editor exits
                 and use that snapshot except maybe make it a bit more pale
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 01. fg color alpha channel should be able to choose between the either taking
     from the bg color or the fg of the character below
      - would need to calculate the bg color first then
@@ -35,6 +33,8 @@ pub struct Style {
     pub underline: Option<(Color, FgTranspSrc)>,
     pub attr: Attributes,
 }
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 01. window shadow!
      - bg color transparent, fg color transparent TO bg color 

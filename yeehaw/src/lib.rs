@@ -28,8 +28,8 @@ pub use {
     element::{Element, Parent},
     elements::{
         DebugSizePane, FileNavPane, FileViewerPane, HorizontalStack, ImageViewer, MenuBar, Pane,
-        PaneScrollable, PaneWithScrollbars, ParentPane, RightClickMenu, Tabs, TermEditorPane,
-        TerminalPane, VerticalStack, WindowPane,
+        PaneScrollable, PaneWithScrollbars, ParentPane, RightClickMenu, Shadowed, Tabs,
+        TermEditorPane, TerminalPane, VerticalStack, WindowPane,
     },
     errors::Error,
     event::{
