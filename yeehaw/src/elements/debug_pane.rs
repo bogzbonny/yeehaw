@@ -5,7 +5,6 @@ use {
         Style, ZIndex,
     },
     std::{cell::RefCell, rc::Rc},
-    yeehaw_derive::impl_element_from,
 };
 
 // displays the size
@@ -56,7 +55,7 @@ impl DebugSizePane {
     }
 }
 
-#[impl_element_from(pane)]
+#[yeehaw_derive::impl_element_from(pane)]
 impl Element for DebugSizePane {
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let size = ctx.s;

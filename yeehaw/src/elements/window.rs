@@ -400,17 +400,8 @@ impl WindowPane {
     }
 }
 
+#[yeehaw_derive::impl_element_from(pane)]
 impl Element for WindowPane {
-    fn kind(&self) -> &'static str {
-        self.pane.kind()
-    }
-    fn id(&self) -> ElementID {
-        self.pane.id()
-    }
-    fn receivable(&self) -> SelfReceivableEvents {
-        self.pane.receivable()
-    }
-
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         //debug!("Window({}) receive_event_inner: {:?}", self.id(), ev);
 
@@ -460,40 +451,6 @@ impl Element for WindowPane {
         }
 
         (captured, resps)
-    }
-
-    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.pane.change_priority(p)
-    }
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        self.pane.drawing(ctx)
-    }
-    fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
-        self.pane.get_attribute(key)
-    }
-    fn set_attribute(&self, key: &str, value: Vec<u8>) {
-        self.pane.set_attribute(key, value)
-    }
-    fn set_parent(&self, up: Box<dyn Parent>) {
-        self.pane.set_parent(up)
-    }
-    fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {
-        self.pane.set_hook(kind, el_id, hook)
-    }
-    fn remove_hook(&self, kind: &str, el_id: ElementID) {
-        self.pane.remove_hook(kind, el_id)
-    }
-    fn clear_hooks_by_id(&self, el_id: ElementID) {
-        self.pane.clear_hooks_by_id(el_id)
-    }
-    fn call_hooks_of_kind(&self, kind: &str) {
-        self.pane.call_hooks_of_kind(kind)
-    }
-    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
-        self.pane.get_dyn_location_set()
-    }
-    fn get_visible(&self) -> Rc<RefCell<bool>> {
-        self.pane.get_visible()
     }
 }
 
@@ -652,16 +609,8 @@ impl BasicWindowTopBar {
     }
 }
 
+#[yeehaw_derive::impl_element_from(pane)]
 impl Element for BasicWindowTopBar {
-    fn kind(&self) -> &'static str {
-        self.pane.kind()
-    }
-    fn id(&self) -> ElementID {
-        self.pane.id()
-    }
-    fn receivable(&self) -> SelfReceivableEvents {
-        self.pane.receivable()
-    }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
             Event::Custom(ref key, _) if key == WindowPane::WINDOW_MINIMIZE_EV_KEY => {
@@ -678,39 +627,6 @@ impl Element for BasicWindowTopBar {
             }
             _ => self.pane.receive_event(ctx, ev),
         }
-    }
-    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.pane.change_priority(p)
-    }
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        self.pane.drawing(ctx)
-    }
-    fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
-        self.pane.get_attribute(key)
-    }
-    fn set_attribute(&self, key: &str, value: Vec<u8>) {
-        self.pane.set_attribute(key, value)
-    }
-    fn set_parent(&self, up: Box<dyn Parent>) {
-        self.pane.set_parent(up)
-    }
-    fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {
-        self.pane.set_hook(kind, el_id, hook)
-    }
-    fn remove_hook(&self, kind: &str, el_id: ElementID) {
-        self.pane.remove_hook(kind, el_id)
-    }
-    fn clear_hooks_by_id(&self, el_id: ElementID) {
-        self.pane.clear_hooks_by_id(el_id)
-    }
-    fn call_hooks_of_kind(&self, kind: &str) {
-        self.pane.call_hooks_of_kind(kind)
-    }
-    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
-        self.pane.get_dyn_location_set()
-    }
-    fn get_visible(&self) -> Rc<RefCell<bool>> {
-        self.pane.get_visible()
     }
 }
 
@@ -762,16 +678,8 @@ impl CornerAdjuster {
     }
 }
 
+#[yeehaw_derive::impl_element_from(pane)]
 impl Element for CornerAdjuster {
-    fn kind(&self) -> &'static str {
-        self.pane.kind()
-    }
-    fn id(&self) -> ElementID {
-        self.pane.id()
-    }
-    fn receivable(&self) -> SelfReceivableEvents {
-        self.pane.receivable()
-    }
     fn receive_event_inner(&self, _ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let cur_dragging = *self.dragging.borrow();
         let mut captured = false;
@@ -806,38 +714,5 @@ impl Element for CornerAdjuster {
             _ => {}
         }
         (captured, EventResponses::default())
-    }
-    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.pane.change_priority(p)
-    }
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        self.pane.drawing(ctx)
-    }
-    fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
-        self.pane.get_attribute(key)
-    }
-    fn set_attribute(&self, key: &str, value: Vec<u8>) {
-        self.pane.set_attribute(key, value)
-    }
-    fn set_parent(&self, up: Box<dyn Parent>) {
-        self.pane.set_parent(up)
-    }
-    fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {
-        self.pane.set_hook(kind, el_id, hook)
-    }
-    fn remove_hook(&self, kind: &str, el_id: ElementID) {
-        self.pane.remove_hook(kind, el_id)
-    }
-    fn clear_hooks_by_id(&self, el_id: ElementID) {
-        self.pane.clear_hooks_by_id(el_id)
-    }
-    fn call_hooks_of_kind(&self, kind: &str) {
-        self.pane.call_hooks_of_kind(kind)
-    }
-    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
-        self.pane.get_dyn_location_set()
-    }
-    fn get_visible(&self) -> Rc<RefCell<bool>> {
-        self.pane.get_visible()
     }
 }

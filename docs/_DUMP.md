@@ -1,4 +1,62 @@
 
+01. multiple terminal windows focus and panic 
+    - I THINK because the ParentPane isn't focusing/defocusing so
+      not the receivable events are changing only what's registered to the 
+      ParentPane.pane which is nothing?!
+    - okay - how do we make the window REfocus when it's selected again??!
+      - do we change priority to use priority + Z-index?? NOPE
+      - do we send back a new event to the Parent to "unfocus all other elements"
+        then refocus this element YUP
+      - We need ctx on change priority BECAUSE for widgets, changing priority
+        means deselecting other widgets which means they need 
+
+01. window x button is killing ALL the terminal windows
+
+01. proper shutdown of other threads in terminal pane (terminal_test doesn't
+    completely shut down).
+01. masterpty likes to die after 10 readers have been created
+     - maybe should use more slaves?
+     - needed to use spawn_blocking
+01. make window top bar slightly lighter when it's focused
+01. window_test scrollable_windows seem to scroll 1 too far!
+01. file nav test seems not to work?
+     - commit 10a47dd broke it
+       - keyboard command nolonger passed up
+       - see lines 342 in organizer.rs - which to me make sense however break
+         this example
+01. textbox greyed out initial message ("type here...") 
+01. window_test term window broken (double registers) 
+    window_test broken by cca0752
+01. file_nav_test broken
+    file_nav_test broken by bbd32af
+01. 12a753e breaks widget_test and window_test
+01. seperate out Event from ReceivableEvent
+01. terminal editor logic should not check for editor closure during drawing but use a hook!
+01. window_resize not working
+
+30. figure out a nicer way of inheriting element functions from the above
+    element besides lots of boilerplate, probably though the use of a macro
+      - maybe? https://github.com/datapture/hereditary
+      - maybe https://docs.rs/delegate/latest/delegate/
+      - gpt query:
+      help me write a rust macro which will implement a trait from the first 
+      field in a struct which will already implement this trait. The macro
+      should allow you to override function implementations, only functions
+      which are not written in the macro will be generated based off of the
+      first struct field.
+help me write a rust macro which will implement a trait from the first 
+      field in a struct which will already implement this trait. The macro
+      should allow you to override function implementations, only functions
+      which are not written in the macro will be generated based off of the
+      first struct field. These Overriding functions may have a `&self` field as their first argument
+followup
+is it possible or not possible to way to make this macro automatically take the
+first field of MyStruct rather than having to manually input it in the macro. If
+it is possible what would that look like 
+     - see macro_brainstorm.md
+help me program a rust procedural macro which adds 2 functions (named
+"my_function1" and "my_function2") to a Trait impl block if either of functions
+doesn't exist in that Trait impl block that this macro is applied too
 05. use .flf (figlet font) format instead of custom megatext
      - https://docs.rs/figlet-rs/latest/figlet_rs/
 01. alpha not working for bg of debug window in window_test

@@ -115,17 +115,8 @@ impl PaneScrollable {
     }
 }
 
+#[yeehaw_derive::impl_element_from(pane)]
 impl Element for PaneScrollable {
-    fn kind(&self) -> &'static str {
-        self.pane.kind()
-    }
-    fn id(&self) -> ElementID {
-        self.pane.id()
-    }
-    fn receivable(&self) -> SelfReceivableEvents {
-        self.pane.receivable()
-    }
-
     fn receive_event_inner(&self, ctx: &Context, mut ev: Event) -> (bool, EventResponses) {
         let inner_ctx = self.inner_ctx(ctx);
         match &mut ev {
@@ -182,9 +173,6 @@ impl Element for PaneScrollable {
         }
     }
 
-    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.pane.change_priority(p)
-    }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let inner_ctx = self.inner_ctx(ctx);
         let out = self.pane.drawing(&inner_ctx);
@@ -200,33 +188,6 @@ impl Element for PaneScrollable {
             max_y,
         );
         out.0
-    }
-    fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
-        self.pane.get_attribute(key)
-    }
-    fn set_attribute(&self, key: &str, value: Vec<u8>) {
-        self.pane.set_attribute(key, value)
-    }
-    fn set_parent(&self, up: Box<dyn Parent>) {
-        self.pane.set_parent(up)
-    }
-    fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {
-        self.pane.set_hook(kind, el_id, hook)
-    }
-    fn remove_hook(&self, kind: &str, el_id: ElementID) {
-        self.pane.remove_hook(kind, el_id)
-    }
-    fn clear_hooks_by_id(&self, el_id: ElementID) {
-        self.pane.clear_hooks_by_id(el_id)
-    }
-    fn call_hooks_of_kind(&self, kind: &str) {
-        self.pane.call_hooks_of_kind(kind)
-    }
-    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
-        self.pane.get_dyn_location_set()
-    }
-    fn get_visible(&self) -> Rc<RefCell<bool>> {
-        self.pane.get_visible()
     }
 }
 
@@ -417,16 +378,8 @@ impl PaneWithScrollbars {
     }
 }
 
+#[yeehaw_derive::impl_element_from(pane)]
 impl Element for PaneWithScrollbars {
-    fn kind(&self) -> &'static str {
-        self.pane.kind()
-    }
-    fn id(&self) -> ElementID {
-        self.pane.id()
-    }
-    fn receivable(&self) -> SelfReceivableEvents {
-        self.pane.receivable()
-    }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         self.ensure_scrollbar_size(ctx);
 
@@ -447,38 +400,8 @@ impl Element for PaneWithScrollbars {
         }
         out
     }
-    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.pane.change_priority(p)
-    }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.ensure_scrollbar_size(ctx);
         self.pane.drawing(ctx)
-    }
-    fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
-        self.pane.get_attribute(key)
-    }
-    fn set_attribute(&self, key: &str, value: Vec<u8>) {
-        self.pane.set_attribute(key, value)
-    }
-    fn set_parent(&self, up: Box<dyn Parent>) {
-        self.pane.set_parent(up)
-    }
-    fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {
-        self.pane.set_hook(kind, el_id, hook)
-    }
-    fn remove_hook(&self, kind: &str, el_id: ElementID) {
-        self.pane.remove_hook(kind, el_id)
-    }
-    fn clear_hooks_by_id(&self, el_id: ElementID) {
-        self.pane.clear_hooks_by_id(el_id)
-    }
-    fn call_hooks_of_kind(&self, kind: &str) {
-        self.pane.call_hooks_of_kind(kind)
-    }
-    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
-        self.pane.get_dyn_location_set()
-    }
-    fn get_visible(&self) -> Rc<RefCell<bool>> {
-        self.pane.get_visible()
     }
 }

@@ -201,17 +201,8 @@ impl Widget for NumbersTextBox {
     }
 }
 
+#[yeehaw_derive::impl_element_from(tb)]
 impl Element for NumbersTextBox {
-    fn kind(&self) -> &'static str {
-        self.tb.kind()
-    }
-    fn id(&self) -> ElementID {
-        self.tb.id()
-    }
-    fn receivable(&self) -> SelfReceivableEvents {
-        self.tb.receivable()
-    }
-
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
             Event::KeyCombo(ref ke) => {
@@ -234,50 +225,11 @@ impl Element for NumbersTextBox {
                         self.update_value_from_tb(ctx);
                         (true, EventResponses::default())
                     }
-                    _ if ke[0] == KB::KEY_SHIFT_ENTER => {
-                        (true, EventResponses::default())
-                    }
+                    _ if ke[0] == KB::KEY_SHIFT_ENTER => (true, EventResponses::default()),
                     _ => self.tb.receive_event(ctx, ev),
                 }
             }
             _ => self.tb.receive_event(ctx, ev),
         }
     }
-
-    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.tb.change_priority(p)
-    }
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        self.tb.drawing(ctx)
-    }
-    fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
-        self.tb.get_attribute(key)
-    }
-    fn set_attribute(&self, key: &str, value: Vec<u8>) {
-        self.tb.set_attribute(key, value)
-    }
-    fn set_parent(&self, up: Box<dyn Parent>) {
-        self.tb.set_parent(up)
-    }
-    fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {
-        self.tb.set_hook(kind, el_id, hook)
-    }
-    fn remove_hook(&self, kind: &str, el_id: ElementID) {
-        self.tb.remove_hook(kind, el_id)
-    }
-    fn clear_hooks_by_id(&self, el_id: ElementID) {
-        self.tb.clear_hooks_by_id(el_id)
-    }
-    fn call_hooks_of_kind(&self, kind: &str) {
-        self.tb.call_hooks_of_kind(kind)
-    }
-    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
-        self.tb.get_dyn_location_set()
-    }
-    fn get_visible(&self) -> Rc<RefCell<bool>> {
-        self.tb.get_visible()
-    }
 }
-
-/*
-*/

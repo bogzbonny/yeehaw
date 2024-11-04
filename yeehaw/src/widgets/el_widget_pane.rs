@@ -358,13 +358,10 @@ impl WidgetPane {
     }
 }
 
+#[yeehaw_derive::impl_element_from(pane)]
 impl Element for WidgetPane {
     fn kind(&self) -> &'static str {
         Self::KIND
-    }
-
-    fn id(&self) -> ElementID {
-        self.pane.id()
     }
 
     // Returns the widget organizer's receivable events along
@@ -467,33 +464,5 @@ impl Element for WidgetPane {
         }
 
         chs
-    }
-
-    fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
-        self.pane.get_attribute(key)
-    }
-    fn set_attribute(&self, key: &str, value: Vec<u8>) {
-        self.pane.set_attribute(key, value)
-    }
-    fn set_parent(&self, up: Box<dyn Parent>) {
-        self.pane.set_parent(up)
-    }
-    fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {
-        self.pane.set_hook(kind, el_id, hook)
-    }
-    fn remove_hook(&self, kind: &str, el_id: ElementID) {
-        self.pane.remove_hook(kind, el_id)
-    }
-    fn clear_hooks_by_id(&self, el_id: ElementID) {
-        self.pane.clear_hooks_by_id(el_id)
-    }
-    fn call_hooks_of_kind(&self, kind: &str) {
-        self.pane.call_hooks_of_kind(kind)
-    }
-    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
-        self.pane.get_dyn_location_set()
-    }
-    fn get_visible(&self) -> Rc<RefCell<bool>> {
-        self.pane.get_visible()
     }
 }

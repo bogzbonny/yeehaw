@@ -280,17 +280,8 @@ impl Widget for DropdownList {
     }
 }
 
+#[yeehaw_derive::impl_element_from(base)]
 impl Element for DropdownList {
-    fn kind(&self) -> &'static str {
-        self.base.kind()
-    }
-    fn id(&self) -> ElementID {
-        self.base.id()
-    }
-    fn receivable(&self) -> SelfReceivableEvents {
-        self.base.receivable()
-    }
-
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let _ = self.base.receive_event(ctx, ev.clone());
         match ev {
@@ -301,27 +292,21 @@ impl Element for DropdownList {
                 let open = *self.open.borrow();
                 return match true {
                     _ if !open
-                        && (ke[0] == KB::KEY_ENTER 
-                            || ke[0] == KB::KEY_DOWN 
-                            || ke[0] == KB::KEY_J 
-                            || ke[0] == KB::KEY_UP 
+                        && (ke[0] == KB::KEY_ENTER
+                            || ke[0] == KB::KEY_DOWN
+                            || ke[0] == KB::KEY_J
+                            || ke[0] == KB::KEY_UP
                             || ke[0] == KB::KEY_K) =>
                     {
                         self.perform_open(ctx);
                         (true, EventResponses::default())
                     }
-                    _ if open && ke[0] == KB::KEY_ENTER => {
-                        (true, self.perform_close(ctx, false))
-                    }
-                    _ if open && ke[0] == KB::KEY_DOWN 
-                        || ke[0] == KB::KEY_J =>
-                    {
+                    _ if open && ke[0] == KB::KEY_ENTER => (true, self.perform_close(ctx, false)),
+                    _ if open && ke[0] == KB::KEY_DOWN || ke[0] == KB::KEY_J => {
                         self.cursor_down(ctx);
                         (true, EventResponses::default())
                     }
-                    _ if open && ke[0] == KB::KEY_UP 
-                        || ke[0] == KB::KEY_K =>
-                    {
+                    _ if open && ke[0] == KB::KEY_UP || ke[0] == KB::KEY_K => {
                         self.cursor_up(ctx);
                         (true, EventResponses::default())
                     }
@@ -442,9 +427,6 @@ impl Element for DropdownList {
         (false, EventResponses::default())
     }
 
-    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        self.base.change_priority(p)
-    }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.base.set_content_from_string(ctx, &self.text(ctx));
 
@@ -481,32 +463,5 @@ impl Element for DropdownList {
         chs.push(arrow_ch);
 
         chs
-    }
-    fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
-        self.base.get_attribute(key)
-    }
-    fn set_attribute(&self, key: &str, value: Vec<u8>) {
-        self.base.set_attribute(key, value)
-    }
-    fn set_parent(&self, up: Box<dyn Parent>) {
-        self.base.set_parent(up)
-    }
-    fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>) {
-        self.base.set_hook(kind, el_id, hook)
-    }
-    fn remove_hook(&self, kind: &str, el_id: ElementID) {
-        self.base.remove_hook(kind, el_id)
-    }
-    fn clear_hooks_by_id(&self, el_id: ElementID) {
-        self.base.clear_hooks_by_id(el_id)
-    }
-    fn call_hooks_of_kind(&self, kind: &str) {
-        self.base.call_hooks_of_kind(kind)
-    }
-    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
-        self.base.get_dyn_location_set()
-    }
-    fn get_visible(&self) -> Rc<RefCell<bool>> {
-        self.base.get_visible()
     }
 }
