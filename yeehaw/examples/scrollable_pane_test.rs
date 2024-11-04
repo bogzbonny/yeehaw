@@ -74,7 +74,7 @@ async fn main() -> Result<(), Error> {
     let mtext = FigletText::new(
         &ctx,
         "HELLO, WERLD!",
-        figlet_rs::FIGfont::from_content(std::include_str!("../assets/figlet/ANSI_Shadow.flf"))
+        figlet_rs::FIGfont::from_content(std::include_str!("../../assets/figlet/ANSI_Shadow.flf"))
             .unwrap(),
     )
     .at(DynVal::new_flex(0.1), DynVal::new_flex(0.6))
