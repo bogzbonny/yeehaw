@@ -18,7 +18,7 @@ use {
 pub struct ImageViewer {
     pub pane: Pane,
     //image: Rc<RefCell<DynamicImage>>,
-    st_pro: Rc<RefCell<Box<dyn StatefulProtocol>>>,
+    st_pro: Rc<RefCell<StatefulProtocol>>,
 }
 
 impl ImageViewer {
@@ -28,12 +28,12 @@ impl ImageViewer {
             .decode()
             .unwrap();
 
-        let Ok(mut picker) = Picker::from_termios() else {
+        let Ok(mut picker) = Picker::from_query_stdio() else {
             panic!("Could not create picker");
         };
 
         // Guess the protocol.
-        picker.guess_protocol();
+        //picker.guess_protocol();
 
         // Create the Protocol which will be used by the widget.
         let st_pro = picker.new_resize_protocol(dyn_img);
@@ -45,12 +45,12 @@ impl ImageViewer {
     }
 
     pub fn new_from_dyn_image(ctx: &Context, dyn_img: DynamicImage) -> Self {
-        let Ok(mut picker) = Picker::from_termios() else {
+        let Ok(mut picker) = Picker::from_query_stdio() else {
             panic!("Could not create picker");
         };
 
         // Guess the protocol.
-        picker.guess_protocol();
+        //picker.guess_protocol();
 
         // Create the Protocol which will be used by the widget.
         let st_pro = picker.new_resize_protocol(dyn_img);

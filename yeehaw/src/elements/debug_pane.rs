@@ -55,6 +55,7 @@ impl DebugSizePane {
     }
 }
 
+/*
 use yeehaw_derive::impl_element_from;
 
 //fn kind(&self) -> &'static str {
@@ -71,8 +72,7 @@ impl Element for DebugSizePane {
         self.pane.drawing(ctx)
     }
 }
-
-/*
+*/
 
 impl Element for DebugSizePane {
     fn kind(&self) -> &'static str {
@@ -126,4 +126,3 @@ impl Element for DebugSizePane {
         self.pane.get_visible()
     }
 }
-*/
