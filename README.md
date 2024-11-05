@@ -33,6 +33,7 @@ have been assigned to them from parent elements.
  - Minor performance improvements at the cost of developer ergonomics
 
 ## Existing Elements:
+[TODO link to a seperate markdown with a bunch of GIFS]
  - tabs 
  - stack panes (think vim buffers) 
  - scrollable panes
@@ -42,45 +43,34 @@ have been assigned to them from parent elements.
  - file navigator (think nerdtree)
  - image viewer 
  - windows
- - terminal
- - widgets:
-   - figlet fonts 
-   - button
-   - checkbox
-   - dropdown-list
-   - label
-   - listbox (optional multi-entry)
-   - radio-buttons
-   - scrollbars
-   - textbox (editable) 
-   - numbers textbox
-   - titles
-   - toggle (yes -> no) 
-   - generalized label decorators on all widgets
+ - terminal (that can open other TUIs!)
+ - basic textbox
+ - $EDITOR textbox (ex. ACTUAL neovim)  
+ - figlet fonts (aka MEGAFONTS)
+ - button
+ - checkbox
+ - dropdown-list
+ - label
+ - listbox (optional multi-entry)
+ - radio-buttons
+ - scrollbars
+ - numbers textbox
+ - toggles
+ - generalized label decorators on all widgets
 
 ## Planned
  - accordion stack container
  - hover comments anywhere
- - vertical tabs
+ - vertical tabs (like brave browser) 
  - vim-style command input system (complete with events and routing)
- - ANSI-animation viewer (using extended asc format)
+ - ANSI-animation player (using extended asc format)
  - optional mouse pixel support
  - wire-connectors
-    - for visualizing routing of information between elements
-    - could be directional or non-directional (aka use an arrow or not)
- - widgets:
-   - color selector
-   - table 
+ - color selector element
+ - table element
  - Interactive debugging TUI application
-   - use https://github.com/eclipse-iceoryx/iceoryx2 for communication
  - TUI Snapshot Tester
- - TUI Application Builder 
-   - basically drag and drop style element builder - with a "Code Copy" button
-   - resizing of the view-pane to test TUI pages at different 
-     sizes
-   - preview mode where you could actually interact with all the elements
-   - eventually the ability to load in code for an existing element then 
-     play around with the sub-elements
+ - Drag and Drop TUI Application Builder (as a TUI of course)
 
 ## Tribute
 
@@ -93,3 +83,13 @@ have been assigned to them from parent elements.
 [dioxus](https://github.com/dioxuslabs/dioxus) seems cool - they have a goal of
 TUI support in the future.
 
+## Contributing 
+
+It'd be cool for this repo to become a monolith. I want all sorts of weird
+gadgets in this baby. All ideas will be considered with an open mind, if you'd
+like to build and element and merge it into yeehaw It'd be an honour. All
+contributions will be merged with the implicit assumption that they will use the
+LICENSE as this repo. Additionally this repo will be transitioning to dynamic
+ownership based on contributions in the future, so if your code becomes merged
+then your be gaining a part piece of ownership whenever dynamic ownership is
+integrated in (more on that later!).

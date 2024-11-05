@@ -1,43 +1,15 @@
-01. make crate into a workspace
-
-10. WONT DO integrate in trait upcasting for Widget Type once available (remove
-    el_widget_pane drawing functionality in favour of the parent pane draw).
-    https://github.com/rust-lang/rust/issues/65991
-
-01. editor element
-    - uses the $EDITOR env variable
-    - execute with something like: "$EDITOR; exit" 
-       - looks like we won't even need to use the "exit" command 
-         if we use the command builder... it will close at the end
-         of the command!
-       - use the editor with a temp file - check after each event for updates to
-         that file
-       - WONT DO consider closeable vs non-closeable version of this widget
-          - I guess if you wanted an Editor to NOT close, when you closed the
-            editor the Pane should be replaced with just the containing text 
-              - OR could take a snapshot right when the editor exits
-                and use that snapshot except maybe make it a bit more pale
-
-01. fg color alpha channel should be able to choose between the either taking
-    from the bg color or the fg of the character below
-     - would need to calculate the bg color first then
-    Maybe to make things open-ended we could have these kinds of alpha:
-    bg-alpha    from: lower-bg, lower-fg
-    fg/ul-alpha from: lower-bg, lower-fg, upper-bg
-    NOTE we can't allow for the bg to be alpha on the upper-fg or else 
-         we have a computational loop which would be annoying to resolve
-    These options should exist in the Style and not the Color. 
-pub struct Style {
-    pub fg: Option<(Color, FgTranspSrc)>,
-    pub bg: Option<(Color, BgTranspSrc)>,
-    pub underline: Option<(Color, FgTranspSrc)>,
-    pub attr: Attributes,
-}
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-01. window shadow!
-     - bg color transparent, fg color transparent TO bg color 
+05. borders-pane wrapper
+     - option for each of up/down/right/left
+        - aka. doesn't need to be fully bordered.
+     - custom up/down/right/left DrawChs AND corner pieces
+     - single/double/bold lines defaults 
+     - built in scrollbars optionally
+     - drag-resizing - drag while on the edge to resize the location
+
+05. introduce errors, remove all unwraps
 
 WIDGET RECALL
  - deleted ElWidgetPane for a new type ParentPaneWithSelectibility
@@ -64,7 +36,7 @@ WIDGET RECALL
 
 01. terminal_editor - get the no-editor elements hooked up.
 
-01. Snapshot tui Tester (just call this tui-tester, binary: tuit (lol)) 
+01. Snapshot TUI Tester (just call this tui-tester, binary: tuit (lol)) 
      - always multi-stage
        - record each action then take a snapshot, however don't save the
          snapshot if it's the same as the previous snapshot. 
@@ -74,7 +46,6 @@ WIDGET RECALL
      - Binary Mode or Yeehaw Mode (start with Yeehaw Mode)
      - Integrate into regular testing
      - TUI ideally we should keep everything in one window.
-       -  
        - diff view (only show the differences)
        - use a toggle to switch between result/expected/diff
        - toggle to switch on and off the mouse
@@ -165,13 +136,15 @@ WIDGET RECALL
            parent pane has this hook registered for resized on each
            minimization.
 
-05. borders-pane wrapper
-     - option for each of up/down/right/left
-        - aka. doesn't need to be fully bordered.
-     - custom up/down/right/left DrawChs AND corner pieces
-     - single/double/bold lines defaults 
-     - built in scrollbars optionally
-     - drag-resizing - drag while on the edge to resize the location
+05. Time Base Events. add a "future event" to a part of the EventResponse. In
+    the future event there is a timestamp which says when this event should be
+    activated. This can be triggered in the render loop and the event will then
+    routed through the standard event loop as normal. This can be used to
+    replicate a heartbeat for a element, or to simulate a visual effect such as
+    a button click (useful for button when Enter key is hit).
+
+05. cui export visual area to either DynamicImage, .png, (optionally or .ans)
+      - useful for WIMP
 
 05. accordion stack
      - could have a static exterior dimension in which case one stack element
@@ -181,40 +154,13 @@ WIDGET RECALL
      - Each header should remain when the element is open 
      - optional vertical accordian stack
 
-05. Time Base Events. add a "future event" to a part of the EventResponse. In
-    the future event there is a timestamp which says when this event should be
-    activated. This can be triggered in the render loop and the event will then
-    routed through the standard event loop as normal. This can be used to
-    replicate a heartbeat for a element, or to simulate a visual effect such as
-    a button click (useful for button when Enter key is hit).
-
-05. I think that in widget_test the textarea is passing in a width that is 1 to
-    small! - once you move the cursor the scrollbar changes size ever so
-    slightly
-
-10. cui export visual area to either DynamicImage, .png, or .ans
-      - useful for WIMP
-
-20. color-pallet widget
-
-20. cui get the color under the cursor - useful for color pickers or from actual image pallets
-
-05. Command functionality
-
-20. table widget
-
-05. Collapse Element Wrapper... 
+05. Collapse Element Wrapper... -> same as accordion stack?
       - should be able to collapse to a single line (vert or horiz) with custom
         text. 
       - when the element it open the collapse triangle button could just be a
         single button or an entire line
       - when an entire line is used it should be able to be draggable to effect
         the size of the element
-
-
-10. introduce errors, remove all unwraps
-
-10. vertical tabs (like brave)
 
 10. widget slider bars / track bars
    ██████████████████━━━━━━━━━━━━━━   ┳   ┳ 1
@@ -237,12 +183,16 @@ WIDGET RECALL
    ▁▂▃▄▅▆▇
 
 
-10. Dial
+10. color-pallet element
+
+10. Dial 8 or 12 positions
     - if there are labels could bold the one which is selected
     - could provide continious value if pixel mode enabled
-   __    __    __    __    __    __    __    __ 
-  ╱° ╲  ╱ °╲  ╱  ⚬  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ⚬  ╲
-  ╲__╱  ╲__╱  ╲__╱  ╲__°  ╲_⚬╱  ╲⚬_╱  °__╱  ╲__╱  
+
+               op                op                op                op 
+   __    __    __    __    __    __    __    __    __    __    __    __ 
+  ╱° ╲  ╱ °╲  ╱  °  ╱  ⚬  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ⚬  ╲  °  ╲
+  ╲__╱  ╲__╱  ╲__╱  ╲__╱  ╲__°  ╲__⚬  ╲_⚬╱  ╲⚬_╱  ⚬__╱  °__╱  ╲__╱  ╲__╱  
                    
 One letter labels
    A__B      A__B       A__B       A__B 
@@ -294,13 +244,26 @@ One letter labels
     - ◢◥◤◣
     - ◥◢◣◤
 
+10. wire-connectors
+    - for visualizing routing of information between elements
+    - could be directional or non-directional (aka use an arrow or not)
+    - it would be cool if it could be used with a border pane WITHOUT
+      actually needing to do anything special in the border pane
+       - this may need new drawing logic to allow it perform conditional logic
+         of the DrawCh based on the cell underneath of it
+          - kind of like how transparency takes the cell underneath maybe
+            the ChPlus could also have custom applications based on whats under
+    
+10. vertical tabs (like brave)
+
+10. table widget
+
 10. feature: hover comments
 
 10. widget: date selector
 
 10. widget: color selector
-10. widget: table (see ratatui)
-10. button: visualize button being clicked
+
 10. TGIF
 
 10. When the keyboard is matching an event combo provided to it, it should be
@@ -309,7 +272,7 @@ One letter labels
     matches or to ignore the wait and to proceed attempting to match the
     character in other ways.  
 
-10. File navigator
+10. File navigator updates 
     - ability to hide dotfiles ("ex. .git") navigator (toggle this functionality
       with Shift-i) 
     - scroll when the expansion exceeds element size (this logic is already in
@@ -320,6 +283,7 @@ One letter labels
          - would need to "refresh" this list with each open could cause
            problems.
     - fix the up-dir (..) button 
+    - mouse functionality
 
 10. MousePossibility events: 
     - adjust mouse event logic to mirror that of the keyboard, each element
@@ -336,6 +300,9 @@ One letter labels
          then if the mouse scroll event is not captured then send it to the
          scrollable pane. - maybe then wouldn't need the mouse event logic??
 
+20. Interactive debugging TUI application
+   - use https://github.com/eclipse-iceoryx/iceoryx2 for communication
+
 20. Add another cargo repo like AssertCmd for tui
      name: TuiTester?
      - https://github.com/aschey/tui-tester
@@ -351,6 +318,15 @@ One letter labels
      - use the .ans format (such as
        https://terminalroot.com/use-ms-paint-directly-in-terminal/) uses. 
        this format can be viewed in the terminal with "cat my_ansi_image.ans"
+
+20. Drag and Drop TUI Application Builder (as a TUI of course)
+     - basically drag and drop style element builder - with a "Code Copy" button
+     - resizing of the view-pane to test TUI pages at different 
+       sizes
+     - preview mode where you could actually interact with all the elements
+     - eventually the ability to load in code for an existing element then 
+       play around with the sub-elements
+
 
 30. irregular gradient lines
     - OUTWARD
@@ -370,10 +346,15 @@ One letter labels
 
 30. gradients on angles: get the actual aspect ratio from the terminal and integrate it in. 
 
-40. jexer custom mouse types (requires image support, and mouse pixel tracking) 
+30. :Command pane and functionality
+      - use custom event routing system
+
+40. custom mouse types using images (requires image support, and mouse pixel tracking) 
 
 40. Scrollbar bug: when dragging scrollbar with mouse, will drag good for a bit
     then close to the end it just moves all the way to the maximum
+
+40. cui get the color under the cursor pixel - useful for color pickers or from actual image pallets
 
 40. Subscription based events on common objects. 
      - like leptos. any element could subscribe to an object (with any other
@@ -385,6 +366,7 @@ One letter labels
          Event
        - question is: what events should actually be broadcast?
 
-50. LOW PRIORITY CAN JUST USE $EDITOR widget: vim-style textbox
+50. LOW PRIORITY CAN JUST USE $EDITOR. widget: vim-style textbox
      - with two scrollbars the mode can be placed in 
        the decorations area!
+
