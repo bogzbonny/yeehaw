@@ -273,12 +273,31 @@ pub enum EventResponse {
     // these EventResponses are then considered to have come from the new element
     NewElement(Box<(dyn Element)>, Option<EventResponses>),
 
+    Move(MoveResponse),
+
+    Resize(ResizeResponse),
+
+    // XXX TODO rename to Custom
     // arbitrary custom metadatas which can be passed back to the parent
     //       key,   , value
     Metadata(String, Vec<u8>),
 
     // contains priority updates that should be made to the receiver's prioritizer
     ReceivableEventChanges(ReceivableEventChanges),
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct MoveResponse {
+    pub dx: i32,
+    pub dy: i32,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct ResizeResponse {
+    pub left_dx: i32,
+    pub right_dx: i32,
+    pub top_dy: i32,
+    pub bottom_dy: i32,
 }
 
 impl std::fmt::Debug for EventResponse {
@@ -296,6 +315,8 @@ impl std::fmt::Debug for EventResponse {
                 el.id(),
                 resp
             ),
+            EventResponse::Move(m) => write!(f, "EventResponse::Move({:?})", m),
+            EventResponse::Resize(r) => write!(f, "EventResponse::Resize({:?})", r),
             EventResponse::Metadata(k, v) => write!(f, "EventResponse::Metadata({}, {:?})", k, v),
             EventResponse::ReceivableEventChanges(rec) => {
                 write!(f, "EventResponse::ReceivableEventChanges({:?})", rec)

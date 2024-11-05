@@ -59,6 +59,7 @@ have been assigned to them from parent elements.
  - generalized label decorators on all widgets
 
 ## Planned
+ - Put a whole dang yeehaw-TUI into a Stateful ratatui widget
  - accordion stack container
  - hover comments anywhere
  - vertical tabs (like brave browser) 

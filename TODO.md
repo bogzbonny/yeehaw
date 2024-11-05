@@ -1,13 +1,18 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-05. borders-pane wrapper
+01. borders-pane wrapper
      - option for each of up/down/right/left
         - aka. doesn't need to be fully bordered.
      - custom up/down/right/left DrawChs AND corner pieces
      - single/double/bold lines defaults 
      - built in scrollbars optionally
      - drag-resizing - drag while on the edge to resize the location
+
+01. replace window CornerAdjuster with border::Corner
+
+01. merge PaneWithScrollbars into border pane - introduce scrollbars into border
+    pane
 
 05. introduce errors, remove all unwraps
 
@@ -32,9 +37,17 @@ WIDGET RECALL
        used for the creation of the widget, and not for the widget itself.
 05. Into<Widgets> Trait which can be applied to each widget builder so that
     .to_widgets() doesn't need to be manually called during construction
+
     (applied in add_widget)
 
 01. terminal_editor - get the no-editor elements hooked up.
+01. terminal_editor - autoexpanding based on text size in buffer (like zell
+    editing) 
+      - need to provide configuration arguments by editor type
+      - I think maybe it would work if we use the no-buffer option in neovim.
+      - need for zelt editing the buffer directly `set autoread`
+      - set swp file location manually so can access the swp files to read them
+         - nvim -c 'set directory=~/my_swap_files//' your_file.txt
 
 01. Snapshot TUI Tester (just call this tui-tester, binary: tuit (lol)) 
      - always multi-stage

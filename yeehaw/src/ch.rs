@@ -141,6 +141,26 @@ impl DrawChPos {
         DrawChs2D::from_string(s.to_string(), sty).to_draw_ch_pos(start_x, start_y)
     }
 
+    pub fn new_repeated_vertical(
+        ch: DrawCh, start_x: u16, start_y: u16, height: u16,
+    ) -> Vec<DrawChPos> {
+        let mut out = Vec::new();
+        for y in 0..height {
+            out.push(DrawChPos::new(ch.clone(), start_x, start_y + y));
+        }
+        out
+    }
+
+    pub fn new_repeated_horizontal(
+        ch: DrawCh, start_x: u16, start_y: u16, width: u16,
+    ) -> Vec<DrawChPos> {
+        let mut out = Vec::new();
+        for x in 0..width {
+            out.push(DrawChPos::new(ch.clone(), start_x + x, start_y));
+        }
+        out
+    }
+
     // get the content style for this DrawChPos given the underlying style
     pub fn get_content_style(
         &self, ctx: &Context, prev: &StyledContent<ChPlus>,

@@ -1,3 +1,4 @@
+pub mod border;
 pub mod debug_pane;
 pub mod file_navigator;
 pub mod file_viewer;
@@ -15,6 +16,7 @@ pub mod terminal_editor;
 pub mod window;
 
 pub use {
+    border::Bordered,
     debug_pane::DebugSizePane,
     file_navigator::FileNavPane,
     file_viewer::FileViewerPane,
