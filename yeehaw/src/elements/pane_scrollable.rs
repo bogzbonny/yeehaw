@@ -31,7 +31,7 @@ impl PaneScrollable {
 
     pub fn new(ctx: &Context, width: usize, height: usize) -> Self {
         Self {
-            pane: ParentPane::new(ctx, Self::KIND),
+            pane: ParentPane::new(ctx, Self::KIND).with_transparent(),
             content_width: Rc::new(RefCell::new(width)),
             content_height: Rc::new(RefCell::new(height)),
             content_offset_x: Rc::new(RefCell::new(0)),
@@ -85,40 +85,7 @@ impl PaneScrollable {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for PaneScrollable {
-    fn set_content_x_offset(&self, ctx: &Context, x: usize) {
-        // need these +1 or else will overscroll
-        // - due to x/y being 0 indexed
-        *self.content_offset_x.borrow_mut() = if x > self
-            .content_width
-            .borrow()
-            .saturating_sub(self.get_width_val(ctx) + 1)
-        {
-            self.content_width
-                .borrow()
-                .saturating_sub(self.get_width_val(ctx) + 1)
-        } else {
-            x
-        };
-    }
-
-    fn set_content_y_offset(&self, ctx: &Context, y: usize) {
-        // need these +1 or else will overscroll
-        // - due to x/y being 0 indexed
-        *self.content_offset_y.borrow_mut() = if y > self
-            .content_height
-            .borrow()
-            .saturating_sub(self.get_height_val(ctx) + 1)
-        {
-            self.content_height
-                .borrow()
-                .saturating_sub(self.get_height_val(ctx) + 1)
-        } else {
-            y
-        };
-    }
-
     fn receive_event_inner(&self, ctx: &Context, mut ev: Event) -> (bool, EventResponses) {
-        let inner_ctx = self.inner_ctx(ctx);
         match &mut ev {
             Event::Mouse(me) => {
                 // adjust the pos of the mouse event
@@ -126,6 +93,7 @@ impl Element for PaneScrollable {
                 me.row += *self.content_offset_y.borrow() as u16;
 
                 let Some(sc_rate) = *self.scroll_rate.borrow() else {
+                    let inner_ctx = self.inner_ctx(ctx);
                     return self.pane.receive_event(&inner_ctx, ev);
                 };
 
@@ -166,10 +134,16 @@ impl Element for PaneScrollable {
                         self.set_content_y_offset(ctx, y);
                         (true, EventResponses::default())
                     }
-                    None => self.pane.receive_event(&inner_ctx, ev),
+                    None => {
+                        let inner_ctx = self.inner_ctx(ctx);
+                        self.pane.receive_event(&inner_ctx, ev)
+                    }
                 }
             }
-            _ => self.pane.receive_event(&inner_ctx, ev),
+            _ => {
+                let inner_ctx = self.inner_ctx(ctx);
+                self.pane.receive_event(&inner_ctx, ev)
+            }
         }
     }
 
@@ -188,6 +162,49 @@ impl Element for PaneScrollable {
             max_y,
         );
         out.0
+    }
+
+    fn set_content_x_offset(&self, ctx: &Context, x: usize) {
+        let x = if x > self
+            .content_width
+            .borrow()
+            .saturating_sub(ctx.s.width.into())
+        {
+            self.content_width
+                .borrow()
+                .saturating_sub(ctx.s.width.into())
+        } else {
+            x
+        };
+        *self.content_offset_x.borrow_mut() = x
+    }
+
+    fn set_content_y_offset(&self, ctx: &Context, y: usize) {
+        let y = if y > self
+            .content_height
+            .borrow()
+            .saturating_sub(ctx.s.height.into())
+        {
+            self.content_height
+                .borrow()
+                .saturating_sub(ctx.s.height.into())
+        } else {
+            y
+        };
+        *self.content_offset_y.borrow_mut() = y;
+    }
+
+    fn get_content_x_offset(&self) -> usize {
+        *self.content_offset_x.borrow()
+    }
+    fn get_content_y_offset(&self) -> usize {
+        *self.content_offset_y.borrow()
+    }
+    fn get_content_width(&self) -> usize {
+        *self.content_width.borrow()
+    }
+    fn get_content_height(&self) -> usize {
+        *self.content_height.borrow()
     }
 }
 
@@ -380,6 +397,10 @@ impl PaneWithScrollbars {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for PaneWithScrollbars {
+    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        self.ensure_scrollbar_size(ctx);
+        self.pane.drawing(ctx)
+    }
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         self.ensure_scrollbar_size(ctx);
 
@@ -399,9 +420,5 @@ impl Element for PaneWithScrollbars {
             );
         }
         out
-    }
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        self.ensure_scrollbar_size(ctx);
-        self.pane.drawing(ctx)
     }
 }

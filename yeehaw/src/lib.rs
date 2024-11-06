@@ -46,7 +46,8 @@ pub use {
     style::{Attributes, BgTranspSrc, FgTranspSrc, Style, UlTranspSrc},
     widgets::WidgetPane,
     widgets::{
-        Button, Checkbox, DropdownList, FigletText, HorizontalSBPositions, Label, ListBox,
-        NumbersTextBox, RadioButtons, ScrollbarSty, TextBox, Toggle, VerticalSBPositions,
+        Button, Checkbox, DropdownList, FigletText, HorizontalSBPositions, HorizontalScrollbar,
+        Label, ListBox, NumbersTextBox, RadioButtons, ScrollbarSty, TextBox, Toggle,
+        VerticalSBPositions, VerticalScrollbar,
     },
 };

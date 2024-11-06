@@ -443,24 +443,38 @@ impl Element for Pane {
         // need these +1 or else will overscroll
         // - due to x/y being 0 indexed
         let content_width = self.content.borrow().width();
-        let width = self.loc.borrow().get_width_val(ctx);
-        *self.content_view_offset_x.borrow_mut() = if x > content_width.saturating_sub(width + 1) {
-            content_width.saturating_sub(width + 1)
+        let view_width = self.loc.borrow().get_width_val(ctx);
+        let x = if x > content_width.saturating_sub(view_width + 1) {
+            content_width.saturating_sub(view_width + 1)
         } else {
             x
         };
+        *self.content_view_offset_x.borrow_mut() = x;
     }
 
     fn set_content_y_offset(&self, ctx: &Context, y: usize) {
         // need these +1 or else will overscroll
         // - due to x/y being 0 indexed
         let content_height = self.content.borrow().height();
-        let height = self.loc.borrow().get_height_val(ctx);
-        *self.content_view_offset_y.borrow_mut() = if y > content_height.saturating_sub(height + 1)
-        {
-            content_height.saturating_sub(height + 1)
+        let view_height = self.loc.borrow().get_height_val(ctx);
+        let y = if y > content_height.saturating_sub(view_height + 1) {
+            content_height.saturating_sub(view_height + 1)
         } else {
             y
         };
+        *self.content_view_offset_y.borrow_mut() = y;
+    }
+
+    fn get_content_x_offset(&self) -> usize {
+        *self.content_view_offset_x.borrow()
+    }
+    fn get_content_y_offset(&self) -> usize {
+        *self.content_view_offset_y.borrow()
+    }
+    fn get_content_width(&self) -> usize {
+        self.content.borrow().width()
+    }
+    fn get_content_height(&self) -> usize {
+        self.content.borrow().height()
     }
 }

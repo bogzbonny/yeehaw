@@ -25,8 +25,12 @@ pub fn impl_element_from(attr: TokenStream, item: TokenStream) -> TokenStream {
         ("set_parent", false),
         ("get_dyn_location_set", false),
         ("get_visible", false),
-        ("set_content_y_offset", false),
         ("set_content_x_offset", false),
+        ("set_content_y_offset", false),
+        ("get_content_x_offset", false),
+        ("get_content_y_offset", false),
+        ("get_content_width", false),
+        ("get_content_height", false),
     ];
 
     // Check if each function already exists in the `impl` block
@@ -213,6 +217,46 @@ pub fn impl_element_from(attr: TokenStream, item: TokenStream) -> TokenStream {
             .items
             .push(syn::parse2(new_fn).expect("Failed to parse set_content_y_offset"));
     }
+    if !funcs_found[17].1 {
+        let new_fn = quote! {
+            fn get_content_x_offset(&self) -> usize {
+                self.#field_name.get_content_x_offset()
+            }
+        };
+        impl_block
+            .items
+            .push(syn::parse2(new_fn).expect("Failed to parse get_content_y_offset"));
+    }
+    if !funcs_found[18].1 {
+        let new_fn = quote! {
+            fn get_content_y_offset(&self) -> usize {
+                self.#field_name.get_content_y_offset()
+            }
+        };
+        impl_block
+            .items
+            .push(syn::parse2(new_fn).expect("Failed to parse get_content_y_offset"));
+    }
+    if !funcs_found[19].1 {
+        let new_fn = quote! {
+            fn get_content_width(&self) -> usize {
+                self.#field_name.get_content_width()
+            }
+        };
+        impl_block
+            .items
+            .push(syn::parse2(new_fn).expect("Failed to parse get_content_width"));
+    }
+    if !funcs_found[20].1 {
+        let new_fn = quote! {
+            fn get_content_height(&self) -> usize {
+                self.#field_name.get_content_height()
+            }
+        };
+        impl_block
+            .items
+            .push(syn::parse2(new_fn).expect("Failed to parse get_content_height"));
+    }
 
     //fn kind(&self) -> &'static str {
     //fn id(&self) -> ElementID;
@@ -233,6 +277,10 @@ pub fn impl_element_from(attr: TokenStream, item: TokenStream) -> TokenStream {
     //fn get_visible(&self) -> Rc<RefCell<bool>>;
     //fn set_content_x_offset(&self, ctx: &Context, x: usize) {
     //fn set_content_y_offset(&self, ctx: &Context, y: usize) {
+    //fn get_content_x_offset(&self) -> usize;
+    //fn get_content_y_offset(&self) -> usize;
+    //fn get_content_width(&self) -> usize;
+    //fn get_content_height(&self) -> usize;
 
     // Return the modified `impl` block
     TokenStream::from(quote! {
