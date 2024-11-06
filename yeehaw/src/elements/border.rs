@@ -9,6 +9,7 @@ use {
 pub struct Bordered {
     pub pane: ParentPane,
     pub chs: Rc<RefCell<BorderSty>>,
+    pub last_size: Rc<RefCell<Size>>, // needed for knowing when to resize scrollbars
     pub properties: Rc<RefCell<BorderProperies>>,
 }
 
@@ -561,6 +562,7 @@ impl Bordered {
         Self {
             pane,
             chs: Rc::new(RefCell::new(chs)),
+            last_size: Rc::new(RefCell::new(ctx.s)),
             properties: Rc::new(RefCell::new(properties)),
         }
     }

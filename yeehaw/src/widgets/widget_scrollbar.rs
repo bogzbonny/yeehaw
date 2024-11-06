@@ -83,13 +83,7 @@ impl VerticalScrollbar {
             scrollbar_length_chs: Rc::new(RefCell::new(scrollable_view_height)),
             scrollable_position: Rc::new(RefCell::new(0)),
             has_arrows: Rc::new(RefCell::new(true)),
-            backwards_arrow: Rc::new(RefCell::new('▲')),
-            forwards_arrow: Rc::new(RefCell::new('▼')),
-            empty_block: Rc::new(RefCell::new(' ')),
-            full_block: Rc::new(RefCell::new('█')),
-            forwards_half_block: Rc::new(RefCell::new('▄')),
-            backwards_half_block: Rc::new(RefCell::new('▀')),
-            unnessecary: Rc::new(RefCell::new('░')),
+            sb_sty: Rc::new(RefCell::new(ScrollbarSty::vertical_block())),
             position_changed_hook: Rc::new(RefCell::new(None)),
             currently_dragging: Rc::new(RefCell::new(false)),
             start_drag_position: Rc::new(RefCell::new(0)),
@@ -166,13 +160,7 @@ impl HorizontalScrollbar {
             scrollbar_length_chs: Rc::new(RefCell::new(scrollable_view_width)),
             scrollable_position: Rc::new(RefCell::new(0)),
             has_arrows: Rc::new(RefCell::new(true)),
-            backwards_arrow: Rc::new(RefCell::new('◀')),
-            forwards_arrow: Rc::new(RefCell::new('▶')),
-            empty_block: Rc::new(RefCell::new(' ')),
-            full_block: Rc::new(RefCell::new('█')),
-            forwards_half_block: Rc::new(RefCell::new('▐')),
-            backwards_half_block: Rc::new(RefCell::new('▌')),
-            unnessecary: Rc::new(RefCell::new('░')),
+            sb_sty: Rc::new(RefCell::new(ScrollbarSty::horizontal_block())),
             position_changed_hook: Rc::new(RefCell::new(None)),
             currently_dragging: Rc::new(RefCell::new(false)),
             start_drag_position: Rc::new(RefCell::new(0)),
@@ -265,13 +253,7 @@ pub struct Scrollbar {
 
     pub has_arrows: Rc<RefCell<bool>>, // if the scrollbar has arrows
 
-    pub backwards_arrow: Rc<RefCell<char>>,
-    pub forwards_arrow: Rc<RefCell<char>>,
-    pub empty_block: Rc<RefCell<char>>,
-    pub full_block: Rc<RefCell<char>>,
-    pub forwards_half_block: Rc<RefCell<char>>,
-    pub backwards_half_block: Rc<RefCell<char>>,
-    pub unnessecary: Rc<RefCell<char>>, // for when the scrollbar ought not to exist
+    pub sb_sty: Rc<RefCell<ScrollbarSty>>,
 
     // function the scrollbar will call everytime there is a position change
     #[allow(clippy::type_complexity)]
@@ -287,6 +269,47 @@ pub struct Scrollbar {
 
     // minimum amount to scroll during a jump scroll
     pub jump_scroll_min_amount: Rc<RefCell<usize>>,
+}
+
+pub struct ScrollbarSty {
+    pub backwards_arrow: char,
+    pub forwards_arrow: char,
+    pub empty_block: char,
+    pub full_block: char,
+    pub forwards_half_block: char,
+    pub backwards_half_block: char,
+    pub unnessecary: char,
+}
+
+impl ScrollbarSty {
+    pub fn horizontal_block() -> Self {
+        ScrollbarSty {
+            backwards_arrow: '◀',
+            forwards_arrow: '▶',
+            empty_block: ' ',
+            full_block: '█',
+            forwards_half_block: '▐',
+            backwards_half_block: '▌',
+            unnessecary: '░',
+        }
+    }
+
+    pub fn vertical_block() -> Self {
+        ScrollbarSty {
+            backwards_arrow: '▲',
+            forwards_arrow: '▼',
+            empty_block: ' ',
+            full_block: '█',
+            forwards_half_block: '▄',
+            backwards_half_block: '▀',
+            unnessecary: '░',
+        }
+    }
+
+    pub fn with_empty_block(mut self, c: char) -> Self {
+        self.empty_block = c;
+        self
+    }
 }
 
 pub enum SBRelPosition {
@@ -524,10 +547,10 @@ impl Scrollbar {
         for i in 0..incr_filled.len() {
             if i % 2 == 1 {
                 match (incr_filled[i - 1], incr_filled[i]) {
-                    (true, true) => rs.push(*self.full_block.borrow()),
-                    (true, false) => rs.push(*self.backwards_half_block.borrow()),
-                    (false, true) => rs.push(*self.forwards_half_block.borrow()),
-                    (false, false) => rs.push(*self.empty_block.borrow()),
+                    (true, true) => rs.push(self.sb_sty.borrow().full_block),
+                    (true, false) => rs.push(self.sb_sty.borrow().backwards_half_block),
+                    (false, true) => rs.push(self.sb_sty.borrow().forwards_half_block),
+                    (false, false) => rs.push(self.sb_sty.borrow().empty_block),
                 }
             }
         }
@@ -538,15 +561,15 @@ impl Scrollbar {
         let mut chs = vec![];
         if self.is_currently_unnecessary(p_size) {
             for _ in 0..self.scrollbar_length_chs.borrow().get_val(p_size as u16) {
-                chs.push(*self.unnessecary.borrow());
+                chs.push(self.sb_sty.borrow().unnessecary);
             }
         } else {
             if *self.has_arrows.borrow() {
-                chs.push(*self.backwards_arrow.borrow());
+                chs.push(self.sb_sty.borrow().backwards_arrow);
             }
             chs.append(&mut self.scrollbar_domain_array_of_runes(p_size));
             if *self.has_arrows.borrow() {
-                chs.push(*self.forwards_arrow.borrow());
+                chs.push(self.sb_sty.borrow().forwards_arrow);
             }
         }
         chs
@@ -599,16 +622,16 @@ impl Scrollbar {
         let mut backwards_half_pos = 0;
         let mut forwards_half_pos = 0;
         for (i, r) in rs.iter().enumerate() {
-            if *r == *self.full_block.borrow() {
+            if *r == self.sb_sty.borrow().full_block {
                 if first_full.is_none() {
                     first_full = Some(i);
                 }
                 last_full = i;
             }
-            if *r == *self.backwards_half_block.borrow() {
+            if *r == self.sb_sty.borrow().backwards_half_block {
                 backwards_half_pos = i;
             }
-            if *r == *self.forwards_half_block.borrow() {
+            if *r == self.sb_sty.borrow().forwards_half_block {
                 forwards_half_pos = i;
             }
         }
