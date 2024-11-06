@@ -114,6 +114,11 @@ impl VerticalScrollbar {
         self
     }
 
+    pub fn with_scrollbar_sty(self, sb_sty: ScrollbarSty) -> Self {
+        *self.sb_sty.borrow_mut() = sb_sty;
+        self
+    }
+
     // set the dimensions of the actual scrollbar (note not the view area)
     pub fn with_scrollbar_length(self, scrollbar_length: DynVal) -> Self {
         *self.scrollbar_length_chs.borrow_mut() = scrollbar_length;
@@ -188,6 +193,11 @@ impl HorizontalScrollbar {
 
     pub fn with_styles(self, styles: WBStyles) -> Self {
         self.base.set_styles(styles);
+        self
+    }
+
+    pub fn with_scrollbar_sty(self, sb_sty: ScrollbarSty) -> Self {
+        *self.sb_sty.borrow_mut() = sb_sty;
         self
     }
 

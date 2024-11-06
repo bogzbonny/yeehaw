@@ -97,7 +97,7 @@ impl WindowPane {
             ctx,
             corner_ch,
             CornerPos::BottomRight,
-            BorderProperty::DragResize,
+            BorderPropertyCnr::DragResize,
         )
         .at(
             DynVal::new_full().minus(1.into()),

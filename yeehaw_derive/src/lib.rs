@@ -25,6 +25,8 @@ pub fn impl_element_from(attr: TokenStream, item: TokenStream) -> TokenStream {
         ("set_parent", false),
         ("get_dyn_location_set", false),
         ("get_visible", false),
+        ("set_content_y_offset", false),
+        ("set_content_x_offset", false),
     ];
 
     // Check if each function already exists in the `impl` block
@@ -38,24 +40,6 @@ pub fn impl_element_from(attr: TokenStream, item: TokenStream) -> TokenStream {
         }
     }
     let field_name: syn::Ident = parse_macro_input!(attr as syn::Ident);
-
-    //fn kind(&self) -> &'static str {
-    //fn id(&self) -> ElementID;
-    //fn receivable(&self) -> SelfReceivableEvents;
-    //fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses);
-    //fn change_priority(&self, p: Priority) -> ReceivableEventChanges;
-    //fn drawing(&self, ctx: &Context) -> Vec<DrawChPos>;
-    //fn get_attribute(&self, key: &str) -> Option<Vec<u8>>;
-    //fn set_attribute(&self, key: &str, value: Vec<u8>);
-    //fn set_hook(&self, kind: &str, el_id: ElementID,
-    //    hook: Box<dyn FnMut(&str, Box<dyn Element>)>,
-    //);
-    //fn remove_hook(&self, kind: &str, el_id: ElementID);
-    //fn clear_hooks_by_id(&self, el_id: ElementID);
-    //fn call_hooks_of_kind(&self, kind: &str);
-    //fn set_parent(&self, up: Box<dyn Parent>);
-    //fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>>;
-    //fn get_visible(&self) -> Rc<RefCell<bool>>;
 
     if !funcs_found[0].1 {
         let new_fn = quote! {
@@ -209,6 +193,46 @@ pub fn impl_element_from(attr: TokenStream, item: TokenStream) -> TokenStream {
             .items
             .push(syn::parse2(new_fn).expect("Failed to parse get_visible"));
     }
+    if !funcs_found[15].1 {
+        let new_fn = quote! {
+            fn set_content_x_offset(&self, ctx: &Context, x: usize) {
+                self.#field_name.set_content_x_offset(ctx, x)
+            }
+        };
+        impl_block
+            .items
+            .push(syn::parse2(new_fn).expect("Failed to parse set_content_x_offset"));
+    }
+    if !funcs_found[16].1 {
+        let new_fn = quote! {
+            fn set_content_y_offset(&self, ctx: &Context, y: usize) {
+                self.#field_name.set_content_y_offset(ctx, y)
+            }
+        };
+        impl_block
+            .items
+            .push(syn::parse2(new_fn).expect("Failed to parse set_content_y_offset"));
+    }
+
+    //fn kind(&self) -> &'static str {
+    //fn id(&self) -> ElementID;
+    //fn receivable(&self) -> SelfReceivableEvents;
+    //fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses);
+    //fn change_priority(&self, p: Priority) -> ReceivableEventChanges;
+    //fn drawing(&self, ctx: &Context) -> Vec<DrawChPos>;
+    //fn get_attribute(&self, key: &str) -> Option<Vec<u8>>;
+    //fn set_attribute(&self, key: &str, value: Vec<u8>);
+    //fn set_hook(&self, kind: &str, el_id: ElementID,
+    //    hook: Box<dyn FnMut(&str, Box<dyn Element>)>,
+    //);
+    //fn remove_hook(&self, kind: &str, el_id: ElementID);
+    //fn clear_hooks_by_id(&self, el_id: ElementID);
+    //fn call_hooks_of_kind(&self, kind: &str);
+    //fn set_parent(&self, up: Box<dyn Parent>);
+    //fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>>;
+    //fn get_visible(&self) -> Rc<RefCell<bool>>;
+    //fn set_content_x_offset(&self, ctx: &Context, x: usize) {
+    //fn set_content_y_offset(&self, ctx: &Context, y: usize) {
 
     // Return the modified `impl` block
     TokenStream::from(quote! {

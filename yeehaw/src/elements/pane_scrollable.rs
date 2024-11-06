@@ -81,8 +81,11 @@ impl PaneScrollable {
             .borrow()
             .get_height_val(ctx)
     }
+}
 
-    pub fn set_content_x_offset(&self, ctx: &Context, x: usize) {
+#[yeehaw_derive::impl_element_from(pane)]
+impl Element for PaneScrollable {
+    fn set_content_x_offset(&self, ctx: &Context, x: usize) {
         // need these +1 or else will overscroll
         // - due to x/y being 0 indexed
         *self.content_offset_x.borrow_mut() = if x > self
@@ -98,7 +101,7 @@ impl PaneScrollable {
         };
     }
 
-    pub fn set_content_y_offset(&self, ctx: &Context, y: usize) {
+    fn set_content_y_offset(&self, ctx: &Context, y: usize) {
         // need these +1 or else will overscroll
         // - due to x/y being 0 indexed
         *self.content_offset_y.borrow_mut() = if y > self
@@ -113,10 +116,7 @@ impl PaneScrollable {
             y
         };
     }
-}
 
-#[yeehaw_derive::impl_element_from(pane)]
-impl Element for PaneScrollable {
     fn receive_event_inner(&self, ctx: &Context, mut ev: Event) -> (bool, EventResponses) {
         let inner_ctx = self.inner_ctx(ctx);
         match &mut ev {

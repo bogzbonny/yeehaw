@@ -8,14 +8,12 @@ use {
 #[derive(Clone)]
 pub struct Bordered {
     pub pane: ParentPane,
-    pub chs: Rc<RefCell<BorderSty>>,
     pub last_size: Rc<RefCell<Size>>, // needed for knowing when to resize scrollbars
-    pub properties: Rc<RefCell<BorderProperies>>,
 }
 
 /// property for the border
 #[derive(Clone, Copy)]
-pub enum Property {
+pub enum PropertyCnr {
     None,       // just for display
     DragResize, // drag to resize
     DragMove,   // drag to move
@@ -24,7 +22,7 @@ pub enum Property {
 /// property for the border
 /// including vertical scrollbar option
 #[derive(Clone)]
-pub enum PropertyVSB {
+pub enum PropertyVrt {
     None,       // just for display
     DragResize, // drag to resize
     DragMove,   // drag to move
@@ -34,7 +32,7 @@ pub enum PropertyVSB {
 /// property for the border
 /// including horizontal scrollbar option
 #[derive(Clone)]
-pub enum PropertyHSB {
+pub enum PropertyHzt {
     None,       // just for display
     DragResize, // drag to resize
     DragMove,   // drag to move
@@ -43,55 +41,112 @@ pub enum PropertyHSB {
 
 #[derive(Clone)]
 pub struct BorderProperies {
-    pub left: Option<Property>, // if None, then no left border
-    //pub right: Option<PropertyVSB>,  // if None, then no right border
-    pub right: Option<Property>, // if None, then no right border
-    pub top: Option<Property>,   // if None, then no top border
-    //pub bottom: Option<PropertyHSB>, // if None, then no bottom border
-    pub bottom: Option<Property>, // if None, then no bottom border
-    pub top_corner: Property,
-    pub bottom_corner: Property,
-    pub left_corner: Property,
-    pub right_corner: Property,
+    pub left: Option<PropertyVrt>,   // if None, then no left border
+    pub right: Option<PropertyVrt>,  // if None, then no right border
+    pub top: Option<PropertyHzt>,    // if None, then no top border
+    pub bottom: Option<PropertyHzt>, // if None, then no bottom border
+    pub top_corner: PropertyCnr,
+    pub bottom_corner: PropertyCnr,
+    pub left_corner: PropertyCnr,
+    pub right_corner: PropertyCnr,
 }
 
 impl BorderProperies {
     pub fn new_basic() -> Self {
         Self {
-            left: Some(Property::None),
-            right: Some(Property::None),
-            top: Some(Property::None),
-            bottom: Some(Property::None),
-            top_corner: Property::None,
-            bottom_corner: Property::None,
-            left_corner: Property::None,
-            right_corner: Property::None,
+            left: Some(PropertyVrt::None),
+            right: Some(PropertyVrt::None),
+            top: Some(PropertyHzt::None),
+            bottom: Some(PropertyHzt::None),
+            top_corner: PropertyCnr::None,
+            bottom_corner: PropertyCnr::None,
+            left_corner: PropertyCnr::None,
+            right_corner: PropertyCnr::None,
+        }
+    }
+
+    pub fn new_basic_with_scrollbars(ctx: &Context) -> Self {
+        Self {
+            left: Some(PropertyVrt::None),
+            right: Some(PropertyVrt::Scrollbar(
+                widgets::VerticalScrollbar::new(ctx, 0.into(), 0)
+                    .with_scrollbar_sty(ScrollbarSty::vertical_for_thin_box()),
+            )),
+            top: Some(PropertyHzt::None),
+            bottom: Some(PropertyHzt::Scrollbar(
+                widgets::HorizontalScrollbar::new(ctx, 0.into(), 0)
+                    .with_scrollbar_sty(ScrollbarSty::horizontal_for_thin_box()),
+            )),
+            top_corner: PropertyCnr::None,
+            bottom_corner: PropertyCnr::None,
+            left_corner: PropertyCnr::None,
+            right_corner: PropertyCnr::None,
+        }
+    }
+
+    pub fn new_borderless_with_scrollbars(ctx: &Context) -> Self {
+        Self {
+            left: None,
+            right: Some(PropertyVrt::Scrollbar(widgets::VerticalScrollbar::new(
+                ctx,
+                0.into(),
+                0,
+            ))),
+            top: None,
+            bottom: Some(PropertyHzt::Scrollbar(widgets::HorizontalScrollbar::new(
+                ctx,
+                0.into(),
+                0,
+            ))),
+            top_corner: PropertyCnr::None,
+            bottom_corner: PropertyCnr::None,
+            left_corner: PropertyCnr::None,
+            right_corner: PropertyCnr::None,
         }
     }
 
     pub fn new_resizer() -> Self {
         Self {
-            left: Some(Property::DragResize),
-            right: Some(Property::DragResize),
-            top: Some(Property::DragResize),
-            bottom: Some(Property::DragResize),
-            top_corner: Property::DragResize,
-            bottom_corner: Property::DragResize,
-            left_corner: Property::DragResize,
-            right_corner: Property::DragResize,
+            left: Some(PropertyVrt::DragResize),
+            right: Some(PropertyVrt::DragResize),
+            top: Some(PropertyHzt::DragResize),
+            bottom: Some(PropertyHzt::DragResize),
+            top_corner: PropertyCnr::DragResize,
+            bottom_corner: PropertyCnr::DragResize,
+            left_corner: PropertyCnr::DragResize,
+            right_corner: PropertyCnr::DragResize,
+        }
+    }
+
+    pub fn new_resizer_with_scrollbars(ctx: &Context) -> Self {
+        Self {
+            left: Some(PropertyVrt::DragResize),
+            right: Some(PropertyVrt::Scrollbar(
+                widgets::VerticalScrollbar::new(ctx, 0.into(), 0)
+                    .with_scrollbar_sty(ScrollbarSty::vertical_for_thin_box()),
+            )),
+            top: Some(PropertyHzt::DragResize),
+            bottom: Some(PropertyHzt::Scrollbar(
+                widgets::HorizontalScrollbar::new(ctx, 0.into(), 0)
+                    .with_scrollbar_sty(ScrollbarSty::horizontal_for_thin_box()),
+            )),
+            top_corner: PropertyCnr::DragResize,
+            bottom_corner: PropertyCnr::DragResize,
+            left_corner: PropertyCnr::DragResize,
+            right_corner: PropertyCnr::DragResize,
         }
     }
 
     pub fn new_mover() -> Self {
         Self {
-            left: Some(Property::DragMove),
-            right: Some(Property::DragMove),
-            top: Some(Property::DragMove),
-            bottom: Some(Property::DragMove),
-            top_corner: Property::DragMove,
-            bottom_corner: Property::DragMove,
-            left_corner: Property::DragMove,
-            right_corner: Property::DragMove,
+            left: Some(PropertyVrt::DragMove),
+            right: Some(PropertyVrt::DragMove),
+            top: Some(PropertyHzt::DragMove),
+            bottom: Some(PropertyHzt::DragMove),
+            top_corner: PropertyCnr::DragMove,
+            bottom_corner: PropertyCnr::DragMove,
+            left_corner: PropertyCnr::DragMove,
+            right_corner: PropertyCnr::DragMove,
         }
     }
 }
@@ -109,6 +164,19 @@ pub struct BorderSty {
 }
 
 impl BorderSty {
+    pub fn new_borderless(sty: Style) -> Self {
+        Self {
+            left: DrawCh::new(' ', sty.clone()),
+            right: DrawCh::new(' ', sty.clone()),
+            top: DrawCh::new(' ', sty.clone()),
+            bottom: DrawCh::new(' ', sty.clone()),
+            bottom_left: DrawCh::new(' ', sty.clone()),
+            bottom_right: DrawCh::new(' ', sty.clone()),
+            top_left: DrawCh::new(' ', sty.clone()),
+            top_right: DrawCh::new(' ', sty),
+        }
+    }
+
     pub fn new_thin_single(sty: Style) -> Self {
         Self {
             left: DrawCh::new('│', sty.clone()),
@@ -417,8 +485,20 @@ impl Bordered {
     }
 
     pub fn new(
-        ctx: &Context, inner: Box<dyn Element>, chs: BorderSty, properties: BorderProperies,
+        ctx: &Context, inner: Box<dyn Element>, chs: BorderSty, mut properties: BorderProperies,
     ) -> Self {
+        // deref chs
+        let BorderSty {
+            left: chs_left,
+            right: chs_right,
+            top: chs_top,
+            bottom: chs_bottom,
+            top_left: chs_top_left,
+            top_right: chs_top_right,
+            bottom_left: chs_bottom_left,
+            bottom_right: chs_bottom_right,
+        } = chs;
+
         let pane = ParentPane::new(ctx, Self::KIND).with_transparent();
 
         let has_top_left_corner = properties.top.is_some() && properties.left.is_some();
@@ -445,12 +525,11 @@ impl Bordered {
             inner_end_y,
         );
         inner.get_dyn_location_set().borrow_mut().l = inner_loc.clone();
-        pane.add_element(inner);
 
         if has_top_left_corner {
             let corner = Corner::new(
                 ctx,
-                chs.top_left.clone(),
+                chs_top_left.clone(),
                 CornerPos::TopLeft,
                 properties.top_corner,
             )
@@ -460,7 +539,7 @@ impl Bordered {
         if has_top_right_corner {
             let corner = Corner::new(
                 ctx,
-                chs.top_right.clone(),
+                chs_top_right.clone(),
                 CornerPos::TopRight,
                 properties.top_corner,
             )
@@ -470,7 +549,7 @@ impl Bordered {
         if has_bottom_left_corner {
             let corner = Corner::new(
                 ctx,
-                chs.bottom_left.clone(),
+                chs_bottom_left.clone(),
                 CornerPos::BottomLeft,
                 properties.bottom_corner,
             )
@@ -480,7 +559,7 @@ impl Bordered {
         if has_bottom_right_corner {
             let corner = Corner::new(
                 ctx,
-                chs.bottom_right.clone(),
+                chs_bottom_right.clone(),
                 CornerPos::BottomRight,
                 properties.bottom_corner,
             )
@@ -491,7 +570,7 @@ impl Bordered {
             pane.add_element(Box::new(corner));
         }
 
-        if let Some(left_property) = properties.left {
+        if let Some(left_property) = properties.left.take() {
             let start_y: DynVal = if has_top_left_corner { 1.into() } else { 0.into() };
             let end_y = if has_bottom_left_corner {
                 DynVal::new_full().minus(1.into())
@@ -499,12 +578,21 @@ impl Bordered {
                 DynVal::new_full()
             };
             let left_loc = DynLocation::new(0.into(), 1.into(), start_y.clone(), end_y);
-            let side = VerticalSide::new(ctx, chs.left.clone(), VerticalPos::Left, left_property);
-            side.pane.get_dyn_location_set().borrow_mut().l = left_loc;
-            pane.add_element(Box::new(side));
+
+            if let PropertyVrt::Scrollbar(sb) = left_property {
+                let inner_ = inner.clone();
+                let hook = Box::new(move |ctx, y| inner_.set_content_y_offset(&ctx, y));
+                *sb.position_changed_hook.borrow_mut() = Some(hook);
+                pane.add_element(Box::new(sb));
+            } else {
+                let side =
+                    VerticalSide::new(ctx, chs_left.clone(), VerticalPos::Left, left_property);
+                side.pane.get_dyn_location_set().borrow_mut().l = left_loc;
+                pane.add_element(Box::new(side));
+            }
         }
 
-        if let Some(right_property) = properties.right {
+        if let Some(right_property) = properties.right.take() {
             let start_y: DynVal = if has_top_right_corner { 1.into() } else { 0.into() };
             let end_y = if has_bottom_right_corner {
                 DynVal::new_full().minus(1.into())
@@ -517,59 +605,130 @@ impl Bordered {
                 start_y.clone(),
                 end_y,
             );
-            let side =
-                VerticalSide::new(ctx, chs.right.clone(), VerticalPos::Right, right_property);
-            side.pane.get_dyn_location_set().borrow_mut().l = right_loc;
-            pane.add_element(Box::new(side));
+
+            if let PropertyVrt::Scrollbar(sb) = right_property {
+                let inner_ = inner.clone();
+                let hook = Box::new(move |ctx, y| inner_.set_content_y_offset(&ctx, y));
+                *sb.position_changed_hook.borrow_mut() = Some(hook);
+                pane.add_element(Box::new(sb));
+            } else {
+                let side =
+                    VerticalSide::new(ctx, chs_right.clone(), VerticalPos::Right, right_property);
+                side.pane.get_dyn_location_set().borrow_mut().l = right_loc;
+                pane.add_element(Box::new(side));
+            }
         }
 
-        if let Some(top_property) = properties.top {
+        if let Some(top_property) = properties.top.take() {
             let start_x: DynVal = if has_top_left_corner { 1.into() } else { 0.into() };
             let end_x = if has_top_right_corner {
                 DynVal::new_full().minus(1.into())
             } else {
                 DynVal::new_full()
             };
-            let top_loc = DynLocation::new(start_x, end_x, 0.into(), 1.into());
-            let side = HorizontalSide::new(ctx, chs.top.clone(), HorizontalPos::Top, top_property);
-            side.pane.get_dyn_location_set().borrow_mut().l = top_loc;
-            pane.add_element(Box::new(side));
+
+            if let PropertyHzt::Scrollbar(sb) = top_property {
+                let inner_ = inner.clone();
+                let hook = Box::new(move |ctx, x| inner_.set_content_x_offset(&ctx, x));
+                *sb.position_changed_hook.borrow_mut() = Some(hook);
+                pane.add_element(Box::new(sb));
+            } else {
+                let top_loc = DynLocation::new(start_x, end_x, 0.into(), 1.into());
+                let side =
+                    HorizontalSide::new(ctx, chs_top.clone(), HorizontalPos::Top, top_property);
+                side.pane.get_dyn_location_set().borrow_mut().l = top_loc;
+                pane.add_element(Box::new(side));
+            }
         }
 
-        if let Some(bottom_property) = properties.bottom {
+        if let Some(bottom_property) = properties.bottom.take() {
             let start_x: DynVal = if has_bottom_left_corner { 1.into() } else { 0.into() };
             let end_x = if has_bottom_right_corner {
                 DynVal::new_full().minus(1.into())
             } else {
                 DynVal::new_full()
             };
-            let bottom_loc = DynLocation::new(
-                start_x,
-                end_x,
-                DynVal::new_full().minus(1.into()),
-                DynVal::new_full(),
-            );
-            let side = HorizontalSide::new(
-                ctx,
-                chs.bottom.clone(),
-                HorizontalPos::Bottom,
-                bottom_property,
-            );
-            side.pane.get_dyn_location_set().borrow_mut().l = bottom_loc;
-            pane.add_element(Box::new(side));
+
+            if let PropertyHzt::Scrollbar(sb) = bottom_property {
+                let inner_ = inner.clone();
+                let hook = Box::new(move |ctx, x| inner_.set_content_x_offset(&ctx, x));
+                *sb.position_changed_hook.borrow_mut() = Some(hook);
+                pane.add_element(Box::new(sb));
+            } else {
+                let bottom_loc = DynLocation::new(
+                    start_x,
+                    end_x,
+                    DynVal::new_full().minus(1.into()),
+                    DynVal::new_full(),
+                );
+                let side = HorizontalSide::new(
+                    ctx,
+                    chs_bottom.clone(),
+                    HorizontalPos::Bottom,
+                    bottom_property,
+                );
+                side.pane.get_dyn_location_set().borrow_mut().l = bottom_loc;
+                pane.add_element(Box::new(side));
+            }
         }
 
+        pane.add_element(inner);
         Self {
             pane,
-            chs: Rc::new(RefCell::new(chs)),
             last_size: Rc::new(RefCell::new(ctx.s)),
-            properties: Rc::new(RefCell::new(properties)),
+        }
+    }
+
+    pub fn ensure_scrollbar_size(&self, ctx: &Context) {
+        if *self.last_size.borrow() != ctx.s {
+            let x_sb = self.x_scrollbar.borrow();
+            if let Some(x_sb) = x_sb.as_ref() {
+                let w: DynVal = DynVal::new_full()
+                    .minus(DynVal::new_fixed(1))
+                    .get_val(ctx.s.width)
+                    .into();
+                x_sb.set_dyn_width(w.clone(), w, None);
+            }
+            let y_sb = self.y_scrollbar.borrow();
+            if let Some(y_sb) = y_sb.as_ref() {
+                let h: DynVal = DynVal::new_full()
+                    .minus(DynVal::new_fixed(1))
+                    .get_val(ctx.s.height)
+                    .into();
+                y_sb.set_dyn_height(h.clone(), h, None);
+            }
+            *self.last_size.borrow_mut() = ctx.s;
         }
     }
 }
 
 #[yeehaw_derive::impl_element_from(pane)]
-impl Element for Bordered {}
+impl Element for Bordered {
+    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        self.ensure_scrollbar_size(ctx);
+
+        let out = self.pane.receive_event_inner(ctx, ev);
+        if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
+            sb.external_change(
+                ctx,
+                *self.inner_pane.content_offset_x.borrow(),
+                *self.inner_pane.content_width.borrow(),
+            );
+        }
+        if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
+            sb.external_change(
+                ctx,
+                *self.inner_pane.content_offset_y.borrow(),
+                *self.inner_pane.content_height.borrow(),
+            );
+        }
+        out
+    }
+    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        self.ensure_scrollbar_size(ctx);
+        self.pane.drawing(ctx)
+    }
+}
 
 // ------------------------------------------------------------------------------------------
 
@@ -578,7 +737,7 @@ impl Element for Bordered {}
 pub struct Corner {
     pub pane: Pane,
     pub pos: Rc<RefCell<CornerPos>>,
-    pub property: Rc<RefCell<Property>>,
+    pub property: Rc<RefCell<PropertyCnr>>,
     pub dragging: Rc<RefCell<bool>>,
 }
 
@@ -594,7 +753,7 @@ pub enum CornerPos {
 impl Corner {
     const Z_INDEX: ZIndex = 200;
 
-    pub fn new(ctx: &Context, ch: DrawCh, pos: CornerPos, property: Property) -> Self {
+    pub fn new(ctx: &Context, ch: DrawCh, pos: CornerPos, property: PropertyCnr) -> Self {
         let pane = Pane::new(ctx, "resize_corner")
             .with_dyn_height(1.into())
             .with_dyn_width(1.into())
@@ -623,7 +782,7 @@ impl Corner {
 impl Element for Corner {
     fn receive_event_inner(&self, _ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let property = *self.property.borrow();
-        if matches!(property, Property::None) {
+        if matches!(property, PropertyCnr::None) {
             return (true, EventResponses::default()); // still capture just don't do anything
         }
         let cur_dragging = *self.dragging.borrow();
@@ -643,7 +802,7 @@ impl Element for Corner {
                     let dy = me.row;
 
                     match property {
-                        Property::DragResize => {
+                        PropertyCnr::DragResize => {
                             let (left_dx, right_dx, top_dy, bottom_dy) = match *self.pos.borrow() {
                                 CornerPos::TopLeft => (dx, 0, dy, 0),
                                 CornerPos::TopRight => (0, dx, dy, 0),
@@ -658,11 +817,11 @@ impl Element for Corner {
                             };
                             return (true, EventResponse::Resize(resp).into());
                         }
-                        Property::DragMove => {
+                        PropertyCnr::DragMove => {
                             let resp = MoveResponse { dx, dy };
                             return (true, EventResponse::Move(resp).into());
                         }
-                        Property::None => {}
+                        PropertyCnr::None => {}
                     }
                 }
                 _ => *self.dragging.borrow_mut() = false,
@@ -681,7 +840,7 @@ pub struct VerticalSide {
     pub pane: Pane,
     pub ch: Rc<RefCell<DrawCh>>,
     pub pos: Rc<RefCell<VerticalPos>>,
-    pub property: Rc<RefCell<Property>>,
+    pub property: Rc<RefCell<PropertyVrt>>,
     pub dragging_start_pos: Rc<RefCell<Option<(i32, i32)>>>, // x, y
 }
 
@@ -695,7 +854,7 @@ pub enum VerticalPos {
 impl VerticalSide {
     const Z_INDEX: ZIndex = 200;
 
-    pub fn new(ctx: &Context, ch: DrawCh, pos: VerticalPos, property: Property) -> Self {
+    pub fn new(ctx: &Context, ch: DrawCh, pos: VerticalPos, property: PropertyVrt) -> Self {
         let pane = Pane::new(ctx, "resize_corner")
             .with_dyn_height(DynVal::new_full())
             .with_dyn_width(1.into());
@@ -721,11 +880,16 @@ impl Element for VerticalSide {
         DrawChPos::new_repeated_vertical(self.ch.borrow().clone(), 0, 0, ctx.s.height)
     }
 
-    fn receive_event_inner(&self, _ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        let property = *self.property.borrow();
-        if matches!(property, Property::None) {
+    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        let property = self.property.borrow();
+        if matches!(*property, PropertyVrt::None) {
             return (true, EventResponses::default()); // still capture just don't do anything
         }
+
+        if let PropertyVrt::Scrollbar(ref sb) = *property {
+            return sb.receive_event(ctx, ev);
+        }
+
         let dragging_start_pos = *self.dragging_start_pos.borrow();
         let mut captured = false;
         match ev {
@@ -740,7 +904,7 @@ impl Element for VerticalSide {
                         let (_, start_y) = dragging_start_pos.expect("impossible");
                         let dy = me.row as i32 - start_y;
 
-                        if matches!(property, Property::DragMove) {
+                        if matches!(*property, PropertyVrt::DragMove) {
                             let resp = MoveResponse { dx: 0, dy };
                             return (true, EventResponse::Move(resp).into());
                         }
@@ -753,8 +917,8 @@ impl Element for VerticalSide {
                     let dx = me.column;
                     let dy = me.row;
 
-                    match property {
-                        Property::DragResize => {
+                    match *property {
+                        PropertyVrt::DragResize => {
                             let (left_dx, right_dx) = match *self.pos.borrow() {
                                 VerticalPos::Left => (dx, 0),
                                 VerticalPos::Right => (0, dx),
@@ -767,14 +931,15 @@ impl Element for VerticalSide {
                             };
                             return (true, EventResponse::Resize(resp).into());
                         }
-                        Property::DragMove => {
+                        PropertyVrt::DragMove => {
                             let (start_x, start_y) = dragging_start_pos.expect("impossible");
                             let dx = dx - start_x;
                             let dy = dy - start_y;
                             let resp = MoveResponse { dx, dy };
                             return (true, EventResponse::Move(resp).into());
                         }
-                        Property::None => {}
+                        PropertyVrt::Scrollbar(_) => {} // handled earlier
+                        PropertyVrt::None => {}
                     }
                 }
                 _ => *self.dragging_start_pos.borrow_mut() = None,
@@ -793,7 +958,7 @@ pub struct HorizontalSide {
     pub pane: Pane,
     pub ch: Rc<RefCell<DrawCh>>,
     pub pos: Rc<RefCell<HorizontalPos>>,
-    pub property: Rc<RefCell<Property>>,
+    pub property: Rc<RefCell<PropertyHzt>>,
     pub dragging_start_pos: Rc<RefCell<Option<(i32, i32)>>>, // x, y
 }
 
@@ -808,7 +973,7 @@ impl HorizontalSide {
     const Z_INDEX: ZIndex = 200;
 
     /// The context provided determines the size of this element
-    pub fn new(ctx: &Context, ch: DrawCh, pos: HorizontalPos, property: Property) -> Self {
+    pub fn new(ctx: &Context, ch: DrawCh, pos: HorizontalPos, property: PropertyHzt) -> Self {
         let pane = Pane::new(ctx, "resize_corner")
             .with_dyn_height(1.into())
             .with_dyn_width(1.0.into());
@@ -834,11 +999,16 @@ impl Element for HorizontalSide {
         DrawChPos::new_repeated_horizontal(self.ch.borrow().clone(), 0, 0, ctx.s.width)
     }
 
-    fn receive_event_inner(&self, _ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        let property = *self.property.borrow();
-        if matches!(property, Property::None) {
+    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        let property = self.property.borrow();
+        if matches!(*property, PropertyHzt::None) {
             return (true, EventResponses::default()); // still capture just don't do anything
         }
+
+        if let PropertyHzt::Scrollbar(ref sb) = *property {
+            return sb.receive_event(ctx, ev);
+        }
+
         let dragging_start_pos = *self.dragging_start_pos.borrow();
         let mut captured = false;
         match ev {
@@ -853,7 +1023,7 @@ impl Element for HorizontalSide {
                         let (start_x, _) = dragging_start_pos.expect("impossible");
                         let dx = me.column as i32 - start_x;
 
-                        if matches!(property, Property::DragMove) {
+                        if matches!(*property, PropertyHzt::DragMove) {
                             let resp = MoveResponse { dx, dy: 0 };
                             return (true, EventResponse::Move(resp).into());
                         }
@@ -866,8 +1036,8 @@ impl Element for HorizontalSide {
                     let dx = me.column;
                     let dy = me.row;
 
-                    match property {
-                        Property::DragResize => {
+                    match *property {
+                        PropertyHzt::DragResize => {
                             let (top_dy, bottom_dy) = match *self.pos.borrow() {
                                 HorizontalPos::Top => (dy, 0),
                                 HorizontalPos::Bottom => (0, dy),
@@ -880,14 +1050,15 @@ impl Element for HorizontalSide {
                             };
                             return (true, EventResponse::Resize(resp).into());
                         }
-                        Property::DragMove => {
+                        PropertyHzt::DragMove => {
                             let (start_x, start_y) = dragging_start_pos.expect("impossible");
                             let dx = dx - start_x;
                             let dy = dy - start_y;
                             let resp = MoveResponse { dx, dy };
                             return (true, EventResponse::Move(resp).into());
                         }
-                        Property::None => {}
+                        PropertyHzt::Scrollbar(_) => {} // handled earlier
+                        PropertyHzt::None => {}
                     }
                 }
                 _ => *self.dragging_start_pos.borrow_mut() = None,

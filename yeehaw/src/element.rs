@@ -118,6 +118,12 @@ pub trait Element: DynClone {
     }
 
     // -------------------------------------------------------
+    // used by scrollbars
+
+    fn set_content_y_offset(&self, ctx: &Context, y: usize);
+    fn set_content_x_offset(&self, ctx: &Context, x: usize);
+
+    // -------------------------------------------------------
     // Freebies
 
     fn with_description(self, desc: String) -> Self

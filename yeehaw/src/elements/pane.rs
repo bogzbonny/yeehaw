@@ -438,4 +438,29 @@ impl Element for Pane {
     fn get_visible(&self) -> Rc<RefCell<bool>> {
         self.visible.clone()
     }
+
+    fn set_content_x_offset(&self, ctx: &Context, x: usize) {
+        // need these +1 or else will overscroll
+        // - due to x/y being 0 indexed
+        let content_width = self.content.borrow().width();
+        let width = self.loc.borrow().get_width_val(ctx);
+        *self.content_view_offset_x.borrow_mut() = if x > content_width.saturating_sub(width + 1) {
+            content_width.saturating_sub(width + 1)
+        } else {
+            x
+        };
+    }
+
+    fn set_content_y_offset(&self, ctx: &Context, y: usize) {
+        // need these +1 or else will overscroll
+        // - due to x/y being 0 indexed
+        let content_height = self.content.borrow().height();
+        let height = self.loc.borrow().get_height_val(ctx);
+        *self.content_view_offset_y.borrow_mut() = if y > content_height.saturating_sub(height + 1)
+        {
+            content_height.saturating_sub(height + 1)
+        } else {
+            y
+        };
+    }
 }

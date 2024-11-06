@@ -24,7 +24,8 @@ pub use {
     widget_listbox::ListBox,
     widget_radio::RadioButtons,
     widget_scrollbar::{
-        HorizontalSBPositions, HorizontalScrollbar, VerticalSBPositions, VerticalScrollbar,
+        HorizontalSBPositions, HorizontalScrollbar, ScrollbarSty, VerticalSBPositions,
+        VerticalScrollbar,
     },
     widget_textbox::TextBox,
     widget_textbox_numbers::NumbersTextBox,

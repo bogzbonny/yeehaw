@@ -27,10 +27,11 @@ pub use {
     dyn_value::DynVal,
     element::{Element, Parent},
     elements::{
-        border::Corner as BorderCorner, border::CornerPos, border::Property as BorderProperty,
-        Bordered, DebugSizePane, FileNavPane, FileViewerPane, HorizontalStack, ImageViewer,
-        MenuBar, Pane, PaneScrollable, PaneWithScrollbars, ParentPane, RightClickMenu, Shadowed,
-        Tabs, TermEditorPane, TerminalPane, VerticalStack, WindowPane,
+        border::Corner as BorderCorner, border::CornerPos,
+        border::PropertyCnr as BorderPropertyCnr, Bordered, DebugSizePane, FileNavPane,
+        FileViewerPane, HorizontalStack, ImageViewer, MenuBar, Pane, PaneScrollable,
+        PaneWithScrollbars, ParentPane, RightClickMenu, Shadowed, Tabs, TermEditorPane,
+        TerminalPane, VerticalStack, WindowPane,
     },
     errors::Error,
     event::{
@@ -44,4 +45,8 @@ pub use {
     sorting_hat::{ElementID, SortingHat},
     style::{Attributes, BgTranspSrc, FgTranspSrc, Style, UlTranspSrc},
     widgets::WidgetPane,
+    widgets::{
+        Button, Checkbox, DropdownList, FigletText, HorizontalSBPositions, Label, ListBox,
+        NumbersTextBox, RadioButtons, ScrollbarSty, TextBox, Toggle, VerticalSBPositions,
+    },
 };
