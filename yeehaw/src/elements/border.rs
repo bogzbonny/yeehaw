@@ -74,17 +74,17 @@ impl BorderProperies {
         }
     }
 
-    pub fn new_basic_with_scrollbars(ctx: &Context) -> Self {
+    pub fn new_basic_with_scrollbars(ctx: &Context, sty: Style) -> Self {
         Self {
             left: Some(PropertyVrt::None),
             right: Some(PropertyVrt::Scrollbar(
                 widgets::VerticalScrollbar::new(ctx, 0.into(), 0)
-                    .with_scrollbar_sty(ScrollbarSty::vertical_for_thin_box()),
+                    .with_scrollbar_sty(ScrollbarSty::vertical_for_thin_box(sty.clone())),
             )),
             top: Some(PropertyHzt::None),
             bottom: Some(PropertyHzt::Scrollbar(
                 widgets::HorizontalScrollbar::new(ctx, 0.into(), 0)
-                    .with_scrollbar_sty(ScrollbarSty::horizontal_for_thin_box()),
+                    .with_scrollbar_sty(ScrollbarSty::horizontal_for_thin_box(sty)),
             )),
             top_corner: PropertyCnr::None,
             bottom_corner: PropertyCnr::None,
@@ -127,17 +127,17 @@ impl BorderProperies {
         }
     }
 
-    pub fn new_resizer_with_scrollbars(ctx: &Context) -> Self {
+    pub fn new_resizer_with_scrollbars(ctx: &Context, sty: Style) -> Self {
         Self {
             left: Some(PropertyVrt::DragResize),
             right: Some(PropertyVrt::Scrollbar(
                 widgets::VerticalScrollbar::new(ctx, 0.into(), 0)
-                    .with_scrollbar_sty(ScrollbarSty::vertical_for_thin_box()),
+                    .with_scrollbar_sty(ScrollbarSty::vertical_for_thin_box(sty.clone())),
             )),
             top: Some(PropertyHzt::DragResize),
             bottom: Some(PropertyHzt::Scrollbar(
                 widgets::HorizontalScrollbar::new(ctx, 0.into(), 0)
-                    .with_scrollbar_sty(ScrollbarSty::horizontal_for_thin_box()),
+                    .with_scrollbar_sty(ScrollbarSty::horizontal_for_thin_box(sty)),
             )),
             top_corner: PropertyCnr::DragResize,
             bottom_corner: PropertyCnr::DragResize,
@@ -481,6 +481,20 @@ impl Bordered {
         Self::new(ctx, inner, chs, properties)
     }
 
+    pub fn new_basic_with_scrollbars(ctx: &Context, inner: Box<dyn Element>, sty: Style) -> Self {
+        let chs = BorderSty::new_thick_single(sty.clone());
+        let properties = BorderProperies::new_basic_with_scrollbars(ctx, sty);
+        Self::new(ctx, inner, chs, properties)
+    }
+
+    pub fn new_borderless_with_scrollbars(
+        ctx: &Context, inner: Box<dyn Element>, sty: Style,
+    ) -> Self {
+        let properties = BorderProperies::new_borderless_with_scrollbars(ctx);
+        let chs = BorderSty::new_borderless(sty);
+        Self::new(ctx, inner, chs, properties)
+    }
+
     pub fn new_resizer(ctx: &Context, inner: Box<dyn Element>, sty: Style) -> Self {
         let chs = BorderSty::new_thick_single(sty);
         let properties = BorderProperies::new_resizer();
@@ -488,8 +502,8 @@ impl Bordered {
     }
 
     pub fn new_resizer_with_scrollbars(ctx: &Context, inner: Box<dyn Element>, sty: Style) -> Self {
-        let chs = BorderSty::new_thick_single(sty);
-        let properties = BorderProperies::new_resizer_with_scrollbars(ctx);
+        let chs = BorderSty::new_thick_single(sty.clone());
+        let properties = BorderProperies::new_resizer_with_scrollbars(ctx, sty);
         Self::new(ctx, inner, chs, properties)
     }
 

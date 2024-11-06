@@ -1,7 +1,5 @@
 01. replace window CornerAdjuster with border::Corner
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 01. borders-pane wrapper
      - option for each of up/down/right/left
         - aka. doesn't need to be fully bordered.
@@ -12,6 +10,8 @@
 
 01. merge PaneWithScrollbars into border pane - introduce scrollbars into border
     pane
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 05. introduce errors, remove all unwraps
 

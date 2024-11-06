@@ -3,7 +3,7 @@ use {
     crate::{
         Color, Context, DrawChPos, DrawChs2D, DynLocationSet, DynVal, Element, ElementID, Event,
         EventResponses, Keyboard as KB, Parent, Priority, ReceivableEvent, ReceivableEventChanges,
-        RelMouseEvent, SelfReceivableEvents, Style,
+        RelMouseEvent, SelfReceivableEvents, Style, *,
     },
     crossterm::event::{KeyEvent, MouseButton, MouseEvent, MouseEventKind},
     std::ops::{Deref, DerefMut},
@@ -83,7 +83,9 @@ impl VerticalScrollbar {
             scrollbar_length_chs: Rc::new(RefCell::new(scrollable_view_height)),
             scrollable_position: Rc::new(RefCell::new(0)),
             has_arrows: Rc::new(RefCell::new(true)),
-            sb_sty: Rc::new(RefCell::new(ScrollbarSty::vertical_block())),
+            sb_sty: Rc::new(RefCell::new(ScrollbarSty::vertical_block(
+                Scrollbar::STYLE.ready_style,
+            ))),
             position_changed_hook: Rc::new(RefCell::new(None)),
             currently_dragging: Rc::new(RefCell::new(false)),
             start_drag_position: Rc::new(RefCell::new(0)),
@@ -165,7 +167,9 @@ impl HorizontalScrollbar {
             scrollbar_length_chs: Rc::new(RefCell::new(scrollable_view_width)),
             scrollable_position: Rc::new(RefCell::new(0)),
             has_arrows: Rc::new(RefCell::new(true)),
-            sb_sty: Rc::new(RefCell::new(ScrollbarSty::horizontal_block())),
+            sb_sty: Rc::new(RefCell::new(ScrollbarSty::horizontal_block(
+                Scrollbar::STYLE.ready_style,
+            ))),
             position_changed_hook: Rc::new(RefCell::new(None)),
             currently_dragging: Rc::new(RefCell::new(false)),
             start_drag_position: Rc::new(RefCell::new(0)),
@@ -282,71 +286,71 @@ pub struct Scrollbar {
 }
 
 pub struct ScrollbarSty {
-    pub backwards_arrow: char,
-    pub forwards_arrow: char,
-    pub empty_block: char,
-    pub full_block: char,
-    pub forwards_half_block: char,
-    pub backwards_half_block: char,
-    pub unnessecary: char,
+    pub backwards_arrow: DrawCh,
+    pub forwards_arrow: DrawCh,
+    pub empty_block: DrawCh,
+    pub full_block: DrawCh,
+    pub forwards_half_block: DrawCh,
+    pub backwards_half_block: DrawCh,
+    pub unnessecary: DrawCh,
 }
 
 impl ScrollbarSty {
-    pub fn horizontal_block() -> Self {
+    pub fn horizontal_block(sty: Style) -> Self {
         ScrollbarSty {
-            backwards_arrow: '◀',
-            forwards_arrow: '▶',
-            empty_block: ' ',
-            full_block: '█',
-            forwards_half_block: '▐',
-            backwards_half_block: '▌',
-            unnessecary: '░',
+            backwards_arrow: DrawCh::new('◀', sty.clone()),
+            forwards_arrow: DrawCh::new('▶', sty.clone()),
+            empty_block: DrawCh::new(' ', sty.clone()),
+            full_block: DrawCh::new('█', sty.clone()),
+            forwards_half_block: DrawCh::new('▐', sty.clone()),
+            backwards_half_block: DrawCh::new('▌', sty.clone()),
+            unnessecary: DrawCh::new('░', sty),
         }
     }
 
-    pub fn horizontal_for_thin_box() -> Self {
+    pub fn horizontal_for_thin_box(sty: Style) -> Self {
         ScrollbarSty {
-            backwards_arrow: '◁',
-            forwards_arrow: '▷',
-            empty_block: '─',
-            full_block: '━',
-            forwards_half_block: '╼',
-            backwards_half_block: '╾',
-            unnessecary: '─',
+            backwards_arrow: DrawCh::new('◁', sty.clone()),
+            forwards_arrow: DrawCh::new('▷', sty.clone()),
+            empty_block: DrawCh::new('─', sty.clone()),
+            full_block: DrawCh::new('━', sty.clone()),
+            forwards_half_block: DrawCh::new('╼', sty.clone()),
+            backwards_half_block: DrawCh::new('╾', sty.clone()),
+            unnessecary: DrawCh::new('━', sty),
         }
     }
 
-    pub fn vertical_block() -> Self {
+    pub fn vertical_block(sty: Style) -> Self {
         ScrollbarSty {
-            backwards_arrow: '▲',
-            forwards_arrow: '▼',
-            empty_block: ' ',
-            full_block: '█',
-            forwards_half_block: '▄',
-            backwards_half_block: '▀',
-            unnessecary: '░',
+            backwards_arrow: DrawCh::new('▲', sty.clone()),
+            forwards_arrow: DrawCh::new('▼', sty.clone()),
+            empty_block: DrawCh::new(' ', sty.clone()),
+            full_block: DrawCh::new('█', sty.clone()),
+            forwards_half_block: DrawCh::new('▄', sty.clone()),
+            backwards_half_block: DrawCh::new('▀', sty.clone()),
+            unnessecary: DrawCh::new('░', sty),
         }
     }
 
-    pub fn vertical_for_thin_box() -> Self {
+    pub fn vertical_for_thin_box(sty: Style) -> Self {
         ScrollbarSty {
-            backwards_arrow: '△',
-            forwards_arrow: '▽',
-            empty_block: '│',
-            full_block: '┃',
-            forwards_half_block: '╽',
-            backwards_half_block: '╿',
-            unnessecary: '│',
+            backwards_arrow: DrawCh::new('△', sty.clone()),
+            forwards_arrow: DrawCh::new('▽', sty.clone()),
+            empty_block: DrawCh::new('│', sty.clone()),
+            full_block: DrawCh::new('┃', sty.clone()),
+            forwards_half_block: DrawCh::new('╽', sty.clone()),
+            backwards_half_block: DrawCh::new('╿', sty.clone()),
+            unnessecary: DrawCh::new('┃', sty),
         }
     }
 
     pub fn with_empty_block(mut self, c: char) -> Self {
-        self.empty_block = c;
+        self.empty_block.ch = c.into();
         self
     }
 
     pub fn with_unnessecary(mut self, c: char) -> Self {
-        self.unnessecary = c;
+        self.unnessecary.ch = c.into();
         self
     }
 }
@@ -579,36 +583,36 @@ impl Scrollbar {
         }
     }
 
-    pub fn scrollbar_domain_array_of_runes(&self, p_size: usize) -> Vec<char> {
+    pub fn scrollbar_domain_array_of_runes(&self, p_size: usize) -> Vec<DrawCh> {
         let incr_filled = self.scroll_bar_domain_array_of_half_increments(p_size);
         let mut rs = vec![];
         // determine the characters based on the filled increments
         for i in 0..incr_filled.len() {
             if i % 2 == 1 {
                 match (incr_filled[i - 1], incr_filled[i]) {
-                    (true, true) => rs.push(self.sb_sty.borrow().full_block),
-                    (true, false) => rs.push(self.sb_sty.borrow().backwards_half_block),
-                    (false, true) => rs.push(self.sb_sty.borrow().forwards_half_block),
-                    (false, false) => rs.push(self.sb_sty.borrow().empty_block),
+                    (true, true) => rs.push(self.sb_sty.borrow().full_block.clone()),
+                    (true, false) => rs.push(self.sb_sty.borrow().backwards_half_block.clone()),
+                    (false, true) => rs.push(self.sb_sty.borrow().forwards_half_block.clone()),
+                    (false, false) => rs.push(self.sb_sty.borrow().empty_block.clone()),
                 }
             }
         }
         rs
     }
 
-    pub fn drawing_runes(&self, p_size: usize) -> Vec<char> {
+    pub fn drawing_runes(&self, p_size: usize) -> Vec<DrawCh> {
         let mut chs = vec![];
         if self.is_currently_unnecessary(p_size) {
             for _ in 0..self.scrollbar_length_chs.borrow().get_val(p_size as u16) {
-                chs.push(self.sb_sty.borrow().unnessecary);
+                chs.push(self.sb_sty.borrow().unnessecary.clone());
             }
         } else {
             if *self.has_arrows.borrow() {
-                chs.push(self.sb_sty.borrow().backwards_arrow);
+                chs.push(self.sb_sty.borrow().backwards_arrow.clone());
             }
             chs.append(&mut self.scrollbar_domain_array_of_runes(p_size));
             if *self.has_arrows.borrow() {
-                chs.push(self.sb_sty.borrow().forwards_arrow);
+                chs.push(self.sb_sty.borrow().forwards_arrow.clone());
             }
         }
         chs
@@ -720,27 +724,15 @@ impl HorizontalScrollbar {
 impl VerticalScrollbar {
     pub fn drawing_(&self, ctx: &Context) -> Vec<DrawChPos> {
         let chs = self.drawing_runes(ctx.get_height().into());
-
-        // compile the runes into a vertical string
-        let mut v_str = String::new();
-        for (i, ch) in chs.iter().enumerate() {
-            v_str.push(*ch);
-            if i != chs.len().saturating_sub(1) {
-                v_str.push('\n');
-            }
-        }
-        self.base.set_content_from_string(ctx, &v_str);
+        let content = DrawChs2D::from_draw_chs_vertical(chs);
+        self.base.set_content(content);
         self.base.drawing(ctx)
     }
 }
 impl HorizontalScrollbar {
     pub fn drawing_(&self, ctx: &Context) -> Vec<DrawChPos> {
-        let h_str = self
-            .drawing_runes(ctx.get_width().into())
-            .iter()
-            .collect::<String>();
-        let sty = self.base.get_current_style();
-        let content = DrawChs2D::from_string(h_str, sty);
+        let chs = self.drawing_runes(ctx.get_width().into());
+        let content = DrawChs2D::from_draw_chs_horizontal(chs);
         self.base.set_content(content);
         self.base.drawing(ctx)
     }
@@ -1132,6 +1124,7 @@ mod tests {
         let dr = sb
             .drawing_runes(ctx.get_width().into())
             .iter()
+            .map(|dc| format!("{}", dc.ch))
             .collect::<String>();
         assert_eq!(dr.to_string(), "◀██▌   ▶");
     }

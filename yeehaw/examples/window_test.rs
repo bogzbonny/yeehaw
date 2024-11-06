@@ -1,24 +1,6 @@
 use {
     std::{cell::RefCell, rc::Rc},
-    yeehaw::{
-        //debug,
-        widgets::{Button, HorizontalSBPositions, VerticalSBPositions},
-        ChPlus,
-        Color,
-        Cui,
-        DebugSizePane,
-        DrawCh,
-        DynVal,
-        Error,
-        EventResponse,
-        PaneWithScrollbars,
-        ParentPane,
-
-        Style,
-        TerminalPane,
-        WindowPane,
-        *,
-    },
+    yeehaw::*,
 };
 
 #[tokio::main]
@@ -79,10 +61,8 @@ async fn main() -> Result<(), Error> {
         let title = format!("Pane {}", *counter_.borrow());
         let bg = Color::new_with_alpha(150, 150, 155, 150);
         let fg = Color::new_with_alpha(150, 150, 155, 150);
-        let def_ch = DrawCh::new(
-            ChPlus::Transparent,
-            Style::default().with_bg(bg.clone()).with_fg(fg),
-        );
+        let sty = Style::default().with_bg(bg.clone()).with_fg(fg);
+        let def_ch = DrawCh::new(ChPlus::Transparent, sty.clone());
 
         let el = DebugSizePane::new(&ctx_)
             .with_text(title.clone())
@@ -91,17 +71,17 @@ async fn main() -> Result<(), Error> {
             .with_default_ch(def_ch)
             .with_style(Style::default().with_bg(bg).with_fg(Color::BLACK));
 
-        let sc_pane = PaneWithScrollbars::new(
-            &ctx_,
-            50,
-            50,
-            HorizontalSBPositions::Below,
-            VerticalSBPositions::ToTheRight,
-        );
+        //let sc_pane = PaneWithScrollbars::new(
+        //    &ctx_,
+        //    50,
+        //    50,
+        //    HorizontalSBPositions::Below,
+        //    VerticalSBPositions::ToTheRight,
+        //);
 
-        //let sc_pane = PaneScrollable::new(&ctx_.hat, 50, 50);
-
+        let sc_pane = PaneScrollable::new(&ctx_, 50, 50);
         sc_pane.add_element(Box::new(el));
+        let sc_pane = Bordered::new_borderless_with_scrollbars(&ctx_, Box::new(sc_pane), sty);
 
         *counter_.borrow_mut() += 1;
         let window = WindowPane::new(&ctx_, Box::new(sc_pane), &title)
@@ -246,15 +226,11 @@ async fn main() -> Result<(), Error> {
             Box::new(sc_pane),
             sty.clone().with_fg(Color::BLACK),
         );
-        //let bordered =
-        //    Bordered::new_resizer(&ctx_, Box::new(sc_pane), sty.clone().with_fg(Color::BLACK));
 
         *counter_.borrow_mut() += 1;
         let window = WindowPane::new(&ctx_, Box::new(bordered), &title)
-        //let window = WindowPane::new(&ctx_, Box::new(sc_pane), &title)
             .with_height(DynVal::new_fixed(20))
             .with_width(DynVal::new_fixed(30))
-            //.with_corner_resizer(&ctx_)
             .at(DynVal::new_fixed(10), DynVal::new_fixed(10));
 
         let inner_resps = vec![

@@ -370,6 +370,18 @@ impl DrawChs2D {
         DrawChs2D(out)
     }
 
+    pub fn from_draw_chs_horizontal(chs: Vec<DrawCh>) -> DrawChs2D {
+        DrawChs2D(vec![chs])
+    }
+
+    pub fn from_draw_chs_vertical(chs: Vec<DrawCh>) -> DrawChs2D {
+        let mut out = Vec::new();
+        for ch in chs {
+            out.push(vec![ch]);
+        }
+        DrawChs2D(out)
+    }
+
     pub fn from_vec_draw_ch_pos(chs: Vec<DrawChPos>, default_ch: DrawCh) -> DrawChs2D {
         // get the max x and y
         let mut max_x = 0;

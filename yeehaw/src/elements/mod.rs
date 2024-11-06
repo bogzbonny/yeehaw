@@ -25,7 +25,7 @@ pub use {
     menu_right_click::RightClickMenu,
     pane::Pane,
     pane_parent::ParentPane,
-    pane_scrollable::{PaneScrollable, PaneWithScrollbars},
+    pane_scrollable::PaneScrollable,
     shadow::Shadowed,
     stack::{HorizontalStack, VerticalStack},
     tabs::Tabs,
