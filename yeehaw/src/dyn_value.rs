@@ -59,6 +59,11 @@ impl DynVal {
             ..DynVal::default()
         }
     }
+
+    pub fn new_full() -> Self {
+        DynVal::new_flex(1.0)
+    }
+
     // Create a new DynVal with a flex but which bounds at a minimum fixed value
     pub fn new_flex_with_min_fixed(flex: f64, min: i32) -> Self {
         DynVal {
@@ -272,7 +277,7 @@ pub mod dyn_val_tests {
         let sv = DynVal::new_flex(0.5).plus(DynVal::new_fixed(1));
         assert_eq!(6, sv.get_val(10));
 
-        let sv = DynVal::new_flex(1.).minus(DynVal::new_fixed(1));
+        let sv = DynVal::new_full().minus(DynVal::new_fixed(1));
         assert_eq!(9, sv.get_val(10));
         assert_eq!(19, sv.get_val(20));
     }

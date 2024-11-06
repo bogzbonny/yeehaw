@@ -289,6 +289,8 @@ impl ElementOrganizer {
                 EventResponse::None => {}
                 EventResponse::Quit => {}
                 EventResponse::Metadata(_, _) => {}
+                EventResponse::Move(_) => {}
+                EventResponse::Resize(_) => {}
                 EventResponse::Destruct => {
                     // send down an exit event to the element about to be destroyed
                     let _ = details.el.receive_event(ctx, Event::Exit);

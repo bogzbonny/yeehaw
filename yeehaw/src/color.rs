@@ -455,7 +455,7 @@ impl Gradient {
     }
 
     pub fn new_x_grad_2_color(c1: Color, c2: Color) -> Self {
-        let grad = vec![(DynVal::new_flex(0.), c1), (DynVal::new_flex(1.), c2)];
+        let grad = vec![(DynVal::new_flex(0.), c1), (DynVal::new_full(), c2)];
         Gradient {
             grad,
             angle_deg: 0.,
@@ -463,7 +463,7 @@ impl Gradient {
     }
 
     pub fn new_y_grad_2_color(c1: Color, c2: Color) -> Self {
-        let grad = vec![(DynVal::new_flex(0.), c1), (DynVal::new_flex(1.), c2)];
+        let grad = vec![(DynVal::new_flex(0.), c1), (DynVal::new_full(), c2)];
         Gradient {
             grad,
             angle_deg: 90.,

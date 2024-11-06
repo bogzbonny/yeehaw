@@ -32,7 +32,7 @@ async fn main() -> Result<(), Error> {
     let pp = ParentPane::new(&ctx, "parent_pane")
         .with_dyn_height(1.0.into())
         .with_dyn_width(1.0.into())
-        .with_bg_color(Color::BLUE);
+        .with_bg_color(Color::DARK_BLUE);
 
     let counter = Rc::new(RefCell::new(0));
 
@@ -51,14 +51,14 @@ async fn main() -> Result<(), Error> {
 
         let el = DebugSizePane::new(&ctx_)
             .with_text(title.clone())
-            .with_width(DynVal::new_flex(1.))
-            .with_height(DynVal::new_flex(1.))
+            .with_width(DynVal::new_full())
+            .with_height(DynVal::new_full())
             .with_default_ch(def_ch)
             .with_style(Style::default().with_bg(bg).with_fg(Color::BLACK));
 
         *counter_.borrow_mut() += 1;
         let window = WindowPane::new(&ctx_, Box::new(el), &title)
-            .with_corner_adjuster(&ctx_)
+            .with_corner_resizer(&ctx_)
             .at(DynVal::new_fixed(10), DynVal::new_fixed(10))
             .with_height(DynVal::new_fixed(20))
             .with_width(DynVal::new_fixed(30));
@@ -86,8 +86,8 @@ async fn main() -> Result<(), Error> {
 
         let el = DebugSizePane::new(&ctx_)
             .with_text(title.clone())
-            .with_width(DynVal::new_flex(1.))
-            .with_height(DynVal::new_flex(1.))
+            .with_width(DynVal::new_full())
+            .with_height(DynVal::new_full())
             .with_default_ch(def_ch)
             .with_style(Style::default().with_bg(bg).with_fg(Color::BLACK));
 
@@ -105,7 +105,7 @@ async fn main() -> Result<(), Error> {
 
         *counter_.borrow_mut() += 1;
         let window = WindowPane::new(&ctx_, Box::new(sc_pane), &title)
-            .with_corner_adjuster(&ctx_)
+            .with_corner_resizer(&ctx_)
             .with_height(DynVal::new_fixed(20))
             .with_width(DynVal::new_fixed(30))
             .at(DynVal::new_fixed(10), DynVal::new_fixed(10));
@@ -133,12 +133,81 @@ async fn main() -> Result<(), Error> {
         ctx_.s.height = 20;
         let title = format!("Pane {}", *counter_.borrow());
         let el = TerminalPane::new(&ctx_)
-            .with_width(DynVal::new_flex(1.))
-            .with_height(DynVal::new_flex(1.));
+            .with_width(DynVal::new_full())
+            .with_height(DynVal::new_full());
 
         *counter_.borrow_mut() += 1;
         let window = WindowPane::new(&ctx_, Box::new(el), &title)
-            .with_corner_adjuster(&ctx_)
+            .with_corner_resizer(&ctx_)
+            .at(DynVal::new_fixed(10), DynVal::new_fixed(10))
+            .with_height(DynVal::new_fixed(20))
+            .with_width(DynVal::new_fixed(30));
+
+        let inner_resps = vec![
+            EventResponse::BringToFront,
+            EventResponse::UnfocusOthers,
+            EventResponse::Focus,
+        ];
+        EventResponse::NewElement(Box::new(window.clone()), Some(inner_resps.into())).into()
+    });
+
+    let mut ctx_ = ctx.clone();
+    let counter_ = counter.clone();
+    let add_button_bordered_resizer_fn = Box::new(move |_, _| {
+        ctx_.s.width = 30;
+        ctx_.s.height = 20;
+        let title = format!("Bordered Pane {}", *counter_.borrow());
+        let bg = Color::new_with_alpha(150, 150, 155, 150);
+        let fg = Color::new_with_alpha(150, 150, 155, 150);
+        let sty = Style::default().with_bg(bg.clone()).with_fg(fg);
+        let def_ch = DrawCh::new(ChPlus::Transparent, sty.clone());
+
+        let el = DebugSizePane::new(&ctx_)
+            .with_text(title.clone())
+            .with_width(DynVal::new_full())
+            .with_height(DynVal::new_full())
+            .with_default_ch(def_ch)
+            .with_style(Style::default().with_bg(bg).with_fg(Color::BLACK));
+
+        let bordered =
+            Bordered::new_resizer(&ctx_, Box::new(el), sty.clone().with_fg(Color::BLACK));
+
+        *counter_.borrow_mut() += 1;
+        let window = WindowPane::new(&ctx_, Box::new(bordered), &title)
+            .at(DynVal::new_fixed(10), DynVal::new_fixed(10))
+            .with_height(DynVal::new_fixed(20))
+            .with_width(DynVal::new_fixed(30));
+
+        let inner_resps = vec![
+            EventResponse::BringToFront,
+            EventResponse::UnfocusOthers,
+            EventResponse::Focus,
+        ];
+        EventResponse::NewElement(Box::new(window.clone()), Some(inner_resps.into())).into()
+    });
+
+    let mut ctx_ = ctx.clone();
+    let counter_ = counter.clone();
+    let add_button_bordered_mover_fn = Box::new(move |_, _| {
+        ctx_.s.width = 30;
+        ctx_.s.height = 20;
+        let title = format!("Bordered Pane {}", *counter_.borrow());
+        let bg = Color::new_with_alpha(150, 150, 155, 150);
+        let fg = Color::new_with_alpha(150, 150, 155, 150);
+        let sty = Style::default().with_bg(bg.clone()).with_fg(fg);
+        let def_ch = DrawCh::new(ChPlus::Transparent, sty.clone());
+
+        let el = DebugSizePane::new(&ctx_)
+            .with_text(title.clone())
+            .with_width(DynVal::new_full())
+            .with_height(DynVal::new_full())
+            .with_default_ch(def_ch)
+            .with_style(Style::default().with_bg(bg).with_fg(Color::BLACK));
+
+        let bordered = Bordered::new_mover(&ctx_, Box::new(el), sty.clone().with_fg(Color::BLACK));
+
+        *counter_.borrow_mut() += 1;
+        let window = WindowPane::new(&ctx_, Box::new(bordered), &title)
             .at(DynVal::new_fixed(10), DynVal::new_fixed(10))
             .with_height(DynVal::new_fixed(20))
             .with_width(DynVal::new_fixed(30));
@@ -156,9 +225,15 @@ async fn main() -> Result<(), Error> {
         Button::new(&ctx, "add_window_scrollable", add_button_scr_click_fn).at(15.into(), 1.into());
     let add_button3 =
         Button::new(&ctx, "add_terminal_window", add_term_click_fn).at(40.into(), 1.into());
+    let add_button4 = Button::new(&ctx, "add_bordered_resizer", add_button_bordered_resizer_fn)
+        .at(63.into(), 1.into());
+    let add_button5 = Button::new(&ctx, "add_bordered_mover", add_button_bordered_mover_fn)
+        .at(87.into(), 1.into());
     pp.add_element(Box::new(add_button));
     pp.add_element(Box::new(add_button2));
     pp.add_element(Box::new(add_button3));
+    pp.add_element(Box::new(add_button4));
+    pp.add_element(Box::new(add_button5));
 
     cui.run(Box::new(pp)).await
 }

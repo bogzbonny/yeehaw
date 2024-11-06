@@ -1,15 +1,13 @@
 use {
     crate::{
         widgets::{Button, Label, WBStyles},
-        Color, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal, Element,
-        ElementID, Event, EventResponse, EventResponses, Pane, Parent, ParentPane, Priority,
-        ReceivableEventChanges, SelfReceivableEvents, Size, Style, ZIndex,
+        *,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
 };
 
-// TODO integrate in border pane size-adjustments
+// TODO Top bar movements should be added to the Top Bar logic instead of the window logic
 // TODO animation for minimize/restore, should have one frame in the middle
 //      in the middle location between the restore position and start position.
 //      for that animation frame should just be the minimized top-bar
@@ -44,7 +42,7 @@ impl WindowPane {
         // adjust the inner size to account for the top bar
         let mut loc = inner.get_dyn_location_set().borrow().clone();
         loc.set_start_y(1.into());
-        loc.set_dyn_height(DynVal::new_flex(1.).minus(1.into()));
+        loc.set_dyn_height(DynVal::new_full().minus(1.into()));
         inner.get_dyn_location_set().replace(loc);
 
         pane.add_element(top_bar.clone());
@@ -88,10 +86,22 @@ impl WindowPane {
         self
     }
 
-    pub fn with_corner_adjuster(self, ctx: &Context) -> Self {
-        let ca = CornerAdjuster::new(ctx).at(
-            DynVal::new_flex(1.).minus(1.into()),
-            DynVal::new_flex(1.).minus(1.into()),
+    pub fn with_corner_resizer(self, ctx: &Context) -> Self {
+        let corner_ch = DrawCh::new(
+            '◢',
+            Style::default()
+                .with_fg(Color::WHITE)
+                .with_bg(Color::TRANSPARENT),
+        );
+        let ca = BorderCorner::new(
+            ctx,
+            corner_ch,
+            CornerPos::BottomRight,
+            BorderProperty::DragResize,
+        )
+        .at(
+            DynVal::new_full().minus(1.into()),
+            DynVal::new_full().minus(1.into()),
         );
         self.pane.add_element(Box::new(ca));
 
@@ -110,47 +120,45 @@ impl WindowPane {
         let mut resps_ = EventResponses::default();
         let mut just_minimized = false;
         for resp in resps.iter_mut() {
-            let mut adjust_size = None;
-            if let EventResponse::Metadata(key, adj_bz) = resp {
-                if key == CornerAdjuster::ADJUST_SIZE_MD_KEY {
-                    adjust_size = Some(adj_bz);
-                }
-            }
-            if let Some(bz) = adjust_size {
-                // get the adjust size event
-                let adj_size_ev: AdjustSizeEvent = match serde_json::from_slice(bz) {
-                    Ok(v) => v,
-                    Err(_e) => {
-                        // TODO log error
-                        continue;
-                    }
-                };
-                let mut dx = adj_size_ev.dx;
-                let mut dy = adj_size_ev.dy;
-                let width = self.pane.pane.get_width(ctx) as i32;
-                let height = self.pane.pane.get_height(ctx) as i32;
-                if width + dx < 2 {
-                    dx = 0
-                }
-                if height + dy < 2 {
-                    dy = 0
-                }
+            let changes = match resp {
+                EventResponse::Move(m) => Some((m.dx, m.dx, m.dy, m.dy)),
+                EventResponse::Resize(r) => Some((r.left_dx, r.right_dx, r.top_dy, r.bottom_dy)),
+                _ => None,
+            };
 
-                if dx == 0 && dy == 0 {
-                    *resp = EventResponse::None;
-                    continue;
-                }
+            if let Some(changes) = changes {
+                let (left_dx, right_dx, top_dy, bottom_dy) = changes;
 
                 // NOTE must set to a a fixed value (aka need to get the size for the pane DynVal
                 // using ctx here. if we do not then the next pane position drag will be off
-                let end_x = self.pane.pane.get_end_x(ctx) + dx;
-                let end_y = self.pane.pane.get_end_y(ctx) + dy;
-                self.pane.pane.set_end_x(end_x.into());
-                self.pane.pane.set_end_y(end_y.into());
+                let start_x = self.pane.pane.get_start_x(ctx);
+                let start_y = self.pane.pane.get_start_y(ctx);
+                let end_x = self.pane.pane.get_end_x(ctx);
+                let end_y = self.pane.pane.get_end_y(ctx);
+                let mut start_x_adj = start_x + left_dx;
+                let mut start_y_adj = start_y + top_dy;
+                let mut end_x_adj = end_x + right_dx;
+                let mut end_y_adj = end_y + bottom_dy;
+
+                if end_x_adj - start_x_adj < 2 || start_x_adj < 0 || start_y_adj < 0 {
+                    start_x_adj = start_x;
+                    end_x_adj = end_x;
+                }
+
+                // 3 = 1 (top bar) + 2 inner
+                if end_y_adj - start_y_adj < 3 || start_x_adj < 0 || start_y_adj < 0 {
+                    start_y_adj = start_y;
+                    end_y_adj = end_y;
+                }
+
+                self.pane.pane.set_start_x(start_x_adj.into());
+                self.pane.pane.set_start_y(start_y_adj.into());
+                self.pane.pane.set_end_x(end_x_adj.into());
+                self.pane.pane.set_end_y(end_y_adj.into());
 
                 let inner_ctx = ctx.clone().with_size(Size::new(
                     self.pane.pane.get_width(ctx) as u16,
-                    self.pane.pane.get_height(ctx) as u16 - 1,
+                    (self.pane.pane.get_height(ctx) as u16).saturating_sub(1),
                 ));
 
                 let mut top_bar_ctx = ctx.clone();
@@ -257,8 +265,8 @@ impl WindowPane {
                     .set_end_x(DynVal::new_fixed(minimize_width.into()));
                 self.pane
                     .pane
-                    .set_start_y(DynVal::new_flex(1.).minus(1.into()));
-                self.pane.pane.set_end_y(DynVal::new_flex(1.));
+                    .set_start_y(DynVal::new_full().minus(1.into()));
+                self.pane.pane.set_end_y(DynVal::new_full());
                 let mut pane_ctx = ctx.clone();
                 pane_ctx.s.height = 1;
                 pane_ctx.s.width = minimize_width;
@@ -469,7 +477,7 @@ impl BasicWindowTopBar {
     ) -> Self {
         let pane = ParentPane::new(ctx, "basic_window_top_bar")
             .with_dyn_height(DynVal::new_fixed(1))
-            .with_dyn_width(DynVal::new_flex(1.))
+            .with_dyn_width(DynVal::new_full())
             .with_style(Style::default().with_bg(Color::WHITE).with_fg(Color::BLACK));
 
         let btn_styles = WBStyles::new(
@@ -503,7 +511,7 @@ impl BasicWindowTopBar {
             ))
             .with_styles(btn_styles.clone())
             .at(
-                DynVal::new_flex(1.).minus(button_rhs_spaces.into()),
+                DynVal::new_full().minus(button_rhs_spaces.into()),
                 DynVal::new_fixed(0),
             );
             pane.add_element(Box::new(close_button));
@@ -534,7 +542,7 @@ impl BasicWindowTopBar {
             ))
             .with_styles(btn_styles.clone())
             .at(
-                DynVal::new_flex(1.).minus(button_rhs_spaces.into()),
+                DynVal::new_full().minus(button_rhs_spaces.into()),
                 DynVal::new_fixed(0),
             );
             let b = Box::new(maximize_button);
@@ -560,7 +568,7 @@ impl BasicWindowTopBar {
             ))
             .with_styles(btn_styles)
             .at(
-                DynVal::new_flex(1.).minus(button_rhs_spaces.into()),
+                DynVal::new_full().minus(button_rhs_spaces.into()),
                 DynVal::new_fixed(0),
             );
             pane.add_element(Box::new(minimize_button));
@@ -574,7 +582,7 @@ impl BasicWindowTopBar {
         let decor_label = Box::new(
             Label::new(ctx, "◹")
                 .with_style(ctx, Style::transparent())
-                .at(DynVal::new_flex(1.).minus(2.into()), DynVal::new_fixed(0)),
+                .at(DynVal::new_full().minus(2.into()), DynVal::new_fixed(0)),
         );
         pane.add_element(title_label.clone());
         pane.add_element(decor_label.clone());
@@ -611,6 +619,15 @@ impl BasicWindowTopBar {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for BasicWindowTopBar {
+    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        let out = self.pane.drawing(ctx);
+        // ensure that none of the positions are outside of the context
+        out.iter()
+            .filter(|dc| dc.x < ctx.s.width && dc.y < ctx.s.height)
+            .cloned()
+            .collect()
+    }
+
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
             Event::Custom(ref key, _) if key == WindowPane::WINDOW_MINIMIZE_EV_KEY => {
@@ -627,97 +644,5 @@ impl Element for BasicWindowTopBar {
             }
             _ => self.pane.receive_event(ctx, ev),
         }
-    }
-}
-
-// ------------------------------------------------
-
-/// a small element (one character) that can be used to send resize requests to parent elements
-#[derive(Clone)]
-pub struct CornerAdjuster {
-    pub pane: Pane,
-    pub dragging: Rc<RefCell<bool>>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone)]
-pub struct AdjustSizeEvent {
-    pub dx: i32,
-    pub dy: i32,
-}
-
-impl CornerAdjuster {
-    const ADJUST_SIZE_MD_KEY: &'static str = "adjust_size";
-    const Z_INDEX: ZIndex = 200;
-
-    pub fn new(ctx: &Context) -> Self {
-        let pane = Pane::new(ctx, "resize_corner")
-            .with_dyn_height(1.into())
-            .with_dyn_width(1.into())
-            .with_style(Style::default().with_bg(Color::WHITE).with_fg(Color::BLACK))
-            .with_content(DrawChs2D::from_char(
-                '◢',
-                Style::default()
-                    .with_fg(Color::WHITE)
-                    .with_bg(Color::TRANSPARENT),
-            ));
-        pane.set_z(Self::Z_INDEX);
-        Self {
-            pane,
-            dragging: Rc::new(RefCell::new(false)),
-        }
-    }
-
-    pub fn with_styles(self, sty: Style) -> Self {
-        self.pane.set_content(DrawChs2D::from_char('◢', sty));
-        self
-    }
-
-    pub fn with_ch(self, ch: DrawCh) -> Self {
-        self.pane.set_content(ch.into());
-        self
-    }
-
-    pub fn at(self, x: DynVal, y: DynVal) -> Self {
-        self.pane.set_at(x, y);
-        self
-    }
-}
-
-#[yeehaw_derive::impl_element_from(pane)]
-impl Element for CornerAdjuster {
-    fn receive_event_inner(&self, _ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        let cur_dragging = *self.dragging.borrow();
-        let mut captured = false;
-        match ev {
-            Event::Mouse(me) => {
-                captured = true;
-                match me.kind {
-                    MouseEventKind::Down(MouseButton::Left) => *self.dragging.borrow_mut() = true,
-                    MouseEventKind::Drag(MouseButton::Left) => {}
-                    _ => *self.dragging.borrow_mut() = false,
-                }
-            }
-            Event::ExternalMouse(me) => match me.kind {
-                MouseEventKind::Drag(MouseButton::Left) if cur_dragging => {
-                    let dx = me.column;
-                    let dy = me.row;
-                    let adj_size_ev = AdjustSizeEvent { dx, dy };
-                    let bz = match serde_json::to_vec(&adj_size_ev) {
-                        Ok(v) => v,
-                        Err(_e) => {
-                            // TODO log error
-                            return (false, EventResponses::default());
-                        }
-                    };
-                    return (
-                        true,
-                        EventResponse::Metadata(Self::ADJUST_SIZE_MD_KEY.to_string(), bz).into(),
-                    );
-                }
-                _ => *self.dragging.borrow_mut() = false,
-            },
-            _ => {}
-        }
-        (captured, EventResponses::default())
     }
 }

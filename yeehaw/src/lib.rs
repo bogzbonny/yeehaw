@@ -27,9 +27,10 @@ pub use {
     dyn_value::DynVal,
     element::{Element, Parent},
     elements::{
-        DebugSizePane, FileNavPane, FileViewerPane, HorizontalStack, ImageViewer, MenuBar, Pane,
-        PaneScrollable, PaneWithScrollbars, ParentPane, RightClickMenu, Shadowed, Tabs,
-        TermEditorPane, TerminalPane, VerticalStack, WindowPane,
+        border::Corner as BorderCorner, border::CornerPos, border::Property as BorderProperty,
+        Bordered, DebugSizePane, FileNavPane, FileViewerPane, HorizontalStack, ImageViewer,
+        MenuBar, Pane, PaneScrollable, PaneWithScrollbars, ParentPane, RightClickMenu, Shadowed,
+        Tabs, TermEditorPane, TerminalPane, VerticalStack, WindowPane,
     },
     errors::Error,
     event::{
@@ -44,5 +45,3 @@ pub use {
     style::{Attributes, BgTranspSrc, FgTranspSrc, Style, UlTranspSrc},
     widgets::WidgetPane,
 };
-
-// -------------------------------------------------------

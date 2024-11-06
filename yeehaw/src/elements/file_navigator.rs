@@ -80,7 +80,7 @@ impl FileNavPane {
             .borrow_mut()
             .push_many_at_priority(Self::default_receivable_events(), Priority::Focused);
 
-        pane.set_dyn_height(DynVal::new_flex(1.));
+        pane.set_dyn_height(DynVal::new_full());
         pane.set_dyn_width(DynVal::new_fixed(32));
 
         let out = Self {

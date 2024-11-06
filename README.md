@@ -60,6 +60,7 @@ have been assigned to them from parent elements.
 
 ## Planned
  - Put a whole dang yeehaw-TUI into a Stateful ratatui widget
+ - mini-TUIs in the CLI (aka. without taking up the whole screen)
  - accordion stack container
  - hover comments anywhere
  - vertical tabs (like brave browser) 
@@ -67,6 +68,7 @@ have been assigned to them from parent elements.
  - ANSI-animation player (using extended asc format)
  - optional mouse pixel support
  - wire-connectors
+ - dials
  - color selector element
  - table element
  - Interactive debugging TUI application
@@ -81,8 +83,7 @@ have been assigned to them from parent elements.
 
 [ratatui](https://ratatui.rs/) obviously rocks, [well done](https://www.youtube.com/watch?v=9wm1D6Rk8TE)
 
-[dioxus](https://github.com/dioxuslabs/dioxus) seems cool - they have a goal of
-TUI support in the future.
+[bubbletea](https://github.com/charmbracelet/bubbletea) lookin' good! (golang)
 
 ## Contributing 
 

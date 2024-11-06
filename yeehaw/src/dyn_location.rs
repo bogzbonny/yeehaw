@@ -16,9 +16,9 @@ impl DynLocation {
     pub fn new_full() -> DynLocation {
         DynLocation {
             start_x: DynVal::new_fixed(0),
-            end_x: DynVal::new_flex(1.),
+            end_x: DynVal::new_full(),
             start_y: DynVal::new_fixed(0),
-            end_y: DynVal::new_flex(1.),
+            end_y: DynVal::new_full(),
         }
     }
 
@@ -56,6 +56,10 @@ impl DynLocation {
         } else {
             out as usize
         }
+    }
+
+    pub fn size(&self, ctx: &Context) -> Size {
+        Size::new(self.width(ctx) as u16, self.height(ctx) as u16)
     }
 
     pub fn set_at(&mut self, x: DynVal, y: DynVal) {

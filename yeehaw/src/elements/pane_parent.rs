@@ -128,6 +128,11 @@ impl ParentPane {
         self
     }
 
+    pub fn with_element(self, el: Box<dyn Element>) -> Self {
+        self.add_element(el);
+        self
+    }
+
     pub fn add_element(&self, el: Box<dyn Element>) -> EventResponse {
         self.eo.add_element(el, Some(Box::new(self.clone())))
     }

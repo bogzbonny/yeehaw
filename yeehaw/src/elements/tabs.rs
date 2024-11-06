@@ -53,7 +53,7 @@ impl TabsTop {
 
         // set the height/width of the tabs top
         tt.pane.pane.set_dyn_height(DynVal::new_fixed(1));
-        tt.pane.pane.set_dyn_width(DynVal::new_flex(1.));
+        tt.pane.pane.set_dyn_width(DynVal::new_full());
         tt
     }
 

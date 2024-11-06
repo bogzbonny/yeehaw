@@ -232,16 +232,16 @@ impl PaneWithScrollbars {
         //  - the solution is to have the width as a fixed size, and adjust it with each resize
 
         let (x_sb_size, x_sc_start_x) = match y_scrollbar_op {
-            VerticalSBPositions::None => (DynVal::new_flex(1.0), DynVal::new_fixed(0)),
+            VerticalSBPositions::None => (DynVal::new_full(), DynVal::new_fixed(0)),
             VerticalSBPositions::ToTheLeft => (
-                DynVal::new_flex(1.)
+                DynVal::new_full()
                     .minus(1.into())
                     .get_val(ctx.s.width)
                     .into(),
                 DynVal::new_fixed(1),
             ),
             VerticalSBPositions::ToTheRight => (
-                DynVal::new_flex(1.)
+                DynVal::new_full()
                     .minus(1.into())
                     .get_val(ctx.s.width)
                     .into(),
@@ -255,21 +255,21 @@ impl PaneWithScrollbars {
                 x_sb.set_at(x_sc_start_x, DynVal::new_fixed(0));
             }
             HorizontalSBPositions::Below => {
-                x_sb.set_at(x_sc_start_x, DynVal::new_flex(1.).minus(1.into()));
+                x_sb.set_at(x_sc_start_x, DynVal::new_full().minus(1.into()));
             }
         }
 
         let (y_sb_size, y_sc_start_y) = match x_scrollbar_op {
-            HorizontalSBPositions::None => (DynVal::new_flex(1.0), DynVal::new_fixed(0)),
+            HorizontalSBPositions::None => (DynVal::new_full(), DynVal::new_fixed(0)),
             HorizontalSBPositions::Above => (
-                DynVal::new_flex(1.)
+                DynVal::new_full()
                     .minus(1.into())
                     .get_val(ctx.s.height)
                     .into(),
                 DynVal::new_fixed(1),
             ),
             HorizontalSBPositions::Below => (
-                DynVal::new_flex(1.)
+                DynVal::new_full()
                     .minus(1.into())
                     .get_val(ctx.s.height)
                     .into(),
@@ -281,7 +281,7 @@ impl PaneWithScrollbars {
         match y_scrollbar_op {
             VerticalSBPositions::None => {}
             VerticalSBPositions::ToTheRight => {
-                y_sb.set_at(DynVal::new_flex(1.).minus(1.into()), y_sc_start_y);
+                y_sb.set_at(DynVal::new_full().minus(1.into()), y_sc_start_y);
             }
             VerticalSBPositions::ToTheLeft => {
                 y_sb.set_at(DynVal::new_fixed(0), y_sc_start_y);
@@ -299,14 +299,14 @@ impl PaneWithScrollbars {
             DynVal::new_fixed(0)
         };
         let inner_pane_width = if matches!(y_scrollbar_op, VerticalSBPositions::None) {
-            DynVal::new_flex(1.0)
+            DynVal::new_full()
         } else {
-            DynVal::new_flex(1.0).minus(DynVal::new_fixed(1))
+            DynVal::new_full().minus(DynVal::new_fixed(1))
         };
         let inner_pane_height = if matches!(x_scrollbar_op, HorizontalSBPositions::None) {
-            DynVal::new_flex(1.0)
+            DynVal::new_full()
         } else {
-            DynVal::new_flex(1.0).minus(DynVal::new_fixed(1))
+            DynVal::new_full().minus(DynVal::new_fixed(1))
         };
 
         let loc = inner_pane.get_dyn_location_set();
@@ -359,7 +359,7 @@ impl PaneWithScrollbars {
         if *self.last_size.borrow() != ctx.s {
             let x_sb = self.x_scrollbar.borrow();
             if let Some(x_sb) = x_sb.as_ref() {
-                let w: DynVal = DynVal::new_flex(1.0)
+                let w: DynVal = DynVal::new_full()
                     .minus(DynVal::new_fixed(1))
                     .get_val(ctx.s.width)
                     .into();
@@ -367,7 +367,7 @@ impl PaneWithScrollbars {
             }
             let y_sb = self.y_scrollbar.borrow();
             if let Some(y_sb) = y_sb.as_ref() {
-                let h: DynVal = DynVal::new_flex(1.0)
+                let h: DynVal = DynVal::new_full()
                     .minus(DynVal::new_fixed(1))
                     .get_val(ctx.s.height)
                     .into();
