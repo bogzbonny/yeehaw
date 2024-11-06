@@ -294,6 +294,18 @@ impl ScrollbarSty {
         }
     }
 
+    pub fn horizontal_for_thin_box() -> Self {
+        ScrollbarSty {
+            backwards_arrow: '◁',
+            forwards_arrow: '▷',
+            empty_block: '─',
+            full_block: '━',
+            forwards_half_block: '╼',
+            backwards_half_block: '╾',
+            unnessecary: '─',
+        }
+    }
+
     pub fn vertical_block() -> Self {
         ScrollbarSty {
             backwards_arrow: '▲',
@@ -306,8 +318,25 @@ impl ScrollbarSty {
         }
     }
 
+    pub fn vertical_for_thin_box() -> Self {
+        ScrollbarSty {
+            backwards_arrow: '△',
+            forwards_arrow: '▽',
+            empty_block: '│',
+            full_block: '┃',
+            forwards_half_block: '╽',
+            backwards_half_block: '╿',
+            unnessecary: '│',
+        }
+    }
+
     pub fn with_empty_block(mut self, c: char) -> Self {
         self.empty_block = c;
+        self
+    }
+
+    pub fn with_unnessecary(mut self, c: char) -> Self {
+        self.unnessecary = c;
         self
     }
 }

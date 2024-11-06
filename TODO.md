@@ -1,3 +1,4 @@
+01. replace window CornerAdjuster with border::Corner
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -8,8 +9,6 @@
      - single/double/bold lines defaults 
      - built in scrollbars optionally
      - drag-resizing - drag while on the edge to resize the location
-
-01. replace window CornerAdjuster with border::Corner
 
 01. merge PaneWithScrollbars into border pane - introduce scrollbars into border
     pane
