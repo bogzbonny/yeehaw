@@ -33,7 +33,7 @@ have been assigned to them from parent elements.
  - Minor performance improvements at the cost of developer ergonomics
 
 ## Existing Elements:
-[TODO link to a seperate markdown with a bunch of GIFS]
+[TODO link to a separate markdown with a bunch of GIFS]
  - tabs 
  - stack panes (think vim buffers) 
  - scrollable panes
@@ -89,9 +89,11 @@ have been assigned to them from parent elements.
 
 It'd be cool for this repo to become a monolith. I want all sorts of weird
 gadgets in this baby. All ideas will be considered with an open mind, if you'd
-like to build and element and merge it into yeehaw It'd be an honour. All
-contributions will be merged with the implicit assumption that they will use the
-LICENSE as this repo. Additionally this repo will be transitioning to dynamic
-ownership based on contributions in the future, so if your code becomes merged
-then your be gaining a part piece of ownership whenever dynamic ownership is
-integrated in (more on that later!).
+like to build and element and merge it into yeehaw It'd be an honour. If you'd
+like to build a element with highly specific needs and the current Element trait
+is non-satisfactory, let's adjust it. 
+All contributions will be merged with the implicit assumption that they will use
+the LICENSE as this repo. Additionally this repo will be transitioning to
+dynamic ownership based on contributions in the future, so if your code becomes
+merged then your be gaining a part piece of ownership in the project whenever
+dynamic ownership is integrated in (more on that later!).
