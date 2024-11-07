@@ -11,6 +11,14 @@
 01. merge PaneWithScrollbars into border pane - introduce scrollbars into border
     pane
 
+40. Scrollbar bug: when dragging scrollbar with mouse, will drag good for a bit
+    then close to the end it just moves all the way to the maximum
+     - this seems to only be an issue when the scrollbar takes up about half of
+       the scrollbar area or more
+     - it happens in both vertical and horizontal scrollbars
+     - it happens in both scroll forwards and scroll backwards
+     - seems like the error exists in drag_backwards_by_1_ch (and forwards_by..)
+
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 05. introduce errors, remove all unwraps
@@ -36,8 +44,12 @@ WIDGET RECALL
        used for the creation of the widget, and not for the widget itself.
 05. Into<Widgets> Trait which can be applied to each widget builder so that
     .to_widgets() doesn't need to be manually called during construction
-
     (applied in add_widget)
+
+01. docs docs docs
+ https://doc.rust-lang.org/rustdoc/how-to-write-documentation.html
+
+^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 01. terminal_editor - get the no-editor elements hooked up.
 01. terminal_editor - autoexpanding based on text size in buffer (like zell
@@ -362,9 +374,6 @@ One letter labels
       - use custom event routing system
 
 40. custom mouse types using images (requires image support, and mouse pixel tracking) 
-
-40. Scrollbar bug: when dragging scrollbar with mouse, will drag good for a bit
-    then close to the end it just moves all the way to the maximum
 
 40. cui get the color under the cursor pixel - useful for color pickers or from actual image pallets
 

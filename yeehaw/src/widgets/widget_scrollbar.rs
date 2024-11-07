@@ -261,8 +261,9 @@ pub struct Scrollbar {
     // dropdown menu with a scrollbar below the dropdown-arrow.
     pub scrollbar_length_chs: Rc<RefCell<DynVal>>,
 
-    // how far down the area is scrolled from the top in true chars.
+    // how far down the area is scrolled from the beginning of the actual content in true chars.
     // The ScrollablePosition will be the first line of the area scrolled to.
+    // NOTE this is not the position within the scrollbar but the position within the actual content.
     pub scrollable_position: Rc<RefCell<usize>>,
 
     pub has_arrows: Rc<RefCell<bool>>, // if the scrollbar has arrows
@@ -421,6 +422,7 @@ impl Scrollbar {
         *self.scrollable_position.borrow() > 0
     }
 
+    /// scroll backwards through the actual content by 1 ch
     pub fn scroll_backwards(&self, ctx: &Context) {
         if !self.can_scroll_backwards() {
             return;
@@ -431,6 +433,7 @@ impl Scrollbar {
         }
     }
 
+    /// scroll forwards through the actual content by 1 ch
     pub fn scroll_forwards(&self, ctx: &Context, p_size: usize) {
         if !self.can_scroll_forwards(p_size) {
             return;
@@ -555,7 +558,9 @@ impl Scrollbar {
             self.scroll_forwards(ctx, p_size);
             let current_incr = self.scroll_bar_domain_array_of_half_increments(p_size);
             let curr_last_filled = Self::last_incr_filled(&current_incr);
-            if curr_last_filled == Some(goal_last_filled) {
+            // NOTE scroll forwards scrolls through the actual content by 1 ch, therefor under
+            // certain circumstances it is possible for curr_last_filled to jump over the goal_last_filled
+            if curr_last_filled >= Some(goal_last_filled) {
                 return;
             }
         }
@@ -577,7 +582,9 @@ impl Scrollbar {
             self.scroll_backwards(ctx);
             let current_incr = self.scroll_bar_domain_array_of_half_increments(p_size);
             let curr_first_filled = Self::first_incr_filled(&current_incr);
-            if curr_first_filled == Some(goal_first_filled) {
+            // NOTE scroll forwards scrolls through the actual content by 1 ch, therefor under
+            // certain circumstances it is possible for curr_last_filled to jump before the goal_last_filled
+            if curr_first_filled <= Some(goal_first_filled) {
                 return;
             }
         }
@@ -816,9 +823,7 @@ impl VerticalScrollbar {
                 *self.currently_dragging.borrow_mut() = false;
                 (true, EventResponses::default())
             }
-            MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Drag(MouseButton::Left)
-                if curr_dragging =>
-            {
+            MouseEventKind::Drag(MouseButton::Left) if curr_dragging => {
                 self.drag_while_dragging(ctx, ev)
             }
             MouseEventKind::Down(MouseButton::Left) if !curr_dragging => {
@@ -950,9 +955,7 @@ impl HorizontalScrollbar {
                 (true, EventResponses::default())
             }
 
-            MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Drag(MouseButton::Left)
-                if curr_dragging =>
-            {
+            MouseEventKind::Drag(MouseButton::Left) if curr_dragging => {
                 self.drag_while_dragging(ctx, ev)
             }
             MouseEventKind::Down(MouseButton::Left) if !curr_dragging => {
