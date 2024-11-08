@@ -102,7 +102,6 @@ impl From<Vec<crossterm::event::KeyEvent>> for Event {
 }
 
 impl Event {
-    // translation note used to be called 'key', TRANSLATION
     pub fn identifier(&self) -> String {
         match self {
             Event::Mouse(_) => "MOUSE".to_string(),
@@ -388,7 +387,6 @@ impl EventResponses {
 // BEFORE adding events.
 
 #[derive(Clone, Default, Debug)]
-// TRANSLATION NOTE used to be InputabilityChanges
 pub struct ReceivableEventChanges {
     pub add: Vec<(ReceivableEvent, Priority)>, // receivable events being added to the element
 
@@ -502,14 +500,12 @@ impl From<Vec<(ReceivableEvent, Priority)>> for SelfReceivableEvents {
 }
 
 impl SelfReceivableEvents {
-    // TRANSLATION NewSelfReceivableEventsFromPrioritizableEv new_self_receivable_events_from_prioritizable_ev
     pub fn new_from_receivable_events(
         p: Priority, evs: Vec<ReceivableEvent>,
     ) -> SelfReceivableEvents {
         SelfReceivableEvents(evs.into_iter().map(|ev| (ev, p)).collect())
     }
 
-    // TRANSLATION Include include
     pub fn push(&mut self, ev: ReceivableEvent, p: Priority) {
         self.0.push((ev, p))
     }
@@ -520,7 +516,6 @@ impl SelfReceivableEvents {
         }
     }
 
-    // TRANSLATION IncludeMany include_many
     pub fn extend(&mut self, evs: Vec<(ReceivableEvent, Priority)>) {
         self.0.extend(evs)
     }
@@ -535,7 +530,6 @@ impl SelfReceivableEvents {
 
     // update_priority_for_ev updates the priority of the given event
     // registered directly to this element
-    // TRANSLATION UpdatePriorityForEvCombo update_priority_for_ev_combo
     pub fn update_priority_for_ev(&mut self, ev: ReceivableEvent, p: Priority) {
         for i in 0..self.0.len() {
             if self.0[i].0 != ev {

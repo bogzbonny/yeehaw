@@ -173,39 +173,39 @@ pub const POST_LOCATION_CHANGE_HOOK_NAME: &str = "post-location-change";
 dyn_clone::clone_trait_object!(Parent);
 
 pub trait Parent: dyn_clone::DynClone {
-    // DO NOT CALL THIS FUNCTION DIRECTLY
-    // This function is intended for internal propogation ONLY if you need to propogate changes
-    // use the function: send_responses_upward found in Pane and ParentPane
-    //
-    // The Parent is a trait that a parent element should fulfill which can then be
-    // provided to child elements as a means for those child elements to propagate changes upward
-    // to their parent (and grand-parents etc.).
-    //
-    // In most cases, receivable event changes are passed to the parent in the return values of a
-    // function invoked on the element by the parent (ex. ReceiveEvent). However, when changes are
-    // initiated through hooks of non-parent elements, the parent must be notified of the changes
-    // from the child directly. By providing this trait to a child element it enables it to propagate
-    // receivable event changes when it hasn't been modified directly by its parent.
-    //
-    // For instance, a file-navigator may with to initiate a content change in an adjacent
-    // content-pane in this case it could activate the content-pane and deactivate itself, this
-    // newly activated content-pane would need a way to inform its parent pane of its receivable
-    // event changes.
-    //
-    // child_el_id is the child element-id which is invoking the propagation from BELOW the element
-    // fulfilling the Parent trait. This is used by the parent element (this one) to
-    // determine which events/cmds to update the prioritizers for.
-    //
-    // TRANSLATION NOTE PropagateUpwardChangesToInputability propagate_upward_changes_to_inputability
-    //fn propagate_receivable_event_changes_upward(
-    //    &self, child_el_id: &ElementID, rec: ReceivableEventChanges,
-    //);
+    /// DO NOT CALL THIS FUNCTION DIRECTLY
+    /// This function is intended for internal propogation ONLY if you need to propogate changes
+    /// use the function: send_responses_upward found in Pane and ParentPane
+    ///
+    /// The Parent is a trait that a parent element should fulfill which can then be
+    /// provided to child elements as a means for those child elements to propagate changes upward
+    /// to their parent (and grand-parents etc.).
+    ///
+    /// In most cases, receivable event changes are passed to the parent in the return values of a
+    /// function invoked on the element by the parent (ex. ReceiveEvent). However, when changes are
+    /// initiated through hooks of non-parent elements, the parent must be notified of the changes
+    /// from the child directly. By providing this trait to a child element it enables it to propagate
+    /// receivable event changes when it hasn't been modified directly by its parent.
+    ///
+    /// For instance, a file-navigator may with to initiate a content change in an adjacent
+    /// content-pane in this case it could activate the content-pane and deactivate itself, this
+    /// newly activated content-pane would need a way to inform its parent pane of its receivable
+    /// event changes.
+    ///
+    /// child_el_id is the child element-id which is invoking the propagation from BELOW the element
+    /// fulfilling the Parent trait. This is used by the parent element (this one) to
+    /// determine which events/cmds to update the prioritizers for.
     fn propagate_responses_upward(
         &self, parent_ctx: &Context, child_el_id: &ElementID, resps: EventResponses,
     );
 
+    /// The parent's store is a cool way for child elements to store common information among it's parent.
+    /// This is a useful mechanism for child elements to communicate with their parent without having to
+    /// pass information directly between each other. Additionally the store can survive the destruction
+    /// of a child element so... well that's a feature to consider.
     fn get_store_item(&self, key: &str) -> Option<Vec<u8>>;
     fn set_store_item(&self, key: &str, value: Vec<u8>);
 
+    /// Get the priority of the parent element, useful for processing in the organizer.
     fn get_priority(&self) -> Priority;
 }

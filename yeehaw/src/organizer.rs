@@ -170,8 +170,6 @@ impl ElementOrganizer {
     // NOTE: if the given index is taken, the element currently filling that index
     // will be pushed further back in the z-dimension (i.e. its z-index will be
     // incremented)
-    //
-    // TRANSLATION: SetZIndexForElement set_z_index_for_element
     pub fn update_el_z_index(&self, el_id: &ElementID, z: ZIndex) {
         if let Some(details) = self.get_el_at_z_index(z) {
             self.increment_z_index_for_el(details);

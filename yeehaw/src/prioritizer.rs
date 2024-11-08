@@ -23,20 +23,6 @@ impl std::fmt::Display for Priority {
     }
 }
 
-// TRANSLATION NOTE PrioritizableEv was replaced by just Event
-// TODO delete post translation
-//
-// PrioritizableEv is a type capable of being prioritized by the EvPrioritizer.
-// It can be thought of as an Event or a category of Event capable of
-// categorizing whether or not another event is a part of the category.
-//pub trait PrioritizableEv: Clone + Sized {
-//pub trait PrioritizableEv {
-//    // The input_event  allows the PrioritizableEv to test whether it
-//    // matches an input event of arbitrary kind.
-//    fn matches(&self, input_event: &Event) -> bool;
-//    fn key(&self) -> String; // unique key for the event
-//}
-
 // EventPrioritizer registers/provides elements and priorities which ought to
 // execute specified events.
 // NOTE: used to sort events by priority

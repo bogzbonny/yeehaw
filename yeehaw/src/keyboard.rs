@@ -35,7 +35,6 @@ impl Keyboard {
         k
     }
 
-    // TRANSLATION NOTE used to be called add_ev_to_keyboard
     // must be called before all functions
     pub fn add_ev(&mut self, ev: KeyEvent) {
         self.evs.push((Some(ev), Instant::now()));

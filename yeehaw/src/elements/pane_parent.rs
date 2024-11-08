@@ -206,7 +206,6 @@ impl ParentPane {
         self.eo.get_element(el_id)
     }
 
-    // TRANSLATION: SetZIndexForElement set_z_index_for_element
     pub fn update_el_z_index(&self, el_id: &ElementID, z: ZIndex) {
         self.eo.update_el_z_index(el_id, z);
     }
