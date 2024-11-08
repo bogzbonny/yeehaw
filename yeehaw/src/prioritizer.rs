@@ -1,9 +1,9 @@
 use crate::{ElementID, Event, Keyboard, ReceivableEvent, ReceivableEventChanges};
 
-// Priority is a rank to determine which element should be receiving user
-// key strokes as they come in. When an element is in focus it should be given
-// the priority of Focused which can only be exceeded if an element is given the
-// Highest priority.
+/// Priority is a rank to determine which element should be receiving user
+/// key strokes as they come in. When an element is in focus it should be given
+/// the priority of Focused which can only be exceeded if an element is given the
+/// Highest priority.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, PartialOrd, Ord)]
 pub enum Priority {
     //Highest,
@@ -23,9 +23,9 @@ impl std::fmt::Display for Priority {
     }
 }
 
-// EventPrioritizer registers/provides elements and priorities which ought to
-// execute specified events.
-// NOTE: used to sort events by priority
+/// EventPrioritizer registers/provides elements and priorities which ought to
+/// execute specified events.
+/// NOTE: used to sort events by priority
 #[derive(PartialEq, Eq, Clone, Default, Debug)]
 pub struct EventPrioritizer(Vec<PriorityIdEvent>);
 
@@ -37,7 +37,7 @@ pub struct PriorityIdEvent {
 }
 impl Ord for PriorityIdEvent {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.priority.cmp(&other.priority) // sort by priority
+        self.priority.cmp(&other.priority) // / sort by priority
     }
 }
 impl PartialOrd for PriorityIdEvent {
@@ -56,8 +56,8 @@ impl PriorityIdEvent {
 }
 
 impl EventPrioritizer {
-    // write func to remove/add evCombos and commands from EvPrioritizer and
-    // CommandPrioritizer, using the ReceivableEventChanges struct
+    /// write func to remove/add evCombos and commands from EvPrioritizer and
+    /// CommandPrioritizer, using the ReceivableEventChanges struct
     pub fn process_receivable_event_changes(
         &mut self, el_id: &ElementID, rec: &ReceivableEventChanges,
     ) {
@@ -65,8 +65,8 @@ impl EventPrioritizer {
         self.include(el_id, &rec.add);
     }
 
-    // are there any priority events already registered with the same priority and
-    // event (independant of the event prioritizers element id).
+    /// are there any priority events already registered with the same priority and
+    /// event (independant of the event prioritizers element id).
     pub fn has_priority_ev(&self, priority_ev: &(ReceivableEvent, Priority)) -> bool {
         for pec in self.0.iter() {
             if priority_ev.0 == pec.event && priority_ev.1 == pec.priority {
@@ -94,11 +94,11 @@ impl EventPrioritizer {
         }
     }
 
-    // Remove removes all specified events for a given element id
-    // from the EvPrioritizer.
-    //
-    // NOTE: Every event in the input slice will remove ALL instances of that event
-    // from the prioritizer.
+    /// Remove removes all specified events for a given element id
+    /// from the EvPrioritizer.
+    ///
+    /// NOTE: Every event in the input slice will remove ALL instances of that event
+    /// from the prioritizer.
     pub fn remove(&mut self, id: &ElementID, evs: &[ReceivableEvent]) {
         self.0.retain(|priority_id_event| {
             if id != &priority_id_event.id {
@@ -109,7 +109,7 @@ impl EventPrioritizer {
         });
     }
 
-    // removes all the registered events for the given id, returns the removed events
+    /// removes all the registered events for the given id, returns the removed events
     pub fn remove_entire_element(&mut self, id: &ElementID) -> Vec<ReceivableEvent> {
         let mut removed = vec![];
         self.0.retain(|priority_id_event| {
@@ -122,13 +122,13 @@ impl EventPrioritizer {
         removed
     }
 
-    // SPECIALTY FUNCTION
-    // doesn't consider general PrioritizableEv's, only EvKeyCombos.
-    //
-    // GetDestinationEl gets the element able to accept the eventKey input at the
-    // highest priority.
-    // Since the EvPrioritizer is sorted by priority, the first element that matches
-    // the eventKey will be the highest priority.
+    /// SPECIALTY FUNCTION
+    /// doesn't consider general PrioritizableEv's, only EvKeyCombos.
+    ///
+    /// GetDestinationEl gets the element able to accept the eventKey input at the
+    /// highest priority.
+    /// Since the EvPrioritizer is sorted by priority, the first element that matches
+    /// the eventKey will be the highest priority.
     pub fn get_destination_el_from_kb(
         &self, kb: &mut Keyboard,
     ) -> Option<(ElementID, Vec<crossterm::event::KeyEvent>)> {
@@ -146,8 +146,8 @@ impl EventPrioritizer {
         None
     }
 
-    // GetDestinationEl returns the id of the element that should
-    // receive the given event.
+    /// GetDestinationEl returns the id of the element that should
+    /// receive the given event.
     pub fn get_destination_el(&self, input_ev: &Event) -> Vec<ElementID> {
         let mut dests = vec![];
         // loop through all events registered by elements (PriorityIdEvent's)

@@ -4,37 +4,44 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-// displays the size
+/// displays the size
 #[derive(Clone)]
 pub struct Bordered {
     pub pane: ParentPane,
     pub inner: Rc<RefCell<Box<dyn Element>>>,
-    pub last_size: Rc<RefCell<Size>>, // needed for knowing when to resize scrollbars
+    pub last_size: Rc<RefCell<Size>>,
+    /// needed for knowing when to resize scrollbars
     pub x_scrollbar: Rc<RefCell<Option<HorizontalScrollbar>>>,
     pub y_scrollbar: Rc<RefCell<Option<VerticalScrollbar>>>,
 
-    // how much less the x scrollbar is from the full width
+    /// how much less the x scrollbar is from the full width
     pub x_scrollbar_sub_from_full: Rc<RefCell<usize>>,
 
-    // how much less the y scrollbar is from the full height
+    /// how much less the y scrollbar is from the full height
     pub y_scrollbar_sub_from_full: Rc<RefCell<usize>>,
 }
 
 /// property for the border
 #[derive(Clone, Copy)]
 pub enum PropertyCnr {
-    None,       // just for display
-    DragResize, // drag to resize
-    DragMove,   // drag to move
+    /// just for display
+    None,
+    /// drag to resize
+    DragResize,
+    /// drag to move
+    DragMove,
 }
 
 /// property for the border
 /// including vertical scrollbar option
 #[derive(Clone)]
 pub enum PropertyVrt {
-    None,       // just for display
-    DragResize, // drag to resize
-    DragMove,   // drag to move
+    /// just for display
+    None,
+    /// drag to resize
+    DragResize,
+    /// drag to move
+    DragMove,
     Scrollbar(widgets::VerticalScrollbar),
 }
 
@@ -42,18 +49,25 @@ pub enum PropertyVrt {
 /// including horizontal scrollbar option
 #[derive(Clone)]
 pub enum PropertyHzt {
-    None,       // just for display
-    DragResize, // drag to resize
-    DragMove,   // drag to move
+    /// just for display
+    None,
+    /// drag to resize
+    DragResize,
+    /// drag to move
+    DragMove,
     Scrollbar(widgets::HorizontalScrollbar),
 }
 
 #[derive(Clone)]
 pub struct BorderProperies {
-    pub left: Option<PropertyVrt>,   // if None, then no left border
-    pub right: Option<PropertyVrt>,  // if None, then no right border
-    pub top: Option<PropertyHzt>,    // if None, then no top border
-    pub bottom: Option<PropertyHzt>, // if None, then no bottom border
+    pub left: Option<PropertyVrt>,
+    /// if None, then no left border
+    pub right: Option<PropertyVrt>,
+    /// if None, then no right border
+    pub top: Option<PropertyHzt>,
+    /// if None, then no top border
+    pub bottom: Option<PropertyHzt>,
+    /// if None, then no bottom border
     pub top_corner: PropertyCnr,
     pub bottom_corner: PropertyCnr,
     pub left_corner: PropertyCnr,
@@ -444,8 +458,8 @@ impl BorderSty {
         }
     }
 
-    // a border composed of all the same character
-    // some recommendations: █ ▓ ▒ ░
+    /// a border composed of all the same character
+    /// some recommendations: █ ▓ ▒ ░
     pub fn new_uniform_ch(ch: char, sty: Style) -> Self {
         Self {
             left: DrawCh::new(ch, sty.clone()),
@@ -512,20 +526,20 @@ impl Bordered {
         Self::new(ctx, inner, chs, properties)
     }
 
-    // NOTE SB-1
-    // THERE is a strange issue with the scrollbars here, using the HorizontalScrollbar as an
-    // example:
-    //  - consider the example were both horizontal and vertical scrollbars are present:
-    //     - VerticalSBPositions is ToTheRight
-    //     - HorizontalSBPositions is Below
-    //  - we want the width of the horizontal scrollbar to be the width of the inner_pane
-    //    aka. flex(1.0)-fixed(1).
-    //  - however internally the width kind of needs to be flex(1.0) as when it comes time
-    //    to draw the scrollbar the context is calculated given its provided dimensions
-    //    and thus the drawing would apply the width of flex(1.0)-fixed(1) to the context which has
-    //    already had the fixed(1) subtracted from it, thus resulting in two subtractions.
-    //  - the solution is to have the width as a fixed size, and adjust it with each resize
-    //     - this is done with the ensure_scrollbar_size function.
+    /// NOTE SB-1
+    /// THERE is a strange issue with the scrollbars here, using the HorizontalScrollbar as an
+    /// example:
+    ///  - consider the example were both horizontal and vertical scrollbars are present:
+    ///     - VerticalSBPositions is ToTheRight
+    ///     - HorizontalSBPositions is Below
+    ///  - we want the width of the horizontal scrollbar to be the width of the inner_pane
+    ///    aka. flex(1.0)-fixed(1).
+    ///  - however internally the width kind of needs to be flex(1.0) as when it comes time
+    ///    to draw the scrollbar the context is calculated given its provided dimensions
+    ///    and thus the drawing would apply the width of flex(1.0)-fixed(1) to the context which has
+    ///    already had the fixed(1) subtracted from it, thus resulting in two subtractions.
+    ///  - the solution is to have the width as a fixed size, and adjust it with each resize
+    ///     - this is done with the ensure_scrollbar_size function.
     pub fn new(
         ctx: &Context, inner: Box<dyn Element>, chs: BorderSty, mut properties: BorderProperies,
     ) -> Self {
@@ -962,7 +976,8 @@ pub struct VerticalSide {
     pub ch: Rc<RefCell<DrawCh>>,
     pub pos: Rc<RefCell<VerticalPos>>,
     pub property: Rc<RefCell<PropertyVrt>>,
-    pub dragging_start_pos: Rc<RefCell<Option<(i32, i32)>>>, // x, y
+    /// x, y
+    pub dragging_start_pos: Rc<RefCell<Option<(i32, i32)>>>,
 }
 
 /// corner position
@@ -1080,7 +1095,8 @@ pub struct HorizontalSide {
     pub ch: Rc<RefCell<DrawCh>>,
     pub pos: Rc<RefCell<HorizontalPos>>,
     pub property: Rc<RefCell<PropertyHzt>>,
-    pub dragging_start_pos: Rc<RefCell<Option<(i32, i32)>>>, // x, y
+    /// x, y
+    pub dragging_start_pos: Rc<RefCell<Option<(i32, i32)>>>,
 }
 
 /// corner position

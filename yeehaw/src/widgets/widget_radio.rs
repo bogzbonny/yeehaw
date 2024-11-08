@@ -9,31 +9,31 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-// TODO multiline text support for each radio
-// TODO option to start with nothing selected
+/// TODO multiline text support for each radio
+/// TODO option to start with nothing selected
 
 #[derive(Clone)]
 pub struct RadioButtons {
     pub base: WidgetBase,
-    pub on_ch: Rc<RefCell<char>>,  // ch used for the selected
-    pub off_ch: Rc<RefCell<char>>, // ch used for the unselected
+    pub on_ch: Rc<RefCell<char>>,  /// ch used for the selected
+    pub off_ch: Rc<RefCell<char>>, /// ch used for the unselected
 
-    pub radios: Rc<RefCell<Vec<String>>>, // the text for each radio button
+    pub radios: Rc<RefCell<Vec<String>>>, /// the text for each radio button
 
-    pub clicked_down: Rc<RefCell<bool>>, // activated when mouse is clicked down while over object
+    pub clicked_down: Rc<RefCell<bool>>, /// activated when mouse is clicked down while over object
 
-    pub selected: Rc<RefCell<usize>>, // which radio button is selected
+    pub selected: Rc<RefCell<usize>>, /// which radio button is selected
 
-    // function which executes when the radio selection is changed
-    //                                           (index, selected)
+    /// function which executes when the radio selection is changed
+    ///                                           (index, selected)
     #[allow(clippy::type_complexity)]
     pub radio_selected_fn: Rc<RefCell<dyn FnMut(Context, usize, String) -> EventResponses>>,
 }
 
-// inspiration:
-// ◯ ◉ ◯ ○
-// ◯ ◯   ●
-// ⍟ ◉ ◯ ○
+/// inspiration:
+/// ◯ ◉ ◯ ○
+/// ◯ ◯   ●
+/// ⍟ ◉ ◯ ○
 
 impl RadioButtons {
     const KIND: &'static str = "widget_radio";
@@ -54,12 +54,12 @@ impl RadioButtons {
     }
 
     pub fn new(ctx: &Context, radios: Vec<String>) -> Self {
-        let max_width = radios.iter().map(|r| r.chars().count()).max().unwrap_or(0) as i32 + 1; // +1 for the radio button
+        let max_width = radios.iter().map(|r| r.chars().count()).max().unwrap_or(0) as i32 + 1; /// +1 for the radio button
         let wb = WidgetBase::new(
             ctx,
             Self::KIND,
             DynVal::new_fixed(max_width),
-            DynVal::new_fixed(radios.len() as i32), // TODO change for multiline support
+            DynVal::new_fixed(radios.len() as i32), /// TODO change for multiline support
             Self::STYLE,
             Self::default_receivable_events(),
         );
@@ -75,7 +75,7 @@ impl RadioButtons {
     }
 
     // ----------------------------------------------
-    // decorators
+    /// decorators
 
     pub fn with_radio_selected_fn(
         mut self, clicked_fn: Box<dyn FnMut(Context, usize, String) -> EventResponses>,
@@ -172,7 +172,7 @@ impl Element for RadioButtons {
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        // need to re set the content in order to reflect active style
+        /// need to re set the content in order to reflect active style
 
         let selected_i = *self.selected.borrow();
         let s =

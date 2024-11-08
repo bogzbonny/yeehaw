@@ -11,7 +11,7 @@ async fn main() -> Result<(), Error> {
 
     let (mut tui, ctx) = Tui::new()?;
 
-    // get the first arg
+    /// get the first arg
     let args: Vec<String> = std::env::args().collect();
     let img_path = if args.len() > 1 {
         args[1].clone()
@@ -21,7 +21,7 @@ async fn main() -> Result<(), Error> {
     };
 
     let vstack = VerticalStack::new(&ctx);
-    //let mut widget_pane = WidgetPane::new(&hat).with_height(DynVal::new_flex_with_max_fixed(0., 3));
+    ///let mut widget_pane = WidgetPane::new(&hat).with_height(DynVal::new_flex_with_max_fixed(0., 3));
     let widget_pane = WidgetPane::new(&ctx).with_height(3.into());
     let hstack = HorizontalStack::new(&ctx).with_height(1.0.into());
     vstack.push(&ctx, Box::new(widget_pane.clone()));

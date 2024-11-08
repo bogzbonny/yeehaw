@@ -10,27 +10,27 @@ use {
     },
 };
 
-// Pane is a pane element which other objects can embed and build off
-// of. It defines the basic draw functionality of a pane.
+/// Pane is a pane element which other objects can embed and build off
+/// of. It defines the basic draw functionality of a pane.
 #[derive(Clone)]
 pub struct Pane {
     kind: Rc<RefCell<&'static str>>,
 
-    id: Rc<RefCell<String>>, // element-id as assigned by the sorting-ctx
-
+    id: Rc<RefCell<String>>,
+    /// element-id as assigned by the sorting-ctx
     attributes: Rc<RefCell<HashMap<String, Vec<u8>>>>,
 
-    // The SelfEvs are NOT handled by the standard pane. The element inheriting the
-    // standard pane is expected to handle all SelfReceivableEvents in the
-    // ReceiveEvent function. The standard pane is only responsible for
-    // listing the receivable events when Receivable() is called
+    /// The SelfEvs are NOT handled by the standard pane. The element inheriting the
+    /// standard pane is expected to handle all SelfReceivableEvents in the
+    /// ReceiveEvent function. The standard pane is only responsible for
+    /// listing the receivable events when Receivable() is called
     pub self_evs: Rc<RefCell<SelfReceivableEvents>>,
 
-    // This elements "overall" reference priority
-    //
-    // TODO this is only used currently by the ParentPane,
-    // consider moving this field into the ParentPane, if nothing
-    // else ever uses it.
+    /// This elements "overall" reference priority
+    ///
+    /// TODO this is only used currently by the ParentPane,
+    /// consider moving this field into the ParentPane, if nothing
+    /// else ever uses it.
     pub element_priority: Rc<RefCell<Priority>>,
 
     pub parent: Rc<RefCell<Option<Box<dyn Parent>>>>,
@@ -39,27 +39,27 @@ pub struct Pane {
     pub hooks:
         Rc<RefCell<HashMap<String, Vec<(ElementID, Box<dyn FnMut(&str, Box<dyn Element>)>)>>>>,
 
-    // The pane's Content need not be the dimensions provided within
-    // the Location, however the Content will simply be cut off if it exceeds
-    // any dimension of the Location. If the Content is less than the dimensions
-    // of the Location all extra characters will be filled with the DefaultCh.
-    // The location of where to begin drawing from within the Content can be
-    // offset using content_view_offset_x and content_view_offset_y
+    /// The pane's Content need not be the dimensions provided within
+    /// the Location, however the Content will simply be cut off if it exceeds
+    /// any dimension of the Location. If the Content is less than the dimensions
+    /// of the Location all extra characters will be filled with the DefaultCh.
+    /// The location of where to begin drawing from within the Content can be
+    /// offset using content_view_offset_x and content_view_offset_y
     pub content: Rc<RefCell<DrawChs2D>>,
     pub default_ch: Rc<RefCell<DrawCh>>,
     pub default_line: Rc<RefCell<Vec<DrawCh>>>,
     pub content_view_offset_x: Rc<RefCell<usize>>,
     pub content_view_offset_y: Rc<RefCell<usize>>,
 
-    // scaleable values of x, y, width, and height in the parent context
-    // NOTE use getters/setters to ensure hook calls
+    /// scaleable values of x, y, width, and height in the parent context
+    /// NOTE use getters/setters to ensure hook calls
     loc: Rc<RefCell<DynLocationSet>>,
     visible: Rc<RefCell<bool>>,
 }
 
 impl Pane {
-    // NOTE kind is a name for the kind of pane, typically a different kind will be applied
-    // to the standard pane, as the standard pane is only boilerplate.
+    /// NOTE kind is a name for the kind of pane, typically a different kind will be applied
+    /// to the standard pane, as the standard pane is only boilerplate.
     pub const KIND: &'static str = "standard_pane";
 
     pub fn new(ctx: &Context, kind: &'static str) -> Pane {
@@ -264,7 +264,7 @@ impl Pane {
         *self.element_priority.borrow()
     }
 
-    // NOTE this name was chosen to distinguish itself from propagate_responses_upward
+    /// NOTE this name was chosen to distinguish itself from propagate_responses_upward
     pub fn send_responses_upward(&self, ctx: &Context, resps: EventResponses) {
         if let Some(parent) = self.parent.borrow().as_ref() {
             if let Some(parent_ctx) = ctx.parent_context() {
@@ -277,7 +277,7 @@ impl Pane {
         self.parent.borrow().is_some()
     }
 
-    // focus all prioritized events
+    /// focus all prioritized events
     pub fn focus(&self, ctx: &Context) {
         let rec = self.change_priority(Priority::Focused);
         if self.has_parent() {
@@ -286,7 +286,7 @@ impl Pane {
         }
     }
 
-    // defocus all prioritized events
+    /// defocus all prioritized events
     pub fn unfocus(&self, ctx: &Context) {
         let rec = self.change_priority(Priority::Unfocused);
         if self.has_parent() {
@@ -305,21 +305,21 @@ impl Element for Pane {
         self.id.borrow().clone()
     }
 
-    // Receivable returns the event keys and commands that can
-    // be received by this element along with their priorities
+    /// Receivable returns the event keys and commands that can
+    /// be received by this element along with their priorities
     fn receivable(&self) -> SelfReceivableEvents {
         self.self_evs.borrow().clone()
     }
 
-    //                                                       (captured, resp          )
+    ///                                                       (captured, resp          )
     fn receive_event_inner(&self, _ctx: &Context, _ev: Event) -> (bool, EventResponses) {
         (false, EventResponses::default())
     }
 
-    // ChangePriority returns a priority change request to its parent organizer so
-    // as to update the priority of all commands registered to this element.
-    // The element iterates through its registered cmds/evCombos, and returns a
-    // priority change request for each one.
+    /// ChangePriority returns a priority change request to its parent organizer so
+    /// as to update the priority of all commands registered to this element.
+    /// The element iterates through its registered cmds/evCombos, and returns a
+    /// priority change request for each one.
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
         // update the priority of all registered events
         for pef in self.self_evs.borrow_mut().iter_mut() {
@@ -329,7 +329,7 @@ impl Element for Pane {
         self.self_evs.borrow().to_receivable_event_changes()
     }
 
-    // Drawing compiles all of the DrawChPos necessary to draw this element
+    /// Drawing compiles all of the DrawChPos necessary to draw this element
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let mut chs = vec![];
 
@@ -375,7 +375,7 @@ impl Element for Pane {
                     }
                 }
 
-                // convert the DrawCh to a DrawChPos
+                /// convert the DrawCh to a DrawChPos
                 chs.push(DrawChPos::new(ch_out, x as u16, y as u16))
             }
         }
@@ -395,10 +395,8 @@ impl Element for Pane {
     }
 
     fn set_hook(
-        &self,
-        kind: &str,
-        el_id: ElementID,
-        //                  kind, hooked element
+        &self, kind: &str, el_id: ElementID,
+        ///                  kind, hooked element
         hook: Box<dyn FnMut(&str, Box<dyn Element>)>,
     ) {
         self.hooks
@@ -414,14 +412,14 @@ impl Element for Pane {
         };
     }
 
-    // remove all hooks for the element with the given id
+    /// remove all hooks for the element with the given id
     fn clear_hooks_by_id(&self, el_id: ElementID) {
         for (_, hook) in self.hooks.borrow_mut().iter_mut() {
             hook.retain(|(el_id_, _)| *el_id_ != el_id);
         }
     }
 
-    // calls all the hooks of the provided kind
+    /// calls all the hooks of the provided kind
     fn call_hooks_of_kind(&self, kind: &str) {
         for (kind_, v) in self.hooks.borrow_mut().iter_mut() {
             if kind == kind_ {
@@ -440,8 +438,8 @@ impl Element for Pane {
     }
 
     fn set_content_x_offset(&self, ctx: &Context, x: usize) {
-        // need these +1 or else will overscroll
-        // - due to x/y being 0 indexed
+        /// need these +1 or else will overscroll
+        /// - due to x/y being 0 indexed
         let content_width = self.content.borrow().width();
         let view_width = self.loc.borrow().get_width_val(ctx);
         let x = if x > content_width.saturating_sub(view_width + 1) {
@@ -453,8 +451,8 @@ impl Element for Pane {
     }
 
     fn set_content_y_offset(&self, ctx: &Context, y: usize) {
-        // need these +1 or else will overscroll
-        // - due to x/y being 0 indexed
+        /// need these +1 or else will overscroll
+        /// - due to x/y being 0 indexed
         let content_height = self.content.borrow().height();
         let view_height = self.loc.borrow().get_height_val(ctx);
         let y = if y > content_height.saturating_sub(view_height + 1) {

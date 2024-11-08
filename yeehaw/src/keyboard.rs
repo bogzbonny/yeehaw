@@ -4,11 +4,11 @@ use {
     std::time::{Duration, Instant},
 };
 
-// Keyboard is a FILO stack of key events.
+/// Keyboard is a FILO stack of key events.
 #[derive(Clone)]
 pub struct Keyboard {
-    // when an event is consumed it is set to None
-    // the Instant is the time when the event was registered
+    /// when an event is consumed it is set to None
+    /// the Instant is the time when the event was registered
     evs: Vec<(Option<KeyEvent>, Instant)>,
 }
 
@@ -35,7 +35,7 @@ impl Keyboard {
         k
     }
 
-    // must be called before all functions
+    /// must be called before all functions
     pub fn add_ev(&mut self, ev: KeyEvent) {
         self.evs.push((Some(ev), Instant::now()));
         if self.evs.len() > MAX_RUNES {
@@ -43,7 +43,7 @@ impl Keyboard {
         }
     }
 
-    // returns true if the last_key_time is withing 500 ms of the current time
+    /// returns true if the last_key_time is withing 500 ms of the current time
     pub fn just_hit(&self) -> bool {
         // get the final two events
         if self.evs.len() < 2 {
@@ -60,13 +60,13 @@ impl Keyboard {
         self.evs.last().map(|x| x.0).unwrap_or(None)
     }
 
-    // consume the current key and return whatever was consumed
+    /// consume the current key and return whatever was consumed
     pub fn consume_current_key(&mut self) -> Option<KeyEvent> {
         self.evs.last_mut().map(|x| x.0.take()).unwrap_or(None)
     }
 
-    // returns the last event character in the stack, previous and then the current
-    //                                  (previous        , current         )
+    /// returns the last event character in the stack, previous and then the current
+    ///                                  (previous        , current         )
     pub fn get_prev_curr_keys(&self) -> (Option<KeyEvent>, Option<KeyEvent>) {
         (
             self.evs[self.evs.len() - 2].0,
@@ -74,7 +74,7 @@ impl Keyboard {
         )
     }
 
-    // consume the current key and return whatever was consumed
+    /// consume the current key and return whatever was consumed
     pub fn consume_prev_curr_keys(&mut self) -> (Option<KeyEvent>, Option<KeyEvent>) {
         let curr = self.evs.last_mut().map(|x| x.0.take()).unwrap_or(None);
 
@@ -88,8 +88,8 @@ impl Keyboard {
         (prev, curr)
     }
 
-    // is the current key one within the list provided
-    // NOTE crossterm normalizes modifiers and casing
+    /// is the current key one within the list provided
+    /// NOTE crossterm normalizes modifiers and casing
     pub fn is_key_one_of(k: KeyEvent, keys: Vec<KeyEvent>) -> bool {
         for key in keys {
             if key == k {
@@ -108,16 +108,16 @@ impl Keyboard {
 
     //---------------------------------------
 
-    // events older than the eventLifetime are not considered
+    /// events older than the eventLifetime are not considered
     pub const EVENT_LIFETIME: Duration = Duration::from_secs(10);
 
-    // returns Some when the event combo matches the keyboard state
-    //
-    // NOTE we return the key events that were matched as the event combo
-    // which is fed in may have wildcard KeyPossibilities such as Digits
-    // which are matched by the actual key event.
-    //
-    // TODO see ISSUE 2206-1001
+    /// returns Some when the event combo matches the keyboard state
+    ///
+    /// NOTE we return the key events that were matched as the event combo
+    /// which is fed in may have wildcard KeyPossibilities such as Digits
+    /// which are matched by the actual key event.
+    ///
+    /// TODO see ISSUE 2206-1001
     pub fn matches(
         &mut self, ec: &[KeyPossibility], consume_events: bool,
     ) -> Option<Vec<KeyEvent>> {
@@ -168,10 +168,10 @@ impl Keyboard {
 
     //---------------------------------------
 
-    // The last number ignoring the previous [ignoring_previous] number of prevRunes
-    //pub fn last_number(&self, ignoring_previous: usize) -> Option<i64> {
-    // NOTE translation ignoreing_previous must be one greater than whatever
-    // it was set too in the original code
+    /// The last number ignoring the previous [ignoring_previous] number of prevRunes
+    ///pub fn last_number(&self, ignoring_previous: usize) -> Option<i64> {
+    /// NOTE translation ignoreing_previous must be one greater than whatever
+    /// it was set too in the original code
     pub fn last_number_ignoring(&self, ignoring_previous: usize) -> Option<u64> {
         let mut s = "".to_string();
         for i in (0..=(self.evs.len() - 1 - ignoring_previous)).rev() {
@@ -413,7 +413,7 @@ impl Keyboard {
     pub const KEY_META_Y: KeyEvent = KeyEvent::new(KeyCode::Char('y'), KeyModifiers::META);
     pub const KEY_META_Z: KeyEvent = KeyEvent::new(KeyCode::Char('z'), KeyModifiers::META);
 
-    // option keys, useful on mac
+    /// option keys, useful on mac
     pub const KEY_OPT_A: KeyEvent = KeyEvent::new(KeyCode::Char('å'), KeyModifiers::NONE);
     pub const KEY_OPT_B: KeyEvent = KeyEvent::new(KeyCode::Char('∫'), KeyModifiers::NONE);
     pub const KEY_OPT_C: KeyEvent = KeyEvent::new(KeyCode::Char('ç'), KeyModifiers::NONE);

@@ -7,7 +7,7 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-// displays the size
+/// displays the size
 #[derive(Clone)]
 pub struct DebugSizePane {
     pub pane: Pane,

@@ -7,9 +7,9 @@ use {
     crossterm::{
         cursor,
         cursor::MoveTo,
-        event as ct_event,
+        event::Event as CTEvent,
         event::EventStream,
-        event::{DisableMouseCapture, EnableMouseCapture, Event as CTEvent},
+        event::{DisableMouseCapture, EnableMouseCapture},
         execute, queue, style,
         style::{ContentStyle, StyledContent},
         terminal,
@@ -23,12 +23,12 @@ use {
     tokio::time::{self, Duration},
 };
 
-// the amount of time the tui will wait in between calls to re-render
-// NOTE: Currently the tui does not re-render when an event it called, hence if
-// this value is set too large it will give the tui a laggy feel.
+/// the amount of time the tui will wait in between calls to re-render
+/// NOTE: Currently the tui does not re-render when an event it called, hence if
+/// this value is set too large it will give the tui a laggy feel.
 const ANIMATION_SPEED: Duration = Duration::from_micros(100);
 
-// configuration of a tui zelt instance
+/// configuration of a tui zelt instance
 pub struct Tui {
     cup: TuiParent,
     main_el_id: ElementID,
@@ -37,11 +37,13 @@ pub struct Tui {
 
     pub kill_on_ctrl_c: bool,
 
-    // last flushed internal screen, used to determine what needs to be flushed next
+    /// last flushed internal screen, used to determine what needs to be flushed next
     //                            x  , y
     pub sc_last_flushed: HashMap<(u16, u16), StyledContent<ChPlus>>,
-    pub exit_recv: WatchReceiver<bool>, // true if exit
-    pub ev_recv: MpscReceiver<Event>,   // event receiver for internally generated events
+    /// true if exit
+    pub exit_recv: WatchReceiver<bool>,
+    /// event receiver for internally generated events
+    pub ev_recv: MpscReceiver<Event>,
 }
 
 impl Tui {
@@ -162,9 +164,9 @@ impl Tui {
         Ok(())
     }
 
-    // process_event_key handles key events
-    //                                                                 exit-tui
-    pub fn process_event_key(&mut self, key_ev: ct_event::KeyEvent) -> bool {
+    /// process_event_key handles key events
+    ///                                                                 exit-tui
+    pub fn process_event_key(&mut self, key_ev: CTEvent::KeyEvent) -> bool {
         self.kb.add_ev(key_ev);
 
         if key_ev == Keyboard::KEY_CTRL_C && self.kill_on_ctrl_c {
@@ -205,9 +207,9 @@ impl Tui {
         process_event_resps(resps, None)
     }
 
-    // process_event_mouse handles mouse events
-    //                                                                       exit-tui
-    pub fn process_event_mouse(&mut self, mouse_ev: ct_event::MouseEvent) -> bool {
+    /// process_event_mouse handles mouse events
+    ///                                                                       exit-tui
+    pub fn process_event_mouse(&mut self, mouse_ev: CTEvent::MouseEvent) -> bool {
         let ctx = self.context();
         let (_, resps) =
             self.cup
@@ -227,17 +229,17 @@ impl Tui {
         .unwrap();
     }
 
-    // Render all elements, draws the screen using the DrawChPos array passed to it
-    // by the element organizers.
-    //
-    // NOTE: when the tui calls all_drawing on the top level ElementOrganizer,
-    // all_drawing gets recursively called on every element organizer in the tree.
-    // Each one returns a DrawChPos array which is then passed to the next level up
-    // in the tree, with that level appending its own DrawChPos array to the end.
-    // Render then iterates through the DrawChPos array and sets the content
-    // provided by each element in order from the bottom of the tree to the top.
-    // This results in elements higher up the tree being able to overwrite elements
-    // lower down the tree.
+    /// Render all elements, draws the screen using the DrawChPos array passed to it
+    /// by the element organizers.
+    ///
+    /// NOTE: when the tui calls all_drawing on the top level ElementOrganizer,
+    /// all_drawing gets recursively called on every element organizer in the tree.
+    /// Each one returns a DrawChPos array which is then passed to the next level up
+    /// in the tree, with that level appending its own DrawChPos array to the end.
+    /// Render then iterates through the DrawChPos array and sets the content
+    /// provided by each element in order from the bottom of the tree to the top.
+    /// This results in elements higher up the tree being able to overwrite elements
+    /// lower down the tree.
     pub fn render(&mut self) {
         let mut sc = stdout();
         let ctx = self.context();
@@ -309,7 +311,8 @@ pub struct TuiParent {
     pub eo: ElementOrganizer,
     pub el_store: Rc<RefCell<HashMap<String, Vec<u8>>>>,
     pub exit_tx: WatchSender<bool>,
-    pub ev_tx: MpscSender<Event>, // event senter for internally generated events
+    /// event senter for internally generated events
+    pub ev_tx: MpscSender<Event>,
 }
 
 impl TuiParent {
@@ -326,14 +329,14 @@ impl TuiParent {
     }
 }
 
-// NOTE: It is necessary for the TUI to fulfill the Parent interface
-// as it is the top of the element tree, despite it not itself being an element
-// (it does not fulfill the Element interface). For the MainEl to pass changes
-// in inputability to the tui's ElementOrganizer, it must hold a reference to
-// the TUI and  be able to call this function (as opposed to calling it on an
-// Element, as a child normally would in the rest of the tree).
+/// NOTE: It is necessary for the TUI to fulfill the Parent interface
+/// as it is the top of the element tree, despite it not itself being an element
+/// (it does not fulfill the Element interface). For the MainEl to pass changes
+/// in inputability to the tui's ElementOrganizer, it must hold a reference to
+/// the TUI and  be able to call this function (as opposed to calling it on an
+/// Element, as a child normally would in the rest of the tree).
 impl Parent for TuiParent {
-    // Receives the final upward propagation of changes to inputability
+    /// Receives the final upward propagation of changes to inputability
     fn propagate_responses_upward(
         &self, parent_ctx: &Context, child_el_id: &ElementID, mut resps: EventResponses,
     ) {

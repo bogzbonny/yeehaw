@@ -9,28 +9,36 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-// TODO add :command hints on the right hand side for command menu items
-//      kind of like mac hotkey hints
-// TODO add keyboard interation
-// TODO multiline menu items
+/// TODO add :command hints on the right hand side for command menu items
+///      kind of like mac hotkey hints
+/// TODO add keyboard interation
+/// TODO multiline menu items
 
 #[derive(Clone)]
 pub struct MenuBar {
     pane: ParentPane,
-    horizontal_bar: Rc<RefCell<bool>>, // is the bar horizontal or vertical
+    /// is the bar horizontal or vertical
+    horizontal_bar: Rc<RefCell<bool>>,
     menu_items: Rc<RefCell<HashMap<ElementID, MenuItem>>>,
-    menu_items_order: Rc<RefCell<Vec<MenuItem>>>, // order of each menu item
-    activated: Rc<RefCell<bool>>, // the bar must first be activated with a click before any expansion
-    primary_has_show_arrow: Rc<RefCell<bool>>, // whether or not primary menu items show the expand arrow
-    primary_open_dir: Rc<RefCell<OpenDirection>>, // used only for the first level of menu items
-    secondary_open_dir: Rc<RefCell<OpenDirection>>, // used for all other levels of menu items
+    /// order of each menu item
+    menu_items_order: Rc<RefCell<Vec<MenuItem>>>,
+    /// the bar must first be activated with a click before any expansion
+    activated: Rc<RefCell<bool>>,
+    /// whether or not primary menu items show the expand arrow
+    primary_has_show_arrow: Rc<RefCell<bool>>,
+    /// used only for the first level of menu items
+    primary_open_dir: Rc<RefCell<OpenDirection>>,
+    /// used for all other levels of menu items
+    secondary_open_dir: Rc<RefCell<OpenDirection>>,
     menu_style: Rc<RefCell<MenuStyle>>,
-    make_invisible_on_closedown: Rc<RefCell<bool>>, // useful for right click menu
+    /// useful for right click menu
+    make_invisible_on_closedown: Rc<RefCell<bool>>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct MenuStyle {
-    folder_arrow: String, // also including any left padding between the arrow and the menu item
+    folder_arrow: String,
+    /// also including any left padding between the arrow and the menu item
     left_padding: usize,
     right_padding: usize,
     unselected_style: Style,
@@ -55,8 +63,8 @@ impl Default for MenuStyle {
     }
 }
 
-// direction which menu items prefer to open. If there is not enough space
-// in the preferred direction, the menu will open in the opposite direction
+/// direction which menu items prefer to open. If there is not enough space
+/// in the preferred direction, the menu will open in the opposite direction
 #[derive(Clone, Copy)]
 pub enum OpenDirection {
     Up,
@@ -69,7 +77,8 @@ pub enum OpenDirection {
 
 impl MenuBar {
     const KIND: &'static str = "menu_bar";
-    const Z_INDEX: ZIndex = 100; // very frontward
+    const Z_INDEX: ZIndex = 100;
+    /// very frontward
     const MENU_STYLE_MD_KEY: &'static str = "menu_style";
 
     pub fn top_menu_bar(ctx: &Context) -> Self {
@@ -119,7 +128,7 @@ impl MenuBar {
         self
     }
 
-    // unselectable item as decoration
+    /// unselectable item as decoration
     pub fn add_decor(&self, ctx: &Context, menu_path: String) {
         let mp = MenuPath(menu_path);
         self.ensure_folders(ctx, mp.clone());
@@ -152,7 +161,7 @@ impl MenuBar {
         }
     }
 
-    // ensure or create all folders leading to the final menu path
+    /// ensure or create all folders leading to the final menu path
     pub fn ensure_folders(&self, ctx: &Context, menu_path: MenuPath) {
         let folders = menu_path.folders();
         for i in 0..folders.len() {
@@ -165,7 +174,7 @@ impl MenuBar {
         }
     }
 
-    // the furthest location of the primary menu element
+    /// the furthest location of the primary menu element
     pub fn max_primary_x(&self, ctx: &Context) -> Option<i32> {
         let mut max_x = None;
         for item in self.menu_items_order.borrow().iter() {
@@ -357,8 +366,8 @@ impl MenuBar {
         (false, EventResponses::default())
     }
 
-    // closedown routine
-    // TODO cleanup, can remove EventResponses
+    /// closedown routine
+    /// TODO cleanup, can remove EventResponses
     pub fn closedown(&self) -> (bool, EventResponses) {
         *self.activated.borrow_mut() = false;
         let make_invis = *self.make_invisible_on_closedown.borrow();
@@ -383,7 +392,7 @@ impl MenuBar {
         (true, EventResponses::default())
     }
 
-    // useful for right click menu
+    /// useful for right click menu
     pub fn make_primary_visible(&self) {
         let menu_items = self.menu_items.borrow();
         for (_, item) in menu_items.iter() {
@@ -396,7 +405,7 @@ impl MenuBar {
         self.update_extra_locations();
     }
 
-    // useful for right click menu
+    /// useful for right click menu
     pub fn deselect_all(&self) {
         let menu_items = self.menu_items.borrow();
         for item in menu_items.values() {
@@ -440,7 +449,7 @@ impl MenuBar {
         }
     }
 
-    // expands all folders required to make the item visible
+    /// expands all folders required to make the item visible
     pub fn expand_up_to_item(&self, item: &MenuItem) {
         let path = item.path.borrow();
         let folders = path.folders();
@@ -458,7 +467,7 @@ impl MenuBar {
         }
     }
 
-    // expands all the sub-items of the provided item
+    /// expands all the sub-items of the provided item
     pub fn expand_folder(&self, item: &MenuItem, dir: OpenDirection) {
         // get the immediate sub items of item
         let mut sub_items = vec![];
@@ -538,11 +547,15 @@ impl MenuBar {
 #[derive(Clone)]
 pub struct MenuItem {
     pane: Pane,
-    path: Rc<RefCell<MenuPath>>, // name displayed in the menu
+    path: Rc<RefCell<MenuPath>>,
+    /// name displayed in the menu
     selectable: Rc<RefCell<bool>>,
-    is_selected: Rc<RefCell<bool>>, // is the item currently selected
-    is_folder: Rc<RefCell<bool>>,   // is the item a folder
-    show_folder_arrow: Rc<RefCell<bool>>, // show the folder arrow, false for primary horizontal bar
+    is_selected: Rc<RefCell<bool>>,
+    /// is the item currently selected
+    is_folder: Rc<RefCell<bool>>,
+    /// is the item a folder
+    show_folder_arrow: Rc<RefCell<bool>>,
+    /// show the folder arrow, false for primary horizontal bar
     #[allow(clippy::type_complexity)]
     click_fn: Rc<RefCell<Option<Box<dyn FnMut(Context) -> EventResponses>>>>,
 }
@@ -598,7 +611,7 @@ impl MenuItem {
         self.path.borrow().is_root()
     }
 
-    // if the primary menu items are folders, they have an arrow if primary_show_arrow=true
+    /// if the primary menu items are folders, they have an arrow if primary_show_arrow=true
     pub fn min_width(&self, sty: &MenuStyle, primary_show_arrow: bool) -> usize {
         let folder_len = if *self.is_folder.borrow()
             && (!self.is_primary() || (self.is_primary() && primary_show_arrow))
@@ -613,8 +626,8 @@ impl MenuItem {
             + folder_len
     }
 
-    // draw_padding draws DrawChPos's for padding and return updated DrawChPos array
-    // along with updated x position
+    /// draw_padding draws DrawChPos's for padding and return updated DrawChPos array
+    /// along with updated x position
     pub fn draw_padding(
         padding: usize, mut x: usize, style: Style, dcps: Vec<DrawChPos>,
     ) -> (usize, Vec<DrawChPos>) {
@@ -754,18 +767,18 @@ impl Element for MenuItem {
 }
 
 // -----------------------------------------------------------------------
-// MenuPath is a path of menu items within a menu tree.
-// For example:
-//
-//	"nwmod/cool_stuff/blaze"
-//
-// represents a menu item which lives in the top-level menu "nwmod" within the
-// sub-menu "cool_stuff" with the name "blaze".
+/// MenuPath is a path of menu items within a menu tree.
+/// For example:
+///
+/// "nwmod/cool_stuff/blaze"
+///
+/// represents a menu item which lives in the top-level menu "nwmod" within the
+/// sub-menu "cool_stuff" with the name "blaze".
 #[derive(Clone, PartialEq, Debug)]
 pub struct MenuPath(pub String);
 
 impl MenuPath {
-    // Name returns the name of the menu item at the end of the menu path
+    /// Name returns the name of the menu item at the end of the menu path
     pub fn name(&self) -> &str {
         let split: Vec<&str> = self.0.split('/').collect();
         if !split.is_empty() {
@@ -775,7 +788,7 @@ impl MenuPath {
         }
     }
 
-    // Folders returns the folders of the menu path
+    /// Folders returns the folders of the menu path
     pub fn folders(&self) -> Vec<&str> {
         let split: Vec<&str> = self.0.split('/').collect();
         if !split.is_empty() {
@@ -789,8 +802,8 @@ impl MenuPath {
         !self.0.contains('/')
     }
 
-    // check if other is the the same as the parent
-    // but then includes one more item
+    /// check if other is the the same as the parent
+    /// but then includes one more item
     pub fn is_immediate_parent_of(&self, other: &MenuPath) -> bool {
         let parent_path1 = self.0.clone();
         let parent_path2 = other.0.clone();

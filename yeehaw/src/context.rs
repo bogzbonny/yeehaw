@@ -4,18 +4,19 @@ use {
     tokio::sync::mpsc::Sender,
 };
 
-// Context is a struct which contains information about the current context of a
-// given element.
-// The context of an element is passed to the element during key function calls
-// where the element may need to know its size
-//
-// Additionally, metadata may be addended to the context to pass additional
-// arbitrary information.
+/// Context is a struct which contains information about the current context of a
+/// given element.
+/// The context of an element is passed to the element during key function calls
+/// where the element may need to know its size
+///
+/// Additionally, metadata may be addended to the context to pass additional
+/// arbitrary information.
 #[derive(Clone, Debug)]
 pub struct Context {
     pub s: Size,
     pub dur_since_launch: std::time::Duration,
-    pub visible_region: Option<Loc>, // the visible region of the element
+    pub visible_region: Option<Loc>,
+    /// the visible region of the element
     //                      key , value
     pub metadata: HashMap<String, Vec<u8>>,
     pub parent_ctx: Option<Box<Context>>,

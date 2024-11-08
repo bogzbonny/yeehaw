@@ -12,27 +12,29 @@ pub struct Style {
     pub attr: Attributes,
 }
 
-// source of the underlying color for fg colors
+/// source of the underlying color for fg colors
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug, Default)]
 pub enum FgTranspSrc {
     #[default]
     LowerFg,
     LowerBg,
     LowerUl,
-    ThisBg, // the bg color of the same cell
+    /// the bg color of the same cell
+    ThisBg,
 }
 
-// source of the underlying color for underline colors
+/// source of the underlying color for underline colors
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug, Default)]
 pub enum UlTranspSrc {
     LowerFg,
     LowerBg,
     #[default]
     LowerUl,
-    ThisBg, // the bg color of the same cell
+    /// the bg color of the same cell
+    ThisBg,
 }
 
-// source of the underlying color for bg colors
+/// source of the underlying color for bg colors
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug, Default)]
 pub enum BgTranspSrc {
     LowerFg,
@@ -69,7 +71,7 @@ impl Style {
         }
     }
 
-    // creates new style from fg, bg with a default style
+    /// creates new style from fg, bg with a default style
     pub const fn new_const(fg: Color, bg: Color) -> Self {
         Self {
             fg: Some((fg, FgTranspSrc::LowerFg)),
@@ -179,8 +181,8 @@ impl From<ratatui::buffer::Cell> for Style {
 }
 
 /// Attributes applied to the text
-// bitflags are not used here to help future proof this struct.
-// It's doubtful it would make a significant difference in performance.
+/// bitflags are not used here to help future proof this struct.
+/// It's doubtful it would make a significant difference in performance.
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Debug, Eq, Default)]
 pub struct Attributes {
     pub bold: bool,

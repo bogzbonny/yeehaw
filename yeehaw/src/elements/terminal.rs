@@ -1,6 +1,6 @@
-// Original inspiration for this element taken from:
-// https://github.com/a-kenji/tui-term/blob/development/examples/smux.rs
-// (MIT LICENSE)
+/// Original inspiration for this element taken from:
+/// https:///github.com/a-kenji/tui-term/blob/development/examples/smux.rs
+/// (MIT LICENSE)
 
 use {
     crate::{
@@ -10,7 +10,7 @@ use {
     },
     compact_str::CompactString,
     crossterm::event::{KeyCode, KeyEvent, KeyModifiers},
-    // lazy
+    /// lazy
     portable_pty::{native_pty_system, ChildKiller, CommandBuilder, MasterPty, PtySize},
     std::{
         cell::RefCell,
@@ -21,11 +21,11 @@ use {
     tokio::task::spawn_blocking,
 };
 
-// TODO use termwiz instead of vt100
-//      https://docs.rs/termwiz/latest/termwiz/
-//      https://github.com/wez/wezterm/blob/main/termwiz/examples/widgets_nested.rs
+/// TODO use termwiz instead of vt100
+///      https:///docs.rs/termwiz/latest/termwiz/
+///      https:///github.com/wez/wezterm/blob/main/termwiz/examples/widgets_nested.rs
 
-// TODO graceful shutdown of tokio tasks
+/// TODO graceful shutdown of tokio tasks
 
 #[derive(Clone)]
 pub struct TerminalPane {
@@ -69,14 +69,14 @@ impl TerminalPane {
         let ev_tx_ = ctx.ev_tx.clone();
         let n = Self::custom_destruct_event_name(pane.id());
         spawn_blocking(move || {
-            // ignore exit status
-            // NOTE this wait can be killed by the killer
+            /// ignore exit status
+            /// NOTE this wait can be killed by the killer
             let _ = child.wait();
             drop(pty_pair.slave);
 
-            // here blocking send will generate an error if the
-            // TUI is closed by the time this send is called, which
-            // is not a problem, so ignore this error.
+            /// here blocking send will generate an error if the
+            /// TUI is closed by the time this send is called, which
+            /// is not a problem, so ignore this error.
             let _ = ev_tx_.blocking_send(Event::Custom(n, Vec::with_capacity(0)));
         });
 
@@ -96,13 +96,13 @@ impl TerminalPane {
                 processed_buf.extend_from_slice(&buf[..size]);
                 parser_.write().unwrap().process(&processed_buf);
 
-                // Clear the processed portion of the buffer
+                /// Clear the processed portion of the buffer
                 processed_buf.clear();
             }
             //debug!("Terminal 2st thread complete")
         });
 
-        // NOTE can only take the writer once
+        /// NOTE can only take the writer once
         let writer = BufWriter::new(pty_pair.master.take_writer().unwrap());
 
         let cur = DrawCh::new(
@@ -159,7 +159,7 @@ impl Element for TerminalPane {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
             Event::KeyCombo(ref keys) => {
-                let captured = handle_pane_key_event(self, &keys[0]); // handle empty case?
+                let captured = handle_pane_key_event(self, &keys[0]); /// handle empty case?
                 return (captured, EventResponses::default());
             }
             Event::Resize => {
@@ -178,8 +178,8 @@ impl Element for TerminalPane {
                     .unwrap();
             }
             Event::Exit => {
-                // this will error is the pty_killer has already been killed
-                // ignore the error
+                /// this will error is the pty_killer has already been killed
+                /// ignore the error
                 let _ = self.pty_killer.borrow_mut().kill();
             }
             Event::Custom(name, _) => {
@@ -201,7 +201,7 @@ impl Element for TerminalPane {
         let cols = ctx.s.width;
         let rows = ctx.s.height;
 
-        // The screen is made out of rows of cells
+        /// The screen is made out of rows of cells
         for row in 0..rows {
             for col in 0..cols {
                 if row > ctx.s.height || col > ctx.s.width {
@@ -260,8 +260,8 @@ pub fn handle_pane_key_event(pane: &TerminalPane, key: &KeyEvent) -> bool {
             let upper = ch.to_ascii_uppercase();
             if key.modifiers == KeyModifiers::CONTROL {
                 match upper {
-                    // https://github.com/fyne-io/terminal/blob/master/input.go
-                    // https://gist.github.com/ConnerWill/d4b6c776b509add763e17f9f113fd25b
+                    /// https:///github.com/fyne-io/terminal/blob/master/input.go
+                    /// https:///gist.github.com/ConnerWill/d4b6c776b509add763e17f9f113fd25b
                     '2' | '@' | ' ' => send = vec![0],
                     '3' | '[' => send = vec![27],
                     '4' | '\\' => send = vec![28],
@@ -269,8 +269,8 @@ pub fn handle_pane_key_event(pane: &TerminalPane, key: &KeyEvent) -> bool {
                     '6' | '^' => send = vec![30],
                     '7' | '-' | '_' => send = vec![31],
                     char if ('A'..='_').contains(&char) => {
-                        // Since A == 65,
-                        // we can safely subtract 64 to get the corresponding control character
+                        /// Since A == 65,
+                        /// we can safely subtract 64 to get the corresponding control character
                         let ascii_val = char as u8;
                         let ascii_to_send = ascii_val - 64;
                         send = vec![ascii_to_send];
@@ -300,12 +300,12 @@ pub fn handle_pane_key_event(pane: &TerminalPane, key: &KeyEvent) -> bool {
         KeyCode::Delete => vec![27, 91, 51, 126],
         KeyCode::Insert => vec![27, 91, 50, 126],
         KeyCode::Esc => vec![27],
-        _ => return true, // ignore key but still capture
+        _ => return true, /// ignore key but still capture
     };
 
-    // if there is an error here, the pty has been closed, therefor do not capture the event. this
-    // could happen in the split second between the pty being closed and the exit event being
-    // received by this terminal pane.
+    /// if there is an error here, the pty has been closed, therefor do not capture the event. this
+    /// could happen in the split second between the pty being closed and the exit event being
+    /// received by this terminal pane.
     if pane.writer.borrow_mut().write_all(&input_bytes).is_err() {
         return false;
     }

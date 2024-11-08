@@ -1,32 +1,31 @@
 use {
     super::{Selectability, VerticalScrollbar, WBStyles, Widget, WidgetBase, Widgets},
     crate::{
-        Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEvent, ReceivableEventChanges,
+        Color, Context, DrawCh, DynVal, Element, Event,
+        EventResponses, Keyboard as KB, ReceivableEvent, ReceivableEventChanges,
         SelfReceivableEvents, Style, ZIndex,
     },
-    crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
 };
 
-//TODO multiline dropdown entry support
+///TODO multiline dropdown entry support
 
 #[derive(Clone)]
 pub struct DropdownList {
     pub base: WidgetBase,
     pub entries: Rc<RefCell<Vec<String>>>,
     pub left_padding: Rc<RefCell<usize>>,
-    pub specified_width: Rc<RefCell<Option<DynVal>>>, // width explicitly set by the caller
-    pub selected: Rc<RefCell<usize>>,                 // the entry which has been selected
-    pub cursor: Rc<RefCell<usize>>, // the entry that is currently hovered while open
-    pub open: Rc<RefCell<bool>>,    // if the list is open
-    pub max_expanded_height: Rc<RefCell<usize>>, // the max height of the entire dropdown list when expanded
-    pub dropdown_arrow: Rc<RefCell<DrawCh>>,     // ▼
-    pub cursor_style: Rc<RefCell<Style>>,        // style for the selected entry
-    pub clicked_down: Rc<RefCell<bool>>, // activated when mouse is clicked down while over object
+    pub specified_width: Rc<RefCell<Option<DynVal>>>, /// width explicitly set by the caller
+    pub selected: Rc<RefCell<usize>>,                 /// the entry which has been selected
+    pub cursor: Rc<RefCell<usize>>, /// the entry that is currently hovered while open
+    pub open: Rc<RefCell<bool>>,    /// if the list is open
+    pub max_expanded_height: Rc<RefCell<usize>>, /// the max height of the entire dropdown list when expanded
+    pub dropdown_arrow: Rc<RefCell<DrawCh>>,     /// ▼
+    pub cursor_style: Rc<RefCell<Style>>,        /// style for the selected entry
+    pub clicked_down: Rc<RefCell<bool>>, /// activated when mouse is clicked down while over object
     #[allow(clippy::type_complexity)]
-    pub selection_made_fn: Rc<RefCell<Box<dyn FnMut(Context, String) -> EventResponses>>>, // function which executes when button moves from pressed -> unpressed
-    pub scrollbar: VerticalScrollbar, // embedded scrollbar in dropdown list
+    pub selection_made_fn: Rc<RefCell<Box<dyn FnMut(Context, String) -> EventResponses>>>, /// function which executes when button moves from pressed -> unpressed
+    pub scrollbar: VerticalScrollbar, /// embedded scrollbar in dropdown list
 }
 
 impl DropdownList {
@@ -49,8 +48,8 @@ impl DropdownList {
     const DEFAULT_DROPDOWN_ARROW: DrawCh =
         DrawCh::const_new('▼', Style::new_const(Color::BLACK, Color::GREY13));
 
-    // needs to be slightly above other widgets to select properly
-    // if widgets overlap
+    /// needs to be slightly above other widgets to select properly
+    /// if widgets overlap
     const Z_INDEX: ZIndex = super::widget::WIDGET_Z_INDEX + 1;
 
     pub fn default_receivable_events() -> Vec<ReceivableEvent> {
@@ -71,7 +70,7 @@ impl DropdownList {
         let wb = WidgetBase::new(
             ctx,
             Self::KIND,
-            DynVal::new_fixed(0), // NOTE width is set later
+            DynVal::new_fixed(0), /// NOTE width is set later
             DynVal::new_fixed(1),
             Self::STYLE,
             Self::default_receivable_events(),
@@ -80,7 +79,7 @@ impl DropdownList {
             .without_arrows()
             .with_styles(Self::STYLE_SCROLLBAR);
 
-        //wire the scrollbar to the dropdown list
+        ///wire the scrollbar to the dropdown list
         let wb_ = wb.clone();
         let hook = Box::new(move |ctx, y| wb_.set_content_y_offset(&ctx, y));
         *sb.position_changed_hook.borrow_mut() = Some(hook);
@@ -105,7 +104,7 @@ impl DropdownList {
     }
 
     // ----------------------------------------------
-    // decorators
+    /// decorators
 
     pub fn with_styles(self, styles: WBStyles) -> Self {
         self.base.set_styles(styles);
@@ -132,9 +131,9 @@ impl DropdownList {
     pub fn with_max_expanded_height(self, height: usize) -> Self {
         *self.max_expanded_height.borrow_mut() = height;
         self.scrollbar.set_dyn_height(
-            DynVal::new_fixed(height as i32), // view height (same as the dropdown list height)
-            DynVal::new_fixed(height.saturating_sub(1) as i32), // scrollbar height (1 less, b/c scrollbar's below the drop-arrow)
-            Some(self.entries.borrow().len()),                  // scrollable domain
+            DynVal::new_fixed(height as i32), /// view height (same as the dropdown list height)
+            DynVal::new_fixed(height.saturating_sub(1) as i32), /// scrollbar height (1 less, b/c scrollbar's below the drop-arrow)
+            Some(self.entries.borrow().len()),                  /// scrollable domain
         );
         self
     }
@@ -180,7 +179,7 @@ impl DropdownList {
     pub fn padded_entry_text(&self, ctx: &Context, i: usize) -> String {
         let entry = self.entries.borrow()[i].clone();
         let entry_len = entry.chars().count();
-        //let width = self.base.get_width_val(ctx);
+        ///let width = self.base.get_width_val(ctx);
         let width = self.calculate_dyn_width().get_val(ctx.get_width());
         let left_padding = *self.left_padding.borrow();
         let right_padding = width.saturating_sub(entry_len as i32 + left_padding as i32);
@@ -189,7 +188,7 @@ impl DropdownList {
         format!("{}{}{}", pad_left, entry, pad_right)
     }
 
-    // doesn't include the arrow text
+    /// doesn't include the arrow text
     pub fn text(&self, ctx: &Context) -> String {
         if !*self.open.borrow() {
             return self.padded_entry_text(ctx, *self.selected.borrow());
@@ -205,7 +204,7 @@ impl DropdownList {
         out
     }
 
-    // the height of the dropdown list while expanded
+    /// the height of the dropdown list while expanded
     pub fn expanded_height(&self) -> usize {
         let max_height = *self.max_expanded_height.borrow();
         if self.entries.borrow().len() > max_height {
@@ -214,7 +213,7 @@ impl DropdownList {
         self.entries.borrow().len()
     }
 
-    // whether or not the dropdown list should display a scrollbar
+    /// whether or not the dropdown list should display a scrollbar
     pub fn display_scrollbar(&self) -> bool {
         self.entries.borrow().len() > self.expanded_height()
     }
@@ -225,7 +224,7 @@ impl DropdownList {
         let h = self.expanded_height() as i32;
         self.base.set_dyn_height(DynVal::new_fixed(h));
 
-        // must set the content for the offsets to be correct
+        /// must set the content for the offsets to be correct
         self.base.set_content_from_string(ctx, &self.text(ctx));
         self.correct_offsets(ctx);
     }
@@ -264,7 +263,7 @@ impl DropdownList {
 
 impl Widget for DropdownList {
     fn get_z_index(&self) -> ZIndex {
-        Self::Z_INDEX // slightly lower than the rest of the widgets so that the dropdown list will sit above the other widgets
+        Self::Z_INDEX // / slightly lower than the rest of the widgets so that the dropdown list will sit above the other widgets
     }
 
     fn set_selectability_pre_hook(&self, ctx: &Context, s: Selectability) -> EventResponses {
@@ -359,13 +358,13 @@ impl Element for DropdownList {
                     _ if open && (!clicked || dragging) => {
                         let (x, y) = (me.column as usize, me.row as usize);
 
-                        // change hovering location to the ev
+                        /// change hovering location to the ev
 
-                        // on arrow
+                        /// on arrow
                         if y == 0 && x == self.base.get_width_val(ctx).saturating_sub(1) {
                             return (true, EventResponses::default());
 
-                        // on scrollbar
+                        /// on scrollbar
                         } else if y > 0
                             && x == self.base.get_width_val(ctx).saturating_sub(1)
                             && self.display_scrollbar()
@@ -376,7 +375,7 @@ impl Element for DropdownList {
                                         .scrollbar
                                         .set_selectability(ctx, Selectability::Selected);
                                 }
-                                // send the the event to the scrollbar (x adjusted to 0)
+                                /// send the the event to the scrollbar (x adjusted to 0)
                                 let mut me_ = me;
                                 me_.column = 0;
                                 me_.row = y.saturating_sub(1) as u16;
@@ -401,14 +400,14 @@ impl Element for DropdownList {
                                     .scrollbar
                                     .set_selectability(ctx, Selectability::Selected);
                             }
-                            // send the the event to the scrollbar (x adjusted to 0)
+                            /// send the the event to the scrollbar (x adjusted to 0)
                             let mut me_ = me;
                             me_.column = 0;
                             me_.row = y.saturating_sub(1) as u16;
                             return self.scrollbar.receive_event(ctx, Event::Mouse(me_));
                         }
 
-                        // on arrow close without change
+                        /// on arrow close without change
                         if y == 0 && x == self.base.get_width_val(ctx).saturating_sub(1) {
                             return (true, self.perform_close(ctx, true));
                         }
@@ -430,7 +429,7 @@ impl Element for DropdownList {
 
         let open = *self.open.borrow();
 
-        // highlight the hovering entry
+        /// highlight the hovering entry
         if open {
             self.base
                 .pane
@@ -441,10 +440,10 @@ impl Element for DropdownList {
 
         let mut chs = self.base.drawing(ctx);
 
-        // set the scrollbar on top of the content
+        /// set the scrollbar on top of the content
         if open && self.display_scrollbar() {
             let mut sb_chs = self.scrollbar.drawing(ctx);
-            // shift the scrollbar content to below the arrow
+            /// shift the scrollbar content to below the arrow
             for ch in sb_chs.iter_mut() {
                 ch.x += self.base.get_width_val(ctx).saturating_sub(1) as u16;
                 ch.y += 1;
@@ -452,7 +451,7 @@ impl Element for DropdownList {
             chs.extend(sb_chs);
         }
 
-        // set the arrow
+        /// set the arrow
         let arrow_ch = DrawChPos::new(
             self.dropdown_arrow.borrow().clone(),
             self.base.get_width_val(ctx).saturating_sub(1) as u16,

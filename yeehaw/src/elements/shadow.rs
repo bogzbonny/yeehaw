@@ -3,7 +3,7 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-// displays the size
+/// displays the size
 #[derive(Clone)]
 pub struct Shadowed {
     pub inner: Box<dyn Element>,
@@ -95,7 +95,7 @@ impl Shadowed {
         out
     }
 
-    // TODO could cache this
+    /// TODO could cache this
     pub fn set_shadow_content(&self, ctx: &Context) -> Vec<DrawChPos> {
         let size = ctx.s;
         let sh_sty = self.sh_sty.borrow();

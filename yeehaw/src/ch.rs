@@ -26,7 +26,7 @@ pub enum ChPlus {
     Skip,
 }
 
-// NOTE need to implement Default for DrawCh so that it is a space character
+/// NOTE need to implement Default for DrawCh so that it is a space character
 impl Default for DrawCh {
     fn default() -> DrawCh {
         DrawCh {
@@ -103,9 +103,9 @@ impl DrawCh {
 
 // ----------------------------------------------------
 
-// DrawChPos is a DrawCh with an X and Y position
-// The positions X and Y are local positions within the element
-// and begin from 0 and count right and down respecively.
+/// DrawChPos is a DrawCh with an X and Y position
+/// The positions X and Y are local positions within the element
+/// and begin from 0 and count right and down respecively.
 #[derive(Clone, Debug, PartialEq)]
 pub struct DrawChPos {
     pub ch: DrawCh,
@@ -161,7 +161,7 @@ impl DrawChPos {
         out
     }
 
-    // get the content style for this DrawChPos given the underlying style
+    /// get the content style for this DrawChPos given the underlying style
     pub fn get_content_style(
         &self, ctx: &Context, prev: &StyledContent<ChPlus>,
     ) -> StyledContent<ChPlus> {
@@ -257,8 +257,8 @@ impl DrawChPosVec {
         DrawChPosVec(chs)
     }
 
-    // adjust the position of the DrawChPos by the offset, if the position
-    // is less than the offset or greater than max_x/y, then truncate the DrawChPos
+    /// adjust the position of the DrawChPos by the offset, if the position
+    /// is less than the offset or greater than max_x/y, then truncate the DrawChPos
     pub fn adjust_for_offset_and_truncate(
         &mut self, offset_x: usize, offset_y: usize, max_x: usize, max_y: usize,
     ) {

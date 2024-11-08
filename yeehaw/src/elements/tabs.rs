@@ -8,23 +8,23 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-// TODO dragging tabs
-// TODO allow for buttons beside the tabs
-// TODO tab commands
+/// TODO dragging tabs
+/// TODO allow for buttons beside the tabs
+/// TODO tab commands
 
-// The upper tabs pane
+/// The upper tabs pane
 #[derive(Clone)]
 pub struct TabsTop {
     pub pane: ParentPane,
     #[allow(clippy::type_complexity)]
     pub els: Rc<RefCell<Vec<Box<dyn Element>>>>,
-    pub names: Rc<RefCell<Vec<String>>>, // the tab names
+    pub names: Rc<RefCell<Vec<String>>>, /// the tab names
 
-    pub selected: Rc<RefCell<Option<usize>>>, // the selected tab
-    pub tab_prefix: Rc<RefCell<String>>,      // the prefix for the tab names
-    pub tab_suffix: Rc<RefCell<String>>,      // the suffix for the tab names
-    pub highlight_style: Rc<RefCell<Style>>,  // the style for the highlighted tab
-    pub normal_style: Rc<RefCell<Style>>,     // the style for the normal tabs
+    pub selected: Rc<RefCell<Option<usize>>>, /// the selected tab
+    pub tab_prefix: Rc<RefCell<String>>,      /// the prefix for the tab names
+    pub tab_suffix: Rc<RefCell<String>>,      /// the suffix for the tab names
+    pub highlight_style: Rc<RefCell<Style>>,  /// the style for the highlighted tab
+    pub normal_style: Rc<RefCell<Style>>,     /// the style for the normal tabs
 }
 
 impl TabsTop {
@@ -51,13 +51,13 @@ impl TabsTop {
             )),
         };
 
-        // set the height/width of the tabs top
+        /// set the height/width of the tabs top
         tt.pane.pane.set_dyn_height(DynVal::new_fixed(1));
         tt.pane.pane.set_dyn_width(DynVal::new_full());
         tt
     }
 
-    // get the names with the prefix/suffixes
+    /// get the names with the prefix/suffixes
     pub fn get_full_names(&self) -> Vec<String> {
         let mut names = Vec::new();
         let prefix = self.tab_prefix.borrow().clone();
@@ -99,7 +99,7 @@ impl Element for TabsTop {
         self.pane.receive_event(ctx, ev)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        // set the names of the tabs
+        /// set the names of the tabs
         let mut chs = self.pane.drawing(ctx);
         let mut pos = 0usize;
         for (i, name_) in self.names.borrow().iter().enumerate() {
@@ -150,8 +150,8 @@ impl Tabs {
         }
     }
 
-    // add an element to the end of the stack resizing the other elements
-    // in order to fit the new element
+    /// add an element to the end of the stack resizing the other elements
+    /// in order to fit the new element
     pub fn push<S: Into<String>>(&self, _ctx: &Context, el: Box<dyn Element>, name: S) {
         Self::sanitize_el_location(&*el);
         self.els.borrow_mut().push(el.clone());
@@ -176,11 +176,11 @@ impl Tabs {
 
     fn sanitize_el_location(el: &dyn Element) {
         let mut loc = el.get_dyn_location_set().borrow().clone();
-        loc.set_start_x(0.0.into()); // 0
-        loc.set_end_x(1.0.into()); // 100%
-        loc.set_start_y(0.0.into()); // 0
-        loc.set_end_y(1.0.into()); // 100%
-        *el.get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
+        loc.set_start_x(0.0.into()); /// 0
+        loc.set_end_x(1.0.into()); /// 100%
+        loc.set_start_y(0.0.into()); /// 0
+        loc.set_end_y(1.0.into()); /// 100%
+        *el.get_dyn_location_set().borrow_mut() = loc; /// set loc without triggering hooks
     }
 
     pub fn set_tab_view_pane(&self, ctx: &Context, idx: Option<usize>) {

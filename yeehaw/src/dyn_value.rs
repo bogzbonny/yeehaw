@@ -1,19 +1,25 @@
-// DynVal represents a dynamic x or y screen position value which scales based on the
-// size of the parent element. The value is a fixed number of characters
-// (fixed) plus the flexible fraction of the parent element size (flex).
-//
-// Additionally the DynVal can add the minimum or maximum of a set of other
-// SclVals. This is useful or Labels which depend on the size of a number of
-// other elements.
+/// DynVal represents a dynamic x or y screen position value which scales based on the
+/// size of the parent element. The value is a fixed number of characters
+/// (fixed) plus the flexible fraction of the parent element size (flex).
+///
+/// Additionally the DynVal can add the minimum or maximum of a set of other
+/// SclVals. This is useful or Labels which depend on the size of a number of
+/// other elements.
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
 pub struct DynVal {
-    pub mul: f64,   // the multiplier is applied to the final value of the dynval
-    pub fixed: i32, // fixed number of characters
-    pub flex: f64,  // flex of the total number of characters (1.0 = 100%)
+    /// the multiplier is applied to the final value of the dynval
+    pub mul: f64,
+    /// fixed number of characters
+    pub fixed: i32,
+    /// flex of the total number of characters (1.0 = 100%)
+    pub flex: f64,
 
-    plus: Vec<DynVal>,        // the DynVal adds all the provided SclVals
-    plus_min_of: Vec<DynVal>, // the DynVal adds the minimum value of these provided SclVals
-    plus_max_of: Vec<DynVal>, // the DynVal adds the maximum value of these provided SclVals
+    /// the DynVal adds all the provided SclVals
+    plus: Vec<DynVal>,
+    /// the DynVal adds the minimum value of these provided SclVals
+    plus_min_of: Vec<DynVal>,
+    /// the DynVal adds the maximum value of these provided SclVals
+    plus_max_of: Vec<DynVal>,
 }
 
 impl Default for DynVal {
@@ -70,7 +76,7 @@ impl DynVal {
         DynVal::new_flex(1.0)
     }
 
-    // Create a new DynVal with a flex but which bounds at a minimum fixed value
+    /// Create a new DynVal with a flex but which bounds at a minimum fixed value
     pub fn new_flex_with_min_fixed(flex: f64, min: i32) -> Self {
         DynVal {
             plus_max_of: vec![DynVal::new_fixed(min), DynVal::new_flex(flex)],
@@ -78,7 +84,7 @@ impl DynVal {
         }
     }
 
-    // Create a new DynVal with a flex but which bounds at a maximum fixed value
+    /// Create a new DynVal with a flex but which bounds at a maximum fixed value
     pub fn new_flex_with_max_fixed(flex: f64, max: i32) -> Self {
         DynVal {
             plus_min_of: vec![DynVal::new_fixed(max), DynVal::new_flex(flex)],
@@ -86,7 +92,7 @@ impl DynVal {
         }
     }
 
-    // Create a new DynVal with a flex but which bounds at minimum and maximum fixed values
+    /// Create a new DynVal with a flex but which bounds at minimum and maximum fixed values
     pub fn new_flex_with_min_and_max_fixed(flex: f64, min: i32, max: i32) -> Self {
         DynVal {
             fixed: min,
@@ -95,7 +101,7 @@ impl DynVal {
         }
     }
 
-    // Get the value from the absolute and relative psvts
+    /// Get the value from the absolute and relative psvts
     pub fn get_val(&self, max_size: u16) -> i32 {
         let flex = max_size as f64 * self.flex;
         let flex = f64::round(flex) as i32;
@@ -110,16 +116,16 @@ impl DynVal {
         f64::round(multiplied) as i32
     }
 
-    // get the bounds of this dynamic value
+    /// get the bounds of this dynamic value
     pub fn get_bounds(&self) -> (i32, i32) {
         let min = self.get_val(0);
         let max = self.get_val(u16::MAX);
         (min, max)
     }
 
-    // get the flexible absolute value for the context provided
-    // this is the value of the flex portion of the DynVal
-    // without the fixed portion.
+    /// get the flexible absolute value for the context provided
+    /// this is the value of the flex portion of the DynVal
+    /// without the fixed portion.
     pub fn get_flex_val_portion_for_ctx(&self, max_size: u16) -> i32 {
         let fixed_amount = self.get_val(0);
         let val = self.get_val(max_size);
@@ -136,8 +142,8 @@ impl DynVal {
         out
     }
 
-    // simplify the calculation of the DynVal
-    // recursive function. Add any plus values to the main value if they are flat
+    /// simplify the calculation of the DynVal
+    /// recursive function. Add any plus values to the main value if they are flat
     pub fn flatten_internal(&mut self) {
         for i in 0..self.plus.len() {
             self.plus[i].flatten_internal();
@@ -187,8 +193,8 @@ impl DynVal {
         self.plus.push(sv.neg());
     }
 
-    // returns a new DynVal which is the sum of the two SclVals
-    // without modifying the original DynVal provided
+    /// returns a new DynVal which is the sum of the two SclVals
+    /// without modifying the original DynVal provided
     pub fn plus(&self, sv: DynVal) -> DynVal {
         let mut out = self.clone();
         out.plus.push(sv);
@@ -229,13 +235,13 @@ impl DynVal {
         out
     }
 
-    // gets the min DynVal of the plusMinOF SclVals
+    /// gets the min DynVal of the plusMinOF SclVals
     pub fn sum_of_plusses(&self, max_size: u16) -> i32 {
         self.plus.iter().fold(0, |acc, v| acc + v.get_val(max_size))
     }
 
-    // gets the min value of the plus_min_of SclVals, if there are no
-    // plus_min_of it returns 0
+    /// gets the min value of the plus_min_of SclVals, if there are no
+    /// plus_min_of it returns 0
     pub fn min_from_plus_min_of(&self, max_size: u16) -> i32 {
         let mut out = None;
         for k in self.plus_min_of.iter() {
@@ -254,8 +260,8 @@ impl DynVal {
         out.unwrap_or(0)
     }
 
-    // gets the max value of the plus_max_of SclVals, if there are no
-    // plus_max_of it returns 0
+    /// gets the max value of the plus_max_of SclVals, if there are no
+    /// plus_max_of it returns 0
     pub fn max_from_plus_max_of(&self, max_size: u16) -> i32 {
         let mut out = 0;
         for k in self.plus_max_of.iter() {

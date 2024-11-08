@@ -18,11 +18,11 @@ pub struct Label {
 pub enum LabelJustification {
     Left,
     Right,
-    Down, // some wacky stuff
+    Down, /// some wacky stuff
     Up,
 }
 
-// when "active" hitting enter will click the button
+/// when "active" hitting enter will click the button
 pub static LABEL_EV_COMBOS: Vec<ReceivableEvent> = Vec::new();
 
 pub static LABEL_STYLE: WBStyles = WBStyles {
@@ -81,8 +81,8 @@ impl Label {
         self
     }
 
-    // Rotate the text by 90 degrees
-    // intended to be used with WithDownJustification or WithUpJustification
+    /// Rotate the text by 90 degrees
+    /// intended to be used with WithDownJustification or WithUpJustification
     pub fn with_rotated_text(self) -> Self {
         let rotated = self.base.pane.content.borrow().rotate_90_deg();
         *self.base.pane.content.borrow_mut() = rotated;
@@ -96,10 +96,10 @@ impl Label {
     pub fn with_style(self, ctx: &Context, sty: Style) -> Self {
         self.base.styles.borrow_mut().unselectable_style = sty;
 
-        // this is necessary to actually update the content of the label w/
-        // the new style
-        // TODO: consider moving this somewhere else if it needs to be called in
-        // many places
+        /// this is necessary to actually update the content of the label w/
+        /// the new style
+        /// TODO: consider moving this somewhere else if it needs to be called in
+        /// many places
         self.base.set_content_from_string(ctx, &self.text.borrow());
         self
     }
@@ -108,7 +108,7 @@ impl Label {
         self.text.borrow().clone()
     }
 
-    // Updates the content and size of the label
+    /// Updates the content and size of the label
     pub fn set_text(&self, ctx: &Context, text: String) {
         self.base.set_content_from_string(ctx, &text);
         let (w, h) = common::get_text_size(&text);

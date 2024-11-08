@@ -34,8 +34,8 @@ impl VerticalStack {
         }
     }
 
-    // add an element to the end of the stack resizing the other elements
-    // in order to fit the new element
+    /// add an element to the end of the stack resizing the other elements
+    /// in order to fit the new element
     pub fn push(&self, ctx: &Context, el: Box<dyn Element>) -> EventResponse {
         Self::sanitize_el_location(&*el);
         self.els.borrow_mut().push(el.clone());
@@ -84,9 +84,9 @@ impl VerticalStack {
         self
     }
 
-    // get the average value of the elements in the stack
-    // this is useful for pushing new elements with an even size
-    // to the other elements
+    /// get the average value of the elements in the stack
+    /// this is useful for pushing new elements with an even size
+    /// to the other elements
     pub fn avg_height(&self, ctx: &Context) -> DynVal {
         let els = self.els.borrow();
         if els.is_empty() {
@@ -110,10 +110,10 @@ impl VerticalStack {
     fn sanitize_el_location(el: &dyn Element) {
         let mut loc = el.get_dyn_location_set().borrow().clone();
 
-        // ignore the x-dimension everything must fit fully
-        loc.set_start_x(0.0.into()); // 0
-        loc.set_end_x(1.0.into()); // 100%
-        *el.get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
+        /// ignore the x-dimension everything must fit fully
+        loc.set_start_x(0.0.into()); /// 0
+        loc.set_end_x(1.0.into()); /// 100%
+        *el.get_dyn_location_set().borrow_mut() = loc; /// set loc without triggering hooks
     }
 
     pub fn ensure_normalized_sizes(&self, ctx: &Context) {
@@ -123,7 +123,7 @@ impl VerticalStack {
         }
     }
 
-    // normalize all the locations within the stack
+    /// normalize all the locations within the stack
     pub fn normalize_locations(&self, ctx: &Context) {
         let mut heights: Vec<DynVal> = self
             .els
@@ -134,24 +134,24 @@ impl VerticalStack {
 
         Self::normalize_heights_to_context(ctx, &mut heights);
 
-        // set all the locations based on the heights
+        /// set all the locations based on the heights
         self.adjust_locations_for_heights(&heights);
     }
 
-    // incrementally change the flex value of each of the existing heights (evenly), until
-    // the context height is reached. max out at 30 iterations.
+    /// incrementally change the flex value of each of the existing heights (evenly), until
+    /// the context height is reached. max out at 30 iterations.
     pub fn normalize_heights_to_context(ctx: &Context, heights: &mut [DynVal]) {
         adjust_els_to_fit_ctx_size(ctx.get_height(), heights);
     }
 
-    // adjust all the locations based on the heights
+    /// adjust all the locations based on the heights
     pub fn adjust_locations_for_heights(&self, heights: &[DynVal]) {
         let mut y = DynVal::new_fixed(0);
         for (el, height) in self.els.borrow().iter().zip(heights.iter()) {
             let mut loc = el.get_dyn_location_set().borrow().clone();
             loc.set_start_y(y.clone());
             loc.set_dyn_height(height.clone());
-            *el.get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
+            *el.get_dyn_location_set().borrow_mut() = loc; /// set loc without triggering hooks
             y = y.plus(height.clone());
         }
     }
@@ -194,8 +194,8 @@ impl HorizontalStack {
         self
     }
 
-    // add an element to the end of the stack resizing the other elements
-    // in order to fit the new element
+    /// add an element to the end of the stack resizing the other elements
+    /// in order to fit the new element
     pub fn push(&self, ctx: &Context, el: Box<dyn Element>) -> EventResponse {
         Self::sanitize_el_location(&*el);
         self.els.borrow_mut().push(el.clone());
@@ -244,9 +244,9 @@ impl HorizontalStack {
         self
     }
 
-    // get the average value of the elements in the stack
-    // this is useful for pushing new elements with an even size
-    // to the other elements
+    /// get the average value of the elements in the stack
+    /// this is useful for pushing new elements with an even size
+    /// to the other elements
     pub fn avg_width(&self, ctx: &Context) -> DynVal {
         let els = self.els.borrow();
         if els.is_empty() {
@@ -270,10 +270,10 @@ impl HorizontalStack {
     fn sanitize_el_location(el: &dyn Element) {
         let mut loc = el.get_dyn_location_set().borrow().clone();
 
-        // ignore the y-dimension everything must fit fully
-        loc.set_start_y(0.0.into()); // 0
-        loc.set_end_y(1.0.into()); // 100%
-        *el.get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
+        /// ignore the y-dimension everything must fit fully
+        loc.set_start_y(0.0.into()); /// 0
+        loc.set_end_y(1.0.into()); /// 100%
+        *el.get_dyn_location_set().borrow_mut() = loc; /// set loc without triggering hooks
     }
 
     pub fn ensure_normalized_sizes(&self, ctx: &Context) {
@@ -283,7 +283,7 @@ impl HorizontalStack {
         }
     }
 
-    // normalize all the locations within the stack
+    /// normalize all the locations within the stack
     pub fn normalize_locations(&self, ctx: &Context) {
         let mut widths: Vec<DynVal> = self
             .els
@@ -294,35 +294,35 @@ impl HorizontalStack {
 
         Self::normalize_widths_to_context(ctx, &mut widths);
 
-        // set all the locations based on the widths
+        /// set all the locations based on the widths
         self.adjust_locations_for_widths(&widths);
     }
 
-    // incrementally change the flex value of each of the existing widths (evenly), until
-    // the context width is reached. max out at 30 iterations.
+    /// incrementally change the flex value of each of the existing widths (evenly), until
+    /// the context width is reached. max out at 30 iterations.
     pub fn normalize_widths_to_context(ctx: &Context, widths: &mut [DynVal]) {
         adjust_els_to_fit_ctx_size(ctx.get_width(), widths);
     }
 
-    // adjust all the locations based on the widths
+    /// adjust all the locations based on the widths
     pub fn adjust_locations_for_widths(&self, widths: &[DynVal]) {
         let mut x = DynVal::new_fixed(0);
         for (el, width) in self.els.borrow().iter().zip(widths.iter()) {
             let mut loc = el.get_dyn_location_set().borrow().clone();
             loc.set_start_x(x.clone());
             loc.set_dyn_width(width.clone());
-            *el.get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
+            *el.get_dyn_location_set().borrow_mut() = loc; /// set loc without triggering hooks
             x = x.plus(width.clone());
         }
     }
 }
 
-// incrementally change the flex value of each of the existing element vals (either height or
-// width), until the total context size is reached. max out at 30 iterations. flex changes are
-// applied additively evenly to all elements (as opposed to multiplicatively).
-//
-// ctx_size is either the height or width of the context
-// vals is either element heights or widths to be adjusted
+/// incrementally change the flex value of each of the existing element vals (either height or
+/// width), until the total context size is reached. max out at 30 iterations. flex changes are
+/// applied additively evenly to all elements (as opposed to multiplicatively).
+///
+/// ctx_size is either the height or width of the context
+/// vals is either element heights or widths to be adjusted
 fn adjust_els_to_fit_ctx_size(ctx_size: u16, vals: &mut [DynVal]) {
     vals.iter_mut().for_each(|h| h.flatten_internal());
     for _i in 0..30 {

@@ -266,7 +266,7 @@ impl Color {
         }
     }
 
-    // considers the alpha of the self and blends with the previous color
+    /// considers the alpha of the self and blends with the previous color
     pub fn to_crossterm_color(
         &self, ctx: &Context, prev: Option<CrosstermColor>, x: u16, y: u16,
     ) -> CrosstermColor {
@@ -279,7 +279,7 @@ impl Color {
         }
     }
 
-    // to color with the given context and position
+    /// to color with the given context and position
     pub fn to_color(self, ctx: &Context, x: u16, y: u16) -> Color {
         match self {
             Color::ANSI(_) | Color::Rgba(_) => self,
@@ -289,7 +289,7 @@ impl Color {
         }
     }
 
-    // to color with the given context and position
+    /// to color with the given context and position
     pub fn update_color(&mut self, ctx: &Context, x: u16, y: u16) {
         match &self {
             Color::Gradient(gr) => *self = gr.clone().to_color(ctx, x, y),
@@ -302,8 +302,10 @@ impl Color {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
 pub struct RadialGradient {
-    pub center: (DynVal, DynVal), // x, y
-    pub skew: (f64, f64), // horizontal, vertical skew (as skew of (1., 1./0.55) seems to make a circle)
+    pub center: (DynVal, DynVal),
+    /// x, y
+    pub skew: (f64, f64),
+    /// horizontal, vertical skew (as skew of (1., 1./0.55) seems to make a circle)
     pub grad: Vec<(DynVal, Color)>,
 }
 
@@ -437,8 +439,10 @@ impl RadialGradient {
 /// of the DynVal will be determined by the distance from the line
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Default)]
 pub struct Gradient {
-    pub grad: Vec<(DynVal, Color)>, // pos, color
-    pub angle_deg: f64, // angle in degrees, starting from the positive-x-axis, moving clockwise
+    /// pos, color
+    pub grad: Vec<(DynVal, Color)>,
+    /// angle in degrees, starting from the positive-x-axis, moving clockwise
+    pub angle_deg: f64,
 }
 
 impl Gradient {
@@ -566,13 +570,6 @@ impl Gradient {
         if self.grad.is_empty() {
             return Color::TRANSPARENT;
         }
-
-        //pub grad: Vec<(DynVal, Color)>, // pos, color
-        //let (grad, angle_deg) = match self.angle_deg {
-        //    (0.0..90.0) => (self.grad.clone(), self.angle_deg),
-        //    (90.0..180.0) => (self.grad.clone(), self.angle_deg),
-        //    _ => (self.grad.clone(), self.angle_deg),
-        //};
 
         // determine the maximum value of the context (used for computing the DynVal)
         let angle_rad = self.angle_deg * std::f64::consts::PI / 180.0;
@@ -723,7 +720,8 @@ pub struct Rgba {
     pub r: u8,
     pub g: u8,
     pub b: u8,
-    pub a: u8, // alpha
+    /// alpha
+    pub a: u8,
 }
 
 impl Default for Rgba {
@@ -802,7 +800,7 @@ impl Rgba {
         Self { r, g, b, a }
     }
 
-    // returns a tuple of the rgb values
+    /// returns a tuple of the rgb values
     pub fn to_tuple(&self) -> (u8, u8, u8) {
         (self.r, self.g, self.b)
     }
@@ -815,7 +813,7 @@ impl Rgba {
         Self::new(r, g, b)
     }
 
-    // considers the alpha of the self and blends with the previous color
+    /// considers the alpha of the self and blends with the previous color
     pub fn to_crossterm_color(&self, prev: Option<CrosstermColor>) -> CrosstermColor {
         let (r, g, b) = self.to_tuple();
         let a = self.a as f64 / 255.0;
@@ -867,7 +865,7 @@ impl Color {
     pub const PALLID_BLUE:      Color = Color::new(90, 110, 190);
     pub const LIGHT_YELLOW2:    Color = Color::new(255, 255, 200);
 
-    // css named colours
+    /// css named colours
     pub const MAROON:                  Color = Color::new(128, 0, 0);
     pub const DARK_RED:                Color = Color::new(139, 0, 0);
     pub const BROWN:                   Color = Color::new(165, 42, 42);

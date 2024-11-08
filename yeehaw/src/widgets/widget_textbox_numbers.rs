@@ -8,21 +8,21 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-// TODO create number finalized hook
-// TODO allow integer OR float values
+/// TODO create number finalized hook
+/// TODO allow integer OR float values
 
 #[derive(Clone)]
 pub struct NumbersTextBox {
     pub tb: TextBox,
     pub value: Rc<RefCell<i64>>,
-    pub has_buttons: Rc<RefCell<bool>>, // if true, adds up/down buttons to the right of the text box
-    pub button_increment: Rc<RefCell<i64>>, // how much to increment/decrement the value by when the up/down buttons are pressed
-    pub max_value: Rc<RefCell<Option<i64>>>, // if set, the maximum value the number can be
-    pub min_value: Rc<RefCell<Option<i64>>>, // if set, the minimum value the number can be
+    pub has_buttons: Rc<RefCell<bool>>, /// if true, adds up/down buttons to the right of the text box
+    pub button_increment: Rc<RefCell<i64>>, /// how much to increment/decrement the value by when the up/down buttons are pressed
+    pub max_value: Rc<RefCell<Option<i64>>>, /// if set, the maximum value the number can be
+    pub min_value: Rc<RefCell<Option<i64>>>, /// if set, the minimum value the number can be
 }
 
 impl NumbersTextBox {
-    // for number textboxes which are editable
+    /// for number textboxes which are editable
     pub fn editable_receivable_events() -> Vec<ReceivableEvent> {
         vec![
             KeyPossibility::Chars.into(),
@@ -49,7 +49,7 @@ impl NumbersTextBox {
     }
 
     // ---------------------------------------------------------
-    // Decorators
+    /// Decorators
 
     pub fn with_buttons(self) -> Self {
         *self.has_buttons.borrow_mut() = true;
@@ -156,7 +156,7 @@ impl NumbersTextBox {
     // ---------------------------------------------------------
 
     pub fn change_value(&self, ctx: &Context, mut new_value: i64) {
-        // correct bounds on value
+        /// correct bounds on value
         if let Some(min) = *self.min_value.borrow() {
             new_value = new_value.max(min)
         }

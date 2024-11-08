@@ -3,42 +3,44 @@ use {
     std::ops::{Deref, DerefMut},
 };
 
-// TODO build in mouse events here
+/// TODO build in mouse events here
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum ReceivableEvent {
     KeyCombo(Vec<KeyPossibility>),
-    Custom(String), // custom event name
+    /// custom event name
+    Custom(String),
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Event {
-    // The Initialize event resets an element's organizer's prioritizers. This essentially
-    // refreshes the state of the element organizer for elements which have an organizer.
+    /// The Initialize event resets an element's organizer's prioritizers. This essentially
+    /// refreshes the state of the element organizer for elements which have an organizer.
     Initialize,
 
-    // A signal to an element that it should closedown.
+    /// A signal to an element that it should closedown.
     Exit,
 
-    // Used to tell an element that the screen has resized. The element should
-    // then adjust all of its children based on the given context
+    /// Used to tell an element that the screen has resized. The element should
+    /// then adjust all of its children based on the given context
     Resize,
 
     KeyCombo(Vec<crossterm::event::KeyEvent>),
 
     Mouse(crossterm::event::MouseEvent),
 
-    // The ExternalMouseEvent is send to all elements
-    // who are not considered to be the "Receiver" of the event
-    //
-    // This is used to receive from a parent, a mouse event that neither it, nor its
-    // children, are meant to consume. This is used to tell an element that
-    // another element, somewhere in the tui, has received/consumed a mouse event.
-    //
+    /// The ExternalMouseEvent is send to all elements
+    /// who are not considered to be the "Receiver" of the event
+    ///
+    /// This is used to receive from a parent, a mouse event that neither it, nor its
+    /// children, are meant to consume. This is used to tell an element that
+    /// another element, somewhere in the tui, has received/consumed a mouse event.
+    ///
     /// NOTE the column and row are the column and row of the mouse event relative
     /// to the element receiving the event, hence they may be negative.
     ExternalMouse(RelMouseEvent),
 
-    Custom(String, Vec<u8>), // custom event type with a name and a payload
+    /// custom event type with a name and a payload
+    Custom(String, Vec<u8>),
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -146,20 +148,22 @@ impl ReceivableEvent {
     }
 }
 
-// Event for triggering a command execution for an element
+/// Event for triggering a command execution for an element
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct CommandEvent {
     pub cmd: String,
     pub args: Vec<String>,
 }
 
-// KeyPossibility is used to match a key event
-// with a specific key or a group of keys
+/// KeyPossibility is used to match a key event
+/// with a specific key or a group of keys
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum KeyPossibility {
     Key(crossterm::event::KeyEvent),
-    Chars,  // any char
-    Digits, // any digit
+    Chars,
+    /// any char
+    Digits,
+    /// any digit
     Anything,
 }
 
@@ -241,47 +245,48 @@ impl From<()> for EventResponse {
     }
 }
 
-// EventResponse is used to send information back to the parent that delivered
-// the event to the element
+/// EventResponse is used to send information back to the parent that delivered
+/// the event to the element
 #[derive(Default)]
 pub enum EventResponse {
     #[default]
     None,
 
-    // quit the application
+    /// quit the application
     Quit,
 
-    // destroy the current element
+    /// destroy the current element
     Destruct,
 
-    // bring this element to the front (greatest z-index)
+    /// bring this element to the front (greatest z-index)
     BringToFront,
 
-    // defocus all other elements
+    /// defocus all other elements
     UnfocusOthers,
 
-    Focus, // focus this element
+    Focus,
+    /// focus this element
 
-    // create an element, its location will be adjusted
-    // by the elements current location.
-    //
-    // this response can be used to create a window
-    // or when used in conjunction with destruct, it can be used to replace
-    // the current element with another.
-    // Additionally EventResponses can be passed with the new element,
-    // these EventResponses are then considered to have come from the new element
+    /// create an element, its location will be adjusted
+    /// by the elements current location.
+    ///
+    /// this response can be used to create a window
+    /// or when used in conjunction with destruct, it can be used to replace
+    /// the current element with another.
+    /// Additionally EventResponses can be passed with the new element,
+    /// these EventResponses are then considered to have come from the new element
     NewElement(Box<(dyn Element)>, Option<EventResponses>),
 
     Move(MoveResponse),
 
     Resize(ResizeResponse),
 
-    // XXX TODO rename to Custom
-    // arbitrary custom metadatas which can be passed back to the parent
-    //       key,   , value
+    /// XXX TODO rename to Custom
+    /// arbitrary custom metadatas which can be passed back to the parent
+    ///       key,   , value
     Metadata(String, Vec<u8>),
 
-    // contains priority updates that should be made to the receiver's prioritizer
+    /// contains priority updates that should be made to the receiver's prioritizer
     ReceivableEventChanges(ReceivableEventChanges),
 }
 
@@ -366,8 +371,8 @@ impl DerefMut for EventResponses {
 }
 
 impl EventResponses {
-    // retrieves only the ReceivableEventChanges from the EventResponses
-    // and concats them together
+    /// retrieves only the ReceivableEventChanges from the EventResponses
+    /// and concats them together
     pub fn get_receivable_event_changes(&self) -> ReceivableEventChanges {
         let mut rec = ReceivableEventChanges::default();
         for er in &self.0 {
@@ -381,20 +386,21 @@ impl EventResponses {
 
 // ----------------------------------------------------------------------------
 
-// ReceivableEventChanges is used to update the receivable events of an element
-// registered in the prioritizers of all ancestors
-// NOTE: While processing inputability changes, element organizers remove events
-// BEFORE adding events.
+/// ReceivableEventChanges is used to update the receivable events of an element
+/// registered in the prioritizers of all ancestors
+/// NOTE: While processing inputability changes, element organizers remove events
+/// BEFORE adding events.
 
 #[derive(Clone, Default, Debug)]
 pub struct ReceivableEventChanges {
-    pub add: Vec<(ReceivableEvent, Priority)>, // receivable events being added to the element
+    pub add: Vec<(ReceivableEvent, Priority)>,
+    /// receivable events being added to the element
 
-    // Receivable events to deregistered from an element.
-    // NOTE: one instance of an event being passed up the hierarchy through
-    // RmRecEvs will remove ALL instances of that event from the prioritizer of
-    // every element higher in the hierarchy that processes the
-    // ReceivableEventChanges.
+    /// Receivable events to deregistered from an element.
+    /// NOTE: one instance of an event being passed up the hierarchy through
+    /// RmRecEvs will remove ALL instances of that event from the prioritizer of
+    /// every element higher in the hierarchy that processes the
+    /// ReceivableEventChanges.
     pub remove: Vec<ReceivableEvent>,
 }
 
@@ -468,15 +474,15 @@ impl ReceivableEventChanges {
 // -------------------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// The SelfReceivableEvents are used to manage events and associated functions
-// registered directly to an element (AND NOT to that elements children!). They
-// are similar to the EvPrioritizer, but they are used to manage the events and
-// commands that are registered locally to this specific element.
-// (The EvPrioritizer and CmdPrioritizer are used to manage the events and
-// commands that are registered to an element's
-// children in the ElementOrganizer).
-// NOTE: these fulfill a similar function to the prioritizers
-// in that they manage inclusion/removal more cleanly and can be sorted
+/// The SelfReceivableEvents are used to manage events and associated functions
+/// registered directly to an element (AND NOT to that elements children!). They
+/// are similar to the EvPrioritizer, but they are used to manage the events and
+/// commands that are registered locally to this specific element.
+/// (The EvPrioritizer and CmdPrioritizer are used to manage the events and
+/// commands that are registered to an element's
+/// children in the ElementOrganizer).
+/// NOTE: these fulfill a similar function to the prioritizers
+/// in that they manage inclusion/removal more cleanly and can be sorted
 #[derive(Clone, Default)]
 pub struct SelfReceivableEvents(pub Vec<(ReceivableEvent, Priority)>);
 
@@ -528,8 +534,8 @@ impl SelfReceivableEvents {
         self.0.retain(|(e, _)| !evs.contains(e))
     }
 
-    // update_priority_for_ev updates the priority of the given event
-    // registered directly to this element
+    /// update_priority_for_ev updates the priority of the given event
+    /// registered directly to this element
     pub fn update_priority_for_ev(&mut self, ev: ReceivableEvent, p: Priority) {
         for i in 0..self.0.len() {
             if self.0[i].0 != ev {

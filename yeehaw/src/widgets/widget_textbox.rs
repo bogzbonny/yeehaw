@@ -13,39 +13,39 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-// TODO better multiline cursor movement
-// retain greater cursor position between lines, ex:
-//    123456789<cursor, starting position>
-//    1234<cursor after moving down>
-//    123456789<cursor, after moving down again>
+/// TODO better multiline cursor movement
+/// retain greater cursor position between lines, ex:
+///    123456789<cursor, starting position>
+///    1234<cursor after moving down>
+///    123456789<cursor, after moving down again>
 
 #[allow(clippy::type_complexity)]
 #[derive(Clone)]
 pub struct TextBox {
     pub base: WidgetBase,
     pub text: Rc<RefCell<Vec<char>>>,
-    pub text_when_empty: Rc<RefCell<String>>, // greyed out text when the textbox is empty
+    pub text_when_empty: Rc<RefCell<String>>, /// greyed out text when the textbox is empty
     pub text_when_empty_fg: Rc<RefCell<Color>>,
-    pub ch_cursor: Rc<RefCell<bool>>, // whether or not this tb has a ch cursor
-    pub editable: Rc<RefCell<bool>>,  // whether or not this tb can be edited
-    pub wordwrap: Rc<RefCell<bool>>,  // whether or not to wrap text
-    pub line_numbered: Rc<RefCell<bool>>, // whether or not there are lefthand line numbers
-    pub cursor_pos: Rc<RefCell<usize>>, // cursor absolute position in the text
+    pub ch_cursor: Rc<RefCell<bool>>, /// whether or not this tb has a ch cursor
+    pub editable: Rc<RefCell<bool>>,  /// whether or not this tb can be edited
+    pub wordwrap: Rc<RefCell<bool>>,  /// whether or not to wrap text
+    pub line_numbered: Rc<RefCell<bool>>, /// whether or not there are lefthand line numbers
+    pub cursor_pos: Rc<RefCell<usize>>, /// cursor absolute position in the text
     pub cursor_style: Rc<RefCell<Style>>,
-    pub visual_mode: Rc<RefCell<bool>>, // whether or not the cursor is visual selecting
-    pub mouse_dragging: Rc<RefCell<bool>>, // if the mouse is currently dragging
-    pub visual_mode_start_pos: Rc<RefCell<usize>>, // the start position of the visual select
+    pub visual_mode: Rc<RefCell<bool>>, /// whether or not the cursor is visual selecting
+    pub mouse_dragging: Rc<RefCell<bool>>, /// if the mouse is currently dragging
+    pub visual_mode_start_pos: Rc<RefCell<usize>>, /// the start position of the visual select
 
     pub text_changed_hook: Rc<RefCell<Option<Box<dyn FnMut(Context, String) -> EventResponses>>>>,
 
-    // When this hook is non-nil each characters style will be determineda via this hook.
-    // This is intended to be used if the caller of the textbox wishes granular control
-    // over the text styling.
-    //                                                              abs_pos, existing
+    /// When this hook is non-nil each characters style will be determineda via this hook.
+    /// This is intended to be used if the caller of the textbox wishes granular control
+    /// over the text styling.
+    ///                                                              abs_pos, existing
     pub position_style_hook: Rc<RefCell<Option<Box<dyn FnMut(Context, usize, Style) -> Style>>>>,
 
-    // this hook is called each time the cursor moves
-    //                                                              abs_pos
+    /// this hook is called each time the cursor moves
+    ///                                                              abs_pos
     pub cursor_changed_hook: Rc<RefCell<Option<Box<dyn FnMut(Context, usize) -> EventResponses>>>>,
 
     pub x_scrollbar_op: Rc<RefCell<HorizontalSBPositions>>,
@@ -55,7 +55,7 @@ pub struct TextBox {
 
     pub line_number_tb: Rc<RefCell<Option<TextBox>>>,
 
-    // for when there are two scrollbars
+    /// for when there are two scrollbars
     pub corner_decor: Rc<RefCell<DrawCh>>,
     pub right_click_menu: Rc<RefCell<Option<RightClickMenu>>>,
 }
@@ -77,7 +77,7 @@ impl TextBox {
 
     const DEFAULT_CURSOR_STYLE: Style = Style::new_const(Color::WHITE, Color::BLUE);
 
-    // for textboxes which are editable
+    /// for textboxes which are editable
     pub fn editable_receivable_events() -> Vec<ReceivableEvent> {
         vec![
             KeyPossibility::Chars.into(),
@@ -95,7 +95,7 @@ impl TextBox {
         ]
     }
 
-    // non-editable textboxes can still scroll
+    /// non-editable textboxes can still scroll
     pub fn non_editable_receivable_events() -> Vec<ReceivableEvent> {
         vec![
             KB::KEY_LEFT.into(),
@@ -169,12 +169,12 @@ impl TextBox {
         );
         *tb.right_click_menu.borrow_mut() = Some(rcm);
 
-        let _ = tb.drawing(ctx); // to set the base content
+        let _ = tb.drawing(ctx); /// to set the base content
         tb
     }
 
     // ---------------------------------------------------------
-    // Decorators
+    /// Decorators
 
     pub fn with_left_scrollbar(self) -> Self {
         *self.y_scrollbar_op.borrow_mut() = VerticalSBPositions::ToTheLeft;
@@ -343,9 +343,9 @@ impl TextBox {
         let mut out: Vec<Box<dyn Widget>> = vec![];
 
         let ln_tb = if *self.line_numbered.borrow() {
-            // determine the width of the line numbers textbox
+            /// determine the width of the line numbers textbox
 
-            // create the line numbers textbox
+            /// create the line numbers textbox
             let (lns, lnw) = self.get_line_numbers(ctx);
             let ln_tb = TextBox::new(ctx, lns)
                 .at(x.clone(), y.clone())
@@ -354,10 +354,10 @@ impl TextBox {
                 .with_no_wordwrap()
                 .non_editable();
             ln_tb.set_selectability(ctx, Selectability::Unselectable);
-            //.with_selectability(Selectability::Unselectable);
+            ///.with_selectability(Selectability::Unselectable);
             out.push(Box::new(ln_tb.clone()));
 
-            // reduce the width of the main textbox
+            /// reduce the width of the main textbox
             self.base.set_dyn_start_x(x.clone().plus_fixed(lnw as i32));
             self.base.set_dyn_width(w.clone().minus_fixed(lnw as i32));
 
@@ -368,7 +368,7 @@ impl TextBox {
         };
         out.push(Box::new(self.clone()));
 
-        // add corner decor
+        /// add corner decor
         let y_sb_op = *self.y_scrollbar_op.borrow();
         let x_sb_op = *self.x_scrollbar_op.borrow();
         let no_y_sb = matches!(y_sb_op, VerticalSBPositions::None);
@@ -445,7 +445,7 @@ impl TextBox {
             out.push(Box::new(hsb));
         }
 
-        let _ = self.drawing(ctx); // to set the base content
+        let _ = self.drawing(ctx); /// to set the base content
         Widgets(out)
     }
 
@@ -461,8 +461,8 @@ impl TextBox {
 
     pub fn get_cursor_pos(&self) -> usize {
         let cur_pos = *self.cursor_pos.borrow();
-        // NOTE the cursor can be placed at the end of the text
-        // hence the position is the length
+        /// NOTE the cursor can be placed at the end of the text
+        /// hence the position is the length
         if cur_pos > self.text.borrow().len() {
             self.text.borrow().len()
         } else {
@@ -493,13 +493,13 @@ impl TextBox {
         self.set_cursor_pos(ctx, new_pos)
     }
 
-    // returns the wrapped characters of the text
+    /// returns the wrapped characters of the text
     pub fn get_wrapped(&self, ctx: &Context) -> WrChs {
         let mut rs = self.text.borrow().clone();
-        rs.push(' '); // add the space for the final possible position
+        rs.push(' '); /// add the space for the final possible position
         let mut chs = vec![];
         let mut max_x = 0;
-        let (mut x, mut y) = (0, 0); // working x and y position in the textbox
+        let (mut x, mut y) = (0, 0); /// working x and y position in the textbox
         for (abs_pos, r) in rs.iter().enumerate() {
             if *self.wordwrap.borrow() && x == self.base.get_width_val(ctx) {
                 y += 1;
@@ -511,10 +511,10 @@ impl TextBox {
             }
 
             if *r == '\n' {
-                // If ch_cursor without wordwrap, add an extra space to the end of
-                // the line so that the cursor can be placed there. Without this
-                // extra space, placing the cursor at the end of the largest line
-                // will panic.
+                /// If ch_cursor without wordwrap, add an extra space to the end of
+                /// the line so that the cursor can be placed there. Without this
+                /// extra space, placing the cursor at the end of the largest line
+                /// will panic.
                 if *self.ch_cursor.borrow() && !*self.wordwrap.borrow() {
                     if x > max_x {
                         max_x = x;
@@ -522,14 +522,14 @@ impl TextBox {
                     chs.push(WrCh::new(' ', None, x, y));
                 }
 
-                // the "newline character" exists as an extra space at
-                // the end of the line
+                /// the "newline character" exists as an extra space at
+                /// the end of the line
                 if x > max_x {
                     max_x = x;
                 }
                 chs.push(WrCh::new('\n', Some(abs_pos), x, y));
 
-                // move the working position to the beginning of the next line
+                /// move the working position to the beginning of the next line
                 y += 1;
                 x = 0;
             } else {
@@ -543,12 +543,12 @@ impl TextBox {
         WrChs { chs, max_x }
     }
 
-    // returns the formatted line numbers of the textbox
-    // line numbers are right justified
+    /// returns the formatted line numbers of the textbox
+    /// line numbers are right justified
     pub fn get_line_numbers(&self, ctx: &Context) -> (String, usize) {
         let wr_chs = self.get_wrapped(ctx);
 
-        // get the max line number
+        /// get the max line number
         let mut max_line_num = 0;
         for (i, wr_ch) in wr_chs.chs.iter().enumerate() {
             if (wr_ch.ch == '\n' && wr_ch.abs_pos.is_some()) || i == 0 {
@@ -556,7 +556,7 @@ impl TextBox {
             }
         }
 
-        // get the largest amount of digits in the line numbers from the string
+        /// get the largest amount of digits in the line numbers from the string
         let line_num_width = max_line_num.to_string().chars().count();
 
         let mut s = String::new();
@@ -570,10 +570,10 @@ impl TextBox {
                 s += "\n";
             }
         }
-        (s, line_num_width + 1) // +1 for the extra space after the digits
+        (s, line_num_width + 1) // / +1 for the extra space after the digits
     }
 
-    // takes into account the width of the line numbers textbox
+    /// takes into account the width of the line numbers textbox
     pub fn x_new_domain_chs(&self) -> usize {
         let lnw = if let Some(ln_tb) = self.line_number_tb.borrow().as_ref() {
             ln_tb.base.content_width()
@@ -583,7 +583,7 @@ impl TextBox {
         self.base.content_width() + lnw
     }
 
-    // NOTE the resp is sent in to potentially modify the offsets from numbers tb
+    /// NOTE the resp is sent in to potentially modify the offsets from numbers tb
     pub fn correct_offsets(&self, ctx: &Context, w: &WrChs) -> EventResponse {
         let (x, y) = w.cursor_x_and_y(self.get_cursor_pos());
         let (x, y) = (x.unwrap_or(0), y.unwrap_or(0));
@@ -592,7 +592,7 @@ impl TextBox {
         let y_offset = *self.base.pane.content_view_offset_y.borrow();
         let x_offset = *self.base.pane.content_view_offset_x.borrow();
 
-        // update the scrollbars/line numbers textbox
+        /// update the scrollbars/line numbers textbox
         if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
             sb.external_change(ctx, y_offset, self.base.content_height());
         }
@@ -617,7 +617,7 @@ impl TextBox {
         resp
     }
 
-    // get the start and end position of the visually selected text
+    /// get the start and end position of the visually selected text
     pub fn visual_selection_pos(&self) -> Option<(usize, usize)> {
         let mut cur_pos = self.get_cursor_pos();
         if *self.visual_mode.borrow() {
@@ -654,7 +654,7 @@ impl TextBox {
             return EventResponses::default();
         }
 
-        // delete everything in the visual selection
+        /// delete everything in the visual selection
         let mut rs = self.text.borrow().clone();
 
         let Some((start_pos, end_pos)) = self.visual_selection_pos() else {
@@ -703,7 +703,7 @@ impl TextBox {
 
         self.incr_cursor_pos(ctx, cliprunes.len() as isize);
         let w = self.get_wrapped(ctx);
-        self.base.set_content_from_string(ctx, &w.wrapped_string()); // See NOTE-1
+        self.base.set_content_from_string(ctx, &w.wrapped_string()); /// See NOTE-1
 
         let resp = self.correct_offsets(ctx, &w);
         resps.push(resp);
@@ -736,7 +736,7 @@ impl TextBox {
                 _ => {}
             }
 
-            // update the scrollbars
+            /// update the scrollbars
             let y_offset = *self.base.pane.content_view_offset_y.borrow();
             let x_offset = *self.base.pane.content_view_offset_x.borrow();
             if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
@@ -808,7 +808,7 @@ impl TextBox {
 
             _ if ev[0] == KB::KEY_LEFT => {
                 if cursor_pos > 0 && cursor_pos <= self.text.borrow().len() {
-                    // do not move left if at the beginning of a line
+                    /// do not move left if at the beginning of a line
                     if self.text.borrow()[cursor_pos - 1] != '\n' {
                         self.incr_cursor_pos(ctx, -1);
                         let w = self.get_wrapped(ctx);
@@ -818,7 +818,7 @@ impl TextBox {
             }
 
             _ if ev[0] == KB::KEY_RIGHT => {
-                // don't allow moving to the next line
+                /// don't allow moving to the next line
                 if cursor_pos < self.text.borrow().len() && self.text.borrow()[cursor_pos] != '\n' {
                     self.incr_cursor_pos(ctx, 1);
                     let w = self.get_wrapped(ctx);
@@ -850,10 +850,10 @@ impl TextBox {
                 self.incr_cursor_pos(ctx, 1);
                 let w = self.get_wrapped(ctx);
 
-                // NOTE-1: must call SetContentFromString to update the content
-                // before updating the offset or else the offset amount may not
-                // exist in the content and the widget base will reject the new
-                // offset
+                /// NOTE-1: must call SetContentFromString to update the content
+                /// before updating the offset or else the offset amount may not
+                /// exist in the content and the widget base will reject the new
+                /// offset
                 self.base.set_content_from_string(ctx, &w.wrapped_string());
                 let resp = self.correct_offsets(ctx, &w);
 
@@ -863,8 +863,8 @@ impl TextBox {
                 resps.push(resp);
             }
 
-            // NOTE useless for now keeping for future reference for vim keybindings
-            // (META not logged by many terminals)
+            /// NOTE useless for now keeping for future reference for vim keybindings
+            /// (META not logged by many terminals)
             //_ if ev[0] == KB::KEY_META_C => {
             //    _ = self.copy_to_clipboard(); // TODO log error
             //}
@@ -883,7 +883,7 @@ impl TextBox {
                     self.incr_cursor_pos(ctx, -1);
                     *self.text.borrow_mut() = rs;
                     let w = self.get_wrapped(ctx);
-                    self.base.set_content_from_string(ctx, &w.wrapped_string()); // See NOTE-1
+                    self.base.set_content_from_string(ctx, &w.wrapped_string()); /// See NOTE-1
                     let resp = self.correct_offsets(ctx, &w);
                     if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
                         resps = hook(ctx.clone(), self.get_text());
@@ -898,7 +898,7 @@ impl TextBox {
                 *self.text.borrow_mut() = rs;
                 self.incr_cursor_pos(ctx, 1);
                 let w = self.get_wrapped(ctx);
-                self.base.set_content_from_string(ctx, &w.wrapped_string()); // See NOTE-1
+                self.base.set_content_from_string(ctx, &w.wrapped_string()); /// See NOTE-1
                 let resp = self.correct_offsets(ctx, &w);
                 if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
                     resps = hook(ctx.clone(), self.get_text());
@@ -917,7 +917,7 @@ impl TextBox {
     }
 
     pub fn receive_mouse_event(&self, ctx: &Context, ev: MouseEvent) -> (bool, EventResponses) {
-        // handle right click
+        /// handle right click
         if let Some(rcm) = &*self.right_click_menu.borrow() {
             if let Some(resp) = rcm.create_menu_if_right_click(ev) {
                 return (true, resp);
@@ -1041,7 +1041,7 @@ impl TextBox {
                 *self.mouse_dragging.borrow_mut() = false;
             }
 
-            // set the cursor to the mouse position on primary click
+            /// set the cursor to the mouse position on primary click
             MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Drag(MouseButton::Left)
                 if selectedness == Selectability::Ready =>
             {
@@ -1050,7 +1050,7 @@ impl TextBox {
                 return (true, resp.into());
             }
 
-            // set the cursor to the mouse position on primary click
+            /// set the cursor to the mouse position on primary click
             MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Drag(MouseButton::Left)
                 if selectedness == Selectability::Selected =>
             {
@@ -1083,7 +1083,7 @@ impl TextBox {
 }
 
 impl Widget for TextBox {
-    // NOTE any changes in here should also be mirrored in NumbersTextBox
+    /// NOTE any changes in here should also be mirrored in NumbersTextBox
 
     fn set_selectability_pre_hook(&self, _: &Context, s: Selectability) -> EventResponses {
         if self.base.get_selectability() == Selectability::Selected && s != Selectability::Selected
@@ -1112,7 +1112,7 @@ impl Element for TextBox {
             && *self.ch_cursor.borrow()
             && self.base.get_selectability() != Selectability::Selected
         {
-            // set greyed out text
+            /// set greyed out text
             let text = self.text_when_empty.borrow();
             let mut sty = self.base.get_current_style();
             sty.set_fg(self.text_when_empty_fg.borrow().clone());
@@ -1123,7 +1123,7 @@ impl Element for TextBox {
             self.base.set_content_from_string(ctx, &wrapped);
         }
 
-        // set styles from hooks
+        /// set styles from hooks
         if let Some(hook) = &mut *self.position_style_hook.borrow_mut() {
             for wr_ch in w.chs.iter() {
                 let existing_sty = self.base.get_current_style();
@@ -1139,7 +1139,7 @@ impl Element for TextBox {
             }
         }
 
-        // set cursor style
+        /// set cursor style
         if self.base.get_selectability() == Selectability::Selected && *self.ch_cursor.borrow() {
             let (cur_x, cur_y) = w.cursor_x_and_y(self.get_cursor_pos());
             if let (Some(cur_x), Some(cur_y)) = (cur_x, cur_y) {
@@ -1171,18 +1171,18 @@ impl Element for TextBox {
     }
 }
 
-// wrapped character
+/// wrapped character
 #[derive(Clone, Default)]
 pub struct WrCh {
-    ch: char, // the character
+    ch: char, /// the character
 
-    // absolute position in the text
-    // If this character is a NOT a part of the text and only introduced
-    // due to line wrapping, the absPos will be None (and ch='\n')
+    /// absolute position in the text
+    /// If this character is a NOT a part of the text and only introduced
+    /// due to line wrapping, the absPos will be None (and ch='\n')
     abs_pos: Option<usize>,
 
-    x_pos: usize, // x position in the line
-    y_pos: usize, // y position of the line
+    x_pos: usize, /// x position in the line
+    y_pos: usize, /// y position of the line
 }
 
 impl WrCh {
@@ -1196,11 +1196,11 @@ impl WrCh {
     }
 }
 
-// wrapped characters
+/// wrapped characters
 #[derive(Clone, Default)]
 pub struct WrChs {
     chs: Vec<WrCh>,
-    max_x: usize, // the maximum x position within the wrapped characters
+    max_x: usize, /// the maximum x position within the wrapped characters
 }
 
 impl WrChs {
@@ -1208,8 +1208,8 @@ impl WrChs {
         self.chs.iter().map(|wr_ch| wr_ch.ch).collect()
     }
 
-    // gets the cursor x and y position in the wrapped text
-    // from the absolute cursor position provided.
+    /// gets the cursor x and y position in the wrapped text
+    /// from the absolute cursor position provided.
     pub fn cursor_x_and_y(&self, cur_abs: usize) -> (Option<usize>, Option<usize>) {
         self.chs
             .iter()
@@ -1218,7 +1218,7 @@ impl WrChs {
             .unwrap_or_default()
     }
 
-    // gets the line at the given y position
+    /// gets the line at the given y position
     pub fn get_line(&self, y: usize) -> Vec<char> {
         self.chs
             .iter()
@@ -1227,7 +1227,7 @@ impl WrChs {
             .collect()
     }
 
-    // maximum y position in the wrapped text
+    /// maximum y position in the wrapped text
     pub fn max_y(&self) -> usize {
         self.chs.last().cloned().unwrap_or_default().y_pos
     }
@@ -1236,8 +1236,8 @@ impl WrChs {
         self.max_x
     }
 
-    // determine the cursor position above the current cursor position
-    //                                                         cur_abs
+    /// determine the cursor position above the current cursor position
+    ///                                                         cur_abs
     pub fn get_cursor_above_position(&self, cur_abs: usize) -> Option<usize> {
         let (cur_i, cur_x, cur_y) = self
             .chs
@@ -1258,8 +1258,8 @@ impl WrChs {
             .unwrap_or(None)
     }
 
-    // determine the cursor position below the current cursor position.
-    //                                                         cur_abs
+    /// determine the cursor position below the current cursor position.
+    ///                                                         cur_abs
     pub fn get_cursor_below_position(&self, cur_abs: usize) -> Option<usize> {
         let (cur_i, cur_x, cur_y) = self
             .chs
@@ -1272,20 +1272,20 @@ impl WrChs {
             return None;
         }
 
-        // move forwards in the wrapped text until we find the character with a y position one
-        // greater than the current cursor position and with the maximum x position less than or
-        // equal to the current cursor x position.
+        /// move forwards in the wrapped text until we find the character with a y position one
+        /// greater than the current cursor position and with the maximum x position less than or
+        /// equal to the current cursor x position.
         self.chs
             .iter()
             .skip(cur_i)
-            .take_while(|wr_ch| wr_ch.y_pos <= cur_y + 1) // optimization 
+            .take_while(|wr_ch| wr_ch.y_pos <= cur_y + 1); /// optimization 
             .filter(|wr_ch| wr_ch.y_pos == cur_y + 1 && wr_ch.x_pos <= cur_x)
             .last()
             .map(|wr_ch| wr_ch.abs_pos)
             .unwrap_or(None)
     }
 
-    //                                                        cur_abs
+    ///                                                        cur_abs
     pub fn get_cursor_left_position(&self, cur_abs: usize) -> Option<usize> {
         let (cur_i, cur_x, cur_y) = self
             .chs
@@ -1326,9 +1326,9 @@ impl WrChs {
     }
 
     pub fn get_nearest_valid_cursor_from_position(&self, x: usize, y: usize) -> Option<usize> {
-        let mut nearest_abs = None; // nearest absolute position with the same y position
-        let mut nearest_abs_y_pos = None; // Y position of the nearest absolute position
-        let mut nearest_abs_x_pos = None; // X position of the nearest absolute position
+        let mut nearest_abs = None; /// nearest absolute position with the same y position
+        let mut nearest_abs_y_pos = None; /// Y position of the nearest absolute position
+        let mut nearest_abs_x_pos = None; /// X position of the nearest absolute position
         for wr_ch in &self.chs {
             if wr_ch.abs_pos.is_none() {
                 continue;

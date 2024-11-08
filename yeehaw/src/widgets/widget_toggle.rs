@@ -14,10 +14,10 @@ pub struct Toggle {
     pub base: WidgetBase,
     pub left: Rc<RefCell<String>>,
     pub right: Rc<RefCell<String>>,
-    pub left_selected: Rc<RefCell<bool>>, // otherwise right is selected
-    pub clicked_down: Rc<RefCell<bool>>,  // activated when mouse is clicked down while over button
+    pub left_selected: Rc<RefCell<bool>>, /// otherwise right is selected
+    pub clicked_down: Rc<RefCell<bool>>,  /// activated when mouse is clicked down while over button
     pub selected_sty: Rc<RefCell<Style>>,
-    //                                   selected
+    ///                                   selected
     pub toggled_fn: Rc<RefCell<dyn FnMut(Context, String) -> EventResponses>>,
 }
 
@@ -30,7 +30,7 @@ impl Toggle {
         unselectable_style: Style::new_const(Color::BLACK, Color::GREY13),
     };
 
-    // for the selected toggle
+    /// for the selected toggle
     const DEFAULT_SELECTED_STY: Style =
         Style::new_const(Color::BLACK, Color::LIGHT_BLUE);
 
@@ -69,7 +69,7 @@ impl Toggle {
     }
 
     // ----------------------------------------------
-    // decorators
+    /// decorators
 
     pub fn with_styles(self, styles: WBStyles) -> Self {
         self.base.set_styles(styles);
@@ -162,7 +162,7 @@ impl Element for Toggle {
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        // need to re set the content in order to reflect active style
+        /// need to re set the content in order to reflect active style
         let left = self.left.borrow();
         let right = self.right.borrow();
         let left_len = left.chars().count();

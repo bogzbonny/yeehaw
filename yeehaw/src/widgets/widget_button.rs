@@ -9,36 +9,36 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-// TODO DynVal button width
+/// TODO DynVal button width
 
 #[derive(Clone)]
 pub struct Button {
     pub base: WidgetBase,
     pub text: Rc<RefCell<String>>,
     pub button_style: Rc<RefCell<ButtonStyle>>,
-    pub clicked_down: Rc<RefCell<bool>>, // activated when mouse is clicked down while over button
-    // function which executes when button moves from pressed -> unpressed
+    pub clicked_down: Rc<RefCell<bool>>, /// activated when mouse is clicked down while over button
+    /// function which executes when button moves from pressed -> unpressed
     #[allow(clippy::type_complexity)]
     pub clicked_fn: Rc<RefCell<dyn FnMut(Button, Context) -> EventResponses>>,
 }
 
 #[derive(Clone)]
 pub enum ButtonStyle {
-    Basic(Option<Style>), // style when depressed
+    Basic(Option<Style>), /// style when depressed
     Sides(ButtonSides),
     Shadow(ButtonShadow),
 }
 
-// ideas
-//	]button[  ⡇button⢸
-//	]button[  ⢸button⡇
-//	⎤button⎣  ❳button❲ ⎣⦘button⦗⎤
+/// ideas
+///	]button[  ⡇button⢸
+///	]button[  ⢸button⡇
+///	⎤button⎣  ❳button❲ ⎣⦘button⦗⎤
 #[derive(Clone)]
 pub struct ButtonSides {
     pub depressed_style: Style,
     pub left: String,
     pub right: String,
-    pub left_depressed: String, // while clicked
+    pub left_depressed: String, /// while clicked
     pub right_depressed: String,
 }
 
@@ -50,8 +50,8 @@ impl Default for ButtonSides {
                 .with_bg(Color::WHITE),
             left: "]".to_string(),
             right: "[".to_string(),
-            //left_depressed: "⢸".to_string(),
-            //right_depressed: "⡇".to_string(),
+            ///left_depressed: "⢸".to_string(),
+            ///right_depressed: "⡇".to_string(),
             left_depressed: " ".to_string(),
             right_depressed: " ".to_string(),
         }
@@ -65,7 +65,7 @@ pub struct ButtonShadow {
     pub left: char,
     pub middle: char,
     pub right: char,
-    pub top_right: char, // beside the button
+    pub top_right: char, /// beside the button
 }
 
 impl Default for ButtonShadow {
@@ -90,7 +90,7 @@ impl Button {
     };
 
     pub fn default_receivable_events() -> Vec<ReceivableEvent> {
-        vec![KB::KEY_ENTER.into()] // when "active" hitting enter will click the button
+        vec![KB::KEY_ENTER.into()] // / when "active" hitting enter will click the button
     }
 
     pub fn button_drawing(&self) -> DrawChs2D {
@@ -130,7 +130,7 @@ impl Button {
                     let top = DrawChs2D::from_string(format!(" {} ", self.text.borrow()), text_sty);
                     let top = left.concat_left_right(top).unwrap();
                     let width = top.width();
-                    // bottom all spaces
+                    /// bottom all spaces
                     let bottom = DrawChs2D::from_string(" ".repeat(width), non_button_sty.clone());
                     top.concat_top_bottom(bottom)
                 } else {
@@ -171,12 +171,12 @@ impl Button {
         let wb = WidgetBase::new(
             ctx,
             Self::KIND,
-            DynVal::new_fixed(text.chars().count() as i32 + 2), // + 2 for sides
+            DynVal::new_fixed(text.chars().count() as i32 + 2), /// + 2 for sides
             DynVal::new_fixed(1),
             Self::STYLE,
             Self::default_receivable_events(),
         );
-        //_ = wb.set_selectability(ctx, Selectability::Unselectable);
+        ///_ = wb.set_selectability(ctx, Selectability::Unselectable);
         let b = Button {
             base: wb,
             text: Rc::new(RefCell::new(text.to_string())),
@@ -192,7 +192,7 @@ impl Button {
     }
 
     // ----------------------------------------------
-    // decorators
+    /// decorators
 
     pub fn with_styles(self, styles: WBStyles) -> Self {
         self.base.set_styles(styles);

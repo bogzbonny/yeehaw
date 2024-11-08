@@ -12,16 +12,16 @@ use {
 #[derive(Clone)]
 pub struct Checkbox {
     pub base: WidgetBase,
-    pub checked: Rc<RefCell<bool>>, // whether the checkbox is checked or not
+    pub checked: Rc<RefCell<bool>>, /// whether the checkbox is checked or not
 
-    pub clicked_down: Rc<RefCell<bool>>, // activated when mouse is clicked down while over object
+    pub clicked_down: Rc<RefCell<bool>>, /// activated when mouse is clicked down while over object
 
-    // rune to use for the checkmark
-    // recommended:  √ X x ✖
+    /// rune to use for the checkmark
+    /// recommended:  √ X x ✖
     pub checkmark: Rc<RefCell<char>>,
 
-    // function which executes when checkbox is checked or unchecked,
-    // bool is the new state of the checkbox (true = checked)
+    /// function which executes when checkbox is checked or unchecked,
+    /// bool is the new state of the checkbox (true = checked)
     pub clicked_fn: Rc<RefCell<dyn FnMut(Context, bool) -> EventResponses>>,
 }
 
@@ -38,7 +38,7 @@ impl Checkbox {
     };
 
     pub fn default_receivable_events() -> Vec<ReceivableEvent> {
-        vec![KB::KEY_ENTER.into()] // when "active" hitting enter will click the button
+        vec![KB::KEY_ENTER.into()] // / when "active" hitting enter will click the button
     }
 
     pub fn new(ctx: &Context) -> Self {
@@ -60,7 +60,7 @@ impl Checkbox {
     }
 
     // ----------------------------------------------
-    // decorators
+    /// decorators
 
     pub fn with_styles(self, styles: WBStyles) -> Self {
         self.base.set_styles(styles);
@@ -138,7 +138,7 @@ impl Element for Checkbox {
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        // need to re set the content in order to reflect active style
+        /// need to re set the content in order to reflect active style
         self.base.set_content_from_string(ctx, &self.text());
         self.base.drawing(ctx)
     }

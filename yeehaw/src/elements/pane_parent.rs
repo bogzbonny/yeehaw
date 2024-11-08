@@ -11,14 +11,14 @@ use {
     },
 };
 
-// ParentPane is a pane element which other objects can embed and build off
-// of. It is a pane which can have children panes.
-//
-// NOTE the ParentPane does not itself fulfill the Element trait however
-// it provides much of the boilerplate required to do so.
-//
-// the element store (el_store) is a store for sub-elements. Any of the sub-elements can be
-// accessed any of the contents and share it with other elements of this parent pane.
+/// ParentPane is a pane element which other objects can embed and build off
+/// of. It is a pane which can have children panes.
+///
+/// NOTE the ParentPane does not itself fulfill the Element trait however
+/// it provides much of the boilerplate required to do so.
+///
+/// the element store (el_store) is a store for sub-elements. Any of the sub-elements can be
+/// accessed any of the contents and share it with other elements of this parent pane.
 #[derive(Clone)]
 pub struct ParentPane {
     pub pane: Pane,
@@ -151,7 +151,7 @@ impl ParentPane {
 
     pub fn perceived_priorities_of_eo(&self) -> SelfReceivableEvents {
         let pr = self.pane.get_element_priority();
-        let pes = self.eo.receivable(); // registered receivable events
+        let pes = self.eo.receivable(); /// registered receivable events
         ElementOrganizer::generate_perceived_priorities(pr, pes)
     }
 
@@ -210,7 +210,7 @@ impl ParentPane {
         self.eo.update_el_z_index(el_id, z);
     }
 
-    // NOTE this name was chosen to distinguish itself from propagate_responses_upward
+    /// NOTE this name was chosen to distinguish itself from propagate_responses_upward
     pub fn send_responses_upward(&self, ctx: &Context, resps: EventResponses) {
         self.pane.send_responses_upward(ctx, resps);
     }
@@ -240,10 +240,10 @@ impl Element for ParentPane {
         pes
     }
 
-    // primarily a placeholder function. An element using the parent pane should
-    // write their own receive_event function.
-    // TODO verify that this code is or isn't used anywhere
-    //                                               (captured, resp         )
+    /// primarily a placeholder function. An element using the parent pane should
+    /// write their own receive_event function.
+    /// TODO verify that this code is or isn't used anywhere
+    ///                                               (captured, resp         )
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         //debug!(
         //    "ParentPane({})::receive_event_inner: ev={:?}",
@@ -254,27 +254,27 @@ impl Element for ParentPane {
         self.eo.event_process(ctx, ev, Box::new(self.clone()))
     }
 
-    // ChangePriority returns a priority change (InputabilityChanges) to its
-    // parent organizer so as to update the priority of all events registered to
-    // this element.
-    //
-    // NOTE: The receivable event changes (rec) that this parent pane sends up is the
-    // combination of:
-    //   - this element's priority changes (the SelfEvs, aka the
-    //     Self Receivable Events)
-    //   - the "perceived priorities" of the childens' Receivable Events
-    //     (aka the results of the child's Receivable() function) The "perceived
-    //     priorities" are the effective priority FROM the perspective of the
-    //     element ABOVE this element in the tree.
+    /// ChangePriority returns a priority change (InputabilityChanges) to its
+    /// parent organizer so as to update the priority of all events registered to
+    /// this element.
+    ///
+    /// NOTE: The receivable event changes (rec) that this parent pane sends up is the
+    /// combination of:
+    ///   - this element's priority changes (the SelfEvs, aka the
+    ///     Self Receivable Events)
+    ///   - the "perceived priorities" of the childens' Receivable Events
+    ///     (aka the results of the child's Receivable() function) The "perceived
+    ///     priorities" are the effective priority FROM the perspective of the
+    ///     element ABOVE this element in the tree.
     fn change_priority(&self, pr: Priority) -> ReceivableEventChanges {
-        // first change the priority of the self evs. These are "this elements
-        // priority changes". NO changes should be made to the childen,
-        // the perceived priorities of the children should be interpreted.
+        /// first change the priority of the self evs. These are "this elements
+        /// priority changes". NO changes should be made to the childen,
+        /// the perceived priorities of the children should be interpreted.
         let mut rec = self.pane.change_priority(pr);
 
-        // update the perceived priorities of the children and update the prioritizer
+        /// update the perceived priorities of the children and update the prioritizer
         for (_, el_details) in self.eo.els.borrow().iter() {
-            let pes = el_details.el.receivable(); // self evs (and child eo's evs)
+            let pes = el_details.el.receivable(); /// self evs (and child eo's evs)
             for pe in ElementOrganizer::generate_perceived_priorities(pr, pes).0 {
                 rec.update_priority_for_ev(pe.0, pe.1);
             }
@@ -294,32 +294,32 @@ impl Element for ParentPane {
 }
 
 impl Parent for ParentPane {
-    // DO NOT CALL THIS FUNCTION DIRECTLY
-    // This function is intended for internal propogation ONLY if you need to propogate changes
-    // use the function: send_responses_upward
-    //
-    // Passes changes to inputability to this element's parent element. If
-    // updateThisElementsPrioritizers is TRUE then this element's prioritizers should be updated
-    // using the given IC. This should be set to false when an upwards propagation is being
-    // initiated as all of the changes to the prioritzers should have already been handled. The
-    // boolean should be set to true on all further calls as the changes are propagated upstream so
-    // as to update the ancestors' prioritizers.
-    //
-    // childEl is the element which is invoking the propagation from BELOW this parent pane. This
-    // is used by the parent to determine which events/cmds to update the prioritizers for.
-    //
-    // The propagateEl is the element to send further upward propagation to. Typically this means
-    // the Element which is inheriting THIS parent pane.
-    //
-    // NOTE: propagateEl is necessary as the parent pane will usually have registered an element
-    // that extends ParentPane. If this ParentPane sent itself, it would not match the child
-    // registered in the parent's EO.
-    //
-    // NOTE this function should be extended from if the parent pane is used as a base for a more
-    // complex element. As the developer you should be fulfilling the
-    // propagate_responses_upward function directly.
-    //
-    // NOTE the parent_ctx is the correct context for THIS parent pane.
+    /// DO NOT CALL THIS FUNCTION DIRECTLY
+    /// This function is intended for internal propogation ONLY if you need to propogate changes
+    /// use the function: send_responses_upward
+    ///
+    /// Passes changes to inputability to this element's parent element. If
+    /// updateThisElementsPrioritizers is TRUE then this element's prioritizers should be updated
+    /// using the given IC. This should be set to false when an upwards propagation is being
+    /// initiated as all of the changes to the prioritzers should have already been handled. The
+    /// boolean should be set to true on all further calls as the changes are propagated upstream so
+    /// as to update the ancestors' prioritizers.
+    ///
+    /// childEl is the element which is invoking the propagation from BELOW this parent pane. This
+    /// is used by the parent to determine which events/cmds to update the prioritizers for.
+    ///
+    /// The propagateEl is the element to send further upward propagation to. Typically this means
+    /// the Element which is inheriting THIS parent pane.
+    ///
+    /// NOTE: propagateEl is necessary as the parent pane will usually have registered an element
+    /// that extends ParentPane. If this ParentPane sent itself, it would not match the child
+    /// registered in the parent's EO.
+    ///
+    /// NOTE this function should be extended from if the parent pane is used as a base for a more
+    /// complex element. As the developer you should be fulfilling the
+    /// propagate_responses_upward function directly.
+    ///
+    /// NOTE the parent_ctx is the correct context for THIS parent pane.
     fn propagate_responses_upward(
         &self, parent_ctx: &Context, child_el_id: &ElementID, mut resps: EventResponses,
     ) {

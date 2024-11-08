@@ -10,7 +10,7 @@ use {
 #[derive(Clone)]
 pub struct PaneScrollable {
     pane: ParentPane,
-    content_width: Rc<RefCell<usize>>, // TODO will need to adjust with scrollbar hooks
+    content_width: Rc<RefCell<usize>>, /// TODO will need to adjust with scrollbar hooks
     content_height: Rc<RefCell<usize>>,
     content_offset_x: Rc<RefCell<usize>>,
     content_offset_y: Rc<RefCell<usize>>,
@@ -81,7 +81,7 @@ impl Element for PaneScrollable {
     fn receive_event_inner(&self, ctx: &Context, mut ev: Event) -> (bool, EventResponses) {
         match &mut ev {
             Event::Mouse(me) => {
-                // adjust the pos of the mouse event
+                /// adjust the pos of the mouse event
                 me.column += *self.content_offset_x.borrow() as u16;
                 me.row += *self.content_offset_y.borrow() as u16;
 

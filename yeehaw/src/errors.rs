@@ -36,12 +36,6 @@ pub enum Error {
     },
 }
 
-//impl Error {
-//    pub fn cba_error(message: &str) -> Self {
-//        CbaSnafu { message }.build()
-//    }
-//}
-
 impl Error {
     pub fn new(message: &str) -> Self {
         Error::YhError {

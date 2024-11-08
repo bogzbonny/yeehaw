@@ -8,23 +8,25 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-// ElementOrganizer prioritizes and organizes all the elements contained
-// within it
+/// ElementOrganizer prioritizes and organizes all the elements contained
+/// within it
 #[derive(Clone, Default)]
 pub struct ElementOrganizer {
     pub els: Rc<RefCell<HashMap<ElementID, ElDetails>>>,
     pub prioritizer: Rc<RefCell<EventPrioritizer>>,
 }
 
-// element details
+/// element details
 #[derive(Clone)]
 pub struct ElDetails {
     pub el: Box<dyn Element>,
 
-    // NOTE we keep references to the location and visibility within the element
-    // rather than just calling into tht element each time to reduce locking.
-    pub loc: Rc<RefCell<DynLocationSet>>, // LocationSet of the element
-    pub vis: Rc<RefCell<bool>>,           // whether the element is set to display
+    /// NOTE we keep references to the location and visibility within the element
+    /// rather than just calling into tht element each time to reduce locking.
+    /// LocationSet of the element
+    pub loc: Rc<RefCell<DynLocationSet>>,
+    /// whether the element is set to display
+    pub vis: Rc<RefCell<bool>>,
 }
 
 impl ElDetails {
@@ -85,7 +87,7 @@ impl ElementOrganizer {
         EventResponse::ReceivableEventChanges(rec)
     }
 
-    // removes all elements from the element organizer
+    /// removes all elements from the element organizer
     pub fn clear_elements(&self) -> EventResponse {
         self.els.borrow_mut().clear();
         let pes = self.receivable().drain(..).map(|(e, _)| e).collect();
@@ -94,13 +96,13 @@ impl ElementOrganizer {
         EventResponse::ReceivableEventChanges(rec)
     }
 
-    // get_element_by_id returns the element registered under the given id in the eo
+    /// get_element_by_id returns the element registered under the given id in the eo
     pub fn get_element_details(&self, el_id: &ElementID) -> Option<ElDetails> {
         self.els.borrow().get(el_id).cloned()
     }
 
-    // get_element_by_id returns the element registered under the given id in the eo
-    //pub fn get_element_by_id(&self, el_id: &ElementID) -> Option<Rc<RefCell<dyn Element>>> {
+    /// get_element_by_id returns the element registered under the given id in the eo
+    ///pub fn get_element_by_id(&self, el_id: &ElementID) -> Option<Rc<RefCell<dyn Element>>> {
     pub fn get_element(&self, el_id: &ElementID) -> Option<Box<dyn Element>> {
         self.els.borrow().get(el_id).map(|ed| ed.el.clone())
     }
@@ -112,7 +114,7 @@ impl ElementOrganizer {
             .map(|ed| ed.loc.borrow().clone())
     }
 
-    // get_el_at_pos returns the element at the given position
+    /// get_el_at_pos returns the element at the given position
     pub fn get_element_details_at_pos(&self, ctx: &Context, x: i32, y: i32) -> Option<ElDetails> {
         for (_, details) in self.els.borrow().iter() {
             if details.loc.borrow().contains(ctx, x, y) {
@@ -122,7 +124,7 @@ impl ElementOrganizer {
         None
     }
 
-    // get_el_id_at_pos returns the element id at the given position
+    /// get_el_id_at_pos returns the element id at the given position
     pub fn get_el_id_at_pos(&self, ctx: &Context, x: i32, y: i32) -> Option<ElementID> {
         for (el_id, details) in self.els.borrow().iter() {
             if details.loc.borrow().contains(ctx, x, y) {
@@ -138,7 +140,7 @@ impl ElementOrganizer {
         }
     }
 
-    // update_el_primary_location updates the primary location of the element with the given id
+    /// update_el_primary_location updates the primary location of the element with the given id
     pub fn update_el_location_set(&self, el_id: ElementID, loc: DynLocationSet) {
         //self.locations.entry(el_id).and_modify(|l| (*l) = loc);
         self.els
@@ -147,7 +149,7 @@ impl ElementOrganizer {
             .and_modify(|ed| *ed.loc.borrow_mut() = loc);
     }
 
-    // update_el_primary_location updates the primary location of the element with the given id
+    /// update_el_primary_location updates the primary location of the element with the given id
     pub fn update_el_primary_location(&self, el_id: ElementID, loc: DynLocation) {
         //self.locations.entry(el_id).and_modify(|l| l.l = loc);
         self.els
@@ -156,8 +158,8 @@ impl ElementOrganizer {
             .and_modify(|ed| ed.loc.borrow_mut().l = loc);
     }
 
-    // updates the extra locations for the given element
-    //pub fn update_extra_locations_for_el(
+    /// updates the extra locations for the given element
+    ///pub fn update_extra_locations_for_el(
     pub fn update_el_extra_locations(&self, el_id: ElementID, extra_locations: Vec<DynLocation>) {
         self.els
             .borrow_mut()
@@ -165,11 +167,11 @@ impl ElementOrganizer {
             .and_modify(|ed| ed.loc.borrow_mut().extra = extra_locations);
     }
 
-    // update_el_z_index updates the z-index of the element with the given id
-    //
-    // NOTE: if the given index is taken, the element currently filling that index
-    // will be pushed further back in the z-dimension (i.e. its z-index will be
-    // incremented)
+    /// update_el_z_index updates the z-index of the element with the given id
+    ///
+    /// NOTE: if the given index is taken, the element currently filling that index
+    /// will be pushed further back in the z-dimension (i.e. its z-index will be
+    /// incremented)
     pub fn update_el_z_index(&self, el_id: &ElementID, z: ZIndex) {
         if let Some(details) = self.get_el_at_z_index(z) {
             self.increment_z_index_for_el(details);
@@ -200,8 +202,8 @@ impl ElementOrganizer {
         self.update_el_z_index(el_id, z + 1);
     }
 
-    // Receivable returns all of the key combos and commands registered to this
-    // element organizer, along with their priorities
+    /// Receivable returns all of the key combos and commands registered to this
+    /// element organizer, along with their priorities
     pub fn receivable(&self) -> SelfReceivableEvents {
         let mut out = Vec::new();
         for details in self.els.borrow().values() {
@@ -211,14 +213,14 @@ impl ElementOrganizer {
         out.into()
     }
 
-    // AllDrawing executes Drawing functions on all elements in the element
-    // organizer.
-    // A DrawChPos slice is returned and passed up the chain to the top of the TUI
-    // element hierarchy.
-    // NOTE: the elements are sorted by z-index, from lowest to highest (furthest
-    // back to furthest forward) and then drawn in that order, such that the element
-    // with the highest z-index is drawn last and thus is on top of all others in the
-    // DrawChPos slice
+    /// AllDrawing executes Drawing functions on all elements in the element
+    /// organizer.
+    /// A DrawChPos slice is returned and passed up the chain to the top of the TUI
+    /// element hierarchy.
+    /// NOTE: the elements are sorted by z-index, from lowest to highest (furthest
+    /// back to furthest forward) and then drawn in that order, such that the element
+    /// with the highest z-index is drawn last and thus is on top of all others in the
+    /// DrawChPos slice
     pub fn all_drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let mut out = Vec::new();
         let mut eoz: Vec<(ElementID, ElDetails)> = Vec::new();
@@ -256,8 +258,8 @@ impl ElementOrganizer {
         out
     }
 
-    // write func to remove/add evCombos and commands from EvPrioritizer and
-    // CommandPrioritizer, using the ReceivableEventChanges struct
+    /// write func to remove/add evCombos and commands from EvPrioritizer and
+    /// CommandPrioritizer, using the ReceivableEventChanges struct
     pub fn process_receivable_event_changes(
         &self, el_id: &ElementID, rec: &ReceivableEventChanges,
     ) {
@@ -266,11 +268,11 @@ impl ElementOrganizer {
             .process_receivable_event_changes(el_id, rec);
     }
 
-    // Partially process the event response for whatever is possible to be processed
-    // in the element organizer. Further processing may be required by the element
-    // which owns this element organizer.
-    //
-    // NOTE this function modifies the event responses in place
+    /// Partially process the event response for whatever is possible to be processed
+    /// in the element organizer. Further processing may be required by the element
+    /// which owns this element organizer.
+    ///
+    /// NOTE this function modifies the event responses in place
     #[allow(clippy::borrowed_box)]
     pub fn partially_process_ev_resps(
         &self, ctx: &Context, el_id: &ElementID, resps: &mut EventResponses,
@@ -371,50 +373,52 @@ impl ElementOrganizer {
         resps.extend(extend_resps.0.drain(..));
     }
 
-    // generate_perceived_priorities generates the "perceived priorities" of the
-    // provided events. It receives a function which can then use each perceived
-    // priority however it needs to.
-    //
-    // **IMPORTANT NOTE**
-    //
-    // The "perceived priorities" are the effective priorities of an element FROM
-    // the perspective of an element two or more levels ABOVE the element in the tree.
-    //
-    // Relative priorities between the children elements of a parent element
-    // should be perserved. To ensure this, the priorities of children should
-    // never be modified but instead interpreted as "perceived priorities".
-    //
-    //	EXAMPLE:	  	Element 0 (ABOVE_FOCUSED)
-    //				  	  evA (ABOVE_FOCUSED)     ┐
-    //				      evB (ABOVE_FOCUSED)     ├─perceived-priorities
-    //				      evC (ABOVE_FOCUSED)     │
-    //		              evD (HIGHEST_FOCUS)     ┘
-    //			                 │
-    //				 	Element 1
-    //				  	  evA (ABOVE_FOCUSED)
-    //				  	  evB (FOCUSED)
-    //				      evC (UNFOCUSED)
-    //				      evD (HIGHEST_FOCUS)
-    //	            ┌────────────┴───────────┐
-    //		   	Element 2                Element 3
-    //		   	 evA (ABOVE_FOCUSED)      evC (UNFOCUSED)
-    //		   	 evB (FOCUSED)            evD (HIGHEST_FOCUS)
-    //
-    // This function does not modify the priorities of any child element, but
-    // instead generates the "perceived priorities" in the following way:
-    //  1. If the input priority (pr) is UNFOCUSED:
-    //     - simply interpret all the childrens' priorities as unfocused.
-    //     (everything set in the ic will be unfocused).
-    //  2. if the input priority (pr) is FOCUSED or greater:
-    //     - individually interpret each child's Receivable Event priority as
-    //     the greatest of either the input priority to this function (pr),
-    //     or the child event's current priority.
-    //
-    // INPUTS
-    //   - The real_pes is the real priority events of the child element.
-    //   - The parent_pr is the priority of the parent element
-    //   - The perceived_pes is the perceived priority events of a child element for
-    //     this element for this element's parent (the grandparent of the child).
+    /// generate_perceived_priorities generates the "perceived priorities" of the
+    /// provided events. It receives a function which can then use each perceived
+    /// priority however it needs to.
+    ///
+    /// **IMPORTANT NOTE**
+    ///
+    /// The "perceived priorities" are the effective priorities of an element FROM
+    /// the perspective of an element two or more levels ABOVE the element in the tree.
+    ///
+    /// Relative priorities between the children elements of a parent element
+    /// should be perserved. To ensure this, the priorities of children should
+    /// never be modified but instead interpreted as "perceived priorities".
+    ///
+    ///```text
+    ///    EXAMPLE:        Element 0 (ABOVE_FOCUSED)
+    ///                        evA (ABOVE_FOCUSED)     ┐
+    ///                      evB (ABOVE_FOCUSED)     ├─perceived-priorities
+    ///                      evC (ABOVE_FOCUSED)     │
+    ///                      evD (HIGHEST_FOCUS)     ┘
+    ///                             │
+    ///                     Element 1
+    ///                        evA (ABOVE_FOCUSED)
+    ///                        evB (FOCUSED)
+    ///                      evC (UNFOCUSED)
+    ///                      evD (HIGHEST_FOCUS)
+    ///                ┌────────────┴───────────┐
+    ///               Element 2                Element 3
+    ///                evA (ABOVE_FOCUSED)      evC (UNFOCUSED)
+    ///                evB (FOCUSED)            evD (HIGHEST_FOCUS)
+    ///```
+    ///
+    /// This function does not modify the priorities of any child element, but
+    /// instead generates the "perceived priorities" in the following way:
+    ///  1. If the input priority (pr) is UNFOCUSED:
+    ///     - simply interpret all the childrens' priorities as unfocused.
+    ///     (everything set in the ic will be unfocused).
+    ///  2. if the input priority (pr) is FOCUSED or greater:
+    ///     - individually interpret each child's Receivable Event priority as
+    ///     the greatest of either the input priority to this function (pr),
+    ///     or the child event's current priority.
+    ///
+    /// INPUTS
+    ///   - The real_pes is the real priority events of the child element.
+    ///   - The parent_pr is the priority of the parent element
+    ///   - The perceived_pes is the perceived priority events of a child element for
+    ///     this element for this element's parent (the grandparent of the child).
     pub fn generate_perceived_priorities(
         parent_pr: Priority, real_pes: SelfReceivableEvents,
     ) -> SelfReceivableEvents {
@@ -438,7 +442,7 @@ impl ElementOrganizer {
         perceived_pes.into()
     }
 
-    // Replaces the element at the given ID with a new element
+    /// Replaces the element at the given ID with a new element
     //pub fn replace_el(
     //    &self, el_id: &ElementID, new_el: Rc<RefCell<dyn Element>>,
     //) -> ReceivableEventChanges {
@@ -485,23 +489,23 @@ impl ElementOrganizer {
             Event::ExternalMouse(me) => {
                 // send the mouse event to all the children
                 let resp = self.external_mouse_event_process(ctx, &me, parent);
-                (false, resp) // never capture
+                (false, resp) // / never capture
             }
             Event::Initialize => {
                 let resps = self.initialize(ctx, parent);
-                (false, resps) // never capture
+                (false, resps) // / never capture
             }
             Event::Exit | Event::Resize => self.propogate_event_to_all(ctx, ev, parent),
         }
     }
 
-    // routed_event_process:
-    // - determines the appropriate element to send the event to then sends the event
-    //    - if the event isn't captured then send it to the next element able to receive this event
-    //      (ordered by priority)
-    // - partially processes changes to the elements receivable events
-    // NOTE elements may choose to not capture events in order to continue sending the
-    //      event to the next element in the chain
+    /// routed_event_process:
+    /// - determines the appropriate element to send the event to then sends the event
+    ///    - if the event isn't captured then send it to the next element able to receive this event
+    ///      (ordered by priority)
+    /// - partially processes changes to the elements receivable events
+    /// NOTE elements may choose to not capture events in order to continue sending the
+    ///      event to the next element in the chain
     pub fn routed_event_process(
         &self, ctx: &Context, ev: Event, parent: Box<dyn Parent>,
     ) -> (Option<ElementID>, EventResponses) {
@@ -544,11 +548,11 @@ impl ElementOrganizer {
         (false, resps)
     }
 
-    // initialize updates the prioritizers essentially refreshing the state of the element organizer.
-    //
-    // NOTE: the refresh allows for less meticulous construction of the main.go file. Elements can
-    // be added in whatever order, so long as your_main_el.refresh() is called after all elements
-    // are added.
+    /// initialize updates the prioritizers essentially refreshing the state of the element organizer.
+    ///
+    /// NOTE: the refresh allows for less meticulous construction of the main.go file. Elements can
+    /// be added in whatever order, so long as your_main_el.refresh() is called after all elements
+    /// are added.
     pub fn initialize(&self, ctx: &Context, parent: Box<dyn Parent>) -> EventResponses {
         // reset prioritizers
         *self.prioritizer.borrow_mut() = EventPrioritizer::default();
@@ -567,9 +571,9 @@ impl ElementOrganizer {
         resps
     }
 
-    // change_priority_for_el updates a child element to a new priority. It does
-    // this by asking the child element to return its registered events w/
-    // priorities updated to a given priority.
+    /// change_priority_for_el updates a child element to a new priority. It does
+    /// this by asking the child element to return its registered events w/
+    /// priorities updated to a given priority.
     pub fn change_priority_for_el(
         &self, el_id: &ElementID, pr: Priority,
     ) -> ReceivableEventChanges {
@@ -587,8 +591,8 @@ impl ElementOrganizer {
         rec
     }
 
-    // get_el_id_z_order_under_mouse returns a list of all Elements whose locations
-    // include the position of the mouse event
+    /// get_el_id_z_order_under_mouse returns a list of all Elements whose locations
+    /// include the position of the mouse event
     pub fn get_el_id_z_order_under_mouse(
         &self, ctx: &Context, ev: &crossterm::event::MouseEvent,
     ) -> Vec<(ElementID, ZIndex)> {
@@ -609,10 +613,10 @@ impl ElementOrganizer {
         ezo
     }
 
-    // mouse_event_process :
-    // - determines the appropriate element to send mouse events to
-    // - sends the event to the element
-    // - processes changes to the element's receivable events
+    /// mouse_event_process :
+    /// - determines the appropriate element to send mouse events to
+    /// - sends the event to the element
+    /// - processes changes to the element's receivable events
     pub fn mouse_event_process(
         &self, ctx: &Context, ev: &crossterm::event::MouseEvent, parent: Box<dyn Parent>,
     ) -> (Option<ElementID>, EventResponses) {
@@ -685,7 +689,7 @@ impl ElementOrganizer {
         (capturing_el_id, resps)
     }
 
-    // sends the external mouse command to all elements in the organizer
+    /// sends the external mouse command to all elements in the organizer
     pub fn external_mouse_event_process(
         &self, ctx: &Context, ev: &RelMouseEvent, parent: Box<dyn Parent>,
     ) -> EventResponses {
@@ -706,8 +710,8 @@ impl ElementOrganizer {
         resps
     }
 
-    // get_el_id_at_z_index returns the element-id at the given z index, or None if
-    // no element exists at the given z index
+    /// get_el_id_at_z_index returns the element-id at the given z index, or None if
+    /// no element exists at the given z index
     pub fn get_el_at_z_index(&self, z: ZIndex) -> Option<ElDetails> {
         for (_, details) in self.els.borrow().iter() {
             if details.loc.borrow().z == z {
@@ -717,18 +721,18 @@ impl ElementOrganizer {
         None
     }
 
-    // increment_z_index_for_el_id increments the z-index of the element with the given id,
-    // pushing it further back in the visual stack.
-    //
-    // NOTE: If an element already occupies the index that the given element is
-    // attempting to occupy, the element occupying the index will be pushed back as
-    // well.
-    //
-    // To move an element in the z-dimension, relative to other elements, use
-    // UpdateZIndexForElID
+    /// increment_z_index_for_el_id increments the z-index of the element with the given id,
+    /// pushing it further back in the visual stack.
+    ///
+    /// NOTE: If an element already occupies the index that the given element is
+    /// attempting to occupy, the element occupying the index will be pushed back as
+    /// well.
+    ///
+    /// To move an element in the z-dimension, relative to other elements, use
+    /// UpdateZIndexForElID
     pub fn increment_z_index_for_el(&self, el_details: ElDetails) {
-        let z = el_details.loc.borrow().z; // current z of element
-
+        let z = el_details.loc.borrow().z;
+        // current z of element
         // check if element exists at next z-index
         if self.is_z_index_occupied(z + 1) {
             // recursively increment z-index of element at next z-index
@@ -743,7 +747,7 @@ impl ElementOrganizer {
             .and_modify(|ed| ed.loc.borrow_mut().z = z + 1);
     }
 
-    // is_z_index_occupied returns true if an element exists at the given z-index
+    /// is_z_index_occupied returns true if an element exists at the given z-index
     pub fn is_z_index_occupied(&self, z: ZIndex) -> bool {
         self.els
             .borrow()
@@ -751,7 +755,7 @@ impl ElementOrganizer {
             .any(|details| details.loc.borrow().z == z)
     }
 
-    // set_visibility_for_el sets the Visibility of the given element ID
+    /// set_visibility_for_el sets the Visibility of the given element ID
     pub fn set_visibility_for_el(&self, el_id: ElementID, visible: bool) {
         self.els
             .borrow_mut()

@@ -9,22 +9,22 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-//pub struct RightClickMenuTemplate(pub MenuBar);
+///pub struct RightClickMenuTemplate(pub MenuBar);
 
 // ---------------------------------------------------
-// The menu destroys itself when it is closed.
+/// The menu destroys itself when it is closed.
 #[derive(Clone)]
 pub struct RightClickMenu {
     pub menu: MenuBar,
 
-    // the position of the inital right click which
-    // opened the menu. This information is passed
-    // into the menuItem function events through the
-    // context
+    /// the position of the inital right click which
+    /// opened the menu. This information is passed
+    /// into the menuItem function events through the
+    /// context
     pub pos: Rc<RefCell<Point>>,
 
-    // used to prevent the first external mouse event
-    // from closing the right click menu
+    /// used to prevent the first external mouse event
+    /// from closing the right click menu
     pub just_created: Rc<RefCell<bool>>,
 }
 
@@ -50,7 +50,7 @@ impl RightClickMenu {
         *self.pos.borrow_mut() = pos;
     }
 
-    // Output Some if a right click menu should be created
+    /// Output Some if a right click menu should be created
     pub fn create_menu_if_right_click(&self, me: MouseEvent) -> Option<EventResponses> {
         if me.kind != MouseEventKind::Up(MouseButton::Right) {
             return None;

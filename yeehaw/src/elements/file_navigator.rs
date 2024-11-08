@@ -12,9 +12,9 @@ use {
     },
 };
 
-// TODO mouse functionality
+/// TODO mouse functionality
 
-// displays the size
+/// displays the size
 #[derive(Clone)]
 pub struct FileNavPane {
     pub pane: Pane,
@@ -36,7 +36,7 @@ pub struct FileNavStyle {
     pub cursor_bg: Color,
 }
 
-// FileNavigator is a pane that displays a file navigator
+/// FileNavigator is a pane that displays a file navigator
 impl Default for FileNavStyle {
     fn default() -> Self {
         FileNavStyle {
@@ -298,7 +298,7 @@ impl File {
         self.path.file_name().unwrap().to_str().unwrap().to_string()
     }
 
-    // Execute the file enter hook
+    /// Execute the file enter hook
     pub fn enter(
         &self, ctx: &Context,
         file_enter_hook: &mut Box<dyn FnMut(Context, PathBuf) -> EventResponses>,

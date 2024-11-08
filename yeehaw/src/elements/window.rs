@@ -7,10 +7,10 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-// TODO Top bar movements should be added to the Top Bar logic instead of the window logic
-// TODO animation for minimize/restore, should have one frame in the middle
-//      in the middle location between the restore position and start position.
-//      for that animation frame should just be the minimized top-bar
+/// TODO Top bar movements should be added to the Top Bar logic instead of the window logic
+/// TODO animation for minimize/restore, should have one frame in the middle
+///      in the middle location between the restore position and start position.
+///      for that animation frame should just be the minimized top-bar
 
 // ---------------------------------------------------
 #[derive(Clone)]
@@ -18,7 +18,7 @@ pub struct WindowPane {
     pub pane: ParentPane,
     pub top_bar: Box<dyn Element>,
     pub inner: Box<dyn Element>,
-    pub dragging: Rc<RefCell<Option<(u16, u16)>>>, // start location of the drag
+    pub dragging: Rc<RefCell<Option<(u16, u16)>>>, /// start location of the drag
     pub maximized_restore: Rc<RefCell<Option<DynLocation>>>,
     pub minimized_restore: Rc<RefCell<Option<DynLocation>>>,
     pub minimized_width: Rc<RefCell<u16>>,
@@ -39,7 +39,7 @@ impl WindowPane {
             .unfocused();
         let top_bar = Box::new(BasicWindowTopBar::new(ctx, title, true, true, true));
 
-        // adjust the inner size to account for the top bar
+        /// adjust the inner size to account for the top bar
         let mut loc = inner.get_dyn_location_set().borrow().clone();
         loc.set_start_y(1.into());
         loc.set_dyn_height(DynVal::new_full().minus(1.into()));
@@ -114,8 +114,8 @@ impl WindowPane {
         self
     }
 
-    // partially process the resp for the inner elements of the window
-    //                                                                                 just-minimized
+    /// partially process the resp for the inner elements of the window
+    ///                                                                                 just-minimized
     pub fn partially_process_inner_resp(&self, ctx: &Context, resps: &mut EventResponses) -> bool {
         let mut resps_ = EventResponses::default();
         let mut just_minimized = false;
@@ -129,8 +129,8 @@ impl WindowPane {
             if let Some(changes) = changes {
                 let (left_dx, right_dx, top_dy, bottom_dy) = changes;
 
-                // NOTE must set to a a fixed value (aka need to get the size for the pane DynVal
-                // using ctx here. if we do not then the next pane position drag will be off
+                /// NOTE must set to a a fixed value (aka need to get the size for the pane DynVal
+                /// using ctx here. if we do not then the next pane position drag will be off
                 let start_x = self.pane.pane.get_start_x(ctx);
                 let start_y = self.pane.pane.get_start_y(ctx);
                 let end_x = self.pane.pane.get_end_x(ctx);
@@ -145,7 +145,7 @@ impl WindowPane {
                     end_x_adj = end_x;
                 }
 
-                // 3 = 1 (top bar) + 2 inner
+                /// 3 = 1 (top bar) + 2 inner
                 if end_y_adj - start_y_adj < 3 || start_x_adj < 0 || start_y_adj < 0 {
                     start_y_adj = start_y;
                     end_y_adj = end_y;
@@ -167,7 +167,7 @@ impl WindowPane {
                 let (_, r) = self.inner.receive_event(&inner_ctx, Event::Resize);
                 resps_.extend(r.0);
 
-                // reset the maximizer button
+                /// reset the maximizer button
                 if self.maximized_restore.borrow().is_some() {
                     self.maximized_restore.replace(None);
                     let (_, r) = self.top_bar.receive_event(
@@ -190,7 +190,7 @@ impl WindowPane {
                     close_window = true;
                 }
             }
-            // swap out the response for a destruct if the window should close
+            /// swap out the response for a destruct if the window should close
             if close_window {
                 *resp = EventResponse::Destruct;
                 continue;
@@ -271,7 +271,7 @@ impl WindowPane {
                 pane_ctx.s.height = 1;
                 pane_ctx.s.width = minimize_width;
 
-                // send an event telling the top bar to hide its buttons
+                /// send an event telling the top bar to hide its buttons
                 let (_, r) = self.top_bar.receive_event(
                     &pane_ctx,
                     Event::Custom(
@@ -281,7 +281,7 @@ impl WindowPane {
                 );
                 resps_.extend(r.0);
 
-                // resize events
+                /// resize events
                 let (_, r) = self.top_bar.receive_event(&pane_ctx, Event::Resize);
                 resps_.extend(r.0);
                 self.inner.get_visible().replace(false);
@@ -302,7 +302,7 @@ impl WindowPane {
             Event::Mouse(me) => {
                 *captured = true;
                 if let MouseEventKind::Down(_) = me.kind {
-                    //self.pane.pane.focus();
+                    ///self.pane.pane.focus();
                     resps.push(EventResponse::BringToFront);
                     resps.push(EventResponse::UnfocusOthers);
                     resps.push(EventResponse::Focus);
@@ -313,7 +313,7 @@ impl WindowPane {
                     MouseEventKind::Up(MouseButton::Left) if !just_minimized && mr.is_some() => {
                         let restore_loc = mr.expect("impossible");
 
-                        // maximize from minimized
+                        /// maximize from minimized
 
                         let mut pane_ctx = ctx.clone();
                         pane_ctx.s.height = restore_loc.height(ctx) as u16;
@@ -324,7 +324,7 @@ impl WindowPane {
 
                         self.pane.pane.set_dyn_location(restore_loc);
 
-                        // send an event telling the top bar to hide its buttons
+                        /// send an event telling the top bar to hide its buttons
                         let (_, r) = self.top_bar.receive_event(
                             &pane_ctx,
                             Event::Custom(
@@ -413,8 +413,8 @@ impl Element for WindowPane {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         //debug!("Window({}) receive_event_inner: {:?}", self.id(), ev);
 
-        // Skip sending the event into the pane if the event is a drag event and we're currently
-        // dragging
+        /// Skip sending the event into the pane if the event is a drag event and we're currently
+        /// dragging
         let mut event_to_inner = true;
         let dragging = self.dragging.borrow().is_some();
         if dragging {
@@ -431,8 +431,8 @@ impl Element for WindowPane {
             (false, EventResponses::default())
         };
 
-        // check if the inner pane has been removed from the parent in which case close this window
-        // NOTE this happens with terminal
+        /// check if the inner pane has been removed from the parent in which case close this window
+        /// NOTE this happens with terminal
         if self.pane.eo.get_element(&self.inner.id()).is_none() {
             resps.push(EventResponse::Destruct);
             return (true, resps);
@@ -443,7 +443,7 @@ impl Element for WindowPane {
             return (captured, resps);
         }
 
-        // process dragging
+        /// process dragging
         self.process_dragging(
             ctx,
             &ev,
@@ -453,7 +453,7 @@ impl Element for WindowPane {
             &mut resps,
         );
 
-        // check if the inner pane has been removed from the parent in which case close this window
+        /// check if the inner pane has been removed from the parent in which case close this window
         if self.pane.eo.get_element(&self.inner.id()).is_none() {
             resps.push(EventResponse::Destruct);
         }
@@ -524,7 +524,7 @@ impl BasicWindowTopBar {
                 ctx,
                 "□",
                 Box::new(|btn, _ctx| {
-                    // change the text to the restore icon or back
+                    /// change the text to the restore icon or back
                     let existing_icon = btn.text.borrow().clone();
                     *btn.text.borrow_mut() = match existing_icon.as_str() {
                         "□" => "◱".to_string(),
@@ -621,7 +621,7 @@ impl BasicWindowTopBar {
 impl Element for BasicWindowTopBar {
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let out = self.pane.drawing(ctx);
-        // ensure that none of the positions are outside of the context
+        /// ensure that none of the positions are outside of the context
         out.iter()
             .filter(|dc| dc.x < ctx.s.width && dc.y < ctx.s.height)
             .cloned()

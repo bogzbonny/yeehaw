@@ -1,15 +1,19 @@
 use crate::{Context, DynVal, RelMouseEvent};
 
-// ZIndex is the z-index or position in the z-dimension of the element
-// The higher the z-index, further "on top" the element is.
+/// ZIndex is the z-index or position in the z-dimension of the element
+/// The higher the z-index, further "on top" the element is.
 pub type ZIndex = u32;
 
 #[derive(Default, Debug, Clone)]
 pub struct DynLocation {
-    pub start_x: DynVal, // inclusive
-    pub end_x: DynVal,   // exclusive
-    pub start_y: DynVal, // inclusive
-    pub end_y: DynVal,   // exclusive
+    /// inclusive
+    pub start_x: DynVal,
+    /// exclusive
+    pub end_x: DynVal,
+    /// inclusive
+    pub start_y: DynVal,
+    /// exclusive
+    pub end_y: DynVal,
 }
 
 impl DynLocation {
@@ -103,14 +107,14 @@ impl DynLocation {
         self.end_y = end_y;
     }
 
-    // X returns the start and end x values of the Location
+    /// X returns the start and end x values of the Location
     pub fn get_start_x(&self, ctx: &Context) -> i32 {
         self.start_x.get_val(ctx.get_width())
     }
     pub fn get_start_y(&self, ctx: &Context) -> i32 {
         self.start_y.get_val(ctx.get_height())
     }
-    // X returns the start and end x values of the Location
+    /// X returns the start and end x values of the Location
     pub fn get_end_x(&self, ctx: &Context) -> i32 {
         self.end_x.get_val(ctx.get_width())
     }
@@ -124,7 +128,7 @@ impl DynLocation {
         )
     }
 
-    // Y returns the start and end y values of the Location
+    /// Y returns the start and end y values of the Location
     pub fn y(&self, ctx: &Context) -> (i32, i32) {
         (
             self.start_y.get_val(ctx.get_height()),
@@ -141,7 +145,7 @@ impl DynLocation {
         false
     }
 
-    // GetSize returns the size of the Location
+    /// GetSize returns the size of the Location
     pub fn get_size(&self, ctx: &Context) -> Size {
         Size::new(self.width(ctx) as u16, self.height(ctx) as u16)
     }
@@ -156,7 +160,8 @@ impl DynLocation {
         let start_y = if start_y < 0 { 0 } else { start_y as u16 };
         let x_adj = x_adj.saturating_sub(start_x);
         let y_adj = y_adj.saturating_sub(start_y);
-        let mut ev = *ev; // copy
+        let mut ev = *ev;
+        // copy
         ev.column = x_adj;
         ev.row = y_adj;
         ev
@@ -170,13 +175,15 @@ impl DynLocation {
         let start_y = self.get_start_y(ctx);
         let x_adj = x_adj - start_x;
         let y_adj = y_adj - start_y;
-        let mut ev: RelMouseEvent = (*ev).into(); // copy
-        ev.column = x_adj.clamp(-1000, 1000); // for bugs when dragging off screen
+        let mut ev: RelMouseEvent = (*ev).into();
+        // copy
+        ev.column = x_adj.clamp(-1000, 1000);
+        // for bugs when dragging off screen
         ev.row = y_adj.clamp(-1000, 1000);
         ev
     }
 
-    // TODO remove dup code with above
+    /// TODO remove dup code with above
     pub fn adjust_mouse_event_external2(
         &self, ctx: &Context, mut ev: RelMouseEvent,
     ) -> RelMouseEvent {
@@ -185,7 +192,8 @@ impl DynLocation {
         let start_y = self.get_start_y(ctx);
         let x_adj = x_adj - start_x;
         let y_adj = y_adj - start_y;
-        ev.column = x_adj.clamp(-1000, 1000); // for bugs when dragging off screen
+        ev.column = x_adj.clamp(-1000, 1000);
+        // for bugs when dragging off screen
         ev.row = y_adj.clamp(-1000, 1000);
         ev
     }
@@ -208,20 +216,21 @@ impl DynLocation {
     }
 }
 
-// DynLocationSet holds the primary location as well as the extra
-// locations of an element. In addition it holds a ZIndex which all
-// locations are said to exist at.
+/// DynLocationSet holds the primary location as well as the extra
+/// locations of an element. In addition it holds a ZIndex which all
+/// locations are said to exist at.
 #[derive(Clone, Debug, Default)]
 pub struct DynLocationSet {
     pub l: DynLocation,
 
-    // Extra locations are locations that are not within the primary location
-    // but are still considered to be part of the element.
-    // This is useful for elements that do not have a rectangular shape (ie, the
-    // menu element)
+    /// Extra locations are locations that are not within the primary location
+    /// but are still considered to be part of the element.
+    /// This is useful for elements that do not have a rectangular shape (ie, the
+    /// menu element)
     pub extra: Vec<DynLocation>,
 
-    pub z: ZIndex, // 0 is the farthest back
+    /// 0 is the farthest back
+    pub z: ZIndex,
 }
 
 impl DynLocationSet {
@@ -264,62 +273,62 @@ impl DynLocationSet {
         self.z = z;
     }
 
-    // convenience function to set the width of the primary location
+    /// convenience function to set the width of the primary location
     pub fn set_dyn_width(&mut self, width: DynVal) {
         self.l.set_dyn_width(width);
     }
 
-    // convenience function to set the height of the primary location
+    /// convenience function to set the height of the primary location
     pub fn set_dyn_height(&mut self, height: DynVal) {
         self.l.set_dyn_height(height);
     }
 
-    // convenience function to set the start x of the primary location
+    /// convenience function to set the start x of the primary location
     pub fn set_start_x(&mut self, start_x: DynVal) {
         self.l.set_start_x(start_x);
     }
 
-    // convenience function to set the start y of the primary location
+    /// convenience function to set the start y of the primary location
     pub fn set_start_y(&mut self, start_y: DynVal) {
         self.l.set_start_y(start_y);
     }
 
-    // convenience function to set the end x of the primary location
+    /// convenience function to set the end x of the primary location
     pub fn set_end_x(&mut self, end_x: DynVal) {
         self.l.set_end_x(end_x);
     }
 
-    // convenience function to set the end y of the primary location
+    /// convenience function to set the end y of the primary location
     pub fn set_end_y(&mut self, end_y: DynVal) {
         self.l.set_end_y(end_y);
     }
 
-    // convenience function to get the start x of the primary location
+    /// convenience function to get the start x of the primary location
     pub fn get_start_x(&self, ctx: &Context) -> i32 {
         self.l.get_start_x(ctx)
     }
 
-    // convenience function to get the start y of the primary location
+    /// convenience function to get the start y of the primary location
     pub fn get_start_y(&self, ctx: &Context) -> i32 {
         self.l.get_start_y(ctx)
     }
 
-    // convenience function to get the end x of the primary location
+    /// convenience function to get the end x of the primary location
     pub fn get_end_x(&self, ctx: &Context) -> i32 {
         self.l.get_end_x(ctx)
     }
 
-    // convenience function to get the end y of the primary location
+    /// convenience function to get the end y of the primary location
     pub fn get_end_y(&self, ctx: &Context) -> i32 {
         self.l.get_end_y(ctx)
     }
 
-    // convenience function to get the width of the primary location
+    /// convenience function to get the width of the primary location
     pub fn get_width_val(&self, ctx: &Context) -> usize {
         self.l.width(ctx)
     }
 
-    // convenience function to get the height of the primary location
+    /// convenience function to get the height of the primary location
     pub fn get_height_val(&self, ctx: &Context) -> usize {
         self.l.height(ctx)
     }
@@ -340,18 +349,18 @@ impl DynLocationSet {
         self.l.end_y.clone()
     }
 
-    // convenience function to get the height of the primary location
+    /// convenience function to get the height of the primary location
     pub fn get_dyn_height(&self) -> DynVal {
         self.l.get_dyn_height()
     }
 
-    // convenience function to get the width of the primary location
+    /// convenience function to get the width of the primary location
     pub fn get_dyn_width(&self) -> DynVal {
         self.l.get_dyn_width()
     }
 
-    // Contains checks if the given location falls in the primary
-    // or extra location of an element
+    /// Contains checks if the given location falls in the primary
+    /// or extra location of an element
     pub fn contains(&self, ctx: &Context, x: i32, y: i32) -> bool {
         self.contains_within_primary(ctx, x, y) || self.contains_within_extra(ctx, x, y)
     }
@@ -372,7 +381,7 @@ impl DynLocationSet {
         false
     }
 
-    // returns None is the point is not contained by the DynLocationSet
+    /// returns None is the point is not contained by the DynLocationSet
     pub fn get_z_index_for_point(&self, ctx: &Context, x: i32, y: i32) -> Option<ZIndex> {
         if self.l.contains_point(ctx, x, y) {
             return Some(self.z);
@@ -403,7 +412,7 @@ impl DynLocationSet {
 }
 
 // --------------------------------------------------
-// Size holds the width and height of an element
+/// Size holds the width and height of an element
 #[derive(Clone, Copy, Default, Debug, PartialEq)]
 pub struct Size {
     pub width: u16,
