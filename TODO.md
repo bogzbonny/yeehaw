@@ -48,6 +48,7 @@ WIDGET RECALL REFACTOR
 
 01. docs docs docs
  https://doc.rust-lang.org/rustdoc/how-to-write-documentation.html
+  - https://lib.rs/crates/utoipa
 
 01. gifs gifs gifs
 
