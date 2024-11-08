@@ -108,7 +108,7 @@ WIDGET RECALL
           - track the last size, only recompute the taffy tree on size changes
             OR taffy style change event (create a new EventResponse Type)
              - this response type would effect a "dirty" flag which would exist
-               at the cui level. 
+               at the tui level. 
           - each element would have a taffy type which is taffy::Style and
             taffy::Layout. The layout would get recomputed and set after each
             taffy tree computation. 
@@ -167,7 +167,7 @@ WIDGET RECALL
     replicate a heartbeat for a element, or to simulate a visual effect such as
     a button click (useful for button when Enter key is hit).
 
-05. cui export visual area to either DynamicImage, .png, (optionally or .ans)
+05. tui export visual area to either DynamicImage, .png, (optionally or .ans)
       - useful for WIMP
 
 05. accordion stack
@@ -332,8 +332,8 @@ One letter labels
      - https://github.com/aschey/tui-tester
      - what about https://github.com/microsoft/tui-test is this necessary?
      - open and record mouse and keystroke events
-     - save only the final cui output
-     - test for the final cui output being the same from
+     - save only the final tui output
+     - test for the final tui output being the same from
        the provided binary.
      - view what the output should look like
      - if a test is failing, but the output is correct but just changed
@@ -375,7 +375,7 @@ One letter labels
 
 40. custom mouse types using images (requires image support, and mouse pixel tracking) 
 
-40. cui get the color under the cursor pixel - useful for color pickers or from actual image pallets
+40. tui get the color under the cursor pixel - useful for color pickers or from actual image pallets
 
 40. Subscription based events on common objects. 
      - like leptos. any element could subscribe to an object (with any other

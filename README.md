@@ -1,8 +1,27 @@
+```
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+░ꕤ                                 |    |    |                                              ꕤ ░       
+░         _________               \|/  \|/  \|/           _̉_̉_̉_̉         3                      ░      
+░        /         \              \|/  \|/  \|/   ☉     \/  x \              ______.          ░     
+░        | yeeeehhaaw!!!!!!!!!!   \|/  \|/  \|/        \       \         ___/_____ꕤ_\___,     ░       
+░  \_____/   _    _ \_____/        |    |    |        \/    _\  \          /|||||||||\        ░        
+░           >    o< ,                _______________  /   /     ..        / ⹁╷,    ⹁╷,\       ░     
+░        C     \                    /   █ █  █ █   ma  \  \               ╳  .      . ╳   7   ░        
+░        `           \             / /   █   █▀█     j    |        well   ╳     /     ╳       ░         
+░          \> \-̲̅-̲̅./   |            \/    ▀   ▀ ▀      e   \    howdee     ╳  \     r  ╳       ░       
+░         | \     `.  /          \_/     __________/// s   |     there!   ╳     -̅     ╳/      ░
+░         |  \      `----<<<-        \     |        /   t /                       ╷           ░              
+░        /    |__|__|                /     }       /    i \                                   ░       
+░ꕤ                                  /     /        \   c  /                                 ꕤ ░                     
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
+```
+
 # YEEHAW
 
 ~ Batteries Included Text Based Application Framework ~
 
-'yeehaw' was born out of a need for an adaptable design for sophisticated text
+yeehaw was born out of a need for an adaptable design for sophisticated text
 based applications, with the goal of presenting as much information as cleanly
 as possible. 
 
@@ -18,19 +37,6 @@ as possible.
 
 [TODO gifs] -> VHS to produce gifs
 
-# Design Overview
-
-Core to 'yeehaw' is an element ownership model. TUI Elements are arranged in a
-hierarchical manner and route event information (keyboard/mouse events) between
-them. Parent elements hold ownership over child elements and determine how the
-flow of events is channeled, in addition they also determine which child
-elements are viewed and where within the parent element they are displayed.
-Elements are only required to have spatial awareness within the confines which
-have been assigned to them from parent elements.  
-
-### Non-objectives
- - Catering to non-UTF-8 or non-true-color terminals.
- - Minor performance improvements at the cost of developer ergonomics
 
 ## Existing Elements:
 [TODO link to a separate markdown with a bunch of GIFS]
@@ -75,6 +81,20 @@ have been assigned to them from parent elements.
  - TUI Snapshot Tester
  - Drag and Drop TUI Application Builder (as a TUI of course)
 
+# Design Overview
+
+Core to 'yeehaw' is an element ownership model. TUI Elements are arranged in a
+hierarchical manner and route event information (keyboard/mouse events) between
+them. Parent elements hold ownership over child elements and determine how the
+flow of events is channeled, in addition they also determine which child
+elements are viewed and where within the parent element they are displayed.
+Elements are only required to have spatial awareness within the confines which
+have been assigned to them from parent elements.  
+
+### Non-objectives
+ - Catering to non-UTF-8 or non-true-color terminals too much.
+ - Minor performance improvements at the cost of developer ergonomics
+
 ## Tribute
 
 [notcurses](https://github.com/dankamongmen/notcurses) insane
@@ -87,13 +107,14 @@ have been assigned to them from parent elements.
 
 ## Contributing 
 
-It'd be cool for this repo to become a monolith. I want all sorts of weird
-gadgets in this baby. All ideas will be considered with an open mind, if you'd
-like to build and element and merge it into yeehaw It'd be an honour. If you'd
-like to build a element with highly specific needs and the current Element trait
-is non-satisfactory, let's adjust it. 
-All contributions will be merged with the implicit assumption that they will use
-the LICENSE as this repo. Additionally this repo will be transitioning to
-dynamic ownership based on contributions in the future, so if your code becomes
-merged then your be gaining a part piece of ownership in the project whenever
-dynamic ownership is integrated in (more on that later!).
+It'd be cool for this repo to become a monolith. I want all sorts of funky
+gadgets in this baby with first class support from this project. All ideas will
+be considered with an open mind, if you'd like to build and element and merge it
+into yeehaw It'd be an honour. If you'd like to build a element with highly
+specific needs and the current Element trait is non-satisfactory, let's adjust
+it. 
+All contributions merged are considered to have the same LICENSE as this repo.
+Additionally this repo will be transitioning to dynamic ownership based on
+contributions in the future, so if your code becomes merged then your be gaining
+a part piece of ownership in the project whenever dynamic ownership is
+integrated in (more on that later!).

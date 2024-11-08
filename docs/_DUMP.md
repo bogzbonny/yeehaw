@@ -261,7 +261,7 @@ doesn't exist in that Trait impl block that this macro is applied too
 
 
 
-01. make the element-id a name (string) which is unique across the entire cui application.
+01. make the element-id a name (string) which is unique across the entire tui application.
      - the element-id will nolonger be assigned by each element organizer, but
        assigned to each element at it's creation. 
      - a global object called sorting_hat will assign each elements name at
@@ -293,7 +293,7 @@ doesn't exist in that Trait impl block that this macro is applied too
 When two WidgetPanes are in a MultiPane (vertpanes) and the bottom one is right
 clicked, the RCM appears in the correct x position but the incorrect y position.
 
-refer to cui/examples/issue_manager/main.rs
+refer to tui/examples/issue_manager/main.rs
 
 
 ##[2302-2201] WidgetPane in StackPanes bleeding out of bounds
@@ -315,7 +315,7 @@ AFFECTED FILES: PaneHorizontalStd.rs, PaneVerticalStd.rs
 
 In certain situations, the pane command key combos (Ctrl+Ww, Ctrl+WW, etc) are
 not being registered correctly.
-Example! cui/examples/issue_manager/main.rs
+Example! tui/examples/issue_manager/main.rs
 Given:
 - Main element is SHP
 - SHP has two panes: WidgetPane & SVP. SVP contains two WidgetPanes
@@ -335,12 +335,12 @@ Given:
 - Pressing Ctrl+Ww moves to WP2
 - Pressing Ctrl+WW moves to WP1
 - Pressing Ctrl+Ww or Ctrl+WW will do nothing as they have been deregistered
-  from the CUI.EO.Prioritizer
+  from the TUI.EO.Prioritizer
 
 it seems as though, when initially moving from WP1 to WP2, the pane controls for
-the SVP are not propagated up to the CUI.EO. But when moving back to WP1 from
+the SVP are not propagated up to the TUI.EO. But when moving back to WP1 from
 WP2, the pane controls for the SHP (Which were never properly registered) are
-properly deregistered from the CUI.EO. But since they were never initially
+properly deregistered from the TUI.EO. But since they were never initially
 added, the ones being removed are actually for the SHP, which can now no longer
 receive the commands, even though it still has them as SelfEvs
 
@@ -348,11 +348,11 @@ I suspect this issues is arising somewhere near
 StackPanes.ChangeFocusToNextPane() in regards to the IC that is being returned 
 
 it appears to be that, when the SHP changes focus from the SVP to WP1, the change in
-inputability to the SVP is propagated all the way up to the CUI.EO. At that
-point, while processing the IC, the CUI.EO will remove ALL instances of the pane
+inputability to the SVP is propagated all the way up to the TUI.EO. At that
+point, while processing the IC, the TUI.EO will remove ALL instances of the pane
 control combos in its prioritizer as all of them are registered to its only
 child - the SHP. And since WP1 isn't registering any pane
-control combos, the CUI.EO winds up with no registered pane control combos.
+control combos, the TUI.EO winds up with no registered pane control combos.
 
 a potential solution would be for a ParentPane to check if any of the
 InputabilityChanges removals overlap with the ParentPane's selfEvs and then send
@@ -384,7 +384,7 @@ AFFECTED FILES: pane.rs
 ##[2211-2200] - Priority Panic
 AFFECTED FILES: ParentPanes.rs, HorizontalPanes.rs, VerticalPanes.rs
 
-- create parameter whereby at the start of the CUI the multipanes can determine
+- create parameter whereby at the start of the TUI the multipanes can determine
   their logic for dealing with 2 evs registered at the same priority. default
   could be just send to the first one. second would be panicking if two were
   registered as the same
@@ -401,7 +401,7 @@ AFFECTED FILES: HorizontalPanes.rs, VerticalPanes.rs
 ##[2211-2100] - Command Restructure 
 AFFECTED FILES: Many Elements
 
-Change the the commandEl to take in the CUI EO instead of the TabsEl. 
+Change the the commandEl to take in the TUI EO instead of the TabsEl. 
 - Eliminate the tabsElContextCreator. 
 
 Old (na?):

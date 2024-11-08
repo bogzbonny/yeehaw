@@ -9,7 +9,7 @@
                                                                                              
    KEYBOARD EVENT                                                                            
                                                                                              
-    CUI                                                                                      
+    TUI                                                                                      
     - relays events to elements                                                               
     - responsible for the top element                                                        
                                                                                              

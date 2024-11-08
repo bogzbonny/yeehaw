@@ -215,7 +215,7 @@ impl ElementOrganizer {
 
     // AllDrawing executes Drawing functions on all elements in the element
     // organizer.
-    // A DrawChPos slice is returned and passed up the chain to the top of the CUI
+    // A DrawChPos slice is returned and passed up the chain to the top of the TUI
     // element hierarchy.
     // NOTE: the elements are sorted by z-index, from lowest to highest (furthest
     // back to furthest forward) and then drawn in that order, such that the element

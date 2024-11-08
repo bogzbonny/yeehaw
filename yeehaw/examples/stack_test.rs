@@ -1,5 +1,5 @@
 use yeehaw::{
-    widgets::Button, Cui, DebugSizePane, Error, EventResponses, HorizontalStack, VerticalStack,
+    widgets::Button, Tui, DebugSizePane, Error, EventResponses, HorizontalStack, VerticalStack,
     WidgetPane,
 };
 
@@ -9,7 +9,7 @@ async fn main() -> Result<(), Error> {
     //yeehaw::debug::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
-    let (mut cui, ctx) = Cui::new()?;
+    let (mut tui, ctx) = Tui::new()?;
 
     let vstack = VerticalStack::new(&ctx);
     //let mut widget_pane = WidgetPane::new(&ctx).with_height(DynVal::new_flex_with_max_fixed(0., 3));
@@ -42,5 +42,5 @@ async fn main() -> Result<(), Error> {
         .to_widgets();
     widget_pane.add_widgets(add_button);
 
-    cui.run(Box::new(vstack)).await
+    tui.run(Box::new(vstack)).await
 }

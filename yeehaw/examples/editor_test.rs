@@ -1,4 +1,4 @@
-use yeehaw::{Color, Cui, Error, EventResponses, ParentPane, Style, TermEditorPane};
+use yeehaw::{Color, Tui, Error, EventResponses, ParentPane, Style, TermEditorPane};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -6,7 +6,7 @@ async fn main() -> Result<(), Error> {
     yeehaw::debug::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
-    let (mut cui, ctx) = Cui::new()?;
+    let (mut tui, ctx) = Tui::new()?;
 
     let el = ParentPane::new(&ctx, "main").with_style(Style::default().with_bg(Color::GREY5));
 
@@ -29,5 +29,5 @@ async fn main() -> Result<(), Error> {
 
     el.add_element(Box::new(editor));
     el.add_element(Box::new(label));
-    cui.run(Box::new(el)).await
+    tui.run(Box::new(el)).await
 }

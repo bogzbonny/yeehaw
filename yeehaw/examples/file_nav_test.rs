@@ -1,5 +1,5 @@
 use yeehaw::{
-    Cui, Error, EventResponses, FileNavPane, FileViewerPane, HorizontalStack, ParentPane,
+    Tui, Error, EventResponses, FileNavPane, FileViewerPane, HorizontalStack, ParentPane,
 };
 
 #[tokio::main]
@@ -8,7 +8,7 @@ async fn main() -> Result<(), Error> {
     yeehaw::debug::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
-    let (mut cui, ctx) = Cui::new()?;
+    let (mut tui, ctx) = Tui::new()?;
 
     let hstack = HorizontalStack::new(&ctx);
 
@@ -38,5 +38,5 @@ async fn main() -> Result<(), Error> {
 
     hstack.push(&ctx, Box::new(nav.clone()));
     hstack.push(&ctx, Box::new(panebox.clone()));
-    cui.run(Box::new(hstack)).await
+    tui.run(Box::new(hstack)).await
 }

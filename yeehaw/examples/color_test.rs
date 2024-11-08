@@ -1,6 +1,6 @@
 use {
     //std::env,
-    yeehaw::{Color, Cui, DynVal, Error, /*Gradient,*/ RadialGradient, TimeGradient, WidgetPane,},
+    yeehaw::{Color, Tui, DynVal, Error, /*Gradient,*/ RadialGradient, TimeGradient, WidgetPane,},
 };
 
 #[tokio::main]
@@ -9,7 +9,7 @@ async fn main() -> Result<(), Error> {
     //yeehaw::debug::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
-    let (mut cui, ctx) = Cui::new()?;
+    let (mut tui, ctx) = Tui::new()?;
 
     let time_gr = vec![
         (std::time::Duration::from_secs(0), Color::RED),
@@ -82,5 +82,5 @@ async fn main() -> Result<(), Error> {
 
     let el = WidgetPane::new(&ctx).with_bg_color(el_bg);
 
-    cui.run(Box::new(el)).await
+    tui.run(Box::new(el)).await
 }

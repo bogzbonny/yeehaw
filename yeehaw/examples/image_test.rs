@@ -1,5 +1,5 @@
 use yeehaw::{
-    widgets::Button, Cui, DebugSizePane, Error, EventResponses, HorizontalStack, ImageViewer,
+    widgets::Button, Tui, DebugSizePane, Error, EventResponses, HorizontalStack, ImageViewer,
     VerticalStack, WidgetPane,
 };
 
@@ -9,7 +9,7 @@ async fn main() -> Result<(), Error> {
     //yeehaw::debug::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
-    let (mut cui, ctx) = Cui::new()?;
+    let (mut tui, ctx) = Tui::new()?;
 
     // get the first arg
     let args: Vec<String> = std::env::args().collect();
@@ -57,5 +57,5 @@ async fn main() -> Result<(), Error> {
         .to_widgets();
     widget_pane.add_widgets(add_button);
 
-    cui.run(Box::new(vstack)).await
+    tui.run(Box::new(vstack)).await
 }

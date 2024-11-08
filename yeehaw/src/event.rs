@@ -32,7 +32,7 @@ pub enum Event {
     //
     // This is used to receive from a parent, a mouse event that neither it, nor its
     // children, are meant to consume. This is used to tell an element that
-    // another element, somewhere in the cui, has received/consumed a mouse event.
+    // another element, somewhere in the tui, has received/consumed a mouse event.
     //
     /// NOTE the column and row are the column and row of the mouse event relative
     /// to the element receiving the event, hence they may be negative.

@@ -1,4 +1,4 @@
-use yeehaw::{Cui, Error, TerminalPane};
+use yeehaw::{Tui, Error, TerminalPane};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -6,7 +6,7 @@ async fn main() -> Result<(), Error> {
     //yeehaw::debug::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
-    let (mut cui, ctx) = Cui::new()?;
+    let (mut tui, ctx) = Tui::new()?;
     let pane = TerminalPane::new(&ctx);
-    cui.run(Box::new(pane)).await
+    tui.run(Box::new(pane)).await
 }

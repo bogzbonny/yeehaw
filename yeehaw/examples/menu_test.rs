@@ -1,6 +1,6 @@
 use yeehaw::{
     widgets::{Button, Label},
-    Cui, Error, EventResponses, MenuBar, ParentPane, VerticalStack,
+    Tui, Error, EventResponses, MenuBar, ParentPane, VerticalStack,
 };
 
 #[tokio::main]
@@ -9,7 +9,7 @@ async fn main() -> Result<(), Error> {
     //yeehaw::debug::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
-    let (mut cui, ctx) = Cui::new()?;
+    let (mut tui, ctx) = Tui::new()?;
 
     let vstack = VerticalStack::new(&ctx);
     let mb = MenuBar::top_menu_bar(&ctx)
@@ -70,5 +70,5 @@ async fn main() -> Result<(), Error> {
     mb.add_item(&ctx, "world/yosdfjldsffff/asdkjl".to_string(), None);
     mb.add_item(&ctx, "diner/yoyo/hi/asgd".to_string(), None);
 
-    cui.run(Box::new(vstack)).await
+    tui.run(Box::new(vstack)).await
 }

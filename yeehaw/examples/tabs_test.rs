@@ -1,6 +1,6 @@
 use yeehaw::{
     //debug,
-    Cui,
+    Tui,
     DebugSizePane,
     Error,
 
@@ -13,7 +13,7 @@ async fn main() -> Result<(), Error> {
     //yeehaw::debug::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
-    let (mut cui, ctx) = Cui::new()?;
+    let (mut tui, ctx) = Tui::new()?;
 
     let tabs = Tabs::new(&ctx);
     let el1 = DebugSizePane::new(&ctx).with_text("tab 1".to_string());
@@ -25,5 +25,5 @@ async fn main() -> Result<(), Error> {
     tabs.push(&ctx, Box::new(el3), "tab 3");
     tabs.select(&ctx, 0);
 
-    cui.run(Box::new(tabs)).await
+    tui.run(Box::new(tabs)).await
 }

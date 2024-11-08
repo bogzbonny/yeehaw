@@ -23,14 +23,14 @@ use {
     tokio::time::{self, Duration},
 };
 
-// the amount of time the cui will wait in between calls to re-render
-// NOTE: Currently the cui does not re-render when an event it called, hence if
-// this value is set too large it will give the cui a laggy feel.
+// the amount of time the tui will wait in between calls to re-render
+// NOTE: Currently the tui does not re-render when an event it called, hence if
+// this value is set too large it will give the tui a laggy feel.
 const ANIMATION_SPEED: Duration = Duration::from_micros(100);
 
-// configuration of a cui zelt instance
-pub struct Cui {
-    cup: CuiParent,
+// configuration of a tui zelt instance
+pub struct Tui {
+    cup: TuiParent,
     main_el_id: ElementID,
     kb: Keyboard,
     launch_instant: std::time::Instant,
@@ -44,15 +44,15 @@ pub struct Cui {
     pub ev_recv: MpscReceiver<Event>,   // event receiver for internally generated events
 }
 
-impl Cui {
-    pub fn new() -> Result<(Cui, Context), Error> {
+impl Tui {
+    pub fn new() -> Result<(Tui, Context), Error> {
         let (exit_tx, exit_recv) = tokio::sync::watch::channel(false);
         let (ev_tx, ev_recv) = tokio::sync::mpsc::channel::<Event>(10); // no idea if this buffer size is right or wrong
 
         let eo = ElementOrganizer::default();
         let hat = SortingHat::default();
-        let cup = CuiParent::new(hat, eo, exit_tx, ev_tx);
-        let cui = Cui {
+        let cup = TuiParent::new(hat, eo, exit_tx, ev_tx);
+        let tui = Tui {
             cup,
             main_el_id: "".to_string(),
             kb: Keyboard::default(),
@@ -63,8 +63,8 @@ impl Cui {
             ev_recv,
         };
 
-        let ctx = Context::new_context_for_screen_no_dur(&cui.cup.hat, cui.cup.ev_tx.clone());
-        Ok((cui, ctx))
+        let ctx = Context::new_context_for_screen_no_dur(&tui.cup.hat, tui.cup.ev_tx.clone());
+        Ok((tui, ctx))
     }
 
     pub fn context(&self) -> Context {
@@ -82,7 +82,7 @@ impl Cui {
         main_el.change_priority(Priority::Focused);
 
         // when adding the main element, nil is passed in as the parent
-        // this is because the top of the tree is the CUI's main EO and so no parent
+        // this is because the top of the tree is the TUI's main EO and so no parent
         // is necessary
         self.cup
             .eo
@@ -109,7 +109,7 @@ impl Cui {
                         Some(Ok(ev)) => {
                             match ev {
                                 CTEvent::Key(key_ev) => {
-                                    //debug!("cui Key event: {:?}", key_ev);
+                                    //debug!("tui Key event: {:?}", key_ev);
                                     if self.process_event_key(key_ev) {
                                         break;
                                     }
@@ -163,7 +163,7 @@ impl Cui {
     }
 
     // process_event_key handles key events
-    //                                                                 exit-cui
+    //                                                                 exit-tui
     pub fn process_event_key(&mut self, key_ev: ct_event::KeyEvent) -> bool {
         self.kb.add_ev(key_ev);
 
@@ -174,7 +174,7 @@ impl Cui {
             return true;
         }
 
-        //debug!("cui Key event: {:?}", key_ev);
+        //debug!("tui Key event: {:?}", key_ev);
 
         // we only care about the event response as all keys are sent to the main
         // element no matter what
@@ -195,7 +195,7 @@ impl Cui {
             return false;
         };
         let ctx = self.context();
-        //debug!("cui destination: {:?}", dest);
+        //debug!("tui destination: {:?}", dest);
 
         let (_, resps) =
             self.cup
@@ -206,7 +206,7 @@ impl Cui {
     }
 
     // process_event_mouse handles mouse events
-    //                                                                       exit-cui
+    //                                                                       exit-tui
     pub fn process_event_mouse(&mut self, mouse_ev: ct_event::MouseEvent) -> bool {
         let ctx = self.context();
         let (_, resps) =
@@ -230,7 +230,7 @@ impl Cui {
     // Render all elements, draws the screen using the DrawChPos array passed to it
     // by the element organizers.
     //
-    // NOTE: when the cui calls all_drawing on the top level ElementOrganizer,
+    // NOTE: when the tui calls all_drawing on the top level ElementOrganizer,
     // all_drawing gets recursively called on every element organizer in the tree.
     // Each one returns a DrawChPos array which is then passed to the next level up
     // in the tree, with that level appending its own DrawChPos array to the end.
@@ -304,7 +304,7 @@ pub fn process_event_resps(resps: EventResponses, exit_tx: Option<WatchSender<bo
 }
 
 #[derive(Clone)]
-pub struct CuiParent {
+pub struct TuiParent {
     pub hat: SortingHat,
     pub eo: ElementOrganizer,
     pub el_store: Rc<RefCell<HashMap<String, Vec<u8>>>>,
@@ -312,11 +312,11 @@ pub struct CuiParent {
     pub ev_tx: MpscSender<Event>, // event senter for internally generated events
 }
 
-impl CuiParent {
+impl TuiParent {
     pub fn new(
         hat: SortingHat, eo: ElementOrganizer, exit_tx: WatchSender<bool>, ev_tx: MpscSender<Event>,
-    ) -> CuiParent {
-        CuiParent {
+    ) -> TuiParent {
+        TuiParent {
             hat,
             eo,
             el_store: Rc::new(RefCell::new(HashMap::new())),
@@ -326,13 +326,13 @@ impl CuiParent {
     }
 }
 
-// NOTE: It is necessary for the CUI to fulfill the Parent interface
+// NOTE: It is necessary for the TUI to fulfill the Parent interface
 // as it is the top of the element tree, despite it not itself being an element
 // (it does not fulfill the Element interface). For the MainEl to pass changes
-// in inputability to the cui's ElementOrganizer, it must hold a reference to
-// the CUI and  be able to call this function (as opposed to calling it on an
+// in inputability to the tui's ElementOrganizer, it must hold a reference to
+// the TUI and  be able to call this function (as opposed to calling it on an
 // Element, as a child normally would in the rest of the tree).
-impl Parent for CuiParent {
+impl Parent for TuiParent {
     // Receives the final upward propagation of changes to inputability
     fn propagate_responses_upward(
         &self, parent_ctx: &Context, child_el_id: &ElementID, mut resps: EventResponses,

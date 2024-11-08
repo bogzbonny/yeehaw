@@ -9,7 +9,7 @@ async fn main() -> Result<(), Error> {
     yeehaw::debug::clear();
     //unsafe { std::env::set_var("RUST_BACKTRACE", "1") };
 
-    let (mut cui, ctx) = Cui::new()?;
+    let (mut tui, ctx) = Tui::new()?;
 
     let pp = ParentPane::new(&ctx, "parent_pane")
         .with_dyn_height(1.0.into())
@@ -263,5 +263,5 @@ async fn main() -> Result<(), Error> {
     pp.add_element(Box::new(add_button5));
     pp.add_element(Box::new(add_button6));
 
-    cui.run(Box::new(pp)).await
+    tui.run(Box::new(pp)).await
 }

@@ -1,5 +1,5 @@
-/// The debugger is a utility intended to be used to write CUI debug information
-/// to a seperate file such that debug output may be read while the a CUI is
+/// The debugger is a utility intended to be used to write TUI debug information
+/// to a seperate file such that debug output may be read while the a TUI is
 /// running.
 ///
 /// DebugFilepath is the path to the debug file. If this is empty, no debug

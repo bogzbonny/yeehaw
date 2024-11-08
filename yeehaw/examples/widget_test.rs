@@ -5,7 +5,7 @@ use yeehaw::{
         NumbersTextBox, RadioButtons, TextBox, Toggle, WBStyles,
     },
     Color,
-    Cui,
+    Tui,
     DynVal,
     Element,
     Error,
@@ -21,7 +21,7 @@ async fn main() -> Result<(), Error> {
     yeehaw::debug::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
-    let (mut cui, ctx) = Cui::new()?;
+    let (mut tui, ctx) = Tui::new()?;
 
     let el = WidgetPane::new(&ctx);
 
@@ -169,5 +169,5 @@ async fn main() -> Result<(), Error> {
         .to_widgets(&ctx);
     el.add_widgets(ntb);
 
-    cui.run(Box::new(el)).await
+    tui.run(Box::new(el)).await
 }
