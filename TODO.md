@@ -23,7 +23,7 @@
 
 05. introduce errors, remove all unwraps
 
-WIDGET RECALL
+WIDGET RECALL REFACTOR
  - deleted ElWidgetPane for a new type ParentPaneWithSelectibility
     - basically the parentpane with tab capturing
     - using the ParentPane store to hold index of the currently selected widget 
@@ -48,6 +48,8 @@ WIDGET RECALL
 
 01. docs docs docs
  https://doc.rust-lang.org/rustdoc/how-to-write-documentation.html
+
+01. gifs gifs gifs
 
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -389,5 +391,5 @@ One letter labels
 
 50. LOW PRIORITY CAN JUST USE $EDITOR. widget: vim-style textbox
      - with two scrollbars the mode can be placed in 
-       the decorations area!
+       the decorations corner!
 

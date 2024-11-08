@@ -22,8 +22,8 @@
 ~ Batteries Included Text Based Application Framework ~
 
 yeehaw was born out of a need for an adaptable design for sophisticated text
-based applications, with the goal of presenting as much information as cleanly
-as possible. 
+based applications. 
+
 
 **Reasons why you need your application to be text-based:**
 1) it's the only way you'll ever be cool again
@@ -33,25 +33,26 @@ as possible.
    flippin breeze with yeehaw
 5) they fas
 
+
 ## Examples
 
 [TODO gifs] -> VHS to produce gifs
 
-
 ## Existing Elements:
 [TODO link to a separate markdown with a bunch of GIFS]
+
+ - $EDITOR textbox (e.g. ACTUAL neovim... wow!)  
+ - basic textbox
  - tabs 
- - stack panes (think vim buffers) 
- - scrollable panes
- - top-down menu
+ - stack panes (think vim-buffers) 
+ - scrollable panes with scrollbars
+ - top-down menus
  - right click menu
  - file viewer
  - file navigator (think nerdtree)
- - image viewer 
+ - image viewer (thanks to [ratatui-image](https://github.com/benjajaja/ratatui-image))
  - windows
  - terminal (that can open other TUIs!)
- - basic textbox
- - $EDITOR textbox (ex. ACTUAL neovim)  
  - figlet fonts (aka MEGAFONTS)
  - button
  - checkbox
@@ -60,40 +61,78 @@ as possible.
  - listbox (optional multi-entry)
  - radio-buttons
  - scrollbars
- - numbers textbox
  - toggles
- - generalized label decorators on all widgets
+ - generalized label decorators on all elements
 
 ## Planned
- - Put a whole dang yeehaw-TUI into a Stateful ratatui widget
+ - put a whole dang yeehaw-TUI into a Stateful ratatui widget
  - mini-TUIs in the CLI (aka. without taking up the whole screen)
  - accordion stack container
  - hover comments anywhere
  - vertical tabs (like brave browser) 
- - vim-style command input system (complete with events and routing)
  - ANSI-animation player (using extended asc format)
  - optional mouse pixel support
  - wire-connectors
  - dials
  - color selector element
  - table element
- - Interactive debugging TUI application
+ - interactive debugging TUI application
  - TUI Snapshot Tester
- - Drag and Drop TUI Application Builder (as a TUI of course)
+ - drag and drop TUI application builder (as a TUI of course)
 
 # Design Overview
 
 Core to 'yeehaw' is an element ownership model. TUI Elements are arranged in a
-hierarchical manner and route event information (keyboard/mouse events) between
-them. Parent elements hold ownership over child elements and determine how the
-flow of events is channeled, in addition they also determine which child
+hierarchical manner and route event information (keyboard/mouse/'other' events)
+between them. Parent elements hold ownership over child elements and determine
+how the flow of events is channeled, in addition they also determine which child
 elements are viewed and where within the parent element they are displayed.
 Elements are only required to have spatial awareness within the confines which
 have been assigned to them from parent elements.  
 
-### Non-objectives
+### Objectives
+[this section is WIP]
+
+ - elements should presenting information as cleanly as possible
+   - tooling should be provided to minimize the need for use of box character
+     borders, for instance through contrasting backgrounds
+ - the element trait, and the design in general should be as versatile as
+   possible, making developing an element require as little information as
+   possible about its surrounding environment.
+
+### Non-Objectives
  - Catering to non-UTF-8 or non-true-color terminals too much.
  - Minor performance improvements at the cost of developer ergonomics
+
+## Stability, Upcoming Refactors, Bugs 
+
+If you plan to build on Yeehaw right now, that's great news! I'd like to keep
+you apprised of some upcoming changes. If you do wish to experiment and or start
+development on yeehaw I wouldn't be too afraid of these upcoming changes, I'll
+try'n help out anyone who needs a hand fixing things broken by upcoming
+refactors. 
+
+- There ain't much testing in here at all, soon a TUI snapshot tester is going to 
+  be developed, which should bring up coverage from about 0% as it stands. 
+- Widget trait is being refactored out and fully covered by the Element trait
+  (with only a couple minor modifications) thus the Widget trait is being
+  removed
+  - Widget builders will be integrated in at this point, suffice it to say there
+    will be a breaking refactor for widgets, for instance the way that labels
+    and scrollbars are tacked onto the textbox widget will be replaced. All
+    elements will be grouped together in a ParentPane.
+  - so basically if you're going to use the existing Widgets, ideally just use
+    them as elements (they all also fulfill the Element trait currently)
+- Taffy is going to be integrated in. It shouldn't change the existing location
+  mechanisms just build on top of them.
+- Window minimization is blocking on the Taffy integration such that the
+  minimized windows can follow a nice grid pattern. Currently minimization
+  works, however multiple minimized windows will stack on each other in the same
+  location. 
+- The $EDITOR text editor element - aka the element where you could use any
+  editor like neovim/vim/emacs(I think?) currently doesn't provide good support
+  for users who HAVEN'T set their $EDITOR env variable. This will be fixed at
+  some point shortly after the widget refactor.
 
 ## Tribute
 
