@@ -18,6 +18,14 @@
      - it happens in both vertical and horizontal scrollbars
      - it happens in both scroll forwards and scroll backwards
      - seems like the error exists in drag_backwards_by_1_ch (and forwards_by..)
+01. titles inside border: ┌hello───┐
+                          │        │
+                          │        │
+                          └────────┘
+01. add tags to cargo file 
+01. Add license
+01. add license and license-file fields to cargo.toml
+     - https://doc.rust-lang.org/cargo/reference/manifest.html
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -47,19 +55,12 @@ WIDGET RECALL REFACTOR
     (applied in add_widget)
 
 01. docs docs docs
- https://doc.rust-lang.org/rustdoc/how-to-write-documentation.html
-  - https://lib.rs/crates/utoipa
 
 01. gifs gifs gifs
 
-01. add tags to cargo file 
+01. add docs, crates button banners to github readme
 
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-01. titles inside border: ┌hello───┐
-                          │        │
-                          │        │
-                          └────────┘
 
 01. terminal_editor - get the no-editor elements hooked up.
 01. terminal_editor - autoexpanding based on text size in buffer (like zell
@@ -287,6 +288,22 @@ One letter labels
          of the DrawCh based on the cell underneath of it
           - kind of like how transparency takes the cell underneath maybe
             the ChPlus could also have custom applications based on whats under
+
+20. ScrollablePane: Ensure Element visible. Feed in an element-is then the scrollable pane 
+    should move the view to ensure that the provided element is visible.
+
+20. listbox over entire elements
+    - abstract the listbox selector except to allow for an
+      arbitrary interface.
+    - THEN build a new viewer which could house an entire element within
+      a "selectable item"
+      - selecting that item could overlay a colored border for instance.
+    - allow for elements to be listed in any fashion, possibly completely 
+      independantly of the listbox logic altogether, all it would need to have 
+      is a list of all the elements (which defines the order of those elements). 
+    - These elements would need to be able handling 
+      special events: "cursor highlight", "select", "cursor unhighlight" 
+    - would need ScrollablePane Ensure Element Visible
     
 10. vertical tabs (like brave)
 

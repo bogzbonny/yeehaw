@@ -171,8 +171,13 @@ be considered with an open mind, if you'd like to build and element and merge it
 into yeehaw It'd be an honour. If you'd like to build a element with highly
 specific needs and the current Element trait is non-satisfactory, let's adjust
 it. 
-All contributions merged are considered to have the same LICENSE as this repo.
-Additionally this repo will be transitioning to dynamic ownership based on
-contributions in the future, so if your code becomes merged then your be gaining
-a part piece of ownership in the project whenever dynamic ownership is
-integrated in (more on that later!).
+This repo will be transitioning to dynamic ownership based on contributions in
+the future, so if your code becomes merged then your be gaining a part piece of
+ownership in the project whenever dynamic ownership is integrated in (more on
+that later!).
+
+Unless you explicitly state otherwise, any contribution you intentionally submit
+for inclusion in the work, as defined in the Apache-2.0 license, shall be
+Apache-2.0 license, without any additional terms or conditions.
+
+
