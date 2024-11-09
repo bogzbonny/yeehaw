@@ -150,7 +150,8 @@ async fn main() -> Result<(), Error> {
             .with_style(Style::default().with_bg(bg).with_fg(Color::BLACK));
 
         let bordered =
-            Bordered::new_resizer(&ctx_, Box::new(el), sty.clone().with_fg(Color::BLACK));
+            Bordered::new_resizer(&ctx_, Box::new(el), sty.clone().with_fg(Color::BLACK))
+                .with_title(&title);
 
         *counter_.borrow_mut() += 1;
         let window = WindowPane::new(&ctx_, Box::new(bordered), &title)
@@ -184,7 +185,8 @@ async fn main() -> Result<(), Error> {
             .with_default_ch(def_ch)
             .with_style(Style::default().with_bg(bg).with_fg(Color::BLACK));
 
-        let bordered = Bordered::new_mover(&ctx_, Box::new(el), sty.clone().with_fg(Color::BLACK));
+        let bordered = Bordered::new_mover(&ctx_, Box::new(el), sty.clone().with_fg(Color::BLACK))
+            .with_title(&title);
 
         *counter_.borrow_mut() += 1;
         let window = WindowPane::new(&ctx_, Box::new(bordered), &title)
@@ -225,7 +227,8 @@ async fn main() -> Result<(), Error> {
             &ctx_,
             Box::new(sc_pane),
             sty.clone().with_fg(Color::BLACK),
-        );
+        )
+        .with_title(&title);
 
         *counter_.borrow_mut() += 1;
         let window = WindowPane::new(&ctx_, Box::new(bordered), &title)

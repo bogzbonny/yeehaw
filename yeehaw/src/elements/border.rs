@@ -9,6 +9,16 @@ use {
 pub struct Bordered {
     pub pane: ParentPane,
     pub inner: Rc<RefCell<Box<dyn Element>>>,
+
+    /// left border element
+    pub left: Rc<RefCell<Option<VerticalSide>>>,
+    /// right border element
+    pub right: Rc<RefCell<Option<VerticalSide>>>,
+    /// top border element
+    pub top: Rc<RefCell<Option<HorizontalSide>>>,
+    /// bottom border element
+    pub bottom: Rc<RefCell<Option<HorizontalSide>>>,
+
     pub last_size: Rc<RefCell<Size>>,
     /// needed for knowing when to resize scrollbars
     pub x_scrollbar: Rc<RefCell<Option<HorizontalScrollbar>>>,
@@ -526,6 +536,162 @@ impl Bordered {
         Self::new(ctx, inner, chs, properties)
     }
 
+    pub fn with_title<S: Into<String>>(self, title: S) -> Self {
+        if let Some(ref top) = *self.top.borrow() {
+            (*top).set_left_text(title);
+        }
+        self
+    }
+
+    pub fn set_title<S: Into<String>>(&self, title: S) {
+        if let Some(ref top) = *self.top.borrow() {
+            (*top).set_left_text(title);
+        }
+    }
+
+    pub fn with_title_right<S: Into<String>>(self, title: S) -> Self {
+        if let Some(ref top) = *self.top.borrow() {
+            (*top).set_right_text(title);
+        }
+        self
+    }
+
+    pub fn set_title_right<S: Into<String>>(&self, title: S) {
+        if let Some(ref top) = *self.top.borrow() {
+            (*top).set_right_text(title);
+        }
+    }
+
+    pub fn with_title_center<S: Into<String>>(self, title: S) -> Self {
+        if let Some(ref top) = *self.top.borrow() {
+            (*top).set_center_text(title);
+        }
+        self
+    }
+
+    pub fn set_title_center<S: Into<String>>(&self, title: S) {
+        if let Some(ref top) = *self.top.borrow() {
+            (*top).set_center_text(title);
+        }
+    }
+
+    pub fn with_bottom_left_text<S: Into<String>>(self, text: S) -> Self {
+        if let Some(ref bottom) = *self.bottom.borrow() {
+            (*bottom).set_left_text(text);
+        }
+        self
+    }
+
+    pub fn set_bottom_left_text<S: Into<String>>(&self, text: S) {
+        if let Some(ref bottom) = *self.bottom.borrow() {
+            (*bottom).set_left_text(text);
+        }
+    }
+
+    pub fn with_bottom_right_text<S: Into<String>>(self, text: S) -> Self {
+        if let Some(ref bottom) = *self.bottom.borrow() {
+            (*bottom).set_right_text(text);
+        }
+        self
+    }
+
+    pub fn set_bottom_right_text<S: Into<String>>(&self, text: S) {
+        if let Some(ref bottom) = *self.bottom.borrow() {
+            (*bottom).set_right_text(text);
+        }
+    }
+
+    pub fn with_bottom_center_text<S: Into<String>>(self, text: S) -> Self {
+        if let Some(ref bottom) = *self.bottom.borrow() {
+            (*bottom).set_center_text(text);
+        }
+        self
+    }
+
+    pub fn set_bottom_center_text<S: Into<String>>(&self, text: S) {
+        if let Some(ref bottom) = *self.bottom.borrow() {
+            (*bottom).set_center_text(text);
+        }
+    }
+
+    pub fn with_left_top_text<S: Into<String>>(self, text: S) -> Self {
+        if let Some(ref left) = *self.left.borrow() {
+            (*left).set_top_text(text);
+        }
+        self
+    }
+
+    pub fn set_left_top_text<S: Into<String>>(&self, text: S) {
+        if let Some(ref left) = *self.left.borrow() {
+            (*left).set_top_text(text);
+        }
+    }
+
+    pub fn with_left_bottom_text<S: Into<String>>(self, text: S) -> Self {
+        if let Some(ref left) = *self.left.borrow() {
+            (*left).set_bottom_text(text);
+        }
+        self
+    }
+
+    pub fn set_left_bottom_text<S: Into<String>>(&self, text: S) {
+        if let Some(ref left) = *self.left.borrow() {
+            (*left).set_bottom_text(text);
+        }
+    }
+
+    pub fn with_left_center_text<S: Into<String>>(self, text: S) -> Self {
+        if let Some(ref left) = *self.left.borrow() {
+            (*left).set_center_text(text);
+        }
+        self
+    }
+
+    pub fn set_left_center_text<S: Into<String>>(&self, text: S) {
+        if let Some(ref left) = *self.left.borrow() {
+            (*left).set_center_text(text);
+        }
+    }
+
+    pub fn with_right_top_text<S: Into<String>>(self, text: S) -> Self {
+        if let Some(ref right) = *self.right.borrow() {
+            (*right).set_top_text(text);
+        }
+        self
+    }
+
+    pub fn set_right_top_text<S: Into<String>>(&self, text: S) {
+        if let Some(ref right) = *self.right.borrow() {
+            (*right).set_top_text(text);
+        }
+    }
+
+    pub fn with_right_bottom_text<S: Into<String>>(self, text: S) -> Self {
+        if let Some(ref right) = *self.right.borrow() {
+            (*right).set_bottom_text(text);
+        }
+        self
+    }
+
+    pub fn set_right_bottom_text<S: Into<String>>(&self, text: S) {
+        if let Some(ref right) = *self.right.borrow() {
+            (*right).set_bottom_text(text);
+        }
+    }
+
+    pub fn with_right_center_text<S: Into<String>>(self, text: S) -> Self {
+        if let Some(ref right) = *self.right.borrow() {
+            (*right).set_center_text(text);
+        }
+        self
+    }
+
+    pub fn set_right_center_text<S: Into<String>>(&self, text: S) {
+        if let Some(ref right) = *self.right.borrow() {
+            (*right).set_center_text(text);
+        }
+    }
+
     /// NOTE SB-1
     /// THERE is a strange issue with the scrollbars here, using the HorizontalScrollbar as an
     /// example:
@@ -559,6 +725,12 @@ impl Bordered {
         let bordered = Self {
             pane,
             inner: Rc::new(RefCell::new(inner.clone())),
+
+            left: Rc::new(RefCell::new(None)),
+            right: Rc::new(RefCell::new(None)),
+            top: Rc::new(RefCell::new(None)),
+            bottom: Rc::new(RefCell::new(None)),
+
             last_size: Rc::new(RefCell::new(ctx.s)),
             x_scrollbar: Rc::new(RefCell::new(None)),
             y_scrollbar: Rc::new(RefCell::new(None)),
@@ -673,7 +845,8 @@ impl Bordered {
                 let side =
                     VerticalSide::new(ctx, chs_left.clone(), VerticalPos::Left, left_property);
                 side.pane.get_dyn_location_set().borrow_mut().l = left_loc;
-                bordered.pane.add_element(Box::new(side));
+                bordered.pane.add_element(Box::new(side.clone()));
+                bordered.left.borrow_mut().replace(side);
             }
         }
 
@@ -721,7 +894,8 @@ impl Bordered {
                 let side =
                     VerticalSide::new(ctx, chs_right.clone(), VerticalPos::Right, right_property);
                 side.pane.get_dyn_location_set().borrow_mut().l = right_loc;
-                bordered.pane.add_element(Box::new(side));
+                bordered.pane.add_element(Box::new(side.clone()));
+                bordered.right.borrow_mut().replace(side);
             }
         }
 
@@ -759,7 +933,8 @@ impl Bordered {
                 let side =
                     HorizontalSide::new(ctx, chs_top.clone(), HorizontalPos::Top, top_property);
                 side.pane.get_dyn_location_set().borrow_mut().l = top_loc;
-                bordered.pane.add_element(Box::new(side));
+                bordered.pane.add_element(Box::new(side.clone()));
+                bordered.top.borrow_mut().replace(side);
             }
         }
 
@@ -806,7 +981,8 @@ impl Bordered {
                     bottom_property,
                 );
                 side.pane.get_dyn_location_set().borrow_mut().l = bottom_loc;
-                bordered.pane.add_element(Box::new(side));
+                bordered.pane.add_element(Box::new(side.clone()));
+                bordered.bottom.borrow_mut().replace(side);
             }
         }
 
@@ -984,6 +1160,7 @@ pub struct VerticalSide {
     pub ch: Rc<RefCell<DrawCh>>,
     pub pos: Rc<RefCell<VerticalPos>>,
     pub property: Rc<RefCell<PropertyVrt>>,
+    #[allow(clippy::type_complexity)]
     pub text: Rc<RefCell<Option<(Vec<DrawCh>, Justification)>>>,
     /// postion where dragging started x, y
     pub dragging_start_pos: Rc<RefCell<Option<(i32, i32)>>>,
@@ -1014,6 +1191,51 @@ impl VerticalSide {
         }
     }
 
+    pub fn with_top_text<S: Into<String>>(self, text: S) -> Self {
+        let sty = self.ch.borrow().style.clone();
+        let j = Justification::Start;
+        let text = DrawCh::str_to_draw_chs(&text.into(), sty);
+        *self.text.borrow_mut() = Some((text, j));
+        self
+    }
+
+    pub fn set_top_text<S: Into<String>>(&self, text: S) {
+        let sty = self.ch.borrow().style.clone();
+        let j = Justification::Start;
+        let text = DrawCh::str_to_draw_chs(&text.into(), sty);
+        *self.text.borrow_mut() = Some((text, j));
+    }
+
+    pub fn with_bottom_text<S: Into<String>>(self, text: S) -> Self {
+        let sty = self.ch.borrow().style.clone();
+        let j = Justification::End;
+        let text = DrawCh::str_to_draw_chs(&text.into(), sty);
+        *self.text.borrow_mut() = Some((text, j));
+        self
+    }
+
+    pub fn set_bottom_text<S: Into<String>>(&self, text: S) {
+        let sty = self.ch.borrow().style.clone();
+        let j = Justification::End;
+        let text = DrawCh::str_to_draw_chs(&text.into(), sty);
+        *self.text.borrow_mut() = Some((text, j));
+    }
+
+    pub fn with_center_text<S: Into<String>>(self, text: S) -> Self {
+        let sty = self.ch.borrow().style.clone();
+        let j = Justification::Center;
+        let text = DrawCh::str_to_draw_chs(&text.into(), sty);
+        *self.text.borrow_mut() = Some((text, j));
+        self
+    }
+
+    pub fn set_center_text<S: Into<String>>(&self, text: S) {
+        let sty = self.ch.borrow().style.clone();
+        let j = Justification::Center;
+        let text = DrawCh::str_to_draw_chs(&text.into(), sty);
+        *self.text.borrow_mut() = Some((text, j));
+    }
+
     pub fn at(self, x: DynVal, y: DynVal) -> Self {
         self.pane.set_at(x, y);
         self
@@ -1023,7 +1245,32 @@ impl VerticalSide {
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for VerticalSide {
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        DrawChPos::new_repeated_vertical(self.ch.borrow().clone(), 0, 0, ctx.s.height)
+        let Some((ref text, ref j)) = *self.text.borrow() else {
+            return DrawChPos::new_repeated_vertical(self.ch.borrow().clone(), 0, 0, ctx.s.height);
+        };
+
+        let text_height = text.len() as u16;
+        let (start_y, end_y) = match j {
+            Justification::Start => (0u16, text_height),
+            Justification::Center => {
+                let start_y = (ctx.s.height - text_height) / 2;
+                (start_y, start_y + text_height)
+            }
+            Justification::End => (ctx.s.height - text_height, ctx.s.height),
+        };
+        let mut out = Vec::with_capacity(ctx.s.height as usize);
+        let mut text_i = 0;
+        for y in 0..ctx.s.height {
+            if y >= start_y && y < end_y {
+                if let Some(ch) = text.get(text_i) {
+                    out.push(DrawChPos::new(ch.clone(), 0, y));
+                    text_i += 1;
+                    continue;
+                }
+            }
+            out.push(DrawChPos::new(self.ch.borrow().clone(), 0, y));
+        }
+        out
     }
 
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
@@ -1105,6 +1352,7 @@ pub struct HorizontalSide {
     pub ch: Rc<RefCell<DrawCh>>,
     pub pos: Rc<RefCell<HorizontalPos>>,
     pub property: Rc<RefCell<PropertyHzt>>,
+    #[allow(clippy::type_complexity)]
     pub text: Rc<RefCell<Option<(Vec<DrawCh>, Justification)>>>,
     /// x, y
     pub dragging_start_pos: Rc<RefCell<Option<(i32, i32)>>>,
@@ -1136,7 +1384,7 @@ impl HorizontalSide {
         }
     }
 
-    pub fn with_top_text<S: Into<String>>(self, text: S) -> Self {
+    pub fn with_left_text<S: Into<String>>(self, text: S) -> Self {
         let sty = self.ch.borrow().style.clone();
         let j = Justification::Start;
         let text = DrawCh::str_to_draw_chs(&text.into(), sty);
@@ -1144,12 +1392,26 @@ impl HorizontalSide {
         self
     }
 
-    pub fn with_bottom_text<S: Into<String>>(self, text: S) -> Self {
+    pub fn set_left_text<S: Into<String>>(&self, text: S) {
+        let sty = self.ch.borrow().style.clone();
+        let j = Justification::Start;
+        let text = DrawCh::str_to_draw_chs(&text.into(), sty);
+        *self.text.borrow_mut() = Some((text, j));
+    }
+
+    pub fn with_right_text<S: Into<String>>(self, text: S) -> Self {
         let sty = self.ch.borrow().style.clone();
         let j = Justification::End;
         let text = DrawCh::str_to_draw_chs(&text.into(), sty);
         *self.text.borrow_mut() = Some((text, j));
         self
+    }
+
+    pub fn set_right_text<S: Into<String>>(&self, text: S) {
+        let sty = self.ch.borrow().style.clone();
+        let j = Justification::End;
+        let text = DrawCh::str_to_draw_chs(&text.into(), sty);
+        *self.text.borrow_mut() = Some((text, j));
     }
 
     pub fn with_center_text<S: Into<String>>(self, text: S) -> Self {
@@ -1158,6 +1420,13 @@ impl HorizontalSide {
         let text = DrawCh::str_to_draw_chs(&text.into(), sty);
         *self.text.borrow_mut() = Some((text, j));
         self
+    }
+
+    pub fn set_center_text<S: Into<String>>(&self, text: S) {
+        let sty = self.ch.borrow().style.clone();
+        let j = Justification::Center;
+        let text = DrawCh::str_to_draw_chs(&text.into(), sty);
+        *self.text.borrow_mut() = Some((text, j));
     }
 
     pub fn at(self, x: DynVal, y: DynVal) -> Self {
@@ -1169,10 +1438,8 @@ impl HorizontalSide {
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for HorizontalSide {
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        let out = DrawChPos::new_repeated_horizontal(self.ch.borrow().clone(), 0, 0, ctx.s.width);
-
         let Some((ref text, ref j)) = *self.text.borrow() else {
-            return out;
+            return DrawChPos::new_repeated_horizontal(self.ch.borrow().clone(), 0, 0, ctx.s.width);
         };
 
         let text_width = text.len() as u16;
@@ -1184,17 +1451,18 @@ impl Element for HorizontalSide {
             }
             Justification::End => (ctx.s.width - text_width, ctx.s.width),
         };
-        let mut out = out;
-        let mut x = start_x;
-        for (i, ch) in text.iter().enumerate() {
-            if i as u16 >= start_x && (i as u16) < end_x {
-                // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-                asdklfjadsjfk
-                out.push(DrawChPos::new(ch.clone(), x, 0));
+        let mut out = Vec::with_capacity(ctx.s.width as usize);
+        let mut text_i = 0;
+        for x in 0..ctx.s.width {
+            if x >= start_x && x < end_x {
+                if let Some(ch) = text.get(text_i) {
+                    out.push(DrawChPos::new(ch.clone(), x, 0));
+                    text_i += 1;
+                    continue;
+                }
             }
-            x += 1;
+            out.push(DrawChPos::new(self.ch.borrow().clone(), x, 0));
         }
-
         out
     }
 
