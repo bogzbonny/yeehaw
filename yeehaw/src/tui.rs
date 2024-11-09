@@ -28,7 +28,7 @@ use {
 /// this value is set too large it will give the tui a laggy feel.
 const ANIMATION_SPEED: Duration = Duration::from_micros(100);
 
-/// configuration of a tui zelt instance
+/// configuration of a tui instance
 pub struct Tui {
     cup: TuiParent,
     main_el_id: ElementID,

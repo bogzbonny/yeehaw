@@ -168,8 +168,8 @@ impl Keyboard {
 
     //---------------------------------------
 
-    /// The last number ignoring the previous [ignoring_previous] number of prevRunes
-    ///pub fn last_number(&self, ignoring_previous: usize) -> Option<i64> {
+    /// The last number ignoring the previous `ignoring_previous` number of prevRunes
+    ///
     /// NOTE translation ignoreing_previous must be one greater than whatever
     /// it was set too in the original code
     pub fn last_number_ignoring(&self, ignoring_previous: usize) -> Option<u64> {

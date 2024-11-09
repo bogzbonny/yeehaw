@@ -102,7 +102,6 @@ impl ElementOrganizer {
     }
 
     /// get_element_by_id returns the element registered under the given id in the eo
-    ///pub fn get_element_by_id(&self, el_id: &ElementID) -> Option<Rc<RefCell<dyn Element>>> {
     pub fn get_element(&self, el_id: &ElementID) -> Option<Box<dyn Element>> {
         self.els.borrow().get(el_id).map(|ed| ed.el.clone())
     }

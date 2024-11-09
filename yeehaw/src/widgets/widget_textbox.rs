@@ -13,11 +13,11 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-/// TODO better multiline cursor movement
-/// retain greater cursor position between lines, ex:
-///    123456789<cursor, starting position>
-///    1234<cursor after moving down>
-///    123456789<cursor, after moving down again>
+// TODO better multiline cursor movement
+// retain greater cursor position between lines, ex:
+//    123456789<cursor, starting position>
+//    1234<cursor after moving down>
+//    123456789<cursor, after moving down again>
 
 #[allow(clippy::type_complexity)]
 #[derive(Clone)]
