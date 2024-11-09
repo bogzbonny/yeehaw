@@ -9,10 +9,10 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-/// TODO add :command hints on the right hand side for command menu items
-///      kind of like mac hotkey hints
-/// TODO add keyboard interation
-/// TODO multiline menu items
+// TODO add :command hints on the right hand side for command menu items
+//      kind of like mac hotkey hints
+// TODO add keyboard interation
+// TODO multiline menu items
 
 #[derive(Clone)]
 pub struct MenuBar {

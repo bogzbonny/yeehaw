@@ -9,10 +9,9 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-///pub struct RightClickMenuTemplate(pub MenuBar);
-
 // ---------------------------------------------------
-/// The menu destroys itself when it is closed.
+
+/// This menu destroys itself when it is closed.
 #[derive(Clone)]
 pub struct RightClickMenu {
     pub menu: MenuBar,

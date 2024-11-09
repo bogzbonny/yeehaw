@@ -969,6 +969,14 @@ impl Element for Corner {
 
 // ------------------------------------------------------------------------------------------
 
+pub enum Justification {
+    /// left or top justified
+    Start,
+    Center,
+    /// right or bottom justified
+    End,
+}
+
 /// a vertical side of the border
 #[derive(Clone)]
 pub struct VerticalSide {
@@ -976,7 +984,8 @@ pub struct VerticalSide {
     pub ch: Rc<RefCell<DrawCh>>,
     pub pos: Rc<RefCell<VerticalPos>>,
     pub property: Rc<RefCell<PropertyVrt>>,
-    /// x, y
+    pub text: Rc<RefCell<Option<(Vec<DrawCh>, Justification)>>>,
+    /// postion where dragging started x, y
     pub dragging_start_pos: Rc<RefCell<Option<(i32, i32)>>>,
 }
 
@@ -1000,6 +1009,7 @@ impl VerticalSide {
             ch: Rc::new(RefCell::new(ch)),
             pos: Rc::new(RefCell::new(pos)),
             property: Rc::new(RefCell::new(property)),
+            text: Rc::new(RefCell::new(None)),
             dragging_start_pos: Rc::new(RefCell::new(None)),
         }
     }
@@ -1095,6 +1105,7 @@ pub struct HorizontalSide {
     pub ch: Rc<RefCell<DrawCh>>,
     pub pos: Rc<RefCell<HorizontalPos>>,
     pub property: Rc<RefCell<PropertyHzt>>,
+    pub text: Rc<RefCell<Option<(Vec<DrawCh>, Justification)>>>,
     /// x, y
     pub dragging_start_pos: Rc<RefCell<Option<(i32, i32)>>>,
 }
@@ -1120,8 +1131,33 @@ impl HorizontalSide {
             ch: Rc::new(RefCell::new(ch)),
             pos: Rc::new(RefCell::new(pos)),
             property: Rc::new(RefCell::new(property)),
+            text: Rc::new(RefCell::new(None)),
             dragging_start_pos: Rc::new(RefCell::new(None)),
         }
+    }
+
+    pub fn with_top_text<S: Into<String>>(self, text: S) -> Self {
+        let sty = self.ch.borrow().style.clone();
+        let j = Justification::Start;
+        let text = DrawCh::str_to_draw_chs(&text.into(), sty);
+        *self.text.borrow_mut() = Some((text, j));
+        self
+    }
+
+    pub fn with_bottom_text<S: Into<String>>(self, text: S) -> Self {
+        let sty = self.ch.borrow().style.clone();
+        let j = Justification::End;
+        let text = DrawCh::str_to_draw_chs(&text.into(), sty);
+        *self.text.borrow_mut() = Some((text, j));
+        self
+    }
+
+    pub fn with_center_text<S: Into<String>>(self, text: S) -> Self {
+        let sty = self.ch.borrow().style.clone();
+        let j = Justification::Center;
+        let text = DrawCh::str_to_draw_chs(&text.into(), sty);
+        *self.text.borrow_mut() = Some((text, j));
+        self
     }
 
     pub fn at(self, x: DynVal, y: DynVal) -> Self {
@@ -1133,7 +1169,33 @@ impl HorizontalSide {
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for HorizontalSide {
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        DrawChPos::new_repeated_horizontal(self.ch.borrow().clone(), 0, 0, ctx.s.width)
+        let out = DrawChPos::new_repeated_horizontal(self.ch.borrow().clone(), 0, 0, ctx.s.width);
+
+        let Some((ref text, ref j)) = *self.text.borrow() else {
+            return out;
+        };
+
+        let text_width = text.len() as u16;
+        let (start_x, end_x) = match j {
+            Justification::Start => (0u16, text_width),
+            Justification::Center => {
+                let start_x = (ctx.s.width - text_width) / 2;
+                (start_x, start_x + text_width)
+            }
+            Justification::End => (ctx.s.width - text_width, ctx.s.width),
+        };
+        let mut out = out;
+        let mut x = start_x;
+        for (i, ch) in text.iter().enumerate() {
+            if i as u16 >= start_x && (i as u16) < end_x {
+                // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+                asdklfjadsjfk
+                out.push(DrawChPos::new(ch.clone(), x, 0));
+            }
+            x += 1;
+        }
+
+        out
     }
 
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {

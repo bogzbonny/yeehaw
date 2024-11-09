@@ -12,7 +12,7 @@ use {
     },
 };
 
-/// TODO mouse functionality
+// TODO mouse functionality
 
 /// displays the size
 #[derive(Clone)]

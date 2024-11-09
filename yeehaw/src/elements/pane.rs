@@ -16,8 +16,9 @@ use {
 pub struct Pane {
     kind: Rc<RefCell<&'static str>>,
 
+    /// element-id as assigned by the sorting-hat
     id: Rc<RefCell<String>>,
-    /// element-id as assigned by the sorting-ctx
+
     attributes: Rc<RefCell<HashMap<String, Vec<u8>>>>,
 
     /// The SelfEvs are NOT handled by the standard pane. The element inheriting the

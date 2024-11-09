@@ -52,7 +52,14 @@ WIDGET RECALL REFACTOR
 
 01. gifs gifs gifs
 
+01. add tags to cargo file 
+
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+01. titles inside border: ┌hello───┐
+                          │        │
+                          │        │
+                          └────────┘
 
 01. terminal_editor - get the no-editor elements hooked up.
 01. terminal_editor - autoexpanding based on text size in buffer (like zell

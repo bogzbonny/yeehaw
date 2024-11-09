@@ -15,8 +15,8 @@ use {
 pub struct Context {
     pub s: Size,
     pub dur_since_launch: std::time::Duration,
-    pub visible_region: Option<Loc>,
     /// the visible region of the element
+    pub visible_region: Option<Loc>,
     //                      key , value
     pub metadata: HashMap<String, Vec<u8>>,
     pub parent_ctx: Option<Box<Context>>,
@@ -25,19 +25,6 @@ pub struct Context {
 }
 
 impl Context {
-    //pub fn new(
-    //    s: Size, dur_since_launch: std::time::Duration, visible_region: Option<Loc>,
-    //    metadata: HashMap<String, Vec<u8>>, parent_ctx: Box<Context>,
-    //) -> Context {
-    //    Context {
-    //        s,
-    //        dur_since_launch,
-    //        visible_region,
-    //        metadata,
-    //        parent_ctx: Some(parent_ctx),
-    //    }
-    //}
-
     // TODO return error
     pub fn new_context_for_screen_no_dur(hat: &SortingHat, ev_tx: Sender<Event>) -> Context {
         let (xmax, ymax) = crossterm::terminal::size().unwrap();

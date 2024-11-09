@@ -7,12 +7,11 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-/// TODO Top bar movements should be added to the Top Bar logic instead of the window logic
-/// TODO animation for minimize/restore, should have one frame in the middle
-///      in the middle location between the restore position and start position.
-///      for that animation frame should just be the minimized top-bar
+// TODO Top bar movements should be added to the Top Bar logic instead of the window logic
+// TODO animation for minimize/restore, should have one frame in the middle
+//      in the middle location between the restore position and start position.
+//      for that animation frame should just be the minimized top-bar
 
-// ---------------------------------------------------
 #[derive(Clone)]
 pub struct WindowPane {
     pub pane: ParentPane,
