@@ -14,7 +14,8 @@ pub struct WidgetPane {
     pub pane: ParentPane,
     #[allow(clippy::type_complexity)]
     widgets: Rc<RefCell<Vec<(Box<dyn Widget>, Rc<RefCell<DynLocationSet>>)>>>,
-    active_widget_index: Rc<RefCell<Option<usize>>>, /// None means no widget active
+    /// None means no widget active
+    active_widget_index: Rc<RefCell<Option<usize>>>,
 }
 
 impl WidgetPane {
@@ -65,7 +66,7 @@ impl WidgetPane {
             .extend(w.receivable().0);
         w.get_dyn_location_set().borrow_mut().set_z(w.get_z_index());
         let loc = w.get_dyn_location_set();
-        ///self.pane.add_element(Rc::new(RefCell::new(w))); /// TODO add to the element organizer
+        //self.pane.add_element(Rc::new(RefCell::new(w))); // TODO add to the element organizer
         self.widgets.borrow_mut().push((w, loc));
     }
 
@@ -113,7 +114,7 @@ impl WidgetPane {
                 .set_selectability(ctx, Selectability::Ready);
             *self.active_widget_index.borrow_mut() = None;
             self.process_widget_resps(ctx, &mut resps, i);
-            /// ignore all unprocessed responses besides receivable event changes
+            // ignore all unprocessed responses besides receivable event changes
             resps.get_receivable_event_changes()
         } else {
             ReceivableEventChanges::default()
@@ -127,12 +128,12 @@ impl WidgetPane {
         for resp in resps.0.iter_mut() {
             let mut modified_resp = None;
             match resp {
-                /// NOTE currently only new element extra responses are not processed!!!
-                ///      all this widget functionality needs to be refactored to reuse the
-                ///      organizer
+                // NOTE currently only new element extra responses are not processed!!!
+                //      all this widget functionality needs to be refactored to reuse the
+                //      organizer
                 EventResponse::NewElement(new_el, _) => {
-                    /// adjust right click menu location to the widget
-                    /// location which made the request
+                    // adjust right click menu location to the widget
+                    // location which made the request
                     let loc = self.widgets.borrow()[widget_index].1.borrow().clone();
                     new_el
                         .get_dyn_location_set()
@@ -204,7 +205,7 @@ impl WidgetPane {
                 return Some(working_index);
             }
             if working_index == starting_index {
-                /// we've come full circle just return the same index
+                // we've come full circle just return the same index
                 return Some(starting_index);
             }
         }
@@ -227,7 +228,7 @@ impl WidgetPane {
                 return Some(working_index);
             }
             if working_index == starting_index {
-                /// we've come full circle just return the same index
+                // we've come full circle just return the same index
                 return Some(starting_index);
             }
         }
@@ -283,17 +284,17 @@ impl WidgetPane {
         &self,
         ctx: &Context,
         ev: crossterm::event::MouseEvent,
-        ///(captured, resp     )
+        //(captured, resp     )
     ) -> (bool, EventResponses) {
         let mut clicked = false;
         if let MouseEventKind::Up(MouseButton::Left) = ev.kind {
             clicked = true;
         }
 
-        let mut most_front_z_index = 0; /// highest value is the most front
-        let mut widget_index_loc = None; /// index of widget with most front z index
+        let mut most_front_z_index = 0; // highest value is the most front
+        let mut widget_index_loc = None; // index of widget with most front z index
 
-        /// find the widget with the most front z index
+        // find the widget with the most front z index
         for (i, (_, loc)) in self.widgets.borrow().iter().enumerate() {
             let loc = loc.borrow();
             if loc.contains(ctx, ev.column.into(), ev.row.into()) && loc.z > most_front_z_index {
@@ -367,17 +368,17 @@ impl Element for WidgetPane {
     /// Returns the widget organizer's receivable events along
     /// with the standard pane's self events.
     fn receivable(&self) -> SelfReceivableEvents {
-        /// all of the events returned by the widget organizer are set to
-        /// focused because WO.Receivable only returns the events associated with
-        /// widget that is currently active.
+        // all of the events returned by the widget organizer are set to
+        // focused because WO.Receivable only returns the events associated with
+        // widget that is currently active.
 
         let wpes = match *self.active_widget_index.borrow() {
             Some(i) => self.widgets.borrow()[i].0.receivable(),
             None => SelfReceivableEvents::default(),
         };
 
-        /// Add the widget pane's self events. These are default receivable events of the widget
-        /// organizer
+        // Add the widget pane's self events. These are default receivable events of the widget
+        // organizer
         let mut rec = self.pane.receivable();
         rec.extend(wpes.0);
         rec
@@ -422,7 +423,7 @@ impl Element for WidgetPane {
         let active_index = *self.active_widget_index.borrow();
 
         for (i, (w, loc)) in self.widgets.borrow().iter().enumerate() {
-            /// skip the active widget the will be drawn on the top after
+            // skip the active widget the will be drawn on the top after
             if Some(i) == active_index {
                 continue;
             }
@@ -438,25 +439,25 @@ impl Element for WidgetPane {
                 d.update_colors_for_time_and_pos(ctx);
             }
             for mut d in ds {
-                /// adjust the location of the drawChPos relative to the WidgetPane
+                // adjust the location of the drawChPos relative to the WidgetPane
                 d.adjust_by_dyn_location(ctx, &loc.borrow().l);
-                /// filter out chs that are outside of the WidgetPane bounds
+                // filter out chs that are outside of the WidgetPane bounds
                 if d.y < ctx.s.height && d.x < ctx.s.width {
                     chs.push(d);
                 }
             }
         }
 
-        /// lastly draw the active widget on top
+        // lastly draw the active widget on top
         if let Some(i) = active_index {
             let ds = self.widgets.borrow()[i].0.drawing(ctx);
             let locs = self.widgets.borrow()[i].1.clone();
 
             for mut d in ds {
-                /// adjust the location of the drawChPos relative to the WidgetPane
+                // adjust the location of the drawChPos relative to the WidgetPane
                 d.adjust_by_dyn_location(ctx, &locs.borrow().l);
 
-                /// filter out chs that are outside of the WidgetPane bounds
+                // filter out chs that are outside of the WidgetPane bounds
                 if d.y < ctx.s.height && d.x < ctx.s.width {
                     chs.push(d);
                 }

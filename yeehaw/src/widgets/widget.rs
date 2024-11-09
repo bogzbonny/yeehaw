@@ -48,7 +48,7 @@ pub trait Widget: Element {
         match serde_json::from_slice(&bz) {
             Ok(v) => v,
             Err(_e) => {
-                /// TODO log error
+                // TODO log error
                 Selectability::Ready
             }
         }
@@ -58,7 +58,7 @@ pub trait Widget: Element {
         let bz = match serde_json::to_vec(&s) {
             Ok(v) => v,
             Err(_e) => {
-                /// TODO log error
+                // TODO log error
                 return;
             }
         };
@@ -83,8 +83,9 @@ pub trait Widget: Element {
         let mut rec = ReceivableEventChanges::default();
         match s {
             Selectability::Selected => {
-                self.set_attr_selectability(s); /// NOTE needs to happen before the next line or
-                                                /// else receivable will return the wrong value
+                self.set_attr_selectability(s);
+                // NOTE needs to happen before the next line or
+                // else receivable will return the wrong value
                 rec.push_add_evs(self.receivable().0)
             }
             Selectability::Ready | Selectability::Unselectable => {
@@ -93,8 +94,8 @@ pub trait Widget: Element {
                         self.receivable().iter().map(|(ev, _)| ev.clone()).collect(),
                     );
                 }
-                self.set_attr_selectability(s); /// NOTE needs to after before the prev line or else
-                                                /// receivable will return the wrong value
+                self.set_attr_selectability(s); // NOTE needs to after before the prev line or else
+                                                // receivable will return the wrong value
             }
         }
 
@@ -114,9 +115,12 @@ pub trait Widget: Element {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq)]
 pub enum Selectability {
-    Selected,     /// currently selected
-    Ready,        /// not selected but able to be selected
-    Unselectable, /// unselectable
+    /// currently selected
+    Selected,
+    /// not selected but able to be selected
+    Ready,
+    /// unselectable
+    Unselectable,
 }
 
 impl std::fmt::Display for Selectability {
@@ -130,21 +134,31 @@ impl std::fmt::Display for Selectability {
 }
 
 /// label positions
+///```text
 ///      1  2
 ///     5████7
 ///      ████
 ///     6████8
 ///      3  4
+///```
 #[derive(Clone, Copy, Debug)]
 pub enum LabelPosition {
-    AboveThenLeft,   /// 1
-    AboveThenRight,  /// 2
-    BelowThenLeft,   /// 3
-    BelowThenRight,  /// 4
-    LeftThenTop,     /// 5
-    LeftThenBottom,  /// 6
-    RightThenTop,    /// 7
-    RightThenBottom, /// 8
+    /// 1
+    AboveThenLeft,
+    /// 2
+    AboveThenRight,
+    /// 3
+    BelowThenLeft,
+    /// 4
+    BelowThenRight,
+    /// 5
+    LeftThenTop,
+    /// 6
+    LeftThenBottom,
+    /// 7
+    RightThenTop,
+    /// 8
+    RightThenBottom,
 }
 
 #[derive(Default)]
@@ -187,7 +201,7 @@ impl Widgets {
         p: LabelPosition,
         label_width: usize,
         label_height: usize,
-        ///(x    , y     )
+        //(x    , y     )
     ) -> (DynVal, DynVal) {
         let l = self.overall_loc();
         match p {
@@ -209,7 +223,7 @@ impl Widgets {
     }
 
     pub fn with_label(self, ctx: &Context, l: &str) -> Self {
-        /// label to the right if a width of 1 otherwise label the top left
+        // label to the right if a width of 1 otherwise label the top left
         if self.overall_loc().width(ctx) == 1 {
             self.with_right_top_label(ctx, l)
         } else {
@@ -486,11 +500,11 @@ impl WidgetBase {
             height = rs.len();
         }
 
-        /// initialize the content with blank characters
-        /// of the height and width of the widget
+        // initialize the content with blank characters
+        // of the height and width of the widget
         *self.pane.content.borrow_mut() = DrawChs2D::new_empty_of_size(width, height, sty.clone());
 
-        /// now fill in with actual content
+        // now fill in with actual content
         for y in 0..height {
             for x in 0..width {
                 let r = if y < rs.len() && x < rs[y].len() {
@@ -518,7 +532,7 @@ impl WidgetBase {
         let view_offset_y = *self.pane.content_view_offset_y.borrow();
         let view_offset_x = *self.pane.content_view_offset_x.borrow();
 
-        /// set y offset if cursor out of bounds
+        // set y offset if cursor out of bounds
         if y >= view_offset_y + self.get_height_val(ctx) {
             //debug!("cor1");
             self.set_content_y_offset(ctx, y - self.get_height_val(ctx) + 1);
@@ -527,23 +541,23 @@ impl WidgetBase {
             self.set_content_y_offset(ctx, y);
         }
 
-        /// correct the offset if the offset is now showing lines that don't exist in
-        /// the content
+        // correct the offset if the offset is now showing lines that don't exist in
+        // the content
         //if view_offset_y + self.get_height_val(ctx) > self.content_height() - 1 {
         if view_offset_y + self.get_height_val(ctx) > self.content_height() {
             //debug!("cor3");
             self.set_content_y_offset(ctx, self.content_height());
         }
 
-        /// set x offset if cursor out of bounds
+        // set x offset if cursor out of bounds
         if x >= view_offset_x + self.get_width_val(ctx) {
             self.set_content_x_offset(ctx, x - self.get_width_val(ctx) + 1);
         } else if x < view_offset_x {
             self.set_content_x_offset(ctx, x);
         }
 
-        /// correct the offset if the offset is now showing characters to the right
-        /// which don't exist in the content.
+        // correct the offset if the offset is now showing characters to the right
+        // which don't exist in the content.
         //if view_offset_x + self.get_width_val(ctx) > self.content_width() - 1 {
         if view_offset_x + self.get_width_val(ctx) > self.content_width() {
             self.set_content_x_offset(ctx, self.content_width());
@@ -590,7 +604,8 @@ impl Element for WidgetBase {
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        let sty = self.get_current_style(); /// NOTE this is different than standard_pane draw... unless this should be set somewhere else
+        let sty = self.get_current_style();
+        // NOTE this is different than standard_pane draw... unless this should be set somewhere else
         let h = self.get_height_val(ctx);
         let w = self.get_width_val(ctx);
         let view_offset_y = *self.pane.content_view_offset_y.borrow();

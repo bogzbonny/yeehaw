@@ -33,7 +33,7 @@ impl FigletText {
         };
 
         let text = format!("{}", fig_text);
-        let text = text.trim_end_matches('\n'); /// remove the last newline
+        let text = text.trim_end_matches('\n'); // remove the last newline
         let content = DrawChs2D::from_string(text.to_string(), Style::default());
         let size = content.size();
 

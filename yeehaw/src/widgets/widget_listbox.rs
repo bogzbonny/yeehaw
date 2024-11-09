@@ -16,12 +16,14 @@ use {
 pub struct ListBox {
     pub base: WidgetBase,
     pub entries: Rc<RefCell<Vec<String>>>,
-    pub selected: Rc<RefCell<Vec<usize>>>, /// the entries which have been selected
-    pub cursor: Rc<RefCell<Option<usize>>>, /// position of a listbox cursor
-    pub clicked_down: Rc<RefCell<bool>>,   /// activated when mouse is clicked down while over object
-
-    pub lines_per_item: Rc<RefCell<usize>>, /// how many lines each item is to take up
-
+    pub selected: Rc<RefCell<Vec<usize>>>,
+    /// the entries which have been selected
+    pub cursor: Rc<RefCell<Option<usize>>>,
+    /// position of a listbox cursor
+    pub clicked_down: Rc<RefCell<bool>>,
+    /// activated when mouse is clicked down while over object
+    pub lines_per_item: Rc<RefCell<usize>>,
+    /// how many lines each item is to take up
     pub selection_mode: Rc<RefCell<SelectionMode>>,
 
     #[allow(clippy::type_complexity)]
@@ -40,8 +42,10 @@ pub struct ListBox {
 
 #[derive(Clone)]
 pub enum SelectionMode {
-    Single, /// only one item is selectable at a time, each selection will deselect the previous selected
-    NoLimit, /// all items are selectable
+    Single,
+    /// only one item is selectable at a time, each selection will deselect the previous selected
+    NoLimit,
+    /// all items are selectable
 
     /// n items are selectable at a time, once n items are selected, no more items can
     /// be selected until one of the selected items is deselected
@@ -64,10 +68,8 @@ impl ListBox {
     };
 
     const STYLE_ITEM_SELECTED: Style = Style::new_const(Color::WHITE, Color::NAVY);
-    const STYLE_CURSOR_OVER_UNSELECTED: Style =
-        Style::new_const(Color::BLACK, Color::LIGHT_BLUE);
-    const STYLE_CURSOR_OVER_SELECTED: Style =
-        Style::new_const(Color::WHITE, Color::BLUE);
+    const STYLE_CURSOR_OVER_UNSELECTED: Style = Style::new_const(Color::BLACK, Color::LIGHT_BLUE);
+    const STYLE_CURSOR_OVER_SELECTED: Style = Style::new_const(Color::WHITE, Color::BLUE);
 
     pub fn default_receivable_events() -> Vec<ReceivableEvent> {
         vec![
@@ -204,7 +206,7 @@ impl ListBox {
             );
         }
 
-        /// wire the scrollbar to the text box
+        // wire the scrollbar to the text box
         let wb_ = self.base.clone();
         let hook = Box::new(move |ctx, y| wb_.set_content_y_offset(&ctx, y));
         *sb.position_changed_hook.borrow_mut() = Some(hook);
@@ -218,7 +220,7 @@ impl ListBox {
     pub fn get_text_for_entry(&self, entry_i: usize, width: usize, entry_height: usize) -> String {
         let entry = self.entries.borrow()[entry_i].clone();
 
-        /// pad the text to the width and height
+        // pad the text to the width and height
         let mut text: Vec<String> = entry.lines().map(|r| r.to_string()).collect();
         let text_len = text.len();
         #[allow(clippy::comparison_chain)]
@@ -230,11 +232,10 @@ impl ListBox {
             }
         }
 
-        /// pad the text to the width of the listbox
+        // pad the text to the width of the listbox
         for line in text.iter_mut() {
-            /// cut off the text if it is too long
+            // cut off the text if it is too long
             if line.chars().count() > width {
-                ///line = line[..width.saturating_sub(1)].to_string() + "…";
                 *line = format!("{}…", &line[..width.saturating_sub(1)]);
             }
             if line.chars().count() < width {
@@ -271,7 +272,7 @@ impl ListBox {
 
         let y_offset = *self.base.pane.content_view_offset_y.borrow();
 
-        /// call the scrollbar external change hook if it exists
+        // call the scrollbar external change hook if it exists
         if let Some(sb) = self.scrollbar.borrow().as_ref() {
             sb.external_change(ctx, y_offset, self.base.content_height());
         }
@@ -313,7 +314,7 @@ impl ListBox {
 
     /// need to reset the content in order to reflect active style
     pub fn update_highlighting(&self, ctx: &Context) {
-        /// change the style for selection and the cursor
+        // change the style for selection and the cursor
         for i in 0..self.entries.borrow().len() {
             let cursor = *self.cursor.borrow();
             let item_selected = self.selected.borrow().contains(&i);
@@ -345,7 +346,7 @@ impl ListBox {
                     .change_style_along_y(y, sty.clone());
             }
 
-            /// update the rest of the lines
+            // update the rest of the lines
             let entries_len = self.entries.borrow().len();
             for i in entries_len * *self.lines_per_item.borrow()..self.base.get_height_val(ctx) {
                 let sty = self.base.get_current_style();
@@ -521,14 +522,14 @@ impl Element for ListBox {
                     _ if clicked => {
                         let (x, y) = (me.column as usize, me.row as usize);
 
-                        /// check if this should be a scrollbar event
+                        // check if this should be a scrollbar event
                         if let Some(sb) = self.scrollbar.borrow().as_ref() {
                             if y > 0 && x == self.base.get_width_val(ctx).saturating_sub(1) {
                                 if dragging {
                                     if sb.get_selectability() != Selectability::Selected {
                                         let _ = sb.set_selectability(ctx, Selectability::Selected);
                                     }
-                                    /// send the the event to the scrollbar (x adjusted to 0)
+                                    // send the the event to the scrollbar (x adjusted to 0)
                                     let mut me_ = me;
                                     me_.column = 0;
                                     me_.row = y.saturating_sub(1) as u16;
@@ -538,13 +539,13 @@ impl Element for ListBox {
                             }
                         }
 
-                        /// get item index at click position
+                        // get item index at click position
                         let item_i = self.get_item_index_for_view_y(y);
                         if item_i >= self.entries.borrow().len() {
                             return (false, EventResponses::default());
                         }
 
-                        /// toggle selection
+                        // toggle selection
                         (true, self.toggle_entry_selected_at_i(ctx, item_i))
                     }
                     _ => (false, EventResponses::default()),
@@ -556,7 +557,7 @@ impl Element for ListBox {
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        self.update_highlighting(ctx); /// this can probably happen in a more targeted way
+        self.update_highlighting(ctx); // this can probably happen in a more targeted way
         self.base.drawing(ctx)
     }
 }

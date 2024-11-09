@@ -375,7 +375,7 @@ impl Element for Pane {
                     }
                 }
 
-                /// convert the DrawCh to a DrawChPos
+                // convert the DrawCh to a DrawChPos
                 chs.push(DrawChPos::new(ch_out, x as u16, y as u16))
             }
         }
@@ -395,8 +395,10 @@ impl Element for Pane {
     }
 
     fn set_hook(
-        &self, kind: &str, el_id: ElementID,
-        ///                  kind, hooked element
+        &self,
+        kind: &str,
+        el_id: ElementID,
+        //                  kind, hooked element
         hook: Box<dyn FnMut(&str, Box<dyn Element>)>,
     ) {
         self.hooks
@@ -438,8 +440,8 @@ impl Element for Pane {
     }
 
     fn set_content_x_offset(&self, ctx: &Context, x: usize) {
-        /// need these +1 or else will overscroll
-        /// - due to x/y being 0 indexed
+        // need these +1 or else will overscroll
+        // - due to x/y being 0 indexed
         let content_width = self.content.borrow().width();
         let view_width = self.loc.borrow().get_width_val(ctx);
         let x = if x > content_width.saturating_sub(view_width + 1) {
@@ -451,8 +453,8 @@ impl Element for Pane {
     }
 
     fn set_content_y_offset(&self, ctx: &Context, y: usize) {
-        /// need these +1 or else will overscroll
-        /// - due to x/y being 0 indexed
+        // need these +1 or else will overscroll
+        // - due to x/y being 0 indexed
         let content_height = self.content.borrow().height();
         let view_height = self.loc.borrow().get_height_val(ctx);
         let y = if y > content_height.saturating_sub(view_height + 1) {

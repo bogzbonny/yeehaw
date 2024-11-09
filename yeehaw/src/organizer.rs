@@ -408,11 +408,11 @@ impl ElementOrganizer {
     /// instead generates the "perceived priorities" in the following way:
     ///  1. If the input priority (pr) is UNFOCUSED:
     ///     - simply interpret all the childrens' priorities as unfocused.
-    ///     (everything set in the ic will be unfocused).
+    ///       (everything set in the ic will be unfocused).
     ///  2. if the input priority (pr) is FOCUSED or greater:
     ///     - individually interpret each child's Receivable Event priority as
-    ///     the greatest of either the input priority to this function (pr),
-    ///     or the child event's current priority.
+    ///       the greatest of either the input priority to this function (pr),
+    ///       or the child event's current priority.
     ///
     /// INPUTS
     ///   - The real_pes is the real priority events of the child element.
@@ -504,6 +504,7 @@ impl ElementOrganizer {
     ///    - if the event isn't captured then send it to the next element able to receive this event
     ///      (ordered by priority)
     /// - partially processes changes to the elements receivable events
+    ///
     /// NOTE elements may choose to not capture events in order to continue sending the
     ///      event to the next element in the chain
     pub fn routed_event_process(

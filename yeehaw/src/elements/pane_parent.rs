@@ -151,7 +151,7 @@ impl ParentPane {
 
     pub fn perceived_priorities_of_eo(&self) -> SelfReceivableEvents {
         let pr = self.pane.get_element_priority();
-        let pes = self.eo.receivable(); /// registered receivable events
+        let pes = self.eo.receivable(); // registered receivable events
         ElementOrganizer::generate_perceived_priorities(pr, pes)
     }
 
@@ -267,14 +267,14 @@ impl Element for ParentPane {
     ///     priorities" are the effective priority FROM the perspective of the
     ///     element ABOVE this element in the tree.
     fn change_priority(&self, pr: Priority) -> ReceivableEventChanges {
-        /// first change the priority of the self evs. These are "this elements
-        /// priority changes". NO changes should be made to the childen,
-        /// the perceived priorities of the children should be interpreted.
+        // first change the priority of the self evs. These are "this elements
+        // priority changes". NO changes should be made to the childen,
+        // the perceived priorities of the children should be interpreted.
         let mut rec = self.pane.change_priority(pr);
 
-        /// update the perceived priorities of the children and update the prioritizer
+        // update the perceived priorities of the children and update the prioritizer
         for (_, el_details) in self.eo.els.borrow().iter() {
-            let pes = el_details.el.receivable(); /// self evs (and child eo's evs)
+            let pes = el_details.el.receivable(); // self evs (and child eo's evs)
             for pe in ElementOrganizer::generate_perceived_priorities(pr, pes).0 {
                 rec.update_priority_for_ev(pe.0, pe.1);
             }

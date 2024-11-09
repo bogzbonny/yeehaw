@@ -94,11 +94,12 @@ impl VerticalScrollbar {
         })
     }
 
+    /// is scrollable_height is None, then it is considererd unchanged
     pub fn set_dyn_height(
         &self,
         view_height: DynVal,
         scrollbar_length: DynVal,
-        scrollable_height: Option<usize>, /// None = unchanged
+        scrollable_height: Option<usize>, // None = unchanged
     ) {
         *self.scrollable_view_chs.borrow_mut() = view_height;
         self.base.set_dyn_height(scrollbar_length.clone());
@@ -178,11 +179,12 @@ impl HorizontalScrollbar {
         })
     }
 
+    /// is scrollable_width is None, then it is considererd unchanged
     pub fn set_dyn_width(
         &self,
         view_width: DynVal,
         scrollbar_length: DynVal,
-        scrollable_width: Option<usize>, /// None = unchanged
+        scrollable_width: Option<usize>, // None = unchanged
     ) {
         *self.scrollable_view_chs.borrow_mut() = view_width;
         self.base.set_dyn_width(scrollbar_length.clone());
@@ -193,7 +195,7 @@ impl HorizontalScrollbar {
     }
 
     // ----------------------------------------------
-    /// decorators
+    // decorators
 
     pub fn with_styles(self, styles: WBStyles) -> Self {
         self.base.set_styles(styles);
@@ -207,7 +209,7 @@ impl HorizontalScrollbar {
 
     /// set the dimensions of the actual scrollbar (note not the view area)
     pub fn with_scrollbar_length(self, scrollbar_length: DynVal) -> Self {
-        ///self.base.set_dyn_width(scrollbar_length.clone());
+        //self.base.set_dyn_width(scrollbar_length.clone());
         *self.scrollbar_length_chs.borrow_mut() = scrollbar_length;
         self
     }
@@ -250,7 +252,8 @@ pub struct Scrollbar {
     /// The ScrollableDomainChs is the scrollable dimension in true characters.
     /// It is AFFECTED by the scrollbar and NOT the literal area of the scrollbar
     /// itself.
-    pub scrollable_domain_chs: Rc<RefCell<usize>>, /// how large the area is that can be scrolled
+    pub scrollable_domain_chs: Rc<RefCell<usize>>,
+    /// how large the area is that can be scrolled
 
     /// how much of the scrollable area is visible in true chars.
     pub scrollable_view_chs: Rc<RefCell<DynVal>>,
@@ -266,8 +269,8 @@ pub struct Scrollbar {
     /// NOTE this is not the position within the scrollbar but the position within the actual content.
     pub scrollable_position: Rc<RefCell<usize>>,
 
-    pub has_arrows: Rc<RefCell<bool>>, /// if the scrollbar has arrows
-
+    pub has_arrows: Rc<RefCell<bool>>,
+    /// if the scrollbar has arrows
     pub sb_sty: Rc<RefCell<ScrollbarSty>>,
 
     /// function the scrollbar will call everytime there is a position change
@@ -276,7 +279,8 @@ pub struct Scrollbar {
 
     /// is the scrollbar currently being dragged?
     pub currently_dragging: Rc<RefCell<bool>>,
-    pub start_drag_position: Rc<RefCell<usize>>, /// in true characters
+    pub start_drag_position: Rc<RefCell<usize>>,
+    /// in true characters
 
     /// The percent (0-100) of the total scrollable domain
     /// to scroll when a click in the scrollbar whitespace is made.
@@ -439,9 +443,6 @@ impl Scrollbar {
             return;
         }
         *self.scrollable_position.borrow_mut() += 1;
-        ///if let Some(hook) = self.position_changed_hook.borrow().as_ref() {
-        ///    hook.borrow_mut()(ctx.clone(), *self.scrollable_position.borrow());
-        ///}
         if let Some(hook) = self.position_changed_hook.borrow_mut().as_mut() {
             hook(ctx.clone(), *self.scrollable_position.borrow());
         }
@@ -452,11 +453,11 @@ impl Scrollbar {
     /// arrow spaces. Each half-increment represents half a character, as the scrollbar may use half
     /// characters to represent its position.
     pub fn scrollbar_domain_in_half_increments(&self, p_size: usize) -> usize {
-        /// minus 2 for the backwards and forwards arrows
+        // minus 2 for the backwards and forwards arrows
         let arrows = if *self.has_arrows.borrow() { 2 } else { 0 };
         let sc_len_chs = self.scrollbar_length_chs.borrow().get_val(p_size as u16);
         let sc_len_chs = if sc_len_chs < 0 { 0 } else { sc_len_chs as usize };
-        /// times 2 for half characters
+        // times 2 for half characters
         2 * (sc_len_chs.saturating_sub(arrows))
     }
 
@@ -465,15 +466,15 @@ impl Scrollbar {
         let percent_viewable = (self.scrollable_view_chs.borrow().get_val(p_size as u16) as f64)
             / (*self.scrollable_domain_chs.borrow() as f64);
 
-        /// scrollbar size in half increments
+        // scrollbar size in half increments
         let mut scrollbar_incr = (percent_viewable * domain_incr as f64).round() as usize;
 
-        /// minimum size of 1 half-increment
+        // minimum size of 1 half-increment
         if scrollbar_incr < 1 {
             scrollbar_incr = 1;
         }
 
-        /// safeguard
+        // safeguard
         if scrollbar_incr > domain_incr {
             scrollbar_incr = domain_incr;
         }
@@ -494,10 +495,9 @@ impl Scrollbar {
         let (scrollbar_incr, domain_incr) =
             self.scroll_bar_size_and_domain_in_half_increments(p_size);
 
-        /// total increments within the scrollbar domain for space above and below the bar
+        // total increments within the scrollbar domain for space above and below the bar
         let total_spacer_incr = domain_incr.saturating_sub(scrollbar_incr);
 
-        ///trueChsAbove := sb.ScrollablePosition
         let true_chs_above = *self.scrollable_position.borrow();
 
         let sc_dom_chs = *self.scrollable_domain_chs.borrow();
@@ -506,13 +506,13 @@ impl Scrollbar {
         let incr_above = (true_chs_above as f64 / diff) * total_spacer_incr as f64;
         let mut incr_above = incr_above.round() as usize;
 
-        /// correct incase the rounding gives an extra increment
+        // correct incase the rounding gives an extra increment
         if incr_above + scrollbar_incr > domain_incr {
             incr_above = domain_incr.saturating_sub(scrollbar_incr);
         }
 
         // -----------------------------------------------
-        /// determine whether each increment is a filled.
+        // determine whether each increment is a filled.
         if domain_incr == 0 {
             //debug!("----------------------------\n")
             //debug!("incrAbove: %v, scrollbarIncr: %v, domainIncr: %v\n", incrAbove, scrollbarIncr, domainIncr)
@@ -551,15 +551,15 @@ impl Scrollbar {
             goal_last_filled = start_incrs.len().saturating_sub(1);
         }
         loop {
-            /// safegaurd against infinite loop
+            // safegaurd against infinite loop
             if !self.can_scroll_forwards(p_size) {
                 return;
             }
             self.scroll_forwards(ctx, p_size);
             let current_incr = self.scroll_bar_domain_array_of_half_increments(p_size);
             let curr_last_filled = Self::last_incr_filled(&current_incr);
-            /// NOTE scroll forwards scrolls through the actual content by 1 ch, therefor under
-            /// certain circumstances it is possible for curr_last_filled to jump over the goal_last_filled
+            // NOTE scroll forwards scrolls through the actual content by 1 ch, therefor under
+            // certain circumstances it is possible for curr_last_filled to jump over the goal_last_filled
             if curr_last_filled >= Some(goal_last_filled) {
                 return;
             }
@@ -575,15 +575,15 @@ impl Scrollbar {
         };
         let goal_first_filled = first_filled.saturating_sub(2);
         loop {
-            /// safegaurd against infinite loop
+            // safegaurd against infinite loop
             if !self.can_scroll_backwards() {
                 return;
             }
             self.scroll_backwards(ctx);
             let current_incr = self.scroll_bar_domain_array_of_half_increments(p_size);
             let curr_first_filled = Self::first_incr_filled(&current_incr);
-            /// NOTE scroll forwards scrolls through the actual content by 1 ch, therefor under
-            /// certain circumstances it is possible for curr_last_filled to jump before the goal_last_filled
+            // NOTE scroll forwards scrolls through the actual content by 1 ch, therefor under
+            // certain circumstances it is possible for curr_last_filled to jump before the goal_last_filled
             if curr_first_filled <= Some(goal_first_filled) {
                 return;
             }
@@ -593,7 +593,7 @@ impl Scrollbar {
     pub fn scrollbar_domain_array_of_runes(&self, p_size: usize) -> Vec<DrawCh> {
         let incr_filled = self.scroll_bar_domain_array_of_half_increments(p_size);
         let mut rs = vec![];
-        /// determine the characters based on the filled increments
+        // determine the characters based on the filled increments
         for i in 0..incr_filled.len() {
             if i % 2 == 1 {
                 match (incr_filled[i - 1], incr_filled[i]) {
@@ -649,7 +649,7 @@ impl Scrollbar {
 
     /// is the provided position before, on, or after the scrollbar?
     pub fn position_relative_to_scrollbar(&self, p_size: usize, mut pos: usize) -> SBRelPosition {
-        /// last pos the actual scrollbar may be in
+        // last pos the actual scrollbar may be in
         let mut last_scrollbar_pos =
             (self.scrollbar_length_chs.borrow().get_val(p_size as u16) as usize).saturating_sub(1);
 
@@ -658,8 +658,8 @@ impl Scrollbar {
             if pos == 0 || pos == sc_len_chs.saturating_sub(1) {
                 return SBRelPosition::None;
             }
-            pos -= 1; /// account for the backwards arrow
-            last_scrollbar_pos = sc_len_chs.saturating_sub(3); /// account for the forwards arrow
+            pos -= 1; // account for the backwards arrow
+            last_scrollbar_pos = sc_len_chs.saturating_sub(3); // account for the forwards arrow
         }
 
         let rs = self.scrollbar_domain_array_of_runes(p_size);
@@ -686,7 +686,7 @@ impl Scrollbar {
             }
         }
 
-        /// edge cases for when very near the end
+        // edge cases for when very near the end
         if pos == 0 && forwards_half_pos == 0 {
             return SBRelPosition::Before;
         }
@@ -876,16 +876,16 @@ impl VerticalScrollbar {
             return (false, EventResponses::default());
         }
 
-        /// only allow dragging if the scrollbar is 1 away from the last
-        /// drag position
+        // only allow dragging if the scrollbar is 1 away from the last
+        // drag position
         if !(y == start_drag_pos.saturating_sub(1) || y == start_drag_pos + 1) {
             *self.currently_dragging.borrow_mut() = false;
-            return self.receive_mouse_event(ctx, ev); /// resend the event as a non-dragging event
+            return self.receive_mouse_event(ctx, ev); // resend the event as a non-dragging event
         }
 
-        /// consider dragging on the arrow keys to be a drag ONLY if the
-        /// mouse is already a single character away from each
-        /// otherwise, cancel the drag and perform a single scroll
+        // consider dragging on the arrow keys to be a drag ONLY if the
+        // mouse is already a single character away from each
+        // otherwise, cancel the drag and perform a single scroll
         if *self.has_arrows.borrow() {
             if y == 0 && start_drag_pos != 1 {
                 *self.currently_dragging.borrow_mut() = false;

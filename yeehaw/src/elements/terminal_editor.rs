@@ -20,21 +20,24 @@ use {
 #[derive(Clone)]
 pub struct TermEditorPane {
     pub pane: ParentPane,
-    pub editor: Option<String>, /// the /opt/homebrew/bin/nvim environment variable
-    pub editor_not_found_text: Rc<RefCell<String>>, /// text to display if the editor is not found
-    pub title: Rc<RefCell<String>>, /// title for the textbox also used for tempfile suffix
-
+    pub editor: Option<String>,
+    /// the /opt/homebrew/bin/nvim environment variable
+    pub editor_not_found_text: Rc<RefCell<String>>,
+    /// text to display if the editor is not found
+    pub title: Rc<RefCell<String>>,
+    /// title for the textbox also used for tempfile suffix
     pub text: Rc<RefCell<Option<String>>>,
 
     pub tempfile: Rc<RefCell<Option<tempfile::NamedTempFile>>>,
 
-    pub non_editing_textbox: Rc<RefCell<TextBox>>, /// the textbox when not being edited for viewing the text
+    pub non_editing_textbox: Rc<RefCell<TextBox>>,
+    /// the textbox when not being edited for viewing the text
 
     /// if the tempfile was just created (and thus the text is empty)
     pub just_created: Rc<RefCell<bool>>,
 
-    pub clicked_down: Rc<RefCell<bool>>, /// activated when mouse is clicked down while over button
-
+    pub clicked_down: Rc<RefCell<bool>>,
+    /// activated when mouse is clicked down while over button
     pub text_changed_hook: Rc<RefCell<TextChangedHook>>,
 }
 
@@ -91,7 +94,7 @@ impl TermEditorPane {
                     .tempfile()
                     .unwrap();
                 if let Some(text) = text {
-                    /// set the tempfile contents to the text
+                    // set the tempfile contents to the text
                     std::fs::write(tempfile.path(), text).unwrap();
                 }
 
@@ -176,7 +179,7 @@ impl TermEditorPane {
 impl Element for TermEditorPane {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         if self.tempfile.borrow().is_none() {
-            /// activate the editor on click
+            // activate the editor on click
             let clicked_down = *self.clicked_down.borrow();
             if let Event::Mouse(me) = ev {
                 match me.kind {
@@ -212,7 +215,7 @@ impl Element for TermEditorPane {
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let out = self.pane.drawing(ctx);
 
-        /// check for changes to the tempfile each draw
+        // check for changes to the tempfile each draw
         if let Some(tempfile) = self.tempfile.borrow().as_ref() {
             let tempfile_path = tempfile.path().to_str().unwrap().to_string();
             let Ok(file_contents) = std::fs::read_to_string(tempfile_path) else {

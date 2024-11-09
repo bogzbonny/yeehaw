@@ -110,10 +110,10 @@ impl VerticalStack {
     fn sanitize_el_location(el: &dyn Element) {
         let mut loc = el.get_dyn_location_set().borrow().clone();
 
-        /// ignore the x-dimension everything must fit fully
-        loc.set_start_x(0.0.into()); /// 0
-        loc.set_end_x(1.0.into()); /// 100%
-        *el.get_dyn_location_set().borrow_mut() = loc; /// set loc without triggering hooks
+        // ignore the x-dimension everything must fit fully
+        loc.set_start_x(0.0.into()); // 0
+        loc.set_end_x(1.0.into()); // 100%
+        *el.get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
     }
 
     pub fn ensure_normalized_sizes(&self, ctx: &Context) {
@@ -134,7 +134,7 @@ impl VerticalStack {
 
         Self::normalize_heights_to_context(ctx, &mut heights);
 
-        /// set all the locations based on the heights
+        // set all the locations based on the heights
         self.adjust_locations_for_heights(&heights);
     }
 
@@ -151,7 +151,7 @@ impl VerticalStack {
             let mut loc = el.get_dyn_location_set().borrow().clone();
             loc.set_start_y(y.clone());
             loc.set_dyn_height(height.clone());
-            *el.get_dyn_location_set().borrow_mut() = loc; /// set loc without triggering hooks
+            *el.get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
             y = y.plus(height.clone());
         }
     }
@@ -270,10 +270,10 @@ impl HorizontalStack {
     fn sanitize_el_location(el: &dyn Element) {
         let mut loc = el.get_dyn_location_set().borrow().clone();
 
-        /// ignore the y-dimension everything must fit fully
-        loc.set_start_y(0.0.into()); /// 0
-        loc.set_end_y(1.0.into()); /// 100%
-        *el.get_dyn_location_set().borrow_mut() = loc; /// set loc without triggering hooks
+        // ignore the y-dimension everything must fit fully
+        loc.set_start_y(0.0.into()); // 0
+        loc.set_end_y(1.0.into()); // 100%
+        *el.get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
     }
 
     pub fn ensure_normalized_sizes(&self, ctx: &Context) {
@@ -294,7 +294,7 @@ impl HorizontalStack {
 
         Self::normalize_widths_to_context(ctx, &mut widths);
 
-        /// set all the locations based on the widths
+        // set all the locations based on the widths
         self.adjust_locations_for_widths(&widths);
     }
 
@@ -311,7 +311,7 @@ impl HorizontalStack {
             let mut loc = el.get_dyn_location_set().borrow().clone();
             loc.set_start_x(x.clone());
             loc.set_dyn_width(width.clone());
-            *el.get_dyn_location_set().borrow_mut() = loc; /// set loc without triggering hooks
+            *el.get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
             x = x.plus(width.clone());
         }
     }

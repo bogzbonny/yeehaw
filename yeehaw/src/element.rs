@@ -79,6 +79,7 @@ pub trait Element: DynClone {
     ///  - "post-event": called after the element receives an event
     ///  - "pre-location-change": called before the element location changes
     ///  - "post-location-change": called after the element location changes
+    ///
     /// NOTE use caution when setting hooks, they can be used to create circular references between elements
     /// el_id is the element-id of the element registering the hook to THIS element
     /// the hook is a function that takes the kind of the hook and the hooked element

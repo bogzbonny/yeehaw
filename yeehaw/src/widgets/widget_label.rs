@@ -18,7 +18,8 @@ pub struct Label {
 pub enum LabelJustification {
     Left,
     Right,
-    Down, /// some wacky stuff
+    Down,
+    /// some wacky stuff
     Up,
 }
 
@@ -96,10 +97,10 @@ impl Label {
     pub fn with_style(self, ctx: &Context, sty: Style) -> Self {
         self.base.styles.borrow_mut().unselectable_style = sty;
 
-        /// this is necessary to actually update the content of the label w/
-        /// the new style
-        /// TODO: consider moving this somewhere else if it needs to be called in
-        /// many places
+        // this is necessary to actually update the content of the label w/
+        // the new style
+        // TODO: consider moving this somewhere else if it needs to be called in
+        // many places
         self.base.set_content_from_string(ctx, &self.text.borrow());
         self
     }

@@ -12,9 +12,10 @@ use {
 #[derive(Clone)]
 pub struct Checkbox {
     pub base: WidgetBase,
-    pub checked: Rc<RefCell<bool>>, /// whether the checkbox is checked or not
-
-    pub clicked_down: Rc<RefCell<bool>>, /// activated when mouse is clicked down while over object
+    pub checked: Rc<RefCell<bool>>,
+    /// whether the checkbox is checked or not
+    pub clicked_down: Rc<RefCell<bool>>,
+    /// activated when mouse is clicked down while over object
 
     /// rune to use for the checkmark
     /// recommended:  √ X x ✖
@@ -138,7 +139,7 @@ impl Element for Checkbox {
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        /// need to re set the content in order to reflect active style
+        // need to re set the content in order to reflect active style
         self.base.set_content_from_string(ctx, &self.text());
         self.base.drawing(ctx)
     }

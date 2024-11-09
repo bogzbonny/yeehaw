@@ -5,11 +5,11 @@ use {
         SortingHat,
     },
     crossterm::{
-        cursor,
-        cursor::MoveTo,
-        event::Event as CTEvent,
-        event::EventStream,
-        event::{DisableMouseCapture, EnableMouseCapture},
+        cursor::{self, MoveTo},
+        event::{
+            DisableMouseCapture, EnableMouseCapture, Event as CTEvent, EventStream,
+            KeyEvent as CTKeyEvent, MouseEvent as CTMouseEvent,
+        },
         execute, queue, style,
         style::{ContentStyle, StyledContent},
         terminal,
@@ -166,7 +166,7 @@ impl Tui {
 
     /// process_event_key handles key events
     ///                                                                 exit-tui
-    pub fn process_event_key(&mut self, key_ev: CTEvent::KeyEvent) -> bool {
+    pub fn process_event_key(&mut self, key_ev: CTKeyEvent) -> bool {
         self.kb.add_ev(key_ev);
 
         if key_ev == Keyboard::KEY_CTRL_C && self.kill_on_ctrl_c {
@@ -209,7 +209,7 @@ impl Tui {
 
     /// process_event_mouse handles mouse events
     ///                                                                       exit-tui
-    pub fn process_event_mouse(&mut self, mouse_ev: CTEvent::MouseEvent) -> bool {
+    pub fn process_event_mouse(&mut self, mouse_ev: CTMouseEvent) -> bool {
         let ctx = self.context();
         let (_, resps) =
             self.cup
