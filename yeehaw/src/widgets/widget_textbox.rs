@@ -5,9 +5,7 @@ use {
     },
     crate::{
         elements::menu::{MenuItem, MenuPath, MenuStyle},
-        Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Error,
-        Event, EventResponse, EventResponses, KeyPossibility, Keyboard as KB, Parent, Priority,
-        ReceivableEvent, ReceivableEventChanges, RightClickMenu, SelfReceivableEvents, Style,
+        Keyboard as KB, *,
     },
     crossterm::event::{KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -119,12 +117,12 @@ impl TextBox {
 
     pub fn new<S: Into<String>>(ctx: &Context, text: S) -> Self {
         let text = text.into();
-        let (width, height) = common::get_text_size(&text);
+        let s = Size::get_text_size(&text);
         let wb = WidgetBase::new(
             ctx,
             Self::KIND,
-            DynVal::new_fixed(width as i32),
-            DynVal::new_fixed(height as i32),
+            DynVal::new_fixed(s.width as i32),
+            DynVal::new_fixed(s.height as i32),
             Self::STYLE,
             Self::editable_receivable_events(),
         );

@@ -1,15 +1,11 @@
 use {
-    super::{common, Selectability, WBStyles, Widget, WidgetBase, Widgets},
-    crate::{
-        Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
-        Parent, Priority, ReceivableEvent, ReceivableEventChanges, SelfReceivableEvents, Style,
-    },
+    crate::*,
     std::{cell::RefCell, rc::Rc},
 };
 
 #[derive(Clone)]
 pub struct Label {
-    pub base: WidgetBase,
+    pub pane: Pane,
     pub justification: Rc<RefCell<LabelJustification>>,
     pub text: Rc<RefCell<String>>,
 }
@@ -23,43 +19,158 @@ pub enum LabelJustification {
     Up,
 }
 
-/// when "active" hitting enter will click the button
-pub static LABEL_EV_COMBOS: Vec<ReceivableEvent> = Vec::new();
+/// label positions for around an element
+///```text
+///      1  2
+///     5████7
+///      ████
+///     6████8
+///      3  4
+///```
+#[derive(Clone, Copy, Debug)]
+pub enum LabelPosition {
+    /// 1
+    AboveThenLeft,
+    /// 2
+    AboveThenRight,
+    /// 3
+    BelowThenLeft,
+    /// 4
+    BelowThenRight,
+    /// 5
+    LeftThenTop,
+    /// 6
+    LeftThenBottom,
+    /// 7
+    RightThenTop,
+    /// 8
+    RightThenBottom,
+}
 
-pub static LABEL_STYLE: WBStyles = WBStyles {
-    selected_style: Style::standard(),
-    ready_style: Style::standard(),
-    unselectable_style: Style::standard(),
-};
+/// when "active" hitting enter will click the button
+pub static LABEL_EV_COMBOS: SelfReceivableEvents = SelfReceivableEvents(vec![]);
 
 impl Label {
     const KIND: &'static str = "widget_label";
 
     pub fn new(ctx: &Context, text: &str) -> Self {
-        let (w, h) = common::get_text_size(text);
-        let wb = WidgetBase::new(
-            ctx,
-            Self::KIND,
-            DynVal::new_fixed(w as i32),
-            DynVal::new_fixed(h as i32),
-            LABEL_STYLE.clone(),
-            LABEL_EV_COMBOS.clone(),
-        );
-        _ = wb.set_selectability(ctx, Selectability::Unselectable);
-        wb.set_content_from_string(ctx, text);
+        let s = Size::get_text_size(text);
+        let pane = Pane::new(ctx, Self::KIND)
+            .with_self_receivable_events(LABEL_EV_COMBOS.clone())
+            .with_style(
+                Style::default()
+                    .with_fg(Color::WHITE)
+                    .with_bg(Color::TRANSPARENT),
+            )
+            .with_dyn_width(DynVal::new_fixed(s.width as i32))
+            .with_dyn_height(DynVal::new_fixed(s.height as i32));
+
+        pane.set_content_from_string(text);
         Label {
-            base: wb,
+            pane,
             justification: Rc::new(RefCell::new(LabelJustification::Left)),
             text: Rc::new(RefCell::new(text.to_string())),
         }
     }
 
-    pub fn get_width_val(&self, ctx: &Context) -> usize {
-        self.base.get_width_val(ctx)
+    pub fn new_for_el(ctx: &Context, el_loc: DynLocation, text: &str) -> Self {
+        let label = Self::new(ctx, text);
+
+        // label to the right if a width of 1 otherwise label the top left
+        if el_loc.width(ctx) == 1 {
+            label.position_right_then_top(ctx, el_loc);
+        } else {
+            label.position_above_then_left(ctx, el_loc);
+        }
+        label
     }
 
-    pub fn get_height_val(&self, ctx: &Context) -> usize {
-        self.base.get_height_val(ctx)
+    pub fn new_above_left_for_el(ctx: &Context, el_loc: DynLocation, text: &str) -> Self {
+        let label = Self::new(ctx, text);
+        label.position_above_then_left(ctx, el_loc);
+        label
+    }
+
+    pub fn new_above_right_for_el(ctx: &Context, el_loc: DynLocation, text: &str) -> Self {
+        let label = Self::new(ctx, text);
+        label.position_above_then_right(ctx, el_loc);
+        label
+    }
+
+    pub fn new_below_left_for_el(ctx: &Context, el_loc: DynLocation, text: &str) -> Self {
+        let label = Self::new(ctx, text);
+        label.position_below_then_left(ctx, el_loc);
+        label
+    }
+
+    pub fn new_below_right_for_el(ctx: &Context, el_loc: DynLocation, text: &str) -> Self {
+        let label = Self::new(ctx, text);
+        label.position_below_then_right(ctx, el_loc);
+        label
+    }
+
+    pub fn new_left_top_for_el(ctx: &Context, el_loc: DynLocation, text: &str) -> Self {
+        let label = Self::new(ctx, text);
+        label.position_left_then_top(ctx, el_loc);
+        label
+    }
+
+    pub fn new_left_bottom_for_el(ctx: &Context, el_loc: DynLocation, text: &str) -> Self {
+        let label = Self::new(ctx, text);
+        label.position_left_then_bottom(ctx, el_loc);
+        label
+    }
+
+    pub fn new_right_top_for_el(ctx: &Context, el_loc: DynLocation, text: &str) -> Self {
+        let label = Self::new(ctx, text);
+        label.position_right_then_top(ctx, el_loc);
+        label
+    }
+
+    pub fn new_right_bottom_for_el(ctx: &Context, el_loc: DynLocation, text: &str) -> Self {
+        let label = Self::new(ctx, text);
+        label.position_right_then_bottom(ctx, el_loc);
+        label
+    }
+
+    pub fn new_left_top_vertical_label_for_el(
+        ctx: &Context, el_loc: DynLocation, text: &str,
+    ) -> Self {
+        let label = Self::new(ctx, text)
+            .with_rotated_text()
+            .with_down_justification();
+        label.position_left_then_top(ctx, el_loc);
+        label
+    }
+
+    pub fn new_left_bottom_vertical_label_for_el(
+        ctx: &Context, el_loc: DynLocation, text: &str,
+    ) -> Self {
+        let label = Self::new(ctx, text)
+            .with_rotated_text()
+            .with_up_justification();
+        label.position_left_then_bottom(ctx, el_loc);
+        label
+    }
+
+    pub fn new_right_top_vertical_label_for_el(
+        ctx: &Context, el_loc: DynLocation, text: &str,
+    ) -> Self {
+        let label = Self::new(ctx, text)
+            .with_rotated_text()
+            .with_down_justification();
+        label.position_right_then_top(ctx, el_loc);
+        label
+    }
+
+    pub fn new_right_bottom_vertical_label_for_el(
+        ctx: &Context, el_loc: DynLocation, text: &str,
+    ) -> Self {
+        let label = Self::new(ctx, text)
+            .with_rotated_text()
+            .with_up_justification();
+        label.position_right_then_bottom(ctx, el_loc);
+        label
     }
 
     pub fn with_left_justification(self) -> Self {
@@ -85,23 +196,24 @@ impl Label {
     /// Rotate the text by 90 degrees
     /// intended to be used with WithDownJustification or WithUpJustification
     pub fn with_rotated_text(self) -> Self {
-        let rotated = self.base.pane.content.borrow().rotate_90_deg();
-        *self.base.pane.content.borrow_mut() = rotated;
-        let old_height = self.base.get_dyn_height();
-        let old_width = self.base.get_dyn_width();
-        self.base.set_dyn_width(old_height);
-        self.base.set_dyn_height(old_width);
+        let rotated = self.pane.content.borrow().rotate_90_deg();
+        *self.pane.content.borrow_mut() = rotated;
+        let old_height = self.pane.get_dyn_height();
+        let old_width = self.pane.get_dyn_width();
+        self.pane.set_dyn_width(old_height);
+        self.pane.set_dyn_height(old_width);
         self
     }
 
-    pub fn with_style(self, ctx: &Context, sty: Style) -> Self {
-        self.base.styles.borrow_mut().unselectable_style = sty;
+    pub fn with_style(self, sty: Style) -> Self {
+        self.pane.set_style(sty);
 
         // this is necessary to actually update the content of the label w/
         // the new style
         // TODO: consider moving this somewhere else if it needs to be called in
         // many places
-        self.base.set_content_from_string(ctx, &self.text.borrow());
+        self.pane
+            .set_content_from_string(self.text.borrow().clone());
         self
     }
 
@@ -110,39 +222,86 @@ impl Label {
     }
 
     /// Updates the content and size of the label
-    pub fn set_text(&self, ctx: &Context, text: String) {
-        self.base.set_content_from_string(ctx, &text);
-        let (w, h) = common::get_text_size(&text);
-        self.base.set_dyn_width(DynVal::new_fixed(w as i32));
-        self.base.set_dyn_height(DynVal::new_fixed(h as i32));
+    pub fn set_text(&self, text: String) {
+        self.pane.set_content_from_string(&text);
+        let s = Size::get_text_size(&text);
+        self.pane.set_dyn_width(DynVal::new_fixed(s.width as i32));
+        self.pane.set_dyn_height(DynVal::new_fixed(s.height as i32));
         *self.text.borrow_mut() = text;
     }
 
     pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.base.at(loc_x, loc_y);
+        self.pane.set_at(loc_x, loc_y);
         self
     }
 
-    pub fn to_widgets(self) -> Widgets {
-        let mut x = self.base.get_dyn_start_x();
-        let mut y = self.base.get_dyn_start_y();
-        let w = self.base.get_dyn_width();
-        let h = self.base.get_dyn_height();
-        match *self.justification.borrow() {
-            LabelJustification::Left => {}
-            LabelJustification::Right => {
-                x = x.minus(w.minus_fixed(1));
-            }
-            LabelJustification::Down => {}
-            LabelJustification::Up => {
-                y = y.minus(h.minus_fixed(1));
-            }
+    pub fn set_at(&self, x: DynVal, y: DynVal) {
+        self.pane.set_at(x, y);
+    }
+
+    /// get the label location from the label position
+    fn label_position_to_xy(
+        l: DynLocation,
+        p: LabelPosition,
+        label_width: usize,
+        label_height: usize,
+        //(x    , y     )
+    ) -> (DynVal, DynVal) {
+        match p {
+            LabelPosition::AboveThenLeft => (l.start_x, l.start_y.minus_fixed(label_height as i32)),
+            LabelPosition::AboveThenRight => (l.end_x, l.start_y.minus_fixed(label_height as i32)),
+            LabelPosition::BelowThenLeft => (l.start_x, l.end_y.plus_fixed(1)),
+            LabelPosition::BelowThenRight => (l.end_x, l.end_y.plus_fixed(1)),
+            LabelPosition::LeftThenTop => (l.start_x.minus_fixed(label_width as i32), l.start_y),
+            LabelPosition::LeftThenBottom => (l.start_x.minus_fixed(label_width as i32), l.end_y),
+            LabelPosition::RightThenTop => (l.end_x.plus_fixed(1), l.start_y),
+            LabelPosition::RightThenBottom => (l.end_x.plus_fixed(1), l.end_y),
         }
-        self.base.at(x, y);
-        Widgets(vec![Box::new(self)])
+    }
+
+    /// positions the label relative to the element location
+    pub fn position_for(&self, ctx: &Context, el_loc: DynLocation, pos: LabelPosition) {
+        let (x, y) = Self::label_position_to_xy(
+            el_loc,
+            pos,
+            self.pane.get_width(ctx),
+            self.pane.get_height(ctx),
+        );
+        self.set_at(x, y);
+    }
+
+    pub fn position_above_then_left(&self, ctx: &Context, el_loc: DynLocation) {
+        self.position_for(ctx, el_loc, LabelPosition::AboveThenLeft);
+    }
+
+    pub fn position_above_then_right(&self, ctx: &Context, el_loc: DynLocation) {
+        self.position_for(ctx, el_loc, LabelPosition::AboveThenRight);
+    }
+
+    pub fn position_below_then_left(&self, ctx: &Context, el_loc: DynLocation) {
+        self.position_for(ctx, el_loc, LabelPosition::BelowThenLeft);
+    }
+
+    pub fn position_below_then_right(&self, ctx: &Context, el_loc: DynLocation) {
+        self.position_for(ctx, el_loc, LabelPosition::BelowThenRight);
+    }
+
+    pub fn position_left_then_top(&self, ctx: &Context, el_loc: DynLocation) {
+        self.position_for(ctx, el_loc, LabelPosition::LeftThenTop);
+    }
+
+    pub fn position_left_then_bottom(&self, ctx: &Context, el_loc: DynLocation) {
+        self.position_for(ctx, el_loc, LabelPosition::LeftThenBottom);
+    }
+
+    pub fn position_right_then_top(&self, ctx: &Context, el_loc: DynLocation) {
+        self.position_for(ctx, el_loc, LabelPosition::RightThenTop);
+    }
+
+    pub fn position_right_then_bottom(&self, ctx: &Context, el_loc: DynLocation) {
+        self.position_for(ctx, el_loc, LabelPosition::RightThenBottom);
     }
 }
-impl Widget for Label {}
 
-#[yeehaw_derive::impl_element_from(base)]
+#[yeehaw_derive::impl_element_from(pane)]
 impl Element for Label {}

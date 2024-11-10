@@ -194,6 +194,14 @@ impl Pane {
         self.loc.borrow_mut().l.set_dyn_width(w);
     }
 
+    pub fn get_dyn_height(&self) -> DynVal {
+        self.loc.borrow().l.get_dyn_height()
+    }
+
+    pub fn get_dyn_width(&self) -> DynVal {
+        self.loc.borrow().l.get_dyn_width()
+    }
+
     pub fn set_z(&self, z: ZIndex) {
         self.loc.borrow_mut().set_z(z);
     }
@@ -218,6 +226,14 @@ impl Pane {
 
     pub fn set_content(&self, content: DrawChs2D) {
         *self.content.borrow_mut() = content;
+    }
+
+    pub fn set_content_from_string<S: Into<String>>(&self, s: S) {
+        *self.content.borrow_mut() = DrawChs2D::from_string(s.into(), self.get_style());
+    }
+
+    pub fn set_content_style(&self, sty: Style) {
+        self.pane.content.borrow_mut().change_all_styles(sty);
     }
 
     pub fn with_default_ch(self, ch: DrawCh) -> Pane {

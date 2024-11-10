@@ -423,6 +423,23 @@ impl Size {
     pub fn new(width: u16, height: u16) -> Size {
         Size { width, height }
     }
+
+    /// get the width and height of the text
+    pub fn get_text_size(text: &str) -> Size {
+        let lines = text.lines();
+        let mut max_width = 0;
+        let mut height = 0;
+        for line in lines {
+            if line.len() > max_width {
+                max_width = line.len();
+            }
+            height += 1;
+        }
+        Size {
+            width: max_width as u16,
+            height: height as u16,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Default, Debug, PartialEq)]
