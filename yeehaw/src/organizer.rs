@@ -4,7 +4,7 @@ use {
         ElementID, Event, EventResponse, EventResponses, Parent, Priority, ReceivableEventChanges,
         RelMouseEvent, SelfReceivableEvents, ZIndex,
     },
-    std::collections::HashMap,
+            resps.extend(resps_.drain(..));
     std::{cell::RefCell, rc::Rc},
 };
 
@@ -215,7 +215,7 @@ impl ElementOrganizer {
         let mut out = Vec::new();
         for details in self.els.borrow().values() {
             let pr_evs = details.el.receivable();
-            out.extend(pr_evs.0);
+            out.extend(pr_evs);
         }
         out.into()
     }
@@ -355,7 +355,7 @@ impl ElementOrganizer {
                     let resp_ = self.add_element(new_el.clone(), Some(parent.clone()));
                     if let Some(new_el_resps) = new_el_resps {
                         self.partially_process_ev_resps(ctx, &new_el.id(), new_el_resps, parent);
-                        extend_resps.extend(new_el_resps.0.drain(..));
+                        extend_resps.extend(new_el_resps.drain(..));
                     }
                     *r = resp_;
                 }
@@ -376,7 +376,7 @@ impl ElementOrganizer {
                 }
             }
         }
-        resps.extend(extend_resps.0.drain(..));
+        resps.extend(extend_resps.drain(..));
     }
 
     /// generate_perceived_priorities generates the "perceived priorities" of the
@@ -529,7 +529,7 @@ impl ElementOrganizer {
             let child_ctx = ctx.child_context(&el_details.loc.borrow().l);
             let (captured, mut resps_) = el_details.el.receive_event(&child_ctx, ev.clone());
             self.partially_process_ev_resps(ctx, &el_id, &mut resps_, &parent);
-            resps.extend(resps_.0.drain(..));
+            resps.extend(resps_.drain(..));
 
             if captured {
                 capturing_el_id = Some(el_id);
@@ -550,7 +550,7 @@ impl ElementOrganizer {
             let el_ctx = ctx.child_context(&details.loc.borrow().l);
             let (_, mut resps_) = details.el.receive_event(&el_ctx, ev.clone());
             self.partially_process_ev_resps(ctx, el_id, &mut resps_, &parent);
-            resps.extend(resps_.0.drain(..));
+            resps.extend(resps_.drain(..));
         }
         (false, resps)
     }
@@ -584,7 +584,7 @@ impl ElementOrganizer {
             let el_ctx = ctx.child_context(&details.loc.borrow().l);
             let (_, mut resp_) = details.el.receive_event(&el_ctx, Event::Initialize);
             self.partially_process_ev_resps(ctx, &details.el.id(), &mut resp_, &parent);
-            resps.extend(resp_.0.drain(..));
+            resps.extend(resp_.drain(..));
 
             let rec = details.el.receivable().to_receivable_event_changes();
             self.process_receivable_event_changes(&details.el.id(), &rec);
@@ -678,7 +678,7 @@ impl ElementOrganizer {
             // send mouse event to the element
             let (captured, mut resps_) = details.el.receive_event(&child_ctx, Event::Mouse(ev_adj));
             self.partially_process_ev_resps(ctx, el_id, &mut resps_, &parent);
-            resps.extend(resps_.0.drain(..));
+            resps.extend(resps_.drain(..));
 
             if !captured {
                 // proceed to the next element
@@ -726,7 +726,7 @@ impl ElementOrganizer {
                 .el
                 .receive_event(&child_ctx, Event::ExternalMouse(ev_adj));
             self.partially_process_ev_resps(ctx, el_id, &mut resps_, &parent);
-            resps.extend(resps_.0);
+            resps.extend(resps_);
         }
         resps
     }

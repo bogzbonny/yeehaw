@@ -118,7 +118,7 @@ impl TextBox {
     pub fn new<S: Into<String>>(ctx: &Context, text: S) -> Self {
         let text = text.into();
         let s = Size::get_text_size(&text);
-        let wb = SelectablePane::new(
+        let pane = SelectablePane::new(
             ctx,
             Self::KIND,
             DynVal::new_fixed(s.width as i32),
@@ -715,7 +715,7 @@ impl TextBox {
         resps.push(resp);
 
         if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
-            resps.extend(hook(ctx.clone(), self.get_text()).0);
+            resps.extend(hook(ctx.clone(), self.get_text()));
         }
         Ok(resps)
     }
@@ -1088,7 +1088,7 @@ impl TextBox {
     }
 }
 
-impl Widget for TextBox {
+impl crate::widgets::Widget for TextBox {
     /// NOTE any changes in here should also be mirrored in NumbersTextBox
 
     fn set_selectability_pre_hook(&self, _: &Context, s: Selectability) -> EventResponses {

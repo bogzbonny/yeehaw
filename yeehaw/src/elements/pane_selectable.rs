@@ -32,10 +32,10 @@ pub struct SelectabilityResp {
 
 pub const ATTR_SELECTABILITY: &str = "selectability";
 
-/// displays the size
+/// SelectablePane is an extension of the ParentPane which allows for the selection.
 #[derive(Clone)]
 pub struct SelectablePane {
-    pub pane: Pane,
+    pub pane: ParentPane,
     pub styles: Rc<RefCell<SelStyles>>,
 }
 
@@ -44,7 +44,7 @@ impl SelectablePane {
 
     pub fn new(ctx: &Context, kind: &'static str) -> SelectablePane {
         let out = SelectablePane {
-            pane: Pane::new(ctx, kind),
+            pane: ParentPane::new(ctx, kind),
             styles: Rc::new(RefCell::new(SelStyles::default())),
         };
         out.enable();
@@ -64,7 +64,7 @@ impl SelectablePane {
             element::PRE_ATTR_CHANGE_HOOK_NAME_PREFIX,
             ATTR_SELECTABILITY
         );
-        self.pane.set_hook(&pre_hook_name, self.id(), hook);
+        self.pane.pane.set_hook(&pre_hook_name, self.id(), hook);
         self
     }
 
@@ -76,7 +76,7 @@ impl SelectablePane {
             element::POST_ATTR_CHANGE_HOOK_NAME_PREFIX,
             ATTR_SELECTABILITY
         );
-        self.pane.set_hook(&pre_hook_name, self.id(), hook);
+        self.pane.pane.set_hook(&pre_hook_name, self.id(), hook);
         self
     }
 
@@ -169,20 +169,22 @@ impl Element for SelectablePane {
         }
     }
 
+    /// default implementation of drawing
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        let sty = self.get_current_style();
-        let h = self.pane.get_height(ctx);
-        let w = self.pane.get_width(ctx);
-        let view_offset_y = *self.pane.content_view_offset_y.borrow();
-        let view_offset_x = *self.pane.content_view_offset_x.borrow();
-        let content_height = self.pane.content.borrow().height();
-        let content_width = self.pane.content.borrow().width();
+        let mut chs = self.pane.drawing(ctx);
 
-        let mut chs = Vec::new();
+        let sty = self.get_current_style();
+        let h = self.pane.pane.get_height(ctx);
+        let w = self.pane.pane.get_width(ctx);
+        let view_offset_y = *self.pane.pane.content_view_offset_y.borrow();
+        let view_offset_x = *self.pane.pane.content_view_offset_x.borrow();
+        let content_height = self.pane.pane.content.borrow().height();
+        let content_width = self.pane.pane.content.borrow().width();
+
         for y in view_offset_y..view_offset_y + h {
             for x in view_offset_x..view_offset_x + w {
                 let ch = if y < content_height && x < content_width {
-                    self.pane.content.borrow().0[y][x].clone()
+                    self.pane.pane.content.borrow().0[y][x].clone()
                 } else {
                     DrawCh::new(' ', sty.clone())
                 };
@@ -196,8 +198,8 @@ impl Element for SelectablePane {
         chs
     }
 
-    fn receive_event_inner(&self, _ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        match ev {
+    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        let (captured, resps) = match ev {
             Event::Custom(ev_name, bz) => {
                 if ev_name == ParentPaneOfSelectable::EV_SET_SELECTABILITY {
                     match serde_json::from_slice(&bz) {
@@ -212,7 +214,11 @@ impl Element for SelectablePane {
                 }
             }
             _ => (false, EventResponses::default()),
+        };
+        if captured {
+            return (true, resps);
         }
+        self.pane.receive_event(ctx, ev)
     }
 }
 

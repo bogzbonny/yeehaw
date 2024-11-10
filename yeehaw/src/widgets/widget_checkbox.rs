@@ -85,7 +85,7 @@ impl Checkbox {
     pub fn click(&self, ctx: &Context) -> EventResponses {
         let checked = !*self.checked.borrow();
         self.checked.replace(checked);
-        self.pane.pane.set_content_from_string(&self.text());
+        self.pane.pane.pane.set_content_from_string(&self.text());
         (self.clicked_fn.borrow_mut())(ctx.clone(), checked)
     }
 }
@@ -134,7 +134,7 @@ impl Element for Checkbox {
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         // need to re set the content in order to reflect active style
-        self.pane.pane.set_content_from_string(&self.text());
+        self.pane.pane.pane.set_content_from_string(&self.text());
         self.pane.drawing(ctx)
     }
 }

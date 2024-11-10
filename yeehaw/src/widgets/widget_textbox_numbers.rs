@@ -1,9 +1,5 @@
 use {
-    crate::{
-        Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
-        KeyPossibility, Keyboard as KB, Parent, Priority, ReceivableEvent, ReceivableEventChanges,
-        SelfReceivableEvents, Style,
-    },
+    crate::{Keyboard as KB, *},
     std::{cell::RefCell, rc::Rc},
 };
 
@@ -120,7 +116,7 @@ impl NumbersTextBox {
             self.tb.pane.get_dyn_start_y(),
         );
 
-        let mut out: Vec<Box<dyn Widget>> = vec![];
+        let mut out: Vec<Box<dyn crate::widgets::Widget>> = vec![];
         if *self.has_buttons.borrow() {
             let incr = *self.button_increment.borrow();
             let self_ = self.clone();
@@ -190,7 +186,7 @@ impl NumbersTextBox {
     }
 }
 
-impl Widget for NumbersTextBox {
+impl crate::widgets::Widget for NumbersTextBox {
     fn set_selectability_pre_hook(&self, ctx: &Context, s: Selectability) -> EventResponses {
         if self.tb.get_selectability() == Selectability::Selected && s != Selectability::Selected {
             self.restore_value(ctx);

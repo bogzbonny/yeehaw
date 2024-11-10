@@ -109,11 +109,6 @@ impl VerticalScrollbar {
     // ----------------------------------------------
     /// decorators
 
-    pub fn with_styles(self, styles: SelStyles) -> Self {
-        self.pane.set_styles(styles);
-        self
-    }
-
     pub fn with_scrollbar_sty(self, sb_sty: ScrollbarSty) -> Self {
         *self.sb_sty.borrow_mut() = sb_sty;
         self

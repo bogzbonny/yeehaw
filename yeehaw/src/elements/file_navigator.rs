@@ -251,7 +251,7 @@ impl NavItems {
     /// adds the items at the insert position
     pub fn add_items(&mut self, insert_pos: usize, items: Vec<NavItem>) {
         if self.0.len() == insert_pos {
-            self.0.extend(items);
+            self.extend(items);
         } else {
             self.0.splice(insert_pos..insert_pos, items);
         }

@@ -59,11 +59,7 @@ impl WidgetPane {
     }
 
     pub fn add_widget(&self, w: Box<dyn Widget>) {
-        self.pane
-            .pane
-            .self_evs
-            .borrow_mut()
-            .extend(w.receivable().0);
+        self.pane.pane.self_evs.borrow_mut().extend(w.receivable());
         let loc = w.get_ref_cell_dyn_location_set();
         loc.borrow_mut().set_z(w.get_z_index()); // will not call the hook
         self.widgets.borrow_mut().push((w, loc));
@@ -143,7 +139,7 @@ impl WidgetPane {
                 EventResponse::Metadata(k, _) => {
                     if k == RESP_DEACTIVATE {
                         let resps_ = self.unselect_selected_widget(ctx);
-                        extend_resps.extend(resps_.0);
+                        extend_resps.extend(resps_);
                         modified_resp = Some(EventResponse::None);
                     }
                 }
@@ -154,7 +150,7 @@ impl WidgetPane {
                 *resp = mr;
             }
         }
-        resps.0.extend(extend_resps);
+        resps.extend(extend_resps);
     }
 
     pub fn switch_between_widgets(
@@ -308,7 +304,7 @@ impl WidgetPane {
             } else {
                 EventResponses::default()
             };
-            resps.extend(self.send_external_mouse_event(ctx, ev, None).0);
+            resps.extend(self.send_external_mouse_event(ctx, ev, None));
             return (false, resps);
         };
 
@@ -324,7 +320,7 @@ impl WidgetPane {
             .receive_event(ctx, Event::Mouse(ev_adj));
 
         self.process_widget_resps(ctx, &mut resps2, widget_index);
-        resps2.extend(resps.0);
+        resps2.extend(resps);
 
         resps2.extend(
             self.send_external_mouse_event(ctx, ev, Some(widget_index))
@@ -346,7 +342,7 @@ impl WidgetPane {
             let ev_adj = loc.borrow().l.adjust_mouse_event_external(ctx, &ev);
             let (_, mut resps_) = w.receive_event(ctx, Event::ExternalMouse(ev_adj));
             self.process_widget_resps(ctx, &mut resps_, i);
-            resps.extend(resps_.0);
+            resps.extend(resps_);
         }
         resps
     }
@@ -379,7 +375,7 @@ impl Element for WidgetPane {
         // Add the widget pane's self events. These are default receivable events of the widget
         // organizer
         let mut rec = self.pane.receivable();
-        rec.extend(wpes.0);
+        rec.extend(wpes);
         rec
     }
 

@@ -246,7 +246,7 @@ impl ParentPane {
 impl Element for ParentPane {
     fn receivable(&self) -> SelfReceivableEvents {
         let mut pes = self.perceived_priorities_of_eo();
-        pes.extend(self.pane.receivable().0);
+        pes.extend(self.pane.receivable());
         pes
     }
 

@@ -573,12 +573,12 @@ impl BasicWindowTopBar {
 
         let title_label = Box::new(
             Label::new(ctx, title)
-                .with_style(ctx, Style::transparent())
+                .with_style(Style::transparent())
                 .at(DynVal::new_fixed(1), DynVal::new_fixed(0)),
         );
         let decor_label = Box::new(
             Label::new(ctx, "◹")
-                .with_style(ctx, Style::transparent())
+                .with_style(Style::transparent())
                 .at(DynVal::new_full().minus(2.into()), DynVal::new_fixed(0)),
         );
         pane.add_element(title_label.clone());

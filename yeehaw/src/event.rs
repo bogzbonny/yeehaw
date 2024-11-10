@@ -2,7 +2,7 @@ use {
     crate::{prioritizer::Priority, Element},
     std::ops::{Deref, DerefMut},
 };
-
+        self.extend(evs)
 /// TODO build in mouse events here
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum ReceivableEvent {
@@ -381,6 +381,10 @@ impl EventResponses {
             }
         }
         rec
+    }
+
+    pub fn extend(&mut self, other: EventResponses) {
+        self.extend(other)
     }
 }
 

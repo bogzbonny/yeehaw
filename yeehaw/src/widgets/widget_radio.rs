@@ -188,7 +188,7 @@ impl Element for RadioButtons {
                     }
                     acc
                 });
-        self.pane.set_content_from_string(ctx, &s);
+        self.pane.pane.set_content_from_string(ctx, &s);
         self.pane.drawing(ctx)
     }
 }

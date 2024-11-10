@@ -75,6 +75,7 @@ impl DropdownList {
     ) -> Self {
         let pane = SelectablePane::new(ctx, Self::KIND);
         pane.pane
+            .pane
             .set_self_receivable_events(Self::default_receivable_events());
         pane.set_styles(Self::STYLE);
         pane.pane.set_dyn_height(DynVal::new_fixed(1));
@@ -104,7 +105,7 @@ impl DropdownList {
             selection_made_fn: Rc::new(RefCell::new(selection_made_fn)),
             scrollbar: sb,
         };
-        d.pane.set_dyn_width(d.calculate_dyn_width());
+        d.pane.pane.set_dyn_width(d.calculate_dyn_width());
 
         let d_ = d.clone();
         d.pane.set_post_hook_for_set_selectability(move |ctx, _| {
