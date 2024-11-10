@@ -6,7 +6,10 @@ use {
     },
     std::{
         collections::HashMap,
-        {cell::RefCell, rc::Rc},
+        {
+            cell::{Ref, RefCell},
+            rc::Rc,
+        },
     },
 };
 
@@ -433,10 +436,17 @@ impl Element for Pane {
         }
     }
 
-    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
+    fn get_dyn_location_set(&self) -> Ref<DynLocationSet> {
+        self.loc.borrow()
+    }
+    fn get_visible(&self) -> bool {
+        *self.visible.borrow()
+    }
+
+    fn get_ref_cell_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
         self.loc.clone()
     }
-    fn get_visible(&self) -> Rc<RefCell<bool>> {
+    fn get_ref_cell_visible(&self) -> Rc<RefCell<bool>> {
         self.visible.clone()
     }
 

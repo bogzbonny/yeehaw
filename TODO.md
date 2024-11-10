@@ -33,7 +33,7 @@
 
 WIDGET RECALL REFACTOR
  - deleted ElWidgetPane for a new type ParentPaneWithSelectibility
-    - basically the parentpane with tab capturing
+    - basically the parentpane with tab capturing and refocusing
     - using the ParentPane store to hold index of the currently selected widget 
     - would just need to specify each element as either "selectible" or "not"
       when it gets added to the widget macro

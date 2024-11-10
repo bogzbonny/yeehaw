@@ -4,7 +4,6 @@ use {
         EventResponses, Parent, Priority, ReceivableEventChanges, SelfReceivableEvents, WidgetPane,
     },
     std::path::PathBuf,
-    std::{cell::RefCell, rc::Rc},
 };
 
 // displays the size

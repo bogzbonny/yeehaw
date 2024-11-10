@@ -4,7 +4,10 @@ use {
         EventResponses, ReceivableEventChanges, SelfReceivableEvents,
     },
     dyn_clone::DynClone,
-    std::{cell::RefCell, rc::Rc},
+    std::{
+        cell::{Ref, RefCell},
+        rc::Rc,
+    },
 };
 
 dyn_clone::clone_trait_object!(Element);
@@ -106,22 +109,31 @@ pub trait Element: DynClone {
     fn set_parent(&self, up: Box<dyn Parent>);
 
     /// get/set the scalable location of the widget
-    /// NOTE these functions should NOT be used to set values, use the set functions below to ensure
-    /// that hooks are called. TODO figure out some way of enforcing this
-    fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>>;
-    fn get_visible(&self) -> Rc<RefCell<bool>>;
+    // TODO figure out some way of enforcing this
+    // TODO search and replace instances of this being used improperly
+    fn get_dyn_location_set(&self) -> Ref<DynLocationSet>;
+    fn get_visible(&self) -> bool;
 
     fn set_dyn_location_set(&self, l: DynLocationSet) {
         self.call_hooks_of_kind(PRE_LOCATION_CHANGE_HOOK_NAME);
-        *self.get_dyn_location_set().borrow_mut() = l;
+        *self.get_ref_cell_dyn_location_set().borrow_mut() = l;
         self.call_hooks_of_kind(POST_LOCATION_CHANGE_HOOK_NAME);
     }
 
     fn set_visible(&self, v: bool) {
         self.call_hooks_of_kind(PRE_VISIBLE_CHANGE_HOOK_NAME);
-        *self.get_visible().borrow_mut() = v;
+        *self.get_ref_cell_visible().borrow_mut() = v;
         self.call_hooks_of_kind(POST_VISIBLE_CHANGE_HOOK_NAME);
     }
+
+    /// gets the reference to the location set and visible.
+    /// The intention is so that these can be read without requiring a mutable reference to the element
+    /// however, the element should not be modified through these references, if this is done then
+    /// the relevant hooks will not be called when values are set.
+    /// NOTE these functions should NOT be used to set values, use the set functions below to ensure
+    /// that hooks are called.
+    fn get_ref_cell_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>>;
+    fn get_ref_cell_visible(&self) -> Rc<RefCell<bool>>;
 
     // -------------------------------------------------------
     /// used by scrollbars

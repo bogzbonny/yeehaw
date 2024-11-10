@@ -1,7 +1,117 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, ImplItem, ImplItemFn, ItemImpl};
+use syn::{parse_macro_input, ImplItem, ImplItemFn, ItemImpl, ItemTrait, TraitItem, TraitItemFn};
 
+#[proc_macro_attribute]
+pub fn impl_element_from(attr: TokenStream, item: TokenStream) -> TokenStream {
+    // Parse the input tokens into a syntax tree
+    let mut output = TokenStream::new();
+    let mut impl_block = parse_macro_input!(item as ItemImpl);
+
+    // add some use statements to the output token stream
+    //"use std::{cell::{Ref, RefCell}, rc::Rc};"
+    //let use_stmts = quote! {
+    //    use std::{cell::{Ref, RefCell}, rc::Rc};
+    //};
+    //output.extend(TokenStream::from(use_stmts));
+
+    // Define the names of the functions we want to check/add
+    let tr_code = r"pub trait Element: DynClone {
+    fn kind(&self) -> &'static str;
+    fn id(&self) -> ElementID;
+    fn receivable(&self) -> SelfReceivableEvents;
+    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses);
+    fn change_priority(&self, p: Priority) -> ReceivableEventChanges;
+    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos>;
+    fn get_attribute(&self, key: &str) -> Option<Vec<u8>>;
+    fn set_attribute(&self, key: &str, value: Vec<u8>);
+    fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>);
+    fn remove_hook(&self, kind: &str, el_id: ElementID);
+    fn clear_hooks_by_id(&self, el_id: ElementID);
+    fn call_hooks_of_kind(&self, kind: &str);
+    fn set_parent(&self, up: Box<dyn Parent>);
+    fn get_dyn_location_set(&self) -> std::cell::Ref<DynLocationSet>;
+    fn get_visible(&self) -> bool;
+    fn get_ref_cell_dyn_location_set(&self) -> std::rc::Rc<std::cell::RefCell<DynLocationSet>>;
+    fn get_ref_cell_visible(&self) -> std::rc::Rc<std::cell::RefCell<bool>>;
+    fn set_content_x_offset(&self, ctx: &Context, x: usize);
+    fn set_content_y_offset(&self, ctx: &Context, y: usize);
+    fn get_content_x_offset(&self) -> usize;
+    fn get_content_y_offset(&self) -> usize;
+    fn get_content_width(&self) -> usize;
+    fn get_content_height(&self) -> usize;
+}";
+    let tr_parsed = syn::parse_str::<ItemTrait>(tr_code).expect("Failed to parse trait");
+
+    // convert the function signatures to Idents
+    let mut fn_found_names = tr_parsed
+        .items
+        .iter()
+        .map(|item| {
+            if let TraitItem::Fn(tr_fn) = item {
+                (false, tr_fn.clone())
+            } else {
+                panic!("Unexpected item in trait");
+            }
+        })
+        .collect::<Vec<(bool, TraitItemFn)>>();
+
+    // Check if each function already exists in the `impl` block
+    for item in &impl_block.items {
+        if let ImplItem::Fn(ImplItemFn { sig, .. }) = item {
+            for (found, tr_fn) in fn_found_names.iter_mut() {
+                if sig.ident == tr_fn.sig.ident {
+                    *found = true;
+                }
+            }
+        }
+    }
+
+    // the field in which all the default implementations are relying on
+    let field_name: syn::Ident = parse_macro_input!(attr as syn::Ident);
+
+    for (found, tr_fn) in fn_found_names.iter() {
+        if !found {
+            // create a default implementation of the function which calls the function on the field
+            let fn_sig = &tr_fn.sig;
+            let fn_name = &tr_fn.sig.ident;
+            let fn_args = &tr_fn.sig.inputs;
+            // get the arg variable names for non-self args
+            let fn_args = fn_args
+                .iter()
+                .filter_map(|arg| {
+                    if let syn::FnArg::Typed(pat) = arg {
+                        if let syn::Pat::Ident(ident) = &*pat.pat {
+                            Some(ident.ident.clone())
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<syn::Ident>>();
+            let fn_args = quote! {#(#fn_args),*};
+            let new_fn = quote! {
+                #fn_sig
+                {
+                    self.#field_name.#fn_name(#fn_args)
+                }
+            };
+            impl_block
+                .items
+                .push(syn::parse2(new_fn).expect("Failed to parse kind"));
+        }
+    }
+
+    // Return the modified `impl` block
+    output.extend(TokenStream::from(quote! {
+        #impl_block
+    }));
+    output
+}
+
+/*
 #[proc_macro_attribute]
 pub fn impl_element_from(attr: TokenStream, item: TokenStream) -> TokenStream {
     // Parse the input tokens into a syntax tree
@@ -23,8 +133,8 @@ pub fn impl_element_from(attr: TokenStream, item: TokenStream) -> TokenStream {
         ("clear_hooks_by_id", false),
         ("call_hooks_of_kind", false),
         ("set_parent", false),
-        ("get_dyn_location_set", false),
-        ("get_visible", false),
+        ("get_ref_cell_dyn_location_set", false),
+        ("get_ref_cell_visible", false),
         ("set_content_x_offset", false),
         ("set_content_y_offset", false),
         ("get_content_x_offset", false),
@@ -63,7 +173,7 @@ pub fn impl_element_from(attr: TokenStream, item: TokenStream) -> TokenStream {
         };
         impl_block
             .items
-            .push(syn::parse2(new_fn).expect("Failed to parse id"));
+        .push(syn::parse2(new_fn).expect("Failed to parse id"));
     }
     if !funcs_found[2].1 {
         let new_fn = quote! {
@@ -179,7 +289,7 @@ pub fn impl_element_from(attr: TokenStream, item: TokenStream) -> TokenStream {
     }
     if !funcs_found[13].1 {
         let new_fn = quote! {
-            fn get_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
+            fn get_ref_cell_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>> {
                 self.#field_name.get_dyn_location_set()
             }
         };
@@ -189,7 +299,7 @@ pub fn impl_element_from(attr: TokenStream, item: TokenStream) -> TokenStream {
     }
     if !funcs_found[14].1 {
         let new_fn = quote! {
-            fn get_visible(&self) -> Rc<RefCell<bool>> {
+            fn get_ref_cell_visible(&self) -> Rc<RefCell<bool>> {
                 self.#field_name.get_visible()
             }
         };
@@ -287,3 +397,4 @@ pub fn impl_element_from(attr: TokenStream, item: TokenStream) -> TokenStream {
         #impl_block
     })
 }
+*/

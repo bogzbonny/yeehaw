@@ -5,7 +5,6 @@ use {
         EventResponses, Parent, Priority, ReceivableEventChanges, SelfReceivableEvents, Style,
     },
     figlet_rs::FIGfont,
-    std::{cell::RefCell, rc::Rc},
 };
 
 /// TODO click function
