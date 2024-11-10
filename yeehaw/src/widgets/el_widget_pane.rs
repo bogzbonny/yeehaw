@@ -21,7 +21,7 @@ pub struct WidgetPane {
 impl WidgetPane {
     pub const KIND: &'static str = "widget_pane";
 
-    pub fn default_receivable_events() -> Vec<ReceivableEvent> {
+    pub fn default_receivable_events() -> SelfReceivableEvents {
         vec![
             KB::KEY_ESC.into(),
             KB::KEY_TAB.into(),

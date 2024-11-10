@@ -1,9 +1,5 @@
 use {
-    crate::{
-        Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Pane, Parent, Priority, ReceivableEvent,
-        ReceivableEventChanges, SelfReceivableEvents, Style,
-    },
+    crate::{Keyboard as KB, *},
     std::{
         cell::RefCell,
         ops::{Deref, DerefMut},
@@ -53,7 +49,7 @@ impl Default for FileNavStyle {
 impl FileNavPane {
     const INDENT_SIZE: usize = 2;
 
-    pub fn default_receivable_events() -> Vec<ReceivableEvent> {
+    pub fn default_receivable_events() -> SelfReceivableEvents {
         vec![
             KB::KEY_ENTER.into(),
             KB::KEY_UP.into(),

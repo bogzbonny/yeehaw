@@ -1,10 +1,5 @@
 use {
-    super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
-    crate::{
-        Color, Context, DrawChPos, DrawChs2D, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEvent, ReceivableEventChanges,
-        RelMouseEvent, SelfReceivableEvents, Style, *,
-    },
+    crate::{Keyboard as KB, *},
     crossterm::event::{KeyEvent, MouseButton, MouseEvent, MouseEventKind},
     std::ops::{Deref, DerefMut},
     std::{cell::RefCell, cmp::Ordering, rc::Rc},
@@ -64,20 +59,22 @@ pub enum HorizontalSBPositions {
 
 impl VerticalScrollbar {
     const KIND: &'static str = "widget_vertical_scrollbar";
-    pub fn default_receivable_events() -> Vec<ReceivableEvent> {
-        vec![KB::KEY_UP.into(), KB::KEY_DOWN.into(), KB::KEY_SPACE.into()]
+    pub fn default_receivable_events() -> SelfReceivableEvents {
+        SelfReceivableEvents(vec![
+            (KB::KEY_UP.into(), Priority::Focused),
+            (KB::KEY_DOWN.into(), Priority::Focused),
+            (KB::KEY_SPACE.into(), Priority::Focused),
+        ])
     }
     pub fn new(ctx: &Context, scrollable_view_height: DynVal, scrollable_height: usize) -> Self {
-        let wb = WidgetBase::new(
-            ctx,
-            Self::KIND,
-            DynVal::new_fixed(1),
-            scrollable_view_height.clone(),
-            Scrollbar::STYLE,
-            Self::default_receivable_events(),
-        );
+        let pane = Pane::new(ctx, Self::KIND)
+            .with_self_receivable_events(Self::default_receivable_events())
+            .with_style(Scrollbar::STYLE)
+            .with_dyn_width(DynVal::new_fixed(1))
+            .with_dyn_height(scrollable_view_height.clone());
+
         VerticalScrollbar(Scrollbar {
-            base: wb,
+            pane,
             scrollable_domain_chs: Rc::new(RefCell::new(scrollable_height)),
             scrollable_view_chs: Rc::new(RefCell::new(scrollable_view_height.clone())),
             scrollbar_length_chs: Rc::new(RefCell::new(scrollable_view_height)),
@@ -102,7 +99,7 @@ impl VerticalScrollbar {
         scrollable_height: Option<usize>, // None = unchanged
     ) {
         *self.scrollable_view_chs.borrow_mut() = view_height;
-        self.base.set_dyn_height(scrollbar_length.clone());
+        self.pane.set_dyn_height(scrollbar_length.clone());
         *self.scrollbar_length_chs.borrow_mut() = scrollbar_length;
         if let Some(scrollable_height) = scrollable_height {
             *self.scrollable_domain_chs.borrow_mut() = scrollable_height;
@@ -112,8 +109,8 @@ impl VerticalScrollbar {
     // ----------------------------------------------
     /// decorators
 
-    pub fn with_styles(self, styles: WBStyles) -> Self {
-        self.base.set_styles(styles);
+    pub fn with_styles(self, styles: SelStyles) -> Self {
+        self.pane.set_styles(styles);
         self
     }
 
@@ -129,16 +126,12 @@ impl VerticalScrollbar {
     }
 
     pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.base.at(loc_x, loc_y);
+        self.pane.at(loc_x, loc_y);
         self
     }
 
     pub fn set_at(&self, loc_x: DynVal, loc_y: DynVal) {
-        self.base.at(loc_x, loc_y);
-    }
-
-    pub fn to_widgets(self) -> Widgets {
-        Widgets(vec![Box::new(self)])
+        self.pane.at(loc_x, loc_y);
     }
 
     pub fn without_arrows(self) -> Self {
@@ -149,20 +142,21 @@ impl VerticalScrollbar {
 
 impl HorizontalScrollbar {
     const KIND: &'static str = "widget_horizontal_scrollbar";
-    pub fn default_receivable_events() -> Vec<ReceivableEvent> {
-        vec![KB::KEY_LEFT.into(), KB::KEY_RIGHT.into()]
+    pub fn default_receivable_events() -> SelfReceivableEvents {
+        SelfReceivableEvents(vec![
+            (KB::KEY_LEFT.into(), Priority::Focused),
+            (KB::KEY_RIGHT.into(), Priority::Focused),
+        ])
     }
     pub fn new(ctx: &Context, scrollable_view_width: DynVal, scrollable_width: usize) -> Self {
-        let wb = WidgetBase::new(
-            ctx,
-            Self::KIND,
-            scrollable_view_width.clone(),
-            DynVal::new_fixed(1),
-            Scrollbar::STYLE,
-            Self::default_receivable_events(),
-        );
+        let pane = Pane::new(ctx, Self::KIND)
+            .with_self_receivable_events(Self::default_receivable_events())
+            .with_style(Scrollbar::STYLE)
+            .with_dyn_height(DynVal::new_fixed(1))
+            .with_dyn_width(scrollable_view_width.clone());
+
         HorizontalScrollbar(Scrollbar {
-            base: wb,
+            pane,
             scrollable_domain_chs: Rc::new(RefCell::new(scrollable_width)),
             scrollable_view_chs: Rc::new(RefCell::new(scrollable_view_width.clone())),
             scrollbar_length_chs: Rc::new(RefCell::new(scrollable_view_width)),
@@ -187,7 +181,7 @@ impl HorizontalScrollbar {
         scrollable_width: Option<usize>, // None = unchanged
     ) {
         *self.scrollable_view_chs.borrow_mut() = view_width;
-        self.base.set_dyn_width(scrollbar_length.clone());
+        self.pane.set_dyn_width(scrollbar_length.clone());
         *self.scrollbar_length_chs.borrow_mut() = scrollbar_length;
         if let Some(scrollable_width) = scrollable_width {
             *self.scrollable_domain_chs.borrow_mut() = scrollable_width;
@@ -197,8 +191,8 @@ impl HorizontalScrollbar {
     // ----------------------------------------------
     // decorators
 
-    pub fn with_styles(self, styles: WBStyles) -> Self {
-        self.base.set_styles(styles);
+    pub fn with_styles(self, styles: SelStyles) -> Self {
+        self.pane.set_styles(styles);
         self
     }
 
@@ -209,22 +203,18 @@ impl HorizontalScrollbar {
 
     /// set the dimensions of the actual scrollbar (note not the view area)
     pub fn with_scrollbar_length(self, scrollbar_length: DynVal) -> Self {
-        //self.base.set_dyn_width(scrollbar_length.clone());
+        //self.pane.set_dyn_width(scrollbar_length.clone());
         *self.scrollbar_length_chs.borrow_mut() = scrollbar_length;
         self
     }
 
     pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.base.at(loc_x, loc_y);
+        self.pane.at(loc_x, loc_y);
         self
     }
 
     pub fn set_at(&self, loc_x: DynVal, loc_y: DynVal) {
-        self.base.at(loc_x, loc_y);
-    }
-
-    pub fn to_widgets(self) -> Widgets {
-        Widgets(vec![Box::new(self)])
+        self.pane.at(loc_x, loc_y);
     }
 
     pub fn without_arrows(self) -> Self {
@@ -235,7 +225,7 @@ impl HorizontalScrollbar {
 
 // ------------------------------------------------------------------
 
-/// The Scrollbar is a base type of common logic to build the
+/// The Scrollbar is a pane type of common logic to build the
 /// vertical and horizontal scrollbars off of.
 ///
 /// For vertical scrollbars:
@@ -247,7 +237,7 @@ impl HorizontalScrollbar {
 ///   - "forwards" should be thought of as "right".
 #[derive(Clone)]
 pub struct Scrollbar {
-    pub base: WidgetBase,
+    pub pane: Pane,
 
     /// The ScrollableDomainChs is the scrollable dimension in true characters.
     /// It is AFFECTED by the scrollbar and NOT the literal area of the scrollbar
@@ -368,7 +358,7 @@ pub enum SBRelPosition {
 }
 
 impl Scrollbar {
-    const STYLE: WBStyles = WBStyles {
+    const STYLE: SelStyles = SelStyles {
         selected_style: Style::new_const(Color::BLACK, Color::LIGHT_YELLOW2),
         ready_style: Style::new_const(Color::WHITE, Color::GREY13),
         unselectable_style: Style::new_const(Color::WHITE, Color::GREY13),
@@ -640,10 +630,10 @@ impl Scrollbar {
     pub fn update_selectibility(&self, ctx: &Context, p_size: usize) {
         if self.is_currently_unnecessary(p_size) {
             let _ = self
-                .base
+                .pane
                 .set_selectability(ctx, Selectability::Unselectable);
         } else {
-            let _ = self.base.set_selectability(ctx, Selectability::Ready);
+            let _ = self.pane.set_selectability(ctx, Selectability::Ready);
         }
     }
 
@@ -732,16 +722,16 @@ impl VerticalScrollbar {
     pub fn drawing_(&self, ctx: &Context) -> Vec<DrawChPos> {
         let chs = self.drawing_runes(ctx.get_height().into());
         let content = DrawChs2D::from_draw_chs_vertical(chs);
-        self.base.set_content(content);
-        self.base.drawing(ctx)
+        self.pane.set_content(content);
+        self.pane.drawing(ctx)
     }
 }
 impl HorizontalScrollbar {
     pub fn drawing_(&self, ctx: &Context) -> Vec<DrawChPos> {
         let chs = self.drawing_runes(ctx.get_width().into());
         let content = DrawChs2D::from_draw_chs_horizontal(chs);
-        self.base.set_content(content);
-        self.base.drawing(ctx)
+        self.pane.set_content(content);
+        self.pane.drawing(ctx)
     }
 }
 
@@ -760,7 +750,7 @@ impl HorizontalScrollbar {
 
 impl VerticalScrollbar {
     pub fn receive_key_event(&self, ev: Vec<KeyEvent>, ctx: &Context) -> (bool, EventResponses) {
-        if self.base.get_selectability() != Selectability::Selected || ev.is_empty() {
+        if self.pane.get_selectability() != Selectability::Selected || ev.is_empty() {
             return (false, EventResponses::default());
         }
 
@@ -784,7 +774,7 @@ impl VerticalScrollbar {
 
 impl HorizontalScrollbar {
     pub fn receive_key_event(&self, ev: Vec<KeyEvent>, ctx: &Context) -> (bool, EventResponses) {
-        if self.base.get_selectability() != Selectability::Selected || ev.is_empty() {
+        if self.pane.get_selectability() != Selectability::Selected || ev.is_empty() {
             return (false, EventResponses::default());
         }
 
@@ -804,7 +794,7 @@ impl HorizontalScrollbar {
 
 impl VerticalScrollbar {
     pub fn receive_mouse_event(&self, ctx: &Context, ev: MouseEvent) -> (bool, EventResponses) {
-        if self.base.get_selectability() == Selectability::Unselectable {
+        if self.pane.get_selectability() == Selectability::Unselectable {
             return (false, EventResponses::default());
         }
 
@@ -916,7 +906,7 @@ impl VerticalScrollbar {
     pub fn receive_external_mouse_event(
         &self, ctx: &Context, ev: RelMouseEvent,
     ) -> (bool, EventResponses) {
-        if self.base.get_selectability() == Selectability::Unselectable {
+        if self.pane.get_selectability() == Selectability::Unselectable {
             return (false, EventResponses::default());
         }
         let curr_dragging = *self.currently_dragging.borrow();
@@ -935,7 +925,7 @@ impl VerticalScrollbar {
 
 impl HorizontalScrollbar {
     pub fn receive_mouse_event(&self, ctx: &Context, ev: MouseEvent) -> (bool, EventResponses) {
-        if self.base.get_selectability() == Selectability::Unselectable {
+        if self.pane.get_selectability() == Selectability::Unselectable {
             return (false, EventResponses::default());
         }
 
@@ -1040,7 +1030,7 @@ impl HorizontalScrollbar {
     pub fn receive_external_mouse_event(
         &self, ctx: &Context, ev: RelMouseEvent,
     ) -> (bool, EventResponses) {
-        if self.base.get_selectability() == Selectability::Unselectable {
+        if self.pane.get_selectability() == Selectability::Unselectable {
             return (false, EventResponses::default());
         }
         let curr_dragging = *self.currently_dragging.borrow();
@@ -1057,21 +1047,7 @@ impl HorizontalScrollbar {
     }
 }
 
-impl Widget for VerticalScrollbar {
-    fn set_selectability_pre_hook(&self, _: &Context, _: Selectability) -> EventResponses {
-        *self.currently_dragging.borrow_mut() = false;
-        EventResponses::default()
-    }
-}
-
-impl Widget for HorizontalScrollbar {
-    fn set_selectability_pre_hook(&self, _: &Context, _: Selectability) -> EventResponses {
-        *self.currently_dragging.borrow_mut() = false;
-        EventResponses::default()
-    }
-}
-
-#[yeehaw_derive::impl_element_from(base)]
+#[yeehaw_derive::impl_element_from(pane)]
 impl Element for VerticalScrollbar {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
@@ -1087,7 +1063,7 @@ impl Element for VerticalScrollbar {
     }
 }
 
-#[yeehaw_derive::impl_element_from(base)]
+#[yeehaw_derive::impl_element_from(pane)]
 impl Element for HorizontalScrollbar {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {

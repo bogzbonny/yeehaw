@@ -1,5 +1,4 @@
 use {
-    super::{Selectability, VerticalScrollbar, WBStyles, Widget, WidgetBase, Widgets},
     crate::{Keyboard as KB, *},
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -9,7 +8,7 @@ use {
 
 #[derive(Clone)]
 pub struct DropdownList {
-    pub base: WidgetBase,
+    pub pane: SelectablePane,
     pub entries: Rc<RefCell<Vec<String>>>,
     pub left_padding: Rc<RefCell<usize>>,
     /// width explicitly set by the caller
@@ -38,13 +37,13 @@ pub struct DropdownList {
 impl DropdownList {
     const KIND: &'static str = "widget_dropdownlist";
 
-    const STYLE: WBStyles = WBStyles {
+    const STYLE: SelStyles = SelStyles {
         selected_style: Style::new_const(Color::BLACK, Color::YELLOW),
         ready_style: Style::new_const(Color::BLACK, Color::WHITE),
         unselectable_style: Style::new_const(Color::BLACK, Color::GREY13),
     };
 
-    const STYLE_SCROLLBAR: WBStyles = WBStyles {
+    const STYLE_SCROLLBAR: SelStyles = SelStyles {
         selected_style: Style::new_const(Color::WHITE, Color::GREY13),
         ready_style: Style::new_const(Color::WHITE, Color::GREY13),
         unselectable_style: Style::new_const(Color::WHITE, Color::GREY13),
@@ -59,40 +58,39 @@ impl DropdownList {
     /// if widgets overlap
     const Z_INDEX: ZIndex = super::widget::WIDGET_Z_INDEX + 1;
 
-    pub fn default_receivable_events() -> Vec<ReceivableEvent> {
-        vec![
-            KB::KEY_ENTER.into(),
-            KB::KEY_DOWN.into(),
-            KB::KEY_UP.into(),
-            KB::KEY_K.into(),
-            KB::KEY_J.into(),
-            KB::KEY_SPACE.into(),
-        ]
+    pub fn default_receivable_events() -> SelfReceivableEvents {
+        SelfReceivableEvents(vec![
+            (KB::KEY_ENTER.into(), Priority::Focused),
+            (KB::KEY_DOWN.into(), Priority::Focused),
+            (KB::KEY_UP.into(), Priority::Focused),
+            (KB::KEY_K.into(), Priority::Focused),
+            (KB::KEY_J.into(), Priority::Focused),
+            (KB::KEY_SPACE.into(), Priority::Focused),
+        ])
     }
 
     pub fn new(
         ctx: &Context, entries: Vec<String>,
         selection_made_fn: Box<dyn FnMut(Context, String) -> EventResponses>,
     ) -> Self {
-        let wb = WidgetBase::new(
-            ctx,
-            Self::KIND,
-            DynVal::new_fixed(0), // NOTE width is set later
-            DynVal::new_fixed(1),
-            Self::STYLE,
-            Self::default_receivable_events(),
-        );
+        let pane = SelectablePane::new(ctx, Self::KIND);
+        pane.pane
+            .set_self_receivable_events(Self::default_receivable_events());
+        pane.set_styles(Self::STYLE);
+        pane.pane.set_dyn_height(DynVal::new_fixed(1));
+        pane.pane.set_z(Self::Z_INDEX);
+
         let sb = VerticalScrollbar::new(ctx, DynVal::new_fixed(0), 0)
             .without_arrows()
             .with_styles(Self::STYLE_SCROLLBAR);
 
         //wire the scrollbar to the dropdown list
-        let wb_ = wb.clone();
-        let hook = Box::new(move |ctx, y| wb_.set_content_y_offset(&ctx, y));
+        let pane_ = pane.clone();
+        let hook = Box::new(move |ctx, y| pane_.set_content_y_offset(&ctx, y));
         *sb.position_changed_hook.borrow_mut() = Some(hook);
 
         let d = DropdownList {
-            base: wb,
+            pane,
             entries: Rc::new(RefCell::new(entries)),
             left_padding: Rc::new(RefCell::new(1)),
             specified_width: Rc::new(RefCell::new(None)),
@@ -106,15 +104,24 @@ impl DropdownList {
             selection_made_fn: Rc::new(RefCell::new(selection_made_fn)),
             scrollbar: sb,
         };
-        d.base.set_dyn_width(d.calculate_dyn_width());
+        d.pane.set_dyn_width(d.calculate_dyn_width());
+
+        let d_ = d.clone();
+        d.pane.set_post_hook_for_set_selectability(move |ctx, _| {
+            if d_.pane.get_selectability() != Selectability::Selected && *d_.open.borrow() {
+                return d_.perform_close(ctx, true);
+            }
+            EventResponses::default()
+        });
+
         d
     }
 
     // ----------------------------------------------
     /// decorators
 
-    pub fn with_styles(self, styles: WBStyles) -> Self {
-        self.base.set_styles(styles);
+    pub fn with_styles(self, styles: SelStyles) -> Self {
+        self.pane.set_styles(styles);
         self
     }
 
@@ -125,13 +132,13 @@ impl DropdownList {
 
     pub fn with_width(self, width: DynVal) -> Self {
         *self.specified_width.borrow_mut() = Some(width);
-        self.base.set_dyn_width(self.calculate_dyn_width());
+        self.pane.set_dyn_width(self.calculate_dyn_width());
         self
     }
 
     pub fn with_left_padding(self, padding: usize) -> Self {
         *self.left_padding.borrow_mut() = padding;
-        self.base.set_dyn_width(self.calculate_dyn_width());
+        self.pane.set_dyn_width(self.calculate_dyn_width());
         self
     }
 
@@ -146,24 +153,20 @@ impl DropdownList {
     }
 
     pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.base.at(loc_x, loc_y);
+        self.pane.at(loc_x, loc_y);
         self
-    }
-
-    pub fn to_widgets(self) -> Widgets {
-        Widgets(vec![Box::new(self)])
     }
 
     // ----------------------------------------------
 
     pub fn correct_offsets(&self, ctx: &Context) {
         let cursor_pos = *self.cursor.borrow();
-        self.base
+        self.pane
             .correct_offsets_to_view_position(ctx, 0, cursor_pos);
         self.scrollbar.external_change(
             ctx,
-            *self.base.pane.content_view_offset_y.borrow(),
-            self.base.content_height(),
+            *self.pane.pane.content_view_offset_y.borrow(),
+            self.pane.content_height(),
         );
     }
 
@@ -228,19 +231,19 @@ impl DropdownList {
         *self.open.borrow_mut() = true;
         *self.cursor.borrow_mut() = *self.selected.borrow();
         let h = self.expanded_height() as i32;
-        self.base.set_dyn_height(DynVal::new_fixed(h));
+        self.pane.set_dyn_height(DynVal::new_fixed(h));
 
         // must set the content for the offsets to be correct
-        self.base.set_content_from_string(ctx, &self.text(ctx));
+        self.pane.set_content_from_string(ctx, &self.text(ctx));
         self.correct_offsets(ctx);
     }
 
     pub fn perform_close(&self, ctx: &Context, escaped: bool) -> EventResponses {
         *self.open.borrow_mut() = false;
-        *self.base.pane.content_view_offset_y.borrow_mut() = 0;
+        *self.pane.pane.content_view_offset_y.borrow_mut() = 0;
         self.scrollbar
-            .external_change(ctx, 0, self.base.content_height());
-        self.base.set_dyn_height(DynVal::new_fixed(1));
+            .external_change(ctx, 0, self.pane.content_height());
+        self.pane.set_dyn_height(DynVal::new_fixed(1));
         if !escaped && *self.selected.borrow() != *self.cursor.borrow() {
             *self.selected.borrow_mut() = *self.cursor.borrow();
             (self.selection_made_fn.borrow_mut())(
@@ -267,33 +270,20 @@ impl DropdownList {
     }
 }
 
-impl Widget for DropdownList {
-    fn get_z_index(&self) -> ZIndex {
-        Self::Z_INDEX // slightly lower than the rest of the widgets so that the dropdown list will sit above the other widgets
-    }
-
-    fn set_selectability_pre_hook(&self, ctx: &Context, s: Selectability) -> EventResponses {
-        if self.base.get_selectability() == Selectability::Selected
-            && s != Selectability::Selected
-            && *self.open.borrow()
-        {
-            return self.perform_close(ctx, true);
-        }
-        EventResponses::default()
-    }
-}
-
-#[yeehaw_derive::impl_element_from(base)]
+#[yeehaw_derive::impl_element_from(pane)]
 impl Element for DropdownList {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        let _ = self.base.receive_event(ctx, ev.clone());
+        let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
+        if captured {
+            return (true, resps);
+        }
         match ev {
             Event::KeyCombo(ke) => {
-                if self.base.get_selectability() != Selectability::Selected || ke.is_empty() {
-                    return (false, EventResponses::default());
+                if self.pane.get_selectability() != Selectability::Selected || ke.is_empty() {
+                    return (false, resps);
                 }
                 let open = *self.open.borrow();
-                return match true {
+                match true {
                     _ if !open
                         && (ke[0] == KB::KEY_ENTER
                             || ke[0] == KB::KEY_DOWN
@@ -302,25 +292,28 @@ impl Element for DropdownList {
                             || ke[0] == KB::KEY_K) =>
                     {
                         self.perform_open(ctx);
-                        (true, EventResponses::default())
+                        return (true, resps);
                     }
                     _ if open && ke[0] == KB::KEY_ENTER => (true, self.perform_close(ctx, false)),
                     _ if open && ke[0] == KB::KEY_DOWN || ke[0] == KB::KEY_J => {
                         self.cursor_down(ctx);
-                        (true, EventResponses::default())
+                        return (true, resps);
                     }
                     _ if open && ke[0] == KB::KEY_UP || ke[0] == KB::KEY_K => {
                         self.cursor_up(ctx);
-                        (true, EventResponses::default())
+                        return (true, resps);
                     }
                     _ if open && ke[0] == KB::KEY_SPACE => {
                         if self.scrollbar.get_selectability() != Selectability::Selected {
                             self.scrollbar
                                 .set_selectability(ctx, Selectability::Selected);
                         }
-                        self.scrollbar.receive_event(ctx, Event::KeyCombo(ke))
+                        let (captured, resps_) =
+                            self.scrollbar.receive_event(ctx, Event::KeyCombo(ke));
+                        resps.extend(resps_);
+                        return (captured, resps);
                     }
-                    _ => (false, EventResponses::default()),
+                    _ => return (false, resps),
                 };
             }
             Event::Mouse(me) => {
@@ -332,7 +325,7 @@ impl Element for DropdownList {
                     match me.kind {
                         MouseEventKind::Down(MouseButton::Left) if !open => {
                             *self.clicked_down.borrow_mut() = true;
-                            return (true, EventResponses::default());
+                            return (true, resps);
                         }
                         MouseEventKind::Drag(MouseButton::Left) if clicked_down => {}
                         _ => {
@@ -348,18 +341,18 @@ impl Element for DropdownList {
                     _ => {}
                 }
 
-                return match true {
+                match true {
                     _ if !open && clicked => {
                         self.perform_open(ctx);
-                        (true, EventResponses::default())
+                        return (true, resps);
                     }
                     _ if open && scroll_up => {
                         self.cursor_up(ctx);
-                        (true, EventResponses::default())
+                        return (true, resps);
                     }
                     _ if open && scroll_down => {
                         self.cursor_down(ctx);
-                        (true, EventResponses::default())
+                        return (true, resps);
                     }
                     _ if open && (!clicked || dragging) => {
                         let (x, y) = (me.column as usize, me.row as usize);
@@ -367,12 +360,12 @@ impl Element for DropdownList {
                         // change hovering location to the ev
 
                         // on arrow
-                        if y == 0 && x == self.base.get_width_val(ctx).saturating_sub(1) {
-                            return (true, EventResponses::default());
+                        if y == 0 && x == self.pane.get_width_val(ctx).saturating_sub(1) {
+                            return (true, resps);
 
                         // on scrollbar
                         } else if y > 0
-                            && x == self.base.get_width_val(ctx).saturating_sub(1)
+                            && x == self.pane.get_width_val(ctx).saturating_sub(1)
                             && self.display_scrollbar()
                         {
                             if dragging {
@@ -385,20 +378,23 @@ impl Element for DropdownList {
                                 let mut me_ = me;
                                 me_.column = 0;
                                 me_.row = y.saturating_sub(1) as u16;
-                                return self.scrollbar.receive_event(ctx, Event::Mouse(me_));
+                                let (captured, resps_) =
+                                    self.scrollbar.receive_event(ctx, Event::Mouse(me_));
+                                resps.extend(resps_);
+                                return (captured, resps);
                             }
-                            return (true, EventResponses::default());
+                            return (true, resps);
                         } else {
                             *self.cursor.borrow_mut() =
-                                y + *self.base.pane.content_view_offset_y.borrow();
+                                y + *self.pane.pane.content_view_offset_y.borrow();
                         }
                         let _ = self.scrollbar.set_selectability(ctx, Selectability::Ready);
-                        (true, EventResponses::default())
+                        return (true, resps);
                     }
                     _ if open && clicked => {
                         let (x, y) = (me.column as usize, me.row as usize);
                         if y > 0
-                            && x == self.base.get_width_val(ctx).saturating_sub(1)
+                            && x == self.pane.get_width_val(ctx).saturating_sub(1)
                             && self.display_scrollbar()
                         {
                             if self.scrollbar.get_selectability() != Selectability::Selected {
@@ -410,48 +406,56 @@ impl Element for DropdownList {
                             let mut me_ = me;
                             me_.column = 0;
                             me_.row = y.saturating_sub(1) as u16;
-                            return self.scrollbar.receive_event(ctx, Event::Mouse(me_));
+                            let (captured, resps_) =
+                                self.scrollbar.receive_event(ctx, Event::Mouse(me_));
+                            resps.extend(resps_);
+                            return (captured, resps);
                         }
 
                         // on arrow close without change
-                        if y == 0 && x == self.base.get_width_val(ctx).saturating_sub(1) {
-                            return (true, self.perform_close(ctx, true));
+                        if y == 0 && x == self.pane.get_width_val(ctx).saturating_sub(1) {
+                            let resps_ = self.perform_close(ctx, true);
+                            resps.extend(resps_);
+                            return (true, resps);
                         }
                         let _ = self.scrollbar.set_selectability(ctx, Selectability::Ready);
                         *self.cursor.borrow_mut() =
-                            y + *self.base.pane.content_view_offset_y.borrow();
-                        (true, self.perform_close(ctx, false))
+                            y + *self.pane.pane.content_view_offset_y.borrow();
+
+                        let resps_ = self.perform_close(ctx, false);
+                        resps.extend(resps_);
+                        return (true, resps);
                     }
-                    _ => (false, EventResponses::default()),
+                    _ => return (false, resps),
                 };
             }
             _ => {}
         }
-        (false, EventResponses::default())
+        (false, resps)
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        self.base.set_content_from_string(ctx, &self.text(ctx));
+        self.pane.set_content_from_string(ctx, &self.text(ctx));
 
         let open = *self.open.borrow();
 
         // highlight the hovering entry
         if open {
-            self.base
+            self.pane
                 .pane
                 .content
                 .borrow_mut()
                 .change_style_along_y(*self.cursor.borrow(), self.cursor_style.borrow().clone());
         }
 
-        let mut chs = self.base.drawing(ctx);
+        let mut chs = self.pane.drawing(ctx);
 
         // set the scrollbar on top of the content
         if open && self.display_scrollbar() {
             let mut sb_chs = self.scrollbar.drawing(ctx);
             // shift the scrollbar content to below the arrow
             for ch in sb_chs.iter_mut() {
-                ch.x += self.base.get_width_val(ctx).saturating_sub(1) as u16;
+                ch.x += self.pane.get_width_val(ctx).saturating_sub(1) as u16;
                 ch.y += 1;
             }
             chs.extend(sb_chs);
@@ -460,7 +464,7 @@ impl Element for DropdownList {
         // set the arrow
         let arrow_ch = DrawChPos::new(
             self.dropdown_arrow.borrow().clone(),
-            self.base.get_width_val(ctx).saturating_sub(1) as u16,
+            self.pane.get_width_val(ctx).saturating_sub(1) as u16,
             0,
         );
         chs.push(arrow_ch);

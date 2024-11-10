@@ -1,20 +1,15 @@
 use {
-    super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
-    crate::{
-        Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEvent, ReceivableEventChanges,
-        SelfReceivableEvents, Style,
-    },
+    crate::{Keyboard as KB, Parent, *},
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
 };
 
-/// TODO multiline text support for each radio
-/// TODO option to start with nothing selected
+// TODO multiline text support for each radio
+// TODO option to start with nothing selected
 
 #[derive(Clone)]
 pub struct RadioButtons {
-    pub base: WidgetBase,
+    pub pane: SelectablePane,
     pub on_ch: Rc<RefCell<char>>,
     /// ch used for the selected
     pub off_ch: Rc<RefCell<char>>,
@@ -40,13 +35,13 @@ pub struct RadioButtons {
 impl RadioButtons {
     const KIND: &'static str = "widget_radio";
 
-    const STYLE: WBStyles = WBStyles {
+    const STYLE: SelStyles = SelStyles {
         selected_style: Style::new_const(Color::LIGHT_YELLOW2, Color::TRANSPARENT),
         ready_style: Style::new_const(Color::WHITE, Color::TRANSPARENT),
         unselectable_style: Style::new_const(Color::GREY13, Color::TRANSPARENT),
     };
 
-    pub fn default_receivable_events() -> Vec<ReceivableEvent> {
+    pub fn default_receivable_events() -> SelfReceivableEvents {
         vec![
             KB::KEY_UP.into(),
             KB::KEY_DOWN.into(),
@@ -57,17 +52,16 @@ impl RadioButtons {
 
     pub fn new(ctx: &Context, radios: Vec<String>) -> Self {
         let max_width = radios.iter().map(|r| r.chars().count()).max().unwrap_or(0) as i32 + 1; // +1 for the radio button
-        let wb = WidgetBase::new(
-            ctx,
-            Self::KIND,
-            DynVal::new_fixed(max_width),
-            DynVal::new_fixed(radios.len() as i32),
-            // TODO change for multiline support
-            Self::STYLE,
-            Self::default_receivable_events(),
-        );
+        let pane = SelectablePane::new(ctx, Self::KIND);
+        pane.pane
+            .set_self_receivable_events(Self::default_receivable_events());
+        pane.set_styles(Self::STYLE);
+        pane.pane.set_dyn_width(DynVal::new_fixed(max_width));
+        pane.pane
+            .set_dyn_height(DynVal::new_fixed(radios.len() as i32));
+
         RadioButtons {
-            base: wb,
+            pane,
             on_ch: Rc::new(RefCell::new('⍟')),
             off_ch: Rc::new(RefCell::new('◯')),
             clicked_down: Rc::new(RefCell::new(false)),
@@ -87,30 +81,27 @@ impl RadioButtons {
         self
     }
 
-    pub fn with_styles(self, styles: WBStyles) -> Self {
-        self.base.set_styles(styles);
+    pub fn with_styles(self, styles: SelStyles) -> Self {
+        self.pane.set_styles(styles);
         self
     }
 
     pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.base.at(loc_x, loc_y);
+        self.pane.at(loc_x, loc_y);
         self
-    }
-
-    pub fn to_widgets(self) -> Widgets {
-        Widgets(vec![Box::new(self)])
     }
 }
 
-impl Widget for RadioButtons {}
-
-#[yeehaw_derive::impl_element_from(base)]
+#[yeehaw_derive::impl_element_from(pane)]
 impl Element for RadioButtons {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        let _ = self.base.receive_event(ctx, ev.clone());
+        let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
+        if captured {
+            return (true, resps);
+        }
         match ev {
             Event::KeyCombo(ke) => {
-                if self.base.get_selectability() != Selectability::Selected || ke.is_empty() {
+                if self.pane.get_selectability() != Selectability::Selected || ke.is_empty() {
                     return (false, EventResponses::default());
                 }
 
@@ -120,9 +111,10 @@ impl Element for RadioButtons {
                             *self.selected.borrow_mut() += 1;
                             let sel_i = *self.selected.borrow();
                             let sel_str = self.radios.borrow()[sel_i].clone();
-                            let resp =
+                            let resps_ =
                                 self.radio_selected_fn.borrow_mut()(ctx.clone(), sel_i, sel_str);
-                            return (true, resp);
+                            resps.extend(resps_);
+                            return (true, resps);
                         }
                     }
                     _ if ke[0] == KB::KEY_UP || ke[0] == KB::KEY_K => {
@@ -130,9 +122,10 @@ impl Element for RadioButtons {
                             *self.selected.borrow_mut() -= 1;
                             let sel_i = *self.selected.borrow();
                             let sel_str = self.radios.borrow()[sel_i].clone();
-                            let resp =
+                            let resps_ =
                                 self.radio_selected_fn.borrow_mut()(ctx.clone(), sel_i, sel_str);
-                            return (true, resp);
+                            resps.extend(resps_);
+                            return (true, resps);
                         }
                     }
                     _ => {}
@@ -146,7 +139,7 @@ impl Element for RadioButtons {
                 match me.kind {
                     MouseEventKind::Down(MouseButton::Left) => {
                         *self.clicked_down.borrow_mut() = true;
-                        return (true, EventResponses::default());
+                        return (true, resps);
                     }
                     MouseEventKind::Drag(MouseButton::Left) if clicked_down => {}
                     MouseEventKind::Up(MouseButton::Left) if clicked_down => {
@@ -154,12 +147,13 @@ impl Element for RadioButtons {
                         let y = me.row as usize;
                         if y < self.radios.borrow().len() {
                             *self.selected.borrow_mut() = y;
-                            let resp = self.radio_selected_fn.borrow_mut()(
+                            let resps_ = self.radio_selected_fn.borrow_mut()(
                                 ctx.clone(),
                                 y,
                                 self.radios.borrow()[y].clone(),
                             );
-                            return (true, resp);
+                            resps.extend(resps_);
+                            return (true, resps);
                         }
                     }
                     _ => {
@@ -167,11 +161,11 @@ impl Element for RadioButtons {
                     }
                 }
 
-                return (false, EventResponses::default());
+                return (false, resps);
             }
             _ => {}
         }
-        (false, EventResponses::default())
+        (false, resps)
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
@@ -194,7 +188,7 @@ impl Element for RadioButtons {
                     }
                     acc
                 });
-        self.base.set_content_from_string(ctx, &s);
-        self.base.drawing(ctx)
+        self.pane.set_content_from_string(ctx, &s);
+        self.pane.drawing(ctx)
     }
 }

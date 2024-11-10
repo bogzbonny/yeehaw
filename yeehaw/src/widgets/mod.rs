@@ -1,4 +1,3 @@
-pub mod common;
 pub mod el_widget_pane;
 pub mod widget;
 pub mod widget_button;

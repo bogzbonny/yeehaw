@@ -1,17 +1,12 @@
 use {
-    super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
-    crate::{
-        Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEvent, ReceivableEventChanges,
-        SelfReceivableEvents, Style,
-    },
+    crate::{Keyboard as KB, *},
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
 };
 
 #[derive(Clone)]
 pub struct Toggle {
-    pub base: WidgetBase,
+    pub pane: SelectablePane,
     pub left: Rc<RefCell<String>>,
     pub right: Rc<RefCell<String>>,
     pub left_selected: Rc<RefCell<bool>>,
@@ -26,7 +21,7 @@ pub struct Toggle {
 impl Toggle {
     const KIND: &'static str = "widget_button";
 
-    const STYLE: WBStyles = WBStyles {
+    const STYLE: SelStyles = SelStyles {
         selected_style: Style::new_const(Color::BLACK, Color::LIGHT_YELLOW2),
         ready_style: Style::new_const(Color::BLACK, Color::WHITE),
         unselectable_style: Style::new_const(Color::BLACK, Color::GREY13),
@@ -35,7 +30,7 @@ impl Toggle {
     /// for the selected toggle
     const DEFAULT_SELECTED_STY: Style = Style::new_const(Color::BLACK, Color::LIGHT_BLUE);
 
-    pub fn default_receivable_events() -> Vec<ReceivableEvent> {
+    pub fn default_receivable_events() -> SelfReceivableEvents {
         vec![
             KB::KEY_ENTER.into(),
             KB::KEY_LEFT.into(),
@@ -49,17 +44,19 @@ impl Toggle {
         ctx: &Context, left: String, right: String,
         toggeld_fn: Box<dyn FnMut(Context, String) -> EventResponses>,
     ) -> Self {
-        let wb = WidgetBase::new(
-            ctx,
-            Self::KIND,
-            DynVal::new_fixed(left.chars().count() as i32 + right.chars().count() as i32),
-            DynVal::new_fixed(1),
-            Self::STYLE,
-            Self::default_receivable_events(),
-        );
-        wb.set_content_from_string(ctx, &(left.clone() + &right));
+        let pane = SelectablePane::new(ctx, Self::KIND);
+        pane.pane
+            .set_self_receivable_events(Self::default_receivable_events());
+        pane.set_styles(Self::STYLE);
+        pane.pane.set_dyn_width(DynVal::new_fixed(
+            left.chars().count() as i32 + right.chars().count() as i32,
+        ));
+        pane.pane.set_dyn_height(DynVal::new_fixed(1));
+
+        pane.set_content_from_string(&(left.clone() + &right));
+
         Toggle {
-            base: wb,
+            pane,
             left: Rc::new(RefCell::new(left)),
             right: Rc::new(RefCell::new(right)),
             left_selected: Rc::new(RefCell::new(true)),
@@ -72,18 +69,14 @@ impl Toggle {
     // ----------------------------------------------
     /// decorators
 
-    pub fn with_styles(self, styles: WBStyles) -> Self {
-        self.base.set_styles(styles);
+    pub fn with_styles(self, styles: SelStyles) -> Self {
+        self.pane.set_styles(styles);
         self
     }
 
     pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.base.at(loc_x, loc_y);
+        self.pane.at(loc_x, loc_y);
         self
-    }
-
-    pub fn to_widgets(self) -> Widgets {
-        Widgets(vec![Box::new(self)])
     }
 
     // ----------------------------------------------
@@ -102,43 +95,50 @@ impl Toggle {
     }
 }
 
-impl Widget for Toggle {}
-
-#[yeehaw_derive::impl_element_from(base)]
+#[yeehaw_derive::impl_element_from(pane)]
 impl Element for Toggle {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        let _ = self.base.receive_event(ctx, ev.clone());
+        let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
+        if captured {
+            return (true, resps);
+        }
         match ev {
             Event::KeyCombo(ke) => {
-                if self.base.get_selectability() != Selectability::Selected || ke.is_empty() {
-                    return (false, EventResponses::default());
+                if self.pane.get_selectability() != Selectability::Selected || ke.is_empty() {
+                    return (false, resps);
                 }
                 match true {
                     _ if ke[0] == KB::KEY_ENTER => {
-                        return (true, self.perform_toggle(ctx));
+                        let resps_ = self.perform_toggle(ctx);
+                        resps.extend(resps_);
+                        return (true, resps);
                     }
                     _ if ke[0] == KB::KEY_LEFT || ke[0] == KB::KEY_H => {
                         if !*self.left_selected.borrow() {
-                            return (true, self.perform_toggle(ctx));
+                            let resps_ = self.perform_toggle(ctx);
+                            resps.extend(resps_);
+                            return (true, resps);
                         }
-                        return (true, EventResponses::default());
+                        return (true, resps);
                     }
                     _ if ke[0] == KB::KEY_RIGHT || ke[0] == KB::KEY_L => {
                         if *self.left_selected.borrow() {
-                            return (true, self.perform_toggle(ctx));
+                            let resps_ = self.perform_toggle(ctx);
+                            resps.extend(resps_);
+                            return (true, resps);
                         }
-                        return (true, EventResponses::default());
+                        return (true, resps);
                     }
                     _ => {}
                 }
-                return (false, EventResponses::default());
+                return (false, resps);
             }
             Event::Mouse(me) => {
                 let clicked_down = *self.clicked_down.borrow();
                 match me.kind {
                     MouseEventKind::Down(MouseButton::Left) => {
                         *self.clicked_down.borrow_mut() = true;
-                        return (true, EventResponses::default());
+                        return (true, resps);
                     }
                     MouseEventKind::Drag(MouseButton::Left) if clicked_down => {}
                     MouseEventKind::Up(MouseButton::Left) if clicked_down => {
@@ -148,18 +148,20 @@ impl Element for Toggle {
                         if (!left_sel && x < self.left.borrow().chars().count())
                             || (left_sel && x >= self.left.borrow().chars().count())
                         {
-                            return (true, self.perform_toggle(ctx));
+                            let resps_ = self.perform_toggle(ctx);
+                            resps.extend(resps_);
+                            return (true, resps);
                         }
                     }
                     _ => {
                         *self.clicked_down.borrow_mut() = false;
                     }
                 }
-                return (false, EventResponses::default());
+                return (false, resps);
             }
             _ => {}
         }
-        (false, EventResponses::default())
+        (false, resps)
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
@@ -168,19 +170,19 @@ impl Element for Toggle {
         let right = self.right.borrow();
         let left_len = left.chars().count();
         let right_len = right.chars().count();
-        self.base
+        self.pane
             .set_content_from_string(ctx, &(left.clone() + &right));
         if *self.left_selected.borrow() {
             for i in 0..left_len {
-                self.base.pane.content.borrow_mut()[0][i].style =
+                self.pane.pane.content.borrow_mut()[0][i].style =
                     self.selected_sty.borrow().clone();
             }
         } else {
             for i in left_len..left_len + right_len {
-                self.base.pane.content.borrow_mut()[0][i].style =
+                self.pane.pane.content.borrow_mut()[0][i].style =
                     self.selected_sty.borrow().clone();
             }
         }
-        self.base.drawing(ctx)
+        self.pane.drawing(ctx)
     }
 }

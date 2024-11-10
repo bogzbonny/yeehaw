@@ -60,17 +60,17 @@ yeehaw/src/widgets/widget_textbox_numbers.rs:118:    pub fn to_widgets(&self, ct
 el_widget_pane.rs          | DONE/TO_DELETE                                  
 mod.rs                     | TO_DELETE                       
 widget.rs                  | TO_DELETE                          
-widget_button.rs           | 
-widget_checkbox.rs         | 
-widget_dropdownlist.rs     | 
-widget_figlet.rs           | DONE
-widget_label.rs            | DONE                             
-widget_listbox.rs          | 
-widget_radio.rs            | 
-widget_scrollbar.rs        | 
+widget_button.rs           | DONE
+widget_checkbox.rs         | DONE
+widget_dropdownlist.rs     | DONE
+widget_figlet.rs           | DONE (not selectable)
+widget_label.rs            | DONE (not selectable)                            
+widget_listbox.rs          |  - need to translate to_widgets
+widget_radio.rs            | DONE
+widget_scrollbar.rs        | DONE (not selectable)
 widget_textbox.rs          | 
 widget_textbox_numbers.rs  | 
-widget_toggle.rs           | 
+widget_toggle.rs           | DONE
 
 
 05. create builder types for each widget. 

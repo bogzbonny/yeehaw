@@ -1,7 +1,7 @@
 use {
     crate::{
-        prioritizer::Priority, Context, DrawChPos, DynLocation, DynLocationSet, DynVal, ElementID,
-        Event, EventResponses, ReceivableEventChanges, SelfReceivableEvents,
+        prioritizer::Priority, Context, DrawChPos, DynLocation, DynLocationSet, ElementID, Event,
+        EventResponses, ReceivableEventChanges, SelfReceivableEvents,
     },
     dyn_clone::DynClone,
     std::{

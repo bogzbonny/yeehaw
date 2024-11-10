@@ -1,17 +1,12 @@
 use {
-    super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
-    crate::{
-        Attributes, Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEvent, ReceivableEventChanges,
-        SelfReceivableEvents, Style,
-    },
+    crate::{Keyboard as KB, *},
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
 };
 
 #[derive(Clone)]
 pub struct Checkbox {
-    pub base: WidgetBase,
+    pub pane: SelectablePane,
     pub checked: Rc<RefCell<bool>>,
     /// whether the checkbox is checked or not
     pub clicked_down: Rc<RefCell<bool>>,
@@ -29,7 +24,7 @@ pub struct Checkbox {
 impl Checkbox {
     const KIND: &'static str = "widget_checkbox";
 
-    const STYLE: WBStyles = WBStyles {
+    const STYLE: SelStyles = SelStyles {
         selected_style: Style::new_const(Color::BLACK, Color::LIGHT_YELLOW2)
             .with_attr(Attributes::new().with_bold()),
         ready_style: Style::new_const(Color::BLACK, Color::WHITE)
@@ -38,21 +33,19 @@ impl Checkbox {
             .with_attr(Attributes::new().with_bold()),
     };
 
-    pub fn default_receivable_events() -> Vec<ReceivableEvent> {
-        vec![KB::KEY_ENTER.into()] // / when "active" hitting enter will click the button
+    pub fn default_receivable_events() -> SelfReceivableEvents {
+        SelfReceivableEvents(vec![(KB::KEY_ENTER.into(), Priority::Focused)]) // / when "active" hitting enter will click the button
     }
 
     pub fn new(ctx: &Context) -> Self {
-        let wb = WidgetBase::new(
-            ctx,
-            Self::KIND,
-            DynVal::new_fixed(1),
-            DynVal::new_fixed(1),
-            Self::STYLE,
-            Self::default_receivable_events(),
-        );
+        let pane = SelectablePane::new(ctx, Self::KIND);
+        pane.pane
+            .set_self_receivable_events(Self::default_receivable_events());
+        pane.set_styles(Self::STYLE);
+        pane.pane.set_dyn_width(DynVal::new_fixed(1));
+        pane.pane.set_dyn_height(DynVal::new_fixed(1));
         Checkbox {
-            base: wb,
+            pane,
             checked: Rc::new(RefCell::new(false)),
             clicked_down: Rc::new(RefCell::new(false)),
             checkmark: Rc::new(RefCell::new('√')),
@@ -63,8 +56,8 @@ impl Checkbox {
     // ----------------------------------------------
     /// decorators
 
-    pub fn with_styles(self, styles: WBStyles) -> Self {
-        self.base.set_styles(styles);
+    pub fn with_styles(self, styles: SelStyles) -> Self {
+        self.pane.set_styles(styles);
         self
     }
 
@@ -76,12 +69,8 @@ impl Checkbox {
     }
 
     pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.base.at(loc_x, loc_y);
+        self.pane.pane.set_at(loc_x, loc_y);
         self
-    }
-
-    pub fn to_widgets(self) -> Widgets {
-        Widgets(vec![Box::new(self)])
     }
 
     // ----------------------------------------------
@@ -96,24 +85,27 @@ impl Checkbox {
     pub fn click(&self, ctx: &Context) -> EventResponses {
         let checked = !*self.checked.borrow();
         self.checked.replace(checked);
-        self.base.set_content_from_string(ctx, &self.text());
+        self.pane.pane.set_content_from_string(&self.text());
         (self.clicked_fn.borrow_mut())(ctx.clone(), checked)
     }
 }
 
-impl Widget for Checkbox {}
-
-#[yeehaw_derive::impl_element_from(base)]
+#[yeehaw_derive::impl_element_from(pane)]
 impl Element for Checkbox {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        let _ = self.base.receive_event(ctx, ev.clone());
+        let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
+        if captured {
+            return (true, resps);
+        }
         match ev {
             Event::KeyCombo(ke) => {
-                if self.base.get_selectability() != Selectability::Selected || ke.is_empty() {
+                if self.pane.get_selectability() != Selectability::Selected || ke.is_empty() {
                     return (false, EventResponses::default());
                 }
                 if ke[0] == KB::KEY_ENTER {
-                    return (true, self.click(ctx));
+                    let resps_ = self.click(ctx);
+                    resps.extend(resps_);
+                    return (true, resps);
                 }
             }
             Event::Mouse(me) => {
@@ -121,12 +113,14 @@ impl Element for Checkbox {
                 match me.kind {
                     MouseEventKind::Down(MouseButton::Left) => {
                         *self.clicked_down.borrow_mut() = true;
-                        return (true, EventResponses::default());
+                        return (true, resps);
                     }
                     MouseEventKind::Drag(MouseButton::Left) if clicked_down => {}
                     MouseEventKind::Up(MouseButton::Left) if clicked_down => {
                         *self.clicked_down.borrow_mut() = false;
-                        return (true, self.click(ctx));
+                        let resps_ = self.click(ctx);
+                        resps.extend(resps_);
+                        return (true, resps);
                     }
                     _ => {
                         *self.clicked_down.borrow_mut() = false;
@@ -135,12 +129,12 @@ impl Element for Checkbox {
             }
             _ => {}
         }
-        (false, EventResponses::default())
+        (false, resps)
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         // need to re set the content in order to reflect active style
-        self.base.set_content_from_string(ctx, &self.text());
-        self.base.drawing(ctx)
+        self.pane.pane.set_content_from_string(&self.text());
+        self.pane.drawing(ctx)
     }
 }

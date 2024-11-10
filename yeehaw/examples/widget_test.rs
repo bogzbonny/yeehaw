@@ -2,7 +2,7 @@ use yeehaw::{
     //debug,
     widgets::{
         widget_button::ButtonSides, Button, Checkbox, DropdownList, FigletText, Label, ListBox,
-        NumbersTextBox, RadioButtons, TextBox, Toggle, WBStyles,
+        NumbersTextBox, RadioButtons, TextBox, Toggle,
     },
     Color,
     Tui,
@@ -79,7 +79,7 @@ async fn main() -> Result<(), Error> {
     .to_widgets();
     el.add_widgets(rbs);
 
-    let mut mtext_sty = WBStyles::default();
+    let mut mtext_sty = SelStyles::default();
     let mut gr = Gradient::x_grad_rainbow(5);
     gr.angle_deg = 60.;
     mtext_sty.unselectable_style.set_fg(Color::Gradient(gr));

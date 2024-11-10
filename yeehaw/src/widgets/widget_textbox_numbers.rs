@@ -1,5 +1,4 @@
 use {
-    super::{Button, Selectability, TextBox, WBStyles, Widget, Widgets},
     crate::{
         Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event, EventResponses,
         KeyPossibility, Keyboard as KB, Parent, Priority, ReceivableEvent, ReceivableEventChanges,
@@ -105,7 +104,7 @@ impl NumbersTextBox {
         self
     }
 
-    pub fn with_styles(mut self, styles: WBStyles) -> Self {
+    pub fn with_styles(mut self, styles: SelStyles) -> Self {
         self.tb = self.tb.with_styles(styles);
         self
     }
@@ -115,10 +114,10 @@ impl NumbersTextBox {
         self
     }
 
-    pub fn to_widgets(&self, ctx: &Context) -> Widgets {
+    pub fn to_widgets(&self, ctx: &Context) -> crate::widgets::Widget {
         let (x, y) = (
-            self.tb.base.get_dyn_start_x(),
-            self.tb.base.get_dyn_start_y(),
+            self.tb.pane.get_dyn_start_x(),
+            self.tb.pane.get_dyn_start_y(),
         );
 
         let mut out: Vec<Box<dyn Widget>> = vec![];
@@ -147,14 +146,14 @@ impl NumbersTextBox {
             )
             .basic_button(None);
 
-            let up_btn_x = x.clone().plus(self.tb.base.get_dyn_width());
+            let up_btn_x = x.clone().plus(self.tb.pane.get_dyn_width());
             let down_btn_x = up_btn_x.clone().plus_fixed(1);
             out.push(Box::new(up_btn.at(up_btn_x, y.clone())));
             out.push(Box::new(down_btn.at(down_btn_x, y.clone())));
         }
 
         out.push(Box::new(self.clone()));
-        Widgets(out)
+        crate::widgets::Widget(out)
     }
 
     // ---------------------------------------------------------
@@ -205,7 +204,7 @@ impl Element for NumbersTextBox {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
             Event::KeyCombo(ref ke) => {
-                if self.tb.base.get_selectability() != Selectability::Selected || ke.is_empty() {
+                if self.tb.pane.get_selectability() != Selectability::Selected || ke.is_empty() {
                     return (false, EventResponses::default());
                 }
 

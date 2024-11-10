@@ -379,7 +379,7 @@ impl Pane {
     }
 
     /// correct_offsets_to_view_position changes the content offsets within the
-    /// WidgetBase in order to bring the given view position into view.
+    /// pane in order to bring the given view position into view.
     pub fn correct_offsets_to_view_position(&self, ctx: &Context, x: usize, y: usize) {
         let view_offset_y = *self.content_view_offset_y.borrow();
         let view_offset_x = *self.content_view_offset_x.borrow();

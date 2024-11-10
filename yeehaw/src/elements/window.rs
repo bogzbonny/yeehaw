@@ -1,8 +1,5 @@
 use {
-    crate::{
-        widgets::{Button, Label, WBStyles},
-        *,
-    },
+    crate::*,
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
 };
@@ -480,7 +477,7 @@ impl BasicWindowTopBar {
             .with_dyn_width(DynVal::new_full())
             .with_style(Style::default().with_bg(Color::WHITE).with_fg(Color::BLACK));
 
-        let btn_styles = WBStyles::new(
+        let btn_styles = SelStyles::new(
             Style::default()
                 .with_bg(Color::GREY20)
                 .with_fg(Color::BLACK),

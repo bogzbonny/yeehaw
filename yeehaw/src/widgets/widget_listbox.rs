@@ -1,20 +1,13 @@
 use {
-    super::{
-        Selectability, VerticalSBPositions, VerticalScrollbar, WBStyles, Widget, WidgetBase,
-        Widgets,
-    },
-    crate::{
-        Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEvent, ReceivableEventChanges,
-        SelfReceivableEvents, Style,
-    },
+    super::{VerticalSBPositions, VerticalScrollbar},
+    crate::{Keyboard as KB, *},
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
 };
 
 #[derive(Clone)]
 pub struct ListBox {
-    pub base: WidgetBase,
+    pub pane: SelectablePane,
     pub entries: Rc<RefCell<Vec<String>>>,
     pub selected: Rc<RefCell<Vec<usize>>>,
     /// the entries which have been selected
@@ -55,13 +48,13 @@ pub enum SelectionMode {
 impl ListBox {
     const KIND: &'static str = "widget_listbox";
 
-    const STYLE: WBStyles = WBStyles {
+    const STYLE: SelStyles = SelStyles {
         selected_style: Style::new_const(Color::BLACK, Color::YELLOW),
         ready_style: Style::new_const(Color::BLACK, Color::WHITE),
         unselectable_style: Style::new_const(Color::BLACK, Color::GREY13),
     };
 
-    const STYLE_SCROLLBAR: WBStyles = WBStyles {
+    const STYLE_SCROLLBAR: SelStyles = SelStyles {
         selected_style: Style::new_const(Color::WHITE, Color::GREY13),
         ready_style: Style::new_const(Color::WHITE, Color::GREY13),
         unselectable_style: Style::new_const(Color::WHITE, Color::GREY13),
@@ -71,15 +64,15 @@ impl ListBox {
     const STYLE_CURSOR_OVER_UNSELECTED: Style = Style::new_const(Color::BLACK, Color::LIGHT_BLUE);
     const STYLE_CURSOR_OVER_SELECTED: Style = Style::new_const(Color::WHITE, Color::BLUE);
 
-    pub fn default_receivable_events() -> Vec<ReceivableEvent> {
-        vec![
-            KB::KEY_ENTER.into(),
-            KB::KEY_DOWN.into(),
-            KB::KEY_UP.into(),
-            KB::KEY_K.into(),
-            KB::KEY_J.into(),
-            KB::KEY_SPACE.into(),
-        ]
+    pub fn default_receivable_events() -> SelfReceivableEvents {
+        SelfReceivableEvents(vec![
+            (KB::KEY_ENTER.into(), Priority::Focused),
+            (KB::KEY_DOWN.into(), Priority::Focused),
+            (KB::KEY_UP.into(), Priority::Focused),
+            (KB::KEY_K.into(), Priority::Focused),
+            (KB::KEY_J.into(), Priority::Focused),
+            (KB::KEY_SPACE.into(), Priority::Focused),
+        ])
     }
 
     pub fn new(
@@ -94,17 +87,16 @@ impl ListBox {
         let line_count = entries.iter().map(|r| r.lines().count()).sum::<usize>() as i32;
         let max_lines_per_entry = entries.iter().map(|r| r.lines().count()).max().unwrap_or(0);
 
-        let wb = WidgetBase::new(
-            ctx,
-            Self::KIND,
-            DynVal::new_fixed(max_entry_width as i32),
-            DynVal::new_fixed(line_count),
-            Self::STYLE,
-            Self::default_receivable_events(),
-        );
+        let pane = SelectablePane::new(ctx, Self::KIND);
+        pane.pane
+            .set_self_receivable_events(Self::default_receivable_events());
+        pane.set_styles(Self::STYLE);
+        pane.pane
+            .set_dyn_width(DynVal::new_fixed(max_entry_width as i32));
+        pane.pane.set_dyn_height(DynVal::new_fixed(line_count));
 
         let lb = ListBox {
-            base: wb,
+            pane,
             entries: Rc::new(RefCell::new(entries)),
             lines_per_item: Rc::new(RefCell::new(max_lines_per_entry)),
             selected: Rc::new(RefCell::new(Vec::new())),
@@ -121,6 +113,15 @@ impl ListBox {
             selection_made_fn: Rc::new(RefCell::new(selection_made_fn)),
         };
         lb.update_content(ctx);
+
+        let lb_ = lb.clone();
+        lb.pane.set_post_hook_for_set_selectability(move |_, _| {
+            if lb_.pane.get_selectability() != Selectability::Selected {
+                *lb_.cursor.borrow_mut() = None;
+            }
+            EventResponses::default()
+        });
+
         lb
     }
 
@@ -144,7 +145,7 @@ impl ListBox {
 
     pub fn with_lines_per_item(self, ctx: &Context, lines: usize) -> Self {
         *self.lines_per_item.borrow_mut() = lines;
-        self.base.set_dyn_height(DynVal::new_fixed(
+        self.pane.set_dyn_height(DynVal::new_fixed(
             self.entries.borrow().len() as i32 * lines as i32,
         ));
         self.update_content(ctx);
@@ -157,62 +158,62 @@ impl ListBox {
         self
     }
 
-    pub fn with_styles(self, ctx: &Context, styles: WBStyles) -> Self {
-        self.base.set_styles(styles);
+    pub fn with_styles(self, ctx: &Context, styles: SelStyles) -> Self {
+        self.pane.set_styles(styles);
         self.update_content(ctx);
         self
     }
 
     pub fn with_width(self, ctx: &Context, width: DynVal) -> Self {
-        self.base.set_dyn_width(width);
+        self.pane.set_dyn_width(width);
         self.update_content(ctx);
         self
     }
     pub fn with_height(self, ctx: &Context, height: DynVal) -> Self {
-        self.base.set_dyn_height(height);
+        self.pane.set_dyn_height(height);
         self.update_content(ctx);
         self
     }
     pub fn with_size(self, ctx: &Context, width: DynVal, height: DynVal) -> Self {
-        self.base.set_dyn_width(width);
-        self.base.set_dyn_height(height);
+        self.pane.set_dyn_width(width);
+        self.pane.set_dyn_height(height);
         self.update_content(ctx);
         self
     }
 
     pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.base.at(loc_x, loc_y);
+        self.pane.at(loc_x, loc_y);
         self
     }
 
-    pub fn to_widgets(self, ctx: &Context) -> Widgets {
+    pub fn to_widgets(self, ctx: &Context) -> crate::widgets::Widgets {
         let position = *self.scrollbar_options.borrow();
         if let VerticalSBPositions::None = position {
-            return Widgets(vec![Box::new(self)]);
+            return crate::widgets::Widgets(vec![Box::new(self)]);
         }
-        let height = self.base.get_dyn_height();
-        let content_height = self.base.content_height();
+        let height = self.pane.get_dyn_height();
+        let content_height = self.pane.content_height();
         let mut sb =
             VerticalScrollbar::new(ctx, height, content_height).with_styles(Self::STYLE_SCROLLBAR);
         if let VerticalSBPositions::ToTheLeft = position {
             sb = sb.at(
-                self.base.get_dyn_start_x().minus_fixed(1),
-                self.base.get_dyn_start_y().clone(),
+                self.pane.get_dyn_start_x().minus_fixed(1),
+                self.pane.get_dyn_start_y().clone(),
             );
         } else if let VerticalSBPositions::ToTheRight = position {
             sb = sb.at(
-                self.base.get_dyn_start_x().plus(self.base.get_dyn_width()),
-                self.base.get_dyn_start_y(),
+                self.pane.get_dyn_start_x().plus(self.pane.get_dyn_width()),
+                self.pane.get_dyn_start_y(),
             );
         }
 
         // wire the scrollbar to the text box
-        let wb_ = self.base.clone();
-        let hook = Box::new(move |ctx, y| wb_.set_content_y_offset(&ctx, y));
+        let pane_ = self.pane.clone();
+        let hook = Box::new(move |ctx, y| pane_.set_content_y_offset(&ctx, y));
         *sb.position_changed_hook.borrow_mut() = Some(hook);
         *self.scrollbar.borrow_mut() = Some(sb.clone());
 
-        Widgets(vec![Box::new(self), Box::new(sb)])
+        crate::widgets::Widgets(vec![Box::new(self), Box::new(sb)])
     }
 
     // ----------------------------------------------
@@ -245,41 +246,30 @@ impl ListBox {
         text.join("\n")
     }
 
-    //pub fn correct_offsets(&self, ctx: &Context) {
-    //    let cursor_pos = *self.cursor.borrow();
-    //    self.base
-    //        .correct_offsets_to_view_position(ctx, 0, cursor_pos);
-    //    self.scrollbar.external_change(
-    //        ctx,
-    //        *self.base.pane.content_view_offset_y.borrow(),
-    //        self.base.content_height(),
-    //    );
-    //}
-
     pub fn correct_offsets(&self, ctx: &Context) {
         let Some(cursor) = *self.cursor.borrow() else {
             return;
         };
         let (start_y, end_y) = self.get_content_y_range_for_item_index(cursor);
-        let y_offset = *self.base.pane.content_view_offset_y.borrow();
-        let height = self.base.get_height_val(ctx);
+        let y_offset = *self.pane.pane.content_view_offset_y.borrow();
+        let height = self.pane.get_height_val(ctx);
 
         if end_y >= y_offset + height {
-            self.base.correct_offsets_to_view_position(ctx, 0, end_y);
+            self.pane.correct_offsets_to_view_position(ctx, 0, end_y);
         } else if start_y < y_offset {
-            self.base.correct_offsets_to_view_position(ctx, 0, start_y);
+            self.pane.correct_offsets_to_view_position(ctx, 0, start_y);
         }
 
-        let y_offset = *self.base.pane.content_view_offset_y.borrow();
+        let y_offset = *self.pane.pane.content_view_offset_y.borrow();
 
         // call the scrollbar external change hook if it exists
         if let Some(sb) = self.scrollbar.borrow().as_ref() {
-            sb.external_change(ctx, y_offset, self.base.content_height());
+            sb.external_change(ctx, y_offset, self.pane.content_height());
         }
     }
 
     pub fn get_item_index_for_view_y(&self, y: usize) -> usize {
-        let y_offset = *self.base.pane.content_view_offset_y.borrow();
+        let y_offset = *self.pane.pane.content_view_offset_y.borrow();
         let offset = y + y_offset;
         offset / *self.lines_per_item.borrow()
     }
@@ -301,14 +291,14 @@ impl ListBox {
         for i in 0..entries_len {
             content += &self.get_text_for_entry(
                 i,
-                self.base.get_width_val(ctx),
+                self.pane.get_width_val(ctx),
                 *self.lines_per_item.borrow(),
             );
             if i < entries_len - 1 {
                 content += "\n";
             }
         }
-        self.base.set_content_from_string(ctx, &content);
+        self.pane.set_content_from_string(ctx, &content);
         self.update_highlighting(ctx);
     }
 
@@ -318,7 +308,7 @@ impl ListBox {
         for i in 0..self.entries.borrow().len() {
             let cursor = *self.cursor.borrow();
             let item_selected = self.selected.borrow().contains(&i);
-            let selectedness = self.base.get_selectability();
+            let selectedness = self.pane.get_selectability();
 
             let sty = match true {
                 _ if item_selected
@@ -334,12 +324,12 @@ impl ListBox {
                     self.cursor_over_unselected_style.borrow().clone()
                 }
                 _ if item_selected => self.item_selected_style.borrow().clone(),
-                _ => self.base.get_current_style(),
+                _ => self.pane.get_current_style(),
             };
 
             let (y_start, y_end) = self.get_content_y_range_for_item_index(i);
             for y in y_start..=y_end {
-                self.base
+                self.pane
                     .pane
                     .content
                     .borrow_mut()
@@ -348,9 +338,9 @@ impl ListBox {
 
             // update the rest of the lines
             let entries_len = self.entries.borrow().len();
-            for i in entries_len * *self.lines_per_item.borrow()..self.base.get_height_val(ctx) {
-                let sty = self.base.get_current_style();
-                self.base
+            for i in entries_len * *self.lines_per_item.borrow()..self.pane.get_height_val(ctx) {
+                let sty = self.pane.get_current_style();
+                self.pane
                     .pane
                     .content
                     .borrow_mut()
@@ -426,56 +416,53 @@ impl ListBox {
     }
 }
 
-impl Widget for ListBox {
-    fn set_selectability_pre_hook(&self, _: &Context, s: Selectability) -> EventResponses {
-        if self.base.get_selectability() == Selectability::Selected && s != Selectability::Selected
-        {
-            *self.cursor.borrow_mut() = None;
-        }
-        EventResponses::default()
-    }
-}
-
-#[yeehaw_derive::impl_element_from(base)]
+#[yeehaw_derive::impl_element_from(pane)]
 impl Element for ListBox {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        let _ = self.base.receive_event(ctx, ev.clone());
+        let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
+        if captured {
+            return (true, resps);
+        }
         match ev {
             Event::KeyCombo(ke) => {
-                if self.base.get_selectability() != Selectability::Selected || ke.is_empty() {
-                    return (false, EventResponses::default());
+                if self.pane.get_selectability() != Selectability::Selected || ke.is_empty() {
+                    return (false, resps);
                 }
-                return match true {
+                match true {
                     _ if ke[0] == KB::KEY_SPACE => {
                         if let Some(sb) = self.scrollbar.borrow().as_ref() {
                             if sb.get_selectability() != Selectability::Selected {
                                 sb.set_selectability(ctx, Selectability::Selected);
                             }
-                            sb.receive_event(ctx, Event::KeyCombo(ke))
+                            let (captured, resps_) = sb.receive_event(ctx, Event::KeyCombo(ke));
+                            resps.extend(resps_);
+                            return (captured, resps);
                         } else {
-                            (true, EventResponses::default())
+                            return (true, resps);
                         }
                     }
                     _ if ke[0] == KB::KEY_DOWN || ke[0] == KB::KEY_J => {
                         self.cursor_down(ctx);
-                        (true, EventResponses::default())
+                        return (true, resps);
                     }
                     _ if ke[0] == KB::KEY_UP || ke[0] == KB::KEY_K => {
                         self.cursor_up(ctx);
-                        (true, EventResponses::default())
+                        return (true, resps);
                     }
                     _ if ke[0] == KB::KEY_ENTER => {
                         let Some(cursor) = *self.cursor.borrow() else {
-                            return (true, EventResponses::default());
+                            return (true, resps);
                         };
                         let entries_len = self.entries.borrow().len();
                         if cursor >= entries_len {
-                            return (true, EventResponses::default());
+                            return (true, resps);
                         }
-                        return (true, self.toggle_entry_selected_at_i(ctx, cursor));
+                        let resps_ = self.toggle_entry_selected_at_i(ctx, cursor);
+                        resps.extend(resps_);
+                        return (true, resps);
                     }
 
-                    _ => (false, EventResponses::default()),
+                    _ => (false, resps),
                 };
             }
             Event::Mouse(me) => {
@@ -495,7 +482,7 @@ impl Element for ListBox {
                 match me.kind {
                     MouseEventKind::Down(MouseButton::Left) => {
                         *self.clicked_down.borrow_mut() = true;
-                        return (true, EventResponses::default());
+                        return (true, resps);
                     }
                     MouseEventKind::Drag(MouseButton::Left) if clicked_down => {}
                     _ => {
@@ -510,21 +497,21 @@ impl Element for ListBox {
                     _ => {}
                 }
 
-                return match true {
+                match true {
                     _ if scroll_up => {
                         self.cursor_up(ctx);
-                        (true, EventResponses::default())
+                        return (true, resps);
                     }
                     _ if scroll_down => {
                         self.cursor_down(ctx);
-                        (true, EventResponses::default())
+                        return (true, resps);
                     }
                     _ if clicked => {
                         let (x, y) = (me.column as usize, me.row as usize);
 
                         // check if this should be a scrollbar event
                         if let Some(sb) = self.scrollbar.borrow().as_ref() {
-                            if y > 0 && x == self.base.get_width_val(ctx).saturating_sub(1) {
+                            if y > 0 && x == self.pane.get_width_val(ctx).saturating_sub(1) {
                                 if dragging {
                                     if sb.get_selectability() != Selectability::Selected {
                                         let _ = sb.set_selectability(ctx, Selectability::Selected);
@@ -533,31 +520,36 @@ impl Element for ListBox {
                                     let mut me_ = me;
                                     me_.column = 0;
                                     me_.row = y.saturating_sub(1) as u16;
-                                    return sb.receive_event(ctx, Event::Mouse(me_));
+                                    let (captured, resps_) =
+                                        sb.receive_event(ctx, Event::Mouse(me_));
+                                    resps.extend(resps_);
+                                    return (captured, resps);
                                 }
-                                return (true, EventResponses::default());
+                                return (true, resps);
                             }
                         }
 
                         // get item index at click position
                         let item_i = self.get_item_index_for_view_y(y);
                         if item_i >= self.entries.borrow().len() {
-                            return (false, EventResponses::default());
+                            return (false, resps);
                         }
 
                         // toggle selection
-                        (true, self.toggle_entry_selected_at_i(ctx, item_i))
+                        let resps_ = self.toggle_entry_selected_at_i(ctx, item_i);
+                        resps.extend(resps_);
+                        return (true, resps);
                     }
-                    _ => (false, EventResponses::default()),
+                    _ => (false, resps),
                 };
             }
             _ => {}
         }
-        (false, EventResponses::default())
+        (false, resps)
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.update_highlighting(ctx); // this can probably happen in a more targeted way
-        self.base.drawing(ctx)
+        self.pane.drawing(ctx)
     }
 }

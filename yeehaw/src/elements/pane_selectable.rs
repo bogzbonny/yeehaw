@@ -56,6 +56,30 @@ impl SelectablePane {
         self
     }
 
+    pub fn set_pre_hook_for_set_selectability(
+        self, hook: Box<dyn FnMut(&str, Box<dyn Element>)>,
+    ) -> Self {
+        let pre_hook_name = format!(
+            "{}{}",
+            element::PRE_ATTR_CHANGE_HOOK_NAME_PREFIX,
+            ATTR_SELECTABILITY
+        );
+        self.pane.set_hook(&pre_hook_name, self.id(), hook);
+        self
+    }
+
+    pub fn set_post_hook_for_set_selectability(
+        self, hook: Box<dyn FnMut(&str, Box<dyn Element>)>,
+    ) -> Self {
+        let pre_hook_name = format!(
+            "{}{}",
+            element::POST_ATTR_CHANGE_HOOK_NAME_PREFIX,
+            ATTR_SELECTABILITY
+        );
+        self.pane.set_hook(&pre_hook_name, self.id(), hook);
+        self
+    }
+
     pub fn set_styles(&self, styles: SelStyles) {
         *self.styles.borrow_mut() = styles;
     }

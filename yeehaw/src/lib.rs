@@ -29,7 +29,8 @@ pub use {
         border::Corner as BorderCorner, border::CornerPos,
         border::PropertyCnr as BorderPropertyCnr, Bordered, DebugSizePane, FileNavPane,
         FileViewerPane, HorizontalStack, ImageViewer, MenuBar, Pane, PaneScrollable, ParentPane,
-        RightClickMenu, Shadowed, Tabs, TermEditorPane, TerminalPane, VerticalStack, WindowPane,
+        ParentPaneOfSelectable, RightClickMenu, SelStyles, Selectability, SelectablePane, Shadowed,
+        Tabs, TermEditorPane, TerminalPane, VerticalStack, WindowPane,
     },
     errors::Error,
     event::{
