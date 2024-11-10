@@ -29,6 +29,13 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+01. create pane basics proceedural macro 
+     - it's crazy the amount of duplication required for ParentPane, and now
+       SelectablePane, this should be a macro to define all the basic get/set
+       functions 
+        - will need to be divided into "with" functions and "non-with" functions
+          (aka self modifying)
+
 05. introduce errors, remove all unwraps
 
 WIDGET RECALL REFACTOR

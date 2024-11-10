@@ -146,7 +146,7 @@ impl ListBox {
 
     pub fn with_lines_per_item(self, ctx: &Context, lines: usize) -> Self {
         *self.lines_per_item.borrow_mut() = lines;
-        self.pane.set_dyn_height(DynVal::new_fixed(
+        self.pane.pane.set_dyn_height(DynVal::new_fixed(
             self.entries.borrow().len() as i32 * lines as i32,
         ));
         self.update_content(ctx);
@@ -166,24 +166,24 @@ impl ListBox {
     }
 
     pub fn with_width(self, ctx: &Context, width: DynVal) -> Self {
-        self.pane.set_dyn_width(width);
+        self.pane.pane.set_dyn_width(width);
         self.update_content(ctx);
         self
     }
     pub fn with_height(self, ctx: &Context, height: DynVal) -> Self {
-        self.pane.set_dyn_height(height);
+        self.pane.pane.set_dyn_height(height);
         self.update_content(ctx);
         self
     }
     pub fn with_size(self, ctx: &Context, width: DynVal, height: DynVal) -> Self {
-        self.pane.set_dyn_width(width);
-        self.pane.set_dyn_height(height);
+        self.pane.pane.set_dyn_width(width);
+        self.pane.pane.set_dyn_height(height);
         self.update_content(ctx);
         self
     }
 
     pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.pane.at(loc_x, loc_y);
+        self.pane.pane.set_at(loc_x, loc_y);
         self
     }
 
@@ -192,19 +192,22 @@ impl ListBox {
         if let VerticalSBPositions::None = position {
             return crate::widgets::Widgets(vec![Box::new(self)]);
         }
-        let height = self.pane.get_dyn_height();
-        let content_height = self.pane.content_height();
+        let height = self.pane.pane.get_dyn_height();
+        let content_height = self.pane.pane.pane.content_height();
         let mut sb =
             VerticalScrollbar::new(ctx, height, content_height).with_styles(Self::STYLE_SCROLLBAR);
         if let VerticalSBPositions::ToTheLeft = position {
             sb = sb.at(
-                self.pane.get_dyn_start_x().minus_fixed(1),
-                self.pane.get_dyn_start_y().clone(),
+                self.pane.pane.get_dyn_start_x().minus_fixed(1),
+                self.pane.pane.get_dyn_start_y().clone(),
             );
         } else if let VerticalSBPositions::ToTheRight = position {
             sb = sb.at(
-                self.pane.get_dyn_start_x().plus(self.pane.get_dyn_width()),
-                self.pane.get_dyn_start_y(),
+                self.pane
+                    .pane
+                    .get_dyn_start_x()
+                    .plus(self.pane.pane.get_dyn_width()),
+                self.pane.pane.get_dyn_start_y(),
             );
         }
 
@@ -256,9 +259,13 @@ impl ListBox {
         let height = self.pane.get_height_val(ctx);
 
         if end_y >= y_offset + height {
-            self.pane.correct_offsets_to_view_position(ctx, 0, end_y);
+            self.pane
+                .pane
+                .correct_offsets_to_view_position(ctx, 0, end_y);
         } else if start_y < y_offset {
-            self.pane.correct_offsets_to_view_position(ctx, 0, start_y);
+            self.pane
+                .pane
+                .correct_offsets_to_view_position(ctx, 0, start_y);
         }
 
         let y_offset = *self.pane.pane.content_view_offset_y.borrow();
@@ -270,7 +277,7 @@ impl ListBox {
     }
 
     pub fn get_item_index_for_view_y(&self, y: usize) -> usize {
-        let y_offset = *self.pane.pane.content_view_offset_y.borrow();
+        let y_offset = *self.pane.pane.pane.content_view_offset_y.borrow();
         let offset = y + y_offset;
         offset / *self.lines_per_item.borrow()
     }
@@ -292,14 +299,14 @@ impl ListBox {
         for i in 0..entries_len {
             content += &self.get_text_for_entry(
                 i,
-                self.pane.get_width_val(ctx),
+                self.pane.pane.pane.get_width(ctx),
                 *self.lines_per_item.borrow(),
             );
             if i < entries_len - 1 {
                 content += "\n";
             }
         }
-        self.pane.set_content_from_string(ctx, &content);
+        self.pane.pane.pane.set_content_from_string(ctx, &content);
         self.update_highlighting(ctx);
     }
 

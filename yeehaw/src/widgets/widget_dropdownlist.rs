@@ -43,12 +43,6 @@ impl DropdownList {
         unselectable_style: Style::new_const(Color::BLACK, Color::GREY13),
     };
 
-    const STYLE_SCROLLBAR: SelStyles = SelStyles {
-        selected_style: Style::new_const(Color::WHITE, Color::GREY13),
-        ready_style: Style::new_const(Color::WHITE, Color::GREY13),
-        unselectable_style: Style::new_const(Color::WHITE, Color::GREY13),
-    };
-
     const STYLE_DD_CURSOR: Style = Style::new_const(Color::WHITE, Color::BLUE);
 
     const DEFAULT_DROPDOWN_ARROW: DrawCh =
@@ -81,9 +75,7 @@ impl DropdownList {
         pane.pane.set_dyn_height(DynVal::new_fixed(1));
         pane.pane.set_z(Self::Z_INDEX);
 
-        let sb = VerticalScrollbar::new(ctx, DynVal::new_fixed(0), 0)
-            .without_arrows()
-            .with_styles(Self::STYLE_SCROLLBAR);
+        let sb = VerticalScrollbar::new(ctx, DynVal::new_fixed(0), 0).without_arrows();
 
         //wire the scrollbar to the dropdown list
         let pane_ = pane.clone();
@@ -133,13 +125,13 @@ impl DropdownList {
 
     pub fn with_width(self, width: DynVal) -> Self {
         *self.specified_width.borrow_mut() = Some(width);
-        self.pane.set_dyn_width(self.calculate_dyn_width());
+        self.pane.pane.set_dyn_width(self.calculate_dyn_width());
         self
     }
 
     pub fn with_left_padding(self, padding: usize) -> Self {
         *self.left_padding.borrow_mut() = padding;
-        self.pane.set_dyn_width(self.calculate_dyn_width());
+        self.pane.pane.set_dyn_width(self.calculate_dyn_width());
         self
     }
 
@@ -167,7 +159,7 @@ impl DropdownList {
         self.scrollbar.external_change(
             ctx,
             *self.pane.pane.content_view_offset_y.borrow(),
-            self.pane.content_height(),
+            self.pane.pane.pane.content_height(),
         );
     }
 
@@ -232,19 +224,19 @@ impl DropdownList {
         *self.open.borrow_mut() = true;
         *self.cursor.borrow_mut() = *self.selected.borrow();
         let h = self.expanded_height() as i32;
-        self.pane.set_dyn_height(DynVal::new_fixed(h));
+        self.pane.pane.set_dyn_height(DynVal::new_fixed(h));
 
         // must set the content for the offsets to be correct
-        self.pane.set_content_from_string(ctx, &self.text(ctx));
+        self.pane.pane.pane.set_content_from_string(&self.text(ctx));
         self.correct_offsets(ctx);
     }
 
     pub fn perform_close(&self, ctx: &Context, escaped: bool) -> EventResponses {
         *self.open.borrow_mut() = false;
-        *self.pane.pane.content_view_offset_y.borrow_mut() = 0;
+        *self.pane.pane.pane.content_view_offset_y.borrow_mut() = 0;
         self.scrollbar
-            .external_change(ctx, 0, self.pane.content_height());
-        self.pane.set_dyn_height(DynVal::new_fixed(1));
+            .external_change(ctx, 0, self.pane.pane.pane.content_height());
+        self.pane.pane.set_dyn_height(DynVal::new_fixed(1));
         if !escaped && *self.selected.borrow() != *self.cursor.borrow() {
             *self.selected.borrow_mut() = *self.cursor.borrow();
             (self.selection_made_fn.borrow_mut())(
@@ -305,10 +297,6 @@ impl Element for DropdownList {
                         return (true, resps);
                     }
                     _ if open && ke[0] == KB::KEY_SPACE => {
-                        if self.scrollbar.get_selectability() != Selectability::Selected {
-                            self.scrollbar
-                                .set_selectability(ctx, Selectability::Selected);
-                        }
                         let (captured, resps_) =
                             self.scrollbar.receive_event(ctx, Event::KeyCombo(ke));
                         resps.extend(resps_);
@@ -361,7 +349,7 @@ impl Element for DropdownList {
                         // change hovering location to the ev
 
                         // on arrow
-                        if y == 0 && x == self.pane.get_width_val(ctx).saturating_sub(1) {
+                        if y == 0 && x == self.pane.pane.pane.get_width(ctx).saturating_sub(1) {
                             return (true, resps);
 
                         // on scrollbar

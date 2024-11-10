@@ -58,6 +58,14 @@ impl ParentPane {
         self.pane.set_start_y(y);
     }
 
+    pub fn get_start_x(&self) -> DynVal {
+        self.pane.get_dyn_start_x()
+    }
+
+    pub fn get_start_y(&self) -> DynVal {
+        self.pane.get_dyn_start_y()
+    }
+
     pub fn set_end_x(&self, x: DynVal) {
         self.pane.set_end_x(x);
     }
@@ -76,6 +84,14 @@ impl ParentPane {
 
     pub fn set_dyn_height(&self, h: DynVal) {
         self.pane.set_dyn_height(h);
+    }
+
+    pub fn get_dyn_width(&self) -> DynVal {
+        self.pane.get_dyn_width()
+    }
+
+    pub fn get_dyn_height(&self) -> DynVal {
+        self.pane.get_dyn_height()
     }
 
     pub fn get_dyn_location(&self) -> DynLocation {

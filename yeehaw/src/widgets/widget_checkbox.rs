@@ -40,6 +40,7 @@ impl Checkbox {
     pub fn new(ctx: &Context) -> Self {
         let pane = SelectablePane::new(ctx, Self::KIND);
         pane.pane
+            .pane
             .set_self_receivable_events(Self::default_receivable_events());
         pane.set_styles(Self::STYLE);
         pane.pane.set_dyn_width(DynVal::new_fixed(1));
