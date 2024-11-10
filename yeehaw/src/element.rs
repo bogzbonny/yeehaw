@@ -10,6 +10,22 @@ use {
     },
 };
 
+//   ELEMENT FARMER       ✲
+//                          /|\      *
+//   ⌂  ⌂  ⌂         ✲      \|/   /  *  \
+//                  ✲            * time  *
+//   water      ~  _|_  ~         \  *  /      ⌃
+//   light        /   \              *       \   /
+//   nutrience  ./ 6 6 \.  hi,             discovery
+//   eneergy        ~      dont u d4re       /   \
+//   darkness        \       munch my crops    ⌄
+//                    -<<<-
+//      |    |    |    |    |    |    |    |     f
+//     \|/  \|/  \|/  \|/  \|/  \|/  \|/  \|/  \ o /
+//     \|/  \|/  \:)  \|/  \|\  \|/  \|/  \|/  \ c /
+//     \|/  \|/  \|/  \|/  \|/  \|/  \|/  \|/  \ u /
+//      |    |    |    | oo |    |    |    |     s
+
 dyn_clone::clone_trait_object!(Element);
 
 /// Element is the base interface which all viewable elements are
@@ -34,7 +50,7 @@ pub trait Element: DynClone {
     /// to a child. The element is expected to return a response to the event, along with any
     /// changes receivable events. When the event is captured, the element is expected to returns
     /// captured=true.
-    ///                                                      (captured, response     )
+    //                                                     (captured, response      )
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses);
 
     fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {

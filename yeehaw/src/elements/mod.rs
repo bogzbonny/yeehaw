@@ -8,6 +8,7 @@ pub mod menu_right_click;
 pub mod pane;
 pub mod pane_parent;
 pub mod pane_scrollable;
+pub mod pane_selectable;
 pub mod shadow;
 pub mod stack;
 pub mod tabs;
@@ -26,6 +27,7 @@ pub use {
     pane::Pane,
     pane_parent::ParentPane,
     pane_scrollable::PaneScrollable,
+    pane_selectable::{ParentPaneOfSelectable, SelStyles, Selectability, SelectablePane},
     shadow::Shadowed,
     stack::{HorizontalStack, VerticalStack},
     tabs::Tabs,

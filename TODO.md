@@ -39,23 +39,25 @@ WIDGET RECALL REFACTOR
     - could maybe do something funny where the hook is actually set to 
       the name of the attribute KEY plus a prefix! thus allowing the hook
       system to specify the exact type of the hook.
-DONE ^^^^^^
+    - WONT DO Remove "Unselectable type" from selectibility which will just be the regular element
+ - deleted ElWidgetPane for a new type ParentPaneWithSelectibility
+    - basically the parentpane with tab capturing and refocusing
+    - using the ParentPane store to hold index of the currently selected widget 
+    - would just need to specify each element as either "selectible" or "not"
+      when it gets added to the widget macro
+ - Test if each element has selectibility by use of the attributes
  - move Widgets -> Elements (basically only used for labels)
+DONE ^^^^^^
 
 .to_widgets() actually used here:
 yeehaw/src/widgets/widget_textbox.rs:348:    pub fn to_widgets(mut self, ctx: &Context) -> Widgets {
 yeehaw/src/widgets/widget_listbox.rs:188:    pub fn to_widgets(self, ctx: &Context) -> Widgets {
 yeehaw/src/widgets/widget_textbox_numbers.rs:118:    pub fn to_widgets(&self, ctx: &Context) -> Widgets {
 
- - deleted ElWidgetPane for a new type ParentPaneWithSelectibility
-    - basically the parentpane with tab capturing and refocusing
-    - using the ParentPane store to hold index of the currently selected widget 
-    - would just need to specify each element as either "selectible" or "not"
-      when it gets added to the widget macro
- - Remove "Unselectable type" from selectibility which will just be the regular element
- - Test if each trait has has selectibility by use of the attributes
+ - ensure that pre-hooks of set selectibility propogate their resps upwards
+   (instead of returning them)
 
-el_widget_pane.rs          |                                   
+el_widget_pane.rs          | DONE/TO_DELETE                                  
 mod.rs                     | TO_DELETE                       
 widget.rs                  | TO_DELETE                          
 widget_button.rs           | 

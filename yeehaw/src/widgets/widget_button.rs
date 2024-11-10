@@ -1,10 +1,6 @@
 use {
     super::{Selectability, WBStyles, Widget, WidgetBase, Widgets},
-    crate::{
-        Color, Context, DrawChPos, DrawChs2D, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Keyboard as KB, Parent, Priority, ReceivableEvent, ReceivableEventChanges,
-        SelfReceivableEvents, Style,
-    },
+    crate::{Keyboard as KB, *},
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
 };
@@ -13,9 +9,11 @@ use {
 
 #[derive(Clone)]
 pub struct Button {
-    pub base: WidgetBase,
+    pub pane: Pane,
     pub text: Rc<RefCell<String>>,
     pub button_style: Rc<RefCell<ButtonStyle>>,
+    pub selected_sty: Style,
+    pub unselectable_sty: Style,
     pub clicked_down: Rc<RefCell<bool>>,
     /// activated when mouse is clicked down while over button
     /// function which executes when button moves from pressed -> unpressed
@@ -91,8 +89,8 @@ impl Button {
         unselectable_style: Style::new_const(Color::BLACK, Color::GREY15),
     };
 
-    pub fn default_receivable_events() -> Vec<ReceivableEvent> {
-        vec![KB::KEY_ENTER.into()] // / when "active" hitting enter will click the button
+    pub fn default_receivable_events() -> SelfReceivableEvents {
+        SelfReceivableEvents(vec![(KB::KEY_ENTER.into(), Priority::Focused)]) // / when "active" hitting enter will click the button
     }
 
     pub fn button_drawing(&self) -> DrawChs2D {
@@ -102,10 +100,10 @@ impl Button {
                     if *self.clicked_down.borrow() {
                         dsty
                     } else {
-                        self.base.get_current_style()
+                        self.pane.get_current_style()
                     }
                 } else {
-                    self.base.get_current_style()
+                    self.pane.get_current_style()
                 };
                 DrawChs2D::from_string(self.text.borrow().clone(), sty)
             }
@@ -117,7 +115,7 @@ impl Button {
                 let sty = if *self.clicked_down.borrow() {
                     &sides.depressed_style
                 } else {
-                    &self.base.get_current_style()
+                    &self.pane.get_current_style()
                 };
                 DrawChs2D::from_string(
                     format!("{}{}{}", left, self.text.borrow(), right),
@@ -125,7 +123,7 @@ impl Button {
                 )
             }
             ButtonStyle::Shadow(shadow) => {
-                let text_sty = self.base.get_current_style();
+                let text_sty = self.pane.get_current_style();
                 if *self.clicked_down.borrow() {
                     let non_button_sty = Style::default_const().with_bg(Color::TRANSPARENT);
                     let left = DrawChs2D::from_string(" ".to_string(), non_button_sty.clone());
@@ -170,18 +168,11 @@ impl Button {
     pub fn new(
         ctx: &Context, text: &str, clicked_fn: Box<dyn FnMut(Button, Context) -> EventResponses>,
     ) -> Self {
-        let wb = WidgetBase::new(
-            ctx,
-            Self::KIND,
-            DynVal::new_fixed(text.chars().count() as i32 + 2),
-            // + 2 for sides
-            DynVal::new_fixed(1),
-            Self::STYLE,
-            Self::default_receivable_events(),
-        );
+        let pane = Pane::new(ctx, Self::KIND)
+            .with_self_receivable_events(Self::default_receivable_events());
         //_ = wb.set_selectability(ctx, Selectability::Unselectable);
         let b = Button {
-            base: wb,
+            pane,
             text: Rc::new(RefCell::new(text.to_string())),
             button_style: Rc::new(RefCell::new(ButtonStyle::Shadow(ButtonShadow::default()))),
             clicked_down: Rc::new(RefCell::new(false)),
@@ -189,8 +180,8 @@ impl Button {
         };
 
         let d = b.button_drawing();
-        b.base.set_dyn_width(DynVal::new_fixed(d.width() as i32));
-        b.base.set_dyn_height(DynVal::new_fixed(d.height() as i32));
+        b.pane.set_dyn_width(DynVal::new_fixed(d.width() as i32));
+        b.pane.set_dyn_height(DynVal::new_fixed(d.height() as i32));
         b
     }
 
@@ -198,15 +189,15 @@ impl Button {
     /// decorators
 
     pub fn with_styles(self, styles: WBStyles) -> Self {
-        self.base.set_styles(styles);
+        self.pane.set_styles(styles);
         self
     }
 
     pub fn with_sides(self, sides: ButtonSides) -> Self {
         *self.button_style.borrow_mut() = ButtonStyle::Sides(sides);
         let d = self.button_drawing();
-        self.base.set_dyn_width(DynVal::new_fixed(d.width() as i32));
-        self.base
+        self.pane.set_dyn_width(DynVal::new_fixed(d.width() as i32));
+        self.pane
             .set_dyn_height(DynVal::new_fixed(d.height() as i32));
         self
     }
@@ -214,8 +205,8 @@ impl Button {
     pub fn with_shadow(self, shadow: ButtonShadow) -> Self {
         *self.button_style.borrow_mut() = ButtonStyle::Shadow(shadow);
         let d = self.button_drawing();
-        self.base.set_dyn_width(DynVal::new_fixed(d.width() as i32));
-        self.base
+        self.pane.set_dyn_width(DynVal::new_fixed(d.width() as i32));
+        self.pane
             .set_dyn_height(DynVal::new_fixed(d.height() as i32));
         self
     }
@@ -223,14 +214,14 @@ impl Button {
     pub fn basic_button(self, sty: Option<Style>) -> Self {
         *self.button_style.borrow_mut() = ButtonStyle::Basic(sty);
         let d = self.button_drawing();
-        self.base.set_dyn_width(DynVal::new_fixed(d.width() as i32));
-        self.base
+        self.pane.set_dyn_width(DynVal::new_fixed(d.width() as i32));
+        self.pane
             .set_dyn_height(DynVal::new_fixed(d.height() as i32));
         self
     }
 
     pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.base.at(loc_x, loc_y);
+        self.pane.at(loc_x, loc_y);
         self
     }
 
@@ -249,10 +240,10 @@ impl Widget for Button {}
 #[yeehaw_derive::impl_element_from(base)]
 impl Element for Button {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        let _ = self.base.receive_event(ctx, ev.clone());
+        let _ = self.pane.receive_event(ctx, ev.clone());
         match ev {
             Event::KeyCombo(ke) => {
-                if self.base.get_selectability() != Selectability::Selected || ke.is_empty() {
+                if self.pane.get_selectability() != Selectability::Selected || ke.is_empty() {
                     return (false, EventResponses::default());
                 }
                 if ke[0] == KB::KEY_ENTER {

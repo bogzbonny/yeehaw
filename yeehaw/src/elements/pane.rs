@@ -232,8 +232,71 @@ impl Pane {
         *self.content.borrow_mut() = DrawChs2D::from_string(s.into(), self.get_style());
     }
 
+    /// sets content from string
+    pub fn set_content_from_string_with_style(&self, ctx: &Context, s: &str, sty: Style) {
+        let lines = s.split('\n');
+        let mut rs: Vec<Vec<char>> = Vec::new();
+
+        let mut width = self.get_width(ctx);
+        let mut height = self.get_height(ctx);
+        for line in lines {
+            if width < line.len() {
+                width = line.len();
+            }
+            rs.push(line.chars().collect());
+        }
+        if height < rs.len() {
+            height = rs.len();
+        }
+
+        // initialize the content with blank characters
+        // of the height and width of the widget
+        *self.content.borrow_mut() = DrawChs2D::new_empty_of_size(width, height, sty.clone());
+
+        // now fill in with actual content
+        for y in 0..height {
+            for x in 0..width {
+                let r = if y < rs.len() && x < rs[y].len() {
+                    rs[y][x]
+                } else {
+                    continue;
+                };
+                let dch = DrawCh::new(r, sty.clone());
+                self.content.borrow_mut().0[y][x] = dch;
+            }
+        }
+    }
+
     pub fn set_content_style(&self, sty: Style) {
-        self.pane.content.borrow_mut().change_all_styles(sty);
+        self.content.borrow_mut().change_all_styles(sty);
+    }
+
+    pub fn content_width(&self) -> usize {
+        self.content.borrow().width()
+    }
+
+    pub fn content_height(&self) -> usize {
+        self.content.borrow().height()
+    }
+
+    pub fn scroll_up(&self, ctx: &Context) {
+        let view_offset_y = *self.content_view_offset_y.borrow();
+        self.set_content_y_offset(ctx, view_offset_y.saturating_sub(1));
+    }
+
+    pub fn scroll_down(&self, ctx: &Context) {
+        let view_offset_y = *self.content_view_offset_y.borrow();
+        self.set_content_y_offset(ctx, view_offset_y + 1);
+    }
+
+    pub fn scroll_left(&self, ctx: &Context) {
+        let view_offset_x = *self.content_view_offset_x.borrow();
+        self.set_content_x_offset(ctx, view_offset_x.saturating_sub(1));
+    }
+
+    pub fn scroll_right(&self, ctx: &Context) {
+        let view_offset_x = *self.content_view_offset_x.borrow();
+        self.set_content_x_offset(ctx, view_offset_x + 1);
     }
 
     pub fn with_default_ch(self, ch: DrawCh) -> Pane {
@@ -312,6 +375,44 @@ impl Pane {
         if self.has_parent() {
             let resps = EventResponse::ReceivableEventChanges(rec);
             self.send_responses_upward(ctx, resps.into());
+        }
+    }
+
+    /// correct_offsets_to_view_position changes the content offsets within the
+    /// WidgetBase in order to bring the given view position into view.
+    pub fn correct_offsets_to_view_position(&self, ctx: &Context, x: usize, y: usize) {
+        let view_offset_y = *self.content_view_offset_y.borrow();
+        let view_offset_x = *self.content_view_offset_x.borrow();
+
+        // set y offset if cursor out of bounds
+        if y >= view_offset_y + self.get_height(ctx) {
+            //debug!("cor1");
+            self.set_content_y_offset(ctx, y - self.get_height(ctx) + 1);
+        } else if y < view_offset_y {
+            //debug!("cor2");
+            self.set_content_y_offset(ctx, y);
+        }
+
+        // correct the offset if the offset is now showing lines that don't exist in
+        // the content
+        //if view_offset_y + self.get_height_val(ctx) > self.content_height() - 1 {
+        if view_offset_y + self.get_height(ctx) > self.content_height() {
+            //debug!("cor3");
+            self.set_content_y_offset(ctx, self.content_height());
+        }
+
+        // set x offset if cursor out of bounds
+        if x >= view_offset_x + self.get_width(ctx) {
+            self.set_content_x_offset(ctx, x - self.get_width(ctx) + 1);
+        } else if x < view_offset_x {
+            self.set_content_x_offset(ctx, x);
+        }
+
+        // correct the offset if the offset is now showing characters to the right
+        // which don't exist in the content.
+        //if view_offset_x + self.get_width_val(ctx) > self.content_width() - 1 {
+        if view_offset_x + self.get_width(ctx) > self.content_width() {
+            self.set_content_x_offset(ctx, self.content_width());
         }
     }
 }

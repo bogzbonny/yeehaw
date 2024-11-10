@@ -31,10 +31,6 @@ use {
 /// operation of the WidgetPane Element.
 ///
 ///let Ok(v) = serde_json::to_string(&zafs) else {
-pub const ATTR_SCL_WIDTH: &str = "widget_dyn_width";
-pub const ATTR_SCL_HEIGHT: &str = "widget_dyn_height";
-pub const ATTR_SCL_LOC_X: &str = "widget_dyn_loc_x";
-pub const ATTR_SCL_LOC_Y: &str = "widget_dyn_loc_y";
 pub const ATTR_SELECTABILITY: &str = "widget_selectability";
 
 pub const WIDGET_Z_INDEX: ZIndex = 10;
@@ -594,10 +590,6 @@ impl Element for WidgetBase {
         } else {
             SelfReceivableEvents::default()
         }
-    }
-
-    fn receive_event_inner(&self, _ctx: &Context, _ev: Event) -> (bool, EventResponses) {
-        (false, EventResponses::default())
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {

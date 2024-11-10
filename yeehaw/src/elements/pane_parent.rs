@@ -206,6 +206,10 @@ impl ParentPane {
         self.eo.get_element(el_id)
     }
 
+    pub fn get_element_attribute(&self, el_id: &ElementID, key: &str) -> Option<Vec<u8>> {
+        self.eo.get_element_attribute(el_id, key)
+    }
+
     pub fn update_el_z_index(&self, el_id: &ElementID, z: ZIndex) {
         self.eo.update_el_z_index(el_id, z);
     }
@@ -229,6 +233,12 @@ impl ParentPane {
             let resps = EventResponse::ReceivableEventChanges(rec);
             self.send_responses_upward(ctx, resps.into());
         }
+    }
+
+    /// sends an event to a specific element
+    pub fn send_event_to_el(&self, ctx: &Context, el_id: &ElementID, ev: Event) -> EventResponses {
+        self.eo
+            .send_event_to_el(ctx, el_id, ev, Box::new(self.clone()))
     }
 }
 

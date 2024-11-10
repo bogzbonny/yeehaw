@@ -106,6 +106,14 @@ impl ElementOrganizer {
         self.els.borrow().get(el_id).map(|ed| ed.el.clone())
     }
 
+    /// get_element_by_id returns the element registered under the given id in the eo
+    pub fn get_element_attribute(&self, el_id: &ElementID, key: &str) -> Option<Vec<u8>> {
+        self.els
+            .borrow()
+            .get(el_id)
+            .map(|ed| ed.el.get_attribute(key))?
+    }
+
     pub fn get_location(&self, el_id: &ElementID) -> Option<DynLocationSet> {
         self.els
             .borrow()
@@ -545,6 +553,20 @@ impl ElementOrganizer {
             resps.extend(resps_.0.drain(..));
         }
         (false, resps)
+    }
+
+    /// sends an event to a specific element
+    pub fn send_event_to_el(
+        &self, ctx: &Context, el_id: &ElementID, ev: Event, parent: Box<dyn Parent>,
+    ) -> EventResponses {
+        let details = self
+            .get_element_details(el_id)
+            .expect("no element for destination id in send_event_to_el");
+
+        let child_ctx = ctx.child_context(&details.loc.borrow().l);
+        let (_, mut resps) = details.el.receive_event(&child_ctx, ev);
+        self.partially_process_ev_resps(ctx, el_id, &mut resps, &parent);
+        resps
     }
 
     /// initialize updates the prioritizers essentially refreshing the state of the element organizer.
