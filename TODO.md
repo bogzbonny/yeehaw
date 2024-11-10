@@ -62,6 +62,9 @@ WIDGET RECALL REFACTOR
 
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+01. border pane text locations (either right, centre, left eg) should all be
+    possible at the same time not ONLY one of those three options
+
 01. terminal_editor - get the no-editor elements hooked up.
 01. terminal_editor - autoexpanding based on text size in buffer (like zell
     editing) 
