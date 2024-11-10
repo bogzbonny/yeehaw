@@ -32,6 +32,13 @@
 05. introduce errors, remove all unwraps
 
 WIDGET RECALL REFACTOR
+ - Selectibility Hook
+    - this one is a bit harder maybe we have to introduce hooks on 
+      arbitrary attribute setting. The existing hook structure should
+      be able to hold hooks of this variety 
+    - could maybe do something funny where the hook is actually set to 
+      the name of the attribute KEY plus a prefix! thus allowing the hook
+      system to specify the exact type of the hook.
  - deleted ElWidgetPane for a new type ParentPaneWithSelectibility
     - basically the parentpane with tab capturing and refocusing
     - using the ParentPane store to hold index of the currently selected widget 
@@ -40,13 +47,6 @@ WIDGET RECALL REFACTOR
  - move Widgets -> Elements (basically only used for labels)
  - Remove "Unselectable type" from selectibility which will just be the regular element
  - Test if each trait has has selectibility by use of the attributes
- - Selectibility Hook
-    - this one is a bit harder maybe we have to introduce hooks on 
-      arbitrary attribute setting. The existing hook structure should
-      be able to hold hooks of this variety 
-    - could maybe do something funny where the hook is actually set to 
-      the name of the attribute KEY plus a prefix! thus allowing the hook
-      system to specify the exact type of the hook.
 05. create builder types for each widget. 
      - sometimes there are fields in the widget that are only 
        used for the creation of the widget, and not for the widget itself.

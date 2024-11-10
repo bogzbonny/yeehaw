@@ -390,7 +390,7 @@ impl Element for Pane {
         self.attributes.borrow().get(key).cloned()
     }
 
-    fn set_attribute(&self, key: &str, value: Vec<u8>) {
+    fn set_attribute_inner(&self, key: &str, value: Vec<u8>) {
         self.attributes.borrow_mut().insert(key.to_string(), value);
     }
 

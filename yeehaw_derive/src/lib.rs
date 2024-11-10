@@ -24,7 +24,7 @@ pub fn impl_element_from(attr: TokenStream, item: TokenStream) -> TokenStream {
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges;
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos>;
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>>;
-    fn set_attribute(&self, key: &str, value: Vec<u8>);
+    fn set_attribute_inner(&self, key: &str, value: Vec<u8>);
     fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>);
     fn remove_hook(&self, kind: &str, el_id: ElementID);
     fn clear_hooks_by_id(&self, el_id: ElementID);

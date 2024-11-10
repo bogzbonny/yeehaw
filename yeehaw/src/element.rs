@@ -72,7 +72,16 @@ pub trait Element: DynClone {
     /// Current attributes used within this library:
     ///  - "description": a string description of the element used everywhere
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>>;
-    fn set_attribute(&self, key: &str, value: Vec<u8>);
+
+    fn set_attribute(&self, key: &str, value: Vec<u8>) {
+        let pre_hook_name = format!("{PRE_ATTR_CHANGE_HOOK_NAME_PREFIX}{key}");
+        let post_hook_name = format!("{POST_ATTR_CHANGE_HOOK_NAME_PREFIX}{key}");
+        self.call_hooks_of_kind(&pre_hook_name);
+        self.set_attribute_inner(key, value);
+        self.call_hooks_of_kind(&post_hook_name);
+    }
+
+    fn set_attribute_inner(&self, key: &str, value: Vec<u8>);
 
     /// sets the hook for the element, the hook is a function that is called when the element is
     /// although a developer may implement any custom hook kind, the default hooks are:
@@ -195,6 +204,10 @@ pub const PRE_EVENT_HOOK_NAME: &str = "pre-event";
 pub const POST_EVENT_HOOK_NAME: &str = "post-event";
 pub const PRE_LOCATION_CHANGE_HOOK_NAME: &str = "pre-location-change";
 pub const POST_LOCATION_CHANGE_HOOK_NAME: &str = "post-location-change";
+/// prefixes because the actual attribute key is appended
+pub const PRE_ATTR_CHANGE_HOOK_NAME_PREFIX: &str = "pre-attr-change-";
+/// prefixes because the actual attribute key is appended
+pub const POST_ATTR_CHANGE_HOOK_NAME_PREFIX: &str = "post-attr-change-";
 
 // ----------------------------------------
 
