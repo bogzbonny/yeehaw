@@ -66,14 +66,11 @@ impl PaneScrollable {
     }
 
     pub fn get_width_val(&self, ctx: &Context) -> usize {
-        self.pane.get_dyn_location_set().borrow().get_width_val(ctx)
+        self.pane.get_dyn_location_set().get_width_val(ctx)
     }
 
     pub fn get_height_val(&self, ctx: &Context) -> usize {
-        self.pane
-            .get_dyn_location_set()
-            .borrow()
-            .get_height_val(ctx)
+        self.pane.get_dyn_location_set().get_height_val(ctx)
     }
 }
 

@@ -761,7 +761,7 @@ impl Bordered {
             inner_start_y.clone(),
             inner_end_y,
         );
-        inner.get_dyn_location_set().borrow_mut().l = inner_loc.clone();
+        inner.set_dyn_location(inner_loc.clone());
 
         if has_top_left_corner {
             let corner = Corner::new(
@@ -832,7 +832,7 @@ impl Bordered {
                 // set the scrollbar dimensions/location (as it wasn't done earlier)
                 // see NOTE SB-1 as to why we don't use the dynamic width
                 let sb_height: DynVal = left_loc.height(ctx).into();
-                sb.get_dyn_location_set().borrow_mut().l = left_loc;
+                sb.set_dyn_location(left_loc);
                 sb.set_dyn_height(
                     sb_height.clone(),
                     sb_height,
@@ -844,7 +844,7 @@ impl Bordered {
             } else {
                 let side =
                     VerticalSide::new(ctx, chs_left.clone(), VerticalPos::Left, left_property);
-                side.pane.get_dyn_location_set().borrow_mut().l = left_loc;
+                side.pane.set_dyn_location(left_loc);
                 bordered.pane.add_element(Box::new(side.clone()));
                 bordered.left.borrow_mut().replace(side);
             }
@@ -881,7 +881,7 @@ impl Bordered {
                 // set the scrollbar dimensions/location (as it wasn't done earlier)
                 // see NOTE SB-1 as to why we don't use the dynamic width
                 let sb_height: DynVal = right_loc.height(ctx).into();
-                sb.get_dyn_location_set().borrow_mut().l = right_loc;
+                sb.set_dyn_location(right_loc);
                 sb.set_dyn_height(
                     sb_height.clone(),
                     sb_height,
@@ -893,7 +893,7 @@ impl Bordered {
             } else {
                 let side =
                     VerticalSide::new(ctx, chs_right.clone(), VerticalPos::Right, right_property);
-                side.pane.get_dyn_location_set().borrow_mut().l = right_loc;
+                side.pane.set_dyn_location(right_loc);
                 bordered.pane.add_element(Box::new(side.clone()));
                 bordered.right.borrow_mut().replace(side);
             }
@@ -924,7 +924,7 @@ impl Bordered {
                 // set the scrollbar dimensions/location (as it wasn't done earlier)
                 // see NOTE SB-1 as to why we don't use the dynamic width
                 let sb_width: DynVal = top_loc.width(ctx).into();
-                sb.get_dyn_location_set().borrow_mut().l = top_loc;
+                sb.set_dyn_location(top_loc);
                 sb.set_dyn_width(sb_width.clone(), sb_width, Some(inner.get_content_width()));
 
                 bordered.x_scrollbar.borrow_mut().replace(sb.clone());
@@ -932,7 +932,7 @@ impl Bordered {
             } else {
                 let side =
                     HorizontalSide::new(ctx, chs_top.clone(), HorizontalPos::Top, top_property);
-                side.pane.get_dyn_location_set().borrow_mut().l = top_loc;
+                side.pane.set_dyn_location(top_loc);
                 bordered.pane.add_element(Box::new(side.clone()));
                 bordered.top.borrow_mut().replace(side);
             }
@@ -968,7 +968,7 @@ impl Bordered {
                 // set the scrollbar dimensions/location (as it wasn't done earlier)
                 // see NOTE SB-1 as to why we don't use the dynamic width
                 let sb_width: DynVal = bottom_loc.width(ctx).into();
-                sb.get_dyn_location_set().borrow_mut().l = bottom_loc;
+                sb.set_dyn_location(bottom_loc);
                 sb.set_dyn_width(sb_width.clone(), sb_width, Some(inner.get_content_width()));
 
                 bordered.x_scrollbar.borrow_mut().replace(sb.clone());
@@ -980,7 +980,7 @@ impl Bordered {
                     HorizontalPos::Bottom,
                     bottom_property,
                 );
-                side.pane.get_dyn_location_set().borrow_mut().l = bottom_loc;
+                side.pane.set_dyn_location(bottom_loc);
                 bordered.pane.add_element(Box::new(side.clone()));
                 bordered.bottom.borrow_mut().replace(side);
             }

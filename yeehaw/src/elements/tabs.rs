@@ -181,12 +181,12 @@ impl Tabs {
     }
 
     fn sanitize_el_location(el: &dyn Element) {
-        let mut loc = el.get_dyn_location_set().borrow().clone();
+        let mut loc = el.get_dyn_location_set().clone();
         loc.set_start_x(0.0.into()); // 0
         loc.set_end_x(1.0.into()); // 100%
         loc.set_start_y(0.0.into()); // 0
         loc.set_end_y(1.0.into()); // 100%
-        *el.get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
+        el.set_dyn_location_set(loc); // set loc without triggering hooks
     }
 
     pub fn set_tab_view_pane(&self, ctx: &Context, idx: Option<usize>) {

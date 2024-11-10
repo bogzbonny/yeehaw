@@ -1,6 +1,6 @@
 use {
     crate::{
-        prioritizer::Priority, Context, DrawChPos, DynLocationSet, ElementID, Event,
+        prioritizer::Priority, Context, DrawChPos, DynLocation, DynLocationSet, ElementID, Event,
         EventResponses, ReceivableEventChanges, SelfReceivableEvents,
     },
     dyn_clone::DynClone,
@@ -109,14 +109,24 @@ pub trait Element: DynClone {
     fn set_parent(&self, up: Box<dyn Parent>);
 
     /// get/set the scalable location of the widget
-    // TODO figure out some way of enforcing this
-    // TODO search and replace instances of this being used improperly
     fn get_dyn_location_set(&self) -> Ref<DynLocationSet>;
     fn get_visible(&self) -> bool;
 
     fn set_dyn_location_set(&self, l: DynLocationSet) {
         self.call_hooks_of_kind(PRE_LOCATION_CHANGE_HOOK_NAME);
         *self.get_ref_cell_dyn_location_set().borrow_mut() = l;
+        self.call_hooks_of_kind(POST_LOCATION_CHANGE_HOOK_NAME);
+    }
+
+    fn set_dyn_location(&self, l: DynLocation) {
+        self.call_hooks_of_kind(PRE_LOCATION_CHANGE_HOOK_NAME);
+        self.get_ref_cell_dyn_location_set().borrow_mut().l = l;
+        self.call_hooks_of_kind(POST_LOCATION_CHANGE_HOOK_NAME);
+    }
+
+    fn set_dyn_location_extra(&self, extra: Vec<DynLocation>) {
+        self.call_hooks_of_kind(PRE_LOCATION_CHANGE_HOOK_NAME);
+        self.get_ref_cell_dyn_location_set().borrow_mut().extra = extra;
         self.call_hooks_of_kind(POST_LOCATION_CHANGE_HOOK_NAME);
     }
 

@@ -376,7 +376,7 @@ impl MenuBar {
         for (_, item) in menu_items.iter() {
             // close all non-primary menus
             if !item.is_primary() || make_invis {
-                item.get_visible().replace(false);
+                item.set_visible(false);
             } else {
                 item.unselect();
             }
@@ -387,7 +387,7 @@ impl MenuBar {
 
         if make_invis {
             // make the actual menu bar element invisible in the parent eo
-            *self.get_visible().borrow_mut() = false;
+            self.set_visible(false);
         }
         (true, EventResponses::default())
     }
@@ -397,7 +397,7 @@ impl MenuBar {
         let menu_items = self.menu_items.borrow();
         for (_, item) in menu_items.iter() {
             if item.is_primary() {
-                item.get_visible().replace(true);
+                item.set_visible(true);
             }
         }
 
@@ -418,7 +418,7 @@ impl MenuBar {
     }
 
     pub fn extra_locations(&self) -> Vec<DynLocation> {
-        let bar_loc = self.get_dyn_location_set().borrow().clone();
+        let bar_loc = self.get_dyn_location_set();
         let x = bar_loc.get_dyn_start_x();
         let y = bar_loc.get_dyn_start_y();
 
@@ -436,7 +436,7 @@ impl MenuBar {
 
     pub fn update_extra_locations(&self) {
         let extra = self.extra_locations();
-        self.get_dyn_location_set().borrow_mut().set_extra(extra);
+        self.set_dyn_location_extra(extra);
     }
 
     pub fn collapse_non_primary(&self) {
@@ -444,7 +444,7 @@ impl MenuBar {
         for (_, item) in menu_items.iter() {
             // close all non-primary menus
             if !item.is_primary() {
-                item.get_visible().replace(false);
+                item.set_visible(false);
             }
         }
     }
@@ -537,7 +537,7 @@ impl MenuBar {
             self.pane
                 .eo
                 .update_el_primary_location(it.id(), loc.clone());
-            it.get_visible().replace(true);
+            it.set_visible(true);
         }
     }
 }
@@ -652,7 +652,7 @@ impl Element for MenuBar {
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        if !*self.get_visible().borrow() {
+        if !self.get_visible() {
             return vec![];
         }
 
@@ -706,7 +706,7 @@ impl Element for MenuItem {
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        if !*self.get_visible().borrow() {
+        if !self.get_visible() {
             return vec![];
         }
 

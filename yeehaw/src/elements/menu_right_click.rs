@@ -69,7 +69,7 @@ impl RightClickMenu {
             vec![],
             Self::Z_INDEX,
         );
-        *self.get_dyn_location_set().borrow_mut() = loc;
+        self.set_dyn_location_set(loc);
 
         self.menu.activate();
         self.menu.deselect_all();

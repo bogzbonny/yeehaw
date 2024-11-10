@@ -40,10 +40,10 @@ impl WindowPane {
         let top_bar = Box::new(BasicWindowTopBar::new(ctx, title, true, true, true));
 
         // adjust the inner size to account for the top bar
-        let mut loc = inner.get_dyn_location_set().borrow().clone();
+        let mut loc = inner.get_dyn_location_set().clone();
         loc.set_start_y(1.into());
         loc.set_dyn_height(DynVal::new_full().minus(1.into()));
-        inner.get_dyn_location_set().replace(loc);
+        inner.set_dyn_location_set(loc);
 
         pane.add_element(top_bar.clone());
         pane.add_element(inner.clone());
@@ -284,7 +284,7 @@ impl WindowPane {
                 // resize events
                 let (_, r) = self.top_bar.receive_event(&pane_ctx, Event::Resize);
                 resps_.extend(r.0);
-                self.inner.get_visible().replace(false);
+                self.inner.set_visible(false);
                 *resp = EventResponse::None;
                 self.minimized_restore.replace(Some(restore_loc));
                 continue;
@@ -336,12 +336,12 @@ impl WindowPane {
 
                         let (_, r) = self.top_bar.receive_event(&top_bar_ctx, Event::Resize);
                         resps.extend(r.0);
-                        self.inner.get_visible().replace(true);
+                        self.inner.set_visible(true);
 
                         self.minimized_restore.replace(None);
                     }
                     MouseEventKind::Down(MouseButton::Left) if !dragging && mr.is_none() => {
-                        let top_height = self.top_bar.get_dyn_location_set().borrow().l.height(ctx);
+                        let top_height = self.top_bar.get_dyn_location_set().l.height(ctx);
                         if me.row as usize >= top_height {
                             return;
                         }
@@ -586,7 +586,7 @@ impl BasicWindowTopBar {
         );
         pane.add_element(title_label.clone());
         pane.add_element(decor_label.clone());
-        decor_label.get_visible().replace(false);
+        decor_label.set_visible(false);
 
         Self {
             pane,
@@ -599,14 +599,14 @@ impl BasicWindowTopBar {
     /// useful for minimization
     pub fn minimize(&self) {
         self.pane.eo.set_all_visibility(false);
-        self.title.get_visible().replace(true);
-        self.minimized_decor.get_visible().replace(true);
+        self.title.set_visible(true);
+        self.minimized_decor.set_visible(true);
     }
 
     /// useful for restore after minimization
     pub fn minimize_restore(&self) {
         self.pane.eo.set_all_visibility(true);
-        self.minimized_decor.get_visible().replace(false);
+        self.minimized_decor.set_visible(false);
     }
 
     pub fn reset_maximizer_button(&self) {

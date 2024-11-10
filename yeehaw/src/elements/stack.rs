@@ -96,11 +96,7 @@ impl VerticalStack {
         let virtual_context = ctx.clone().with_size(Size::new(virtual_size, virtual_size));
         let avg = els
             .iter()
-            .map(|el| {
-                el.get_dyn_location_set()
-                    .borrow()
-                    .get_height_val(&virtual_context)
-            })
+            .map(|el| el.get_dyn_location_set().get_height_val(&virtual_context))
             .sum::<usize>() as f64
             / els.len() as f64;
         let avg_flex = avg / virtual_size as f64;
@@ -108,12 +104,12 @@ impl VerticalStack {
     }
 
     fn sanitize_el_location(el: &dyn Element) {
-        let mut loc = el.get_dyn_location_set().borrow().clone();
+        let mut loc = el.get_dyn_location_set().clone();
 
         // ignore the x-dimension everything must fit fully
         loc.set_start_x(0.0.into()); // 0
         loc.set_end_x(1.0.into()); // 100%
-        *el.get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
+        el.set_dyn_location_set(loc); // set loc without triggering hooks
     }
 
     pub fn ensure_normalized_sizes(&self, ctx: &Context) {
@@ -129,7 +125,7 @@ impl VerticalStack {
             .els
             .borrow()
             .iter()
-            .map(|el| el.get_dyn_location_set().borrow().get_dyn_height())
+            .map(|el| el.get_dyn_location_set().get_dyn_height())
             .collect();
 
         Self::normalize_heights_to_context(ctx, &mut heights);
@@ -148,10 +144,10 @@ impl VerticalStack {
     pub fn adjust_locations_for_heights(&self, heights: &[DynVal]) {
         let mut y = DynVal::new_fixed(0);
         for (el, height) in self.els.borrow().iter().zip(heights.iter()) {
-            let mut loc = el.get_dyn_location_set().borrow().clone();
+            let mut loc = el.get_dyn_location_set().clone();
             loc.set_start_y(y.clone());
             loc.set_dyn_height(height.clone());
-            *el.get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
+            el.set_dyn_location_set(loc); // set loc without triggering hooks
             y = y.plus(height.clone());
         }
     }
@@ -256,11 +252,7 @@ impl HorizontalStack {
         let virtual_context = ctx.clone().with_size(Size::new(virtual_size, virtual_size));
         let avg = els
             .iter()
-            .map(|el| {
-                el.get_dyn_location_set()
-                    .borrow()
-                    .get_width_val(&virtual_context)
-            })
+            .map(|el| el.get_dyn_location_set().get_width_val(&virtual_context))
             .sum::<usize>() as f64
             / els.len() as f64;
         let avg_flex = avg / virtual_size as f64;
@@ -268,12 +260,12 @@ impl HorizontalStack {
     }
 
     fn sanitize_el_location(el: &dyn Element) {
-        let mut loc = el.get_dyn_location_set().borrow().clone();
+        let mut loc = el.get_dyn_location_set().clone();
 
         // ignore the y-dimension everything must fit fully
         loc.set_start_y(0.0.into()); // 0
         loc.set_end_y(1.0.into()); // 100%
-        *el.get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
+        el.set_dyn_location_set(loc); // set loc without triggering hooks
     }
 
     pub fn ensure_normalized_sizes(&self, ctx: &Context) {
@@ -289,7 +281,7 @@ impl HorizontalStack {
             .els
             .borrow()
             .iter()
-            .map(|el| el.get_dyn_location_set().borrow().get_dyn_width())
+            .map(|el| el.get_dyn_location_set().get_dyn_width())
             .collect();
 
         Self::normalize_widths_to_context(ctx, &mut widths);
@@ -308,10 +300,10 @@ impl HorizontalStack {
     pub fn adjust_locations_for_widths(&self, widths: &[DynVal]) {
         let mut x = DynVal::new_fixed(0);
         for (el, width) in self.els.borrow().iter().zip(widths.iter()) {
-            let mut loc = el.get_dyn_location_set().borrow().clone();
+            let mut loc = el.get_dyn_location_set().clone();
             loc.set_start_x(x.clone());
             loc.set_dyn_width(width.clone());
-            *el.get_dyn_location_set().borrow_mut() = loc; // set loc without triggering hooks
+            el.set_dyn_location_set(loc); // set loc without triggering hooks
             x = x.plus(width.clone());
         }
     }

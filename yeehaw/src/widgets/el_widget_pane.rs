@@ -64,9 +64,8 @@ impl WidgetPane {
             .self_evs
             .borrow_mut()
             .extend(w.receivable().0);
-        w.get_dyn_location_set().borrow_mut().set_z(w.get_z_index());
-        let loc = w.get_dyn_location_set();
-        //self.pane.add_element(Rc::new(RefCell::new(w))); // TODO add to the element organizer
+        let loc = w.get_ref_cell_dyn_location_set();
+        loc.borrow_mut().set_z(w.get_z_index()); // will not call the hook
         self.widgets.borrow_mut().push((w, loc));
     }
 
@@ -135,10 +134,10 @@ impl WidgetPane {
                     // adjust right click menu location to the widget
                     // location which made the request
                     let loc = self.widgets.borrow()[widget_index].1.borrow().clone();
-                    new_el
-                        .get_dyn_location_set()
-                        .borrow_mut()
-                        .adjust_locations_by(loc.l.start_x.clone(), loc.l.start_y.clone());
+
+                    let mut ls = new_el.get_dyn_location_set().clone();
+                    ls.adjust_locations_by(loc.l.start_x.clone(), loc.l.start_y.clone());
+                    new_el.set_dyn_location_set(ls);
                     new_el.set_parent(Box::new(self.pane.clone()));
                 }
                 EventResponse::Metadata(k, _) => {

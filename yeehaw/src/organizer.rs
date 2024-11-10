@@ -31,8 +31,8 @@ pub struct ElDetails {
 
 impl ElDetails {
     pub fn new(el: Box<dyn Element>) -> Self {
-        let loc = el.get_dyn_location_set().clone();
-        let vis = el.get_visible().clone();
+        let loc = el.get_ref_cell_dyn_location_set().clone();
+        let vis = el.get_ref_cell_visible();
         Self { el, loc, vis }
     }
 
@@ -52,7 +52,7 @@ impl ElementOrganizer {
         // assign the new element id
         let el_id = el.id().clone();
 
-        let z = el.get_dyn_location_set().borrow().z;
+        let z = el.get_dyn_location_set().z;
 
         // put it at the top of the z-dim (pushing everything else down))
         self.update_el_z_index(&el_id, z);
@@ -338,13 +338,12 @@ impl ElementOrganizer {
                 EventResponse::NewElement(new_el, ref mut new_el_resps) => {
                     // adjust the location of the window to be relative to the given element and adds the element
                     // to the element organizer
-                    new_el
-                        .get_dyn_location_set()
-                        .borrow_mut()
-                        .adjust_locations_by(
-                            details.loc.borrow().l.start_x.clone(),
-                            details.loc.borrow().l.start_y.clone(),
-                        );
+                    let mut ls = new_el.get_dyn_location_set().clone();
+                    ls.adjust_locations_by(
+                        details.loc.borrow().l.start_x.clone(),
+                        details.loc.borrow().l.start_y.clone(),
+                    );
+                    new_el.set_dyn_location_set(ls);
                     let resp_ = self.add_element(new_el.clone(), Some(parent.clone()));
                     if let Some(new_el_resps) = new_el_resps {
                         self.partially_process_ev_resps(ctx, &new_el.id(), new_el_resps, parent);
