@@ -27,7 +27,7 @@ pub mod window;
 
 pub use {
     border::Bordered,
-    button::Button,
+    button::{Button, ButtonShadow, ButtonSides, ButtonStyle},
     checkbox::Checkbox,
     debug_pane::DebugSizePane,
     dropdownlist::DropdownList,

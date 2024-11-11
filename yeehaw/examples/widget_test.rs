@@ -15,7 +15,7 @@ async fn main() -> Result<(), Error> {
     let l = l1.clone().at(DynVal::new_flex(0.5), DynVal::new_flex(0.5));
     el.add_element(Box::new(l));
 
-    let button_click_fn = Box::new(move |_, ctx_| {
+    let button_click_fn = Box::new(move |_, _| {
         let t = l1.get_text();
         let t = t + "0";
         l1.set_text(t);
@@ -23,9 +23,14 @@ async fn main() -> Result<(), Error> {
     });
     let button = Button::new(&ctx, "click me", button_click_fn)
         .with_description("a button!".to_string())
-        .at(DynVal::new_flex(0.25), DynVal::new_flex(0.25))
-        .with_label(&ctx, "button-label");
-    el.add_element(button);
+        .at(DynVal::new_flex(0.25), DynVal::new_flex(0.25));
+    let button_label = Label::new_for_el(
+        &ctx,
+        button.get_dyn_location_set().l.clone(),
+        "button-label",
+    );
+    el.add_element(Box::new(button));
+    el.add_element(Box::new(button_label));
 
     let button2 = Button::new(&ctx, "button2", Box::new(|_, _| EventResponses::default()))
         .with_description("a button!".to_string())
@@ -34,15 +39,15 @@ async fn main() -> Result<(), Error> {
 
     el.add_element(Box::new(button2));
 
-    let cb = Checkbox::new(&ctx)
-        .at(DynVal::new_flex(0.1), DynVal::new_flex(0.1))
-        .with_label(&ctx, "check me");
-    el.add_element(cb);
+    let cb = Checkbox::new(&ctx).at(DynVal::new_flex(0.1), DynVal::new_flex(0.1));
+    let cb_label = Label::new_for_el(&ctx, cb.get_dyn_location_set().l.clone(), "check me");
+    el.add_element(Box::new(cb));
+    el.add_element(Box::new(cb_label));
 
-    let cb2 = Checkbox::new(&ctx)
-        .at(DynVal::new_flex(0.1), DynVal::new_flex(0.1).plus_fixed(1))
-        .with_label(&ctx, "check me2");
+    let cb2 = Checkbox::new(&ctx).at(DynVal::new_flex(0.1), DynVal::new_flex(0.1).plus_fixed(1));
+    let cb2_label = Label::new_for_el(&ctx, cb2.get_dyn_location_set().l.clone(), "check me");
     el.add_element(Box::new(cb2));
+    el.add_element(Box::new(cb2_label));
 
     let rbs = RadioButtons::new(
         &ctx,

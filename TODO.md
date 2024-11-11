@@ -26,15 +26,14 @@
 01. Add license
 01. add license and license-file fields to cargo.toml
      - https://doc.rust-lang.org/cargo/reference/manifest.html
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 01. create pane basics proceedural macro 
      - it's crazy the amount of duplication required for ParentPane, and now
        SelectablePane, this should be a macro to define all the basic get/set
        functions 
         - will need to be divided into "with" functions and "non-with" functions
           (aka self modifying)
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 05. introduce errors, remove all unwraps
 
@@ -222,6 +221,7 @@ widget_toggle.rs           | DONE
        would always have to be open
      - Optionally could allow for growing and shrinking its total size in which case it
        could store its size if all the elements where minimized
+        - multiple stacks could be open in this situation
      - Each header should remain when the element is open 
      - optional vertical accordian stack
 
@@ -254,8 +254,6 @@ widget_toggle.rs           | DONE
    ▁▂▃▄▅▆▇
 
 
-10. color-pallet element
-
 10. Dial 8 or 12 positions
     - if there are labels could bold the one which is selected
     - could provide continious value if pixel mode enabled
@@ -283,19 +281,38 @@ One letter labels
                 ⟋    ⟍ 
            OptionE  OptionD
 
-            OptionH  OptionA
-         OptionK.⟍ __ ⟋ .OptionB
+            OptionL  OptionA
+         OptionK.⟍ __ ⟋.OptionB
        OptionJ -  ╱  ╲  - OptionC
        OptionI -  ⚬__╱  - OptionD    // can use lower then upper dots on these positions
-         OptionH´⟋    ⟍ `OptionE
-            OptionG  OptionF
+         OptionH´⟋    ⟍`OptionE
+            OptionG  OptionF      
 
-            OptionH  OptionA
-         OptionK   __    OptionB
+            OptionL  OptionA
+         OptionK   __   OptionB
        OptionJ    ╱  ╲    OptionC
        OptionI    °__╱    OptionD
-         OptionH         OptionE
+         OptionH        OptionE
             OptionG  OptionF
+
+It'd be cool to come up with a "Complex Selector" generalization for the dials. 
+ - probably each version of the dial (3 postion... 8 position etc) should be a
+   different complex selector. 
+ - All the different states could be fed in manually as DrawCh2Ds 
+ - we would probably want different states for "selecting" (brighter colors) and
+   "selected" dimmer colors. 
+ - Feed in a map of all the different selection positions:
+
+      OptionL  OptionA          KKKLLLLLLLLLLAAAAAAAAAABBB
+   OptionK.⟍ __ ⟋.OptionB       JKKKKKKKKKLLLAAA1BBBBBBBBC
+ OptionJ -  ╱  ╲  - OptionC     JJJJJJJJJJJJJCCCCCCCCCCCCC
+ OptionI -  ⚬__╱  - OptionD     IIIIIIIIIIIIIDDDDDDDDDDDDD 
+   OptionH´⟋    ⟍`OptionE       IHHHHHHHHHGGGFFFEEEEEEEEED
+      OptionG  OptionF          HHHGGGGGGGGGGFFFFFFFFFFEEE 
+
+ - if certain positions are excluded their selection positions could be a '0'
+ - If the mouse is dragging outside of the selector zone, the nearest position
+   could be "snapped to".
 
 10. progress bar
     - optionally with an embedded word
@@ -315,6 +332,8 @@ One letter labels
     - ◢◥◤◣
     - ◥◢◣◤
 
+10. color-pallet element
+
 10. wire-connectors
     - for visualizing routing of information between elements
     - could be directional or non-directional (aka use an arrow or not)
@@ -324,6 +343,15 @@ One letter labels
          of the DrawCh based on the cell underneath of it
           - kind of like how transparency takes the cell underneath maybe
             the ChPlus could also have custom applications based on whats under
+
+20. Prompt-Window
+     - basically an old school prompt window which says some biz then gives you
+       a couple options
+     - Optionally it could also sieze control of the whole screen, not allowing
+       you to interact with the other elements until you answer the prompt
+         - could use a big transparent pane that captures all events for this
+         - could "flash" the topzone of the window when the users clicks
+           elsewhere than the window
 
 20. ScrollablePane: Ensure Element visible. Feed in an element-is then the scrollable pane 
     should move the view to ensure that the provided element is visible.
@@ -345,7 +373,14 @@ One letter labels
 
 10. table widget
 
-10. feature: hover comments
+10. hover comments
+     - hover comment event which is triggered after a certain amount of time
+     - TUI option to disable hover comments
+     - should just be a special floaty window (with "high z" use BrintToFront)
+     - destroyed on the first external event that it receives
+     - All this logic should exist at the Pane level 
+       - will have to refactor code such that everything now DOES call the pane
+         receive event function.
 
 10. widget: date selector
 
@@ -439,6 +474,32 @@ One letter labels
 40. custom mouse types using images (requires image support, and mouse pixel tracking) 
 
 40. tui get the color under the cursor pixel - useful for color pickers or from actual image pallets
+
+30. PIXEL MODE SPLITS for Complex Selector
+ - SPLITS: for pixel selection mode need a way to represent split selection 
+   within one cell. Probably we just need to define special characters for these
+   positions. The user would have feed in manual definitions (NOTE don't attempt
+   to abstract more complex patterns, too much work too implement).
+
+      OptionL  OptionA          KKKLLLLLLLLLLAAAAAAAAAABBB     
+   OptionK.⟍ __ ⟋.OptionB       8KKKKKKKK2LLLAAA1BBBBBBBB5
+ OptionJ -  ╱  ╲  - OptionC     JJJJJJJJJ88885555CCCCCCCCC
+ OptionI -  ⚬__╱  - OptionD     IIIIIIIII77776666DDDDDDDDD 
+   OptionH´⟋    ⟍`OptionE       7HHHHHHHH3GGGFFF4EEEEEEEE6
+      OptionG  OptionF          HHHGGGGGGGGGGFFFFFFFFFFEEE 
+
+1 = upper A lower B
+2 = upper L lower K
+3 = upper H lower G
+4 = upper E lower F 
+5 = upper B lower C 
+6 = upper D lower E
+7 = upper I lower H
+8 = upper K lower J
+   > allow for possible splits:
+     - diagonal (both ways)
+     - half (horizontal and vertical)
+     - quarters (square and diagonal) 
 
 40. Subscription based events on common objects. 
      - like leptos. any element could subscribe to an object (with any other

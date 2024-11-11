@@ -26,12 +26,12 @@ pub use {
     element::{Element, HookFn as ElementHookFn, Parent},
     elements::{
         border::Corner as BorderCorner, border::CornerPos,
-        border::PropertyCnr as BorderPropertyCnr, Bordered, Button, Checkbox, DebugSizePane,
-        DropdownList, FigletText, FileNavPane, FileViewerPane, HorizontalSBPositions,
-        HorizontalScrollbar, HorizontalStack, ImageViewer, Label, ListBox, MenuBar, Pane,
-        PaneScrollable, ParentPane, ParentPaneOfSelectable, RadioButtons, RightClickMenu,
-        ScrollbarSty, SelStyles, Selectability, SelectablePane, Shadowed, Tabs, TerminalPane,
-        Toggle, VerticalSBPositions, VerticalScrollbar, VerticalStack, WindowPane,
+        border::PropertyCnr as BorderPropertyCnr, Bordered, Button, ButtonSides, Checkbox,
+        DebugSizePane, DropdownList, FigletText, FileNavPane, FileViewerPane,
+        HorizontalSBPositions, HorizontalScrollbar, HorizontalStack, ImageViewer, Label, ListBox,
+        MenuBar, Pane, PaneScrollable, ParentPane, ParentPaneOfSelectable, RadioButtons,
+        RightClickMenu, ScrollbarSty, SelStyles, Selectability, SelectablePane, Shadowed, Tabs,
+        TerminalPane, Toggle, VerticalSBPositions, VerticalScrollbar, VerticalStack, WindowPane,
     },
     // XXX bring back post widger recall
     //TermEditorPane,
