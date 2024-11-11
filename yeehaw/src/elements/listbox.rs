@@ -86,6 +86,88 @@ impl ListBox {
         self.inner.borrow().update_content(ctx);
         self
     }
+
+    // ----------------------------------------------
+    /// decorators
+
+    pub fn with_left_scrollbar(self, ctx: &Context) -> Self {
+        self.with_scrollbar_inner(ctx, VerticalSBPositions::ToTheLeft)
+    }
+
+    pub fn with_right_scrollbar(self, ctx: &Context) -> Self {
+        self.with_scrollbar_inner(ctx, VerticalSBPositions::ToTheRight)
+    }
+
+    pub fn with_scrollbar(self, ctx: &Context) -> Self {
+        self.with_scrollbar_inner(ctx, VerticalSBPositions::ToTheRight)
+    }
+
+    fn with_scrollbar_inner(self, ctx: &Context, pos: VerticalSBPositions) -> Self {
+        let height = self.pane.get_dyn_height();
+        let content_height = self.pane.content_height();
+        let sb = VerticalScrollbar::new(ctx, height, content_height);
+        match pos {
+            VerticalSBPositions::ToTheLeft => {
+                sb.set_at(
+                    self.pane.get_dyn_start_x().minus_fixed(1),
+                    self.pane.get_dyn_start_y().clone(),
+                );
+            }
+            VerticalSBPositions::ToTheRight => {
+                sb.set_at(
+                    self.pane.get_dyn_start_x().plus(self.pane.get_dyn_width()),
+                    self.pane.get_dyn_start_y(),
+                );
+            }
+            VerticalSBPositions::None => {
+                return self;
+            }
+        }
+
+        // wire the scrollbar to the text box
+        let pane_ = self.pane.clone();
+        let hook = Box::new(move |ctx, y| pane_.set_content_y_offset(&ctx, y));
+        *sb.position_changed_hook.borrow_mut() = Some(hook);
+        *self.scrollbar.borrow_mut() = Some(sb.clone());
+        self
+    }
+
+    pub fn with_lines_per_item(self, ctx: &Context, lines: usize) -> Self {
+        *self.inner.borrow().lines_per_item.borrow_mut() = lines;
+        self.pane.set_dyn_height(DynVal::new_fixed(
+            self.inner.borrow().entries.borrow().len() as i32 * lines as i32,
+        ));
+        self.inner.borrow().update_content(ctx);
+        self
+    }
+
+    pub fn with_selection_mode(self, ctx: &Context, mode: SelectionMode) -> Self {
+        *self.inner.borrow().selection_mode.borrow_mut() = mode;
+        self.inner.borrow().update_content(ctx);
+        self
+    }
+
+    pub fn with_width(self, ctx: &Context, width: DynVal) -> Self {
+        self.pane.set_dyn_width(width);
+        self.inner.borrow().update_content(ctx);
+        self
+    }
+    pub fn with_height(self, ctx: &Context, height: DynVal) -> Self {
+        self.pane.set_dyn_height(height);
+        self.inner.borrow().update_content(ctx);
+        self
+    }
+    pub fn with_size(self, ctx: &Context, width: DynVal, height: DynVal) -> Self {
+        self.pane.set_dyn_width(width);
+        self.pane.set_dyn_height(height);
+        self.inner.borrow().update_content(ctx);
+        self
+    }
+
+    pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
+        self.pane.set_at(loc_x, loc_y);
+        self
+    }
 }
 
 impl ListBoxInner {
@@ -147,88 +229,6 @@ impl ListBoxInner {
         };
         lb.update_content(ctx);
         lb
-    }
-
-    // ----------------------------------------------
-    /// decorators
-
-    pub fn with_left_scrollbar(self, ctx: &Context) -> Self {
-        self.with_scrollbar_inner(ctx, VerticalSBPositions::ToTheLeft)
-    }
-
-    pub fn with_right_scrollbar(self, ctx: &Context) -> Self {
-        self.with_scrollbar_inner(ctx, VerticalSBPositions::ToTheRight)
-    }
-
-    pub fn with_scrollbar(self, ctx: &Context) -> Self {
-        self.with_scrollbar_inner(ctx, VerticalSBPositions::ToTheRight)
-    }
-
-    fn with_scrollbar_inner(self, ctx: &Context, pos: VerticalSBPositions) -> Self {
-        let height = self.pane.get_dyn_height();
-        let content_height = self.pane.content_height();
-        let sb = VerticalScrollbar::new(ctx, height, content_height);
-        match pos {
-            VerticalSBPositions::ToTheLeft => {
-                sb.set_at(
-                    self.pane.get_dyn_start_x().minus_fixed(1),
-                    self.pane.get_dyn_start_y().clone(),
-                );
-            }
-            VerticalSBPositions::ToTheRight => {
-                sb.set_at(
-                    self.pane.get_dyn_start_x().plus(self.pane.get_dyn_width()),
-                    self.pane.get_dyn_start_y(),
-                );
-            }
-            VerticalSBPositions::None => {
-                return self;
-            }
-        }
-
-        // wire the scrollbar to the text box
-        let pane_ = self.pane.clone();
-        let hook = Box::new(move |ctx, y| pane_.set_content_y_offset(&ctx, y));
-        *sb.position_changed_hook.borrow_mut() = Some(hook);
-        *self.scrollbar.borrow_mut() = Some(sb.clone());
-        self
-    }
-
-    pub fn with_lines_per_item(self, ctx: &Context, lines: usize) -> Self {
-        *self.lines_per_item.borrow_mut() = lines;
-        self.pane.set_dyn_height(DynVal::new_fixed(
-            self.entries.borrow().len() as i32 * lines as i32,
-        ));
-        self.update_content(ctx);
-        self
-    }
-
-    pub fn with_selection_mode(self, ctx: &Context, mode: SelectionMode) -> Self {
-        *self.selection_mode.borrow_mut() = mode;
-        self.update_content(ctx);
-        self
-    }
-
-    pub fn with_width(self, ctx: &Context, width: DynVal) -> Self {
-        self.pane.set_dyn_width(width);
-        self.update_content(ctx);
-        self
-    }
-    pub fn with_height(self, ctx: &Context, height: DynVal) -> Self {
-        self.pane.set_dyn_height(height);
-        self.update_content(ctx);
-        self
-    }
-    pub fn with_size(self, ctx: &Context, width: DynVal, height: DynVal) -> Self {
-        self.pane.set_dyn_width(width);
-        self.pane.set_dyn_height(height);
-        self.update_content(ctx);
-        self
-    }
-
-    pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.pane.set_at(loc_x, loc_y);
-        self
     }
 
     // ----------------------------------------------

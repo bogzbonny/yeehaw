@@ -267,6 +267,14 @@ impl ParentPaneOfSelectable {
         ])
     }
 
+    pub fn new(ctx: &Context) -> ParentPaneOfSelectable {
+        ParentPaneOfSelectable {
+            pane: ParentPane::new(ctx, Self::KIND),
+            selected: Rc::new(RefCell::new(None)),
+            selectables: Rc::new(RefCell::new(vec![])),
+        }
+    }
+
     pub fn add_element(&self, el: Box<dyn Element>) {
         // check if it is selectable
         if self.get_attribute(ATTR_SELECTABILITY).is_some() {
