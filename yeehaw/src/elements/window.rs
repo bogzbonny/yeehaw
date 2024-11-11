@@ -162,7 +162,7 @@ impl WindowPane {
                 top_bar_ctx.s.height = 1;
 
                 let (_, r) = self.inner.receive_event(&inner_ctx, Event::Resize);
-                resps_.extend(r.0);
+                resps_.extend(r);
 
                 // reset the maximizer button
                 if self.maximized_restore.borrow().is_some() {
@@ -174,7 +174,7 @@ impl WindowPane {
                             Vec::with_capacity(0),
                         ),
                     );
-                    resps_.extend(r.0);
+                    resps_.extend(r);
                 }
 
                 *resp = EventResponse::None;
@@ -216,9 +216,9 @@ impl WindowPane {
                         self.pane.pane.set_dyn_location(restore_loc);
 
                         let (_, r) = self.top_bar.receive_event(&top_bar_ctx, Event::Resize);
-                        resps_.extend(r.0);
+                        resps_.extend(r);
                         let (_, r) = self.inner.receive_event(&inner_ctx, Event::Resize);
-                        resps_.extend(r.0);
+                        resps_.extend(r);
 
                         self.maximized_restore.replace(None);
                     }
@@ -234,9 +234,9 @@ impl WindowPane {
                         inner_ctx.s.height -= 1;
 
                         let (_, r) = self.top_bar.receive_event(&top_bar_ctx, Event::Resize);
-                        resps_.extend(r.0);
+                        resps_.extend(r);
                         let (_, r) = self.inner.receive_event(&inner_ctx, Event::Resize);
-                        resps_.extend(r.0);
+                        resps_.extend(r);
 
                         self.maximized_restore.replace(Some(restore_loc));
                     }
@@ -276,18 +276,18 @@ impl WindowPane {
                         Vec::with_capacity(0),
                     ),
                 );
-                resps_.extend(r.0);
+                resps_.extend(r);
 
                 // resize events
                 let (_, r) = self.top_bar.receive_event(&pane_ctx, Event::Resize);
-                resps_.extend(r.0);
+                resps_.extend(r);
                 self.inner.set_visible(false);
                 *resp = EventResponse::None;
                 self.minimized_restore.replace(Some(restore_loc));
                 continue;
             }
         }
-        resps.extend(resps_.0);
+        resps.extend(resps_);
         just_minimized
     }
 
@@ -329,10 +329,10 @@ impl WindowPane {
                                 Vec::with_capacity(0),
                             ),
                         );
-                        resps.extend(r.0);
+                        resps.extend(r);
 
                         let (_, r) = self.top_bar.receive_event(&top_bar_ctx, Event::Resize);
-                        resps.extend(r.0);
+                        resps.extend(r);
                         self.inner.set_visible(true);
 
                         self.minimized_restore.replace(None);

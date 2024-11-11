@@ -31,28 +31,26 @@ impl Toggle {
     const DEFAULT_SELECTED_STY: Style = Style::new_const(Color::BLACK, Color::LIGHT_BLUE);
 
     pub fn default_receivable_events() -> SelfReceivableEvents {
-        vec![
-            KB::KEY_ENTER.into(),
-            KB::KEY_LEFT.into(),
-            KB::KEY_RIGHT.into(),
-            KB::KEY_H.into(),
-            KB::KEY_L.into(),
-        ]
+        SelfReceivableEvents(vec![
+            (KB::KEY_ENTER.into(), Priority::Focused),
+            (KB::KEY_LEFT.into(), Priority::Focused),
+            (KB::KEY_RIGHT.into(), Priority::Focused),
+            (KB::KEY_H.into(), Priority::Focused),
+            (KB::KEY_L.into(), Priority::Focused),
+        ])
     }
 
     pub fn new(
         ctx: &Context, left: String, right: String,
         toggeld_fn: Box<dyn FnMut(Context, String) -> EventResponses>,
     ) -> Self {
-        let pane = SelectablePane::new(ctx, Self::KIND);
-        pane.pane
-            .pane
-            .set_self_receivable_events(Self::default_receivable_events());
-        pane.set_styles(Self::STYLE);
-        pane.pane.set_dyn_width(DynVal::new_fixed(
-            left.chars().count() as i32 + right.chars().count() as i32,
-        ));
-        pane.pane.set_dyn_height(DynVal::new_fixed(1));
+        let pane = SelectablePane::new(ctx, Self::KIND)
+            .with_self_receivable_events(Self::default_receivable_events())
+            .with_styles(Self::STYLE)
+            .with_dyn_width(DynVal::new_fixed(
+                left.chars().count() as i32 + right.chars().count() as i32,
+            ))
+            .with_dyn_height(DynVal::new_fixed(1));
 
         pane.set_content_from_string(&(left.clone() + &right));
 
@@ -76,7 +74,7 @@ impl Toggle {
     }
 
     pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.pane.at(loc_x, loc_y);
+        self.pane.set_at(loc_x, loc_y);
         self
     }
 
@@ -171,16 +169,15 @@ impl Element for Toggle {
         let right = self.right.borrow();
         let left_len = left.chars().count();
         let right_len = right.chars().count();
-        self.pane
-            .set_content_from_string(ctx, &(left.clone() + &right));
+        self.pane.set_content_from_string(&(left.clone() + &right));
         if *self.left_selected.borrow() {
             for i in 0..left_len {
-                self.pane.pane.content.borrow_mut()[0][i].style =
+                self.pane.pane.pane.content.borrow_mut()[0][i].style =
                     self.selected_sty.borrow().clone();
             }
         } else {
             for i in left_len..left_len + right_len {
-                self.pane.pane.content.borrow_mut()[0][i].style =
+                self.pane.pane.pane.content.borrow_mut()[0][i].style =
                     self.selected_sty.borrow().clone();
             }
         }

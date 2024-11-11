@@ -16,7 +16,6 @@ pub mod prioritizer;
 pub mod sorting_hat;
 pub mod style;
 pub mod tui;
-pub mod widgets;
 
 pub use {
     ch::{ChPlus, DrawCh, DrawChPos, DrawChPosVec, DrawChs2D},
@@ -24,14 +23,20 @@ pub use {
     context::Context,
     dyn_location::{DynLocation, DynLocationSet, Loc, Point, Size, ZIndex},
     dyn_value::DynVal,
-    element::{Element, Parent},
+    element::{Element, HookFn as ElementHookFn, Parent},
     elements::{
         border::Corner as BorderCorner, border::CornerPos,
-        border::PropertyCnr as BorderPropertyCnr, Bordered, DebugSizePane, FileNavPane,
-        FileViewerPane, HorizontalStack, ImageViewer, MenuBar, Pane, PaneScrollable, ParentPane,
-        ParentPaneOfSelectable, RightClickMenu, SelStyles, Selectability, SelectablePane, Shadowed,
-        Tabs, TermEditorPane, TerminalPane, VerticalStack, WindowPane,
+        border::PropertyCnr as BorderPropertyCnr, Bordered, Button, Checkbox, DebugSizePane,
+        DropdownList, FigletText, FileNavPane, FileViewerPane, HorizontalSBPositions,
+        HorizontalScrollbar, HorizontalStack, ImageViewer, Label, ListBox, MenuBar, Pane,
+        PaneScrollable, ParentPane, ParentPaneOfSelectable, RadioButtons, RightClickMenu,
+        ScrollbarSty, SelStyles, Selectability, SelectablePane, Shadowed, Tabs, TerminalPane,
+        Toggle, VerticalSBPositions, VerticalScrollbar, VerticalStack, WindowPane,
     },
+    // XXX bring back post widger recall
+    //TermEditorPane,
+    //TextBox,
+    //NumbersTextBox,
     errors::Error,
     event::{
         CommandEvent, Event, EventResponse, EventResponses, KeyPossibility, MoveResponse,
@@ -44,10 +49,4 @@ pub use {
     sorting_hat::{ElementID, SortingHat},
     style::{Attributes, BgTranspSrc, FgTranspSrc, Style, UlTranspSrc},
     tui::Tui,
-    widgets::WidgetPane,
-    widgets::{
-        Button, Checkbox, DropdownList, FigletText, HorizontalSBPositions, HorizontalScrollbar,
-        Label, ListBox, NumbersTextBox, RadioButtons, ScrollbarSty, TextBox, Toggle,
-        VerticalSBPositions, VerticalScrollbar,
-    },
 };

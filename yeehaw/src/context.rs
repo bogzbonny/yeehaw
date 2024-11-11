@@ -24,6 +24,22 @@ pub struct Context {
     pub ev_tx: Sender<Event>,
 }
 
+/// Default implementation for Context, use only as a dummy value
+impl Default for Context {
+    fn default() -> Self {
+        let (ev_tx, _) = tokio::sync::mpsc::channel::<Event>(1);
+        Context {
+            s: Size::default(),
+            dur_since_launch: std::time::Duration::default(),
+            visible_region: None,
+            metadata: HashMap::new(),
+            parent_ctx: None,
+            hat: SortingHat::default(),
+            ev_tx,
+        }
+    }
+}
+
 impl Context {
     // TODO return error
     pub fn new_context_for_screen_no_dur(hat: &SortingHat, ev_tx: Sender<Event>) -> Context {

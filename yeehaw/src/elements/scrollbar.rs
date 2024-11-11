@@ -80,9 +80,7 @@ impl VerticalScrollbar {
             scrollbar_length_chs: Rc::new(RefCell::new(scrollable_view_height)),
             scrollable_position: Rc::new(RefCell::new(0)),
             has_arrows: Rc::new(RefCell::new(true)),
-            sb_sty: Rc::new(RefCell::new(ScrollbarSty::vertical_block(
-                Scrollbar::STYLE.ready_style,
-            ))),
+            sb_sty: Rc::new(RefCell::new(ScrollbarSty::vertical_block(Scrollbar::STYLE))),
             position_changed_hook: Rc::new(RefCell::new(None)),
             currently_dragging: Rc::new(RefCell::new(false)),
             start_drag_position: Rc::new(RefCell::new(0)),
@@ -121,12 +119,12 @@ impl VerticalScrollbar {
     }
 
     pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.pane.at(loc_x, loc_y);
+        self.pane.set_at(loc_x, loc_y);
         self
     }
 
     pub fn set_at(&self, loc_x: DynVal, loc_y: DynVal) {
-        self.pane.at(loc_x, loc_y);
+        self.pane.set_at(loc_x, loc_y);
     }
 
     pub fn without_arrows(self) -> Self {
@@ -158,7 +156,7 @@ impl HorizontalScrollbar {
             scrollable_position: Rc::new(RefCell::new(0)),
             has_arrows: Rc::new(RefCell::new(true)),
             sb_sty: Rc::new(RefCell::new(ScrollbarSty::horizontal_block(
-                Scrollbar::STYLE.ready_style,
+                Scrollbar::STYLE,
             ))),
             position_changed_hook: Rc::new(RefCell::new(None)),
             currently_dragging: Rc::new(RefCell::new(false)),
@@ -186,11 +184,6 @@ impl HorizontalScrollbar {
     // ----------------------------------------------
     // decorators
 
-    pub fn with_styles(self, styles: SelStyles) -> Self {
-        self.pane.set_styles(styles);
-        self
-    }
-
     pub fn with_scrollbar_sty(self, sb_sty: ScrollbarSty) -> Self {
         *self.sb_sty.borrow_mut() = sb_sty;
         self
@@ -204,12 +197,12 @@ impl HorizontalScrollbar {
     }
 
     pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.pane.at(loc_x, loc_y);
+        self.pane.set_at(loc_x, loc_y);
         self
     }
 
     pub fn set_at(&self, loc_x: DynVal, loc_y: DynVal) {
-        self.pane.at(loc_x, loc_y);
+        self.pane.set_at(loc_x, loc_y);
     }
 
     pub fn without_arrows(self) -> Self {
@@ -353,11 +346,7 @@ pub enum SBRelPosition {
 }
 
 impl Scrollbar {
-    const STYLE: SelStyles = SelStyles {
-        selected_style: Style::new_const(Color::BLACK, Color::LIGHT_YELLOW2),
-        ready_style: Style::new_const(Color::WHITE, Color::GREY13),
-        unselectable_style: Style::new_const(Color::WHITE, Color::GREY13),
-    };
+    const STYLE: Style = Style::new_const(Color::WHITE, Color::GREY13);
 
     /// if the Scrollbar currently cannot be used due to insufficient domain.
     pub fn is_currently_unnecessary(&self, p_size: usize) -> bool {
@@ -613,23 +602,9 @@ impl Scrollbar {
     /// Call this when the position has been changed external to the scrollbar
     /// new_view_offset is the new position of the view in full characters
     /// new_view_domain is the number of full characters of the full scrollable domain
-    pub fn external_change(
-        &self, ctx: &Context, p_size: usize, new_view_offset: usize, new_domain_chs: usize,
-    ) {
+    pub fn external_change(&self, new_view_offset: usize, new_domain_chs: usize) {
         *self.scrollable_position.borrow_mut() = new_view_offset;
         *self.scrollable_domain_chs.borrow_mut() = new_domain_chs;
-        self.update_selectibility(ctx, p_size);
-    }
-
-    /// process for the selectibility of the scrollbar
-    pub fn update_selectibility(&self, ctx: &Context, p_size: usize) {
-        if self.is_currently_unnecessary(p_size) {
-            let _ = self
-                .pane
-                .set_selectability(ctx, Selectability::Unselectable);
-        } else {
-            let _ = self.pane.set_selectability(ctx, Selectability::Ready);
-        }
     }
 
     /// is the provided position before, on, or after the scrollbar?
@@ -699,17 +674,15 @@ impl Scrollbar {
 /// Specific implementations for the vertical and horizontal scrollbars
 
 impl VerticalScrollbar {
-    pub fn external_change(&self, ctx: &Context, new_view_offset: usize, new_domain_chs: usize) {
+    pub fn external_change(&self, new_view_offset: usize, new_domain_chs: usize) {
         *self.scrollable_position.borrow_mut() = new_view_offset;
         *self.scrollable_domain_chs.borrow_mut() = new_domain_chs;
-        self.update_selectibility(ctx, ctx.get_height().into());
     }
 }
 impl HorizontalScrollbar {
-    pub fn external_change(&self, ctx: &Context, new_view_offset: usize, new_domain_chs: usize) {
+    pub fn external_change(&self, new_view_offset: usize, new_domain_chs: usize) {
         *self.scrollable_position.borrow_mut() = new_view_offset;
         *self.scrollable_domain_chs.borrow_mut() = new_domain_chs;
-        self.update_selectibility(ctx, ctx.get_width().into());
     }
 }
 
@@ -731,21 +704,8 @@ impl HorizontalScrollbar {
 }
 
 impl VerticalScrollbar {
-    pub fn resize_event(&self, ctx: &Context) -> (bool, EventResponses) {
-        self.update_selectibility(ctx, ctx.get_height().into());
-        (false, EventResponses::default())
-    }
-}
-impl HorizontalScrollbar {
-    pub fn resize_event(&self, ctx: &Context) -> (bool, EventResponses) {
-        self.update_selectibility(ctx, ctx.get_width().into());
-        (false, EventResponses::default())
-    }
-}
-
-impl VerticalScrollbar {
     pub fn receive_key_event(&self, ev: Vec<KeyEvent>, ctx: &Context) -> (bool, EventResponses) {
-        if self.pane.get_selectability() != Selectability::Selected || ev.is_empty() {
+        if ev.is_empty() {
             return (false, EventResponses::default());
         }
 
@@ -769,7 +729,7 @@ impl VerticalScrollbar {
 
 impl HorizontalScrollbar {
     pub fn receive_key_event(&self, ev: Vec<KeyEvent>, ctx: &Context) -> (bool, EventResponses) {
-        if self.pane.get_selectability() != Selectability::Selected || ev.is_empty() {
+        if ev.is_empty() {
             return (false, EventResponses::default());
         }
 
@@ -789,10 +749,6 @@ impl HorizontalScrollbar {
 
 impl VerticalScrollbar {
     pub fn receive_mouse_event(&self, ctx: &Context, ev: MouseEvent) -> (bool, EventResponses) {
-        if self.pane.get_selectability() == Selectability::Unselectable {
-            return (false, EventResponses::default());
-        }
-
         let curr_dragging = *self.currently_dragging.borrow();
         let h = ctx.get_height();
         match ev.kind {
@@ -901,9 +857,6 @@ impl VerticalScrollbar {
     pub fn receive_external_mouse_event(
         &self, ctx: &Context, ev: RelMouseEvent,
     ) -> (bool, EventResponses) {
-        if self.pane.get_selectability() == Selectability::Unselectable {
-            return (false, EventResponses::default());
-        }
         let curr_dragging = *self.currently_dragging.borrow();
         if !curr_dragging {
             return (false, EventResponses::default());
@@ -920,10 +873,6 @@ impl VerticalScrollbar {
 
 impl HorizontalScrollbar {
     pub fn receive_mouse_event(&self, ctx: &Context, ev: MouseEvent) -> (bool, EventResponses) {
-        if self.pane.get_selectability() == Selectability::Unselectable {
-            return (false, EventResponses::default());
-        }
-
         let curr_dragging = *self.currently_dragging.borrow();
         let w = ctx.get_width();
         match ev.kind {
@@ -1025,9 +974,6 @@ impl HorizontalScrollbar {
     pub fn receive_external_mouse_event(
         &self, ctx: &Context, ev: RelMouseEvent,
     ) -> (bool, EventResponses) {
-        if self.pane.get_selectability() == Selectability::Unselectable {
-            return (false, EventResponses::default());
-        }
         let curr_dragging = *self.currently_dragging.borrow();
         if !curr_dragging {
             return (false, EventResponses::default());
@@ -1049,7 +995,6 @@ impl Element for VerticalScrollbar {
             Event::KeyCombo(ke) => self.receive_key_event(ke, ctx),
             Event::Mouse(me) => self.receive_mouse_event(ctx, me),
             Event::ExternalMouse(me) => self.receive_external_mouse_event(ctx, me),
-            Event::Resize => self.resize_event(ctx),
             _ => (false, EventResponses::default()),
         }
     }
@@ -1065,7 +1010,6 @@ impl Element for HorizontalScrollbar {
             Event::KeyCombo(ke) => self.receive_key_event(ke, ctx),
             Event::Mouse(me) => self.receive_mouse_event(ctx, me),
             Event::ExternalMouse(me) => self.receive_external_mouse_event(ctx, me),
-            Event::Resize => self.resize_event(ctx),
             _ => (false, EventResponses::default()),
         }
     }

@@ -237,12 +237,12 @@ impl TextBox {
     }
 
     pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.pane.at(loc_x, loc_y);
+        self.pane.set_at(loc_x, loc_y);
         self
     }
 
     pub fn set_at(&self, loc_x: DynVal, loc_y: DynVal) {
-        self.pane.at(loc_x, loc_y);
+        self.pane.set_at(loc_x, loc_y);
     }
 
     pub fn with_ch_cursor(self) -> Self {
@@ -261,7 +261,7 @@ impl TextBox {
             Priority::Focused,
             Self::editable_receivable_events(),
         );
-        self.pane.set_receivable_events(sre);
+        self.pane.set_self_receivable_events(sre);
         self
     }
 
@@ -270,7 +270,7 @@ impl TextBox {
             Priority::Focused,
             Self::non_editable_receivable_events(),
         );
-        self.pane.set_receivable_events(sre);
+        self.pane.set_self_receivable_events(sre);
         self
     }
 
@@ -343,6 +343,8 @@ impl TextBox {
         self
     }
 
+    // XXX integrate
+    /*
     pub fn to_widgets(mut self, ctx: &Context) -> crate::widgets::Widget {
         let (x, y) = (self.pane.get_dyn_start_x(), self.pane.get_dyn_start_y());
         let (h, w) = (self.pane.get_dyn_height(), self.pane.get_dyn_width());
@@ -454,6 +456,7 @@ impl TextBox {
         let _ = self.drawing(ctx); // to set the pane content
         crate::widgets::Widget(out)
     }
+    */
 
     pub fn get_text(&self) -> String {
         self.text.borrow().iter().collect()
@@ -595,17 +598,17 @@ impl TextBox {
         let (x, y) = (x.unwrap_or(0), y.unwrap_or(0));
         self.pane.correct_offsets_to_view_position(ctx, x, y);
 
-        let y_offset = *self.pane.pane.content_view_offset_y.borrow();
-        let x_offset = *self.pane.pane.content_view_offset_x.borrow();
+        let y_offset = self.pane.get_content_y_offset();
+        let x_offset = self.pane.get_content_x_offset();
 
         // update the scrollbars/line numbers textbox
         if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
-            sb.external_change(ctx, y_offset, self.pane.content_height());
+            sb.external_change(y_offset, self.pane.content_height());
         }
         let resp = EventResponse::default();
         if let Some(ln_tb) = self.line_number_tb.borrow().as_ref() {
             let (lns, lnw) = self.get_line_numbers(ctx);
-            let last_lnw = ln_tb.pane.get_width_val(ctx);
+            let last_lnw = ln_tb.pane.get_width(ctx);
             if lnw != last_lnw {
                 let diff_lnw = lnw as i32 - last_lnw as i32;
                 let new_tb_width = self.pane.get_dyn_width().minus_fixed(diff_lnw);
@@ -618,7 +621,7 @@ impl TextBox {
             ln_tb.pane.set_content_y_offset(ctx, y_offset);
         }
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
-            sb.external_change(ctx, x_offset, self.x_new_domain_chs());
+            sb.external_change(x_offset, self.x_new_domain_chs());
         }
         resp
     }
@@ -672,7 +675,7 @@ impl TextBox {
         *self.text.borrow_mut() = rs;
         *self.visual_mode.borrow_mut() = false;
         let w = self.get_wrapped(ctx);
-        self.pane.set_content_from_string(ctx, &w.wrapped_string());
+        self.pane.set_content_from_string(&w.wrapped_string());
         let resp = self.correct_offsets(ctx, &w);
         let mut resps = if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
             hook(ctx.clone(), self.get_text())
@@ -709,7 +712,7 @@ impl TextBox {
 
         self.incr_cursor_pos(ctx, cliprunes.len() as isize);
         let w = self.get_wrapped(ctx);
-        self.pane.set_content_from_string(ctx, &w.wrapped_string()); // See NOTE-1
+        self.pane.set_content_from_string(&w.wrapped_string()); // See NOTE-1
 
         let resp = self.correct_offsets(ctx, &w);
         resps.push(resp);
@@ -743,13 +746,13 @@ impl TextBox {
             }
 
             // update the scrollbars
-            let y_offset = *self.pane.pane.content_view_offset_y.borrow();
-            let x_offset = *self.pane.pane.content_view_offset_x.borrow();
+            let y_offset = self.pane.get_content_y_offset();
+            let x_offset = self.pane.get_content_x_offset();
             if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
-                sb.external_change(ctx, y_offset, self.pane.content_height());
+                sb.external_change(y_offset, self.pane.content_height());
             }
             if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
-                sb.external_change(ctx, x_offset, self.x_new_domain_chs());
+                sb.external_change(x_offset, self.x_new_domain_chs());
             }
             return (true, EventResponses::default());
         }
@@ -860,7 +863,7 @@ impl TextBox {
                 // before updating the offset or else the offset amount may not
                 // exist in the content and the widget pane will reject the new
                 // offset
-                self.pane.set_content_from_string(ctx, &w.wrapped_string());
+                self.pane.set_content_from_string(&w.wrapped_string());
                 let resp = self.correct_offsets(ctx, &w);
 
                 if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
@@ -889,7 +892,7 @@ impl TextBox {
                     self.incr_cursor_pos(ctx, -1);
                     *self.text.borrow_mut() = rs;
                     let w = self.get_wrapped(ctx);
-                    self.pane.set_content_from_string(ctx, &w.wrapped_string()); // See NOTE-1
+                    self.pane.set_content_from_string(&w.wrapped_string()); // See NOTE-1
                     let resp = self.correct_offsets(ctx, &w);
                     if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
                         resps = hook(ctx.clone(), self.get_text());
@@ -904,7 +907,7 @@ impl TextBox {
                 *self.text.borrow_mut() = rs;
                 self.incr_cursor_pos(ctx, 1);
                 let w = self.get_wrapped(ctx);
-                self.pane.set_content_from_string(ctx, &w.wrapped_string()); // See NOTE-1
+                self.pane.set_content_from_string(&w.wrapped_string()); // See NOTE-1
                 let resp = self.correct_offsets(ctx, &w);
                 if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
                     resps = hook(ctx.clone(), self.get_text());
@@ -1060,8 +1063,8 @@ impl TextBox {
             MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Drag(MouseButton::Left)
                 if selectedness == Selectability::Selected =>
             {
-                let x = ev.column as usize + *self.pane.pane.content_view_offset_x.borrow();
-                let y = ev.row as usize + *self.pane.pane.content_view_offset_y.borrow();
+                let x = ev.column as usize + self.pane.get_content_x_offset();
+                let y = ev.row as usize + self.pane.get_content_y_offset();
                 let w = self.get_wrapped(ctx);
 
                 let mouse_dragging = *self.mouse_dragging.borrow();
@@ -1126,7 +1129,7 @@ impl Element for TextBox {
                 .set_content_from_string_with_style(ctx, &text, sty);
             return self.pane.drawing(ctx);
         } else {
-            self.pane.set_content_from_string(ctx, &wrapped);
+            self.pane.set_content_from_string(&wrapped);
         }
 
         // set styles from hooks
@@ -1137,7 +1140,7 @@ impl Element for TextBox {
                     continue;
                 }
                 let sty = hook(ctx.clone(), wr_ch.abs_pos.unwrap(), existing_sty);
-                self.pane.pane.content.borrow_mut().change_style_at_xy(
+                self.pane.pane.pane.content.borrow_mut().change_style_at_xy(
                     wr_ch.x_pos,
                     wr_ch.y_pos,
                     sty,
@@ -1149,7 +1152,7 @@ impl Element for TextBox {
         if self.pane.get_selectability() == Selectability::Selected && *self.ch_cursor.borrow() {
             let (cur_x, cur_y) = w.cursor_x_and_y(self.get_cursor_pos());
             if let (Some(cur_x), Some(cur_y)) = (cur_x, cur_y) {
-                self.pane.pane.content.borrow_mut().change_style_at_xy(
+                self.pane.pane.pane.content.borrow_mut().change_style_at_xy(
                     cur_x,
                     cur_y,
                     self.cursor_style.borrow().clone(),
@@ -1164,7 +1167,7 @@ impl Element for TextBox {
             let end = if start_pos < cur_pos { cur_pos } else { start_pos };
             for i in start..=end {
                 if let (Some(cur_x), Some(cur_y)) = w.cursor_x_and_y(i) {
-                    self.pane.pane.content.borrow_mut().change_style_at_xy(
+                    self.pane.pane.pane.content.borrow_mut().change_style_at_xy(
                         cur_x,
                         cur_y,
                         self.cursor_style.borrow().clone(),

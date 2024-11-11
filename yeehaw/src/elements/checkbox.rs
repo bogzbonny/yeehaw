@@ -38,13 +38,11 @@ impl Checkbox {
     }
 
     pub fn new(ctx: &Context) -> Self {
-        let pane = SelectablePane::new(ctx, Self::KIND);
-        pane.pane
-            .pane
-            .set_self_receivable_events(Self::default_receivable_events());
-        pane.set_styles(Self::STYLE);
-        pane.pane.set_dyn_width(DynVal::new_fixed(1));
-        pane.pane.set_dyn_height(DynVal::new_fixed(1));
+        let pane = SelectablePane::new(ctx, Self::KIND)
+            .with_self_receivable_events(Self::default_receivable_events())
+            .with_styles(Self::STYLE)
+            .with_dyn_width(DynVal::new_fixed(1))
+            .with_dyn_height(DynVal::new_fixed(1));
         Checkbox {
             pane,
             checked: Rc::new(RefCell::new(false)),
@@ -70,7 +68,7 @@ impl Checkbox {
     }
 
     pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.pane.pane.set_at(loc_x, loc_y);
+        self.pane.set_at(loc_x, loc_y);
         self
     }
 
@@ -86,7 +84,7 @@ impl Checkbox {
     pub fn click(&self, ctx: &Context) -> EventResponses {
         let checked = !*self.checked.borrow();
         self.checked.replace(checked);
-        self.pane.pane.pane.set_content_from_string(&self.text());
+        self.pane.set_content_from_string(self.text());
         (self.clicked_fn.borrow_mut())(ctx.clone(), checked)
     }
 }
@@ -135,7 +133,7 @@ impl Element for Checkbox {
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         // need to re set the content in order to reflect active style
-        self.pane.pane.pane.set_content_from_string(&self.text());
+        self.pane.set_content_from_string(self.text());
         self.pane.drawing(ctx)
     }
 }

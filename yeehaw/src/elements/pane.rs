@@ -51,7 +51,6 @@ pub struct Pane {
     /// offset using content_view_offset_x and content_view_offset_y
     pub content: Rc<RefCell<DrawChs2D>>,
     pub default_ch: Rc<RefCell<DrawCh>>,
-    pub default_line: Rc<RefCell<Vec<DrawCh>>>,
     pub content_view_offset_x: Rc<RefCell<usize>>,
     pub content_view_offset_y: Rc<RefCell<usize>>,
 
@@ -77,7 +76,6 @@ impl Pane {
             hooks: Rc::new(RefCell::new(HashMap::new())),
             content: Rc::new(RefCell::new(DrawChs2D::default())),
             default_ch: Rc::new(RefCell::new(DrawCh::default())),
-            default_line: Rc::new(RefCell::new(vec![])),
             content_view_offset_x: Rc::new(RefCell::new(0)),
             content_view_offset_y: Rc::new(RefCell::new(0)),
             loc: Rc::new(RefCell::new(DynLocationSet::new_full())),
@@ -329,17 +327,6 @@ impl Pane {
         *self.default_ch.borrow_mut() = ch;
     }
 
-    pub fn with_default_line(self, line: Vec<DrawCh>) -> Pane {
-        *self.default_line.borrow_mut() = line;
-        self
-    }
-
-    pub fn with_content_view_offset(self, x: usize, y: usize) -> Pane {
-        *self.content_view_offset_x.borrow_mut() = x;
-        *self.content_view_offset_y.borrow_mut() = y;
-        self
-    }
-
     pub fn with_self_receivable_events(self, evs: SelfReceivableEvents) -> Pane {
         *self.self_evs.borrow_mut() = evs;
         self
@@ -497,11 +484,7 @@ impl Element for Pane {
                 // NOTE: height of the visible content is the height of the
                 // content minus the offset
                 if y > self.content.borrow().0.len() {
-                    if x < self.default_line.borrow().len() {
-                        ch_out = self.default_line.borrow()[x].clone();
-                    } else {
-                        ch_out = self.default_ch.borrow().clone();
-                    }
+                    ch_out = self.default_ch.borrow().clone();
                 }
 
                 // convert the DrawCh to a DrawChPos

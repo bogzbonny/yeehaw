@@ -112,14 +112,7 @@ pub trait Element: DynClone {
     /// el_id is the element-id of the element registering the hook to THIS element
     /// the hook is a function that takes the kind of the hook and the hooked element
 
-    #[allow(clippy::type_complexity)]
-    fn set_hook(
-        &self,
-        kind: &str,
-        el_id: ElementID,
-        //                  kind, hooked element
-        hook: Box<dyn FnMut(&str, Box<dyn Element>)>,
-    );
+    fn set_hook(&self, kind: &str, el_id: ElementID, hook: HookFn);
 
     fn remove_hook(&self, kind: &str, el_id: ElementID);
 
@@ -210,7 +203,7 @@ pub trait Element: DynClone {
     }
 }
 
-pub type HookFn = Box<dyn FnMut(&str, Rc<RefCell<dyn Element>>)>;
+pub type HookFn = Box<dyn FnMut(&str, Box<dyn Element>)>;
 
 pub const ATTR_DESCRIPTION: &str = "standard_pane";
 

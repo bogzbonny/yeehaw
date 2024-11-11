@@ -1,9 +1,5 @@
 use {
-    crate::{
-        widgets::TextBox, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID,
-        Event, EventResponse, EventResponses, Parent, ParentPane, Priority, ReceivableEventChanges,
-        SelfReceivableEvents, TerminalPane, ZIndex,
-    },
+    crate::*,
     crossterm::event::{MouseButton, MouseEventKind},
     portable_pty::CommandBuilder,
     std::{cell::RefCell, rc::Rc},
@@ -119,7 +115,7 @@ impl TermEditorPane {
                     .at(DynVal::new_fixed(0), DynVal::new_fixed(0));
 
                 use crate::widgets::Widget;
-                tb.set_selectability(ctx, crate::widgets::Selectability::Selected);
+                tb.set_selectability(ctx, Selectability::Selected);
 
                 self.pane.add_element(Box::new(tb))
             }

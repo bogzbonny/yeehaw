@@ -39,6 +39,7 @@ pub struct SelectablePane {
     pub styles: Rc<RefCell<SelStyles>>,
 }
 
+#[yeehaw_derive::impl_pane_basics_from(pane)]
 impl SelectablePane {
     pub const RESP_SET_SELECTABILITY: &'static str = "set_selectability";
 
@@ -51,37 +52,32 @@ impl SelectablePane {
         out
     }
 
-    pub fn with_styles(self, styles: SelStyles) -> Self {
-        self.set_styles(styles);
-        self
-    }
-
-    pub fn set_pre_hook_for_set_selectability(
-        self, hook: Box<dyn FnMut(&str, Box<dyn Element>)>,
-    ) -> Self {
+    #[allow(clippy::type_complexity)]
+    pub fn set_pre_hook_for_set_selectability(&self, hook: ElementHookFn) {
         let pre_hook_name = format!(
             "{}{}",
             element::PRE_ATTR_CHANGE_HOOK_NAME_PREFIX,
             ATTR_SELECTABILITY
         );
         self.pane.pane.set_hook(&pre_hook_name, self.id(), hook);
-        self
     }
 
-    pub fn set_post_hook_for_set_selectability(
-        self, hook: Box<dyn FnMut(&str, Box<dyn Element>)>,
-    ) -> Self {
+    pub fn set_post_hook_for_set_selectability(&self, hook: ElementHookFn) {
         let pre_hook_name = format!(
             "{}{}",
             element::POST_ATTR_CHANGE_HOOK_NAME_PREFIX,
             ATTR_SELECTABILITY
         );
         self.pane.pane.set_hook(&pre_hook_name, self.id(), hook);
-        self
     }
 
     pub fn set_styles(&self, styles: SelStyles) {
         *self.styles.borrow_mut() = styles;
+    }
+
+    pub fn with_styles(self, styles: SelStyles) -> Self {
+        self.set_styles(styles);
+        self
     }
 
     pub fn disable(&self) -> EventResponses {
@@ -152,7 +148,7 @@ impl SelectablePane {
             }
         }
 
-        resps.push(EventResponse::ReceivableEventChanges(rec).into());
+        resps.push(EventResponse::ReceivableEventChanges(rec));
         resps
     }
 }
@@ -200,9 +196,9 @@ impl Element for SelectablePane {
 
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let (captured, resps) = match ev {
-            Event::Custom(ev_name, bz) => {
+            Event::Custom(ref ev_name, ref bz) => {
                 if ev_name == ParentPaneOfSelectable::EV_SET_SELECTABILITY {
-                    match serde_json::from_slice(&bz) {
+                    match serde_json::from_slice(bz) {
                         Ok(v) => (true, self.set_selectability(v)),
                         Err(_e) => {
                             // TODO log error
@@ -280,9 +276,7 @@ impl ParentPaneOfSelectable {
     }
 
     fn get_selectability_for_el(&self, el_id: &ElementID) -> Option<Selectability> {
-        let Some(bz) = self.pane.get_element_attribute(el_id, ATTR_SELECTABILITY) else {
-            return None;
-        };
+        let bz = self.pane.get_element_attribute(el_id, ATTR_SELECTABILITY)?;
         let sel = match serde_json::from_slice(&bz) {
             Ok(v) => v,
             Err(_e) => {
@@ -298,7 +292,7 @@ impl ParentPaneOfSelectable {
     ) -> EventResponses {
         let ev_bz = serde_json::to_vec(&s).unwrap();
         let ev = Event::Custom(Self::EV_SET_SELECTABILITY.to_string(), ev_bz);
-        let mut resps = self.pane.send_event_to_el(ctx, &el_id, ev);
+        let mut resps = self.pane.send_event_to_el(ctx, el_id, ev);
         self.partially_process_sel_resps(ctx, &mut resps);
         resps
     }
@@ -328,23 +322,22 @@ impl ParentPaneOfSelectable {
         let mut extend_resps = vec![];
         for resp in resps.0.iter_mut() {
             let mut modified_resp = None;
-            match resp {
-                EventResponse::Metadata(k, v_bz) => {
-                    if k == SelectablePane::RESP_SET_SELECTABILITY {
-                        let s_resp: SelectabilityResp = match serde_json::from_slice(&v_bz) {
-                            Ok(v) => v,
-                            Err(_e) => {
-                                // TODO log error
-                                continue;
-                            }
-                        };
-                        let resps_ = self.set_selectability_for_el(ctx, &s_resp.id, s_resp.sel);
-                        extend_resps.extend(resps_.0);
-                        modified_resp = Some(EventResponse::None);
-                    }
+
+            if let EventResponse::Metadata(k, v_bz) = resp {
+                if k == SelectablePane::RESP_SET_SELECTABILITY {
+                    let s_resp: SelectabilityResp = match serde_json::from_slice(v_bz) {
+                        Ok(v) => v,
+                        Err(_e) => {
+                            // TODO log error
+                            continue;
+                        }
+                    };
+                    let resps_ = self.set_selectability_for_el(ctx, &s_resp.id, s_resp.sel);
+                    extend_resps.extend(resps_.0);
+                    modified_resp = Some(EventResponse::None);
                 }
-                _ => {}
             }
+
             if let Some(mr) = modified_resp {
                 *resp = mr;
             }
@@ -368,11 +361,11 @@ impl ParentPaneOfSelectable {
         let mut resps = EventResponses::default();
         if let Some(ref old_el_id) = old_el_id {
             let resps_ = self.set_selectability_for_el(ctx, old_el_id, Selectability::Ready);
-            resps.extend(resps_.0);
+            resps.extend(resps_);
         }
         if let Some(ref new_el_id) = new_el_id {
             let resps_ = self.set_selectability_for_el(ctx, new_el_id, Selectability::Selected);
-            resps.extend(resps_.0);
+            resps.extend(resps_);
         }
         *self.selected.borrow_mut() = new_el_id;
         resps
@@ -393,7 +386,7 @@ impl ParentPaneOfSelectable {
                 .unwrap_or(0),
             None => 0,
         };
-        let starting_index = working_index.clone();
+        let starting_index = working_index;
 
         for _ in 0..self.selectables.borrow().len() + 1 {
             working_index = (working_index + 1) % self.selectables.borrow().len();
@@ -426,7 +419,7 @@ impl ParentPaneOfSelectable {
                 .unwrap_or(sel_len - 1),
             None => sel_len - 1,
         };
-        let starting_index = working_index.clone();
+        let starting_index = working_index;
 
         for _ in 0..self.selectables.borrow().len() + 1 {
             working_index = (working_index + sel_len - 1) % sel_len;
@@ -483,7 +476,7 @@ impl Element for ParentPaneOfSelectable {
             Event::Mouse(me) => {
                 if let MouseEventKind::Down(_) = me.kind {
                     let resps_ = self.unselect_selected(ctx);
-                    resps.extend(resps_.0);
+                    resps.extend(resps_);
                 }
             }
             Event::KeyCombo(ke) if !captured => {
@@ -491,17 +484,17 @@ impl Element for ParentPaneOfSelectable {
                     match true {
                         _ if ke[0] == KB::KEY_ESC => {
                             let resps_ = self.unselect_selected(ctx);
-                            resps.extend(resps_.0);
+                            resps.extend(resps_);
                             captured = true;
                         }
                         _ if ke[0] == KB::KEY_TAB => {
                             let resps_ = self.switch_to_next_widget(ctx);
-                            resps.extend(resps_.0);
+                            resps.extend(resps_);
                             captured = true;
                         }
                         _ if ke[0] == KB::KEY_BACKTAB => {
                             let resps_ = self.switch_to_prev_widget(ctx);
-                            resps.extend(resps_.0);
+                            resps.extend(resps_);
                             captured = true;
                         }
                         _ => {}

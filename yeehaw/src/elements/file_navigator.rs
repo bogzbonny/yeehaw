@@ -50,13 +50,13 @@ impl FileNavPane {
     const INDENT_SIZE: usize = 2;
 
     pub fn default_receivable_events() -> SelfReceivableEvents {
-        vec![
-            KB::KEY_ENTER.into(),
-            KB::KEY_UP.into(),
-            KB::KEY_DOWN.into(),
-            KB::KEY_J.into(),
-            KB::KEY_K.into(),
-        ]
+        SelfReceivableEvents(vec![
+            (KB::KEY_ENTER.into(), Priority::Focused),
+            (KB::KEY_UP.into(), Priority::Focused),
+            (KB::KEY_DOWN.into(), Priority::Focused),
+            (KB::KEY_J.into(), Priority::Focused),
+            (KB::KEY_K.into(), Priority::Focused),
+        ])
     }
 
     pub fn new(ctx: &Context, dir: PathBuf) -> Self {
@@ -74,7 +74,7 @@ impl FileNavPane {
 
         pane.self_evs
             .borrow_mut()
-            .push_many_at_priority(Self::default_receivable_events(), Priority::Focused);
+            .extend(Self::default_receivable_events().0);
 
         pane.set_dyn_height(DynVal::new_full());
         pane.set_dyn_width(DynVal::new_fixed(32));

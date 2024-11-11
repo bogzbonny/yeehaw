@@ -42,23 +42,21 @@ impl RadioButtons {
     };
 
     pub fn default_receivable_events() -> SelfReceivableEvents {
-        vec![
-            KB::KEY_UP.into(),
-            KB::KEY_DOWN.into(),
-            KB::KEY_J.into(),
-            KB::KEY_K.into(),
-        ]
+        SelfReceivableEvents(vec![
+            (KB::KEY_UP.into(), Priority::Focused),
+            (KB::KEY_DOWN.into(), Priority::Focused),
+            (KB::KEY_J.into(), Priority::Focused),
+            (KB::KEY_K.into(), Priority::Focused),
+        ])
     }
 
     pub fn new(ctx: &Context, radios: Vec<String>) -> Self {
         let max_width = radios.iter().map(|r| r.chars().count()).max().unwrap_or(0) as i32 + 1; // +1 for the radio button
-        let pane = SelectablePane::new(ctx, Self::KIND);
-        pane.pane
-            .set_self_receivable_events(Self::default_receivable_events());
-        pane.set_styles(Self::STYLE);
-        pane.pane.set_dyn_width(DynVal::new_fixed(max_width));
-        pane.pane
-            .set_dyn_height(DynVal::new_fixed(radios.len() as i32));
+        let pane = SelectablePane::new(ctx, Self::KIND)
+            .with_self_receivable_events(Self::default_receivable_events())
+            .with_styles(Self::STYLE)
+            .with_dyn_width(DynVal::new_fixed(max_width))
+            .with_dyn_height(DynVal::new_fixed(radios.len() as i32));
 
         RadioButtons {
             pane,
@@ -87,7 +85,7 @@ impl RadioButtons {
     }
 
     pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.pane.at(loc_x, loc_y);
+        self.pane.set_at(loc_x, loc_y);
         self
     }
 }
@@ -188,7 +186,7 @@ impl Element for RadioButtons {
                     }
                     acc
                 });
-        self.pane.pane.set_content_from_string(ctx, &s);
+        self.pane.set_content_from_string(&s);
         self.pane.drawing(ctx)
     }
 }

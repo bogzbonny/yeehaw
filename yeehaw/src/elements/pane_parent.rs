@@ -1,7 +1,7 @@
 use {
     crate::{
-        Color, Context, DrawCh, DrawChPos, DynLocation, DynLocationSet, DynVal, Element, ElementID,
-        ElementOrganizer, Event, EventResponse, EventResponses, Pane, Parent, Priority,
+        Color, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal, Element,
+        ElementID, ElementOrganizer, Event, EventResponse, EventResponses, Pane, Parent, Priority,
         ReceivableEventChanges, SelfReceivableEvents, Style, ZIndex,
     },
     std::collections::HashMap,
@@ -26,6 +26,7 @@ pub struct ParentPane {
     pub el_store: Rc<RefCell<HashMap<String, Vec<u8>>>>,
 }
 
+#[yeehaw_derive::impl_pane_basics_from(pane)]
 impl ParentPane {
     pub fn new(ctx: &Context, kind: &'static str) -> Self {
         let pane = Pane::new(ctx, kind).focused();
@@ -44,62 +45,6 @@ impl ParentPane {
     pub fn at(self, x: DynVal, y: DynVal) -> Self {
         self.set_at(x, y);
         self
-    }
-
-    pub fn set_at(&self, x: DynVal, y: DynVal) {
-        self.pane.set_at(x, y);
-    }
-
-    pub fn set_start_x(&self, x: DynVal) {
-        self.pane.set_start_x(x);
-    }
-
-    pub fn set_start_y(&self, y: DynVal) {
-        self.pane.set_start_y(y);
-    }
-
-    pub fn get_start_x(&self) -> DynVal {
-        self.pane.get_dyn_start_x()
-    }
-
-    pub fn get_start_y(&self) -> DynVal {
-        self.pane.get_dyn_start_y()
-    }
-
-    pub fn set_end_x(&self, x: DynVal) {
-        self.pane.set_end_x(x);
-    }
-
-    pub fn set_end_y(&self, y: DynVal) {
-        self.pane.set_end_y(y);
-    }
-
-    pub fn set_z(&self, z: ZIndex) {
-        self.pane.set_z(z);
-    }
-
-    pub fn set_dyn_width(&self, w: DynVal) {
-        self.pane.set_dyn_width(w);
-    }
-
-    pub fn set_dyn_height(&self, h: DynVal) {
-        self.pane.set_dyn_height(h);
-    }
-
-    pub fn get_dyn_width(&self) -> DynVal {
-        self.pane.get_dyn_width()
-    }
-
-    pub fn get_dyn_height(&self) -> DynVal {
-        self.pane.get_dyn_height()
-    }
-
-    pub fn get_dyn_location(&self) -> DynLocation {
-        self.pane.get_dyn_location()
-    }
-
-    pub fn set_dyn_location(&self, dl: DynLocation) {
-        self.pane.set_dyn_location(dl);
     }
 
     pub fn with_kind(self, kind: &'static str) -> Self {
@@ -262,7 +207,7 @@ impl ParentPane {
 impl Element for ParentPane {
     fn receivable(&self) -> SelfReceivableEvents {
         let mut pes = self.perceived_priorities_of_eo();
-        pes.extend(self.pane.receivable());
+        pes.extend(self.pane.receivable().0);
         pes
     }
 

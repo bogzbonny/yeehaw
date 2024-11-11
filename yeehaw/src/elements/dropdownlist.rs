@@ -48,9 +48,9 @@ impl DropdownList {
     const DEFAULT_DROPDOWN_ARROW: DrawCh =
         DrawCh::const_new('▼', Style::new_const(Color::BLACK, Color::GREY13));
 
-    /// needs to be slightly above other widgets to select properly
+    /// needs to be slightly above other elements to select properly
     /// if widgets overlap
-    const Z_INDEX: ZIndex = super::widget::WIDGET_Z_INDEX + 1;
+    const Z_INDEX: ZIndex = 101;
 
     pub fn default_receivable_events() -> SelfReceivableEvents {
         SelfReceivableEvents(vec![
@@ -67,13 +67,11 @@ impl DropdownList {
         ctx: &Context, entries: Vec<String>,
         selection_made_fn: Box<dyn FnMut(Context, String) -> EventResponses>,
     ) -> Self {
-        let pane = SelectablePane::new(ctx, Self::KIND);
-        pane.pane
-            .pane
-            .set_self_receivable_events(Self::default_receivable_events());
-        pane.set_styles(Self::STYLE);
-        pane.pane.set_dyn_height(DynVal::new_fixed(1));
-        pane.pane.set_z(Self::Z_INDEX);
+        let pane = SelectablePane::new(ctx, Self::KIND)
+            .with_self_receivable_events(Self::default_receivable_events())
+            .with_styles(Self::STYLE)
+            .with_dyn_height(DynVal::new_fixed(1))
+            .with_z(Self::Z_INDEX);
 
         let sb = VerticalScrollbar::new(ctx, DynVal::new_fixed(0), 0).without_arrows();
 
@@ -97,15 +95,15 @@ impl DropdownList {
             selection_made_fn: Rc::new(RefCell::new(selection_made_fn)),
             scrollbar: sb,
         };
-        d.pane.pane.set_dyn_width(d.calculate_dyn_width());
+        d.pane.set_dyn_width(d.calculate_dyn_width());
 
         let d_ = d.clone();
-        d.pane.set_post_hook_for_set_selectability(move |ctx, _| {
-            if d_.pane.get_selectability() != Selectability::Selected && *d_.open.borrow() {
-                return d_.perform_close(ctx, true);
-            }
-            EventResponses::default()
-        });
+        d.pane
+            .set_post_hook_for_set_selectability(Box::new(move |_, _| {
+                if d_.pane.get_selectability() != Selectability::Selected && *d_.open.borrow() {
+                    d_.perform_close_escape();
+                }
+            }));
 
         d
     }
@@ -125,13 +123,13 @@ impl DropdownList {
 
     pub fn with_width(self, width: DynVal) -> Self {
         *self.specified_width.borrow_mut() = Some(width);
-        self.pane.pane.set_dyn_width(self.calculate_dyn_width());
+        self.pane.set_dyn_width(self.calculate_dyn_width());
         self
     }
 
     pub fn with_left_padding(self, padding: usize) -> Self {
         *self.left_padding.borrow_mut() = padding;
-        self.pane.pane.set_dyn_width(self.calculate_dyn_width());
+        self.pane.set_dyn_width(self.calculate_dyn_width());
         self
     }
 
@@ -146,7 +144,7 @@ impl DropdownList {
     }
 
     pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.pane.at(loc_x, loc_y);
+        self.pane.set_at(loc_x, loc_y);
         self
     }
 
@@ -156,11 +154,8 @@ impl DropdownList {
         let cursor_pos = *self.cursor.borrow();
         self.pane
             .correct_offsets_to_view_position(ctx, 0, cursor_pos);
-        self.scrollbar.external_change(
-            ctx,
-            *self.pane.pane.content_view_offset_y.borrow(),
-            self.pane.pane.pane.content_height(),
-        );
+        self.scrollbar
+            .external_change(self.pane.get_content_y_offset(), self.pane.content_height());
     }
 
     pub fn calculate_dyn_width(&self) -> DynVal {
@@ -224,19 +219,29 @@ impl DropdownList {
         *self.open.borrow_mut() = true;
         *self.cursor.borrow_mut() = *self.selected.borrow();
         let h = self.expanded_height() as i32;
-        self.pane.pane.set_dyn_height(DynVal::new_fixed(h));
+        self.pane.set_dyn_height(DynVal::new_fixed(h));
 
         // must set the content for the offsets to be correct
-        self.pane.pane.pane.set_content_from_string(&self.text(ctx));
+        self.pane.set_content_from_string(self.text(ctx));
         self.correct_offsets(ctx);
+    }
+
+    pub fn perform_close_escape(&self) {
+        *self.open.borrow_mut() = false;
+        // NOTE we are using the default context here, as we know
+        // that a content_y_offset of 0 is safe. a lil' hacky
+        self.pane.set_content_y_offset(&Context::default(), 0);
+        self.scrollbar
+            .external_change(0, self.pane.content_height());
+        self.pane.set_dyn_height(DynVal::new_fixed(1));
     }
 
     pub fn perform_close(&self, ctx: &Context, escaped: bool) -> EventResponses {
         *self.open.borrow_mut() = false;
-        *self.pane.pane.pane.content_view_offset_y.borrow_mut() = 0;
+        self.pane.set_content_y_offset(ctx, 0);
         self.scrollbar
-            .external_change(ctx, 0, self.pane.pane.pane.content_height());
-        self.pane.pane.set_dyn_height(DynVal::new_fixed(1));
+            .external_change(0, self.pane.content_height());
+        self.pane.set_dyn_height(DynVal::new_fixed(1));
         if !escaped && *self.selected.borrow() != *self.cursor.borrow() {
             *self.selected.borrow_mut() = *self.cursor.borrow();
             (self.selection_made_fn.borrow_mut())(
@@ -349,20 +354,15 @@ impl Element for DropdownList {
                         // change hovering location to the ev
 
                         // on arrow
-                        if y == 0 && x == self.pane.pane.pane.get_width(ctx).saturating_sub(1) {
+                        if y == 0 && x == self.pane.get_width(ctx).saturating_sub(1) {
                             return (true, resps);
 
                         // on scrollbar
                         } else if y > 0
-                            && x == self.pane.get_width_val(ctx).saturating_sub(1)
+                            && x == self.pane.get_width(ctx).saturating_sub(1)
                             && self.display_scrollbar()
                         {
                             if dragging {
-                                if self.scrollbar.get_selectability() != Selectability::Selected {
-                                    let _ = self
-                                        .scrollbar
-                                        .set_selectability(ctx, Selectability::Selected);
-                                }
                                 // send the the event to the scrollbar (x adjusted to 0)
                                 let mut me_ = me;
                                 me_.column = 0;
@@ -374,23 +374,16 @@ impl Element for DropdownList {
                             }
                             return (true, resps);
                         } else {
-                            *self.cursor.borrow_mut() =
-                                y + *self.pane.pane.content_view_offset_y.borrow();
+                            *self.cursor.borrow_mut() = y + self.pane.get_content_y_offset();
                         }
-                        let _ = self.scrollbar.set_selectability(ctx, Selectability::Ready);
                         return (true, resps);
                     }
                     _ if open && clicked => {
                         let (x, y) = (me.column as usize, me.row as usize);
                         if y > 0
-                            && x == self.pane.get_width_val(ctx).saturating_sub(1)
+                            && x == self.pane.get_width(ctx).saturating_sub(1)
                             && self.display_scrollbar()
                         {
-                            if self.scrollbar.get_selectability() != Selectability::Selected {
-                                let _ = self
-                                    .scrollbar
-                                    .set_selectability(ctx, Selectability::Selected);
-                            }
                             // send the the event to the scrollbar (x adjusted to 0)
                             let mut me_ = me;
                             me_.column = 0;
@@ -402,14 +395,12 @@ impl Element for DropdownList {
                         }
 
                         // on arrow close without change
-                        if y == 0 && x == self.pane.get_width_val(ctx).saturating_sub(1) {
+                        if y == 0 && x == self.pane.get_width(ctx).saturating_sub(1) {
                             let resps_ = self.perform_close(ctx, true);
                             resps.extend(resps_);
                             return (true, resps);
                         }
-                        let _ = self.scrollbar.set_selectability(ctx, Selectability::Ready);
-                        *self.cursor.borrow_mut() =
-                            y + *self.pane.pane.content_view_offset_y.borrow();
+                        *self.cursor.borrow_mut() = y + self.pane.get_content_y_offset();
 
                         let resps_ = self.perform_close(ctx, false);
                         resps.extend(resps_);
@@ -424,13 +415,14 @@ impl Element for DropdownList {
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        self.pane.set_content_from_string(ctx, &self.text(ctx));
+        self.pane.set_content_from_string(self.text(ctx));
 
         let open = *self.open.borrow();
 
         // highlight the hovering entry
         if open {
             self.pane
+                .pane
                 .pane
                 .content
                 .borrow_mut()
@@ -444,7 +436,7 @@ impl Element for DropdownList {
             let mut sb_chs = self.scrollbar.drawing(ctx);
             // shift the scrollbar content to below the arrow
             for ch in sb_chs.iter_mut() {
-                ch.x += self.pane.get_width_val(ctx).saturating_sub(1) as u16;
+                ch.x += self.pane.get_width(ctx).saturating_sub(1) as u16;
                 ch.y += 1;
             }
             chs.extend(sb_chs);
@@ -453,7 +445,7 @@ impl Element for DropdownList {
         // set the arrow
         let arrow_ch = DrawChPos::new(
             self.dropdown_arrow.borrow().clone(),
-            self.pane.get_width_val(ctx).saturating_sub(1) as u16,
+            self.pane.get_width(ctx).saturating_sub(1) as u16,
             0,
         );
         chs.push(arrow_ch);

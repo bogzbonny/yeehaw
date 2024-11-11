@@ -1,8 +1,7 @@
 use {
-    super::Label,
     crate::{
-        event::Event, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal,
-        Element, ElementID, EventResponse, EventResponses, Pane, Parent, Priority, ReceivableEvent,
+        Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal, Element,
+        ElementID, EventResponse, EventResponses, Pane, Parent, Priority, ReceivableEvent,
         ReceivableEventChanges, SelfReceivableEvents, Style, ZIndex,
     },
     std::{cell::RefCell, rc::Rc},
@@ -323,12 +322,12 @@ impl WidgetBase {
     }
 
     pub fn scroll_up(&self, ctx: &Context) {
-        let view_offset_y = *self.pane.content_view_offset_y.borrow();
+        let view_offset_y = self.pane.get_content_y_offset();
         self.set_content_y_offset(ctx, view_offset_y.saturating_sub(1));
     }
 
     pub fn scroll_down(&self, ctx: &Context) {
-        let view_offset_y = *self.pane.content_view_offset_y.borrow();
+        let view_offset_y = self.pane.get_content_y_offset();
         self.set_content_y_offset(ctx, view_offset_y + 1);
     }
 
@@ -420,7 +419,7 @@ impl WidgetBase {
     /// correct_offsets_to_view_position changes the content offsets within the
     /// WidgetBase in order to bring the given view position into view.
     pub fn correct_offsets_to_view_position(&self, ctx: &Context, x: usize, y: usize) {
-        let view_offset_y = *self.pane.content_view_offset_y.borrow();
+        let view_offset_y = self.pane.get_content_y_offset();
         let view_offset_x = *self.pane.content_view_offset_x.borrow();
 
         // set y offset if cursor out of bounds
@@ -495,7 +494,7 @@ impl Element for WidgetBase {
         // NOTE this is different than standard_pane draw... unless this should be set somewhere else
         let h = self.get_height_val(ctx);
         let w = self.get_width_val(ctx);
-        let view_offset_y = *self.pane.content_view_offset_y.borrow();
+        let view_offset_y = self.pane.get_content_y_offset();
         let view_offset_x = *self.pane.content_view_offset_x.borrow();
         let content_height = self.pane.content.borrow().height();
         let content_width = self.pane.content.borrow().width();

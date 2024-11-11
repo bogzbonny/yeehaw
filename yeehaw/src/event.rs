@@ -2,8 +2,9 @@ use {
     crate::{prioritizer::Priority, Element},
     std::ops::{Deref, DerefMut},
 };
-        self.extend(evs)
-/// TODO build in mouse events here
+
+// TODO build in mouse events here
+
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum ReceivableEvent {
     KeyCombo(Vec<KeyPossibility>),
@@ -384,7 +385,7 @@ impl EventResponses {
     }
 
     pub fn extend(&mut self, other: EventResponses) {
-        self.extend(other)
+        self.0.extend(other.0)
     }
 }
 

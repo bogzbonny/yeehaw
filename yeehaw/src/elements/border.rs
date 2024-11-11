@@ -52,7 +52,7 @@ pub enum PropertyVrt {
     DragResize,
     /// drag to move
     DragMove,
-    Scrollbar(widgets::VerticalScrollbar),
+    Scrollbar(VerticalScrollbar),
 }
 
 /// property for the border
@@ -65,7 +65,7 @@ pub enum PropertyHzt {
     DragResize,
     /// drag to move
     DragMove,
-    Scrollbar(widgets::HorizontalScrollbar),
+    Scrollbar(HorizontalScrollbar),
 }
 
 #[derive(Clone)]
@@ -102,12 +102,12 @@ impl BorderProperies {
         Self {
             left: Some(PropertyVrt::None),
             right: Some(PropertyVrt::Scrollbar(
-                widgets::VerticalScrollbar::new(ctx, 0.into(), 0)
+                VerticalScrollbar::new(ctx, 0.into(), 0)
                     .with_scrollbar_sty(ScrollbarSty::vertical_for_thin_box(sty.clone())),
             )),
             top: Some(PropertyHzt::None),
             bottom: Some(PropertyHzt::Scrollbar(
-                widgets::HorizontalScrollbar::new(ctx, 0.into(), 0)
+                HorizontalScrollbar::new(ctx, 0.into(), 0)
                     .with_scrollbar_sty(ScrollbarSty::horizontal_for_thin_box(sty)),
             )),
             top_corner: PropertyCnr::None,
@@ -120,13 +120,13 @@ impl BorderProperies {
     pub fn new_borderless_with_scrollbars(ctx: &Context) -> Self {
         Self {
             left: None,
-            right: Some(PropertyVrt::Scrollbar(widgets::VerticalScrollbar::new(
+            right: Some(PropertyVrt::Scrollbar(VerticalScrollbar::new(
                 ctx,
                 0.into(),
                 0,
             ))),
             top: None,
-            bottom: Some(PropertyHzt::Scrollbar(widgets::HorizontalScrollbar::new(
+            bottom: Some(PropertyHzt::Scrollbar(HorizontalScrollbar::new(
                 ctx,
                 0.into(),
                 0,
@@ -155,12 +155,12 @@ impl BorderProperies {
         Self {
             left: Some(PropertyVrt::DragResize),
             right: Some(PropertyVrt::Scrollbar(
-                widgets::VerticalScrollbar::new(ctx, 0.into(), 0)
+                VerticalScrollbar::new(ctx, 0.into(), 0)
                     .with_scrollbar_sty(ScrollbarSty::vertical_for_thin_box(sty.clone())),
             )),
             top: Some(PropertyHzt::DragResize),
             bottom: Some(PropertyHzt::Scrollbar(
-                widgets::HorizontalScrollbar::new(ctx, 0.into(), 0)
+                HorizontalScrollbar::new(ctx, 0.into(), 0)
                     .with_scrollbar_sty(ScrollbarSty::horizontal_for_thin_box(sty)),
             )),
             top_corner: PropertyCnr::DragResize,
@@ -1021,14 +1021,12 @@ impl Element for Bordered {
         let out = self.pane.receive_event_inner(ctx, ev);
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
             sb.external_change(
-                ctx,
                 self.inner.borrow().get_content_x_offset(),
                 self.inner.borrow().get_content_width(),
             );
         }
         if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
             sb.external_change(
-                ctx,
                 self.inner.borrow().get_content_y_offset(),
                 self.inner.borrow().get_content_height(),
             );

@@ -93,11 +93,9 @@ impl Button {
     pub fn new(
         ctx: &Context, text: &str, clicked_fn: Box<dyn FnMut(Button, Context) -> EventResponses>,
     ) -> Self {
-        let pane = SelectablePane::new(ctx, Self::KIND);
-        pane.pane
-            .pane
-            .set_self_receivable_events(Self::default_receivable_events());
-        pane.set_styles(Self::STYLE);
+        let pane = SelectablePane::new(ctx, Self::KIND)
+            .with_self_receivable_events(Self::default_receivable_events())
+            .with_styles(Self::STYLE);
 
         let b = Button {
             pane,
@@ -108,12 +106,8 @@ impl Button {
         };
 
         let d = b.button_drawing();
-        b.pane
-            .pane
-            .set_dyn_width(DynVal::new_fixed(d.width() as i32));
-        b.pane
-            .pane
-            .set_dyn_height(DynVal::new_fixed(d.height() as i32));
+        b.pane.set_dyn_width(DynVal::new_fixed(d.width() as i32));
+        b.pane.set_dyn_height(DynVal::new_fixed(d.height() as i32));
         b
     }
 
@@ -234,7 +228,7 @@ impl Button {
     }
 
     pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.pane.pane.set_at(loc_x, loc_y);
+        self.pane.set_at(loc_x, loc_y);
         self
     }
 
