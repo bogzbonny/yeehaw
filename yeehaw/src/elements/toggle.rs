@@ -54,7 +54,7 @@ impl Toggle {
 
         pane.set_content_from_string(&(left.clone() + &right));
 
-        Toggle {
+        let t = Toggle {
             pane,
             left: Rc::new(RefCell::new(left)),
             right: Rc::new(RefCell::new(right)),
@@ -62,7 +62,15 @@ impl Toggle {
             clicked_down: Rc::new(RefCell::new(false)),
             selected_sty: Rc::new(RefCell::new(Self::DEFAULT_SELECTED_STY)),
             toggled_fn: Rc::new(RefCell::new(toggeld_fn)),
-        }
+        };
+        t.update_content();
+
+        let t_ = t.clone();
+        t.pane
+            .set_post_hook_for_set_selectability(Box::new(move |_, _| {
+                t_.update_content();
+            }));
+        t
     }
 
     // ----------------------------------------------
@@ -90,7 +98,30 @@ impl Toggle {
     pub fn perform_toggle(&self, ctx: &Context) -> EventResponses {
         let l_sel = *self.left_selected.borrow();
         *self.left_selected.borrow_mut() = !l_sel;
-        self.toggled_fn.borrow_mut()(ctx.clone(), self.selected())
+        let resps = self.toggled_fn.borrow_mut()(ctx.clone(), self.selected());
+        self.update_content();
+        resps
+    }
+
+    pub fn update_content(&self) {
+        // need to re set the content in order to reflect active style
+        self.pane.set_style(self.pane.get_current_style());
+        let left = self.left.borrow();
+        let right = self.right.borrow();
+        let left_len = left.chars().count();
+        let right_len = right.chars().count();
+        self.pane.set_content_from_string(&(left.clone() + &right));
+        if *self.left_selected.borrow() {
+            for i in 0..left_len {
+                self.pane.pane.pane.content.borrow_mut()[0][i].style =
+                    self.selected_sty.borrow().clone();
+            }
+        } else {
+            for i in left_len..left_len + right_len {
+                self.pane.pane.pane.content.borrow_mut()[0][i].style =
+                    self.selected_sty.borrow().clone();
+            }
+        }
     }
 }
 
@@ -161,27 +192,5 @@ impl Element for Toggle {
             _ => {}
         }
         (false, resps)
-    }
-
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        // need to re set the content in order to reflect active style
-        let left = self.left.borrow();
-        let right = self.right.borrow();
-        let left_len = left.chars().count();
-        let right_len = right.chars().count();
-        self.pane.set_content_from_string(&(left.clone() + &right));
-        if *self.left_selected.borrow() {
-            for i in 0..left_len {
-                self.pane.pane.pane.content.borrow_mut()[0][i].style =
-                    self.selected_sty.borrow().clone();
-            }
-        } else {
-            for i in left_len..left_len + right_len {
-                self.pane.pane.pane.content.borrow_mut()[0][i].style =
-                    self.selected_sty.borrow().clone();
-            }
-        }
-        self.pane.set_style(self.pane.get_current_style());
-        self.pane.drawing(ctx)
     }
 }

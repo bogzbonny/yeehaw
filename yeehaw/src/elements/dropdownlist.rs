@@ -464,6 +464,10 @@ impl Element for DropdownList {
                     _ => return (false, resps),
                 };
             }
+            Event::Resize => {
+                self.dirty.replace(true);
+                return (true, resps);
+            }
             _ => {}
         }
         (false, resps)

@@ -27,7 +27,7 @@ pub struct RadioButtons {
     pub radio_selected_fn: Rc<RefCell<dyn FnMut(Context, usize, String) -> EventResponses>>,
 }
 
-/// inspiration:
+/// inspiration for some radios:
 /// ◯ ◉ ◯ ○
 /// ◯ ◯   ●
 /// ⍟ ◉ ◯ ○
@@ -58,7 +58,7 @@ impl RadioButtons {
             .with_dyn_width(DynVal::new_fixed(max_width))
             .with_dyn_height(DynVal::new_fixed(radios.len() as i32));
 
-        RadioButtons {
+        let rb = RadioButtons {
             pane,
             on_ch: Rc::new(RefCell::new('⍟')),
             off_ch: Rc::new(RefCell::new('◯')),
@@ -66,7 +66,15 @@ impl RadioButtons {
             radios: Rc::new(RefCell::new(radios)),
             selected: Rc::new(RefCell::new(0)),
             radio_selected_fn: Rc::new(RefCell::new(|_, _, _| EventResponses::default())),
-        }
+        };
+        rb.update_content();
+
+        let rb_ = rb.clone();
+        rb.pane
+            .set_post_hook_for_set_selectability(Box::new(move |_, _| {
+                rb_.update_content();
+            }));
+        rb
     }
 
     // ----------------------------------------------
@@ -87,6 +95,32 @@ impl RadioButtons {
     pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
         self.pane.set_at(loc_x, loc_y);
         self
+    }
+
+    // ----------------------------------------------
+
+    pub fn update_content(&self) {
+        // need to re set the content in order to reflect active style
+        let selected_i = *self.selected.borrow();
+        let s =
+            self.radios
+                .borrow()
+                .iter()
+                .enumerate()
+                .fold(String::new(), |mut acc, (i, radio)| {
+                    if i == selected_i {
+                        acc.push(*self.on_ch.borrow());
+                    } else {
+                        acc.push(*self.off_ch.borrow());
+                    }
+                    acc.push_str(radio);
+                    if i != self.radios.borrow().len() - 1 {
+                        acc.push('\n');
+                    }
+                    acc
+                });
+        self.pane.set_style(self.pane.get_current_style());
+        self.pane.set_content_from_string(&s);
     }
 }
 
@@ -112,6 +146,7 @@ impl Element for RadioButtons {
                             let resps_ =
                                 self.radio_selected_fn.borrow_mut()(ctx.clone(), sel_i, sel_str);
                             resps.extend(resps_);
+                            self.update_content();
                             return (true, resps);
                         }
                     }
@@ -123,6 +158,7 @@ impl Element for RadioButtons {
                             let resps_ =
                                 self.radio_selected_fn.borrow_mut()(ctx.clone(), sel_i, sel_str);
                             resps.extend(resps_);
+                            self.update_content();
                             return (true, resps);
                         }
                     }
@@ -137,6 +173,7 @@ impl Element for RadioButtons {
                 match me.kind {
                     MouseEventKind::Down(MouseButton::Left) => {
                         *self.clicked_down.borrow_mut() = true;
+                        self.update_content();
                         return (true, resps);
                     }
                     MouseEventKind::Drag(MouseButton::Left) if clicked_down => {}
@@ -151,6 +188,7 @@ impl Element for RadioButtons {
                                 self.radios.borrow()[y].clone(),
                             );
                             resps.extend(resps_);
+                            self.update_content();
                             return (true, resps);
                         }
                     }
@@ -164,30 +202,5 @@ impl Element for RadioButtons {
             _ => {}
         }
         (false, resps)
-    }
-
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        // need to re set the content in order to reflect active style
-        let selected_i = *self.selected.borrow();
-        let s =
-            self.radios
-                .borrow()
-                .iter()
-                .enumerate()
-                .fold(String::new(), |mut acc, (i, radio)| {
-                    if i == selected_i {
-                        acc.push(*self.on_ch.borrow());
-                    } else {
-                        acc.push(*self.off_ch.borrow());
-                    }
-                    acc.push_str(radio);
-                    if i != self.radios.borrow().len() - 1 {
-                        acc.push('\n');
-                    }
-                    acc
-                });
-        self.pane.set_style(self.pane.get_current_style());
-        self.pane.set_content_from_string(&s);
-        self.pane.drawing(ctx)
     }
 }
