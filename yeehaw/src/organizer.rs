@@ -631,6 +631,9 @@ impl ElementOrganizer {
                 ezo.push((el_id.clone(), details.loc.borrow().z));
             }
         }
+
+        // reverse sort the elements by z-index (highest-z to lowest-z)
+        ezo.sort_by(|a, b| b.1.cmp(&a.1));
         ezo
     }
 
@@ -641,7 +644,7 @@ impl ElementOrganizer {
     pub fn mouse_event_process(
         &self, ctx: &Context, ev: &crossterm::event::MouseEvent, parent: Box<dyn Parent>,
     ) -> (Option<ElementID>, EventResponses) {
-        let mut eoz = self.get_el_id_z_order_under_mouse(ctx, ev);
+        let eoz = self.get_el_id_z_order_under_mouse(ctx, ev);
 
         if eoz.is_empty() {
             let mut el_resps = Vec::new();
@@ -657,9 +660,6 @@ impl ElementOrganizer {
         }
 
         let mut resps = EventResponses::default();
-
-        // reverse sort the elements by z-index (highest-z to lowest-z)
-        eoz.sort_by(|a, b| b.1.cmp(&a.1));
         let mut capturing_el_id = None;
         let mut i = 0;
         loop {

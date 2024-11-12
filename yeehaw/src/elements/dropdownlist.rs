@@ -415,6 +415,7 @@ impl Element for DropdownList {
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        self.pane.set_style(self.pane.get_current_style());
         self.pane.set_content_from_string(self.text(ctx));
 
         let open = *self.open.borrow();
@@ -431,6 +432,7 @@ impl Element for DropdownList {
 
         let mut chs = self.pane.drawing(ctx);
 
+        // XXX the scrollbar is too wide
         // set the scrollbar on top of the content
         if open && self.display_scrollbar() {
             let mut sb_chs = self.scrollbar.drawing(ctx);

@@ -121,26 +121,34 @@ impl SelectablePane {
     }
 
     pub fn set_selectability(&self, s: Selectability) -> EventResponses {
-        let attr_sel = self.get_selectability();
-        if attr_sel == s {
-            return EventResponses::default();
+        let mut prev_sel: Option<Selectability> = None;
+        if let Some(bz) = self.get_attribute(ATTR_SELECTABILITY) {
+            if let Ok(v) = serde_json::from_slice(&bz) {
+                prev_sel = Some(v);
+            }
+        };
+        if let Some(prev_sel) = prev_sel {
+            if s == prev_sel {
+                return EventResponses::default();
+            }
         }
 
         let mut resps = EventResponses::default();
-        let mut rec = ReceivableEventChanges::default();
         match s {
             Selectability::Selected => {
                 // NOTE needs to happen before the next line or else receivable will return the
                 // wrong value
                 self.set_attr_selectability(s);
-                rec.push_add_evs(self.receivable().0);
+                let rec = ReceivableEventChanges::default().with_add_evs(self.receivable().0);
+                resps.push(EventResponse::ReceivableEventChanges(rec));
                 resps.push(EventResponse::BringToFront);
             }
             Selectability::Ready | Selectability::Unselectable => {
-                if let Selectability::Selected = attr_sel {
-                    rec.push_remove_evs(
+                if let Some(Selectability::Selected) = prev_sel {
+                    let rec = ReceivableEventChanges::default().with_remove_evs(
                         self.receivable().iter().map(|(ev, _)| ev.clone()).collect(),
                     );
+                    resps.push(EventResponse::ReceivableEventChanges(rec));
                 }
                 // NOTE this needs to after the prev line or else receivable will return the
                 // wrong value
@@ -148,7 +156,6 @@ impl SelectablePane {
             }
         }
 
-        resps.push(EventResponse::ReceivableEventChanges(rec));
         resps
     }
 }
@@ -268,8 +275,10 @@ impl ParentPaneOfSelectable {
     }
 
     pub fn new(ctx: &Context) -> ParentPaneOfSelectable {
+        let pane = ParentPane::new(ctx, Self::KIND)
+            .with_self_receivable_events(Self::default_receivable_events());
         ParentPaneOfSelectable {
-            pane: ParentPane::new(ctx, Self::KIND),
+            pane,
             selected: Rc::new(RefCell::new(None)),
             selectables: Rc::new(RefCell::new(vec![])),
         }
@@ -277,7 +286,7 @@ impl ParentPaneOfSelectable {
 
     pub fn add_element(&self, el: Box<dyn Element>) {
         // check if it is selectable
-        if self.get_attribute(ATTR_SELECTABILITY).is_some() {
+        if el.get_attribute(ATTR_SELECTABILITY).is_some() {
             self.selectables.borrow_mut().push(el.id());
         }
         self.pane.add_element(el);
@@ -316,13 +325,13 @@ impl ParentPaneOfSelectable {
     }
 
     pub fn unselect_selected(&self, ctx: &Context) -> EventResponses {
-        if let Some(ref sel_el_id) = *self.selected.borrow() {
-            let resps = self.set_selectability_for_el(ctx, sel_el_id, Selectability::Ready);
-            *self.selected.borrow_mut() = None;
-            resps
+        let resps = if let Some(ref sel_el_id) = *self.selected.borrow() {
+            self.set_selectability_for_el(ctx, sel_el_id, Selectability::Ready)
         } else {
             EventResponses::default()
-        }
+        };
+        *self.selected.borrow_mut() = None;
+        resps
     }
 
     /// processes the custom response for setting selectability
@@ -353,6 +362,8 @@ impl ParentPaneOfSelectable {
         resps.0.extend(extend_resps);
     }
 
+    /// this function will not set the new element to selected if it is unselectable or if it does
+    /// not already have selectability (aka a normal element)
     pub fn switch_between_els(
         &self, ctx: &Context, old_el_id: Option<ElementID>, new_el_id: Option<ElementID>,
     ) -> EventResponses {
@@ -360,17 +371,23 @@ impl ParentPaneOfSelectable {
             return EventResponses::default();
         }
 
-        if let Some(ref new_el_id) = new_el_id {
-            if let Some(Selectability::Unselectable) = self.get_selectability_for_el(new_el_id) {
-                return EventResponses::default();
-            }
-        }
-
+        // first remove the selectability from the old element
         let mut resps = EventResponses::default();
         if let Some(ref old_el_id) = old_el_id {
             let resps_ = self.set_selectability_for_el(ctx, old_el_id, Selectability::Ready);
             resps.extend(resps_);
         }
+
+        if let Some(ref new_el_id) = new_el_id {
+            let new_sel = self.get_selectability_for_el(new_el_id);
+            if let Some(Selectability::Unselectable) = new_sel {
+                return EventResponses::default();
+            }
+            if new_sel.is_none() {
+                return EventResponses::default();
+            }
+        }
+
         if let Some(ref new_el_id) = new_el_id {
             let resps_ = self.set_selectability_for_el(ctx, new_el_id, Selectability::Selected);
             resps.extend(resps_);
@@ -392,7 +409,7 @@ impl ParentPaneOfSelectable {
             Some(ref starting_el_id) => self
                 .get_selectables_index_for_el(starting_el_id)
                 .unwrap_or(0),
-            None => 0,
+            None => return self.selectables.borrow().first().cloned(),
         };
         let starting_index = working_index;
 
@@ -425,7 +442,7 @@ impl ParentPaneOfSelectable {
             Some(ref starting_el_id) => self
                 .get_selectables_index_for_el(starting_el_id)
                 .unwrap_or(sel_len - 1),
-            None => sel_len - 1,
+            None => return self.selectables.borrow().last().cloned(),
         };
         let starting_index = working_index;
 
@@ -461,6 +478,7 @@ impl ParentPaneOfSelectable {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for ParentPaneOfSelectable {
+    // XXX delete post widget recall
     //fn receivable(&self) -> SelfReceivableEvents {
     //    // all of the events returned by the widget organizer are set to
     //    // focused because WO.Receivable only returns the events associated with
@@ -479,16 +497,26 @@ impl Element for ParentPaneOfSelectable {
     //}
 
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        let (mut captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
-        match ev {
+        let (captured, mut resps) = match ev {
             Event::Mouse(me) => {
+                let mut resps = EventResponses::default();
                 if let MouseEventKind::Down(_) = me.kind {
-                    let resps_ = self.unselect_selected(ctx);
+                    let eoz = self.pane.eo.get_el_id_z_order_under_mouse(ctx, &me);
+                    let new_el_id = eoz.first().map(|(el_id, _)| el_id.clone());
+                    let old_selected = self.selected.borrow().clone();
+                    // NOTE if new_el is not selectable, then this function will only
+                    // unselect the old_selected
+                    let resps_ = self.switch_between_els(ctx, old_selected, new_el_id);
                     resps.extend(resps_);
                 }
+                let (captured, resps_) = self.pane.receive_event(ctx, ev.clone());
+                resps.extend(resps_);
+                (captured, resps)
             }
-            Event::KeyCombo(ke) if !captured => {
-                if !ke.is_empty() {
+            Event::KeyCombo(ref ke) => {
+                let (mut captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
+
+                if !captured && !ke.is_empty() {
                     match true {
                         _ if ke[0] == KB::KEY_ESC => {
                             let resps_ = self.unselect_selected(ctx);
@@ -508,9 +536,10 @@ impl Element for ParentPaneOfSelectable {
                         _ => {}
                     }
                 }
+                (captured, resps)
             }
-            _ => {}
-        }
+            _ => self.pane.receive_event(ctx, ev.clone()),
+        };
         self.partially_process_sel_resps(ctx, &mut resps);
         (captured, resps)
     }

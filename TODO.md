@@ -37,6 +37,12 @@
 
 05. introduce errors, remove all unwraps
 
+01. Each element should become SELF selected when it receives a mouse event then
+    unselect itself on the first external mouse click 
+     - this way an element such as the dropdown list would still be able to use
+     the up and down arrow keys once its selected EVEN IF it wasn't a part of a 
+     ParentPaneOfSelectables
+
 WIDGET RECALL REFACTOR
  - Selectibility Hook
     - this one is a bit harder maybe we have to introduce hooks on 

@@ -25,7 +25,8 @@ impl Checkbox {
     const KIND: &'static str = "widget_checkbox";
 
     const STYLE: SelStyles = SelStyles {
-        selected_style: Style::new_const(Color::BLACK, Color::LIGHT_YELLOW2)
+        //selected_style: Style::new_const(Color::BLACK, Color::LIGHT_YELLOW2)
+        selected_style: Style::new_const(Color::BLACK, Color::YELLOW)
             .with_attr(Attributes::new().with_bold()),
         ready_style: Style::new_const(Color::BLACK, Color::WHITE)
             .with_attr(Attributes::new().with_bold()),
@@ -74,11 +75,11 @@ impl Checkbox {
 
     // ----------------------------------------------
 
-    pub fn text(&self) -> String {
+    pub fn text(&self) -> char {
         if *self.checked.borrow() {
-            return self.checkmark.borrow().to_string();
+            return *self.checkmark.borrow();
         }
-        " ".to_string()
+        ' '
     }
 
     pub fn click(&self, ctx: &Context) -> EventResponses {
@@ -132,8 +133,7 @@ impl Element for Checkbox {
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        // need to re set the content in order to reflect active style
-        self.pane.set_content_from_string(self.text());
+        self.pane.set_style(self.pane.get_current_style());
         self.pane.drawing(ctx)
     }
 }

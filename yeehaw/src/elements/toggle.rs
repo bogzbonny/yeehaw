@@ -181,6 +181,7 @@ impl Element for Toggle {
                     self.selected_sty.borrow().clone();
             }
         }
+        self.pane.set_style(self.pane.get_current_style());
         self.pane.drawing(ctx)
     }
 }

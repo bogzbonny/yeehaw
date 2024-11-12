@@ -488,7 +488,7 @@ impl ReceivableEventChanges {
 /// children in the ElementOrganizer).
 /// NOTE: these fulfill a similar function to the prioritizers
 /// in that they manage inclusion/removal more cleanly and can be sorted
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct SelfReceivableEvents(pub Vec<(ReceivableEvent, Priority)>);
 
 impl Deref for SelfReceivableEvents {

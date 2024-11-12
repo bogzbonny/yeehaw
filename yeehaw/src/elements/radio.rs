@@ -36,7 +36,7 @@ impl RadioButtons {
     const KIND: &'static str = "widget_radio";
 
     const STYLE: SelStyles = SelStyles {
-        selected_style: Style::new_const(Color::LIGHT_YELLOW2, Color::TRANSPARENT),
+        selected_style: Style::new_const(Color::YELLOW, Color::TRANSPARENT),
         ready_style: Style::new_const(Color::WHITE, Color::TRANSPARENT),
         unselectable_style: Style::new_const(Color::GREY13, Color::TRANSPARENT),
     };
@@ -186,6 +186,7 @@ impl Element for RadioButtons {
                     }
                     acc
                 });
+        self.pane.set_style(self.pane.get_current_style());
         self.pane.set_content_from_string(&s);
         self.pane.drawing(ctx)
     }
