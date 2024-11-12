@@ -429,6 +429,16 @@ impl DrawChs2D {
         Size::new(self.width() as u16, self.height() as u16)
     }
 
+    pub fn apply_vec_draw_ch_pos(&mut self, chs: Vec<DrawChPos>) {
+        for ch in chs {
+            self.apply_draw_ch_pos(ch);
+        }
+    }
+
+    pub fn apply_draw_ch_pos(&mut self, ch: DrawChPos) {
+        self.set_ch(ch.x as usize, ch.y as usize, ch.ch);
+    }
+
     pub fn set_ch(&mut self, x: usize, y: usize, ch: DrawCh) {
         let Some(line) = self.0.get_mut(y) else {
             return;

@@ -44,13 +44,20 @@ impl Checkbox {
             .with_styles(Self::STYLE)
             .with_dyn_width(DynVal::new_fixed(1))
             .with_dyn_height(DynVal::new_fixed(1));
-        Checkbox {
+        let cb = Checkbox {
             pane,
             checked: Rc::new(RefCell::new(false)),
             clicked_down: Rc::new(RefCell::new(false)),
             checkmark: Rc::new(RefCell::new('√')),
             clicked_fn: Rc::new(RefCell::new(|_, _| EventResponses::default())),
-        }
+        };
+
+        let cb_ = cb.clone();
+        cb.pane
+            .set_post_hook_for_set_selectability(Box::new(move |_, _| {
+                cb_.pane.set_content_style(cb_.pane.get_current_style());
+            }));
+        cb
     }
 
     // ----------------------------------------------
@@ -85,6 +92,7 @@ impl Checkbox {
     pub fn click(&self, ctx: &Context) -> EventResponses {
         let checked = !*self.checked.borrow();
         self.checked.replace(checked);
+        self.pane.set_style(self.pane.get_current_style());
         self.pane.set_content_from_string(self.text());
         (self.clicked_fn.borrow_mut())(ctx.clone(), checked)
     }
@@ -130,10 +138,5 @@ impl Element for Checkbox {
             _ => {}
         }
         (false, resps)
-    }
-
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        self.pane.set_style(self.pane.get_current_style());
-        self.pane.drawing(ctx)
     }
 }

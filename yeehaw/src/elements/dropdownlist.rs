@@ -32,6 +32,9 @@ pub struct DropdownList {
     pub selection_made_fn: Rc<RefCell<Box<dyn FnMut(Context, String) -> EventResponses>>>,
     /// embedded scrollbar in dropdown list
     pub scrollbar: VerticalScrollbar,
+
+    /// if true, then the content should be updated on next drawing
+    pub dirty: Rc<RefCell<bool>>,
 }
 
 impl DropdownList {
@@ -94,6 +97,7 @@ impl DropdownList {
             clicked_down: Rc::new(RefCell::new(false)),
             selection_made_fn: Rc::new(RefCell::new(selection_made_fn)),
             scrollbar: sb,
+            dirty: Rc::new(RefCell::new(true)),
         };
         d.pane.set_dyn_width(d.calculate_dyn_width());
 
@@ -103,6 +107,7 @@ impl DropdownList {
                 if d_.pane.get_selectability() != Selectability::Selected && *d_.open.borrow() {
                     d_.perform_close_escape();
                 }
+                d_.dirty.replace(true);
             }));
 
         d
@@ -216,6 +221,7 @@ impl DropdownList {
     }
 
     pub fn perform_open(&self, ctx: &Context) {
+        self.dirty.replace(true);
         *self.open.borrow_mut() = true;
         *self.cursor.borrow_mut() = *self.selected.borrow();
         let h = self.expanded_height() as i32;
@@ -227,6 +233,7 @@ impl DropdownList {
     }
 
     pub fn perform_close_escape(&self) {
+        self.dirty.replace(true);
         *self.open.borrow_mut() = false;
         // NOTE we are using the default context here, as we know
         // that a content_y_offset of 0 is safe. a lil' hacky
@@ -237,6 +244,7 @@ impl DropdownList {
     }
 
     pub fn perform_close(&self, ctx: &Context, escaped: bool) -> EventResponses {
+        self.dirty.replace(true);
         *self.open.borrow_mut() = false;
         self.pane.set_content_y_offset(ctx, 0);
         self.scrollbar
@@ -254,6 +262,7 @@ impl DropdownList {
     }
 
     pub fn cursor_up(&self, ctx: &Context) {
+        self.dirty.replace(true);
         if *self.cursor.borrow() > 0 {
             *self.cursor.borrow_mut() -= 1;
         }
@@ -261,10 +270,51 @@ impl DropdownList {
     }
 
     pub fn cursor_down(&self, ctx: &Context) {
+        self.dirty.replace(true);
         if *self.cursor.borrow() < self.entries.borrow().len().saturating_sub(1) {
             *self.cursor.borrow_mut() += 1;
         }
         self.correct_offsets(ctx);
+    }
+
+    pub fn update_content(&self, ctx: &Context) {
+        let sty = self.pane.get_current_style();
+        let mut content = DrawChs2D::from_string(self.text(ctx), sty);
+
+        // NOTE use the ctx width as the width as the context has already been shrunk to 100% of the
+        // element size
+        let width = ctx.get_width();
+
+        let open = *self.open.borrow();
+
+        // highlight the hovering entry
+        if open {
+            content.change_style_along_y(*self.cursor.borrow(), self.cursor_style.borrow().clone());
+        }
+
+        let offset = self.pane.get_content_y_offset() as u16;
+
+        // set the scrollbar on top of the content
+        if open && self.display_scrollbar() {
+            let sb_ctx = ctx.child_context(&self.scrollbar.get_dyn_location_set().l);
+            let mut sb_chs = self.scrollbar.drawing(&sb_ctx);
+            // shift the scrollbar content to below the arrow
+            for ch in sb_chs.iter_mut() {
+                ch.x += width.saturating_sub(1);
+                ch.y += 1 + offset;
+            }
+            content.apply_vec_draw_ch_pos(sb_chs);
+        }
+
+        // set the arrow
+        let arrow_ch = DrawChPos::new(
+            self.dropdown_arrow.borrow().clone(),
+            width.saturating_sub(1),
+            offset,
+        );
+        content.apply_draw_ch_pos(arrow_ch);
+
+        self.pane.set_content(content);
     }
 }
 
@@ -305,6 +355,7 @@ impl Element for DropdownList {
                         let (captured, resps_) =
                             self.scrollbar.receive_event(ctx, Event::KeyCombo(ke));
                         resps.extend(resps_);
+                        self.dirty.replace(true);
                         return (captured, resps);
                     }
                     _ => return (false, resps),
@@ -355,6 +406,7 @@ impl Element for DropdownList {
 
                         // on arrow
                         if y == 0 && x == self.pane.get_width(ctx).saturating_sub(1) {
+                            self.dirty.replace(true);
                             return (true, resps);
 
                         // on scrollbar
@@ -372,10 +424,12 @@ impl Element for DropdownList {
                                 resps.extend(resps_);
                                 return (captured, resps);
                             }
+                            self.dirty.replace(true);
                             return (true, resps);
                         } else {
                             *self.cursor.borrow_mut() = y + self.pane.get_content_y_offset();
                         }
+                        self.dirty.replace(true);
                         return (true, resps);
                     }
                     _ if open && clicked => {
@@ -391,6 +445,7 @@ impl Element for DropdownList {
                             let (captured, resps_) =
                                 self.scrollbar.receive_event(ctx, Event::Mouse(me_));
                             resps.extend(resps_);
+                            self.dirty.replace(true);
                             return (captured, resps);
                         }
 
@@ -415,47 +470,10 @@ impl Element for DropdownList {
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        self.pane.set_style(self.pane.get_current_style());
-        self.pane.set_content_from_string(self.text(ctx));
-
-        // NOTE use the ctx width as the width as the context has already been shrunk to 100% of the
-        // element size
-        let width = ctx.get_width();
-
-        let open = *self.open.borrow();
-
-        // highlight the hovering entry
-        if open {
-            self.pane
-                .pane
-                .pane
-                .content
-                .borrow_mut()
-                .change_style_along_y(*self.cursor.borrow(), self.cursor_style.borrow().clone());
+        if *self.dirty.borrow() {
+            self.update_content(ctx);
+            *self.dirty.borrow_mut() = false;
         }
-
-        let mut chs = self.pane.drawing(ctx);
-
-        // set the scrollbar on top of the content
-        if open && self.display_scrollbar() {
-            let sb_ctx = ctx.child_context(&self.scrollbar.get_dyn_location_set().l);
-            let mut sb_chs = self.scrollbar.drawing(&sb_ctx);
-            // shift the scrollbar content to below the arrow
-            for ch in sb_chs.iter_mut() {
-                ch.x += width.saturating_sub(1);
-                ch.y += 1;
-            }
-            chs.extend(sb_chs);
-        }
-
-        // set the arrow
-        let arrow_ch = DrawChPos::new(
-            self.dropdown_arrow.borrow().clone(),
-            width.saturating_sub(1),
-            0,
-        );
-        chs.push(arrow_ch);
-
-        chs
+        self.pane.drawing(ctx)
     }
 }

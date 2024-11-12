@@ -108,6 +108,13 @@ impl Button {
         let d = b.button_drawing();
         b.pane.set_dyn_width(DynVal::new_fixed(d.width() as i32));
         b.pane.set_dyn_height(DynVal::new_fixed(d.height() as i32));
+        b.pane.set_content(d);
+
+        let b_ = b.clone();
+        b.pane
+            .set_post_hook_for_set_selectability(Box::new(move |_, _| {
+                b_.pane.set_content(b_.button_drawing());
+            }));
         b
     }
 
@@ -200,6 +207,7 @@ impl Button {
         self.pane
             .pane
             .set_dyn_height(DynVal::new_fixed(d.height() as i32));
+        self.pane.set_content(d);
         self
     }
 
@@ -212,6 +220,7 @@ impl Button {
         self.pane
             .pane
             .set_dyn_height(DynVal::new_fixed(d.height() as i32));
+        self.pane.set_content(d);
         self
     }
 
@@ -224,6 +233,7 @@ impl Button {
         self.pane
             .pane
             .set_dyn_height(DynVal::new_fixed(d.height() as i32));
+        self.pane.set_content(d);
         self
     }
 
@@ -253,6 +263,7 @@ impl Element for Button {
                 if ke[0] == KB::KEY_ENTER {
                     let resps_ = self.click(ctx);
                     resps.extend(resps_);
+                    self.pane.set_content(self.button_drawing());
                     return (true, resps);
                 }
             }
@@ -261,6 +272,7 @@ impl Element for Button {
                 match me.kind {
                     MouseEventKind::Down(MouseButton::Left) => {
                         *self.clicked_down.borrow_mut() = true;
+                        self.pane.set_content(self.button_drawing());
                         return (true, resps);
                     }
                     MouseEventKind::Drag(MouseButton::Left) if clicked_down => {}
@@ -268,10 +280,12 @@ impl Element for Button {
                         *self.clicked_down.borrow_mut() = false;
                         let resps_ = self.click(ctx);
                         resps.extend(resps_);
+                        self.pane.set_content(self.button_drawing());
                         return (true, resps);
                     }
                     _ => {
                         *self.clicked_down.borrow_mut() = false;
+                        self.pane.set_content(self.button_drawing());
                     }
                 }
             }
@@ -279,14 +293,11 @@ impl Element for Button {
                 let clicked_down = *self.clicked_down.borrow();
                 if clicked_down {
                     *self.clicked_down.borrow_mut() = false;
+                    self.pane.set_content(self.button_drawing());
                 }
             }
             _ => {}
         }
         (false, EventResponses::default())
-    }
-
-    fn drawing(&self, _ctx: &Context) -> Vec<DrawChPos> {
-        self.button_drawing().to_draw_ch_pos(0, 0)
     }
 }
