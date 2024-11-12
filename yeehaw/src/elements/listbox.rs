@@ -64,6 +64,7 @@ impl ListBox {
             .with_styles(ListBoxInner::STYLE)
             .with_dyn_width(DynVal::new_fixed(inner.pane.get_width(ctx) as i32))
             .with_dyn_height(DynVal::new_fixed(inner.pane.get_height(ctx) as i32));
+        pane.pane.add_element(Box::new(inner.clone()));
         let lb = ListBox {
             pane,
             inner: Rc::new(RefCell::new(inner)),
@@ -105,7 +106,7 @@ impl ListBox {
     fn with_scrollbar_inner(self, ctx: &Context, pos: VerticalSBPositions) -> Self {
         let height = self.pane.get_dyn_height();
         let content_height = self.pane.content_height();
-        let sb = VerticalScrollbar::new(ctx, height, content_height);
+        let sb = VerticalScrollbar::new(ctx, height, content_height).without_keyboard_events();
         match pos {
             VerticalSBPositions::ToTheLeft => {
                 sb.set_at(
@@ -129,6 +130,7 @@ impl ListBox {
         let hook = Box::new(move |ctx, y| pane_.set_content_y_offset(&ctx, y));
         *sb.position_changed_hook.borrow_mut() = Some(hook);
         *self.scrollbar.borrow_mut() = Some(sb.clone());
+        self.pane.pane.add_element(Box::new(sb.clone()));
         self
     }
 

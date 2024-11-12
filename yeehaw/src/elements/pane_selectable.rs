@@ -172,34 +172,34 @@ impl Element for SelectablePane {
         }
     }
 
-    /// default implementation of drawing
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        let mut chs = self.pane.drawing(ctx);
+    ///// default implementation of drawing
+    //fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+    //    let mut chs = self.pane.drawing(ctx);
 
-        let sty = self.get_current_style();
-        let h = self.pane.pane.get_height(ctx);
-        let w = self.pane.pane.get_width(ctx);
-        let view_offset_y = *self.pane.pane.content_view_offset_y.borrow();
-        let view_offset_x = *self.pane.pane.content_view_offset_x.borrow();
-        let content_height = self.pane.pane.content.borrow().height();
-        let content_width = self.pane.pane.content.borrow().width();
+    //    let sty = self.get_current_style();
+    //    let h = self.pane.pane.get_height(ctx);
+    //    let w = self.pane.pane.get_width(ctx);
+    //    let view_offset_y = *self.pane.pane.content_view_offset_y.borrow();
+    //    let view_offset_x = *self.pane.pane.content_view_offset_x.borrow();
+    //    let content_height = self.pane.pane.content.borrow().height();
+    //    let content_width = self.pane.pane.content.borrow().width();
 
-        for y in view_offset_y..view_offset_y + h {
-            for x in view_offset_x..view_offset_x + w {
-                let ch = if y < content_height && x < content_width {
-                    self.pane.pane.content.borrow().0[y][x].clone()
-                } else {
-                    DrawCh::new(' ', sty.clone())
-                };
-                chs.push(DrawChPos::new(
-                    ch,
-                    (x - view_offset_x) as u16,
-                    (y - view_offset_y) as u16,
-                ));
-            }
-        }
-        chs
-    }
+    //    for y in view_offset_y..view_offset_y + h {
+    //        for x in view_offset_x..view_offset_x + w {
+    //            let ch = if y < content_height && x < content_width {
+    //                self.pane.pane.content.borrow().0[y][x].clone()
+    //            } else {
+    //                DrawCh::new(' ', sty.clone())
+    //            };
+    //            chs.push(DrawChPos::new(
+    //                ch,
+    //                (x - view_offset_x) as u16,
+    //                (y - view_offset_y) as u16,
+    //            ));
+    //        }
+    //    }
+    //    chs
+    //}
 
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let (captured, resps) = match ev {

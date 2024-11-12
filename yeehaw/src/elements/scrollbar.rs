@@ -107,6 +107,12 @@ impl VerticalScrollbar {
     // ----------------------------------------------
     /// decorators
 
+    pub fn without_keyboard_events(self) -> Self {
+        self.pane
+            .set_self_receivable_events(SelfReceivableEvents::default());
+        self
+    }
+
     pub fn with_scrollbar_sty(self, sb_sty: ScrollbarSty) -> Self {
         *self.sb_sty.borrow_mut() = sb_sty;
         self
@@ -183,6 +189,12 @@ impl HorizontalScrollbar {
 
     // ----------------------------------------------
     // decorators
+
+    pub fn without_keyboard_events(self) -> Self {
+        self.pane
+            .set_self_receivable_events(SelfReceivableEvents::default());
+        self
+    }
 
     pub fn with_scrollbar_sty(self, sb_sty: ScrollbarSty) -> Self {
         *self.sb_sty.borrow_mut() = sb_sty;
