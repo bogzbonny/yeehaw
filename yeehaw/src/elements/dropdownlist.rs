@@ -177,11 +177,11 @@ impl DropdownList {
     pub fn padded_entry_text(&self, ctx: &Context, i: usize) -> String {
         let entry = self.entries.borrow()[i].clone();
         let entry_len = entry.chars().count();
-        let width = self.calculate_dyn_width().get_val(ctx.get_width());
+        let width = ctx.get_width() as usize; // NOTE use ctx width which is already the width of the element
         let left_padding = *self.left_padding.borrow();
-        let right_padding = width.saturating_sub(entry_len as i32 + left_padding as i32);
+        let right_padding = width.saturating_sub(entry_len + left_padding);
         let pad_left = " ".repeat(left_padding);
-        let pad_right = " ".repeat(right_padding as usize);
+        let pad_right = " ".repeat(right_padding);
         format!("{}{}{}", pad_left, entry, pad_right)
     }
 
@@ -418,6 +418,10 @@ impl Element for DropdownList {
         self.pane.set_style(self.pane.get_current_style());
         self.pane.set_content_from_string(self.text(ctx));
 
+        // NOTE use the ctx width as the width as the context has already been shrunk to 100% of the
+        // element size
+        let width = ctx.get_width();
+
         let open = *self.open.borrow();
 
         // highlight the hovering entry
@@ -432,13 +436,13 @@ impl Element for DropdownList {
 
         let mut chs = self.pane.drawing(ctx);
 
-        // XXX the scrollbar is too wide
         // set the scrollbar on top of the content
         if open && self.display_scrollbar() {
-            let mut sb_chs = self.scrollbar.drawing(ctx);
+            let sb_ctx = ctx.child_context(&self.scrollbar.get_dyn_location_set().l);
+            let mut sb_chs = self.scrollbar.drawing(&sb_ctx);
             // shift the scrollbar content to below the arrow
             for ch in sb_chs.iter_mut() {
-                ch.x += self.pane.get_width(ctx).saturating_sub(1) as u16;
+                ch.x += width.saturating_sub(1);
                 ch.y += 1;
             }
             chs.extend(sb_chs);
@@ -447,7 +451,7 @@ impl Element for DropdownList {
         // set the arrow
         let arrow_ch = DrawChPos::new(
             self.dropdown_arrow.borrow().clone(),
-            self.pane.get_width(ctx).saturating_sub(1) as u16,
+            width.saturating_sub(1),
             0,
         );
         chs.push(arrow_ch);
