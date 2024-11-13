@@ -47,7 +47,7 @@ widget_checkbox.rs         | DONE
 widget_dropdownlist.rs     | DONE
 widget_figlet.rs           | DONE (not selectable)
 widget_label.rs            | DONE (not selectable)                            
-widget_listbox.rs          |  - need to translate to_widgets
+widget_listbox.rs          |  - need to update drawing calculations to be passive
 widget_radio.rs            | DONE
 widget_scrollbar.rs        | DONE (not selectable)
 widget_textbox.rs          | 

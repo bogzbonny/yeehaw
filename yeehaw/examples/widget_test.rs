@@ -104,14 +104,20 @@ async fn main() -> Result<(), Error> {
     use yeehaw::elements::listbox::SelectionMode;
     let listbox = ListBox::new(&ctx, ld_entries, Box::new(|_, _| EventResponses::default()))
         .with_selection_mode(&ctx, SelectionMode::UpTo(3))
+        //.with_width(&ctx, DynVal::new_fixed(12))
+        //.with_height(&ctx, DynVal::new_fixed(5))
         .with_width(
             &ctx,
             DynVal::default()
                 .plus_max_of(DynVal::new_flex(0.15))
                 .plus_max_of(DynVal::new_fixed(12)),
         )
-        //.with_width(&ctx, DynVal::new_fixed(12))
-        .with_height(&ctx, DynVal::new_fixed(5))
+        .with_height(
+            &ctx,
+            DynVal::default()
+                .plus_max_of(DynVal::new_flex(0.13))
+                .plus_max_of(DynVal::new_fixed(5)),
+        )
         .with_scrollbar(&ctx)
         .at(DynVal::new_flex(0.5), DynVal::new_flex(0.1));
     el.add_element(Box::new(listbox));

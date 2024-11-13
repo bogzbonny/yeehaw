@@ -112,7 +112,7 @@ impl ListBox {
     }
 
     fn with_scrollbar_inner(self, ctx: &Context, pos: VerticalSBPositions) -> Self {
-        let height = self.pane.get_dyn_height();
+        let height = DynVal::full();
         let content_height = self.inner.borrow().pane.content_height();
 
         let sb = VerticalScrollbar::new(ctx, height, content_height).without_keyboard_events();
