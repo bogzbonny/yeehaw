@@ -39,6 +39,7 @@ pub struct ListBoxInner {
     pub cursor_over_unselected_style: Rc<RefCell<Style>>,
     pub cursor_over_selected_style: Rc<RefCell<Style>>,
     pub scrollbar: Rc<RefCell<Option<VerticalScrollbar>>>,
+    pub is_dirty: Rc<RefCell<bool>>,
 }
 
 #[derive(Clone)]
@@ -86,6 +87,7 @@ impl ListBox {
                     *lb_.inner.borrow().cursor.borrow_mut() = None;
                 }
                 *lb_.inner.borrow().selectedness.borrow_mut() = sel;
+                *lb_.inner.borrow().is_dirty.borrow_mut() = true;
             }));
         lb
     }
@@ -186,7 +188,7 @@ impl ListBoxInner {
 
     const STYLE: SelStyles = SelStyles {
         selected_style: Style::new_const(Color::BLACK, Color::YELLOW),
-        ready_style: Style::new_const(Color::BLACK, Color::WHITE),
+        ready_style: Style::new_const(Color::BLACK, Color::GREY20),
         unselectable_style: Style::new_const(Color::BLACK, Color::GREY13),
     };
 
@@ -231,6 +233,7 @@ impl ListBoxInner {
             cursor_over_selected_style: Rc::new(RefCell::new(Self::STYLE_CURSOR_OVER_SELECTED)),
             selection_made_fn: Rc::new(RefCell::new(selection_made_fn)),
             scrollbar: Rc::new(RefCell::new(None)),
+            is_dirty: Rc::new(RefCell::new(true)),
         };
         lb.update_content(ctx);
         lb
@@ -286,6 +289,7 @@ impl ListBoxInner {
         if let Some(sb) = self.scrollbar.borrow().as_ref() {
             sb.external_change(y_offset, self.pane.content_height());
         }
+        self.is_dirty.replace(true);
     }
 
     pub fn get_item_index_for_view_y(&self, y: usize) -> usize {
@@ -320,6 +324,7 @@ impl ListBoxInner {
         }
         self.pane.set_content_from_string(&content);
         self.update_highlighting(ctx);
+        self.is_dirty.replace(true);
     }
 
     /// need to reset the content in order to reflect active style
@@ -393,6 +398,7 @@ impl ListBoxInner {
     }
 
     pub fn toggle_entry_selected_at_i(&self, ctx: &Context, i: usize) -> EventResponses {
+        self.is_dirty.replace(true);
         let already_selected = self.selected.borrow().contains(&i);
 
         match *self.selection_mode.borrow() {
@@ -427,6 +433,7 @@ impl ListBoxInner {
             .iter()
             .map(|i| entries[*i].clone())
             .collect();
+
         (self.selection_made_fn.borrow_mut())(ctx.clone(), selected_entries)
     }
 }
@@ -463,6 +470,7 @@ impl Element for ListBoxInner {
                         if let Some(sb) = self.scrollbar.borrow().as_ref() {
                             let (captured, resps_) = sb.receive_event(ctx, Event::KeyCombo(ke));
                             resps.extend(resps_);
+                            self.is_dirty.replace(true);
                             return (captured, resps);
                         } else {
                             return (true, resps);
@@ -536,6 +544,7 @@ impl Element for ListBoxInner {
                                     me_.row = y.saturating_sub(1) as u16;
                                     let (captured, resps_) =
                                         sb.receive_event(ctx, Event::Mouse(me_));
+                                    self.is_dirty.replace(true);
                                     resps.extend(resps_);
                                     return (captured, resps);
                                 }
@@ -563,7 +572,9 @@ impl Element for ListBoxInner {
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        self.update_highlighting(ctx); // this can probably happen in a more targeted way
+        if self.is_dirty.replace(false) {
+            self.update_highlighting(ctx);
+        }
         self.pane.drawing(ctx)
     }
 }

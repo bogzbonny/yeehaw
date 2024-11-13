@@ -35,7 +35,7 @@ impl Checkbox {
     };
 
     pub fn default_receivable_events() -> SelfReceivableEvents {
-        SelfReceivableEvents(vec![(KB::KEY_ENTER.into(), Priority::Focused)]) // / when "active" hitting enter will click the button
+        SelfReceivableEvents(vec![(KB::KEY_ENTER.into(), Priority::Focused)]) // when "active" hitting enter will click the button
     }
 
     pub fn new(ctx: &Context) -> Self {
@@ -51,6 +51,7 @@ impl Checkbox {
             checkmark: Rc::new(RefCell::new('√')),
             clicked_fn: Rc::new(RefCell::new(|_, _| EventResponses::default())),
         };
+        cb.pane.set_content_from_string(' ');
         cb.pane.set_content_style(cb.pane.get_current_style());
 
         let cb_ = cb.clone();

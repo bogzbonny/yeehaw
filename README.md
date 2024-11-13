@@ -9,8 +9,8 @@
 ░        C     \                    /   █ █  █ █   ma  \  \               ╳  .      . ╳   7   ░        
 ░        `           \             / /   █   █▀█     j    |        well   ╳     /     ╳       ░         
 ░          \> \-̲̅-̲̅./   |            \/    ▀   ▀ ▀      e   \    howdee     ╳  \     r  ╳       ░       
-░         | \     `.  /          \_/     __________/// s   |     there!   ╳     -̅     ╳/      ░
-░         |  \      `----<<<-        \     |        /   t /                       ╷           ░              
+░         | \     `.  /          \_/     __________/// s   |     there!   ╳     -̅     ╳_      ░
+░         |  \      `----<<<-        \     |        /   t /                       ╷    \      ░              
 ░        /    |__|__|                /     }       /    i \                                   ░       
 ░ꕤ                                  /     /        \   c  /                                 ꕤ ░                     
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -129,29 +129,28 @@ If you plan to build on Yeehaw right now, that's great news! I'd like to keep
 you apprised of some upcoming changes. If you do wish to experiment and or start
 development on yeehaw I wouldn't be too afraid of these upcoming changes, I'll
 try'n help out anyone who needs a hand fixing things broken by upcoming
-refactors. 
+refactors / update a breaking changes doc with upgrade instructions.
 
 - There ain't much testing in here at all, soon a TUI snapshot tester is going to 
   be developed, which should bring up coverage from about 0% as it stands. 
-- Widget trait is being refactored out and fully covered by the Element trait
-  (with only a couple minor modifications) thus the Widget trait is being
-  removed
-  - Widget builders will be integrated in at this point, suffice it to say there
-    will be a breaking refactor for widgets, for instance the way that labels
-    and scrollbars are tacked onto the textbox widget will be replaced. All
-    elements will be grouped together in a ParentPane.
-  - so basically if you're going to use the existing Widgets, ideally just use
-    them as elements (they all also fulfill the Element trait currently)
 - Taffy is going to be integrated in. It shouldn't change the existing location
   mechanisms just build on top of them.
-- Window minimization is blocking on the Taffy integration such that the
-  minimized windows can follow a nice grid pattern. Currently minimization
-  works, however multiple minimized windows will stack on each other in the same
-  location. 
+- Proper window minimization behaviour is blocking on the Taffy integration such
+  that the minimized windows can follow a nice grid pattern. Currently
+  minimization works, however multiple minimized windows will stack on each
+  other in the same location. 
 - The $EDITOR text editor element - aka the element where you could use any
   editor like neovim/vim/emacs(I think?) currently doesn't provide good support
   for users who HAVEN'T set their $EDITOR env variable. This will be fixed at
-  some point shortly after the widget refactor.
+  some point soon.
+- gradients on angles are not fully stable, the goal is to have the gradient
+  actually reflect a visual angle taking into account the width and the height
+  of each cell. Currently the angles work under an assumption of equal cell
+  width and height, sometimes it produces funny/unexpected results for a
+  gradient which has is supposed to just be at a 45-degree angle and occur only
+  once across the whole target area (DynVal::ful()). Gradients on angles which are
+  repetitive (DynVal::fixed), or gradients on right-angles (0, 90, 180, 270
+  degrees) are considerably more stable.
 
 ## Tribute
 
@@ -165,7 +164,7 @@ refactors.
 
 ## Contributing 
 
-It'd be cool for this repo to become a monolith. I want all sorts of funky
+It'd be cool for this repo to become a "megarepo". I want all sorts of funky
 gadgets in this baby with first class support from this project. All ideas will
 be considered with an open mind, if you'd like to build and element and merge it
 into yeehaw It'd be an honour. If you'd like to build a element with highly
@@ -176,8 +175,6 @@ the future, so if your code becomes merged then your be gaining a part piece of
 ownership in the project whenever dynamic ownership is integrated in (more on
 that later!).
 
-Unless you explicitly state otherwise, any contribution you intentionally submit
-for inclusion in the work, as defined in the Apache-2.0 license, shall be
-Apache-2.0 license, without any additional terms or conditions.
-
-
+Any contribution you intentionally submit for inclusion in the work, as defined
+in the Apache-2.0 license, shall be Apache-2.0 license, without any additional
+terms or conditions.

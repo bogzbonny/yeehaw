@@ -4,14 +4,16 @@
     - independant if we use a flex or fixed width
     - seems to be routed to the ParentPaneOfSelectable, but NOT the top-level
       ListBox el even though the ListBox has it set to receivable 
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
+01. 74b6e9b breaks checkbox drawing
 01. Each element should become SELF selected when it receives a mouse event then
     unselect itself on the first external mouse click 
      - this way an element such as the dropdown list would still be able to use
      the up and down arrow keys once its selected EVEN IF it wasn't a part of a 
      ParentPaneOfSelectables
+     - external mouse click logic to exist in SelectablePane
+     - currently not deregistering OR registering properly from mouse click
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 WIDGET RECALL REFACTOR
  - Selectibility Hook
@@ -47,7 +49,7 @@ widget_checkbox.rs         | DONE
 widget_dropdownlist.rs     | DONE
 widget_figlet.rs           | DONE (not selectable)
 widget_label.rs            | DONE (not selectable)                            
-widget_listbox.rs          |  - need to update drawing calculations to be passive
+widget_listbox.rs          | DONE
 widget_radio.rs            | DONE
 widget_scrollbar.rs        | DONE (not selectable)
 widget_textbox.rs          | 

@@ -41,7 +41,7 @@ pub struct SelectablePane {
 
 #[yeehaw_derive::impl_pane_basics_from(pane)]
 impl SelectablePane {
-    pub const RESP_SET_SELECTABILITY: &'static str = "set_selectability";
+    pub const RESP_SELECTABILITY_WAS_SET: &'static str = "selectability_was_set";
 
     pub fn new(ctx: &Context, kind: &'static str) -> SelectablePane {
         let out = SelectablePane {
@@ -86,6 +86,14 @@ impl SelectablePane {
 
     pub fn enable(&self) -> EventResponses {
         self.set_selectability(Selectability::Ready)
+    }
+
+    pub fn deselect(&self) -> EventResponses {
+        self.set_selectability(Selectability::Ready)
+    }
+
+    pub fn select(&self) -> EventResponses {
+        self.set_selectability(Selectability::Selected)
     }
 
     pub fn get_current_style(&self) -> Style {
@@ -142,6 +150,14 @@ impl SelectablePane {
                 let rec = ReceivableEventChanges::default().with_add_evs(self.receivable().0);
                 resps.push(EventResponse::ReceivableEventChanges(rec));
                 resps.push(EventResponse::BringToFront);
+                resps.push(EventResponse::Metadata(
+                    Self::RESP_SELECTABILITY_WAS_SET.to_string(),
+                    serde_json::to_vec(&SelectabilityResp {
+                        sel: s,
+                        id: self.id().clone(),
+                    })
+                    .unwrap(),
+                ));
             }
             Selectability::Ready | Selectability::Unselectable => {
                 if let Some(Selectability::Selected) = prev_sel {
@@ -149,6 +165,15 @@ impl SelectablePane {
                         self.receivable().iter().map(|(ev, _)| ev.clone()).collect(),
                     );
                     resps.push(EventResponse::ReceivableEventChanges(rec));
+
+                    resps.push(EventResponse::Metadata(
+                        Self::RESP_SELECTABILITY_WAS_SET.to_string(),
+                        serde_json::to_vec(&SelectabilityResp {
+                            sel: s,
+                            id: self.id().clone(),
+                        })
+                        .unwrap(),
+                    ));
                 }
                 // NOTE this needs to after the prev line or else receivable will return the
                 // wrong value
@@ -202,7 +227,24 @@ impl Element for SelectablePane {
     //}
 
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        let (captured, resps) = match ev {
+        let (captured, mut resps) = match ev {
+            Event::Mouse(me) => {
+                if matches!(me.kind, MouseEventKind::Down(_)) {
+                    (false, self.select())
+                } else {
+                    (false, EventResponses::default())
+                }
+            }
+            Event::ExternalMouse(ref me) => {
+                if matches!(
+                    me.kind,
+                    MouseEventKind::Down(_) | MouseEventKind::Drag(_) | MouseEventKind::Up(_)
+                ) {
+                    (false, self.deselect())
+                } else {
+                    (false, EventResponses::default())
+                }
+            }
             Event::Custom(ref ev_name, ref bz) => {
                 if ev_name == ParentPaneOfSelectable::EV_SET_SELECTABILITY {
                     match serde_json::from_slice(bz) {
@@ -221,7 +263,9 @@ impl Element for SelectablePane {
         if captured {
             return (true, resps);
         }
-        self.pane.receive_event(ctx, ev)
+        let (captured, resps_) = self.pane.receive_event(ctx, ev);
+        resps.extend(resps_);
+        (captured, resps)
     }
 }
 
@@ -325,7 +369,8 @@ impl ParentPaneOfSelectable {
     }
 
     pub fn unselect_selected(&self, ctx: &Context) -> EventResponses {
-        let resps = if let Some(ref sel_el_id) = *self.selected.borrow() {
+        let sel_el_id = self.selected.borrow().clone();
+        let resps = if let Some(ref sel_el_id) = sel_el_id {
             self.set_selectability_for_el(ctx, sel_el_id, Selectability::Ready)
         } else {
             EventResponses::default()
@@ -341,7 +386,7 @@ impl ParentPaneOfSelectable {
             let mut modified_resp = None;
 
             if let EventResponse::Metadata(k, v_bz) = resp {
-                if k == SelectablePane::RESP_SET_SELECTABILITY {
+                if k == SelectablePane::RESP_SELECTABILITY_WAS_SET {
                     let s_resp: SelectabilityResp = match serde_json::from_slice(v_bz) {
                         Ok(v) => v,
                         Err(_e) => {
@@ -349,8 +394,40 @@ impl ParentPaneOfSelectable {
                             continue;
                         }
                     };
-                    let resps_ = self.set_selectability_for_el(ctx, &s_resp.id, s_resp.sel);
-                    extend_resps.extend(resps_.0);
+                    match s_resp.sel {
+                        Selectability::Selected => {
+                            let old_sel_el_id = self.selected.borrow().clone();
+                            if let Some(old_sel_el_id) = old_sel_el_id {
+                                if old_sel_el_id != s_resp.id {
+                                    *self.selected.borrow_mut() = Some(s_resp.id.clone());
+
+                                    // deselect the old selected element
+                                    let resps_ = self.set_selectability_for_el(
+                                        ctx,
+                                        &old_sel_el_id,
+                                        Selectability::Ready,
+                                    );
+                                    extend_resps.extend(resps_.0);
+                                }
+                            }
+                        }
+                        Selectability::Ready => {
+                            let old_sel_el_id = self.selected.borrow().clone();
+                            if let Some(sel_el_id) = old_sel_el_id {
+                                if sel_el_id == s_resp.id {
+                                    *self.selected.borrow_mut() = None;
+                                }
+                            }
+                        }
+                        Selectability::Unselectable => {
+                            let old_sel_el_id = self.selected.borrow().clone();
+                            if let Some(sel_el_id) = old_sel_el_id {
+                                if sel_el_id == s_resp.id {
+                                    *self.selected.borrow_mut() = None;
+                                }
+                            }
+                        }
+                    }
                     modified_resp = Some(EventResponse::None);
                 }
             }
