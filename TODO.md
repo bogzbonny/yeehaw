@@ -67,6 +67,16 @@ widget_toggle.rs           | DONE
 
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+05. integrate in is_dirty logic into the Pane to the drawing. if is_dirty is
+    true the pane will call 'update_dirty_content', otherwise it will just
+    return whatever is in the pane's content during drawing. 
+     - note this will be backwards compatible, as this doesn't actually need to
+       change the element interface, as all this logic can happen at the pane
+       level, the default pane drawing functionality will just use an is_dirty
+       check.
+     - Users of the pane would then register a fn variable on the pane for 
+       performing the content updates for when the pane is_dirty
+
 01. border pane text locations (either right, centre, left eg) should all be
     possible at the same time not ONLY one of those three options
 

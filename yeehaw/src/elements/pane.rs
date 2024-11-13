@@ -498,31 +498,26 @@ impl Element for Pane {
             (0, ctx.s.width as usize, 0, ctx.s.height as usize)
         };
 
+        let view_offset_y = *self.content_view_offset_y.borrow();
+        let view_offset_x = *self.content_view_offset_x.borrow();
+        let default_ch = self.default_ch.borrow().clone();
+        let content_height = self.content.borrow().height();
+        let content_width = self.content.borrow().width();
+
         // convert the Content to DrawChPos
         for y in ymin..ymax {
             for x in xmin..xmax {
-                // default ch being added next is the DefaultCh
-                let mut ch_out = self.default_ch.borrow().clone();
-
-                let offset_y = y + *self.content_view_offset_y.borrow();
-                let offset_x = x + *self.content_view_offset_x.borrow();
+                let offset_y = y + view_offset_y;
+                let offset_x = x + view_offset_x;
 
                 // if the offset isn't pushing all the content out of view,
                 // assign the next ch to be the one at the offset in the Content
                 // matrix
-                if offset_y < self.content.borrow().0.len()
-                    && offset_x < self.content.borrow().0[offset_y].len()
-                {
-                    ch_out = self.content.borrow().0[offset_y][offset_x].clone();
-                }
-
-                // if y is greater than the height of the visible content,
-                // trigger a default line.
-                // NOTE: height of the visible content is the height of the
-                // content minus the offset
-                if y > self.content.borrow().0.len() {
-                    ch_out = self.default_ch.borrow().clone();
-                }
+                let ch_out = if offset_y < content_height && offset_x < content_width {
+                    self.content.borrow().0[offset_y][offset_x].clone()
+                } else {
+                    default_ch.clone()
+                };
 
                 // convert the DrawCh to a DrawChPos
                 chs.push(DrawChPos::new(ch_out, x as u16, y as u16))

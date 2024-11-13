@@ -51,6 +51,7 @@ impl Checkbox {
             checkmark: Rc::new(RefCell::new('√')),
             clicked_fn: Rc::new(RefCell::new(|_, _| EventResponses::default())),
         };
+        cb.pane.set_content_style(cb.pane.get_current_style());
 
         let cb_ = cb.clone();
         cb.pane
@@ -65,6 +66,7 @@ impl Checkbox {
 
     pub fn with_styles(self, styles: SelStyles) -> Self {
         self.pane.set_styles(styles);
+        self.pane.set_content_style(self.pane.get_current_style());
         self
     }
 
