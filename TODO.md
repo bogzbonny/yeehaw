@@ -1,41 +1,11 @@
-01. replace window CornerAdjuster with border::Corner
 
-01. borders-pane wrapper
-     - option for each of up/down/right/left
-        - aka. doesn't need to be fully bordered.
-     - custom up/down/right/left DrawChs AND corner pieces
-     - single/double/bold lines defaults 
-     - built in scrollbars optionally
-     - drag-resizing - drag while on the edge to resize the location
-
-01. merge PaneWithScrollbars into border pane - introduce scrollbars into border
-    pane
-
-40. Scrollbar bug: when dragging scrollbar with mouse, will drag good for a bit
-    then close to the end it just moves all the way to the maximum
-     - this seems to only be an issue when the scrollbar takes up about half of
-       the scrollbar area or more
-     - it happens in both vertical and horizontal scrollbars
-     - it happens in both scroll forwards and scroll backwards
-     - seems like the error exists in drag_backwards_by_1_ch (and forwards_by..)
-01. titles inside border: ┌hello───┐
-                          │        │
-                          │        │
-                          └────────┘
-01. add tags to cargo file 
-01. Add license
-01. add license and license-file fields to cargo.toml
-     - https://doc.rust-lang.org/cargo/reference/manifest.html
-01. create pane basics proceedural macro 
-     - it's crazy the amount of duplication required for ParentPane, and now
-       SelectablePane, this should be a macro to define all the basic get/set
-       functions 
-        - will need to be divided into "with" functions and "non-with" functions
-          (aka self modifying)
+01. listbox scrollbar never activated
+01. listbox not selecting with up and down arrows after a resize
+    - independant if we use a flex or fixed width
+    - seems to be routed to the ParentPaneOfSelectable, but NOT the top-level
+      ListBox el even though the ListBox has it set to receivable 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-05. introduce errors, remove all unwraps
 
 01. Each element should become SELF selected when it receives a mouse event then
     unselect itself on the first external mouse click 
@@ -85,12 +55,9 @@ widget_textbox_numbers.rs  |
 widget_toggle.rs           | DONE
 
 
-05. create builder types for each widget. 
-     - sometimes there are fields in the widget that are only 
-       used for the creation of the widget, and not for the widget itself.
-05. Into<Widgets> Trait which can be applied to each widget builder so that
-    .to_widgets() doesn't need to be manually called during construction
-    (applied in add_widget)
+
+
+05. introduce errors, remove all unwraps
 
 01. docs docs docs
 

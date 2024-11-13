@@ -495,11 +495,11 @@ impl ElementOrganizer {
             Event::ExternalMouse(me) => {
                 // send the mouse event to all the children
                 let resp = self.external_mouse_event_process(ctx, &me, parent);
-                (false, resp) // / never capture
+                (false, resp) // never capture
             }
             Event::Initialize => {
                 let resps = self.initialize(ctx, parent);
-                (false, resps) // / never capture
+                (false, resps) // never capture
             }
             Event::Exit | Event::Resize => self.propogate_event_to_all(ctx, ev, parent),
         }
@@ -542,9 +542,6 @@ impl ElementOrganizer {
     pub fn propogate_event_to_all(
         &self, ctx: &Context, ev: Event, parent: Box<dyn Parent>,
     ) -> (bool, EventResponses) {
-        // reset prioritizers
-        *self.prioritizer.borrow_mut() = EventPrioritizer::default();
-
         let mut resps = EventResponses::default();
         for (el_id, details) in self.els.borrow().iter() {
             let el_ctx = ctx.child_context(&details.loc.borrow().l);

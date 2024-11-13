@@ -497,11 +497,11 @@ impl Element for ParentPaneOfSelectable {
     //}
 
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        let (captured, mut resps) = match ev {
+        let (captured, mut resps) = match &ev {
             Event::Mouse(me) => {
                 let mut resps = EventResponses::default();
                 if let MouseEventKind::Down(_) = me.kind {
-                    let eoz = self.pane.eo.get_el_id_z_order_under_mouse(ctx, &me);
+                    let eoz = self.pane.eo.get_el_id_z_order_under_mouse(ctx, me);
                     let new_el_id = eoz.first().map(|(el_id, _)| el_id.clone());
                     let old_selected = self.selected.borrow().clone();
                     // NOTE if new_el is not selectable, then this function will only
@@ -509,12 +509,13 @@ impl Element for ParentPaneOfSelectable {
                     let resps_ = self.switch_between_els(ctx, old_selected, new_el_id);
                     resps.extend(resps_);
                 }
-                let (captured, resps_) = self.pane.receive_event(ctx, ev.clone());
+                let (captured, resps_) = self.pane.receive_event(ctx, ev);
                 resps.extend(resps_);
                 (captured, resps)
             }
             Event::KeyCombo(ref ke) => {
-                let (mut captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
+                let ke = ke.clone();
+                let (mut captured, mut resps) = self.pane.receive_event(ctx, ev);
 
                 if !captured && !ke.is_empty() {
                     match true {
@@ -538,7 +539,7 @@ impl Element for ParentPaneOfSelectable {
                 }
                 (captured, resps)
             }
-            _ => self.pane.receive_event(ctx, ev.clone()),
+            _ => self.pane.receive_event(ctx, ev),
         };
         self.partially_process_sel_resps(ctx, &mut resps);
         (captured, resps)

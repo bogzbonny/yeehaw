@@ -67,13 +67,15 @@ impl EventPrioritizer {
 
     /// are there any priority events already registered with the same priority and
     /// event (independant of the event prioritizers element id).
-    pub fn has_priority_ev(&self, priority_ev: &(ReceivableEvent, Priority)) -> bool {
+    pub fn get_priority_ev_id(
+        &self, priority_ev: &(ReceivableEvent, Priority),
+    ) -> Option<ElementID> {
         for pec in self.0.iter() {
             if priority_ev.0 == pec.event && priority_ev.1 == pec.priority {
-                return true;
+                return Some(pec.id.clone());
             }
         }
-        false
+        None
     }
 
     pub fn include(&mut self, id: &ElementID, priority_ev: &Vec<(ReceivableEvent, Priority)>) {
@@ -83,9 +85,16 @@ impl EventPrioritizer {
             // (excluding Unfocused). If false the event will be sent to the ev/cmd to which
             // happens to be first in the prioritizer
             #[cfg(debug_assertions)]
-            if pe.1 != Priority::Unfocused && self.has_priority_ev(pe) {
-                panic!("EvPrioritizer found at least 2 events registered to different elements with the \
-                       same priority. \n\tregistering-id: {id}\n\tpr: {}\n\tev: {:?}", pe.1, pe.0)
+            if pe.1 != Priority::Unfocused {
+                if let Some(existing_id) = self.get_priority_ev_id(pe) {
+                    panic!(
+                        "EvPrioritizer found at least 2 events registered to different \
+                    elements with the same priority. \
+                    \n\texisting-id: {existing_id} \
+                    \n\tregistering-id: {id}\n\tpr: {}\n\tev: {:?}",
+                        pe.1, pe.0
+                    )
+                }
             }
 
             let peie = PriorityIdEvent::new(pe.1, id.clone(), pe.0.clone());

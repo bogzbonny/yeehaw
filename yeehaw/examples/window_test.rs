@@ -33,8 +33,8 @@ async fn main() -> Result<(), Error> {
 
         let el = DebugSizePane::new(&ctx_)
             .with_text(title.clone())
-            .with_width(DynVal::new_full())
-            .with_height(DynVal::new_full())
+            .with_width(DynVal::full())
+            .with_height(DynVal::full())
             .with_default_ch(def_ch)
             .with_style(Style::default().with_bg(bg).with_fg(Color::BLACK));
 
@@ -66,8 +66,8 @@ async fn main() -> Result<(), Error> {
 
         let el = DebugSizePane::new(&ctx_)
             .with_text(title.clone())
-            .with_width(DynVal::new_full())
-            .with_height(DynVal::new_full())
+            .with_width(DynVal::full())
+            .with_height(DynVal::full())
             .with_default_ch(def_ch)
             .with_style(Style::default().with_bg(bg).with_fg(Color::BLACK));
 
@@ -113,8 +113,8 @@ async fn main() -> Result<(), Error> {
         ctx_.s.height = 20;
         let title = format!("Pane {}", *counter_.borrow());
         let el = TerminalPane::new(&ctx_)
-            .with_width(DynVal::new_full())
-            .with_height(DynVal::new_full());
+            .with_width(DynVal::full())
+            .with_height(DynVal::full());
 
         *counter_.borrow_mut() += 1;
         let window = WindowPane::new(&ctx_, Box::new(el), &title)
@@ -144,8 +144,8 @@ async fn main() -> Result<(), Error> {
 
         let el = DebugSizePane::new(&ctx_)
             .with_text(title.clone())
-            .with_width(DynVal::new_full())
-            .with_height(DynVal::new_full())
+            .with_width(DynVal::full())
+            .with_height(DynVal::full())
             .with_default_ch(def_ch)
             .with_style(Style::default().with_bg(bg).with_fg(Color::BLACK));
 
@@ -180,8 +180,8 @@ async fn main() -> Result<(), Error> {
 
         let el = DebugSizePane::new(&ctx_)
             .with_text(title.clone())
-            .with_width(DynVal::new_full())
-            .with_height(DynVal::new_full())
+            .with_width(DynVal::full())
+            .with_height(DynVal::full())
             .with_default_ch(def_ch)
             .with_style(Style::default().with_bg(bg).with_fg(Color::BLACK));
 
@@ -215,8 +215,8 @@ async fn main() -> Result<(), Error> {
 
         let el = DebugSizePane::new(&ctx_)
             .with_text(title.clone())
-            .with_width(DynVal::new_full())
-            .with_height(DynVal::new_full())
+            .with_width(DynVal::full())
+            .with_height(DynVal::full())
             .with_default_ch(def_ch)
             .with_style(Style::default().with_bg(bg).with_fg(Color::BLACK));
 

@@ -78,7 +78,7 @@ impl Pane {
             default_ch: Rc::new(RefCell::new(DrawCh::default())),
             content_view_offset_x: Rc::new(RefCell::new(0)),
             content_view_offset_y: Rc::new(RefCell::new(0)),
-            loc: Rc::new(RefCell::new(DynLocationSet::new_full())),
+            loc: Rc::new(RefCell::new(DynLocationSet::full())),
             visible: Rc::new(RefCell::new(true)),
         }
     }

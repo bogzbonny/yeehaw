@@ -16,8 +16,8 @@ impl FileViewerPane {
 
         // XXX TODO uncomment/fix post widger recall
         //let tb = TextBox::new(ctx, content)
-        //    .with_width(DynVal::new_full())
-        //    .with_height(DynVal::new_full())
+        //    .with_width(DynVal::full())
+        //    .with_height(DynVal::full())
         //    .with_right_scrollbar()
         //    .with_lower_scrollbar()
         //    .editable()

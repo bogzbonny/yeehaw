@@ -58,12 +58,20 @@ impl ListBox {
         ctx: &Context, entries: Vec<String>,
         selection_made_fn: Box<dyn FnMut(Context, Vec<String>) -> EventResponses>,
     ) -> Self {
+        let max_entry_width = entries
+            .iter()
+            .map(|r| r.lines().map(|l| l.chars().count()).max().unwrap_or(0))
+            .max()
+            .unwrap_or(0);
+        let line_count = entries.iter().map(|r| r.lines().count()).sum::<usize>() as i32;
         let inner = ListBoxInner::new(ctx, entries, selection_made_fn);
+
         let pane = SelectablePane::new(ctx, ListBoxInner::KIND)
-            .with_self_receivable_events(ListBoxInner::default_receivable_events())
             .with_styles(ListBoxInner::STYLE)
-            .with_dyn_width(DynVal::new_fixed(inner.pane.get_width(ctx) as i32))
-            .with_dyn_height(DynVal::new_fixed(inner.pane.get_height(ctx) as i32));
+            //.with_dyn_width(DynVal::new_fixed(inner.pane.get_width(ctx) as i32))
+            //.with_dyn_height(DynVal::new_fixed(inner.pane.get_height(ctx) as i32));
+            .with_dyn_width(DynVal::new_fixed(max_entry_width as i32))
+            .with_dyn_height(DynVal::new_fixed(line_count));
         pane.pane.add_element(Box::new(inner.clone()));
         let lb = ListBox {
             pane,
@@ -105,32 +113,33 @@ impl ListBox {
 
     fn with_scrollbar_inner(self, ctx: &Context, pos: VerticalSBPositions) -> Self {
         let height = self.pane.get_dyn_height();
-        let content_height = self.pane.content_height();
+        let content_height = self.inner.borrow().pane.content_height();
+
         let sb = VerticalScrollbar::new(ctx, height, content_height).without_keyboard_events();
         match pos {
             VerticalSBPositions::ToTheLeft => {
-                sb.set_at(
-                    self.pane.get_dyn_start_x().minus_fixed(1),
-                    self.pane.get_dyn_start_y().clone(),
-                );
+                sb.set_at(1.into(), 0.into());
+                self.inner.borrow().pane.set_start_x(1.into());
             }
             VerticalSBPositions::ToTheRight => {
-                sb.set_at(
-                    self.pane.get_dyn_start_x().plus(self.pane.get_dyn_width()),
-                    self.pane.get_dyn_start_y(),
-                );
+                sb.set_at(DynVal::full().minus_fixed(1), 0.into());
+                self.inner
+                    .borrow()
+                    .pane
+                    .set_end_x(DynVal::full().minus_fixed(1));
             }
             VerticalSBPositions::None => {
                 return self;
             }
         }
 
-        // wire the scrollbar to the text box
-        let pane_ = self.pane.clone();
+        // wire the scrollbar to the listbox
+        let pane_ = self.inner.borrow().pane.clone();
         let hook = Box::new(move |ctx, y| pane_.set_content_y_offset(&ctx, y));
         *sb.position_changed_hook.borrow_mut() = Some(hook);
         *self.scrollbar.borrow_mut() = Some(sb.clone());
         self.pane.pane.add_element(Box::new(sb.clone()));
+        self.inner.borrow().scrollbar.replace(Some(sb));
         self
     }
 
@@ -200,18 +209,12 @@ impl ListBoxInner {
         ctx: &Context, entries: Vec<String>,
         selection_made_fn: Box<dyn FnMut(Context, Vec<String>) -> EventResponses>,
     ) -> Self {
-        let max_entry_width = entries
-            .iter()
-            .map(|r| r.lines().map(|l| l.chars().count()).max().unwrap_or(0))
-            .max()
-            .unwrap_or(0);
-        let line_count = entries.iter().map(|r| r.lines().count()).sum::<usize>() as i32;
         let max_lines_per_entry = entries.iter().map(|r| r.lines().count()).max().unwrap_or(0);
 
         let pane = Pane::new(ctx, Self::KIND)
             .with_self_receivable_events(Self::default_receivable_events())
-            .with_dyn_width(DynVal::new_fixed(max_entry_width as i32))
-            .with_dyn_height(DynVal::new_fixed(line_count));
+            .with_dyn_width(DynVal::full())
+            .with_dyn_height(DynVal::full());
 
         let lb = ListBoxInner {
             pane,

@@ -76,7 +76,7 @@ impl FileNavPane {
             .borrow_mut()
             .extend(Self::default_receivable_events().0);
 
-        pane.set_dyn_height(DynVal::new_full());
+        pane.set_dyn_height(DynVal::full());
         pane.set_dyn_width(DynVal::new_fixed(32));
 
         let out = Self {

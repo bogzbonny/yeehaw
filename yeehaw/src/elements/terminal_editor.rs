@@ -55,8 +55,8 @@ impl TermEditorPane {
         let pane = ParentPane::new(ctx, Self::KIND);
 
         let non_editing_textbox = TextBox::new(ctx, "")
-            .with_width(DynVal::new_full())
-            .with_height(DynVal::new_full())
+            .with_width(DynVal::full())
+            .with_height(DynVal::full())
             .with_wordwrap()
             .non_editable()
             .with_right_click_menu(None)
@@ -109,8 +109,8 @@ impl TermEditorPane {
                 let start_text = self.editor_not_found_text.borrow().clone();
                 let tb = TextBox::new(ctx, "")
                     .with_text_when_empty(start_text)
-                    .with_width(DynVal::new_full())
-                    .with_height(DynVal::new_full())
+                    .with_width(DynVal::full())
+                    .with_height(DynVal::full())
                     .with_no_wordwrap()
                     .at(DynVal::new_fixed(0), DynVal::new_fixed(0));
 
