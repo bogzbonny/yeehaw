@@ -328,7 +328,7 @@ impl DrawChs2D {
         DrawChs2D(chs)
     }
 
-    // filles a new empty DrawChs2D to the provided size
+    /// filles a new empty DrawChs2D to the provided size
     pub fn new_empty_of_size(width: usize, height: usize, sty: Style) -> DrawChs2D {
         let mut out = Vec::new();
         for _ in 0..height {
@@ -346,12 +346,16 @@ impl DrawChs2D {
     }
 
     pub fn from_string(text: String, sty: Style) -> DrawChs2D {
+        let s = Size::get_text_size(&text);
+        let mut out = Self::new_empty_of_size(s.width as usize, s.height as usize, sty.clone());
+
         let lines = text.split('\n');
-        let mut chs = Vec::new();
-        for line in lines {
-            chs.push(DrawCh::str_to_draw_chs(line, sty.clone()));
+        for (y, line) in lines.enumerate() {
+            for (x, c) in line.chars().enumerate() {
+                out[y][x] = DrawCh::new(c, sty.clone());
+            }
         }
-        DrawChs2D(chs)
+        out
     }
 
     pub fn from_char(ch: char, sty: Style) -> DrawChs2D {
@@ -449,8 +453,44 @@ impl DrawChs2D {
         *chplus = ch;
     }
 
+    /// pads the DrawChs2D with the provided character added to the lefthand side the
+    /// `amount` number of columns
+    pub fn pad_left(&mut self, ch: DrawCh, amount: usize) {
+        for line in self.0.iter_mut() {
+            for _ in 0..amount {
+                line.insert(0, ch.clone());
+            }
+        }
+    }
+
+    /// pads the DrawChs2D with the provided character added to the righthand side the
+    /// `amount` number of columns
+    pub fn pad_right(&mut self, ch: DrawCh, amount: usize) {
+        for line in self.0.iter_mut() {
+            for _ in 0..amount {
+                line.push(ch.clone());
+            }
+        }
+    }
+
+    /// pads the DrawChs2D with the provided character added to the top the
+    /// `amount` number of rows
+    pub fn pad_top(&mut self, ch: DrawCh, amount: usize) {
+        for _ in 0..amount {
+            self.0.insert(0, vec![ch.clone(); self.width()]);
+        }
+    }
+
+    /// pads the DrawChs2D with the provided character added to the bottom the
+    /// `amount` number of rows
+    pub fn pad_bottom(&mut self, ch: DrawCh, amount: usize) {
+        for _ in 0..amount {
+            self.0.push(vec![ch.clone(); self.width()]);
+        }
+    }
+
     // TODO rename concat_right
-    // concats the two arrays with self to the left of chs2
+    /// concats the two arrays with self to the left of chs2
     pub fn concat_left_right(&self, chs2: DrawChs2D) -> Result<DrawChs2D, Error> {
         if self.0.is_empty() && !chs2.0.is_empty() {
             return Ok(chs2.clone());
@@ -470,7 +510,7 @@ impl DrawChs2D {
         Ok(chs)
     }
 
-    // concats the two arrays with chs on top of chs2
+    /// concats the two arrays with chs on top of chs2
     pub fn concat_top_bottom(&self, chs2: DrawChs2D) -> DrawChs2D {
         if self.0.is_empty() && !chs2.0.is_empty() {
             return chs2.clone();
@@ -483,8 +523,8 @@ impl DrawChs2D {
         chs
     }
 
-    // Changes the style of all the characters in the array
-    // at provided y line.
+    /// Changes the style of all the characters in the array
+    /// at provided y line.
     pub fn change_style_at_xy(&mut self, x: usize, y: usize, sty: Style) {
         if y >= self.0.len() {
             return;
@@ -495,8 +535,8 @@ impl DrawChs2D {
         self.0[y][x].style = sty;
     }
 
-    // Changes the style of all the characters in the array
-    // at provided y line.
+    /// Changes the style of all the characters in the array
+    /// at provided y line.
     pub fn change_style_along_y(&mut self, y: usize, sty: Style) {
         if y >= self.0.len() {
             return;
@@ -506,8 +546,8 @@ impl DrawChs2D {
         }
     }
 
-    // Changes the style of all the characters in the array
-    // at provided x column.
+    /// Changes the style of all the characters in the array
+    /// at provided x column.
     pub fn change_style_along_x(&mut self, x: usize, sty: Style) {
         if x >= self.0[0].len() {
             return;

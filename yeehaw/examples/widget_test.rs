@@ -32,6 +32,15 @@ async fn main() -> Result<(), Error> {
     el.add_element(Box::new(button));
     el.add_element(Box::new(button_label));
 
+    let button = Button::new(
+        &ctx,
+        "do not\nclick me",
+        Box::new(|_, _| EventResponses::default()),
+    )
+    .with_description("a button!".to_string())
+    .at(DynVal::new_flex(0.25), DynVal::new_flex(0.15));
+    el.add_element(Box::new(button));
+
     let button2 = Button::new(&ctx, "button2", Box::new(|_, _| EventResponses::default()))
         .with_description("a button!".to_string())
         .with_sides(ButtonSides::default())

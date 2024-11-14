@@ -35,7 +35,6 @@ DONE ^^^^^^
 
 .to_widgets() actually used here:
 yeehaw/src/widgets/widget_textbox.rs:348:    pub fn to_widgets(mut self, ctx: &Context) -> Widgets {
-yeehaw/src/widgets/widget_listbox.rs:188:    pub fn to_widgets(self, ctx: &Context) -> Widgets {
 yeehaw/src/widgets/widget_textbox_numbers.rs:118:    pub fn to_widgets(&self, ctx: &Context) -> Widgets {
 
  - ensure that pre-hooks of set selectibility propogate their resps upwards
@@ -55,9 +54,6 @@ widget_scrollbar.rs        | DONE (not selectable)
 widget_textbox.rs          | 
 widget_textbox_numbers.rs  | 
 widget_toggle.rs           | DONE
-
-
-
 
 05. introduce errors, remove all unwraps
 
@@ -81,6 +77,9 @@ widget_toggle.rs           | DONE
 
 01. border pane text locations (either right, centre, left eg) should all be
     possible at the same time not ONLY one of those three options
+
+01. dropdownlist option to deselect on enter (useful for usage in non-selection
+    parent pane)
 
 01. terminal_editor - get the no-editor elements hooked up.
 01. terminal_editor - autoexpanding based on text size in buffer (like zell
@@ -281,6 +280,9 @@ One letter labels
             OptionG  OptionF
 
 It'd be cool to come up with a "Complex Selector" generalization for the dials. 
+ - for now, this complex selector should probably be the only way to initialize
+   a dial... eventually we could automatically produce the maps, but it can get
+   complicated as the text of the different options changes.
  - probably each version of the dial (3 postion... 8 position etc) should be a
    different complex selector. 
  - All the different states could be fed in manually as DrawCh2Ds 
@@ -289,7 +291,7 @@ It'd be cool to come up with a "Complex Selector" generalization for the dials.
  - Feed in a map of all the different selection positions:
 
       OptionL  OptionA          KKKLLLLLLLLLLAAAAAAAAAABBB
-   OptionK.⟍ __ ⟋.OptionB       JKKKKKKKKKLLLAAA1BBBBBBBBC
+   OptionK.⟍ __ ⟋.OptionB       JKKKKKKKKKLLLAAABBBBBBBBBC
  OptionJ -  ╱  ╲  - OptionC     JJJJJJJJJJJJJCCCCCCCCCCCCC
  OptionI -  ⚬__╱  - OptionD     IIIIIIIIIIIIIDDDDDDDDDDDDD 
    OptionH´⟋    ⟍`OptionE       IHHHHHHHHHGGGFFFEEEEEEEEED

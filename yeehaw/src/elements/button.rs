@@ -58,10 +58,11 @@ impl Default for ButtonSides {
 pub struct ButtonShadow {
     pub shadow_style: Option<Color>,
     /// if None will use a darkened version of the button's bg color
-    pub left: char,
-    pub middle: char,
-    pub right: char,
+    pub bottom_left: char,
+    pub bottom_middle: char,
+    pub bottom_right: char,
     /// beside the button
+    pub right: char,
     pub top_right: char,
 }
 
@@ -69,9 +70,10 @@ impl Default for ButtonShadow {
     fn default() -> Self {
         ButtonShadow {
             shadow_style: None,
-            left: '▝',
-            middle: '▀',
-            right: '▘',
+            bottom_left: '▝',
+            bottom_middle: '▀',
+            bottom_right: '▘',
+            right: '▌',
             top_right: '▖',
         }
     }
@@ -151,13 +153,15 @@ impl Button {
                 let text_sty = self.pane.get_current_style();
                 if *self.clicked_down.borrow() {
                     let non_button_sty = Style::default_const().with_bg(Color::TRANSPARENT);
-                    let left = DrawChs2D::from_string(" ".to_string(), non_button_sty.clone());
-                    let top = DrawChs2D::from_string(format!(" {} ", self.text.borrow()), text_sty);
-                    let top = left.concat_left_right(top).unwrap();
-                    let width = top.width();
-                    // bottom all spaces
-                    let bottom = DrawChs2D::from_string(" ".repeat(width), non_button_sty.clone());
-                    top.concat_top_bottom(bottom)
+                    let mut chs =
+                        DrawChs2D::from_string(format!("{}", self.text.borrow()), text_sty.clone());
+                    let padding = DrawCh::new(' ', text_sty.clone());
+                    let blank = DrawCh::new(' ', non_button_sty.clone());
+                    chs.pad_left(padding.clone(), 1);
+                    chs.pad_right(padding.clone(), 1);
+                    chs.pad_left(blank.clone(), 1);
+                    chs.pad_bottom(blank.clone(), 1);
+                    chs
                 } else {
                     let shadow_sty = match shadow.shadow_style {
                         Some(c) => Style::default_const()
@@ -170,20 +174,26 @@ impl Button {
                                 .with_fg(fg)
                         }
                     };
-                    let top = DrawChs2D::from_string(
-                        format!(" {} ", self.text.borrow()),
-                        text_sty.clone(),
-                    );
-                    let right =
-                        DrawChs2D::from_string(shadow.top_right.to_string(), shadow_sty.clone());
-                    let top = top.concat_left_right(right).unwrap();
-                    let bottom_text = format!(
+                    let mut top =
+                        DrawChs2D::from_string(format!("{}", self.text.borrow()), text_sty.clone());
+                    let padding = DrawCh::new(' ', text_sty.clone());
+                    top.pad_left(padding.clone(), 1);
+                    top.pad_right(padding.clone(), 1);
+
+                    let right_shadow = DrawCh::new(shadow.right, shadow_sty.clone());
+                    top.pad_right(right_shadow.clone(), 1);
+
+                    // adjust the top right corner to be the shadow's top right corner character
+                    let top_right_shadow = DrawCh::new(shadow.top_right, shadow_sty.clone());
+                    top.set_ch(top.width() - 1, 0, top_right_shadow);
+
+                    let bottom_shadow = format!(
                         "{}{}{}",
-                        shadow.left,
-                        shadow.middle.to_string().repeat(top.width() - 2),
-                        shadow.right
+                        shadow.bottom_left,
+                        shadow.bottom_middle.to_string().repeat(top.width() - 2),
+                        shadow.bottom_right
                     );
-                    let bottom = DrawChs2D::from_string(bottom_text, shadow_sty.clone());
+                    let bottom = DrawChs2D::from_string(bottom_shadow, shadow_sty.clone());
                     top.concat_top_bottom(bottom)
                 }
             }
