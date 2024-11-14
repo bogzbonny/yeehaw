@@ -152,6 +152,7 @@ pub fn impl_pane_basics_from(attr: TokenStream, item: TokenStream) -> TokenStrea
     fn set_content_style(&self, sty: Style);
     fn content_width(&self) -> usize;
     fn content_height(&self) -> usize;
+    fn content_size(&self) -> Size;
     fn scroll_up(&self, ctx: &Context);
     fn scroll_down(&self, ctx: &Context);
     fn scroll_left(&self, ctx: &Context);

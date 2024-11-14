@@ -2,7 +2,7 @@ use {
     crate::{
         Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal, Element,
         ElementID, Event, EventResponse, EventResponses, Parent, Priority, ReceivableEventChanges,
-        SelfReceivableEvents, Style, ZIndex,
+        SelfReceivableEvents, Size, Style, ZIndex,
     },
     std::{
         collections::HashMap,
@@ -283,6 +283,10 @@ impl Pane {
 
     pub fn content_height(&self) -> usize {
         self.content.borrow().height()
+    }
+
+    pub fn content_size(&self) -> Size {
+        Size::new(self.content_width() as u16, self.content_height() as u16)
     }
 
     pub fn scroll_up(&self, ctx: &Context) {

@@ -118,8 +118,10 @@ impl ListBox {
     fn with_scrollbar_inner(self, ctx: &Context, pos: VerticalSBPositions) -> Self {
         let height = DynVal::full();
         let content_height = self.inner.borrow().pane.content_height();
+        let content_size = self.inner.borrow().pane.content_size();
 
-        let sb = VerticalScrollbar::new(ctx, height, content_height).without_keyboard_events();
+        let sb = VerticalScrollbar::new(ctx, height, content_size, content_height)
+            .without_keyboard_events();
         match pos {
             VerticalSBPositions::ToTheLeft => {
                 sb.set_at(0.into(), 0.into());
@@ -289,7 +291,11 @@ impl ListBoxInner {
 
         // call the scrollbar external change hook if it exists
         if let Some(sb) = self.scrollbar.borrow().as_ref() {
-            sb.external_change(y_offset, self.pane.content_height());
+            sb.external_change(
+                y_offset,
+                self.pane.content_height(),
+                self.pane.content_size(),
+            );
         }
         self.is_dirty.replace(true);
     }

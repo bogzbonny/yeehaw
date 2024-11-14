@@ -2,7 +2,7 @@ use {
     crate::{
         Color, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal, Element,
         ElementID, ElementOrganizer, Event, EventResponse, EventResponses, Pane, Parent, Priority,
-        ReceivableEventChanges, SelfReceivableEvents, Style, ZIndex,
+        ReceivableEventChanges, SelfReceivableEvents, Size, Style, ZIndex,
     },
     std::collections::HashMap,
     std::{

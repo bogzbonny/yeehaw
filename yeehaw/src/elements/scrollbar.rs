@@ -66,7 +66,10 @@ impl VerticalScrollbar {
             (KB::KEY_SPACE.into(), Priority::Focused),
         ])
     }
-    pub fn new(ctx: &Context, scrollable_view_height: DynVal, scrollable_height: usize) -> Self {
+    pub fn new(
+        ctx: &Context, scrollable_view_height: DynVal, scrollable_view_size: Size,
+        scrollable_height: usize,
+    ) -> Self {
         let pane = Pane::new(ctx, Self::KIND)
             .with_self_receivable_events(Self::default_receivable_events())
             .with_style(Scrollbar::STYLE)
@@ -77,6 +80,7 @@ impl VerticalScrollbar {
             pane,
             scrollable_domain_chs: Rc::new(RefCell::new(scrollable_height)),
             scrollable_view_chs: Rc::new(RefCell::new(scrollable_view_height.clone())),
+            scrollable_view_size: Rc::new(RefCell::new(scrollable_view_size)),
             scrollbar_length_chs: Rc::new(RefCell::new(scrollable_view_height)),
             scrollable_position: Rc::new(RefCell::new(0)),
             has_arrows: Rc::new(RefCell::new(true)),
@@ -147,7 +151,10 @@ impl HorizontalScrollbar {
             (KB::KEY_RIGHT.into(), Priority::Focused),
         ])
     }
-    pub fn new(ctx: &Context, scrollable_view_width: DynVal, scrollable_width: usize) -> Self {
+    pub fn new(
+        ctx: &Context, scrollable_view_width: DynVal, scrollable_view_size: Size,
+        scrollable_width: usize,
+    ) -> Self {
         let pane = Pane::new(ctx, Self::KIND)
             .with_self_receivable_events(Self::default_receivable_events())
             .with_style(Scrollbar::STYLE)
@@ -158,6 +165,7 @@ impl HorizontalScrollbar {
             pane,
             scrollable_domain_chs: Rc::new(RefCell::new(scrollable_width)),
             scrollable_view_chs: Rc::new(RefCell::new(scrollable_view_width.clone())),
+            scrollable_view_size: Rc::new(RefCell::new(scrollable_view_size)),
             scrollbar_length_chs: Rc::new(RefCell::new(scrollable_view_width)),
             scrollable_position: Rc::new(RefCell::new(0)),
             has_arrows: Rc::new(RefCell::new(true)),
@@ -247,6 +255,10 @@ pub struct Scrollbar {
 
     /// how much of the scrollable area is visible in true chars.
     pub scrollable_view_chs: Rc<RefCell<DynVal>>,
+
+    /// used during the construction of the context during
+    /// hook calls to the view
+    pub scrollable_view_size: Rc<RefCell<Size>>,
 
     /// Length of the actual scrollbar (and arrows) in true characters.
     /// Typically this is the same as ScrollableViewChs, however some situations
@@ -384,7 +396,9 @@ impl Scrollbar {
         }
         *self.scrollable_position.borrow_mut() = position;
         if let Some(hook) = self.position_changed_hook.borrow_mut().as_mut() {
-            hook(ctx.clone(), position);
+            let mut ctx = ctx.clone();
+            ctx.s = self.scrollable_view_size.borrow().clone();
+            hook(ctx, position);
         }
     }
 
@@ -419,7 +433,9 @@ impl Scrollbar {
         }
         *self.scrollable_position.borrow_mut() -= 1;
         if let Some(hook) = self.position_changed_hook.borrow_mut().as_mut() {
-            hook(ctx.clone(), *self.scrollable_position.borrow());
+            let mut ctx = ctx.clone();
+            ctx.s = self.scrollable_view_size.borrow().clone();
+            hook(ctx, *self.scrollable_position.borrow());
         }
     }
 
@@ -430,7 +446,9 @@ impl Scrollbar {
         }
         *self.scrollable_position.borrow_mut() += 1;
         if let Some(hook) = self.position_changed_hook.borrow_mut().as_mut() {
-            hook(ctx.clone(), *self.scrollable_position.borrow());
+            let mut ctx = ctx.clone();
+            ctx.s = self.scrollable_view_size.borrow().clone();
+            hook(ctx, *self.scrollable_position.borrow());
         }
     }
 
@@ -614,9 +632,12 @@ impl Scrollbar {
     /// Call this when the position has been changed external to the scrollbar
     /// new_view_offset is the new position of the view in full characters
     /// new_view_domain is the number of full characters of the full scrollable domain
-    pub fn external_change(&self, new_view_offset: usize, new_domain_chs: usize) {
+    pub fn external_change(
+        &self, new_view_offset: usize, new_domain_chs: usize, scrollable_view_size: Size,
+    ) {
         *self.scrollable_position.borrow_mut() = new_view_offset;
         *self.scrollable_domain_chs.borrow_mut() = new_domain_chs;
+        *self.scrollable_view_size.borrow_mut() = scrollable_view_size;
     }
 
     /// is the provided position before, on, or after the scrollbar?
@@ -686,15 +707,21 @@ impl Scrollbar {
 /// Specific implementations for the vertical and horizontal scrollbars
 
 impl VerticalScrollbar {
-    pub fn external_change(&self, new_view_offset: usize, new_domain_chs: usize) {
+    pub fn external_change(
+        &self, new_view_offset: usize, new_domain_chs: usize, scrollable_view_size: Size,
+    ) {
         *self.scrollable_position.borrow_mut() = new_view_offset;
         *self.scrollable_domain_chs.borrow_mut() = new_domain_chs;
+        *self.scrollable_view_size.borrow_mut() = scrollable_view_size;
     }
 }
 impl HorizontalScrollbar {
-    pub fn external_change(&self, new_view_offset: usize, new_domain_chs: usize) {
+    pub fn external_change(
+        &self, new_view_offset: usize, new_domain_chs: usize, scrollable_view_size: Size,
+    ) {
         *self.scrollable_position.borrow_mut() = new_view_offset;
         *self.scrollable_domain_chs.borrow_mut() = new_domain_chs;
+        *self.scrollable_view_size.borrow_mut() = scrollable_view_size;
     }
 }
 

@@ -192,11 +192,13 @@ impl TextBox {
     fn set_y_scrollbar_inner(&self, ctx: &Context, pos: VerticalSBPositions) {
         let height = DynVal::full();
         let content_height = self.inner.borrow().pane.content_height();
+        let content_size = self.inner.borrow().pane.content_size();
 
         // accounts for the other scrollbar
         let inner_start_y = self.inner.borrow().pane.get_dyn_start_y();
 
-        let sb = VerticalScrollbar::new(ctx, height, content_height).without_keyboard_events();
+        let sb = VerticalScrollbar::new(ctx, height, content_size, content_height)
+            .without_keyboard_events();
         match pos {
             VerticalSBPositions::ToTheLeft => {
                 sb.set_at(1.into(), inner_start_y);
@@ -236,6 +238,7 @@ impl TextBox {
     fn set_x_scrollbar_inner(&self, ctx: &Context, pos: HorizontalSBPositions) {
         let width = DynVal::full();
         let content_width = self.inner.borrow().pane.content_height();
+        let content_size = self.inner.borrow().pane.content_size();
 
         // accounts for the other scrollbar
         let mut inner_start_x = self.inner.borrow().pane.get_dyn_start_x();
@@ -243,7 +246,8 @@ impl TextBox {
             inner_start_x = ln_tb.pane.get_dyn_start_x();
         }
 
-        let sb = HorizontalScrollbar::new(ctx, width, content_width).without_keyboard_events();
+        let sb = HorizontalScrollbar::new(ctx, width, content_size, content_width)
+            .without_keyboard_events();
         match pos {
             HorizontalSBPositions::Above => {
                 sb.set_at(inner_start_x, 0.into());
@@ -784,7 +788,11 @@ impl TextBoxInner {
 
         // update the scrollbars/line numbers textbox
         if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
-            sb.external_change(y_offset, self.pane.content_height());
+            sb.external_change(
+                y_offset,
+                self.pane.content_height(),
+                self.pane.content_size(),
+            );
         }
         let resp = EventResponse::default();
         if let Some(ln_tb) = self.line_number_tb.borrow().as_ref() {
@@ -800,7 +808,7 @@ impl TextBoxInner {
             ln_tb.pane.set_content_y_offset(ctx, y_offset);
         }
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
-            sb.external_change(x_offset, self.x_new_domain_chs());
+            sb.external_change(x_offset, self.x_new_domain_chs(), self.pane.content_size());
         }
         resp
     }
@@ -928,10 +936,14 @@ impl TextBoxInner {
             let y_offset = self.pane.get_content_y_offset();
             let x_offset = self.pane.get_content_x_offset();
             if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
-                sb.external_change(y_offset, self.pane.content_height());
+                sb.external_change(
+                    y_offset,
+                    self.pane.content_height(),
+                    self.pane.content_size(),
+                );
             }
             if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
-                sb.external_change(x_offset, self.x_new_domain_chs());
+                sb.external_change(x_offset, self.x_new_domain_chs(), self.pane.content_size());
             }
             return (true, EventResponses::default());
         }

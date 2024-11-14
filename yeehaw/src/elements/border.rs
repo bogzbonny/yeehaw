@@ -29,6 +29,12 @@ pub struct Bordered {
 
     /// how much less the y scrollbar is from the full height
     pub y_scrollbar_sub_from_full: Rc<RefCell<usize>>,
+
+    /// how much less the x scrollbar view width is from the full width
+    pub x_scrollbar_view_sub_from_full: Rc<RefCell<usize>>,
+
+    /// how much less the y scrollbar view width is from the full width
+    pub y_scrollbar_view_sub_from_full: Rc<RefCell<usize>>,
 }
 
 /// property for the border
@@ -102,12 +108,12 @@ impl BorderProperies {
         Self {
             left: Some(PropertyVrt::None),
             right: Some(PropertyVrt::Scrollbar(
-                VerticalScrollbar::new(ctx, 0.into(), 0)
+                VerticalScrollbar::new(ctx, 0.into(), Size::default(), 0)
                     .with_scrollbar_sty(ScrollbarSty::vertical_for_thin_box(sty.clone())),
             )),
             top: Some(PropertyHzt::None),
             bottom: Some(PropertyHzt::Scrollbar(
-                HorizontalScrollbar::new(ctx, 0.into(), 0)
+                HorizontalScrollbar::new(ctx, 0.into(), Size::default(), 0)
                     .with_scrollbar_sty(ScrollbarSty::horizontal_for_thin_box(sty)),
             )),
             top_corner: PropertyCnr::None,
@@ -123,12 +129,14 @@ impl BorderProperies {
             right: Some(PropertyVrt::Scrollbar(VerticalScrollbar::new(
                 ctx,
                 0.into(),
+                Size::default(),
                 0,
             ))),
             top: None,
             bottom: Some(PropertyHzt::Scrollbar(HorizontalScrollbar::new(
                 ctx,
                 0.into(),
+                Size::default(),
                 0,
             ))),
             top_corner: PropertyCnr::None,
@@ -155,12 +163,12 @@ impl BorderProperies {
         Self {
             left: Some(PropertyVrt::DragResize),
             right: Some(PropertyVrt::Scrollbar(
-                VerticalScrollbar::new(ctx, 0.into(), 0)
+                VerticalScrollbar::new(ctx, 0.into(), Size::default(), 0)
                     .with_scrollbar_sty(ScrollbarSty::vertical_for_thin_box(sty.clone())),
             )),
             top: Some(PropertyHzt::DragResize),
             bottom: Some(PropertyHzt::Scrollbar(
-                HorizontalScrollbar::new(ctx, 0.into(), 0)
+                HorizontalScrollbar::new(ctx, 0.into(), Size::default(), 0)
                     .with_scrollbar_sty(ScrollbarSty::horizontal_for_thin_box(sty)),
             )),
             top_corner: PropertyCnr::DragResize,
@@ -568,6 +576,37 @@ impl Bordered {
         Self::new(ctx, inner, chs, properties)
     }
 
+    /// a special case there there is no bottom left corner element
+    /// that position is taken by the scrollbar
+    pub fn new_borderless_with_scrollbars_and_thin_left(
+        ctx: &Context, inner: Box<dyn Element>, sty: Style,
+    ) -> Self {
+        let properties = BorderProperies::new_borderless_with_scrollbars(ctx);
+        let chs = BorderSty::new_borderless(sty.clone());
+        let bordered = Self::new(ctx, inner, chs, properties);
+
+        let start_y: DynVal = 0.into();
+        let end_y = DynVal::full().minus(1.into());
+        let left_loc = DynLocation::new(0.into(), 1.into(), start_y.clone(), end_y);
+
+        let chs_left = DrawCh::new('▏', sty);
+        let side = VerticalSide::new(ctx, chs_left.clone(), VerticalPos::Left, PropertyVrt::None);
+        side.pane.set_dyn_location(left_loc);
+        bordered.pane.add_element(Box::new(side.clone()));
+        bordered.left.borrow_mut().replace(side);
+
+        let mut l = bordered.inner.borrow().get_dyn_location_set().clone();
+        l.l.set_start_x(1.into());
+        //l.l.set_end_x(DynVal::full().minus(2.into()));
+        bordered.inner.borrow_mut().set_dyn_location_set(l);
+
+        // shrink the view portal as understood by the x scrollbar
+        *bordered.x_scrollbar_view_sub_from_full.borrow_mut() += 1;
+        bordered.ensure_scrollbar_size(ctx);
+
+        bordered
+    }
+
     pub fn new_resizer(ctx: &Context, inner: Box<dyn Element>, sty: Style) -> Self {
         let chs = BorderSty::new_thick_single(sty);
         let properties = BorderProperies::new_resizer();
@@ -786,6 +825,8 @@ impl Bordered {
             y_scrollbar: Rc::new(RefCell::new(None)),
             x_scrollbar_sub_from_full: Rc::new(RefCell::new(0)),
             y_scrollbar_sub_from_full: Rc::new(RefCell::new(0)),
+            x_scrollbar_view_sub_from_full: Rc::new(RefCell::new(0)),
+            y_scrollbar_view_sub_from_full: Rc::new(RefCell::new(0)),
         };
 
         let has_top_left_corner = properties.top.is_some() && properties.left.is_some();
@@ -872,6 +913,7 @@ impl Bordered {
                 DynVal::full()
             };
             *bordered.y_scrollbar_sub_from_full.borrow_mut() = y_less;
+            *bordered.y_scrollbar_view_sub_from_full.borrow_mut() = y_less;
             let left_loc = DynLocation::new(0.into(), 1.into(), start_y.clone(), end_y);
 
             if let PropertyVrt::Scrollbar(sb) = left_property {
@@ -915,6 +957,7 @@ impl Bordered {
                 DynVal::full()
             };
             *bordered.y_scrollbar_sub_from_full.borrow_mut() = y_less;
+            *bordered.y_scrollbar_view_sub_from_full.borrow_mut() = y_less;
 
             let right_loc = DynLocation::new(
                 DynVal::full().minus(1.into()),
@@ -964,6 +1007,7 @@ impl Bordered {
                 DynVal::full()
             };
             *bordered.x_scrollbar_sub_from_full.borrow_mut() = x_less;
+            *bordered.x_scrollbar_view_sub_from_full.borrow_mut() = x_less;
 
             let top_loc = DynLocation::new(start_x, end_x, 0.into(), 1.into());
             if let PropertyHzt::Scrollbar(sb) = top_property {
@@ -1003,6 +1047,7 @@ impl Bordered {
                 DynVal::full()
             };
             *bordered.x_scrollbar_sub_from_full.borrow_mut() = x_less;
+            *bordered.x_scrollbar_view_sub_from_full.borrow_mut() = x_less;
 
             let bottom_loc = DynLocation::new(
                 start_x,
@@ -1012,7 +1057,9 @@ impl Bordered {
             );
             if let PropertyHzt::Scrollbar(sb) = bottom_property {
                 let inner_ = inner.clone();
-                let hook = Box::new(move |ctx, x| inner_.set_content_x_offset(&ctx, x));
+                let hook = Box::new(move |ctx, x| {
+                    inner_.set_content_x_offset(&ctx, x);
+                });
                 *sb.position_changed_hook.borrow_mut() = Some(hook);
 
                 // set the scrollbar dimensions/location (as it wasn't done earlier)
@@ -1044,19 +1091,27 @@ impl Bordered {
         if *self.last_size.borrow() != ctx.s {
             let x_sb = self.x_scrollbar.borrow();
             if let Some(x_sb) = x_sb.as_ref() {
+                let view_w: DynVal = DynVal::full()
+                    .minus((*self.x_scrollbar_view_sub_from_full.borrow()).into())
+                    .get_val(ctx.s.width)
+                    .into();
                 let w: DynVal = DynVal::full()
                     .minus((*self.x_scrollbar_sub_from_full.borrow()).into())
                     .get_val(ctx.s.width)
                     .into();
-                x_sb.set_dyn_width(w.clone(), w, None);
+                x_sb.set_dyn_width(view_w, w, None);
             }
             let y_sb = self.y_scrollbar.borrow();
             if let Some(y_sb) = y_sb.as_ref() {
+                let view_h: DynVal = DynVal::full()
+                    .minus((*self.y_scrollbar_view_sub_from_full.borrow()).into())
+                    .get_val(ctx.s.height)
+                    .into();
                 let h: DynVal = DynVal::full()
                     .minus((*self.y_scrollbar_sub_from_full.borrow()).into())
                     .get_val(ctx.s.height)
                     .into();
-                y_sb.set_dyn_height(h.clone(), h, None);
+                y_sb.set_dyn_height(view_h, h, None);
             }
             *self.last_size.borrow_mut() = ctx.s;
         }
@@ -1069,16 +1124,19 @@ impl Element for Bordered {
         self.ensure_scrollbar_size(ctx);
 
         let out = self.pane.receive_event_inner(ctx, ev);
+        let inner_size = self.inner.borrow().get_dyn_location_set().l.get_size(ctx);
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
             sb.external_change(
                 self.inner.borrow().get_content_x_offset(),
                 self.inner.borrow().get_content_width(),
+                inner_size,
             );
         }
         if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
             sb.external_change(
                 self.inner.borrow().get_content_y_offset(),
                 self.inner.borrow().get_content_height(),
+                inner_size,
             );
         }
         out

@@ -71,17 +71,15 @@ async fn main() -> Result<(), Error> {
             .with_default_ch(def_ch)
             .with_style(Style::default().with_bg(bg).with_fg(Color::BLACK));
 
-        //let sc_pane = PaneWithScrollbars::new(
-        //    &ctx_,
-        //    50,
-        //    50,
-        //    HorizontalSBPositions::Below,
-        //    VerticalSBPositions::ToTheRight,
-        //);
-
         let sc_pane = PaneScrollable::new(&ctx_, 50, 50);
         sc_pane.add_element(Box::new(el));
-        let sc_pane = Bordered::new_borderless_with_scrollbars(&ctx_, Box::new(sc_pane), sty);
+        //let sc_pane = Bordered::new_borderless_with_scrollbars(&ctx_, Box::new(sc_pane), sty);
+        let border_sty = sty.clone().with_fg(Color::WHITE);
+        let sc_pane = Bordered::new_borderless_with_scrollbars_and_thin_left(
+            &ctx_,
+            Box::new(sc_pane),
+            border_sty,
+        );
 
         *counter_.borrow_mut() += 1;
         let window = WindowPane::new(&ctx_, Box::new(sc_pane), &title)

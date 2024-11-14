@@ -12,17 +12,16 @@
      ParentPaneOfSelectables
      - external mouse click logic to exist in SelectablePane
      - currently not deregistering OR registering properly from mouse click
+01. micro shadow buttons 
+      ░▏
+01. Special border for windows: left & right scrollbars, no top, thin 8th left
+    line ** Bottom righthand corner as scrollbar!
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 01. Buttons on window test are acting mad funny
      - highlight when mouse moves over them. click minimize, then click maximize
        and multiple registered events occurs
-
-01. Special border for windows: left & right scrollbars, no top, thin 8th left
-    line
-
-01. micro shadow buttons 
-      ░▏
+     - replace with microshadow buttons while I'm at it
 
 WIDGET RECALL REFACTOR
  - Selectibility Hook

@@ -76,7 +76,8 @@ impl DropdownList {
             .with_dyn_height(DynVal::new_fixed(1))
             .with_z(Self::Z_INDEX);
 
-        let sb = VerticalScrollbar::new(ctx, DynVal::new_fixed(0), 0).without_arrows();
+        let sb =
+            VerticalScrollbar::new(ctx, DynVal::new_fixed(0), Size::default(), 0).without_arrows();
 
         //wire the scrollbar to the dropdown list
         let pane_ = pane.clone();
@@ -159,8 +160,11 @@ impl DropdownList {
         let cursor_pos = *self.cursor.borrow();
         self.pane
             .correct_offsets_to_view_position(ctx, 0, cursor_pos);
-        self.scrollbar
-            .external_change(self.pane.get_content_y_offset(), self.pane.content_height());
+        self.scrollbar.external_change(
+            self.pane.get_content_y_offset(),
+            self.pane.content_height(),
+            self.pane.content_size(),
+        );
     }
 
     pub fn calculate_dyn_width(&self) -> DynVal {
@@ -239,7 +243,7 @@ impl DropdownList {
         // that a content_y_offset of 0 is safe. a lil' hacky
         self.pane.set_content_y_offset(&Context::default(), 0);
         self.scrollbar
-            .external_change(0, self.pane.content_height());
+            .external_change(0, self.pane.content_height(), self.pane.content_size());
         self.pane.set_dyn_height(DynVal::new_fixed(1));
     }
 
@@ -248,7 +252,7 @@ impl DropdownList {
         *self.open.borrow_mut() = false;
         self.pane.set_content_y_offset(ctx, 0);
         self.scrollbar
-            .external_change(0, self.pane.content_height());
+            .external_change(0, self.pane.content_height(), self.pane.content_size());
         self.pane.set_dyn_height(DynVal::new_fixed(1));
         if !escaped && *self.selected.borrow() != *self.cursor.borrow() {
             *self.selected.borrow_mut() = *self.cursor.borrow();
