@@ -430,8 +430,9 @@ impl Size {
         let mut max_width = 0;
         let mut height = 0;
         for line in lines {
-            if line.len() > max_width {
-                max_width = line.len();
+            let len = line.chars().count();
+            if len > max_width {
+                max_width = len;
             }
             height += 1;
         }

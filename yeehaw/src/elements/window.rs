@@ -260,9 +260,7 @@ impl WindowPane {
                 self.pane
                     .pane
                     .set_end_x(DynVal::new_fixed(minimize_width.into()));
-                self.pane
-                    .pane
-                    .set_start_y(DynVal::full().minus(1.into()));
+                self.pane.pane.set_start_y(DynVal::full().minus(1.into()));
                 self.pane.pane.set_end_y(DynVal::full());
                 let mut pane_ctx = ctx.clone();
                 pane_ctx.s.height = 1;
@@ -408,8 +406,6 @@ impl WindowPane {
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for WindowPane {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        //debug!("Window({}) receive_event_inner: {:?}", self.id(), ev);
-
         // Skip sending the event into the pane if the event is a drag event and we're currently
         // dragging
         let mut event_to_inner = true;
@@ -479,14 +475,19 @@ impl BasicWindowTopBar {
 
         let btn_styles = SelStyles::new(
             Style::default()
-                .with_bg(Color::GREY20)
+                .with_bg(Color::GREY22)
                 .with_fg(Color::BLACK),
             Style::default()
-                .with_bg(Color::GREY20)
+                .with_bg(Color::GREY22)
                 .with_fg(Color::BLACK),
             Style::default()
-                .with_bg(Color::GREY20)
+                .with_bg(Color::GREY22)
                 .with_fg(Color::BLACK),
+        );
+
+        let shadow_sty = ButtonMicroShadow::new(
+            Some(Color::GREY19),
+            Style::default().with_fg(Color::BLACK).with_bg(Color::BLUE),
         );
 
         let mut button_rhs_spaces = 2;
@@ -495,17 +496,17 @@ impl BasicWindowTopBar {
             let close_button = Button::new(
                 ctx,
                 "x",
-                Box::new(|_, _ctx| {
-                    EventResponse::Metadata(
+                Box::new(|btn, _ctx| {
+                    let mut resps = btn.pane.deselect();
+                    let resp = EventResponse::Metadata(
                         WindowPane::CLOSE_WINDOW_MD_KEY.to_string(),
                         Vec::with_capacity(0),
-                    )
-                    .into()
+                    );
+                    resps.push(resp);
+                    resps
                 }),
             )
-            .basic_button(Some(
-                Style::default().with_fg(Color::BLACK).with_bg(Color::BLUE),
-            ))
+            .with_micro_shadow(shadow_sty.clone())
             .with_styles(btn_styles.clone())
             .at(
                 DynVal::full().minus(button_rhs_spaces.into()),
@@ -521,22 +522,22 @@ impl BasicWindowTopBar {
                 ctx,
                 "□",
                 Box::new(|btn, _ctx| {
+                    let mut resps = btn.pane.deselect();
                     // change the text to the restore icon or back
                     let existing_icon = btn.text.borrow().clone();
                     *btn.text.borrow_mut() = match existing_icon.as_str() {
                         "□" => "◱".to_string(),
                         _ => "□".to_string(),
                     };
-                    EventResponse::Metadata(
+                    let resp = EventResponse::Metadata(
                         WindowPane::MAXIMIZE_WINDOW_MD_KEY.to_string(),
                         Vec::with_capacity(0),
-                    )
-                    .into()
+                    );
+                    resps.push(resp);
+                    resps
                 }),
             )
-            .basic_button(Some(
-                Style::default().with_fg(Color::BLACK).with_bg(Color::BLUE),
-            ))
+            .with_micro_shadow(shadow_sty.clone())
             .with_styles(btn_styles.clone())
             .at(
                 DynVal::full().minus(button_rhs_spaces.into()),
@@ -552,17 +553,17 @@ impl BasicWindowTopBar {
             let minimize_button = Button::new(
                 ctx,
                 "ˍ",
-                Box::new(|_, _ctx| {
-                    EventResponse::Metadata(
+                Box::new(|btn, _ctx| {
+                    let mut resps = btn.pane.deselect();
+                    let resp = EventResponse::Metadata(
                         WindowPane::MINIMIZE_WINDOW_MD_KEY.to_string(),
                         Vec::with_capacity(0),
-                    )
-                    .into()
+                    );
+                    resps.push(resp);
+                    resps
                 }),
             )
-            .basic_button(Some(
-                Style::default().with_fg(Color::BLACK).with_bg(Color::BLUE),
-            ))
+            .with_micro_shadow(shadow_sty)
             .with_styles(btn_styles)
             .at(
                 DynVal::full().minus(button_rhs_spaces.into()),

@@ -73,6 +73,7 @@ impl SelectablePane {
 
     pub fn set_styles(&self, styles: SelStyles) {
         *self.styles.borrow_mut() = styles;
+        self.set_style(self.get_current_style());
     }
 
     pub fn with_styles(self, styles: SelStyles) -> Self {
@@ -197,6 +198,7 @@ impl Element for SelectablePane {
         }
     }
 
+    // XXX delete
     ///// default implementation of drawing
     //fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
     //    let mut chs = self.pane.drawing(ctx);
@@ -229,7 +231,7 @@ impl Element for SelectablePane {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let (captured, mut resps) = match ev {
             Event::Mouse(me) => {
-                if matches!(me.kind, MouseEventKind::Down(_)) {
+                if matches!(me.kind, MouseEventKind::Up(_)) {
                     (false, self.select())
                 } else {
                     (false, EventResponses::default())

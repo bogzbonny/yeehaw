@@ -84,6 +84,7 @@ impl Default for ButtonShadow {
 #[derive(Clone)]
 pub struct ButtonMicroShadow {
     pub shadow_style: Option<Color>,
+    pub depressed_style: Style,
     pub right: char,
 }
 
@@ -91,6 +92,19 @@ impl Default for ButtonMicroShadow {
     fn default() -> Self {
         ButtonMicroShadow {
             shadow_style: None,
+            depressed_style: Style::default_const()
+                .with_fg(Color::BLACK)
+                .with_bg(Color::BLUE),
+            right: '▎',
+        }
+    }
+}
+
+impl ButtonMicroShadow {
+    pub fn new(shadow_style: Option<Color>, depressed_sty: Style) -> Self {
+        ButtonMicroShadow {
+            shadow_style,
+            depressed_style: depressed_sty,
             right: '▎',
         }
     }
@@ -125,6 +139,8 @@ impl Button {
         };
 
         let d = b.button_drawing();
+
+        debug!("button new: {:?}, {}, {}", text, d.width(), d.height());
         b.pane.set_dyn_width(DynVal::new_fixed(d.width() as i32));
         b.pane.set_dyn_height(DynVal::new_fixed(d.height() as i32));
         b.pane.set_content(d);
@@ -217,11 +233,12 @@ impl Button {
             ButtonStyle::MicroShadow(shadow) => {
                 let text_sty = self.pane.get_current_style();
                 if *self.clicked_down.borrow() {
+                    let sty = shadow.depressed_style;
                     let mut chs =
-                        DrawChs2D::from_string(format!("{}", self.text.borrow()), text_sty.clone());
+                        DrawChs2D::from_string(format!("{}", self.text.borrow()), sty.clone());
                     let shadow_sty = Style::default_const()
                         .with_bg(Color::TRANSPARENT)
-                        .with_fg(text_sty.bg.clone().unwrap_or_default().0);
+                        .with_fg(sty.bg.clone().unwrap_or_default().0);
                     let right_shadow = DrawCh::new(shadow.right, shadow_sty);
                     chs.pad_right(right_shadow.clone(), 1);
                     chs
@@ -252,9 +269,22 @@ impl Button {
 
     pub fn with_styles(self, styles: SelStyles) -> Self {
         self.pane.set_styles(styles);
+        self.pane.set_content(self.button_drawing());
         self
     }
 
+    pub fn basic_button(self, sty: Option<Style>) -> Self {
+        *self.button_style.borrow_mut() = ButtonStyle::Basic(sty);
+        let d = self.button_drawing();
+        self.pane
+            .pane
+            .set_dyn_width(DynVal::new_fixed(d.width() as i32));
+        self.pane
+            .pane
+            .set_dyn_height(DynVal::new_fixed(d.height() as i32));
+        self.pane.set_content(d);
+        self
+    }
     pub fn with_sides(self, sides: ButtonSides) -> Self {
         *self.button_style.borrow_mut() = ButtonStyle::Sides(sides);
         let d = self.button_drawing();
@@ -283,19 +313,6 @@ impl Button {
 
     pub fn with_micro_shadow(self, shadow: ButtonMicroShadow) -> Self {
         *self.button_style.borrow_mut() = ButtonStyle::MicroShadow(shadow);
-        let d = self.button_drawing();
-        self.pane
-            .pane
-            .set_dyn_width(DynVal::new_fixed(d.width() as i32));
-        self.pane
-            .pane
-            .set_dyn_height(DynVal::new_fixed(d.height() as i32));
-        self.pane.set_content(d);
-        self
-    }
-
-    pub fn basic_button(self, sty: Option<Style>) -> Self {
-        *self.button_style.borrow_mut() = ButtonStyle::Basic(sty);
         let d = self.button_drawing();
         self.pane
             .pane

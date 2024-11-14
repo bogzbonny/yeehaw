@@ -17,11 +17,12 @@
 01. Special border for windows: left & right scrollbars, no top, thin 8th left
     line ** Bottom righthand corner as scrollbar!
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 01. Buttons on window test are acting mad funny
-     - highlight when mouse moves over them. click minimize, then click maximize
-       and multiple registered events occurs
+     - click but then release somewhere else (making the button focused) then
+       click again - tries to re-register events
      - replace with microshadow buttons while I'm at it
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 WIDGET RECALL REFACTOR
  - Selectibility Hook
@@ -90,6 +91,8 @@ widget_toggle.rs           | DONE
         in a textbox
 
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+01. running "top" inside terminal window shoots the cursor outside of the
+    window! should correct for this
 
 05. integrate in is_dirty logic into the Pane to the drawing. if is_dirty is
     true the pane will call 'update_dirty_content', otherwise it will just
