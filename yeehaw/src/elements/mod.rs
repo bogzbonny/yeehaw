@@ -21,6 +21,7 @@ pub mod shadow;
 pub mod stack;
 pub mod tabs;
 pub mod terminal;
+pub mod textbox;
 //pub mod terminal_editor;
 pub mod toggle;
 pub mod window;
@@ -52,6 +53,7 @@ pub use {
     stack::{HorizontalStack, VerticalStack},
     tabs::Tabs,
     terminal::TerminalPane,
+    textbox::TextBox,
     // XXX
     //terminal_editor::TermEditorPane,
     toggle::Toggle,

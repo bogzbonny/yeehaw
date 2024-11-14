@@ -131,20 +131,18 @@ async fn main() -> Result<(), Error> {
         .at(DynVal::new_flex(0.5), DynVal::new_flex(0.1));
     el.add_element(Box::new(listbox));
 
-    // XXX uncomment
-    //let tb = TextBox::new(&ctx, "hellllllllllllllllllllllllllo\nworld")
-    //    .with_width(DynVal::new_fixed(20))
-    //    .with_height(DynVal::new_fixed(10))
-    //    .with_line_numbers()
-    //    .with_right_scrollbar()
-    //    .with_lower_scrollbar()
-    //    .editable()
-    //    .with_no_wordwrap()
-    //    .at(DynVal::new_fixed(70), DynVal::new_fixed(6))
-    //    .to_widgets(&ctx);
+    let tb = TextBox::new(&ctx, "hellllllllllllllllllllllllllo\nworld")
+        .with_width(DynVal::new_fixed(20))
+        .with_height(DynVal::new_fixed(10))
+        .with_line_numbers(&ctx)
+        .with_right_scrollbar(&ctx)
+        .with_lower_scrollbar(&ctx)
+        .editable()
+        .with_no_wordwrap()
+        .at(DynVal::new_fixed(70), DynVal::new_fixed(6));
+    el.add_element(Box::new(tb));
 
-    //el.add_element(tb);
-
+    // XXX
     //let tb_with_grey = TextBox::new(&ctx, "")
     //    .with_width(DynVal::new_fixed(18))
     //    .with_height(DynVal::new_fixed(1))

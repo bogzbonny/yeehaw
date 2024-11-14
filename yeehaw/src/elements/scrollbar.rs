@@ -58,7 +58,7 @@ pub enum HorizontalSBPositions {
 }
 
 impl VerticalScrollbar {
-    const KIND: &'static str = "widget_vertical_scrollbar";
+    const KIND: &'static str = "vertical_scrollbar";
     pub fn default_receivable_events() -> SelfReceivableEvents {
         SelfReceivableEvents(vec![
             (KB::KEY_UP.into(), Priority::Focused),
@@ -140,7 +140,7 @@ impl VerticalScrollbar {
 }
 
 impl HorizontalScrollbar {
-    const KIND: &'static str = "widget_horizontal_scrollbar";
+    const KIND: &'static str = "horizontal_scrollbar";
     pub fn default_receivable_events() -> SelfReceivableEvents {
         SelfReceivableEvents(vec![
             (KB::KEY_LEFT.into(), Priority::Focused),

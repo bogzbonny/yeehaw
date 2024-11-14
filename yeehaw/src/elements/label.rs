@@ -51,7 +51,7 @@ pub enum LabelPosition {
 pub static LABEL_EV_COMBOS: SelfReceivableEvents = SelfReceivableEvents(vec![]);
 
 impl Label {
-    const KIND: &'static str = "widget_label";
+    const KIND: &'static str = "label";
 
     pub fn new(ctx: &Context, text: &str) -> Self {
         let s = Size::get_text_size(text);

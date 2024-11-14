@@ -38,7 +38,7 @@ pub struct DropdownList {
 }
 
 impl DropdownList {
-    const KIND: &'static str = "widget_dropdownlist";
+    const KIND: &'static str = "dropdownlist";
 
     const STYLE: SelStyles = SelStyles {
         selected_style: Style::new_const(Color::BLACK, Color::YELLOW),

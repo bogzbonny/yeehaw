@@ -8,7 +8,7 @@ pub struct FigletText {
 }
 
 impl FigletText {
-    const KIND: &'static str = "widget_megatext";
+    const KIND: &'static str = "figlet";
 
     pub fn new(ctx: &Context, text: &str, font: FIGfont) -> Self {
         let Some(fig_text) = font.convert(text) else {

@@ -19,7 +19,7 @@ pub struct Toggle {
 }
 
 impl Toggle {
-    const KIND: &'static str = "widget_button";
+    const KIND: &'static str = "button";
 
     const STYLE: SelStyles = SelStyles {
         selected_style: Style::new_const(Color::BLACK, Color::LIGHT_YELLOW2),

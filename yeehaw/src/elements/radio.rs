@@ -33,7 +33,7 @@ pub struct RadioButtons {
 /// ⍟ ◉ ◯ ○
 
 impl RadioButtons {
-    const KIND: &'static str = "widget_radio";
+    const KIND: &'static str = "radio";
 
     const STYLE: SelStyles = SelStyles {
         selected_style: Style::new_const(Color::YELLOW, Color::TRANSPARENT),

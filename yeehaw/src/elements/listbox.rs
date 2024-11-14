@@ -55,6 +55,8 @@ pub enum SelectionMode {
 }
 
 impl ListBox {
+    const KIND: &'static str = "listbox";
+
     pub fn new(
         ctx: &Context, entries: Vec<String>,
         selection_made_fn: Box<dyn FnMut(Context, Vec<String>) -> EventResponses>,
@@ -67,10 +69,8 @@ impl ListBox {
         let line_count = entries.iter().map(|r| r.lines().count()).sum::<usize>() as i32;
         let inner = ListBoxInner::new(ctx, entries, selection_made_fn);
 
-        let pane = SelectablePane::new(ctx, ListBoxInner::KIND)
+        let pane = SelectablePane::new(ctx, Self::KIND)
             .with_styles(ListBoxInner::STYLE)
-            //.with_dyn_width(DynVal::new_fixed(inner.pane.get_width(ctx) as i32))
-            //.with_dyn_height(DynVal::new_fixed(inner.pane.get_height(ctx) as i32));
             .with_dyn_width(DynVal::new_fixed(max_entry_width as i32))
             .with_dyn_height(DynVal::new_fixed(line_count));
         pane.pane.add_element(Box::new(inner.clone()));
@@ -120,7 +120,7 @@ impl ListBox {
         let sb = VerticalScrollbar::new(ctx, height, content_height).without_keyboard_events();
         match pos {
             VerticalSBPositions::ToTheLeft => {
-                sb.set_at(1.into(), 0.into());
+                sb.set_at(0.into(), 0.into());
                 self.inner.borrow().pane.set_start_x(1.into());
             }
             VerticalSBPositions::ToTheRight => {
@@ -184,7 +184,7 @@ impl ListBox {
 }
 
 impl ListBoxInner {
-    const KIND: &'static str = "widget_listbox";
+    const KIND: &'static str = "listbox_inner";
 
     const STYLE: SelStyles = SelStyles {
         selected_style: Style::new_const(Color::BLACK, Color::YELLOW),

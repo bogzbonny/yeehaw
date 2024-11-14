@@ -63,6 +63,24 @@ widget_toggle.rs           | DONE
 
 01. add docs, crates button banners to github readme
 
+01. showcase example 
+      - sweet figlet text up top "Yeahaw showcase"
+      - dial with window types 
+        - terminal as one of them
+      - window generator button
+      - a menu
+         - some hidden funny stuff on some items
+         - tic tac toe
+      - a split stack with some tabs
+        and funky gradient examples
+         - maybe some dials which can change the
+           gradient colors / angle / size
+      - a big "DO NOT PRESS button" 
+        which instigates the blue screen of death
+      - neovim editor
+      - buncha widgets which dont do much but log their results 
+        in a textbox
+
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 05. integrate in is_dirty logic into the Pane to the drawing. if is_dirty is

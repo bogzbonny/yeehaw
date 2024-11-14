@@ -22,7 +22,7 @@ pub struct Checkbox {
 }
 
 impl Checkbox {
-    const KIND: &'static str = "widget_checkbox";
+    const KIND: &'static str = "checkbox";
 
     const STYLE: SelStyles = SelStyles {
         //selected_style: Style::new_const(Color::BLACK, Color::LIGHT_YELLOW2)

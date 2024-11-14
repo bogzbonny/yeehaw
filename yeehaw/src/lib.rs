@@ -31,11 +31,11 @@ pub use {
         HorizontalSBPositions, HorizontalScrollbar, HorizontalStack, ImageViewer, Label, ListBox,
         MenuBar, Pane, PaneScrollable, ParentPane, ParentPaneOfSelectable, RadioButtons,
         RightClickMenu, ScrollbarSty, SelStyles, Selectability, SelectablePane, Shadowed, Tabs,
-        TerminalPane, Toggle, VerticalSBPositions, VerticalScrollbar, VerticalStack, WindowPane,
+        TerminalPane, TextBox, Toggle, VerticalSBPositions, VerticalScrollbar, VerticalStack,
+        WindowPane,
     },
     // XXX bring back post widger recall
     //TermEditorPane,
-    //TextBox,
     //NumbersTextBox,
     errors::Error,
     event::{
