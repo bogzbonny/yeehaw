@@ -87,8 +87,10 @@ impl ListBox {
                     *lb_.inner.borrow().cursor.borrow_mut() = None;
                 }
                 *lb_.inner.borrow().selectedness.borrow_mut() = sel;
+                *lb_.inner.borrow().current_sty.borrow_mut() = lb_.pane.get_current_style();
                 *lb_.inner.borrow().is_dirty.borrow_mut() = true;
             }));
+        *lb.inner.borrow().current_sty.borrow_mut() = lb.pane.get_current_style();
         lb
     }
 
@@ -445,11 +447,6 @@ impl Element for ListBox {
             return (false, EventResponses::default());
         }
         self.pane.receive_event(ctx, ev)
-    }
-
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        *self.inner.borrow().current_sty.borrow_mut() = self.pane.get_current_style();
-        self.pane.drawing(ctx)
     }
 }
 

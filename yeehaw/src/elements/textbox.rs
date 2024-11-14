@@ -37,13 +37,25 @@ impl TextBox {
             .with_styles(TextBoxInner::STYLE);
         let inner = TextBoxInner::new(ctx, text);
         pane.pane.add_element(Box::new(inner.clone()));
-        TextBox {
+        let tb = TextBox {
             pane,
             inner: Rc::new(RefCell::new(inner)),
             x_scrollbar: Rc::new(RefCell::new(None)),
             y_scrollbar: Rc::new(RefCell::new(None)),
             line_number_tb: Rc::new(RefCell::new(None)),
-        }
+        };
+
+        let tb_ = tb.clone();
+        tb.pane
+            .set_post_hook_for_set_selectability(Box::new(move |_, _| {
+                let sel = tb_.pane.get_selectability();
+                *tb_.inner.borrow().selectedness.borrow_mut() = sel;
+                *tb_.inner.borrow().current_sty.borrow_mut() = tb_.pane.get_current_style();
+                if sel != Selectability::Selected {
+                    *tb_.inner.borrow().visual_mode.borrow_mut() = false;
+                }
+            }));
+        tb
     }
 
     // XXX integrate
@@ -280,7 +292,7 @@ impl TextBox {
     }
 
     pub fn with_styles(self, styles: SelStyles) -> Self {
-        self.inner.borrow().pane.set_styles(styles);
+        self.pane.set_styles(styles);
         self
     }
 
@@ -351,7 +363,7 @@ impl TextBox {
             .with_height(DynVal::full())
             .with_no_wordwrap()
             .non_editable();
-        ln_tb.pane.set_selectability(Selectability::Unselectable);
+        //ln_tb.pane.set_selectability(Selectability::Unselectable);
         self.pane.pane.add_element(Box::new(ln_tb.clone()));
 
         let new_inner_start_x = start_x.plus_fixed(lnw as i32);
@@ -437,7 +449,9 @@ impl Element for TextBox {
 #[allow(clippy::type_complexity)]
 #[derive(Clone)]
 pub struct TextBoxInner {
-    pub pane: SelectablePane,
+    pub pane: Pane,
+    pub current_sty: Rc<RefCell<Style>>,
+    pub selectedness: Rc<RefCell<Selectability>>,
     pub text: Rc<RefCell<Vec<char>>>,
     pub text_when_empty: Rc<RefCell<String>>,
     /// greyed out text when the textbox is empty
@@ -523,14 +537,15 @@ impl TextBoxInner {
 
     pub fn new<S: Into<String>>(ctx: &Context, text: S) -> Self {
         let text = text.into();
-        let pane = SelectablePane::new(ctx, Self::KIND)
+        let pane = Pane::new(ctx, Self::KIND)
             .with_dyn_width(DynVal::full())
             .with_dyn_height(DynVal::full())
-            .with_styles(Self::STYLE)
             .with_self_receivable_events(Self::editable_receivable_events());
 
         let tb = TextBoxInner {
             pane,
+            current_sty: Rc::new(RefCell::new(Style::default())),
+            selectedness: Rc::new(RefCell::new(Selectability::Ready)),
             text: Rc::new(RefCell::new(text.chars().collect())),
             text_when_empty: Rc::new(RefCell::new("enter text...".to_string())),
             text_when_empty_fg: Rc::new(RefCell::new(Color::GREY6)),
@@ -573,17 +588,6 @@ impl TextBoxInner {
             ],
         );
         *tb.right_click_menu.borrow_mut() = Some(rcm);
-
-        let tb_ = tb.clone();
-        tb.pane
-            .set_post_hook_for_set_selectability(Box::new(move |_, _| {
-                let sel = tb_.pane.get_selectability();
-                if sel != Selectability::Selected {
-                    *tb_.visual_mode.borrow_mut() = false;
-                }
-            }));
-
-        tb.pane.set_content_style(tb.pane.get_current_style());
 
         let _ = tb.drawing(ctx); // to set the pane content
         tb
@@ -787,14 +791,12 @@ impl TextBoxInner {
             let (lns, lnw) = self.get_line_numbers(ctx);
             let last_lnw = ln_tb.pane.get_width(ctx);
             if lnw != last_lnw {
-                let diff_lnw = lnw as i32 - last_lnw as i32;
-                let new_tb_width = self.pane.get_dyn_width().minus_fixed(diff_lnw);
-                self.pane
-                    .set_start_x(self.pane.get_dyn_start_x().plus_fixed(diff_lnw));
-                self.pane.set_dyn_width(new_tb_width);
+                let ln_start_x = ln_tb.pane.get_dyn_start_x();
+                let tb_start_x = ln_start_x.plus_fixed(lnw as i32);
+                self.pane.set_start_x(tb_start_x);
+                ln_tb.pane.set_dyn_width(DynVal::new_fixed(lnw as i32))
             }
             ln_tb.set_text(lns);
-            ln_tb.pane.set_dyn_width(DynVal::new_fixed(lnw as i32));
             ln_tb.pane.set_content_y_offset(ctx, y_offset);
         }
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
@@ -901,7 +903,7 @@ impl TextBoxInner {
     }
 
     pub fn receive_key_event(&self, ctx: &Context, ev: Vec<KeyEvent>) -> (bool, EventResponses) {
-        if self.pane.get_selectability() != Selectability::Selected || ev.is_empty() {
+        if *self.selectedness.borrow() != Selectability::Selected || ev.is_empty() {
             return (false, EventResponses::default());
         }
 
@@ -1099,7 +1101,7 @@ impl TextBoxInner {
             }
         }
 
-        let selectedness = self.pane.get_selectability();
+        let selectedness = *self.selectedness.borrow();
         let cursor_pos = self.get_cursor_pos();
         match ev.kind {
             MouseEventKind::ScrollDown
@@ -1271,42 +1273,43 @@ impl Element for TextBoxInner {
         let w = self.get_wrapped(ctx);
         let wrapped = w.wrapped_string();
 
+        let curr_sty = self.current_sty.borrow().clone();
+        let mut sty = curr_sty.clone();
         if wrapped.len() == 1
             && *self.ch_cursor.borrow()
-            && self.pane.get_selectability() != Selectability::Selected
+            && *self.selectedness.borrow() != Selectability::Selected
         {
             // set greyed out text
             let text = self.text_when_empty.borrow();
-            let mut sty = self.pane.get_current_style();
             sty.set_fg(self.text_when_empty_fg.borrow().clone());
             self.pane
                 .set_content_from_string_with_style(ctx, &text, sty);
             return self.pane.drawing(ctx);
         } else {
-            self.pane.set_content_from_string(&wrapped);
+            self.pane
+                .set_content_from_string_with_style(ctx, &wrapped, sty);
         }
 
-        // set styles from hooks
+        // set styles from hooks if applicable
         if let Some(hook) = &mut *self.position_style_hook.borrow_mut() {
             for wr_ch in w.chs.iter() {
-                let existing_sty = self.pane.get_current_style();
+                let existing_sty = curr_sty.clone();
                 if wr_ch.abs_pos.is_none() {
                     continue;
                 }
                 let sty = hook(ctx.clone(), wr_ch.abs_pos.unwrap(), existing_sty);
-                self.pane.pane.pane.content.borrow_mut().change_style_at_xy(
-                    wr_ch.x_pos,
-                    wr_ch.y_pos,
-                    sty,
-                );
+                self.pane
+                    .content
+                    .borrow_mut()
+                    .change_style_at_xy(wr_ch.x_pos, wr_ch.y_pos, sty);
             }
         }
 
         // set cursor style
-        if self.pane.get_selectability() == Selectability::Selected && *self.ch_cursor.borrow() {
+        if *self.selectedness.borrow() == Selectability::Selected && *self.ch_cursor.borrow() {
             let (cur_x, cur_y) = w.cursor_x_and_y(self.get_cursor_pos());
             if let (Some(cur_x), Some(cur_y)) = (cur_x, cur_y) {
-                self.pane.pane.pane.content.borrow_mut().change_style_at_xy(
+                self.pane.content.borrow_mut().change_style_at_xy(
                     cur_x,
                     cur_y,
                     self.cursor_style.borrow().clone(),
@@ -1321,7 +1324,7 @@ impl Element for TextBoxInner {
             let end = if start_pos < cur_pos { cur_pos } else { start_pos };
             for i in start..=end {
                 if let (Some(cur_x), Some(cur_y)) = w.cursor_x_and_y(i) {
-                    self.pane.pane.pane.content.borrow_mut().change_style_at_xy(
+                    self.pane.content.borrow_mut().change_style_at_xy(
                         cur_x,
                         cur_y,
                         self.cursor_style.borrow().clone(),

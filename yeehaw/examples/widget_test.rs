@@ -45,8 +45,13 @@ async fn main() -> Result<(), Error> {
         .with_description("a button!".to_string())
         .with_sides(ButtonSides::default())
         .at(DynVal::new_flex(0.25), DynVal::new_flex(0.29));
-
     el.add_element(Box::new(button2));
+
+    let button3 = Button::new(&ctx, "b", Box::new(|_, _| EventResponses::default()))
+        .with_description("a button!".to_string())
+        .with_micro_shadow(ButtonMicroShadow::default())
+        .at(DynVal::new_flex(0.25), DynVal::new_flex(0.10));
+    el.add_element(Box::new(button3));
 
     let cb = Checkbox::new(&ctx).at(DynVal::new_flex(0.1), DynVal::new_flex(0.1));
     let cb_label = Label::new_for_el(&ctx, cb.get_dyn_location_set().l.clone(), "check me");
@@ -131,15 +136,24 @@ async fn main() -> Result<(), Error> {
         .at(DynVal::new_flex(0.5), DynVal::new_flex(0.1));
     el.add_element(Box::new(listbox));
 
-    let tb = TextBox::new(&ctx, "hellllllllllllllllllllllllllo\nworld")
-        .with_width(DynVal::new_fixed(20))
-        .with_height(DynVal::new_fixed(10))
-        .with_line_numbers(&ctx)
-        .with_right_scrollbar(&ctx)
-        .with_lower_scrollbar(&ctx)
-        .editable()
-        .with_no_wordwrap()
-        .at(DynVal::new_fixed(70), DynVal::new_fixed(6));
+    //let tb = TextBox::new(
+    //    &ctx,
+    //    "012345678901234567890123456789 \
+    //    \n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9",
+    //)
+    let tb = TextBox::new(
+        &ctx,
+        "012345678901234567890123456789 \
+        \n1",
+    )
+    .with_width(DynVal::new_fixed(20))
+    .with_height(DynVal::new_fixed(10))
+    .with_lower_scrollbar(&ctx)
+    .with_right_scrollbar(&ctx)
+    //.with_line_numbers(&ctx)
+    .editable()
+    .with_no_wordwrap()
+    .at(DynVal::new_fixed(70), DynVal::new_fixed(6));
     el.add_element(Box::new(tb));
 
     // XXX

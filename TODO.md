@@ -14,6 +14,15 @@
      - currently not deregistering OR registering properly from mouse click
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+01. Buttons on window test are acting mad funny
+     - highlight when mouse moves over them. click minimize, then click maximize
+       and multiple registered events occurs
+
+01. Special border for windows: left & right scrollbars, no top, thin 8th left
+    line
+
+01. micro shadow buttons 
+      ░▏
 
 WIDGET RECALL REFACTOR
  - Selectibility Hook
@@ -336,6 +345,16 @@ It'd be cool to come up with a "Complex Selector" generalization for the dials.
     - △▷▽◁
     - ◢◥◤◣
     - ◥◢◣◤
+
+
+10. dragable file-like icon object:
+       ┌────┐
+       │prev│
+       └────┘
+     my-file.txt
+
+   - double click hook action
+   - make a few different fun icons, (a scroll for text files?)
 
 10. color-pallet element
 

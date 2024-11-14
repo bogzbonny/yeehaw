@@ -24,6 +24,8 @@ pub enum ButtonStyle {
     /// style when depressed
     Sides(ButtonSides),
     Shadow(ButtonShadow),
+    // a very thin righthand shadow: `░▏`
+    MicroShadow(ButtonMicroShadow),
 }
 
 /// ideas
@@ -75,6 +77,21 @@ impl Default for ButtonShadow {
             bottom_right: '▘',
             right: '▌',
             top_right: '▖',
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct ButtonMicroShadow {
+    pub shadow_style: Option<Color>,
+    pub right: char,
+}
+
+impl Default for ButtonMicroShadow {
+    fn default() -> Self {
+        ButtonMicroShadow {
+            shadow_style: None,
+            right: '▎',
         }
     }
 }
@@ -197,6 +214,36 @@ impl Button {
                     top.concat_top_bottom(bottom)
                 }
             }
+            ButtonStyle::MicroShadow(shadow) => {
+                let text_sty = self.pane.get_current_style();
+                if *self.clicked_down.borrow() {
+                    let mut chs =
+                        DrawChs2D::from_string(format!("{}", self.text.borrow()), text_sty.clone());
+                    let shadow_sty = Style::default_const()
+                        .with_bg(Color::TRANSPARENT)
+                        .with_fg(text_sty.bg.clone().unwrap_or_default().0);
+                    let right_shadow = DrawCh::new(shadow.right, shadow_sty);
+                    chs.pad_right(right_shadow.clone(), 1);
+                    chs
+                } else {
+                    let shadow_sty = match shadow.shadow_style {
+                        Some(c) => Style::default_const()
+                            .with_bg(Color::TRANSPARENT)
+                            .with_fg(c),
+                        None => {
+                            let fg = text_sty.bg.clone().unwrap_or_default().0.darken();
+                            Style::default_const()
+                                .with_bg(Color::TRANSPARENT)
+                                .with_fg(fg)
+                        }
+                    };
+                    let mut chs =
+                        DrawChs2D::from_string(format!("{}", self.text.borrow()), text_sty);
+                    let right_shadow = DrawCh::new(shadow.right, shadow_sty.clone());
+                    chs.pad_right(right_shadow.clone(), 1);
+                    chs
+                }
+            }
         }
     }
 
@@ -223,6 +270,19 @@ impl Button {
 
     pub fn with_shadow(self, shadow: ButtonShadow) -> Self {
         *self.button_style.borrow_mut() = ButtonStyle::Shadow(shadow);
+        let d = self.button_drawing();
+        self.pane
+            .pane
+            .set_dyn_width(DynVal::new_fixed(d.width() as i32));
+        self.pane
+            .pane
+            .set_dyn_height(DynVal::new_fixed(d.height() as i32));
+        self.pane.set_content(d);
+        self
+    }
+
+    pub fn with_micro_shadow(self, shadow: ButtonMicroShadow) -> Self {
+        *self.button_style.borrow_mut() = ButtonStyle::MicroShadow(shadow);
         let d = self.button_drawing();
         self.pane
             .pane

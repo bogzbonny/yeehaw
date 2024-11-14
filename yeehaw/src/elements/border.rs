@@ -442,6 +442,12 @@ impl BorderSty {
         }
     }
 
+    /// ```text
+    /// ▗▄▄▄▄▄▄▖
+    /// ▐      ▌
+    /// ▐      ▌
+    /// ▝▀▀▀▀▀▀▘
+    /// ```
     pub fn new_tight_half_block(sty: Style) -> Self {
         Self {
             left: DrawCh::new('▐', sty.clone()),
@@ -455,6 +461,12 @@ impl BorderSty {
         }
     }
 
+    /// ```text
+    /// ▛▀▀▀▀▀▀▜
+    /// ▌      ▐
+    /// ▌      ▐
+    /// ▙▄▄▄▄▄▄▟
+    /// ```
     pub fn new_large_half_block(sty: Style) -> Self {
         Self {
             left: DrawCh::new('▌', sty.clone()),
@@ -465,6 +477,44 @@ impl BorderSty {
             top_right: DrawCh::new('▜', sty.clone()),
             bottom_left: DrawCh::new('▙', sty.clone()),
             bottom_right: DrawCh::new('▟', sty),
+        }
+    }
+
+    /// ```text
+    /// ▛▔▔▔▔▔▔▜
+    /// ▏      ▕
+    /// ▏      ▕
+    /// ▙▁▁▁▁▁▁▟
+    /// ```
+    pub fn new_large_eighth_block(sty: Style) -> Self {
+        Self {
+            left: DrawCh::new('▏', sty.clone()),
+            right: DrawCh::new('▕', sty.clone()),
+            top: DrawCh::new('▔', sty.clone()),
+            bottom: DrawCh::new('▁', sty.clone()),
+            top_left: DrawCh::new('▛', sty.clone()),
+            top_right: DrawCh::new('▜', sty.clone()),
+            bottom_left: DrawCh::new('▙', sty.clone()),
+            bottom_right: DrawCh::new('▟', sty),
+        }
+    }
+
+    /// ```text
+    ///  ▁▁▁▁▁▁▁▁   
+    /// ▕hello   ▏
+    /// ▕whats up▏
+    ///  ▔▔▔▔▔▔▔▔
+    /// ```
+    pub fn new_thin_eighth_block(sty: Style) -> Self {
+        Self {
+            left: DrawCh::new('▏', sty.clone()),
+            right: DrawCh::new('▕', sty.clone()),
+            top: DrawCh::new('▔', sty.clone()),
+            bottom: DrawCh::new('▁', sty.clone()),
+            top_left: DrawCh::new(' ', sty.clone()),
+            top_right: DrawCh::new(' ', sty.clone()),
+            bottom_left: DrawCh::new(' ', sty.clone()),
+            bottom_right: DrawCh::new(' ', sty),
         }
     }
 
