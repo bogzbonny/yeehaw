@@ -81,7 +81,6 @@ impl VerticalScrollbar {
             scrollable_domain_chs: Rc::new(RefCell::new(scrollable_height)),
             scrollable_view_chs: Rc::new(RefCell::new(scrollable_view_height.clone())),
             scrollable_view_size: Rc::new(RefCell::new(scrollable_view_size)),
-            scrollbar_length_chs: Rc::new(RefCell::new(scrollable_view_height)),
             scrollable_position: Rc::new(RefCell::new(0)),
             has_arrows: Rc::new(RefCell::new(true)),
             sb_sty: Rc::new(RefCell::new(ScrollbarSty::vertical_block(Scrollbar::STYLE))),
@@ -102,7 +101,6 @@ impl VerticalScrollbar {
     ) {
         *self.scrollable_view_chs.borrow_mut() = view_height;
         self.pane.set_dyn_height(scrollbar_length.clone());
-        *self.scrollbar_length_chs.borrow_mut() = scrollbar_length;
         if let Some(scrollable_height) = scrollable_height {
             *self.scrollable_domain_chs.borrow_mut() = scrollable_height;
         }
@@ -119,12 +117,6 @@ impl VerticalScrollbar {
 
     pub fn with_scrollbar_sty(self, sb_sty: ScrollbarSty) -> Self {
         *self.sb_sty.borrow_mut() = sb_sty;
-        self
-    }
-
-    /// set the dimensions of the actual scrollbar (note not the view area)
-    pub fn with_scrollbar_length(self, scrollbar_length: DynVal) -> Self {
-        *self.scrollbar_length_chs.borrow_mut() = scrollbar_length;
         self
     }
 
@@ -166,7 +158,6 @@ impl HorizontalScrollbar {
             scrollable_domain_chs: Rc::new(RefCell::new(scrollable_width)),
             scrollable_view_chs: Rc::new(RefCell::new(scrollable_view_width.clone())),
             scrollable_view_size: Rc::new(RefCell::new(scrollable_view_size)),
-            scrollbar_length_chs: Rc::new(RefCell::new(scrollable_view_width)),
             scrollable_position: Rc::new(RefCell::new(0)),
             has_arrows: Rc::new(RefCell::new(true)),
             sb_sty: Rc::new(RefCell::new(ScrollbarSty::horizontal_block(
@@ -189,7 +180,6 @@ impl HorizontalScrollbar {
     ) {
         *self.scrollable_view_chs.borrow_mut() = view_width;
         self.pane.set_dyn_width(scrollbar_length.clone());
-        *self.scrollbar_length_chs.borrow_mut() = scrollbar_length;
         if let Some(scrollable_width) = scrollable_width {
             *self.scrollable_domain_chs.borrow_mut() = scrollable_width;
         }
@@ -206,13 +196,6 @@ impl HorizontalScrollbar {
 
     pub fn with_scrollbar_sty(self, sb_sty: ScrollbarSty) -> Self {
         *self.sb_sty.borrow_mut() = sb_sty;
-        self
-    }
-
-    /// set the dimensions of the actual scrollbar (note not the view area)
-    pub fn with_scrollbar_length(self, scrollbar_length: DynVal) -> Self {
-        //self.pane.set_dyn_width(scrollbar_length.clone());
-        *self.scrollbar_length_chs.borrow_mut() = scrollbar_length;
         self
     }
 
@@ -259,12 +242,6 @@ pub struct Scrollbar {
     /// used during the construction of the context during
     /// hook calls to the view
     pub scrollable_view_size: Rc<RefCell<Size>>,
-
-    /// Length of the actual scrollbar (and arrows) in true characters.
-    /// Typically this is the same as ScrollableViewChs, however some situations
-    /// call for a different size scrollbar than the scrollable view, such as the
-    /// dropdown menu with a scrollbar below the dropdown-arrow.
-    pub scrollbar_length_chs: Rc<RefCell<DynVal>>,
 
     /// how far down the area is scrolled from the beginning of the actual content in true chars.
     /// The ScrollablePosition will be the first line of the area scrolled to.
@@ -459,7 +436,7 @@ impl Scrollbar {
     pub fn scrollbar_domain_in_half_increments(&self, p_size: usize) -> usize {
         // minus 2 for the backwards and forwards arrows
         let arrows = if *self.has_arrows.borrow() { 2 } else { 0 };
-        let sc_len_chs = self.scrollbar_length_chs.borrow().get_val(p_size as u16);
+        let sc_len_chs = p_size;
         let sc_len_chs = if sc_len_chs < 0 { 0 } else { sc_len_chs as usize };
         // times 2 for half characters
         2 * (sc_len_chs.saturating_sub(arrows))
@@ -490,8 +467,7 @@ impl Scrollbar {
     /// half-increments)
     pub fn true_chs_per_scrollbar_character(&self, p_size: usize) -> usize {
         let (scrollbar_incr, _) = self.scroll_bar_size_and_domain_in_half_increments(p_size);
-        (self.scrollbar_length_chs.borrow().get_val(p_size as u16) as f64
-            / (scrollbar_incr as f64 / 2.0)) as usize
+        (p_size as f64 / (scrollbar_incr as f64 / 2.0)) as usize
     }
 
     /// Get an array of half-increments of the scrollbar domain area
@@ -614,7 +590,7 @@ impl Scrollbar {
     pub fn drawing_runes(&self, p_size: usize) -> Vec<DrawCh> {
         let mut chs = vec![];
         if self.is_currently_unnecessary(p_size) {
-            for _ in 0..self.scrollbar_length_chs.borrow().get_val(p_size as u16) {
+            for _ in 0..p_size {
                 chs.push(self.sb_sty.borrow().unnessecary.clone());
             }
         } else {
@@ -643,11 +619,10 @@ impl Scrollbar {
     /// is the provided position before, on, or after the scrollbar?
     pub fn position_relative_to_scrollbar(&self, p_size: usize, mut pos: usize) -> SBRelPosition {
         // last pos the actual scrollbar may be in
-        let mut last_scrollbar_pos =
-            (self.scrollbar_length_chs.borrow().get_val(p_size as u16) as usize).saturating_sub(1);
+        let mut last_scrollbar_pos = p_size.saturating_sub(1);
 
         if *self.has_arrows.borrow() {
-            let sc_len_chs = self.scrollbar_length_chs.borrow().get_val(p_size as u16) as usize;
+            let sc_len_chs = p_size;
             if pos == 0 || pos == sc_len_chs.saturating_sub(1) {
                 return SBRelPosition::None;
             }
@@ -814,10 +789,7 @@ impl VerticalScrollbar {
                         self.scroll_backwards(ctx);
                         *self.currently_dragging.borrow_mut() = false;
                     }
-                    _ if has_arrows
-                        && y == (self.scrollbar_length_chs.borrow().get_val(h) as usize)
-                            .saturating_sub(1) =>
-                    {
+                    _ if has_arrows && y == (h as usize).saturating_sub(1) => {
                         self.scroll_forwards(ctx, h.into());
                         *self.currently_dragging.borrow_mut() = false;
                     }
@@ -872,7 +844,7 @@ impl VerticalScrollbar {
                 self.scroll_backwards(ctx);
                 return (true, EventResponses::default());
             }
-            let sb_len_chs = self.scrollbar_length_chs.borrow().get_val(h) as usize;
+            let sb_len_chs = h as usize;
             if y == sb_len_chs.saturating_sub(1) && start_drag_pos != sb_len_chs.saturating_sub(2) {
                 *self.currently_dragging.borrow_mut() = false;
                 self.scroll_forwards(ctx, h.into());
@@ -939,10 +911,7 @@ impl HorizontalScrollbar {
                         self.scroll_backwards(ctx);
                         *self.currently_dragging.borrow_mut() = false;
                     }
-                    _ if has_arrows
-                        && x == (self.scrollbar_length_chs.borrow().get_val(w) as usize)
-                            .saturating_sub(1) =>
-                    {
+                    _ if has_arrows && x == (w as usize).saturating_sub(1) => {
                         self.scroll_forwards(ctx, w.into());
                         *self.currently_dragging.borrow_mut() = false;
                     }
@@ -987,7 +956,7 @@ impl HorizontalScrollbar {
                 self.scroll_backwards(ctx);
                 return (true, EventResponses::default());
             }
-            let sb_len_chs = self.scrollbar_length_chs.borrow().get_val(w);
+            let sb_len_chs = w;
             if x == (sb_len_chs as usize).saturating_sub(1)
                 && start_drag_pos != (sb_len_chs as usize).saturating_sub(2)
             {
@@ -1075,7 +1044,7 @@ mod tests {
         let width = DynVal::full().minus(sub.into());
         let width_val = width.get_val(ctx.get_width());
         assert_eq!(width_val, w as i32 - sub);
-        let sb = HorizontalScrollbar::new(&ctx, width, w as usize * 2);
+        let sb = HorizontalScrollbar::new(&ctx, width, ctx.s, w as usize * 2);
         assert!(*sb.has_arrows.borrow());
 
         let dr = sb
