@@ -146,9 +146,9 @@ async fn main() -> Result<(), Error> {
     .with_height(DynVal::new_fixed(10))
     //.with_top_scrollbar(&ctx)
     .with_bottom_scrollbar(&ctx)
-    //.with_right_scrollbar(&ctx)
-    .with_line_numbers(&ctx)
-    .with_left_scrollbar(&ctx)
+    .with_right_scrollbar(&ctx)
+    //.with_left_scrollbar(&ctx)
+    //.with_line_numbers(&ctx)
     .editable()
     .with_no_wordwrap()
     .at(DynVal::new_flex(0.35), DynVal::new_flex(0.1));

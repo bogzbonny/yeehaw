@@ -382,75 +382,39 @@ impl Pane {
     pub fn correct_offsets_to_view_position(&self, ctx: &Context, x: usize, y: usize) {
         let view_offset_y = *self.content_view_offset_y.borrow();
         let view_offset_x = *self.content_view_offset_x.borrow();
+        let height = ctx.s.height as usize;
+        let width = ctx.s.width as usize;
+
+        debug!("corr for x: {} y: {}", x, y);
 
         // set y offset if cursor out of bounds
-        if y >= view_offset_y + self.get_height(ctx) {
-            //debug!("cor1");
-            self.set_content_y_offset(ctx, y - self.get_height(ctx) + 1);
+        if y >= view_offset_y + height {
+            debug!("cor1, setting to {}", y - height + 1);
+            self.set_content_y_offset(ctx, y - height + 1);
         } else if y < view_offset_y {
-            //debug!("cor2");
+            debug!("cor2");
             self.set_content_y_offset(ctx, y);
         }
 
         // correct the offset if the offset is now showing lines that don't exist in
         // the content
-        if view_offset_y + self.get_height(ctx) > self.content_height() {
-            //debug!("cor3");
-            self.set_content_y_offset(ctx, self.content_height());
+        if view_offset_y + height > self.content_height() {
+            self.set_content_y_offset(ctx, height);
         }
 
         // set x offset if cursor out of bounds
-        if x >= view_offset_x + self.get_width(ctx) {
-            self.set_content_x_offset(ctx, x - self.get_width(ctx) + 1);
+        if x >= view_offset_x + width {
+            self.set_content_x_offset(ctx, x - width + 1);
         } else if x < view_offset_x {
             self.set_content_x_offset(ctx, x);
         }
 
         // correct the offset if the offset is now showing characters to the right
         // which don't exist in the content.
-        if view_offset_x + self.get_width(ctx) > self.content_width() {
+        if view_offset_x + width > self.content_width() {
             self.set_content_x_offset(ctx, self.content_width());
         }
     }
-
-    ///// correct_offsets_to_view_position changes the content offsets within the
-    ///// pane in order to bring the given view position into view.
-    //pub fn correct_offsets_to_view_position(&self, ctx: &Context, x: usize, y: usize) {
-    //    let view_offset_y = *self.content_view_offset_y.borrow();
-    //    let view_offset_x = *self.content_view_offset_x.borrow();
-    //    let height = ctx.s.height as usize;
-    //    let width = ctx.s.width as usize;
-
-    //    debug!("corr for x: {} y: {}", x, y);
-
-    //    // set y offset if cursor out of bounds
-    //    if y >= view_offset_y + height {
-    //        debug!("cor1, setting to {}", y - height + 1);
-    //        self.set_content_y_offset(ctx, y - height + 1);
-    //    } else if y < view_offset_y {
-    //        debug!("cor2");
-    //        self.set_content_y_offset(ctx, y);
-    //    }
-
-    //    // correct the offset if the offset is now showing lines that don't exist in
-    //    // the content
-    //    if view_offset_y + height > self.content_height() {
-    //        self.set_content_y_offset(ctx, height);
-    //    }
-
-    //    // set x offset if cursor out of bounds
-    //    if x >= view_offset_x + width {
-    //        self.set_content_x_offset(ctx, x - width + 1);
-    //    } else if x < view_offset_x {
-    //        self.set_content_x_offset(ctx, x);
-    //    }
-
-    //    // correct the offset if the offset is now showing characters to the right
-    //    // which don't exist in the content.
-    //    if view_offset_x + width > self.content_width() {
-    //        self.set_content_x_offset(ctx, self.content_width());
-    //    }
-    //}
 }
 
 impl Element for Pane {
@@ -610,6 +574,10 @@ impl Element for Pane {
         let content_height = self.content.borrow().height();
         //let view_height = self.loc.borrow().get_height_val(ctx);
         let view_height = ctx.s.height as usize;
+        debug!(
+            "setting y offset to {}, content height: {}, view height: {}",
+            y, content_height, view_height
+        );
         let y = if y > content_height.saturating_sub(view_height) {
             content_height.saturating_sub(view_height)
         } else {

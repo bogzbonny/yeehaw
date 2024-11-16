@@ -164,7 +164,7 @@ impl DropdownList {
         self.scrollbar.external_change(
             self.pane.get_content_y_offset(),
             self.pane.content_height(),
-            self.pane.content_size(),
+            ctx.s,
         );
     }
 

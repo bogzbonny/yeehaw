@@ -66,124 +66,11 @@ impl TextBox {
                 }
             }));
 
-        //let _ = tb.drawing(&ctx.child_context(&tb.pane.get_dyn_location())); // to set the pane content
+        let cctx = ctx.child_context(&tb.pane.get_dyn_location());
+        debug!("cctx.s: {:?}", cctx.s);
+        let _ = tb.drawing(&ctx.child_context(&tb.pane.get_dyn_location())); // to set the pane content
         tb
     }
-
-    // XXX integrate
-    /*
-    pub fn to_widgets(mut self, ctx: &Context) -> crate::widgets::Widget {
-        let (x, y) = (self.pane.get_dyn_start_x(), self.pane.get_dyn_start_y());
-        let (h, w) = (self.pane.get_dyn_height(), self.pane.get_dyn_width());
-        let mut out: Vec<Box<dyn crate::widgets::Widget>> = vec![];
-
-        let ln_tb = if *self.line_numbered.borrow() {
-            // determine the width of the line numbers textbox
-
-            // create the line numbers textbox
-            let (lns, lnw) = self.get_line_numbers(ctx);
-            let ln_tb = TextBoxInner::new(ctx, lns)
-                .at(x.clone(), y.clone())
-                .with_width(DynVal::new_fixed(lnw as i32))
-                .with_height(h.clone())
-                .with_no_wordwrap()
-                .non_editable();
-            ln_tb.set_selectability(ctx, Selectability::Unselectable);
-            //.with_selectability(Selectability::Unselectable);
-            out.push(Box::new(ln_tb.clone()));
-
-            // reduce the width of the main textbox
-            self.pane.set_dyn_start_x(x.clone().plus_fixed(lnw as i32));
-            self.pane.set_dyn_width(w.clone().minus_fixed(lnw as i32));
-
-            self.line_number_tb = Rc::new(RefCell::new(Some(ln_tb.clone())));
-            Some(ln_tb)
-        } else {
-            None
-        };
-        out.push(Box::new(self.clone()));
-
-        // add corner decor
-        let y_sb_op = *self.y_scrollbar_op.borrow();
-        let x_sb_op = *self.x_scrollbar_op.borrow();
-        let no_y_sb = matches!(y_sb_op, VerticalSBPositions::None);
-        let no_x_sb = matches!(x_sb_op, HorizontalSBPositions::None);
-        if !no_y_sb && !no_x_sb {
-            let cd = Label::new(ctx, &(self.corner_decor.borrow().ch.to_string()))
-                .with_style(ctx, self.corner_decor.borrow().style.clone());
-            let (cd_x, cd_y) = match (y_sb_op, x_sb_op) {
-                (VerticalSBPositions::ToTheLeft, HorizontalSBPositions::Above) => {
-                    (x.clone().minus_fixed(1), y.clone().minus_fixed(1))
-                }
-                (VerticalSBPositions::ToTheLeft, HorizontalSBPositions::Below) => {
-                    (x.clone().minus_fixed(1), y.clone().plus(h.clone()))
-                }
-                (VerticalSBPositions::ToTheRight, HorizontalSBPositions::Above) => {
-                    (x.clone().plus(w.clone()), y.clone().minus_fixed(1))
-                }
-                (VerticalSBPositions::ToTheRight, HorizontalSBPositions::Below) => {
-                    (x.clone().plus(w.clone()), y.clone().plus(h.clone()))
-                }
-                _ => panic!("impossible"),
-            };
-            let cd = cd.at(cd_x, cd_y);
-            out.push(Box::new(cd));
-        }
-
-        if !no_y_sb {
-            let x2 = match y_sb_op {
-                VerticalSBPositions::ToTheLeft => x.clone().minus_fixed(1),
-                VerticalSBPositions::ToTheRight => x.clone().plus(w.clone()),
-                _ => panic!("impossible"),
-            };
-            let vsb = VerticalScrollbar::new(ctx, h.clone(), self.pane.content_height())
-                .at(x2, y.clone())
-                .with_styles(Self::STYLE_SCROLLBAR);
-
-            match ln_tb {
-                Some(ln_tb) => {
-                    let pane_ = self.pane.clone();
-                    let ln_tb_wb = ln_tb.pane.clone();
-                    let hook = Box::new(move |ctx, y| {
-                        pane_.set_content_y_offset(&ctx, y);
-                        ln_tb_wb.set_content_y_offset(&ctx, y);
-                    });
-                    *vsb.position_changed_hook.borrow_mut() = Some(hook);
-                }
-                None => {
-                    let pane_ = self.pane.clone();
-                    let hook = Box::new(move |ctx, y| pane_.set_content_y_offset(&ctx, y));
-                    *vsb.position_changed_hook.borrow_mut() = Some(hook);
-                }
-            }
-
-            *self.y_scrollbar.borrow_mut() = Some(vsb.clone());
-            out.push(Box::new(vsb));
-        }
-
-        if !no_x_sb {
-            let y2 = match x_sb_op {
-                HorizontalSBPositions::Above => y.clone().minus_fixed(1),
-                HorizontalSBPositions::Below => y.clone().plus(h),
-                _ => panic!("impossible"),
-            };
-
-            let hsb = HorizontalScrollbar::new(ctx, w, self.x_new_domain_chs())
-                .at(x, y2)
-                .with_styles(Self::STYLE_SCROLLBAR);
-
-            let pane_ = self.pane.clone();
-            let hook = Box::new(move |ctx, x| pane_.set_content_x_offset(&ctx, x));
-            *hsb.position_changed_hook.borrow_mut() = Some(hook);
-            *self.x_scrollbar.borrow_mut() = Some(hsb.clone());
-
-            out.push(Box::new(hsb));
-        }
-
-        let _ = self.drawing(ctx); // to set the pane content
-        crate::widgets::Widget(out)
-    }
-    */
 
     pub fn with_scrollbars(self, ctx: &Context) -> Self {
         self.set_x_scrollbar_inner(ctx, HorizontalSBPositions::Below);
@@ -199,23 +86,6 @@ impl TextBox {
     pub fn with_right_scrollbar(self, ctx: &Context) -> Self {
         self.set_y_scrollbar_inner(ctx, VerticalSBPositions::ToTheRight);
         self
-    }
-
-    pub fn set_corner_decor(&self, ctx: &Context) {
-        // add corner decor
-        if let (Some(x_sb), Some(y_sb)) = (&*self.x_scrollbar.borrow(), &*self.y_scrollbar.borrow())
-        {
-            let corner_decor = self.inner.borrow().corner_decor.borrow().clone();
-            let cd = Label::new(ctx, &(corner_decor.ch.to_string()))
-                .with_style(corner_decor.style.clone());
-
-            let cd_y = x_sb.pane.get_dyn_start_y();
-            let cd_x = y_sb.pane.get_dyn_start_x();
-            debug!("cd_x: {:?}", cd_x);
-            debug!("cd_y: {:?}", cd_y);
-            let cd = cd.at(cd_x, cd_y);
-            self.pane.pane.add_element(Box::new(cd));
-        }
     }
 
     fn set_y_scrollbar_inner(&self, ctx: &Context, pos: VerticalSBPositions) {
@@ -264,6 +134,13 @@ impl TextBox {
                 return;
             }
         }
+        let size = ctx
+            .child_context(&self.inner.borrow().pane.get_dyn_location())
+            .s;
+        sb.set_scrollable_view_size(size);
+        if let Some(x_sb) = &*self.x_scrollbar.borrow() {
+            x_sb.set_scrollable_view_size(size);
+        }
 
         // wire the scrollbar to the textbox
         let pane_ = self.inner.borrow().pane.clone();
@@ -275,6 +152,7 @@ impl TextBox {
 
         self.reset_line_numbers(ctx);
         self.set_corner_decor(ctx);
+        self.reset_sb_sizes(ctx);
     }
 
     pub fn with_top_scrollbar(self, ctx: &Context) -> Self {
@@ -343,6 +221,19 @@ impl TextBox {
         self.pane.pane.add_element(Box::new(sb.clone()));
         self.inner.borrow().x_scrollbar.replace(Some(sb));
         self.set_corner_decor(ctx);
+        self.reset_sb_sizes(ctx);
+    }
+
+    pub fn reset_sb_sizes(&self, ctx: &Context) {
+        let size = ctx
+            .child_context(&self.inner.borrow().pane.get_dyn_location())
+            .s;
+        if let Some(y_sb) = &*self.y_scrollbar.borrow() {
+            y_sb.set_scrollable_view_size(size);
+        }
+        if let Some(x_sb) = &*self.x_scrollbar.borrow() {
+            x_sb.set_scrollable_view_size(size);
+        }
     }
 
     pub fn with_line_numbers(self, ctx: &Context) -> Self {
@@ -368,7 +259,6 @@ impl TextBox {
         let start_x = self.inner.borrow().pane.get_dyn_start_x();
         let start_y = self.inner.borrow().pane.get_dyn_start_y();
         let end_y = self.inner.borrow().pane.get_dyn_end_y();
-        debug!("ln_tb start_x: {:?}", start_x);
 
         // determine the width of the line numbers textbox
         let (lns, lnw) = self.inner.borrow().get_line_numbers(ctx);
@@ -393,6 +283,22 @@ impl TextBox {
         // reduce the width of the main textbox
         self.inner.borrow().pane.set_start_x(new_inner_start_x);
         *self.inner.borrow().line_number_tb.borrow_mut() = Some(ln_tb.clone());
+        self.reset_sb_sizes(ctx);
+    }
+
+    pub fn set_corner_decor(&self, ctx: &Context) {
+        // add corner decor
+        if let (Some(x_sb), Some(y_sb)) = (&*self.x_scrollbar.borrow(), &*self.y_scrollbar.borrow())
+        {
+            let corner_decor = self.inner.borrow().corner_decor.borrow().clone();
+            let cd = Label::new(ctx, &(corner_decor.ch.to_string()))
+                .with_style(corner_decor.style.clone());
+
+            let cd_y = x_sb.pane.get_dyn_start_y();
+            let cd_x = y_sb.pane.get_dyn_start_x();
+            let cd = cd.at(cd_x, cd_y);
+            self.pane.pane.add_element(Box::new(cd));
+        }
     }
 
     // TODO create this function eventually
@@ -883,11 +789,7 @@ impl TextBoxInner {
 
         // update the scrollbars/line numbers textbox
         if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
-            sb.external_change(
-                y_offset,
-                self.pane.content_height() - 1, // -1 for unknown reason, TODO fix/understand
-                self.pane.content_size(),
-            );
+            sb.external_change(y_offset, self.pane.content_height(), ctx.s);
         }
         let resp = EventResponse::default();
         if let Some(ln_tb) = self.line_number_tb.borrow().as_ref() {
@@ -903,11 +805,7 @@ impl TextBoxInner {
             ln_tb.pane.set_content_y_offset(ctx, y_offset);
         }
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
-            sb.external_change(
-                x_offset,
-                self.x_new_domain_chs() - 1, // -1 for unknown reason, TODO fix/understand
-                self.pane.content_size(),
-            );
+            sb.external_change(x_offset, self.x_new_domain_chs(), ctx.s);
         }
         resp
     }

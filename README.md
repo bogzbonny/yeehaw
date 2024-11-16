@@ -104,6 +104,14 @@ Looking to understand more? Checkout:
  - [Context](TODO) <- an object which can be found nearly everywhere
  - [DynVal](TODO) <- the basis for all layouts and sizes
 
+#### an important note of contexts
+The context provided always contains the size of the element. However during
+initialization, before the size of an element is known, the context fed in will
+be the parent context. This is confusing as heck and I hope to rectify this,
+possibly by providing both the parent-element size and size-for-the-element as
+options within the context. 
+
+
 ### Objectives [WIP]
 
  - elements should presenting information as cleanly as possible

@@ -40,6 +40,7 @@
 01. resizing a scrollable pane should modify the offset of that pane to account
     for the extra space (instead of automatically extending out of range)
 
+
 WIDGET RECALL REFACTOR
  - Selectibility Hook
     - this one is a bit harder maybe we have to introduce hooks on 
@@ -105,6 +106,17 @@ widget_toggle.rs           | DONE
       - neovim editor
       - buncha widgets which dont do much but log their results 
         in a textbox
+
+01. Make the context size more clear.
+     - The context provided always contains the size of the element. However
+       during initialization, before the size of an element is known, the
+       context fed in will be the parent context. This is confusing as heck and
+       I hope to rectify this, possibly by providing both the parent-element
+       size and size-for-the-element as options within the context. 
+     - parent size should not be an option, only the child size should be an
+       option. parent size must always be known.
+       - calling pane.width(ctx) should be the same as ctx.child.width if the child
+         size is provided
 
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 01. running "top" inside terminal window shoots the cursor outside of the
@@ -208,6 +220,20 @@ widget_toggle.rs           | DONE
                - each sub-item would be a leaf of the menu-bar however a final
                  location would be flattened down such that it was not a sub-item
                  of the menu-bar but of the same parent the menu-bar has 
+
+10. scrollbar style on pane option... use a half(widthwise) block character instead of the
+    thick border line... looks nice
+
+┌─────────────────────┐
+│                     │
+│                     │
+│                     ▖
+│                     ▌
+│                     ▌
+│                     ▌
+│                     ▘
+│                     │
+└◁───▀▀▀▀▀▀▀▀▀▀▀▘────▷┘
 
 05. STACKING of minimized windows in parent pane
     MAYBE do only after taffy is integrated... could help for these guys
@@ -352,7 +378,14 @@ It'd be cool to come up with a "Complex Selector" generalization for the dials.
     - imagine that the progressbar was just a gradient changing around a box
       border
 
+10. allow for the time gradient to execute once instead of on repeat. 
+
+10. character content "gradients" - aka the characters change 
+
 10. Loading spinners
+    - maybe the easiest thing would be to allow for a character changes based on
+      time (like a time gradient except for the character actually displayed).
+       - could have position character changes too although maybe not as useful?
     - 🌑🌒🌓🌔🌕🌖🌗🌘
     - braile movers
     - block movers of a few varieties

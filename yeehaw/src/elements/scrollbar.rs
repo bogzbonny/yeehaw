@@ -133,6 +133,10 @@ impl VerticalScrollbar {
         *self.has_arrows.borrow_mut() = false;
         self
     }
+
+    pub fn set_scrollable_view_size(&self, scrollable_view_size: Size) {
+        *self.scrollable_view_size.borrow_mut() = scrollable_view_size;
+    }
 }
 
 impl HorizontalScrollbar {
@@ -211,6 +215,10 @@ impl HorizontalScrollbar {
     pub fn without_arrows(self) -> Self {
         *self.has_arrows.borrow_mut() = false;
         self
+    }
+
+    pub fn set_scrollable_view_size(&self, scrollable_view_size: Size) {
+        *self.scrollable_view_size.borrow_mut() = scrollable_view_size;
     }
 }
 
@@ -348,6 +356,10 @@ pub enum SBRelPosition {
 
 impl Scrollbar {
     const STYLE: Style = Style::new_const(Color::WHITE, Color::GREY13);
+
+    pub fn set_scrollable_view_size(&self, scrollable_view_size: Size) {
+        *self.scrollable_view_size.borrow_mut() = scrollable_view_size;
+    }
 
     /// if the Scrollbar currently cannot be used due to insufficient domain.
     pub fn is_currently_unnecessary(&self, p_size: usize) -> bool {

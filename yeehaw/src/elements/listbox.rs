@@ -118,10 +118,9 @@ impl ListBox {
     fn with_scrollbar_inner(self, ctx: &Context, pos: VerticalSBPositions) -> Self {
         let height = DynVal::full();
         let content_height = self.inner.borrow().pane.content_height();
-        let content_size = self.inner.borrow().pane.content_size();
 
-        let sb = VerticalScrollbar::new(ctx, height, content_size, content_height)
-            .without_keyboard_events();
+        let sb =
+            VerticalScrollbar::new(ctx, height, ctx.s, content_height).without_keyboard_events();
         match pos {
             VerticalSBPositions::ToTheLeft => {
                 sb.set_at(0.into(), 0.into());
@@ -138,10 +137,14 @@ impl ListBox {
                 return self;
             }
         }
+        sb.set_scrollable_view_size(ctx.child_context(&self.pane.get_dyn_location()).s);
 
         // wire the scrollbar to the listbox
         let pane_ = self.inner.borrow().pane.clone();
-        let hook = Box::new(move |ctx, y| pane_.set_content_y_offset(&ctx, y));
+        let hook = Box::new(move |ctx, y| {
+            debug!("listbox scrollbar hook called, y: {}", y);
+            pane_.set_content_y_offset(&ctx, y)
+        });
         *sb.position_changed_hook.borrow_mut() = Some(hook);
         *self.scrollbar.borrow_mut() = Some(sb.clone());
         self.pane.pane.add_element(Box::new(sb.clone()));
@@ -291,11 +294,7 @@ impl ListBoxInner {
 
         // call the scrollbar external change hook if it exists
         if let Some(sb) = self.scrollbar.borrow().as_ref() {
-            sb.external_change(
-                y_offset,
-                self.pane.content_height(),
-                self.pane.content_size(),
-            );
+            sb.external_change(y_offset, self.pane.content_height(), ctx.s);
         }
         self.is_dirty.replace(true);
     }
