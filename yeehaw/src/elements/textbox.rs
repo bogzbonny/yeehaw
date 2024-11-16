@@ -265,7 +265,7 @@ impl TextBox {
             }
         }
 
-        // wire the scrollbar to the listbox
+        // wire the scrollbar to the textbox
         let pane_ = self.inner.borrow().pane.clone();
         let hook = Box::new(move |ctx, y| pane_.set_content_y_offset(&ctx, y));
         *sb.position_changed_hook.borrow_mut() = Some(hook);
@@ -335,7 +335,7 @@ impl TextBox {
             }
         }
 
-        // wire the scrollbar to the listbox
+        // wire the scrollbar to the textbox
         let pane_ = self.inner.borrow().pane.clone();
         let hook = Box::new(move |ctx, x| pane_.set_content_x_offset(&ctx, x));
         *sb.position_changed_hook.borrow_mut() = Some(hook);
