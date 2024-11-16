@@ -166,7 +166,7 @@ impl TextBox {
     }
 
     fn set_x_scrollbar_inner(&self, ctx: &Context, pos: HorizontalSBPositions) {
-        let content_width = self.inner.borrow().pane.content_height();
+        let content_width = self.inner.borrow().pane.content_width();
         let content_size = self.inner.borrow().pane.content_size();
 
         // accounts for the other scrollbar

@@ -118,8 +118,6 @@ async fn main() -> Result<(), Error> {
     use yeehaw::elements::listbox::SelectionMode;
     let listbox = ListBox::new(&ctx, ld_entries, Box::new(|_, _| EventResponses::default()))
         .with_selection_mode(&ctx, SelectionMode::UpTo(3))
-        //.with_width(&ctx, DynVal::new_fixed(12))
-        //.with_height(&ctx, DynVal::new_fixed(5))
         .with_width(
             &ctx,
             DynVal::default()
@@ -146,9 +144,9 @@ async fn main() -> Result<(), Error> {
     .with_height(DynVal::new_fixed(10))
     //.with_top_scrollbar(&ctx)
     .with_bottom_scrollbar(&ctx)
-    .with_right_scrollbar(&ctx)
-    //.with_left_scrollbar(&ctx)
-    //.with_line_numbers(&ctx)
+    .with_left_scrollbar(&ctx)
+    //.with_right_scrollbar(&ctx)
+    .with_line_numbers(&ctx)
     .editable()
     .with_no_wordwrap()
     .at(DynVal::new_flex(0.35), DynVal::new_flex(0.1));
