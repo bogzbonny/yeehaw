@@ -374,7 +374,7 @@ impl Scrollbar {
         *self.scrollable_position.borrow_mut() = position;
         if let Some(hook) = self.position_changed_hook.borrow_mut().as_mut() {
             let mut ctx = ctx.clone();
-            ctx.s = self.scrollable_view_size.borrow().clone();
+            ctx.s = *self.scrollable_view_size.borrow();
             hook(ctx, position);
         }
     }
@@ -411,7 +411,7 @@ impl Scrollbar {
         *self.scrollable_position.borrow_mut() -= 1;
         if let Some(hook) = self.position_changed_hook.borrow_mut().as_mut() {
             let mut ctx = ctx.clone();
-            ctx.s = self.scrollable_view_size.borrow().clone();
+            ctx.s = *self.scrollable_view_size.borrow();
             hook(ctx, *self.scrollable_position.borrow());
         }
     }
@@ -424,7 +424,7 @@ impl Scrollbar {
         *self.scrollable_position.borrow_mut() += 1;
         if let Some(hook) = self.position_changed_hook.borrow_mut().as_mut() {
             let mut ctx = ctx.clone();
-            ctx.s = self.scrollable_view_size.borrow().clone();
+            ctx.s = *self.scrollable_view_size.borrow();
             hook(ctx, *self.scrollable_position.borrow());
         }
     }
@@ -437,7 +437,6 @@ impl Scrollbar {
         // minus 2 for the backwards and forwards arrows
         let arrows = if *self.has_arrows.borrow() { 2 } else { 0 };
         let sc_len_chs = p_size;
-        let sc_len_chs = if sc_len_chs < 0 { 0 } else { sc_len_chs as usize };
         // times 2 for half characters
         2 * (sc_len_chs.saturating_sub(arrows))
     }

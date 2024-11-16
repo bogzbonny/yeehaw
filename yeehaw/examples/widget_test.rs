@@ -138,7 +138,7 @@ async fn main() -> Result<(), Error> {
 
     let tb = TextBox::new(
         &ctx,
-        "012345678901234567890123456789 \
+        "012345678901234567890123456789\
         \n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9",
         //\n1",
     )
@@ -147,11 +147,11 @@ async fn main() -> Result<(), Error> {
     //.with_top_scrollbar(&ctx)
     .with_bottom_scrollbar(&ctx)
     //.with_right_scrollbar(&ctx)
-    .with_left_scrollbar(&ctx)
     .with_line_numbers(&ctx)
+    .with_left_scrollbar(&ctx)
     .editable()
     .with_no_wordwrap()
-    .at(DynVal::new_fixed(70), DynVal::new_fixed(6));
+    .at(DynVal::new_flex(0.35), DynVal::new_flex(0.1));
     el.add_element(Box::new(tb));
 
     //let tb = elements::textbox::TextBoxInner::new(

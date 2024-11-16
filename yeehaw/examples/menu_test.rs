@@ -1,7 +1,4 @@
-use yeehaw::{
-    widgets::{Button, Label},
-    Tui, Error, EventResponses, MenuBar, ParentPane, VerticalStack,
-};
+use yeehaw::{Error, EventResponses, MenuBar, ParentPane, Tui, VerticalStack, *};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -26,8 +23,8 @@ async fn main() -> Result<(), Error> {
     let btn_a = Button::new(
         &ctx,
         "A",
-        Box::new(move |_, ctx_| {
-            label_.set_text(&ctx_, "Button A clicked".to_string());
+        Box::new(move |_, _| {
+            label_.set_text("Button A clicked".to_string());
             EventResponses::default()
         }),
     )
@@ -37,8 +34,8 @@ async fn main() -> Result<(), Error> {
     let btn_b = Button::new(
         &ctx,
         "B",
-        Box::new(move |_, ctx_| {
-            label_.set_text(&ctx_, "Button B clicked".to_string());
+        Box::new(move |_, _| {
+            label_.set_text("Button B clicked".to_string());
             EventResponses::default()
         }),
     )
@@ -48,8 +45,8 @@ async fn main() -> Result<(), Error> {
     let btn_c = Button::new(
         &ctx,
         "C",
-        Box::new(move |_, ctx_| {
-            label_.set_text(&ctx_, "Button C clicked".to_string());
+        Box::new(move |_, _| {
+            label_.set_text("Button C clicked".to_string());
             EventResponses::default()
         }),
     )

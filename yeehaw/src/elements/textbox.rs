@@ -36,6 +36,12 @@ impl TextBox {
             .with_dyn_height(DynVal::new_fixed(s.height as i32))
             .with_styles(TextBoxInner::STYLE);
         let inner = TextBoxInner::new(ctx, text);
+
+        debug!(
+            "STARTy-sb content_height: {:?}",
+            inner.pane.content_height()
+        );
+        debug!("STARTy-sb content_width: {:?}", inner.pane.content_width());
         pane.pane.add_element(Box::new(inner.clone()));
         let tb = TextBox {
             pane,
@@ -59,6 +65,8 @@ impl TextBox {
                     *tb_.inner.borrow().visual_mode.borrow_mut() = false;
                 }
             }));
+
+        //let _ = tb.drawing(&ctx.child_context(&tb.pane.get_dyn_location())); // to set the pane content
         tb
     }
 
@@ -223,15 +231,24 @@ impl TextBox {
             DynVal::full()
         };
 
+        debug!(
+            "y-sb content_height: {:?}",
+            self.inner.borrow().pane.content_height()
+        );
+        debug!(
+            "y-sb content_width: {:?}",
+            self.inner.borrow().pane.content_width()
+        );
+
         let sb = VerticalScrollbar::new(ctx, height, content_size, content_height)
             .without_keyboard_events();
         match pos {
             VerticalSBPositions::ToTheLeft => {
                 sb.set_at(0.into(), inner_start_y);
-                self.inner.borrow().pane.set_start_x(1.into());
                 if let Some(x_sb) = &*self.x_scrollbar.borrow() {
                     x_sb.pane.set_start_x(1.into());
                 }
+                self.inner.borrow().pane.set_start_x(1.into());
             }
             VerticalSBPositions::ToTheRight => {
                 sb.set_at(DynVal::full().minus_fixed(1), inner_start_y);
@@ -255,6 +272,8 @@ impl TextBox {
         *self.y_scrollbar.borrow_mut() = Some(sb.clone());
         self.pane.pane.add_element(Box::new(sb.clone()));
         self.inner.borrow().y_scrollbar.replace(Some(sb));
+
+        self.reset_line_numbers(ctx);
         self.set_corner_decor(ctx);
     }
 
@@ -325,6 +344,63 @@ impl TextBox {
         self.inner.borrow().x_scrollbar.replace(Some(sb));
         self.set_corner_decor(ctx);
     }
+
+    pub fn with_line_numbers(self, ctx: &Context) -> Self {
+        self.set_line_numbers(ctx);
+        self
+    }
+
+    pub fn reset_line_numbers(&self, ctx: &Context) {
+        let ln_id = self
+            .inner
+            .borrow()
+            .line_number_tb
+            .borrow()
+            .as_ref()
+            .map(|ln_tb| ln_tb.pane.id());
+        if let Some(ln_id) = ln_id {
+            self.pane.pane.remove_element(&ln_id);
+            self.set_line_numbers(ctx);
+        }
+    }
+
+    pub fn set_line_numbers(&self, ctx: &Context) {
+        let start_x = self.inner.borrow().pane.get_dyn_start_x();
+        let start_y = self.inner.borrow().pane.get_dyn_start_y();
+        let end_y = self.inner.borrow().pane.get_dyn_end_y();
+        debug!("ln_tb start_x: {:?}", start_x);
+
+        // determine the width of the line numbers textbox
+        let (lns, lnw) = self.inner.borrow().get_line_numbers(ctx);
+
+        // create the line numbers textbox
+        let ln_tb = TextBoxInner::new(ctx, lns)
+            .at(start_x.clone(), start_y)
+            .with_width(DynVal::new_fixed(lnw as i32))
+            .with_no_wordwrap()
+            .non_editable()
+            .non_navigable();
+
+        ln_tb.pane.set_end_y(end_y);
+
+        *ln_tb.current_sty.borrow_mut() = self.pane.get_current_style();
+
+        *ln_tb.selectedness.borrow_mut() = Selectability::Unselectable;
+        self.pane.pane.add_element(Box::new(ln_tb.clone()));
+
+        let new_inner_start_x = start_x.plus_fixed(lnw as i32);
+
+        // reduce the width of the main textbox
+        self.inner.borrow().pane.set_start_x(new_inner_start_x);
+        *self.inner.borrow().line_number_tb.borrow_mut() = Some(ln_tb.clone());
+    }
+
+    // TODO create this function eventually
+    // not that important and annoying to calculate if the tb has a line numbers element
+    //pub fn with_no_line_numbers(self) -> Self {
+    //    *self.inner.borrow().line_numbered.borrow_mut() = false;
+    //    self
+    //}
 
     pub fn with_right_click_menu(self, rcm: Option<RightClickMenu>) -> Self {
         *self.inner.borrow().right_click_menu.borrow_mut() = rcm;
@@ -403,43 +479,6 @@ impl TextBox {
         *self.inner.borrow().wordwrap.borrow_mut() = false;
         self
     }
-
-    pub fn with_line_numbers(self, ctx: &Context) -> Self {
-        let start_x = self.inner.borrow().pane.get_dyn_start_x();
-        let start_y = self.inner.borrow().pane.get_dyn_start_y();
-
-        // determine the width of the line numbers textbox
-        let (lns, lnw) = self.inner.borrow().get_line_numbers(ctx);
-
-        // create the line numbers textbox
-        let ln_tb = TextBoxInner::new(ctx, lns)
-            .at(start_x.clone(), start_y)
-            .with_width(DynVal::new_fixed(lnw as i32))
-            .with_height(DynVal::full())
-            .with_no_wordwrap()
-            .non_editable()
-            .non_navigable();
-
-        *ln_tb.current_sty.borrow_mut() = self.pane.get_current_style();
-
-        //ln_tb.pane.set_selectability(Selectability::Unselectable);
-        self.pane.pane.add_element(Box::new(ln_tb.clone()));
-
-        let new_inner_start_x = start_x.plus_fixed(lnw as i32);
-
-        // reduce the width of the main textbox
-        self.inner.borrow().pane.set_start_x(new_inner_start_x);
-        *self.inner.borrow().line_number_tb.borrow_mut() = Some(ln_tb.clone());
-
-        self
-    }
-
-    // TODO create this function eventually
-    // not that important and annoying to calculate if the tb has a line numbers element
-    //pub fn with_no_line_numbers(self) -> Self {
-    //    *self.inner.borrow().line_numbered.borrow_mut() = false;
-    //    self
-    //}
 
     pub fn with_position_style_hook(
         self, hook: Box<dyn FnMut(Context, usize, Style) -> Style>,
@@ -644,7 +683,6 @@ impl TextBoxInner {
         );
         *tb.right_click_menu.borrow_mut() = Some(rcm);
 
-        let _ = tb.drawing(ctx); // to set the pane content
         tb
     }
 
@@ -847,7 +885,7 @@ impl TextBoxInner {
         if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
             sb.external_change(
                 y_offset,
-                self.pane.content_height(),
+                self.pane.content_height() - 1, // -1 for unknown reason, TODO fix/understand
                 self.pane.content_size(),
             );
         }
@@ -865,7 +903,11 @@ impl TextBoxInner {
             ln_tb.pane.set_content_y_offset(ctx, y_offset);
         }
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
-            sb.external_change(x_offset, self.x_new_domain_chs(), self.pane.content_size());
+            sb.external_change(
+                x_offset,
+                self.x_new_domain_chs() - 1, // -1 for unknown reason, TODO fix/understand
+                self.pane.content_size(),
+            );
         }
         resp
     }

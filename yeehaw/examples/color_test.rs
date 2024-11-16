@@ -1,6 +1,6 @@
 use {
     //std::env,
-    yeehaw::{Color, Tui, DynVal, Error, /*Gradient,*/ RadialGradient, TimeGradient, WidgetPane,},
+    yeehaw::{Color, DynVal, Error, ParentPane, /*Gradient,*/ RadialGradient, TimeGradient, Tui,},
 };
 
 #[tokio::main]
@@ -80,7 +80,7 @@ async fn main() -> Result<(), Error> {
         grad: rgrad,
     });
 
-    let el = WidgetPane::new(&ctx).with_bg_color(el_bg);
+    let el = ParentPane::new(&ctx, "color-test").with_bg_color(el_bg);
 
     tui.run(Box::new(el)).await
 }
