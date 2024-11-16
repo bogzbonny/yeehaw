@@ -4,7 +4,7 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Debug)]
 pub enum Selectability {
     /// currently selected
     Selected,
@@ -232,7 +232,7 @@ impl Element for SelectablePane {
         let (captured, mut resps) = match ev {
             Event::Mouse(me) => {
                 if matches!(me.kind, MouseEventKind::Up(_)) {
-                    (false, self.select())
+                    (false, self.select()) // XXX
                 } else {
                     (false, EventResponses::default())
                 }

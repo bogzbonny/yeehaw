@@ -87,13 +87,15 @@ impl EventPrioritizer {
             #[cfg(debug_assertions)]
             if pe.1 != Priority::Unfocused {
                 if let Some(existing_id) = self.get_priority_ev_id(pe) {
-                    panic!(
-                        "EvPrioritizer found at least 2 events registered to different \
-                    elements with the same priority. \
-                    \n\texisting-id: {existing_id} \
-                    \n\tregistering-id: {id}\n\tpr: {}\n\tev: {:?}",
-                        pe.1, pe.0
-                    )
+                    if existing_id != *id {
+                        panic!(
+                            "EvPrioritizer found at least 2 events registered to different \
+                             elements with the same priority. \
+                             \n\texisting-id: {existing_id} \
+                             \n\tregistering-id: {id}\n\tpr: {}\n\tev: {:?}",
+                            pe.1, pe.0
+                        )
+                    }
                 }
             }
 

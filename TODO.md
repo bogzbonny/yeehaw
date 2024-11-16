@@ -24,6 +24,22 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+01. click down in textbox (or dropdownlist), then click again and drag to listbox then unclick.. this will panic on priotizer
+    registers
+      - likely due to the fact that external mouse events are processed after
+        mouse events... 
+        - solution, only check for conflicts in prioratizer after all events
+          have been processed.
+
+01. scrolling tb while deselected doesn't scroll the linenumbers or the
+    scrollbars
+
+01. window test, all the main buttons are staying highlighted after they're clicked
+          (easy fix) 
+
+01. resizing a scrollable pane should modify the offset of that pane to account
+    for the extra space (instead of automatically extending out of range)
+
 WIDGET RECALL REFACTOR
  - Selectibility Hook
     - this one is a bit harder maybe we have to introduce hooks on 
@@ -336,7 +352,7 @@ It'd be cool to come up with a "Complex Selector" generalization for the dials.
     - imagine that the progressbar was just a gradient changing around a box
       border
 
-10. Loading fidgets spinners
+10. Loading spinners
     - 🌑🌒🌓🌔🌕🌖🌗🌘
     - braile movers
     - block movers of a few varieties
@@ -397,7 +413,16 @@ It'd be cool to come up with a "Complex Selector" generalization for the dials.
     
 10. vertical tabs (like brave)
 
-10. table widget
+11. tabs with border:
+╭─────╮────╮────╮──────╮  ╭─────╭────╮────╮──────╮ ╭─────╭────╭────╮──────╮
+│tabs1│tab2│tab3│ tab4 │  │tabs1│tab2│tab3│ tab4 │ │tabs1│tab2│tab3│ tab4 │
+│     └────────────────╮  ├─────┘    └────┴──────┤ ├─────┴────┘    └──────┤
+│                      │  │                      │ │                      │
+│                      │  │                      │ │                      │
+│                      │  │                      │ │                      │
+│                      │  │                      │ │                      │
+└──────────────────────┘  └──────────────────────┘ └──────────────────────┘
+10. table widget        
 
 10. hover comments
      - hover comment event which is triggered after a certain amount of time

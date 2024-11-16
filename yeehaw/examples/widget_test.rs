@@ -136,25 +136,39 @@ async fn main() -> Result<(), Error> {
         .at(DynVal::new_flex(0.5), DynVal::new_flex(0.1));
     el.add_element(Box::new(listbox));
 
-    //let tb = TextBox::new(
-    //    &ctx,
-    //    "012345678901234567890123456789 \
-    //    \n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9",
-    //)
     let tb = TextBox::new(
         &ctx,
         "012345678901234567890123456789 \
-        \n1",
+        \n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9",
+        //\n1",
     )
     .with_width(DynVal::new_fixed(20))
     .with_height(DynVal::new_fixed(10))
-    .with_lower_scrollbar(&ctx)
-    .with_right_scrollbar(&ctx)
-    //.with_line_numbers(&ctx)
+    //.with_top_scrollbar(&ctx)
+    .with_bottom_scrollbar(&ctx)
+    //.with_right_scrollbar(&ctx)
+    .with_left_scrollbar(&ctx)
+    .with_line_numbers(&ctx)
     .editable()
     .with_no_wordwrap()
     .at(DynVal::new_fixed(70), DynVal::new_fixed(6));
     el.add_element(Box::new(tb));
+
+    //let tb = elements::textbox::TextBoxInner::new(
+    //    &ctx,
+    //    "012345678901234567890123456789 \
+    //    \n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9",
+    //    //\n1",
+    //)
+    //.with_width(DynVal::new_fixed(20))
+    //.with_height(DynVal::new_fixed(10))
+    ////.with_lower_scrollbar(&ctx)
+    ////.with_right_scrollbar(&ctx)
+    ////.with_line_numbers(&ctx)
+    //.editable()
+    //.with_no_wordwrap()
+    //.at(DynVal::new_fixed(70), DynVal::new_fixed(6));
+    //el.add_element(Box::new(tb));
 
     // XXX
     //let tb_with_grey = TextBox::new(&ctx, "")

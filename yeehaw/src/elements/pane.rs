@@ -243,8 +243,8 @@ impl Pane {
         let lines = s.split('\n');
         let mut rs: Vec<Vec<char>> = Vec::new();
 
-        let mut width = self.get_width(ctx);
-        let mut height = self.get_height(ctx);
+        let mut width = ctx.s.width as usize;
+        let mut height = ctx.s.height as usize;
         for line in lines {
             if width < line.len() {
                 width = line.len();
@@ -596,7 +596,8 @@ impl Element for Pane {
 
     fn set_content_x_offset(&self, ctx: &Context, x: usize) {
         let content_width = self.content.borrow().width();
-        let view_width = self.loc.borrow().get_width_val(ctx);
+        //let view_width = self.loc.borrow().get_width_val(ctx);
+        let view_width = ctx.s.width as usize;
         let x = if x > content_width.saturating_sub(view_width) {
             content_width.saturating_sub(view_width)
         } else {
@@ -607,7 +608,8 @@ impl Element for Pane {
 
     fn set_content_y_offset(&self, ctx: &Context, y: usize) {
         let content_height = self.content.borrow().height();
-        let view_height = self.loc.borrow().get_height_val(ctx);
+        //let view_height = self.loc.borrow().get_height_val(ctx);
+        let view_height = ctx.s.height as usize;
         let y = if y > content_height.saturating_sub(view_height) {
             content_height.saturating_sub(view_height)
         } else {

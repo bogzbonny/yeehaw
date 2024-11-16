@@ -140,7 +140,6 @@ impl Button {
 
         let d = b.button_drawing();
 
-        debug!("button new: {:?}, {}, {}", text, d.width(), d.height());
         b.pane.set_dyn_width(DynVal::new_fixed(d.width() as i32));
         b.pane.set_dyn_height(DynVal::new_fixed(d.height() as i32));
         b.pane.set_content(d);

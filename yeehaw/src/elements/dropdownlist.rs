@@ -4,7 +4,8 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-///TODO multiline dropdown entry support
+// TODO multiline dropdown entry support
+// TODO allow for scrollbar mouse events
 
 #[derive(Clone)]
 pub struct DropdownList {
