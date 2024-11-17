@@ -22,6 +22,11 @@ pub struct ListBoxInner {
     pub selected: Rc<RefCell<Vec<usize>>>,
     /// the entries which have been selected
     pub cursor: Rc<RefCell<Option<usize>>>,
+
+    /// the last listbox position which was clicked, used for initialization
+    /// of a new keyboard cursor if none exists and then it is initialized.
+    pub last_clicked_position: Rc<RefCell<Option<usize>>>,
+
     /// position of a listbox cursor
     pub clicked_down: Rc<RefCell<bool>>,
     /// activated when mouse is clicked down while over object
@@ -67,9 +72,10 @@ impl ListBox {
             .max()
             .unwrap_or(0);
         let line_count = entries.iter().map(|r| r.lines().count()).sum::<usize>() as i32;
-        let inner = ListBoxInner::new(ctx, entries, selection_made_fn);
+        let init_ctx = ctx.child_init_context();
+        let inner = ListBoxInner::new(&init_ctx, entries, selection_made_fn);
 
-        let pane = SelectablePane::new(ctx, Self::KIND)
+        let pane = SelectablePane::new(&init_ctx, Self::KIND)
             .with_styles(ListBoxInner::STYLE)
             .with_dyn_width(DynVal::new_fixed(max_entry_width as i32))
             .with_dyn_height(DynVal::new_fixed(line_count));
@@ -94,33 +100,33 @@ impl ListBox {
         lb
     }
 
-    pub fn with_styles(self, ctx: &Context, styles: SelStyles) -> Self {
+    pub fn with_styles(self, init_ctx: &Context, styles: SelStyles) -> Self {
         self.pane.set_styles(styles);
-        self.inner.borrow().update_content(ctx);
+        self.inner.borrow().update_content(init_ctx);
         self
     }
 
     // ----------------------------------------------
     /// decorators
 
-    pub fn with_left_scrollbar(self, ctx: &Context) -> Self {
-        self.with_scrollbar_inner(ctx, VerticalSBPositions::ToTheLeft)
+    pub fn with_left_scrollbar(self, init_ctx: &Context) -> Self {
+        self.with_scrollbar_inner(init_ctx, VerticalSBPositions::ToTheLeft)
     }
 
-    pub fn with_right_scrollbar(self, ctx: &Context) -> Self {
-        self.with_scrollbar_inner(ctx, VerticalSBPositions::ToTheRight)
+    pub fn with_right_scrollbar(self, init_ctx: &Context) -> Self {
+        self.with_scrollbar_inner(init_ctx, VerticalSBPositions::ToTheRight)
     }
 
-    pub fn with_scrollbar(self, ctx: &Context) -> Self {
-        self.with_scrollbar_inner(ctx, VerticalSBPositions::ToTheRight)
+    pub fn with_scrollbar(self, init_ctx: &Context) -> Self {
+        self.with_scrollbar_inner(init_ctx, VerticalSBPositions::ToTheRight)
     }
 
-    fn with_scrollbar_inner(self, ctx: &Context, pos: VerticalSBPositions) -> Self {
+    fn with_scrollbar_inner(self, init_ctx: &Context, pos: VerticalSBPositions) -> Self {
         let height = DynVal::full();
         let content_height = self.inner.borrow().pane.content_height();
 
-        let sb =
-            VerticalScrollbar::new(ctx, height, ctx.s, content_height).without_keyboard_events();
+        let sb = VerticalScrollbar::new(init_ctx, height, init_ctx.s, content_height)
+            .without_keyboard_events();
         match pos {
             VerticalSBPositions::ToTheLeft => {
                 sb.set_at(0.into(), 0.into());
@@ -137,7 +143,7 @@ impl ListBox {
                 return self;
             }
         }
-        sb.set_scrollable_view_size(ctx.child_context(&self.pane.get_dyn_location()).s);
+        sb.set_scrollable_view_size(init_ctx.child_context(&self.pane.get_dyn_location()).s);
 
         // wire the scrollbar to the listbox
         let pane_ = self.inner.borrow().pane.clone();
@@ -152,35 +158,35 @@ impl ListBox {
         self
     }
 
-    pub fn with_lines_per_item(self, ctx: &Context, lines: usize) -> Self {
+    pub fn with_lines_per_item(self, init_ctx: &Context, lines: usize) -> Self {
         *self.inner.borrow().lines_per_item.borrow_mut() = lines;
         self.pane.set_dyn_height(DynVal::new_fixed(
             self.inner.borrow().entries.borrow().len() as i32 * lines as i32,
         ));
-        self.inner.borrow().update_content(ctx);
+        self.inner.borrow().update_content(init_ctx);
         self
     }
 
-    pub fn with_selection_mode(self, ctx: &Context, mode: SelectionMode) -> Self {
+    pub fn with_selection_mode(self, init_ctx: &Context, mode: SelectionMode) -> Self {
         *self.inner.borrow().selection_mode.borrow_mut() = mode;
-        self.inner.borrow().update_content(ctx);
+        self.inner.borrow().update_content(init_ctx);
         self
     }
 
-    pub fn with_width(self, ctx: &Context, width: DynVal) -> Self {
+    pub fn with_width(self, init_ctx: &Context, width: DynVal) -> Self {
         self.pane.set_dyn_width(width);
-        self.inner.borrow().update_content(ctx);
+        self.inner.borrow().update_content(init_ctx);
         self
     }
-    pub fn with_height(self, ctx: &Context, height: DynVal) -> Self {
+    pub fn with_height(self, init_ctx: &Context, height: DynVal) -> Self {
         self.pane.set_dyn_height(height);
-        self.inner.borrow().update_content(ctx);
+        self.inner.borrow().update_content(init_ctx);
         self
     }
-    pub fn with_size(self, ctx: &Context, width: DynVal, height: DynVal) -> Self {
+    pub fn with_size(self, init_ctx: &Context, width: DynVal, height: DynVal) -> Self {
         self.pane.set_dyn_width(width);
         self.pane.set_dyn_height(height);
-        self.inner.borrow().update_content(ctx);
+        self.inner.borrow().update_content(init_ctx);
         self
     }
 
@@ -215,12 +221,12 @@ impl ListBoxInner {
     }
 
     pub fn new(
-        ctx: &Context, entries: Vec<String>,
+        init_ctx: &Context, entries: Vec<String>,
         selection_made_fn: Box<dyn FnMut(Context, Vec<String>) -> EventResponses>,
     ) -> Self {
         let max_lines_per_entry = entries.iter().map(|r| r.lines().count()).max().unwrap_or(0);
 
-        let pane = Pane::new(ctx, Self::KIND)
+        let pane = Pane::new(init_ctx, Self::KIND)
             .with_self_receivable_events(Self::default_receivable_events())
             .with_dyn_width(DynVal::full())
             .with_dyn_height(DynVal::full());
@@ -233,6 +239,7 @@ impl ListBoxInner {
             lines_per_item: Rc::new(RefCell::new(max_lines_per_entry)),
             selected: Rc::new(RefCell::new(Vec::new())),
             cursor: Rc::new(RefCell::new(None)),
+            last_clicked_position: Rc::new(RefCell::new(None)),
             clicked_down: Rc::new(RefCell::new(false)),
             selection_mode: Rc::new(RefCell::new(SelectionMode::NoLimit)),
             item_selected_style: Rc::new(RefCell::new(Self::STYLE_ITEM_SELECTED)),
@@ -242,7 +249,7 @@ impl ListBoxInner {
             scrollbar: Rc::new(RefCell::new(None)),
             is_dirty: Rc::new(RefCell::new(true)),
         };
-        lb.update_content(ctx);
+        lb.update_content(init_ctx);
         lb
     }
 
@@ -320,11 +327,8 @@ impl ListBoxInner {
         let mut content = String::new();
         let entries_len = self.entries.borrow().len();
         for i in 0..entries_len {
-            content += &self.get_text_for_entry(
-                i,
-                self.pane.get_width(ctx),
-                *self.lines_per_item.borrow(),
-            );
+            content +=
+                &self.get_text_for_entry(i, ctx.s.width.into(), *self.lines_per_item.borrow());
             if i < entries_len - 1 {
                 content += "\n";
             }
@@ -383,7 +387,12 @@ impl ListBoxInner {
                 *self.cursor.borrow_mut() = Some(cursor - 1);
             }
             None => {
-                *self.cursor.borrow_mut() = Some(self.entries.borrow().len() - 1);
+                if let Some(lcp) = *self.last_clicked_position.borrow() {
+                    *self.cursor.borrow_mut() = Some(lcp);
+                    self.cursor_up(ctx);
+                } else {
+                    *self.cursor.borrow_mut() = Some(self.entries.borrow().len() - 1);
+                }
             }
             _ => {}
         }
@@ -397,7 +406,12 @@ impl ListBoxInner {
                 *self.cursor.borrow_mut() = Some(cursor + 1);
             }
             None => {
-                *self.cursor.borrow_mut() = Some(0);
+                if let Some(lcp) = *self.last_clicked_position.borrow() {
+                    *self.cursor.borrow_mut() = Some(lcp);
+                    self.cursor_down(ctx);
+                } else {
+                    *self.cursor.borrow_mut() = Some(0);
+                }
             }
             _ => {}
         }
@@ -560,6 +574,8 @@ impl Element for ListBoxInner {
                             return (false, resps);
                         }
 
+                        *self.last_clicked_position.borrow_mut() = Some(item_i);
+
                         // toggle selection
                         let resps_ = self.toggle_entry_selected_at_i(ctx, item_i);
                         resps.extend(resps_);
@@ -576,6 +592,7 @@ impl Element for ListBoxInner {
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         if self.is_dirty.replace(false) {
             self.update_highlighting(ctx);
+            self.update_content(ctx);
         }
         self.pane.drawing(ctx)
     }

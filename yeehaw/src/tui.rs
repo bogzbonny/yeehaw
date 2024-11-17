@@ -47,6 +47,7 @@ pub struct Tui {
 }
 
 impl Tui {
+    /// creates a new full screen TUI, also provides a context for sub-element initialization
     pub fn new() -> Result<(Tui, Context), Error> {
         let (exit_tx, exit_recv) = tokio::sync::watch::channel(false);
         let (ev_tx, ev_recv) = tokio::sync::mpsc::channel::<Event>(10); // no idea if this buffer size is right or wrong
@@ -66,7 +67,8 @@ impl Tui {
         };
 
         let ctx = Context::new_context_for_screen_no_dur(&tui.cup.hat, tui.cup.ev_tx.clone());
-        Ok((tui, ctx))
+        let child_ctx = ctx.child_init_context();
+        Ok((tui, child_ctx))
     }
 
     pub fn context(&self) -> Context {

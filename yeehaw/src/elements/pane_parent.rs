@@ -298,9 +298,8 @@ impl Parent for ParentPane {
         self.eo
             .partially_process_ev_resps(parent_ctx, child_el_id, &mut resps, &b);
         if let Some(parent) = self.pane.parent.borrow_mut().deref() {
-            if let Some(next_parent_ctx) = parent_ctx.parent_context() {
-                parent.propagate_responses_upward(next_parent_ctx, &self.id(), resps);
-            }
+            let next_parent_ctx = parent_ctx.must_get_parent_context();
+            parent.propagate_responses_upward(next_parent_ctx, &self.id(), resps);
         }
     }
 

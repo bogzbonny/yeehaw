@@ -13,9 +13,13 @@ use {
 /// arbitrary information.
 #[derive(Clone, Debug)]
 pub struct Context {
+    /// The size of the element, during initialization of an element this size will be unknown and
+    /// will be set to a size of (0,0). During all subsiquent calls to the element, the size should
+    /// be known.
     pub s: Size,
     pub dur_since_launch: std::time::Duration,
-    /// the visible region of the element
+    /// the visible region of the element for very large elements, this may be a subset of the
+    /// entire element
     pub visible_region: Option<Loc>,
     //                      key , value
     pub metadata: HashMap<String, Vec<u8>>,
@@ -98,8 +102,24 @@ impl Context {
         }
     }
 
-    pub fn parent_context(&self) -> Option<&Context> {
-        self.parent_ctx.as_ref().map(|c| c.as_ref())
+    /// create a new context for initialization of a child element where the size of the child is
+    /// not yet known
+    pub fn child_init_context(&self) -> Context {
+        Context {
+            s: Size::default(),
+            dur_since_launch: self.dur_since_launch,
+            visible_region: None,
+            metadata: self.metadata.clone(),
+            parent_ctx: Some(Box::new(self.clone())),
+            hat: self.hat.clone(),
+            ev_tx: self.ev_tx.clone(),
+        }
+    }
+
+    pub fn must_get_parent_context(&self) -> &Context {
+        self.parent_ctx
+            .as_ref()
+            .expect("all contexts besides the first (TUI) context must have a parent")
     }
 
     pub fn with_visible_region(mut self, vr: Option<Loc>) -> Self {

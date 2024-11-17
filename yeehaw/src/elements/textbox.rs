@@ -28,14 +28,14 @@ pub struct TextBox {
 
 impl TextBox {
     const KIND: &'static str = "textbox";
-    pub fn new<S: Into<String>>(ctx: &Context, text: S) -> Self {
+    pub fn new<S: Into<String>>(init_ctx: &Context, text: S) -> Self {
         let text = text.into();
         let s = Size::get_text_size(&text);
-        let pane = SelectablePane::new(ctx, Self::KIND)
+        let pane = SelectablePane::new(init_ctx, Self::KIND)
             .with_dyn_width(DynVal::new_fixed(s.width as i32))
             .with_dyn_height(DynVal::new_fixed(s.height as i32))
             .with_styles(TextBoxInner::STYLE);
-        let inner = TextBoxInner::new(ctx, text);
+        let inner = TextBoxInner::new(init_ctx, text);
 
         debug!(
             "STARTy-sb content_height: {:?}",
@@ -73,9 +73,7 @@ impl TextBox {
                 tb_.post_hook_for_set_selectability();
             }));
 
-        let cctx = ctx.child_context(&tb.pane.get_dyn_location());
-        debug!("cctx.s: {:?}", cctx.s);
-        let _ = tb.drawing(&ctx.child_context(&tb.pane.get_dyn_location())); // to set the pane content
+        let _ = tb.drawing(&init_ctx.child_context(&tb.pane.get_dyn_location())); // to set the pane content
         tb
     }
 
@@ -88,30 +86,30 @@ impl TextBox {
         }
     }
 
-    pub fn with_scrollbars(self, ctx: &Context) -> Self {
-        self.set_x_scrollbar_inner(ctx, HorizontalSBPositions::Below);
-        self.set_y_scrollbar_inner(ctx, VerticalSBPositions::ToTheRight);
+    pub fn with_scrollbars(self, init_ctx: &Context) -> Self {
+        self.set_x_scrollbar_inner(init_ctx, HorizontalSBPositions::Below);
+        self.set_y_scrollbar_inner(init_ctx, VerticalSBPositions::ToTheRight);
         self
     }
 
-    pub fn with_left_scrollbar(self, ctx: &Context) -> Self {
-        self.set_y_scrollbar_inner(ctx, VerticalSBPositions::ToTheLeft);
+    pub fn with_left_scrollbar(self, init_ctx: &Context) -> Self {
+        self.set_y_scrollbar_inner(init_ctx, VerticalSBPositions::ToTheLeft);
         self
     }
 
-    pub fn with_right_scrollbar(self, ctx: &Context) -> Self {
-        self.set_y_scrollbar_inner(ctx, VerticalSBPositions::ToTheRight);
+    pub fn with_right_scrollbar(self, init_ctx: &Context) -> Self {
+        self.set_y_scrollbar_inner(init_ctx, VerticalSBPositions::ToTheRight);
         self
     }
 
-    fn set_y_scrollbar_inner(&self, ctx: &Context, pos: VerticalSBPositions) {
+    fn set_y_scrollbar_inner(&self, init_ctx: &Context, pos: VerticalSBPositions) {
         let content_height = self.inner.borrow().pane.content_height();
         let content_size = self.inner.borrow().pane.content_size();
 
         // accounts for the other scrollbar
         let inner_start_y = self.inner.borrow().pane.get_dyn_start_y();
 
-        let sb = VerticalScrollbar::new(ctx, DynVal::full(), content_size, content_height)
+        let sb = VerticalScrollbar::new(init_ctx, DynVal::full(), content_size, content_height)
             .without_keyboard_events();
         if self.x_scrollbar.borrow().is_some() {
             sb.pane.set_end_y(DynVal::full().minus_fixed(1));
@@ -138,7 +136,7 @@ impl TextBox {
                 return;
             }
         }
-        let size = ctx
+        let size = init_ctx
             .child_context(&self.inner.borrow().pane.get_dyn_location())
             .s;
         sb.set_scrollable_view_size(size);
@@ -148,28 +146,28 @@ impl TextBox {
 
         // wire the scrollbar to the textbox
         let pane_ = self.inner.borrow().pane.clone();
-        let hook = Box::new(move |ctx, y| pane_.set_content_y_offset(&ctx, y));
+        let hook = Box::new(move |init_ctx, y| pane_.set_content_y_offset(&init_ctx, y));
         *sb.position_changed_hook.borrow_mut() = Some(hook);
         *self.y_scrollbar.borrow_mut() = Some(sb.clone());
         self.pane.pane.add_element(Box::new(sb.clone()));
         self.inner.borrow().y_scrollbar.replace(Some(sb));
 
-        self.reset_line_numbers(ctx);
-        self.set_corner_decor(ctx);
-        self.reset_sb_sizes(ctx);
+        self.reset_line_numbers(init_ctx);
+        self.set_corner_decor(init_ctx);
+        self.reset_sb_sizes(init_ctx);
     }
 
-    pub fn with_top_scrollbar(self, ctx: &Context) -> Self {
-        self.set_x_scrollbar_inner(ctx, HorizontalSBPositions::Above);
+    pub fn with_top_scrollbar(self, init_ctx: &Context) -> Self {
+        self.set_x_scrollbar_inner(init_ctx, HorizontalSBPositions::Above);
         self
     }
 
-    pub fn with_bottom_scrollbar(self, ctx: &Context) -> Self {
-        self.set_x_scrollbar_inner(ctx, HorizontalSBPositions::Below);
+    pub fn with_bottom_scrollbar(self, init_ctx: &Context) -> Self {
+        self.set_x_scrollbar_inner(init_ctx, HorizontalSBPositions::Below);
         self
     }
 
-    fn set_x_scrollbar_inner(&self, ctx: &Context, pos: HorizontalSBPositions) {
+    fn set_x_scrollbar_inner(&self, init_ctx: &Context, pos: HorizontalSBPositions) {
         let content_width = self.inner.borrow().pane.content_width();
         let content_size = self.inner.borrow().pane.content_size();
 
@@ -180,7 +178,7 @@ impl TextBox {
             self.inner.borrow().pane.get_dyn_start_x()
         };
 
-        let sb = HorizontalScrollbar::new(ctx, DynVal::full(), content_size, content_width)
+        let sb = HorizontalScrollbar::new(init_ctx, DynVal::full(), content_size, content_width)
             .without_keyboard_events();
         if self.x_scrollbar.borrow().is_some() {
             sb.pane.set_end_y(DynVal::full().minus_fixed(1));
@@ -216,22 +214,22 @@ impl TextBox {
 
         // wire the scrollbar to the textbox
         let pane_ = self.inner.borrow().pane.clone();
-        let hook = Box::new(move |ctx, x| pane_.set_content_x_offset(&ctx, x));
+        let hook = Box::new(move |init_ctx, x| pane_.set_content_x_offset(&init_ctx, x));
         *sb.position_changed_hook.borrow_mut() = Some(hook);
         *self.x_scrollbar.borrow_mut() = Some(sb.clone());
         self.pane.pane.add_element(Box::new(sb.clone()));
         self.inner.borrow().x_scrollbar.replace(Some(sb));
-        self.set_corner_decor(ctx);
-        self.reset_sb_sizes(ctx);
+        self.set_corner_decor(init_ctx);
+        self.reset_sb_sizes(init_ctx);
     }
 
-    pub fn reset_sb_sizes(&self, ctx: &Context) {
-        let inner_ctx = ctx
+    pub fn reset_sb_sizes(&self, init_ctx: &Context) {
+        let inner_ctx = init_ctx
             .child_context(&self.pane.get_dyn_location())
             .child_context(&self.inner.borrow().pane.get_dyn_location());
         debug!(
-            "resetting sb sizes, ctx size: {:?}, inner size: {:?}",
-            ctx.s,
+            "resetting sb sizes, init_ctx size: {:?}, inner size: {:?}",
+            init_ctx.s,
             inner_ctx.s,
             //&self.inner.borrow().pane.get_dyn_location()
         );
@@ -250,12 +248,12 @@ impl TextBox {
         let _ = self.inner.borrow().correct_ln_and_sbs(&inner_ctx);
     }
 
-    pub fn with_line_numbers(self, ctx: &Context) -> Self {
-        self.set_line_numbers(ctx);
+    pub fn with_line_numbers(self, init_ctx: &Context) -> Self {
+        self.set_line_numbers(init_ctx);
         self
     }
 
-    pub fn reset_line_numbers(&self, ctx: &Context) {
+    pub fn reset_line_numbers(&self, init_ctx: &Context) {
         let ln_id = self
             .inner
             .borrow()
@@ -265,20 +263,20 @@ impl TextBox {
             .map(|ln_tb| ln_tb.pane.id());
         if let Some(ln_id) = ln_id {
             self.pane.pane.remove_element(&ln_id);
-            self.set_line_numbers(ctx);
+            self.set_line_numbers(init_ctx);
         }
     }
 
-    pub fn set_line_numbers(&self, ctx: &Context) {
+    pub fn set_line_numbers(&self, init_ctx: &Context) {
         let start_x = self.inner.borrow().pane.get_dyn_start_x();
         let start_y = self.inner.borrow().pane.get_dyn_start_y();
         let end_y = self.inner.borrow().pane.get_dyn_end_y();
 
         // determine the width of the line numbers textbox
-        let (lns, lnw) = self.inner.borrow().get_line_numbers(ctx);
+        let (lns, lnw) = self.inner.borrow().get_line_numbers(init_ctx);
 
         // create the line numbers textbox
-        let ln_tb = TextBoxInner::new(ctx, lns)
+        let ln_tb = TextBoxInner::new(init_ctx, lns)
             .at(start_x.clone(), start_y)
             .with_width(DynVal::new_fixed(lnw as i32))
             .with_no_wordwrap()
@@ -298,15 +296,15 @@ impl TextBox {
         // reduce the width of the main textbox
         self.inner.borrow().pane.set_start_x(new_inner_start_x);
         *self.inner.borrow().line_number_tb.borrow_mut() = Some(ln_tb.clone());
-        self.reset_sb_sizes(ctx);
+        self.reset_sb_sizes(init_ctx);
     }
 
-    pub fn set_corner_decor(&self, ctx: &Context) {
+    pub fn set_corner_decor(&self, init_ctx: &Context) {
         // add corner decor
         if let (Some(x_sb), Some(y_sb)) = (&*self.x_scrollbar.borrow(), &*self.y_scrollbar.borrow())
         {
             let corner_decor = self.inner.borrow().corner_decor.borrow().clone();
-            let cd = Label::new(ctx, &(corner_decor.ch.to_string()))
+            let cd = Label::new(init_ctx, &(corner_decor.ch.to_string()))
                 .with_style(corner_decor.style.clone());
 
             let cd_y = x_sb.pane.get_dyn_start_y();
@@ -381,27 +379,27 @@ impl TextBox {
         self
     }
 
-    pub fn editable(self, ctx: &Context) -> Self {
+    pub fn editable(self, init_ctx: &Context) -> Self {
         self.inner.borrow().set_editable();
-        self.reset_sb_sizes(ctx);
+        self.reset_sb_sizes(init_ctx);
         self
     }
 
-    pub fn non_editable(self, ctx: &Context) -> Self {
+    pub fn non_editable(self, init_ctx: &Context) -> Self {
         self.inner.borrow().set_non_editable();
-        self.reset_sb_sizes(ctx);
+        self.reset_sb_sizes(init_ctx);
         self
     }
 
-    pub fn with_wordwrap(self, ctx: &Context) -> Self {
+    pub fn with_wordwrap(self, init_ctx: &Context) -> Self {
         *self.inner.borrow().wordwrap.borrow_mut() = true;
-        self.reset_sb_sizes(ctx);
+        self.reset_sb_sizes(init_ctx);
         self
     }
 
-    pub fn with_no_wordwrap(self, ctx: &Context) -> Self {
+    pub fn with_no_wordwrap(self, init_ctx: &Context) -> Self {
         *self.inner.borrow().wordwrap.borrow_mut() = false;
-        self.reset_sb_sizes(ctx);
+        self.reset_sb_sizes(init_ctx);
         self
     }
 

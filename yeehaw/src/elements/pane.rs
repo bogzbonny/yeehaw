@@ -349,9 +349,8 @@ impl Pane {
     /// NOTE this name was chosen to distinguish itself from propagate_responses_upward
     pub fn send_responses_upward(&self, ctx: &Context, resps: EventResponses) {
         if let Some(parent) = self.parent.borrow().as_ref() {
-            if let Some(parent_ctx) = ctx.parent_context() {
-                parent.propagate_responses_upward(parent_ctx, &self.id(), resps);
-            }
+            let parent_ctx = ctx.must_get_parent_context();
+            parent.propagate_responses_upward(parent_ctx, &self.id(), resps);
         }
     }
 
