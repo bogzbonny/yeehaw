@@ -81,9 +81,14 @@ impl TextBox {
         let sel = self.pane.get_selectability();
         *self.inner.borrow().selectedness.borrow_mut() = sel;
         *self.inner.borrow().current_sty.borrow_mut() = self.pane.get_current_style();
+        *self.inner.borrow().is_dirty.borrow_mut() = true;
         if sel != Selectability::Selected {
             *self.inner.borrow().visual_mode.borrow_mut() = false;
         }
+    }
+
+    pub fn set_dirty(&self) {
+        *self.inner.borrow().is_dirty.borrow_mut() = true;
     }
 
     pub fn with_scrollbars(self, init_ctx: &Context) -> Self {
@@ -225,6 +230,7 @@ impl TextBox {
 
     pub fn reset_sb_sizes(&self, init_ctx: &Context) {
         let inner_ctx = init_ctx
+            .must_get_parent_context()
             .child_context(&self.pane.get_dyn_location())
             .child_context(&self.inner.borrow().pane.get_dyn_location());
         debug!(
@@ -246,6 +252,8 @@ impl TextBox {
 
         // correct offsets
         let _ = self.inner.borrow().correct_ln_and_sbs(&inner_ctx);
+        let _ = self.drawing(&init_ctx.child_context(&self.pane.get_dyn_location())); // to set the pane content
+        self.set_dirty();
     }
 
     pub fn with_line_numbers(self, init_ctx: &Context) -> Self {
@@ -328,11 +336,13 @@ impl TextBox {
 
     pub fn with_text_when_empty<S: Into<String>>(self, text: S) -> Self {
         *self.inner.borrow().text_when_empty.borrow_mut() = text.into();
+        self.set_dirty();
         self
     }
 
     pub fn with_text_when_empty_fg(self, fg: Color) -> Self {
         *self.inner.borrow().text_when_empty_fg.borrow_mut() = fg;
+        self.set_dirty();
         self
     }
 
@@ -343,39 +353,47 @@ impl TextBox {
         }
         *self.inner.borrow().current_sty.borrow_mut() = self.pane.get_current_style();
         self.pane.set_styles(styles);
+        self.set_dirty();
         self
     }
 
     pub fn with_width(self, width: DynVal) -> Self {
         self.pane.set_dyn_width(width);
+        self.set_dirty();
         self
     }
     pub fn with_height(self, height: DynVal) -> Self {
         self.pane.set_dyn_height(height);
+        self.set_dirty();
         self
     }
     pub fn with_size(self, width: DynVal, height: DynVal) -> Self {
         self.pane.set_dyn_width(width);
         self.pane.set_dyn_height(height);
+        self.set_dirty();
         self
     }
 
     pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
         self.pane.set_at(loc_x, loc_y);
+        self.set_dirty();
         self
     }
 
     pub fn set_at(&self, loc_x: DynVal, loc_y: DynVal) {
         self.pane.set_at(loc_x, loc_y);
+        self.set_dirty();
     }
 
     pub fn with_ch_cursor(self) -> Self {
         *self.inner.borrow().ch_cursor.borrow_mut() = true;
+        self.set_dirty();
         self
     }
 
     pub fn with_no_ch_cursor(self) -> Self {
         *self.inner.borrow().ch_cursor.borrow_mut() = false;
+        self.set_dirty();
         self
     }
 
@@ -407,6 +425,7 @@ impl TextBox {
         self, hook: Box<dyn FnMut(Context, usize, Style) -> Style>,
     ) -> Self {
         *self.inner.borrow().position_style_hook.borrow_mut() = Some(hook);
+        self.set_dirty();
         self
     }
 
@@ -440,11 +459,13 @@ impl TextBox {
 
     pub fn with_cursor_style(self, style: Style) -> Self {
         *self.inner.borrow().cursor_style.borrow_mut() = style;
+        self.set_dirty();
         self
     }
 
     pub fn with_corner_decor(self, decor: DrawCh) -> Self {
         *self.inner.borrow().corner_decor.borrow_mut() = decor;
+        self.set_dirty();
         self
     }
 
@@ -454,10 +475,12 @@ impl TextBox {
 
     pub fn set_text(&self, text: String) {
         self.inner.borrow().set_text(text);
+        self.set_dirty();
     }
 
     pub fn set_cursor_pos(&self, pos: usize) {
         self.inner.borrow().set_cursor_pos(pos);
+        self.set_dirty();
     }
 }
 
@@ -477,6 +500,13 @@ pub struct TextBoxInner {
     pub pane: Pane,
     pub current_sty: Rc<RefCell<Style>>,
     pub selectedness: Rc<RefCell<Selectability>>,
+
+    /// whether or not the content is dirty and needs updating
+    pub is_dirty: Rc<RefCell<bool>>,
+
+    /// used for redrawing logic
+    pub last_size: Rc<RefCell<Size>>,
+
     pub text: Rc<RefCell<Vec<char>>>,
     pub text_when_empty: Rc<RefCell<String>>,
     /// greyed out text when the textbox is empty
@@ -575,6 +605,8 @@ impl TextBoxInner {
             pane,
             current_sty: Rc::new(RefCell::new(Style::default())),
             selectedness: Rc::new(RefCell::new(Selectability::Ready)),
+            is_dirty: Rc::new(RefCell::new(true)),
+            last_size: Rc::new(RefCell::new(Size::default())),
             text: Rc::new(RefCell::new(text.chars().collect())),
             text_when_empty: Rc::new(RefCell::new("enter text...".to_string())),
             text_when_empty_fg: Rc::new(RefCell::new(Color::GREY6)),
@@ -941,6 +973,8 @@ impl TextBoxInner {
             return (false, EventResponses::default());
         }
 
+        self.is_dirty.replace(true);
+
         if !*self.ch_cursor.borrow() {
             match true {
                 _ if ev[0] == KB::KEY_LEFT || ev[0] == KB::KEY_H => {
@@ -1127,6 +1161,10 @@ impl TextBoxInner {
             }
         }
 
+        if !matches!(ev.kind, MouseEventKind::Moved) {
+            self.is_dirty.replace(true);
+        }
+
         let selectedness = *self.selectedness.borrow();
         let cursor_pos = self.get_cursor_pos();
         match ev.kind {
@@ -1285,21 +1323,12 @@ impl TextBoxInner {
 
         (false, EventResponses::default())
     }
-}
 
-#[yeehaw_derive::impl_element_from(pane)]
-impl Element for TextBoxInner {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        match ev {
-            Event::KeyCombo(ke) => self.receive_key_event(ctx, ke),
-            Event::Mouse(me) => self.receive_mouse_event(ctx, me),
-            _ => (false, EventResponses::default()),
-        }
-    }
-
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+    /// updates the content of the textbox
+    pub fn update_content(&self, ctx: &Context) {
         let w = self.get_wrapped(ctx);
         let wrapped = w.wrapped_string();
+        self.correct_ln_and_sbs(ctx);
 
         let curr_sty = self.current_sty.borrow().clone();
         let mut sty = curr_sty.clone();
@@ -1312,7 +1341,7 @@ impl Element for TextBoxInner {
             sty.set_fg(self.text_when_empty_fg.borrow().clone());
             self.pane
                 .set_content_from_string_with_style(ctx, &text, sty);
-            return self.pane.drawing(ctx);
+            return;
         } else {
             self.pane
                 .set_content_from_string_with_style(ctx, &wrapped, sty);
@@ -1360,7 +1389,24 @@ impl Element for TextBoxInner {
                 }
             }
         }
+    }
+}
 
+#[yeehaw_derive::impl_element_from(pane)]
+impl Element for TextBoxInner {
+    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        match ev {
+            Event::KeyCombo(ke) => self.receive_key_event(ctx, ke),
+            Event::Mouse(me) => self.receive_mouse_event(ctx, me),
+            _ => (false, EventResponses::default()),
+        }
+    }
+
+    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        if self.is_dirty.replace(false) || *self.last_size.borrow() != ctx.s {
+            self.update_content(ctx);
+            self.last_size.replace(ctx.s);
+        }
         self.pane.drawing(ctx)
     }
 }

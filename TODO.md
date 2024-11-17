@@ -1,6 +1,3 @@
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 01. Make the context size more clear.
      - The context provided always contains the size of the element. However
        during initialization, before the size of an element is known, the
@@ -17,11 +14,95 @@
        option and the regular context where the size is nolonger an option!?
          - makes it maybe a bit annoying with some duplicated logic however?
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 05. introduce errors, remove all unwraps
 
 01. docs docs docs
 
 01. add docs, crates button banners to github readme
+
+10. element slider bars / track bars
+   ██████████████████━━━━━━━━━━━━━━   ┳   ┳ 1
+                                      ┃   ┃
+   ━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━   ╋   ╋ 2
+                                      ┃   ┃
+   ██████████╋━━━━━━━━━━━━━━━━━━━━━  ▶╋   ╋ 3
+                                      ┃  ▶┃
+   ━━━━━━━━━━╋██████████████╋━━━━━━   ╋   ╋ 4
+                                      ┃   ┃
+   ══════════╪═════════════════════   ╋   ╋ 5
+                                      ┃   ┃
+   ══════════╪██████████████╪══════   ╋   ╋ 6 
+                                      ┃   ┃
+   ══════════╪▓▓▓▓▓▓▓▓▓▓▓▓▓▓╪══════   ┻   ┻ 7 
+
+   ━━━━━━━━━● 
+      ●━━━━━━━━━━━━━━━━━━━━● 
+   ━━━━━━━━❍─────────────────────── 
+
+10. Dial 8 or 12 positions
+    - if there are labels could bold the one which is selected
+    - could provide continious value if pixel mode enabled
+
+               op                op                op                op 
+   __    __    __    __    __    __    __    __    __    __    __    __ 
+  ╱° ╲  ╱ °╲  ╱  °  ╱  ⚬  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ⚬  ╲  °  ╲
+  ╲__╱  ╲__╱  ╲__╱  ╲__╱  ╲__°  ╲__⚬  ╲_⚬╱  ╲⚬_╱  ⚬__╱  °__╱  ╲__╱  ╲__╱  
+                   
+One letter labels
+   A__B      A__B       A__B       A__B 
+ H ╱° ╲ C  H ╱  ⚬ C   H ╱  ╲ C   H ╱° ╲ C
+ G ╲__╱ D  G ╲__╱ D   G ╲__° D   G ╲__╱ D              
+   F  E      F  E       F  E       F  E  
+
+           OptionH __ OptionA
+         OptionG  ╱° ╲  OptionB
+         OptionF  ╲__╱  OptionC
+           OptionE    OptionD
+
+           OptionH  OptionA
+                ⟍ __ ⟋ 
+       OptionG - ╱  ╲ - OptionB
+       OptionF - °__╱ - OptionC
+                ⟋    ⟍ 
+           OptionE  OptionD
+
+            OptionL  OptionA
+         OptionK.⟍ __ ⟋.OptionB
+       OptionJ -  ╱  ╲  - OptionC
+       OptionI -  ⚬__╱  - OptionD    // can use lower then upper dots on these positions
+         OptionH´⟋    ⟍`OptionE
+            OptionG  OptionF      
+
+            OptionL  OptionA
+         OptionK   __   OptionB
+       OptionJ    ╱  ╲    OptionC
+       OptionI    °__╱    OptionD
+         OptionH        OptionE
+            OptionG  OptionF
+
+It'd be cool to come up with a "Complex Selector" generalization for the dials. 
+ - for now, this complex selector should probably be the only way to initialize
+   a dial... eventually we could automatically produce the maps, but it can get
+   complicated as the text of the different options changes.
+ - probably each version of the dial (3 postion... 8 position etc) should be a
+   different complex selector. 
+ - All the different states could be fed in manually as DrawCh2Ds 
+ - we would probably want different states for "selecting" (brighter colors) and
+   "selected" dimmer colors. 
+ - Feed in a map of all the different selection positions:
+
+      OptionL  OptionA          KKKLLLLLLLLLLAAAAAAAAAABBB
+   OptionK.⟍ __ ⟋.OptionB       JKKKKKKKKKLLLAAABBBBBBBBBC
+ OptionJ -  ╱  ╲  - OptionC     JJJJJJJJJJJJJCCCCCCCCCCCCC
+ OptionI -  ⚬__╱  - OptionD     IIIIIIIIIIIIIDDDDDDDDDDDDD 
+   OptionH´⟋    ⟍`OptionE       IHHHHHHHHHGGGFFFEEEEEEEEED
+      OptionG  OptionF          HHHGGGGGGGGGGFFFFFFFFFFEEE 
+
+ - if certain positions are excluded their selection positions could be a '0'
+ - If the mouse is dragging outside of the selector zone, the nearest position
+   could be "snapped to".
 
 01. showcase example 
       - sweet figlet text up top "Yeahaw showcase"
@@ -43,10 +124,8 @@
 
 01. gifs gifs gifs
 
-01. resizing a scrollable pane should modify the offset of that pane to account
-    for the extra space (instead of automatically extending out of range)
-
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 
 01. scrollbars on textbox grow ever so slightly once the texbox is entered.
       - scrollbars on textbox have bad starting size
@@ -155,17 +234,23 @@
 
 10. scrollbar style on pane option... use a half(widthwise) block character instead of the
     thick border line... looks nice
+     - maybe dont use half characters for this one only full characters
+     - also maybe don't use arrows for this style
+     - could provide the "inner" or "outer" option
 
 ┌─────────────────────┐
 │                     │
 │                     │
-│                     ▖
-│                     ▌
-│                     ▌
-│                     ▌
-│                     ▘
 │                     │
-└◁───▀▀▀▀▀▀▀▀▀▀▀▘────▷┘
+│                     ▌
+│                     ▌
+│                     ▌
+│                     ▌
+│                     │
+└────▀▀▀▀▀▀▀▀▀▀▀▀─────┘
+
+10. resizing a scrollable pane should modify the offset of that pane to account
+    for the extra space (instead of automatically extending out of range)
 
 05. STACKING of minimized windows in parent pane
     MAYBE do only after taffy is integrated... could help for these guys
@@ -220,89 +305,6 @@
       - when an entire line is used it should be able to be draggable to effect
         the size of the element
 
-10. widget slider bars / track bars
-   ██████████████████━━━━━━━━━━━━━━   ┳   ┳ 1
-                                      ┃   ┃
-   ━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━   ╋   ╋ 2
-                                      ┃   ┃
-   ██████████╋━━━━━━━━━━━━━━━━━━━━━  ▶╋   ╋ 3
-                                      ┃  ▶┃
-   ━━━━━━━━━━╋██████████████╋━━━━━━   ╋   ╋ 4
-                                      ┃   ┃
-   ══════════╪═════════════════════   ╋   ╋ 5
-                                      ┃   ┃
-   ══════════╪██████████████╪══════   ╋   ╋ 6 
-                                      ┃   ┃
-   ══════════╪▓▓▓▓▓▓▓▓▓▓▓▓▓▓╪══════   ┻   ┻ 7 
-
-   ━━━━━━━━━● 
-      ●━━━━━━━━━━━━━━━━━━━━● 
-   ━━━━━━━━❍─────────────────────── 
-   ▁▂▃▄▅▆▇
-
-
-10. Dial 8 or 12 positions
-    - if there are labels could bold the one which is selected
-    - could provide continious value if pixel mode enabled
-
-               op                op                op                op 
-   __    __    __    __    __    __    __    __    __    __    __    __ 
-  ╱° ╲  ╱ °╲  ╱  °  ╱  ⚬  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ⚬  ╲  °  ╲
-  ╲__╱  ╲__╱  ╲__╱  ╲__╱  ╲__°  ╲__⚬  ╲_⚬╱  ╲⚬_╱  ⚬__╱  °__╱  ╲__╱  ╲__╱  
-                   
-One letter labels
-   A__B      A__B       A__B       A__B 
- H ╱° ╲ C  H ╱  ⚬ C   H ╱  ╲ C   H ╱° ╲ C
- G ╲__╱ D  G ╲__╱ D   G ╲__° D   G ╲__╱ D              
-   F  E      F  E       F  E       F  E  
-
-           OptionH __ OptionA
-         OptionG  ╱° ╲  OptionB
-         OptionF  ╲__╱  OptionC
-           OptionE    OptionD
-
-           OptionH  OptionA
-                ⟍ __ ⟋ 
-       OptionG - ╱  ╲ - OptionB
-       OptionF - °__╱ - OptionC
-                ⟋    ⟍ 
-           OptionE  OptionD
-
-            OptionL  OptionA
-         OptionK.⟍ __ ⟋.OptionB
-       OptionJ -  ╱  ╲  - OptionC
-       OptionI -  ⚬__╱  - OptionD    // can use lower then upper dots on these positions
-         OptionH´⟋    ⟍`OptionE
-            OptionG  OptionF      
-
-            OptionL  OptionA
-         OptionK   __   OptionB
-       OptionJ    ╱  ╲    OptionC
-       OptionI    °__╱    OptionD
-         OptionH        OptionE
-            OptionG  OptionF
-
-It'd be cool to come up with a "Complex Selector" generalization for the dials. 
- - for now, this complex selector should probably be the only way to initialize
-   a dial... eventually we could automatically produce the maps, but it can get
-   complicated as the text of the different options changes.
- - probably each version of the dial (3 postion... 8 position etc) should be a
-   different complex selector. 
- - All the different states could be fed in manually as DrawCh2Ds 
- - we would probably want different states for "selecting" (brighter colors) and
-   "selected" dimmer colors. 
- - Feed in a map of all the different selection positions:
-
-      OptionL  OptionA          KKKLLLLLLLLLLAAAAAAAAAABBB
-   OptionK.⟍ __ ⟋.OptionB       JKKKKKKKKKLLLAAABBBBBBBBBC
- OptionJ -  ╱  ╲  - OptionC     JJJJJJJJJJJJJCCCCCCCCCCCCC
- OptionI -  ⚬__╱  - OptionD     IIIIIIIIIIIIIDDDDDDDDDDDDD 
-   OptionH´⟋    ⟍`OptionE       IHHHHHHHHHGGGFFFEEEEEEEEED
-      OptionG  OptionF          HHHGGGGGGGGGGFFFFFFFFFFEEE 
-
- - if certain positions are excluded their selection positions could be a '0'
- - If the mouse is dragging outside of the selector zone, the nearest position
-   could be "snapped to".
 
 10. progress bar
     - optionally with an embedded word
@@ -387,7 +389,7 @@ It'd be cool to come up with a "Complex Selector" generalization for the dials.
 │                      │  │                      │ │                      │
 │                      │  │                      │ │                      │
 └──────────────────────┘  └──────────────────────┘ └──────────────────────┘
-10. table widget        
+10. table element        
 
 10. hover comments
      - hover comment event which is triggered after a certain amount of time
@@ -398,9 +400,25 @@ It'd be cool to come up with a "Complex Selector" generalization for the dials.
        - will have to refactor code such that everything now DOES call the pane
          receive event function.
 
-10. widget: date selector
+10. element: date selector
 
-10. widget: color selector
+10. element: color selector
+
+10. 2D selector space
+     - title and ticks as optional
+     - use for color selector
+     - could eventually provide inter-pixel values too
+     - optional coloring function for bg
+     - cursor obviously an option
+     
+    ┌────────────┐ 
+   1┤            │
+ B  ┤    x       │
+ U  ┤            │
+ S  ┤            │
+ T 0┤            │
+    └────────────┘
+         BOOM        
 
 10. TGIF
 
@@ -428,9 +446,9 @@ It'd be cool to come up with a "Complex Selector" generalization for the dials.
       can define what kind of mouse logic it is able to receive. 
     - this way priority can be defined between different types of mouse events,
       noteably within a scrollable pane, the scroll event could be routed to the 
-      scrollpane if it is not over a textbox widget but routed to the textbox
-      widget if the the event takes place over the widget AND the priority of
-      the widget is greater than the priority of the scrollpane
+      scrollpane if it is not over a textbox element but routed to the textbox
+      element if the the event takes place over the element AND the priority of
+      the element is greater than the priority of the scrollpane
     - integrate in better capture event logic, if the mouse event is NOT
       captured, send the event to the next priority down. [DONE]
        - this could potentially also be applied to the accomplish the scroll
@@ -504,6 +522,10 @@ It'd be cool to come up with a "Complex Selector" generalization for the dials.
 
 40. custom mouse types using images (requires image support, and mouse pixel tracking) 
 
+40. volume bar (color in) 
+   ▁▂▃▄▅▆▇
+    - drag up/right to increase down/left to decrease 
+
 40. tui get the color under the cursor pixel - useful for color pickers or from actual image pallets
 
 30. PIXEL MODE SPLITS for Complex Selector
@@ -542,7 +564,7 @@ It'd be cool to come up with a "Complex Selector" generalization for the dials.
          Event
        - question is: what events should actually be broadcast?
 
-50. LOW PRIORITY CAN JUST USE $EDITOR. widget: vim-style textbox
+50. LOW PRIORITY CAN JUST USE $EDITOR. element: vim-style textbox
      - with two scrollbars the mode can be placed in 
        the decorations corner!
 
