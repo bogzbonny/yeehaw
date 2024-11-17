@@ -20,7 +20,7 @@ async fn main() -> Result<(), Error> {
 
     let mut ctx_ = ctx.clone();
     let counter_ = counter.clone();
-    let add_button_click_fn = Box::new(move |btn: Button, _| {
+    let add_button_click_fn = Box::new(move |_btn: Button, _| {
         ctx_.s.width = 30;
         ctx_.s.height = 20;
         let title = format!("Pane {}", *counter_.borrow());
@@ -50,10 +50,11 @@ async fn main() -> Result<(), Error> {
             EventResponse::UnfocusOthers,
             EventResponse::Focus,
         ];
-        let mut resps = btn.pane.deselect();
-        let resp = EventResponse::NewElement(Box::new(window.clone()), Some(inner_resps.into()));
-        resps.push(resp);
-        resps
+        //let mut resps = btn.pane.deselect();
+        //let resp = EventResponse::NewElement(Box::new(window.clone()), Some(inner_resps.into()));
+        //resps.push(resp);
+        //resps
+        EventResponse::NewElement(Box::new(window.clone()), Some(inner_resps.into())).into()
     });
 
     let mut ctx_ = ctx.clone();

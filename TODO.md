@@ -30,6 +30,10 @@
         mouse events... 
         - solution, only check for conflicts in prioratizer after all events
           have been processed.
+      - hmmmm but doesn't QUITE make sense, should have deselected from the
+        textbox on first drag outside of the textbox
+      - interesting so... tb hasn't actually been selected because the Up click
+        was never sent to the widget... 
 
 01. scrolling tb while deselected doesn't scroll the linenumbers or the
     scrollbars
@@ -507,7 +511,22 @@ It'd be cool to come up with a "Complex Selector" generalization for the dials.
          scrollable pane. - maybe then wouldn't need the mouse event logic??
 
 20. Interactive debugging TUI application
-   - use https://github.com/eclipse-iceoryx/iceoryx2 for communication
+   - use https://github.com/eclipse-iceoryx/iceoryx2 for communication?
+     - or can just write to a json file
+
+     [reload]  aspect(ddlist)
+                - location
+                - self-rec evs
+    ┌───────┐┌────────┐┌──────────────┐┌─────────────────┐
+    │events ││elements││ element-parts││ OUTPUT          │ 
+    │       ││        ││              ││                 │
+    │       ││        ││              ││                 │
+    │       ││        ││              ││                 │
+    │       ││        ││              ││                 │
+    │       ││        ││              ││                 │
+    └───────┘└────────┘└──────────────┘└─────────────────┘
+    [add another group]
+
 
 20. Add another cargo repo like AssertCmd for tui
      name: TuiTester?

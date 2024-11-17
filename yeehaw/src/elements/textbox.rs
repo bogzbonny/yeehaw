@@ -53,6 +53,13 @@ impl TextBox {
 
         *tb.inner.borrow().current_sty.borrow_mut() = tb.pane.get_current_style();
 
+        debug!(
+            "START inner loc: {:?}",
+            &tb.inner.borrow().pane.get_dyn_location()
+        );
+
+        debug!("START tb loc: {:?}", &tb.pane.get_dyn_location());
+
         let tb_ = tb.clone();
 
         tb.pane
@@ -94,15 +101,6 @@ impl TextBox {
 
         // accounts for the other scrollbar
         let inner_start_y = self.inner.borrow().pane.get_dyn_start_y();
-
-        debug!(
-            "y-sb content_height: {:?}",
-            self.inner.borrow().pane.content_height()
-        );
-        debug!(
-            "y-sb content_width: {:?}",
-            self.inner.borrow().pane.content_width()
-        );
 
         let sb = VerticalScrollbar::new(ctx, DynVal::full(), content_size, content_height)
             .without_keyboard_events();
@@ -220,8 +218,15 @@ impl TextBox {
 
     pub fn reset_sb_sizes(&self, ctx: &Context) {
         let size = ctx
+            .child_context(&self.pane.get_dyn_location())
             .child_context(&self.inner.borrow().pane.get_dyn_location())
             .s;
+        debug!(
+            "resetting sb sizes, ctx size: {:?}, size: {:?}, inner size: {:?}",
+            ctx.s,
+            size,
+            &self.inner.borrow().pane.get_dyn_location()
+        );
         if let Some(y_sb) = &*self.y_scrollbar.borrow() {
             y_sb.set_scrollable_view_size(size);
         }

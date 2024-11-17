@@ -1,6 +1,6 @@
 use {
     crate::{Keyboard as KB, *},
-    crossterm::event::MouseEventKind,
+    crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
 };
 
@@ -24,7 +24,7 @@ impl std::fmt::Display for Selectability {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug)]
 pub struct SelectabilityResp {
     sel: Selectability,
     id: ElementID,
@@ -198,7 +198,7 @@ impl Element for SelectablePane {
         }
     }
 
-    // XXX delete
+    // XXX delete post widget recall
     ///// default implementation of drawing
     //fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
     //    let mut chs = self.pane.drawing(ctx);
@@ -231,7 +231,7 @@ impl Element for SelectablePane {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let (captured, mut resps) = match ev {
             Event::Mouse(me) => {
-                if matches!(me.kind, MouseEventKind::Up(_)) {
+                if matches!(me.kind, MouseEventKind::Up(MouseButton::Left)) {
                     (false, self.select()) // XXX
                 } else {
                     (false, EventResponses::default())
@@ -242,7 +242,9 @@ impl Element for SelectablePane {
                     me.kind,
                     MouseEventKind::Down(_) | MouseEventKind::Drag(_) | MouseEventKind::Up(_)
                 ) {
-                    (false, self.deselect())
+                    let resps = self.deselect();
+                    debug!("deselect, id: {}, resps: {:?}", self.id(), resps);
+                    (false, resps)
                 } else {
                     (false, EventResponses::default())
                 }
@@ -396,13 +398,13 @@ impl ParentPaneOfSelectable {
                             continue;
                         }
                     };
+                    debug!("selectability was set: {:?}", s_resp);
                     match s_resp.sel {
                         Selectability::Selected => {
                             let old_sel_el_id = self.selected.borrow().clone();
+                            *self.selected.borrow_mut() = Some(s_resp.id.clone());
                             if let Some(old_sel_el_id) = old_sel_el_id {
                                 if old_sel_el_id != s_resp.id {
-                                    *self.selected.borrow_mut() = Some(s_resp.id.clone());
-
                                     // deselect the old selected element
                                     let resps_ = self.set_selectability_for_el(
                                         ctx,
@@ -576,22 +578,23 @@ impl Element for ParentPaneOfSelectable {
     //}
 
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        debug!("event: {:?}", ev);
         let (captured, mut resps) = match &ev {
-            Event::Mouse(me) => {
-                let mut resps = EventResponses::default();
-                if let MouseEventKind::Down(_) = me.kind {
-                    let eoz = self.pane.eo.get_el_id_z_order_under_mouse(ctx, me);
-                    let new_el_id = eoz.first().map(|(el_id, _)| el_id.clone());
-                    let old_selected = self.selected.borrow().clone();
-                    // NOTE if new_el is not selectable, then this function will only
-                    // unselect the old_selected
-                    let resps_ = self.switch_between_els(ctx, old_selected, new_el_id);
-                    resps.extend(resps_);
-                }
-                let (captured, resps_) = self.pane.receive_event(ctx, ev);
-                resps.extend(resps_);
-                (captured, resps)
-            }
+            //Event::Mouse(me) => {
+            //    let mut resps = EventResponses::default();
+            //    if let MouseEventKind::Down(_) = me.kind {
+            //        let eoz = self.pane.eo.get_el_id_z_order_under_mouse(ctx, me);
+            //        let new_el_id = eoz.first().map(|(el_id, _)| el_id.clone());
+            //        let old_selected = self.selected.borrow().clone();
+            //        // NOTE if new_el is not selectable, then this function will only
+            //        // unselect the old_selected
+            //        let resps_ = self.switch_between_els(ctx, old_selected, new_el_id);
+            //        resps.extend(resps_);
+            //    }
+            //    let (captured, resps_) = self.pane.receive_event(ctx, ev);
+            //    resps.extend(resps_);
+            //    (captured, resps)
+            //}
             Event::KeyCombo(ref ke) => {
                 let ke = ke.clone();
                 let (mut captured, mut resps) = self.pane.receive_event(ctx, ev);
@@ -599,6 +602,7 @@ impl Element for ParentPaneOfSelectable {
                 if !captured && !ke.is_empty() {
                     match true {
                         _ if ke[0] == KB::KEY_ESC => {
+                            debug!("esc, about to unselect: {:?}", self.selected.borrow());
                             let resps_ = self.unselect_selected(ctx);
                             resps.extend(resps_);
                             captured = true;
