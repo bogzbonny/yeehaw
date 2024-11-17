@@ -57,8 +57,8 @@ impl TermEditorPane {
         let non_editing_textbox = TextBox::new(ctx, "")
             .with_width(DynVal::full())
             .with_height(DynVal::full())
-            .with_wordwrap()
-            .non_editable()
+            .with_wordwrap(ctx)
+            .non_editable(ctx)
             .with_right_click_menu(None)
             .at(DynVal::new_fixed(0), DynVal::new_fixed(0));
 
@@ -111,11 +111,10 @@ impl TermEditorPane {
                     .with_text_when_empty(start_text)
                     .with_width(DynVal::full())
                     .with_height(DynVal::full())
-                    .with_no_wordwrap()
+                    .with_no_wordwrap(ctx)
                     .at(DynVal::new_fixed(0), DynVal::new_fixed(0));
 
-                use crate::widgets::Widget;
-                tb.set_selectability(ctx, Selectability::Selected);
+                tb.pane.select();
 
                 self.pane.add_element(Box::new(tb))
             }

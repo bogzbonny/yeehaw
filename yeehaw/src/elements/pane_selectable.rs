@@ -198,36 +198,6 @@ impl Element for SelectablePane {
         }
     }
 
-    // XXX delete post widget recall
-    ///// default implementation of drawing
-    //fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-    //    let mut chs = self.pane.drawing(ctx);
-
-    //    let sty = self.get_current_style();
-    //    let h = self.pane.pane.get_height(ctx);
-    //    let w = self.pane.pane.get_width(ctx);
-    //    let view_offset_y = *self.pane.pane.content_view_offset_y.borrow();
-    //    let view_offset_x = *self.pane.pane.content_view_offset_x.borrow();
-    //    let content_height = self.pane.pane.content.borrow().height();
-    //    let content_width = self.pane.pane.content.borrow().width();
-
-    //    for y in view_offset_y..view_offset_y + h {
-    //        for x in view_offset_x..view_offset_x + w {
-    //            let ch = if y < content_height && x < content_width {
-    //                self.pane.pane.content.borrow().0[y][x].clone()
-    //            } else {
-    //                DrawCh::new(' ', sty.clone())
-    //            };
-    //            chs.push(DrawChPos::new(
-    //                ch,
-    //                (x - view_offset_x) as u16,
-    //                (y - view_offset_y) as u16,
-    //            ));
-    //        }
-    //    }
-    //    chs
-    //}
-
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let (captured, mut resps) = match ev {
             Event::Mouse(me) => {
@@ -560,42 +530,8 @@ impl ParentPaneOfSelectable {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for ParentPaneOfSelectable {
-    // XXX delete post widget recall
-    //fn receivable(&self) -> SelfReceivableEvents {
-    //    // all of the events returned by the widget organizer are set to
-    //    // focused because WO.Receivable only returns the events associated with
-    //    // widget that is currently active.
-
-    //    let wpes = match *self.active_widget_index.borrow() {
-    //        Some(i) => self.widgets.borrow()[i].0.receivable(),
-    //        None => SelfReceivableEvents::default(),
-    //    };
-
-    //    // Add the widget pane's self events. These are default receivable events of the widget
-    //    // organizer
-    //    let mut rec = self.pane.receivable();
-    //    rec.extend(wpes.0);
-    //    rec
-    //}
-
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        //debug!("event: {:?}", ev);
         let (captured, mut resps) = match &ev {
-            //Event::Mouse(me) => {
-            //    let mut resps = EventResponses::default();
-            //    if let MouseEventKind::Down(_) = me.kind {
-            //        let eoz = self.pane.eo.get_el_id_z_order_under_mouse(ctx, me);
-            //        let new_el_id = eoz.first().map(|(el_id, _)| el_id.clone());
-            //        let old_selected = self.selected.borrow().clone();
-            //        // NOTE if new_el is not selectable, then this function will only
-            //        // unselect the old_selected
-            //        let resps_ = self.switch_between_els(ctx, old_selected, new_el_id);
-            //        resps.extend(resps_);
-            //    }
-            //    let (captured, resps_) = self.pane.receive_event(ctx, ev);
-            //    resps.extend(resps_);
-            //    (captured, resps)
-            //}
             Event::KeyCombo(ref ke) => {
                 let ke = ke.clone();
                 let (mut captured, mut resps) = self.pane.receive_event(ctx, ev);

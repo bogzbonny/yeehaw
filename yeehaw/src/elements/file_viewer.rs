@@ -10,21 +10,19 @@ impl FileViewerPane {
     const KIND: &'static str = "file_viewer_pane";
 
     pub fn new(ctx: &Context, file_path: PathBuf) -> FileViewerPane {
-        let _content = std::fs::read_to_string(file_path).unwrap();
+        let content = std::fs::read_to_string(file_path).unwrap();
 
         let pane = ParentPane::new(ctx, Self::KIND);
 
-        // XXX TODO uncomment/fix post widger recall
-        //let tb = TextBox::new(ctx, content)
-        //    .with_width(DynVal::full())
-        //    .with_height(DynVal::full())
-        //    .with_right_scrollbar()
-        //    .with_lower_scrollbar()
-        //    .editable()
-        //    .with_no_wordwrap()
-        //    .at(DynVal::new_fixed(0), DynVal::new_fixed(0))
-        //    .to_widgets(ctx);
-        //pane.add_widgets(tb);
+        let tb = TextBox::new(ctx, content)
+            .with_width(DynVal::full())
+            .with_height(DynVal::full())
+            .with_right_scrollbar(ctx)
+            .with_bottom_scrollbar(ctx)
+            .editable(ctx)
+            .with_no_wordwrap(ctx)
+            .at(DynVal::new_fixed(0), DynVal::new_fixed(0));
+        pane.add_element(Box::new(tb));
 
         FileViewerPane { pane }
     }

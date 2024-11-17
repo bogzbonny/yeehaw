@@ -1,4 +1,80 @@
 
+01. listbox scrollbar never activated
+01. listbox not selecting with up and down arrows after a resize
+    - independant if we use a flex or fixed width
+    - seems to be routed to the ParentPaneOfSelectable, but NOT the top-level
+      ListBox el even though the ListBox has it set to receivable 
+01. 74b6e9b breaks checkbox drawing
+01. Each element should become SELF selected when it receives a mouse event then
+    unselect itself on the first external mouse click 
+     - this way an element such as the dropdown list would still be able to use
+     the up and down arrow keys once its selected EVEN IF it wasn't a part of a 
+     ParentPaneOfSelectables
+     - external mouse click logic to exist in SelectablePane
+     - currently not deregistering OR registering properly from mouse click
+01. micro shadow buttons 
+      ░▏
+01. Special border for windows: left & right scrollbars, no top, thin 8th left
+    line ** Bottom righthand corner as scrollbar!
+
+01. Buttons on window test are acting mad funny
+     - click but then release somewhere else (making the button focused) then
+       click again - tries to re-register events
+     - replace with microshadow buttons while I'm at it
+01. window test, all the main buttons are staying highlighted after they're clicked
+          (easy fix) 
+01. click down in textbox (or dropdownlist), then click again and drag to listbox then unclick.. this will panic on priotizer
+    registers
+      - likely due to the fact that external mouse events are processed after
+        mouse events... 
+        - solution, only check for conflicts in prioratizer after all events
+          have been processed.
+      - hmmmm but doesn't QUITE make sense, should have deselected from the
+        textbox on first drag outside of the textbox
+      - interesting so... tb hasn't actually been selected because the Up click
+        was never sent to the widget... 
+      - STILL Buggy for click dropdownlist, click empty space, then click button
+01. scrolling tb while deselected doesn't scroll the linenumbers or the
+    scrollbars
+
+WIDGET RECALL REFACTOR
+ - Selectibility Hook
+    - this one is a bit harder maybe we have to introduce hooks on 
+      arbitrary attribute setting. The existing hook structure should
+      be able to hold hooks of this variety 
+    - could maybe do something funny where the hook is actually set to 
+      the name of the attribute KEY plus a prefix! thus allowing the hook
+      system to specify the exact type of the hook.
+    - WONT DO Remove "Unselectable type" from selectibility which will just be the regular element
+ - deleted ElWidgetPane for a new type ParentPaneWithSelectibility
+    - basically the parentpane with tab capturing and refocusing
+    - using the ParentPane store to hold index of the currently selected widget 
+    - would just need to specify each element as either "selectible" or "not"
+      when it gets added to the widget macro
+ - Test if each element has selectibility by use of the attributes
+ - move Widgets -> Elements (basically only used for labels)
+
+.to_widgets() actually used here:
+yeehaw/src/widgets/widget_textbox.rs:348:    pub fn to_widgets(mut self, ctx: &Context) -> Widgets {
+yeehaw/src/widgets/widget_textbox_numbers.rs:118:    pub fn to_widgets(&self, ctx: &Context) -> Widgets {
+
+ - ensure that pre-hooks of set selectibility propogate their resps upwards
+   (instead of returning them)
+
+el_widget_pane.rs          | DONE/TO_DELETE                                  
+mod.rs                     | TO_DELETE                       
+widget.rs                  | TO_DELETE                          
+widget_button.rs           | DONE
+widget_checkbox.rs         | DONE
+widget_dropdownlist.rs     | DONE
+widget_figlet.rs           | DONE (not selectable)
+widget_label.rs            | DONE (not selectable)                            
+widget_listbox.rs          | DONE
+widget_radio.rs            | DONE
+widget_scrollbar.rs        | DONE (not selectable)
+widget_textbox.rs          | DONE
+widget_textbox_numbers.rs  | DONE
+widget_toggle.rs           | DONE
 01. replace window CornerAdjuster with border::Corner
 
 01. borders-pane wrapper

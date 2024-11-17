@@ -154,40 +154,20 @@ async fn main() -> Result<(), Error> {
     .at(DynVal::new_flex(0.35), DynVal::new_flex(0.1));
     el.add_element(Box::new(tb));
 
-    //let tb = elements::textbox::TextBoxInner::new(
-    //    &ctx,
-    //    "012345678901234567890123456789 \
-    //    \n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9",
-    //    //\n1",
-    //)
-    //.with_width(DynVal::new_fixed(20))
-    //.with_height(DynVal::new_fixed(10))
-    ////.with_lower_scrollbar(&ctx)
-    ////.with_right_scrollbar(&ctx)
-    ////.with_line_numbers(&ctx)
-    //.editable()
-    //.with_no_wordwrap()
-    //.at(DynVal::new_fixed(70), DynVal::new_fixed(6));
-    //el.add_element(Box::new(tb));
+    let tb_with_grey = TextBox::new(&ctx, "")
+        .with_width(DynVal::new_fixed(18))
+        .with_height(DynVal::new_fixed(1))
+        .editable(&ctx)
+        .with_text_when_empty("enter text here")
+        .with_no_wordwrap(&ctx)
+        .at(DynVal::new_flex(0.25), DynVal::new_fixed(3));
+    el.add_element(Box::new(tb_with_grey));
 
-    // XXX
-    //let tb_with_grey = TextBox::new(&ctx, "")
-    //    .with_width(DynVal::new_fixed(18))
-    //    .with_height(DynVal::new_fixed(1))
-    //    .editable()
-    //    .with_text_when_empty("enter text here")
-    //    .with_no_wordwrap()
-    //    .at(DynVal::new_flex(0.25), DynVal::new_fixed(6))
-    //    .to_widgets(&ctx);
-
-    //el.add_element(tb_with_grey);
-
-    //let ntb = NumbersTextBox::new(&ctx, 0)
-    //    .with_min(-10)
-    //    .with_max(10)
-    //    .at(DynVal::new_flex(0.75), DynVal::new_flex(0.5))
-    //    .to_widgets(&ctx);
-    //el.add_element(ntb);
+    let ntb = NumbersTextBox::new(&ctx, 0f64)
+        .with_min(-10.0)
+        .with_max(10.0)
+        .at(DynVal::new_flex(0.75), DynVal::new_flex(0.5));
+    el.add_element(Box::new(ntb));
 
     tui.run(Box::new(el)).await
 }
