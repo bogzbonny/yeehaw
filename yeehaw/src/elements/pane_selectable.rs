@@ -243,7 +243,7 @@ impl Element for SelectablePane {
                     MouseEventKind::Down(_) | MouseEventKind::Drag(_) | MouseEventKind::Up(_)
                 ) {
                     let resps = self.deselect();
-                    debug!("deselect, id: {}, resps: {:?}", self.id(), resps);
+                    //debug!("deselect, id: {}, resps: {:?}", self.id(), resps);
                     (false, resps)
                 } else {
                     (false, EventResponses::default())
@@ -269,7 +269,7 @@ impl Element for SelectablePane {
         }
         let (captured, resps_) = self.pane.receive_event(ctx, ev);
         resps.extend(resps_);
-        debug!("OUT deselect, id: {}, resps: {:?}", self.id(), resps);
+        //debug!("OUT deselect, id: {}, resps: {:?}", self.id(), resps);
         (captured, resps)
     }
 }
@@ -399,7 +399,7 @@ impl ParentPaneOfSelectable {
                             continue;
                         }
                     };
-                    debug!("selectability was set: {:?}", s_resp);
+                    //debug!("selectability was set: {:?}", s_resp);
                     match s_resp.sel {
                         Selectability::Selected => {
                             let old_sel_el_id = self.selected.borrow().clone();
@@ -579,7 +579,7 @@ impl Element for ParentPaneOfSelectable {
     //}
 
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        debug!("event: {:?}", ev);
+        //debug!("event: {:?}", ev);
         let (captured, mut resps) = match &ev {
             //Event::Mouse(me) => {
             //    let mut resps = EventResponses::default();
@@ -603,7 +603,7 @@ impl Element for ParentPaneOfSelectable {
                 if !captured && !ke.is_empty() {
                     match true {
                         _ if ke[0] == KB::KEY_ESC => {
-                            debug!("esc, about to unselect: {:?}", self.selected.borrow());
+                            //debug!("esc, about to unselect: {:?}", self.selected.borrow());
                             let resps_ = self.unselect_selected(ctx);
                             resps.extend(resps_);
                             captured = true;

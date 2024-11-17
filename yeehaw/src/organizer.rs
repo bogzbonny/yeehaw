@@ -646,7 +646,7 @@ impl ElementOrganizer {
     pub fn mouse_event_process(
         &self, ctx: &Context, ev: &crossterm::event::MouseEvent, parent: Box<dyn Parent>,
     ) -> (Option<ElementID>, EventResponses) {
-        debug!("mouse_event_process: ev: {ev:?}");
+        //debug!("mouse_event_process: ev: {ev:?}");
         let eoz = self.get_el_id_z_order_under_mouse(ctx, ev);
 
         let mut resps = EventResponses::default();
@@ -693,7 +693,7 @@ impl ElementOrganizer {
             let (_, mut resps_) = details2
                 .el
                 .receive_event(&child_ctx, Event::ExternalMouse(ev_adj));
-            debug!("about to process external mouse resp: id:{el_id2:?} resps: {resps_:?}");
+            //debug!("about to process external mouse resp: id:{el_id2:?} resps: {resps_:?}");
             self.partially_process_ev_resps(ctx, el_id2, &mut resps_, &parent);
             resps.0.append(&mut resps_.0);
         }

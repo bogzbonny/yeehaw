@@ -22,6 +22,7 @@ pub mod stack;
 pub mod tabs;
 pub mod terminal;
 pub mod textbox;
+pub mod textbox_numbers;
 //pub mod terminal_editor;
 pub mod toggle;
 pub mod window;
@@ -54,6 +55,7 @@ pub use {
     tabs::Tabs,
     terminal::TerminalPane,
     textbox::TextBox,
+    textbox_numbers::NumbersTextBox,
     // XXX
     //terminal_editor::TermEditorPane,
     toggle::Toggle,

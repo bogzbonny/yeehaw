@@ -23,9 +23,6 @@
      - replace with microshadow buttons while I'm at it
 01. window test, all the main buttons are staying highlighted after they're clicked
           (easy fix) 
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 01. click down in textbox (or dropdownlist), then click again and drag to listbox then unclick.. this will panic on priotizer
     registers
       - likely due to the fact that external mouse events are processed after
@@ -37,13 +34,10 @@
       - interesting so... tb hasn't actually been selected because the Up click
         was never sent to the widget... 
       - STILL Buggy for click dropdownlist, click empty space, then click button
-
 01. scrolling tb while deselected doesn't scroll the linenumbers or the
     scrollbars
 
-01. resizing a scrollable pane should modify the offset of that pane to account
-    for the extra space (instead of automatically extending out of range)
-
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 WIDGET RECALL REFACTOR
  - Selectibility Hook
@@ -81,7 +75,7 @@ widget_label.rs            | DONE (not selectable)
 widget_listbox.rs          | DONE
 widget_radio.rs            | DONE
 widget_scrollbar.rs        | DONE (not selectable)
-widget_textbox.rs          | 
+widget_textbox.rs          | DONE
 widget_textbox_numbers.rs  | 
 widget_toggle.rs           | DONE
 
@@ -122,7 +116,14 @@ widget_toggle.rs           | DONE
        - calling pane.width(ctx) should be the same as ctx.child.width if the child
          size is provided
 
+01. resizing a scrollable pane should modify the offset of that pane to account
+    for the extra space (instead of automatically extending out of range)
+
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+01. scrollbars on textbox grow ever so slightly once the texbox is entered.
+      - scrollbars on textbox have bad starting size
+
 01. running "top" inside terminal window shoots the cursor outside of the
     window! should correct for this
 

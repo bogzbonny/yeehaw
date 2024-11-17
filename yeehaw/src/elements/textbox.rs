@@ -64,19 +64,28 @@ impl TextBox {
 
         tb.pane
             .set_post_hook_for_set_selectability(Box::new(move |_, _| {
-                let sel = tb_.pane.get_selectability();
-                debug!("TB PSH selectability: {:?}", sel);
-                *tb_.inner.borrow().selectedness.borrow_mut() = sel;
-                *tb_.inner.borrow().current_sty.borrow_mut() = tb_.pane.get_current_style();
-                if sel != Selectability::Selected {
-                    *tb_.inner.borrow().visual_mode.borrow_mut() = false;
-                }
+                //let sel = tb_.pane.get_selectability();
+                //*tb_.inner.borrow().selectedness.borrow_mut() = sel;
+                //*tb_.inner.borrow().current_sty.borrow_mut() = tb_.pane.get_current_style();
+                //if sel != Selectability::Selected {
+                //    *tb_.inner.borrow().visual_mode.borrow_mut() = false;
+                //}
+                tb_.post_hook_for_set_selectability();
             }));
 
         let cctx = ctx.child_context(&tb.pane.get_dyn_location());
         debug!("cctx.s: {:?}", cctx.s);
         let _ = tb.drawing(&ctx.child_context(&tb.pane.get_dyn_location())); // to set the pane content
         tb
+    }
+
+    pub fn post_hook_for_set_selectability(&self) {
+        let sel = self.pane.get_selectability();
+        *self.inner.borrow().selectedness.borrow_mut() = sel;
+        *self.inner.borrow().current_sty.borrow_mut() = self.pane.get_current_style();
+        if sel != Selectability::Selected {
+            *self.inner.borrow().visual_mode.borrow_mut() = false;
+        }
     }
 
     pub fn with_scrollbars(self, ctx: &Context) -> Self {
@@ -217,22 +226,28 @@ impl TextBox {
     }
 
     pub fn reset_sb_sizes(&self, ctx: &Context) {
-        let size = ctx
+        let inner_ctx = ctx
             .child_context(&self.pane.get_dyn_location())
-            .child_context(&self.inner.borrow().pane.get_dyn_location())
-            .s;
+            .child_context(&self.inner.borrow().pane.get_dyn_location());
         debug!(
-            "resetting sb sizes, ctx size: {:?}, size: {:?}, inner size: {:?}",
+            "resetting sb sizes, ctx size: {:?}, inner size: {:?}",
             ctx.s,
-            size,
-            &self.inner.borrow().pane.get_dyn_location()
+            inner_ctx.s,
+            //&self.inner.borrow().pane.get_dyn_location()
         );
         if let Some(y_sb) = &*self.y_scrollbar.borrow() {
-            y_sb.set_scrollable_view_size(size);
+            y_sb.set_scrollable_view_size(inner_ctx.s);
+            *y_sb.scrollable_view_chs.borrow_mut() = DynVal::new_fixed(inner_ctx.s.height as i32);
+            //y_sb.external_change(0, self.inner.borrow().pane.content_height(), inner_ctx.s);
         }
         if let Some(x_sb) = &*self.x_scrollbar.borrow() {
-            x_sb.set_scrollable_view_size(size);
+            x_sb.set_scrollable_view_size(inner_ctx.s);
+            *x_sb.scrollable_view_chs.borrow_mut() = DynVal::new_fixed(inner_ctx.s.width as i32);
+            //x_sb.external_change(0, self.inner.borrow().pane.content_width(), inner_ctx.s);
         }
+
+        // correct offsets
+        let _ = self.inner.borrow().correct_ln_and_sbs(&inner_ctx);
     }
 
     pub fn with_line_numbers(self, ctx: &Context) -> Self {
@@ -272,7 +287,8 @@ impl TextBox {
 
         ln_tb.pane.set_end_y(end_y);
 
-        *ln_tb.current_sty.borrow_mut() = self.pane.get_current_style();
+        //*ln_tb.current_sty.borrow_mut() = self.pane.get_current_style();
+        *ln_tb.current_sty.borrow_mut() = TextBoxInner::LINE_NUMBERS_STYLE;
 
         *ln_tb.selectedness.borrow_mut() = Selectability::Unselectable;
         self.pane.pane.add_element(Box::new(ln_tb.clone()));
@@ -365,23 +381,27 @@ impl TextBox {
         self
     }
 
-    pub fn editable(self) -> Self {
+    pub fn editable(self, ctx: &Context) -> Self {
         self.inner.borrow().set_editable();
+        self.reset_sb_sizes(ctx);
         self
     }
 
-    pub fn non_editable(self) -> Self {
+    pub fn non_editable(self, ctx: &Context) -> Self {
         self.inner.borrow().set_non_editable();
+        self.reset_sb_sizes(ctx);
         self
     }
 
-    pub fn with_wordwrap(self) -> Self {
+    pub fn with_wordwrap(self, ctx: &Context) -> Self {
         *self.inner.borrow().wordwrap.borrow_mut() = true;
+        self.reset_sb_sizes(ctx);
         self
     }
 
-    pub fn with_no_wordwrap(self) -> Self {
+    pub fn with_no_wordwrap(self, ctx: &Context) -> Self {
         *self.inner.borrow().wordwrap.borrow_mut() = false;
+        self.reset_sb_sizes(ctx);
         self
     }
 
@@ -496,9 +516,11 @@ impl TextBoxInner {
 
     const STYLE: SelStyles = SelStyles {
         selected_style: Style::new_const(Color::BLACK, Color::WHITE),
-        ready_style: Style::new_const(Color::BLACK, Color::GREY13),
+        ready_style: Style::new_const(Color::BLACK, Color::GREY17),
         unselectable_style: Style::new_const(Color::BLACK, Color::GREY15),
     };
+
+    const LINE_NUMBERS_STYLE: Style = Style::new_const(Color::BLACK, Color::GREY13);
 
     const DEFAULT_CURSOR_STYLE: Style = Style::new_const(Color::WHITE, Color::BLUE);
 
@@ -767,22 +789,16 @@ impl TextBoxInner {
         (s, line_num_width + 1) // +1 for the extra space after the digits
     }
 
-    /// takes into account the width of the line numbers textbox
-    pub fn x_new_domain_chs(&self) -> usize {
-        let lnw = if let Some(ln_tb) = self.line_number_tb.borrow().as_ref() {
-            ln_tb.pane.content_width()
-        } else {
-            0
-        };
-        self.pane.content_width() + lnw - 1 // TODO understand why -1 here
-    }
-
     /// NOTE the resp is sent in to potentially modify the offsets from numbers tb
     pub fn correct_offsets(&self, ctx: &Context, w: &WrChs) -> EventResponse {
         let (x, y) = w.cursor_x_and_y(self.get_cursor_pos());
         let (x, y) = (x.unwrap_or(0), y.unwrap_or(0));
         self.pane.correct_offsets_to_view_position(ctx, x, y);
+        self.correct_ln_and_sbs(ctx)
+    }
 
+    /// correct the line number (if applicable) and scrollbar positions
+    pub fn correct_ln_and_sbs(&self, ctx: &Context) -> EventResponse {
         let y_offset = self.pane.get_content_y_offset();
         let x_offset = self.pane.get_content_x_offset();
 
@@ -804,7 +820,13 @@ impl TextBoxInner {
             ln_tb.pane.set_content_y_offset(ctx, y_offset);
         }
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
-            sb.external_change(x_offset, self.x_new_domain_chs(), ctx.s);
+            debug!(
+                "correcting x scrollbar: x_offset: {:?}, width: {}, size: ctx.s: {:?}",
+                x_offset,
+                self.pane.content_width(),
+                ctx.s
+            );
+            sb.external_change(x_offset, self.pane.content_width(), ctx.s);
         }
         resp
     }
@@ -928,20 +950,7 @@ impl TextBoxInner {
                 _ => {}
             }
 
-            // update the scrollbars
-            let y_offset = self.pane.get_content_y_offset();
-            let x_offset = self.pane.get_content_x_offset();
-            if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
-                sb.external_change(
-                    y_offset,
-                    self.pane.content_height(),
-                    self.pane.content_size(),
-                );
-            }
-            if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
-                sb.external_change(x_offset, self.x_new_domain_chs(), self.pane.content_size());
-            }
-            return (true, EventResponses::default());
+            return (true, self.correct_ln_and_sbs(ctx).into());
         }
 
         let mut visual_mode_event = false;
@@ -1189,37 +1198,37 @@ impl TextBoxInner {
                 if ev.modifiers == KeyModifiers::NONE && selectedness == Selectability::Ready =>
             {
                 self.pane.scroll_down(ctx);
-                return (true, EventResponses::default());
+                return (true, self.correct_ln_and_sbs(ctx).into());
             }
             MouseEventKind::ScrollUp
                 if ev.modifiers == KeyModifiers::NONE && selectedness == Selectability::Ready =>
             {
                 self.pane.scroll_up(ctx);
-                return (true, EventResponses::default());
+                return (true, self.correct_ln_and_sbs(ctx).into());
             }
             MouseEventKind::ScrollLeft
                 if ev.modifiers == KeyModifiers::NONE && selectedness == Selectability::Ready =>
             {
                 self.pane.scroll_left(ctx);
-                return (true, EventResponses::default());
+                return (true, self.correct_ln_and_sbs(ctx).into());
             }
             MouseEventKind::ScrollDown
                 if ev.modifiers == KeyModifiers::SHIFT && selectedness == Selectability::Ready =>
             {
                 self.pane.scroll_left(ctx);
-                return (true, EventResponses::default());
+                return (true, self.correct_ln_and_sbs(ctx).into());
             }
             MouseEventKind::ScrollRight
                 if ev.modifiers == KeyModifiers::NONE && selectedness == Selectability::Ready =>
             {
                 self.pane.scroll_right(ctx);
-                return (true, EventResponses::default());
+                return (true, self.correct_ln_and_sbs(ctx).into());
             }
             MouseEventKind::ScrollUp
                 if ev.modifiers == KeyModifiers::SHIFT && selectedness == Selectability::Ready =>
             {
                 self.pane.scroll_right(ctx);
-                return (true, EventResponses::default());
+                return (true, self.correct_ln_and_sbs(ctx).into());
             }
 
             MouseEventKind::Moved | MouseEventKind::Up(_) => {

@@ -149,8 +149,8 @@ async fn main() -> Result<(), Error> {
     .with_left_scrollbar(&ctx)
     .with_line_numbers(&ctx)
     //.with_right_scrollbar(&ctx)
-    .editable()
-    .with_no_wordwrap()
+    .editable(&ctx)
+    .with_no_wordwrap(&ctx)
     .at(DynVal::new_flex(0.35), DynVal::new_flex(0.1));
     el.add_element(Box::new(tb));
 
