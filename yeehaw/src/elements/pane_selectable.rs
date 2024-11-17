@@ -151,7 +151,7 @@ impl SelectablePane {
                 let rec = ReceivableEventChanges::default().with_add_evs(self.receivable().0);
                 resps.push(EventResponse::ReceivableEventChanges(rec));
                 resps.push(EventResponse::BringToFront);
-                resps.push(EventResponse::Metadata(
+                resps.push(EventResponse::Custom(
                     Self::RESP_SELECTABILITY_WAS_SET.to_string(),
                     serde_json::to_vec(&SelectabilityResp {
                         sel: s,
@@ -167,7 +167,7 @@ impl SelectablePane {
                     );
                     resps.push(EventResponse::ReceivableEventChanges(rec));
 
-                    resps.push(EventResponse::Metadata(
+                    resps.push(EventResponse::Custom(
                         Self::RESP_SELECTABILITY_WAS_SET.to_string(),
                         serde_json::to_vec(&SelectabilityResp {
                             sel: s,
@@ -360,7 +360,7 @@ impl ParentPaneOfSelectable {
         for resp in resps.0.iter_mut() {
             let mut modified_resp = None;
 
-            if let EventResponse::Metadata(k, v_bz) = resp {
+            if let EventResponse::Custom(k, v_bz) = resp {
                 if k == SelectablePane::RESP_SELECTABILITY_WAS_SET {
                     let s_resp: SelectabilityResp = match serde_json::from_slice(v_bz) {
                         Ok(v) => v,

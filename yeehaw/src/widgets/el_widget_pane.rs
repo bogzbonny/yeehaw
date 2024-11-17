@@ -136,7 +136,7 @@ impl WidgetPane {
                     new_el.set_dyn_location_set(ls);
                     new_el.set_parent(Box::new(self.pane.clone()));
                 }
-                EventResponse::Metadata(k, _) => {
+                EventResponse::Custom(k, _) => {
                     if k == RESP_DEACTIVATE {
                         let resps_ = self.unselect_selected_widget(ctx);
                         extend_resps.extend(resps_);

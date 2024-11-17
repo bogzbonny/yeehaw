@@ -182,7 +182,7 @@ impl WindowPane {
             }
 
             let mut close_window = false;
-            if let EventResponse::Metadata(key, _) = resp {
+            if let EventResponse::Custom(key, _) = resp {
                 if key == Self::CLOSE_WINDOW_MD_KEY {
                     close_window = true;
                 }
@@ -194,7 +194,7 @@ impl WindowPane {
             }
 
             let mut maximize_window = false;
-            if let EventResponse::Metadata(key, _) = resp {
+            if let EventResponse::Custom(key, _) = resp {
                 if key == Self::MAXIMIZE_WINDOW_MD_KEY {
                     maximize_window = true;
                 }
@@ -245,7 +245,7 @@ impl WindowPane {
             }
 
             let mut minimize_window = false;
-            if let EventResponse::Metadata(key, _) = resp {
+            if let EventResponse::Custom(key, _) = resp {
                 if key == Self::MINIMIZE_WINDOW_MD_KEY {
                     minimize_window = true;
                     just_minimized = true;
@@ -498,7 +498,7 @@ impl BasicWindowTopBar {
                 "x",
                 Box::new(|btn, _ctx| {
                     let mut resps = btn.pane.deselect();
-                    let resp = EventResponse::Metadata(
+                    let resp = EventResponse::Custom(
                         WindowPane::CLOSE_WINDOW_MD_KEY.to_string(),
                         Vec::with_capacity(0),
                     );
@@ -529,7 +529,7 @@ impl BasicWindowTopBar {
                         "□" => "◱".to_string(),
                         _ => "□".to_string(),
                     };
-                    let resp = EventResponse::Metadata(
+                    let resp = EventResponse::Custom(
                         WindowPane::MAXIMIZE_WINDOW_MD_KEY.to_string(),
                         Vec::with_capacity(0),
                     );
@@ -555,7 +555,7 @@ impl BasicWindowTopBar {
                 "ˍ",
                 Box::new(|btn, _ctx| {
                     let mut resps = btn.pane.deselect();
-                    let resp = EventResponse::Metadata(
+                    let resp = EventResponse::Custom(
                         WindowPane::MINIMIZE_WINDOW_MD_KEY.to_string(),
                         Vec::with_capacity(0),
                     );

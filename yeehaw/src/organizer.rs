@@ -295,7 +295,7 @@ impl ElementOrganizer {
             match r {
                 EventResponse::None => {}
                 EventResponse::Quit => {}
-                EventResponse::Metadata(_, _) => {}
+                EventResponse::Custom(_, _) => {}
                 EventResponse::Move(_) => {}
                 EventResponse::Resize(_) => {}
                 EventResponse::Destruct => {

@@ -282,10 +282,9 @@ pub enum EventResponse {
 
     Resize(ResizeResponse),
 
-    /// XXX TODO rename to Custom
-    /// arbitrary custom metadatas which can be passed back to the parent
+    /// arbitrary custom value which can be passed back to the parent
     ///       key,   , value
-    Metadata(String, Vec<u8>),
+    Custom(String, Vec<u8>),
 
     /// contains priority updates that should be made to the receiver's prioritizer
     ReceivableEventChanges(ReceivableEventChanges),
@@ -322,7 +321,7 @@ impl std::fmt::Debug for EventResponse {
             ),
             EventResponse::Move(m) => write!(f, "EventResponse::Move({:?})", m),
             EventResponse::Resize(r) => write!(f, "EventResponse::Resize({:?})", r),
-            EventResponse::Metadata(k, v) => write!(f, "EventResponse::Metadata({}, {:?})", k, v),
+            EventResponse::Custom(k, v) => write!(f, "EventResponse::Custom({}, {:?})", k, v),
             EventResponse::ReceivableEventChanges(rec) => {
                 write!(f, "EventResponse::ReceivableEventChanges({:?})", rec)
             }
@@ -332,7 +331,7 @@ impl std::fmt::Debug for EventResponse {
 
 impl EventResponse {
     pub fn has_metadata(&self, key: &str) -> bool {
-        matches!(self, EventResponse::Metadata(k, _) if k == key)
+        matches!(self, EventResponse::Custom(k, _) if k == key)
     }
 }
 
