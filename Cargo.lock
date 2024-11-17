@@ -2241,6 +2241,7 @@ dependencies = [
  "figlet-rs",
  "futures",
  "image",
+ "num-traits",
  "once_cell",
  "parking_lot",
  "portable-pty",

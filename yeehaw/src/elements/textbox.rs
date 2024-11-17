@@ -418,16 +418,12 @@ impl TextBox {
         *self.inner.borrow().position_style_hook.borrow_mut() = Some(hook);
     }
 
-    pub fn with_cursor_changed_hook(
-        self, hook: Box<dyn FnMut(Context, usize) -> EventResponses>,
-    ) -> Self {
+    pub fn with_cursor_changed_hook(self, hook: CursorChangedHook) -> Self {
         *self.inner.borrow().cursor_changed_hook.borrow_mut() = Some(hook);
         self
     }
 
-    pub fn set_cursor_changed_hook(
-        &mut self, hook: Box<dyn FnMut(Context, usize) -> EventResponses>,
-    ) {
+    pub fn set_cursor_changed_hook(&mut self, hook: CursorChangedHook) {
         *self.inner.borrow().cursor_changed_hook.borrow_mut() = Some(hook);
     }
 
@@ -452,6 +448,18 @@ impl TextBox {
     pub fn with_corner_decor(self, decor: DrawCh) -> Self {
         *self.inner.borrow().corner_decor.borrow_mut() = decor;
         self
+    }
+
+    pub fn get_text(&self) -> String {
+        self.inner.borrow().get_text()
+    }
+
+    pub fn set_text(&self, text: String) {
+        self.inner.borrow().set_text(text);
+    }
+
+    pub fn set_cursor_pos(&self, pos: usize) {
+        self.inner.borrow().set_cursor_pos(pos);
     }
 }
 
@@ -499,8 +507,7 @@ pub struct TextBoxInner {
     pub position_style_hook: Rc<RefCell<Option<Box<dyn FnMut(Context, usize, Style) -> Style>>>>,
 
     /// this hook is called each time the cursor moves
-    ///                                                              abs_pos
-    pub cursor_changed_hook: Rc<RefCell<Option<Box<dyn FnMut(Context, usize) -> EventResponses>>>>,
+    pub cursor_changed_hook: Rc<RefCell<Option<CursorChangedHook>>>,
 
     pub x_scrollbar: Rc<RefCell<Option<HorizontalScrollbar>>>,
     pub y_scrollbar: Rc<RefCell<Option<VerticalScrollbar>>>,
@@ -510,6 +517,9 @@ pub struct TextBoxInner {
     pub corner_decor: Rc<RefCell<DrawCh>>,
     pub right_click_menu: Rc<RefCell<Option<RightClickMenu>>>,
 }
+
+/// The hook is called when the cursor position changes, the hook is passed the absolute position of the cursor.
+pub type CursorChangedHook = Box<dyn FnMut(usize) -> EventResponses>;
 
 impl TextBoxInner {
     const KIND: &'static str = "textbox_inner";
@@ -695,18 +705,18 @@ impl TextBoxInner {
         }
     }
 
-    pub fn set_cursor_pos(&self, ctx: &Context, new_abs_pos: usize) -> EventResponses {
+    pub fn set_cursor_pos(&self, new_abs_pos: usize) -> EventResponses {
         *self.cursor_pos.borrow_mut() = new_abs_pos;
         if let Some(hook) = &mut *self.cursor_changed_hook.borrow_mut() {
-            hook(ctx.clone(), new_abs_pos)
+            hook(new_abs_pos)
         } else {
             EventResponses::default()
         }
     }
 
-    pub fn incr_cursor_pos(&self, ctx: &Context, pos_change: isize) -> EventResponses {
+    pub fn incr_cursor_pos(&self, pos_change: isize) -> EventResponses {
         let new_pos = (self.get_cursor_pos() as isize + pos_change).max(0) as usize;
-        self.set_cursor_pos(ctx, new_pos)
+        self.set_cursor_pos(new_pos)
     }
 
     /// returns the wrapped characters of the text
@@ -875,7 +885,7 @@ impl TextBoxInner {
             return EventResponses::default();
         };
         rs.drain(start_pos..=end_pos);
-        self.set_cursor_pos(ctx, start_pos);
+        self.set_cursor_pos(start_pos);
 
         *self.text.borrow_mut() = rs;
         *self.visual_mode.borrow_mut() = false;
@@ -915,7 +925,7 @@ impl TextBoxInner {
         rs.splice(cur_pos..cur_pos, cliprunes.iter().cloned());
         *self.text.borrow_mut() = rs;
 
-        self.incr_cursor_pos(ctx, cliprunes.len() as isize);
+        self.incr_cursor_pos(cliprunes.len() as isize);
         let w = self.get_wrapped(ctx);
         self.pane.set_content_from_string(w.wrapped_string()); // See NOTE-1
 
@@ -966,7 +976,7 @@ impl TextBoxInner {
                     *self.visual_mode_start_pos.borrow_mut() = cursor_pos;
                 }
                 if cursor_pos > 0 {
-                    self.incr_cursor_pos(ctx, -1);
+                    self.incr_cursor_pos(-1);
                     let w = self.get_wrapped(ctx);
                     resps = self.correct_offsets(ctx, &w).into();
                 }
@@ -979,7 +989,7 @@ impl TextBoxInner {
                     *self.visual_mode_start_pos.borrow_mut() = cursor_pos;
                 }
                 if cursor_pos < self.text.borrow().len() {
-                    self.incr_cursor_pos(ctx, 1);
+                    self.incr_cursor_pos(1);
                     let w = self.get_wrapped(ctx);
                     resps = self.correct_offsets(ctx, &w).into();
                 }
@@ -993,7 +1003,7 @@ impl TextBoxInner {
                 }
                 let w = self.get_wrapped(ctx);
                 if let Some(new_pos) = w.get_cursor_above_position(cursor_pos) {
-                    self.set_cursor_pos(ctx, new_pos);
+                    self.set_cursor_pos(new_pos);
                     resps = self.correct_offsets(ctx, &w).into();
                 }
             }
@@ -1006,7 +1016,7 @@ impl TextBoxInner {
                 }
                 let w = self.get_wrapped(ctx);
                 if let Some(new_pos) = w.get_cursor_below_position(cursor_pos) {
-                    self.set_cursor_pos(ctx, new_pos);
+                    self.set_cursor_pos(new_pos);
                     resps = self.correct_offsets(ctx, &w).into();
                 }
             }
@@ -1015,7 +1025,7 @@ impl TextBoxInner {
                 if cursor_pos > 0 && cursor_pos <= self.text.borrow().len() {
                     // do not move left if at the beginning of a line
                     if self.text.borrow()[cursor_pos - 1] != '\n' {
-                        self.incr_cursor_pos(ctx, -1);
+                        self.incr_cursor_pos(-1);
                         let w = self.get_wrapped(ctx);
                         resps = self.correct_offsets(ctx, &w).into();
                     }
@@ -1025,7 +1035,7 @@ impl TextBoxInner {
             _ if ev[0] == KB::KEY_RIGHT => {
                 // don't allow moving to the next line
                 if cursor_pos < self.text.borrow().len() && self.text.borrow()[cursor_pos] != '\n' {
-                    self.incr_cursor_pos(ctx, 1);
+                    self.incr_cursor_pos(1);
                     let w = self.get_wrapped(ctx);
                     resps = self.correct_offsets(ctx, &w).into();
                 }
@@ -1034,7 +1044,7 @@ impl TextBoxInner {
             _ if ev[0] == KB::KEY_UP => {
                 let w = self.get_wrapped(ctx);
                 if let Some(new_pos) = w.get_cursor_above_position(cursor_pos) {
-                    self.set_cursor_pos(ctx, new_pos);
+                    self.set_cursor_pos(new_pos);
                     resps = self.correct_offsets(ctx, &w).into();
                 }
             }
@@ -1042,7 +1052,7 @@ impl TextBoxInner {
             _ if ev[0] == KB::KEY_DOWN => {
                 let w = self.get_wrapped(ctx);
                 if let Some(new_pos) = w.get_cursor_below_position(cursor_pos) {
-                    self.set_cursor_pos(ctx, new_pos);
+                    self.set_cursor_pos(new_pos);
                     resps = self.correct_offsets(ctx, &w).into();
                 }
             }
@@ -1052,7 +1062,7 @@ impl TextBoxInner {
                     let mut rs = self.text.borrow().clone();
                     rs.insert(cursor_pos, r);
                     *self.text.borrow_mut() = rs;
-                    self.incr_cursor_pos(ctx, 1);
+                    self.incr_cursor_pos(1);
                     let w = self.get_wrapped(ctx);
 
                     // NOTE-1: must call SetContentFromString to update the content
@@ -1075,7 +1085,7 @@ impl TextBoxInner {
                 } else if cursor_pos > 0 {
                     let mut rs = self.text.borrow().clone();
                     rs.remove(cursor_pos - 1);
-                    self.incr_cursor_pos(ctx, -1);
+                    self.incr_cursor_pos(-1);
                     *self.text.borrow_mut() = rs;
                     let w = self.get_wrapped(ctx);
                     self.pane.set_content_from_string(w.wrapped_string()); // See NOTE-1
@@ -1091,7 +1101,7 @@ impl TextBoxInner {
                 let mut rs = self.text.borrow().clone();
                 rs.splice(cursor_pos..cursor_pos, std::iter::once('\n'));
                 *self.text.borrow_mut() = rs;
-                self.incr_cursor_pos(ctx, 1);
+                self.incr_cursor_pos(1);
                 let w = self.get_wrapped(ctx);
                 self.pane.set_content_from_string(w.wrapped_string()); // See NOTE-1
                 let resp = self.correct_offsets(ctx, &w);
@@ -1130,7 +1140,7 @@ impl TextBoxInner {
                 let Some(new_pos) = w.get_cursor_below_position(cursor_pos) else {
                     return (true, EventResponses::default());
                 };
-                self.set_cursor_pos(ctx, new_pos);
+                self.set_cursor_pos(new_pos);
                 let resp = self.correct_offsets(ctx, &w);
                 return (true, resp.into());
             }
@@ -1142,7 +1152,7 @@ impl TextBoxInner {
                 let Some(new_pos) = w.get_cursor_above_position(cursor_pos) else {
                     return (true, EventResponses::default());
                 };
-                self.set_cursor_pos(ctx, new_pos);
+                self.set_cursor_pos(new_pos);
                 let resp = self.correct_offsets(ctx, &w);
                 return (true, resp.into());
             }
@@ -1154,7 +1164,7 @@ impl TextBoxInner {
                 let Some(new_pos) = w.get_cursor_left_position(cursor_pos) else {
                     return (true, EventResponses::default());
                 };
-                self.set_cursor_pos(ctx, new_pos);
+                self.set_cursor_pos(new_pos);
                 let resp = self.correct_offsets(ctx, &w);
                 return (true, resp.into());
             }
@@ -1166,7 +1176,7 @@ impl TextBoxInner {
                 let Some(new_pos) = w.get_cursor_left_position(cursor_pos) else {
                     return (true, EventResponses::default());
                 };
-                self.set_cursor_pos(ctx, new_pos);
+                self.set_cursor_pos(new_pos);
                 let resp = self.correct_offsets(ctx, &w);
                 return (true, resp.into());
             }
@@ -1178,7 +1188,7 @@ impl TextBoxInner {
                 let Some(new_pos) = w.get_cursor_right_position(cursor_pos) else {
                     return (true, EventResponses::default());
                 };
-                self.set_cursor_pos(ctx, new_pos);
+                self.set_cursor_pos(new_pos);
                 let resp = self.correct_offsets(ctx, &w);
                 return (true, resp.into());
             }
@@ -1190,7 +1200,7 @@ impl TextBoxInner {
                 let Some(new_pos) = w.get_cursor_right_position(cursor_pos) else {
                     return (true, EventResponses::default());
                 };
-                self.set_cursor_pos(ctx, new_pos);
+                self.set_cursor_pos(new_pos);
                 let resp = self.correct_offsets(ctx, &w);
                 return (true, resp.into());
             }
@@ -1266,7 +1276,7 @@ impl TextBoxInner {
                 }
                 *self.mouse_dragging.borrow_mut() = true;
                 if let Some(new_pos) = w.get_nearest_valid_cursor_from_position(x, y) {
-                    self.set_cursor_pos(ctx, new_pos);
+                    self.set_cursor_pos(new_pos);
                     let resp = self.correct_offsets(ctx, &w);
                     return (true, resp.into());
                 }

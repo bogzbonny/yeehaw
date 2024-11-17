@@ -30,6 +30,7 @@ figlet-rs = "^0.1.5"
 dyn-clone = "^1.0.17"
 tempfile = "3"
 yeehaw_derive = { path = "../yeehaw_derive" }
+num-traits = "^0.2.0"
 
 vt100 = { version = "0.15.2" }
 portable-pty = { version = "0.8.1" }
