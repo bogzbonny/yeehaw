@@ -646,20 +646,8 @@ impl ElementOrganizer {
     pub fn mouse_event_process(
         &self, ctx: &Context, ev: &crossterm::event::MouseEvent, parent: Box<dyn Parent>,
     ) -> (Option<ElementID>, EventResponses) {
+        debug!("mouse_event_process: ev: {ev:?}");
         let eoz = self.get_el_id_z_order_under_mouse(ctx, ev);
-
-        if eoz.is_empty() {
-            let mut el_resps = Vec::new();
-            for (el_id2, details2) in self.els.borrow().iter() {
-                let child_ctx = ctx.child_context(&details2.loc.borrow().l);
-                let ev_adj = details2.loc.borrow().l.adjust_mouse_event_external(ctx, ev);
-                let (_, r) = details2
-                    .el
-                    .receive_event(&child_ctx, Event::ExternalMouse(ev_adj));
-                el_resps.push((el_id2.clone(), r));
-            }
-            return (None, EventResponses::default());
-        }
 
         let mut resps = EventResponses::default();
         let mut capturing_el_id = None;
