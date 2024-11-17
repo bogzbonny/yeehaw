@@ -95,12 +95,6 @@ impl TextBox {
         // accounts for the other scrollbar
         let inner_start_y = self.inner.borrow().pane.get_dyn_start_y();
 
-        let height = if let Some(_x_sb) = &*self.x_scrollbar.borrow() {
-            DynVal::full().minus_fixed(1)
-        } else {
-            DynVal::full()
-        };
-
         debug!(
             "y-sb content_height: {:?}",
             self.inner.borrow().pane.content_height()
@@ -110,8 +104,11 @@ impl TextBox {
             self.inner.borrow().pane.content_width()
         );
 
-        let sb = VerticalScrollbar::new(ctx, height, content_size, content_height)
+        let sb = VerticalScrollbar::new(ctx, DynVal::full(), content_size, content_height)
             .without_keyboard_events();
+        if self.x_scrollbar.borrow().is_some() {
+            sb.pane.set_end_y(DynVal::full().minus_fixed(1));
+        }
         match pos {
             VerticalSBPositions::ToTheLeft => {
                 sb.set_at(0.into(), inner_start_y);
@@ -176,14 +173,11 @@ impl TextBox {
             self.inner.borrow().pane.get_dyn_start_x()
         };
 
-        let width = if let Some(_y_sb) = &*self.y_scrollbar.borrow() {
-            DynVal::full().minus_fixed(1)
-        } else {
-            DynVal::full()
-        };
-
-        let sb = HorizontalScrollbar::new(ctx, width, content_size, content_width)
+        let sb = HorizontalScrollbar::new(ctx, DynVal::full(), content_size, content_width)
             .without_keyboard_events();
+        if self.x_scrollbar.borrow().is_some() {
+            sb.pane.set_end_y(DynVal::full().minus_fixed(1));
+        }
         match pos {
             HorizontalSBPositions::Above => {
                 sb.set_at(inner_start_x, 0.into());
@@ -775,7 +769,7 @@ impl TextBoxInner {
         } else {
             0
         };
-        self.pane.content_width() + lnw
+        self.pane.content_width() + lnw - 1 // TODO understand why -1 here
     }
 
     /// NOTE the resp is sent in to potentially modify the offsets from numbers tb

@@ -140,13 +140,15 @@ async fn main() -> Result<(), Error> {
         \n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9",
         //\n1",
     )
-    .with_width(DynVal::new_fixed(20))
-    .with_height(DynVal::new_fixed(10))
+    //.with_width(DynVal::new_fixed(20))
+    //.with_height(DynVal::new_fixed(10))
+    .with_width(DynVal::new_flex(0.1))
+    .with_height(DynVal::new_flex(0.2))
     //.with_top_scrollbar(&ctx)
     .with_bottom_scrollbar(&ctx)
     .with_left_scrollbar(&ctx)
-    //.with_right_scrollbar(&ctx)
     .with_line_numbers(&ctx)
+    //.with_right_scrollbar(&ctx)
     .editable()
     .with_no_wordwrap()
     .at(DynVal::new_flex(0.35), DynVal::new_flex(0.1));
