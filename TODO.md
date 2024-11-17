@@ -1,11 +1,25 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+01. Make the context size more clear.
+     - The context provided always contains the size of the element. However
+       during initialization, before the size of an element is known, the
+       context fed in will be the parent context. This is confusing as heck and
+       I hope to rectify this, possibly by providing both the parent-element
+       size and size-for-the-element as options within the context. 
+     - Actually, NO parent size, parent context is provided so one can get the
+       size that way.
+     - parent size should not be an option, only the child size should be an
+       option. parent size must always be known (get from parent Ctx)
+       - calling pane.width(ctx) should be the same as ctx.child.width if the child
+         size is provided
+     - Maybe there should be an Initialization context where the Size is an
+       option and the regular context where the size is nolonger an option!?
+         - makes it maybe a bit annoying with some duplicated logic however?
+
 05. introduce errors, remove all unwraps
 
 01. docs docs docs
-
-01. gifs gifs gifs
 
 01. add docs, crates button banners to github readme
 
@@ -27,16 +41,7 @@
       - buncha widgets which dont do much but log their results 
         in a textbox
 
-01. Make the context size more clear.
-     - The context provided always contains the size of the element. However
-       during initialization, before the size of an element is known, the
-       context fed in will be the parent context. This is confusing as heck and
-       I hope to rectify this, possibly by providing both the parent-element
-       size and size-for-the-element as options within the context. 
-     - parent size should not be an option, only the child size should be an
-       option. parent size must always be known.
-       - calling pane.width(ctx) should be the same as ctx.child.width if the child
-         size is provided
+01. gifs gifs gifs
 
 01. resizing a scrollable pane should modify the offset of that pane to account
     for the extra space (instead of automatically extending out of range)
