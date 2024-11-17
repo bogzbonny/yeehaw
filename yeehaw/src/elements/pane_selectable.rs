@@ -232,7 +232,7 @@ impl Element for SelectablePane {
         let (captured, mut resps) = match ev {
             Event::Mouse(me) => {
                 if matches!(me.kind, MouseEventKind::Up(MouseButton::Left)) {
-                    (false, self.select()) // XXX
+                    (false, self.select())
                 } else {
                     (false, EventResponses::default())
                 }
@@ -269,6 +269,7 @@ impl Element for SelectablePane {
         }
         let (captured, resps_) = self.pane.receive_event(ctx, ev);
         resps.extend(resps_);
+        debug!("OUT deselect, id: {}, resps: {:?}", self.id(), resps);
         (captured, resps)
     }
 }

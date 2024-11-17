@@ -21,6 +21,8 @@
      - click but then release somewhere else (making the button focused) then
        click again - tries to re-register events
      - replace with microshadow buttons while I'm at it
+01. window test, all the main buttons are staying highlighted after they're clicked
+          (easy fix) 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -34,12 +36,10 @@
         textbox on first drag outside of the textbox
       - interesting so... tb hasn't actually been selected because the Up click
         was never sent to the widget... 
+      - STILL Buggy for click dropdownlist, click empty space, then click button
 
 01. scrolling tb while deselected doesn't scroll the linenumbers or the
     scrollbars
-
-01. window test, all the main buttons are staying highlighted after they're clicked
-          (easy fix) 
 
 01. resizing a scrollable pane should modify the offset of that pane to account
     for the extra space (instead of automatically extending out of range)

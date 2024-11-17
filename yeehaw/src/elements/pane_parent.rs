@@ -315,4 +315,8 @@ impl Parent for ParentPane {
     fn get_priority(&self) -> Priority {
         self.pane.get_element_priority()
     }
+
+    fn get_id(&self) -> ElementID {
+        self.pane.id()
+    }
 }

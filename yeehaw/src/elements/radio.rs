@@ -134,7 +134,7 @@ impl Element for RadioButtons {
         match ev {
             Event::KeyCombo(ke) => {
                 if self.pane.get_selectability() != Selectability::Selected || ke.is_empty() {
-                    return (false, EventResponses::default());
+                    return (false, resps);
                 }
 
                 match true {
@@ -164,7 +164,7 @@ impl Element for RadioButtons {
                     }
                     _ => {}
                 }
-                return (false, EventResponses::default());
+                return (false, resps);
             }
             Event::Mouse(me) => {
                 if let MouseEventKind::Up(MouseButton::Left) = me.kind {}

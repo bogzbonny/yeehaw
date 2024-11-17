@@ -483,7 +483,8 @@ impl ElementOrganizer {
     pub fn event_process(
         &self, ctx: &Context, ev: Event, parent: Box<dyn Parent>,
     ) -> (bool, EventResponses) {
-        match ev {
+        let p_id = parent.get_id();
+        let (captured, resps) = match ev {
             Event::KeyCombo(_) | Event::Custom(_, _) => {
                 let (el_id, resps) = self.routed_event_process(ctx, ev, parent);
                 (el_id.is_some(), resps)
@@ -502,7 +503,11 @@ impl ElementOrganizer {
                 (false, resps) // never capture
             }
             Event::Exit | Event::Resize => self.propogate_event_to_all(ctx, ev, parent),
-        }
+        };
+        self.prioritizer
+            .borrow()
+            .ensure_no_duplicate_priorities(&p_id);
+        (captured, resps)
     }
 
     /// routed_event_process:
@@ -700,6 +705,7 @@ impl ElementOrganizer {
             let (_, mut resps_) = details2
                 .el
                 .receive_event(&child_ctx, Event::ExternalMouse(ev_adj));
+            debug!("about to process external mouse resp: id:{el_id2:?} resps: {resps_:?}");
             self.partially_process_ev_resps(ctx, el_id2, &mut resps_, &parent);
             resps.0.append(&mut resps_.0);
         }

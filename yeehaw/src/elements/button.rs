@@ -384,6 +384,6 @@ impl Element for Button {
             }
             _ => {}
         }
-        (false, EventResponses::default())
+        (false, resps)
     }
 }

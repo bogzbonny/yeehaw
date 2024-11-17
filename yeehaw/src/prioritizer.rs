@@ -84,24 +84,48 @@ impl EventPrioritizer {
             // Panic if two children have registered the same ev/cmd at the same priority
             // (excluding Unfocused). If false the event will be sent to the ev/cmd to which
             // happens to be first in the prioritizer
-            #[cfg(debug_assertions)]
-            if pe.1 != Priority::Unfocused {
-                if let Some(existing_id) = self.get_priority_ev_id(pe) {
-                    if existing_id != *id {
-                        panic!(
-                            "EvPrioritizer found at least 2 events registered to different \
-                             elements with the same priority. \
-                             \n\texisting-id: {existing_id} \
-                             \n\tregistering-id: {id}\n\tpr: {}\n\tev: {:?}",
-                            pe.1, pe.0
-                        )
-                    }
-                }
-            }
+            //#[cfg(debug_assertions)]
+            //if pe.1 != Priority::Unfocused {
+            //    if let Some(existing_id) = self.get_priority_ev_id(pe) {
+            //        if existing_id != *id {
+            //            panic!(
+            //                "EvPrioritizer found at least 2 events registered to different \
+            //                 elements with the same priority. \
+            //                 \n\texisting-id: {existing_id} \
+            //                 \n\tregistering-id: {id}\n\tpr: {}\n\tev: {:?}",
+            //                pe.1, pe.0
+            //            )
+            //        }
+            //    }
+            //}
 
             let peie = PriorityIdEvent::new(pe.1, id.clone(), pe.0.clone());
             self.0.push(peie);
             self.0.sort();
+        }
+    }
+
+    // check for priority overloading.
+    // Panic if two children have registered the same ev/cmd at the same priority
+    // (excluding Unfocused). If false the event will be sent to the ev/cmd to which
+    // happens to be first in the prioritizer
+    pub fn ensure_no_duplicate_priorities(&self, parent: &ElementID) {
+        #[cfg(debug_assertions)]
+        for pe in self.0.iter() {
+            if pe.priority != Priority::Unfocused {
+                if let Some(existing_id) = self.get_priority_ev_id(&(pe.event.clone(), pe.priority))
+                {
+                    if existing_id != *pe.id {
+                        panic!(
+                            "EvPrioritizer found at least 2 events registered to different \
+                             elements with the same priority for parent {parent}. \
+                             \n\tid1: {existing_id} \
+                             \n\tid2: {}\n\tpr: {}\n\tev: {:?}",
+                            pe.id, pe.priority, pe.event
+                        )
+                    }
+                }
+            }
         }
     }
 

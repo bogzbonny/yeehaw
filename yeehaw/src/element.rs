@@ -258,6 +258,8 @@ pub trait Parent: dyn_clone::DynClone {
 
     /// Get the priority of the parent element, useful for processing in the organizer.
     fn get_priority(&self) -> Priority;
+
+    fn get_id(&self) -> ElementID;
 }
 
 // -------------------------------------------------------

@@ -358,6 +358,10 @@ impl Parent for TuiParent {
     fn get_priority(&self) -> Priority {
         Priority::Focused
     }
+
+    fn get_id(&self) -> ElementID {
+        "TUI".to_string()
+    }
 }
 
 pub fn sc_startup() -> Result<(), Error> {
