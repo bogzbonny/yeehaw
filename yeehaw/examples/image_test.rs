@@ -1,7 +1,4 @@
-use yeehaw::{
-    widgets::Button, DebugSizePane, Error, EventResponses, HorizontalStack, ImageViewer, Tui,
-    VerticalStack, WidgetPane,
-};
+use yeehaw::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -21,9 +18,9 @@ async fn main() -> Result<(), Error> {
     };
 
     let vstack = VerticalStack::new(&ctx);
-    let widget_pane = WidgetPane::new(&ctx).with_height(3.into());
+    let sel_pane = ParentPaneOfSelectable::new(&ctx).with_dyn_height(3.into());
     let hstack = HorizontalStack::new(&ctx).with_height(1.0.into());
-    vstack.push(&ctx, Box::new(widget_pane.clone()));
+    vstack.push(&ctx, Box::new(sel_pane.clone()));
     vstack.push(&ctx, Box::new(hstack.clone()));
 
     let hstack__ = hstack.clone();
@@ -33,10 +30,9 @@ async fn main() -> Result<(), Error> {
         }
         EventResponses::default()
     });
-    let remove_button = Button::new(&ctx, "remove_pane", remove_button_click_fn)
-        .at(13.into(), 1.into())
-        .to_widgets();
-    widget_pane.add_widgets(remove_button);
+    let remove_button =
+        Button::new(&ctx, "remove_pane", remove_button_click_fn).at(13.into(), 1.into());
+    sel_pane.add_element(Box::new(remove_button));
 
     let hstack_ = hstack.clone();
     let ctx_ = ctx.clone();
@@ -51,10 +47,8 @@ async fn main() -> Result<(), Error> {
             EventResponses::default()
         }
     });
-    let add_button = Button::new(&ctx, "add_pane", add_button_click_fn)
-        .at(1.into(), 1.into())
-        .to_widgets();
-    widget_pane.add_widgets(add_button);
+    let add_button = Button::new(&ctx, "add_pane", add_button_click_fn).at(1.into(), 1.into());
+    sel_pane.add_element(Box::new(add_button));
 
     tui.run(Box::new(vstack)).await
 }

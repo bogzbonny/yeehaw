@@ -1,4 +1,4 @@
-use yeehaw::{Color, Tui, Error, EventResponses, ParentPane, Style, TermEditorPane};
+use yeehaw::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -16,12 +16,11 @@ async fn main() -> Result<(), Error> {
         .with_width(30.into())
         .at(1.into(), 1.into());
 
-    let label = yeehaw::widgets::Label::new(&ctx, "nothing yet set in $EDITOR textbox")
-        .at(50.into(), 1.into());
+    let label = Label::new(&ctx, "nothing yet set in $EDITOR textbox").at(50.into(), 1.into());
 
     let label_ = label.clone();
-    let hook = Box::new(move |ctx_, text: String| {
-        label_.set_text(&ctx_, format!("text set to:\n {text}"));
+    let hook = Box::new(move |_ctx, text: String| {
+        label_.set_text(format!("text set to:\n {text}"));
         EventResponses::default()
     });
 

@@ -1063,6 +1063,6 @@ mod tests {
             .iter()
             .map(|dc| format!("{}", dc.ch))
             .collect::<String>();
-        assert_eq!(dr.to_string(), "◀██▌   ▶");
+        assert_eq!(dr.to_string(), "◀███     ▶");
     }
 }

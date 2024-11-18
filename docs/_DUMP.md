@@ -1,7 +1,7 @@
-THIS document is a dumping grounds for design decisions for various elements and
-features. The intention is that text from this document will eventually be
-sifted through and included in actual docs - at which point this document will
-be deleted
+THIS document is a dumping grounds for design decisions/brainstorming for
+various elements and features. The intention is that text from this document
+will eventually be sifted through and included in actual docs - at which point
+this document will be deleted
 __________________________________________________
 
 01. Make the context size more clear.

@@ -292,6 +292,7 @@ pub struct ParentPaneOfSelectable {
     pub selectables: Rc<RefCell<Vec<ElementID>>>,
 }
 
+#[yeehaw_derive::impl_pane_basics_from(pane)]
 impl ParentPaneOfSelectable {
     pub const KIND: &'static str = "parent_pane_of_selectable";
     pub const EV_SET_SELECTABILITY: &'static str = "set_selectability";
