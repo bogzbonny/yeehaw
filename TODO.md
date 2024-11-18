@@ -1,46 +1,9 @@
-01. Make the context size more clear.
-     - The context provided always contains the size of the element. However
-       during initialization, before the size of an element is known, the
-       context fed in will be the parent context. This is confusing as heck and
-       I hope to rectify this, possibly by providing both the parent-element
-       size and size-for-the-element as options within the context. 
-     - Actually, NO parent size, parent context is provided so one can get the
-       size that way.
-     - parent size should not be an option, only the child size should be an
-       option. parent size must always be known (get from parent Ctx)
-       - calling pane.width(ctx) should be the same as ctx.child.width if the child
-         size is provided
-     - Maybe there should be an Initialization context where the Size is an
-       option and the regular context where the size is nolonger an option!?
-         - makes it maybe a bit annoying with some duplicated logic however?
-01. right click menu of the textbox deselects the textbox
+01. window_test: maximizing terminal window doesn't enlarge the inner terminal
 
-01. scrollbars on textbox grow ever so slightly once the texbox is entered.
-      - scrollbars on textbox have bad starting size
-10. element slider bars / track bars
-   ━━━━━━━━━━╉─────────────────────          
-   ━━━━━━━━━━⛊─────────────────────          
-   ██████████╋━━━━━━━━━━━━━━━━━━━━━          
-   ━━━━━━━━━● 
-   ━━━━━━━━❍─────────────────────── 
-   Options:
-    - styles:
-      - one sided
-        - end ch
-        - left ch      NOTE to set it to a different color, just use a pos gradient
-        - right ch
+01. running "top" inside terminal window shoots the cursor outside of the
+    window! should correct for this
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-10. organize elements into subfolders
-      - containers
-      - widgets
-      - panes... keep in root?
-         - (pane,parent_pane)
-      - terminal 
-      - misc 
-         - shadow
-         - menu
-         - right_click_menu
 
 10. Dial 8 or 12 positions
     - if there are labels could bold the one which is selected
@@ -83,12 +46,12 @@ One letter labels
          OptionH        OptionE
             OptionG  OptionF
 
-It'd be cool to come up with a "Complex Selector" generalization for the dials. 
- - for now, this complex selector should probably be the only way to initialize
+It'd be cool to come up with a "Arbitrary Selector" generalization for the dials. 
+ - for now, this arbitrary selector should probably be the only way to initialize
    a dial... eventually we could automatically produce the maps, but it can get
    complicated as the text of the different options changes.
  - probably each version of the dial (3 postion... 8 position etc) should be a
-   different complex selector. 
+   different arbitrary selector. 
  - All the different states could be fed in manually as DrawCh2Ds 
  - we would probably want different states for "selecting" (brighter colors) and
    "selected" dimmer colors. 
@@ -103,7 +66,14 @@ It'd be cool to come up with a "Complex Selector" generalization for the dials.
 
  - if certain positions are excluded their selection positions could be a '0'
  - If the mouse is dragging outside of the selector zone, the nearest position
-   could be "snapped to".
+   could be "snapped to"
+ - Arbitrary Selector, feed in:
+    - positions map 
+    - base DrawCh2D
+    - selection-made DrawChPos changes
+       - these are drawn on top of the base for each selection
+       - for the dial for ex, this is all the differences
+
 
 05. introduce errors, remove all unwraps
 
@@ -132,9 +102,6 @@ It'd be cool to come up with a "Complex Selector" generalization for the dials.
 01. gifs gifs gifs
 
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-01. running "top" inside terminal window shoots the cursor outside of the
-    window! should correct for this
 
 05. integrate in is_dirty logic into the Pane to the drawing. if is_dirty is
     true the pane will call 'update_dirty_content', otherwise it will just
@@ -234,6 +201,7 @@ It'd be cool to come up with a "Complex Selector" generalization for the dials.
                - each sub-item would be a leaf of the menu-bar however a final
                  location would be flattened down such that it was not a sub-item
                  of the menu-bar but of the same parent the menu-bar has 
+
 
 10. scrollbar style on pane option... use a half(widthwise) block character instead of the
     thick border line... looks nice

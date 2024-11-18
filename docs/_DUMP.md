@@ -4,6 +4,47 @@ sifted through and included in actual docs - at which point this document will
 be deleted
 __________________________________________________
 
+01. Make the context size more clear.
+     - The context provided always contains the size of the element. However
+       during initialization, before the size of an element is known, the
+       context fed in will be the parent context. This is confusing as heck and
+       I hope to rectify this, possibly by providing both the parent-element
+       size and size-for-the-element as options within the context. 
+     - Actually, NO parent size, parent context is provided so one can get the
+       size that way.
+     - parent size should not be an option, only the child size should be an
+       option. parent size must always be known (get from parent Ctx)
+       - calling pane.width(ctx) should be the same as ctx.child.width if the child
+         size is provided
+     - Maybe there should be an Initialization context where the Size is an
+       option and the regular context where the size is nolonger an option!?
+         - makes it maybe a bit annoying with some duplicated logic however?
+01. right click menu of the textbox deselects the textbox
+
+01. scrollbars on textbox grow ever so slightly once the texbox is entered.
+      - scrollbars on textbox have bad starting size
+10. element slider bars / track bars
+   ━━━━━━━━━━╉─────────────────────          
+   ━━━━━━━━━━⛊─────────────────────          
+   ██████████╋━━━━━━━━━━━━━━━━━━━━━          
+   ━━━━━━━━━● 
+   ━━━━━━━━❍─────────────────────── 
+   Options:
+    - styles:
+      - one sided
+        - end ch
+        - left ch      NOTE to set it to a different color, just use a pos gradient
+        - right ch
+10. organize elements into subfolders
+      - containers
+      - widgets
+      - panes... keep in root?
+         - (pane,parent_pane)
+      - terminal 
+      - misc 
+         - shadow
+         - menu
+         - right_click_menu
 
 01. listbox scrollbar never activated
 01. listbox not selecting with up and down arrows after a resize

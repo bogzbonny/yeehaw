@@ -192,6 +192,28 @@ impl Element for TerminalPane {
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        let mp_size = self.master_pty.borrow().get_size();
+        let resize = if let Ok(mp_size) = mp_size {
+            mp_size.rows != ctx.s.height || mp_size.cols != ctx.s.width
+        } else {
+            true
+        };
+        if resize {
+            self.parser
+                .write()
+                .unwrap()
+                .set_size(ctx.s.height, ctx.s.width);
+            self.master_pty
+                .borrow()
+                .resize(PtySize {
+                    rows: ctx.s.height,
+                    cols: ctx.s.width,
+                    pixel_width: 0,
+                    pixel_height: 0,
+                })
+                .unwrap();
+        }
+
         let mut out = vec![];
 
         let sc = self.parser.read().unwrap();
