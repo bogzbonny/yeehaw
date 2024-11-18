@@ -628,23 +628,28 @@ impl TextBoxInner {
             right_click_menu: Rc::new(RefCell::new(None)),
         };
 
-        let tb1 = tb.clone();
-        let tb2 = tb.clone();
-        let tb3 = tb.clone();
+        let (tb1, tb2, tb3) = (tb.clone(), tb.clone(), tb.clone());
         let rcm = RightClickMenu::new(ctx, MenuStyle::default()).with_menu_items(
             ctx,
             vec![
                 MenuItem::new(ctx, MenuPath("Cut".to_string())).with_click_fn(Some(Box::new(
-                    move |ctx| tb1.cut_to_clipboard(&ctx).unwrap(),
+                    move |ctx| {
+                        tb1.is_dirty.replace(true);
+                        tb1.cut_to_clipboard(&ctx).unwrap()
+                    },
                 ))),
                 MenuItem::new(ctx, MenuPath("Copy".to_string())).with_click_fn(Some(Box::new(
                     move |_ctx| {
+                        tb2.is_dirty.replace(true);
                         tb2.copy_to_clipboard().unwrap();
                         EventResponses::default()
                     },
                 ))),
                 MenuItem::new(ctx, MenuPath("Paste".to_string())).with_click_fn(Some(Box::new(
-                    move |ctx| tb3.paste_from_clipboard(&ctx).unwrap(),
+                    move |ctx| {
+                        tb3.is_dirty.replace(true);
+                        tb3.paste_from_clipboard(&ctx).unwrap()
+                    },
                 ))),
             ],
         );
@@ -860,12 +865,12 @@ impl TextBoxInner {
             ln_tb.pane.set_content_y_offset(ctx, y_offset);
         }
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
-            debug!(
-                "correcting x scrollbar: x_offset: {:?}, width: {}, size: ctx.s: {:?}",
-                x_offset,
-                self.pane.content_width(),
-                ctx.s
-            );
+            //debug!(
+            //    "correcting x scrollbar: x_offset: {:?}, width: {}, size: ctx.s: {:?}",
+            //    x_offset,
+            //    self.pane.content_width(),
+            //    ctx.s
+            //);
             sb.external_change(x_offset, self.pane.content_width(), ctx.s);
         }
         resp
@@ -1156,8 +1161,8 @@ impl TextBoxInner {
     pub fn receive_mouse_event(&self, ctx: &Context, ev: MouseEvent) -> (bool, EventResponses) {
         // handle right click
         if let Some(rcm) = &*self.right_click_menu.borrow() {
-            if let Some(resp) = rcm.create_menu_if_right_click(ev) {
-                return (true, resp);
+            if let Some(resps) = rcm.create_menu_if_right_click(ev) {
+                return (true, resps);
             }
         }
 

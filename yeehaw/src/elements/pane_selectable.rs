@@ -199,6 +199,7 @@ impl Element for SelectablePane {
     }
 
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        //debug!("IN select, id: {}, ev: {:?}", self.id(), ev);
         let (captured, mut resps) = match ev {
             Event::Mouse(me) => {
                 if matches!(me.kind, MouseEventKind::Up(MouseButton::Left)) {
@@ -210,10 +211,12 @@ impl Element for SelectablePane {
             Event::ExternalMouse(ref me) => {
                 if matches!(
                     me.kind,
-                    MouseEventKind::Down(_) | MouseEventKind::Drag(_) | MouseEventKind::Up(_)
+                    MouseEventKind::Down(MouseButton::Left)
+                        | MouseEventKind::Drag(MouseButton::Left)
+                        | MouseEventKind::Up(MouseButton::Left)
                 ) {
                     let resps = self.deselect();
-                    //debug!("deselect, id: {}, resps: {:?}", self.id(), resps);
+                    debug!("deselect, id: {}, resps: {:?}", self.id(), resps);
                     (false, resps)
                 } else {
                     (false, EventResponses::default())

@@ -16,6 +16,8 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+01. right click menu of the textbox deselects the textbox
+
 05. introduce errors, remove all unwraps
 
 01. docs docs docs
