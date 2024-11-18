@@ -17,10 +17,6 @@
 
 01. scrollbars on textbox grow ever so slightly once the texbox is entered.
       - scrollbars on textbox have bad starting size
-
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 10. element slider bars / track bars
    ━━━━━━━━━━╉─────────────────────          
    ━━━━━━━━━━⛊─────────────────────          
@@ -34,6 +30,7 @@
         - left ch      NOTE to set it to a different color, just use a pos gradient
         - right ch
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 10. organize elements into subfolders
       - containers
       - widgets
@@ -44,8 +41,6 @@
          - shadow
          - menu
          - right_click_menu
-
-
 
 10. Dial 8 or 12 positions
     - if there are labels could bold the one which is selected

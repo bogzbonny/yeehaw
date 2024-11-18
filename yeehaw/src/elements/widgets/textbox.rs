@@ -1,8 +1,4 @@
 use {
-    super::{
-        HorizontalSBPositions, HorizontalScrollbar, Selectability, VerticalSBPositions,
-        VerticalScrollbar,
-    },
     crate::{
         elements::menu::{MenuItem, MenuPath, MenuStyle},
         Keyboard as KB, *,
