@@ -298,6 +298,66 @@ impl Color {
             _ => {}
         }
     }
+
+    pub fn set_alpha(&mut self, alpha: u8) {
+        match self {
+            Color::Rgba(c) => c.a = alpha,
+            Color::Gradient(gr) => {
+                for (_, c) in &mut gr.grad {
+                    c.set_alpha(alpha);
+                }
+            }
+            Color::TimeGradient(tg) => {
+                for (_, c) in &mut tg.points {
+                    c.set_alpha(alpha);
+                }
+            }
+            Color::RadialGradient(rg) => {
+                for (_, c) in &mut rg.grad {
+                    c.set_alpha(alpha);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    pub fn overlay_color(&self, overlay: Self) -> Self {
+        match overlay {
+            Color::Rgba(oc) => match self {
+                Color::ANSI(_) => overlay,
+                Color::Rgba(c) => Color::Rgba(c.overlay_color(oc)),
+                Color::Gradient(gr) => {
+                    let mut grad = vec![];
+                    for (x, c) in &gr.grad {
+                        grad.push((x.clone(), c.overlay_color(overlay.clone())));
+                    }
+                    Color::Gradient(Gradient {
+                        grad,
+                        angle_deg: gr.angle_deg,
+                    })
+                }
+                Color::TimeGradient(tg) => {
+                    let mut points = vec![];
+                    for (dur, c) in &tg.points {
+                        points.push((*dur, c.overlay_color(overlay.clone())));
+                    }
+                    Color::TimeGradient(TimeGradient::new(tg.total_dur, points))
+                }
+                Color::RadialGradient(rg) => {
+                    let mut grad = vec![];
+                    for (x, c) in &rg.grad {
+                        grad.push((x.clone(), c.overlay_color(overlay.clone())));
+                    }
+                    Color::RadialGradient(RadialGradient {
+                        center: rg.center.clone(),
+                        skew: rg.skew,
+                        grad,
+                    })
+                }
+            },
+            _ => overlay,
+        }
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
@@ -801,8 +861,8 @@ impl Rgba {
     }
 
     /// returns a tuple of the rgb values
-    pub fn to_tuple(&self) -> (u8, u8, u8) {
-        (self.r, self.g, self.b)
+    pub fn to_tuple(&self) -> (u8, u8, u8, u8) {
+        (self.r, self.g, self.b, self.a)
     }
 
     /// Multiply the color by a scalar amount
@@ -815,8 +875,8 @@ impl Rgba {
 
     /// considers the alpha of the self and blends with the previous color
     pub fn to_crossterm_color(&self, prev: Option<CrosstermColor>) -> CrosstermColor {
-        let (r, g, b) = self.to_tuple();
-        let a = self.a as f64 / 255.0;
+        let (r, g, b, a) = self.to_tuple();
+        let a = a as f64 / 255.0;
         let prev = prev.unwrap_or(CrosstermColor::Rgb { r: 0, g: 0, b: 0 });
         let (pr, pg, pb) = match prev {
             CrosstermColor::Rgb { r, g, b } => (r, g, b),
@@ -826,6 +886,21 @@ impl Rgba {
         let g = (g as f64 * a + pg as f64 * (1.0 - a)) as u8;
         let b = (b as f64 * a + pb as f64 * (1.0 - a)) as u8;
         CrosstermColor::Rgb { r, g, b }
+    }
+
+    pub fn overlay_color(&self, overlay: Self) -> Self {
+        let (r, g, b, a) = overlay.to_tuple();
+        let a = a as f64 / 255.0;
+        let (under_r, under_g, under_b, under_a) = self.to_tuple();
+        let r = (r as f64 * a + under_r as f64 * (1.0 - a)) as u8;
+        let g = (g as f64 * a + under_g as f64 * (1.0 - a)) as u8;
+        let b = (b as f64 * a + under_b as f64 * (1.0 - a)) as u8;
+        Self {
+            r,
+            g,
+            b,
+            a: under_a,
+        }
     }
 }
 

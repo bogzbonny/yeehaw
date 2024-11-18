@@ -30,7 +30,7 @@ impl FigletText {
     }
 
     // ----------------------------------------------
-    /// decorators
+    // decorators
 
     pub fn with_style(self, sty: Style) -> Self {
         self.pane.set_style(sty.clone());

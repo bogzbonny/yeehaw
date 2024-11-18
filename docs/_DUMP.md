@@ -1,3 +1,9 @@
+THIS document is a dumping grounds for design decisions for various elements and
+features. The intention is that text from this document will eventually be
+sifted through and included in actual docs - at which point this document will
+be deleted
+__________________________________________________
+
 
 01. listbox scrollbar never activated
 01. listbox not selecting with up and down arrows after a resize

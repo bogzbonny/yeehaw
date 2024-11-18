@@ -216,7 +216,7 @@ impl Element for SelectablePane {
                         | MouseEventKind::Up(MouseButton::Left)
                 ) {
                     let resps = self.deselect();
-                    debug!("deselect, id: {}, resps: {:?}", self.id(), resps);
+                    //debug!("deselect, id: {}, resps: {:?}", self.id(), resps);
                     (false, resps)
                 } else {
                     (false, EventResponses::default())
@@ -269,6 +269,14 @@ impl SelStyles {
             selected_style: Style::transparent(),
             ready_style: Style::transparent(),
             unselectable_style: Style::transparent(),
+        }
+    }
+
+    pub fn opaque() -> SelStyles {
+        SelStyles {
+            selected_style: Style::opaque(Color::YELLOW, 40),
+            ready_style: Style::transparent(),
+            unselectable_style: Style::opaque(Color::GREY15, 40),
         }
     }
 }

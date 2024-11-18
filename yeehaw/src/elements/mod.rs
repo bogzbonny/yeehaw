@@ -18,6 +18,7 @@ pub mod pane_selectable;
 pub mod radio;
 pub mod scrollbar;
 pub mod shadow;
+pub mod slider;
 pub mod stack;
 pub mod tabs;
 pub mod terminal;
@@ -51,6 +52,7 @@ pub use {
         VerticalScrollbar,
     },
     shadow::Shadowed,
+    slider::Slider,
     stack::{HorizontalStack, VerticalStack},
     tabs::Tabs,
     terminal::TerminalPane,

@@ -99,6 +99,15 @@ impl DrawCh {
     pub fn str_to_draw_chs(s: &str, sty: Style) -> Vec<DrawCh> {
         s.chars().map(|c| DrawCh::new(c, sty.clone())).collect()
     }
+
+    pub fn overlay_style(&mut self, sty: &Style) {
+        self.style.overlay_style(sty);
+    }
+
+    pub fn with_overlay_style(mut self, sty: &Style) -> Self {
+        self.style.overlay_style(sty);
+        self
+    }
 }
 
 // ----------------------------------------------------

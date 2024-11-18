@@ -22,7 +22,7 @@
 ~ Batteries Included Text Based Application Framework ~
 
 yeehaw was born out of a need for an adaptable and embeddable element design for
-sophisticated text based applications. 
+sophisticated text based applications. Also it's just fun to program.
 
 **Reasons why you need your application to be text-based:**
 1) it's the only way you'll ever be cool again
@@ -52,17 +52,18 @@ sophisticated text based applications.
  - file navigator (think nerdtree)
  - image viewer (thanks to [ratatui-image](https://github.com/benjajaja/ratatui-image))
  - windows
- - terminal (that can open other TUIs!)
- - figlet fonts (aka MEGAFONTS)
- - button
- - checkbox
- - dropdown-list
- - label
- - listbox (optional multi-entry)
+ - terminal (that can open other TUIs! ..dang)
+ - figlet fonts (aka MONSTER FONTS)
+ - buttons
+ - checkboxs
+ - dropdown-lists
+ - labels
+ - listboxs
  - radio-buttons
  - scrollbars
  - toggles
  - generalized label decorators on all elements
+ - progress bars/sliders
 
 ## Planned
  - put a whole dang yeehaw-TUI into a stateful ratatui widget, why not!
@@ -104,13 +105,6 @@ Looking to understand more? Checkout:
  - [Context](TODO) <- an object which can be found nearly everywhere
  - [DynVal](TODO) <- the basis for all layouts and sizes
 
-#### an important note of contexts
-The context provided always contains the size of the element. However during
-initialization, before the size of an element is known, the context fed in will
-be the parent context. This is confusing as heck and I hope to rectify this,
-possibly by providing both the parent-element size and size-for-the-element as
-options within the context. 
-
 
 ### Objectives [WIP]
 
@@ -137,16 +131,17 @@ If you plan to build on Yeehaw right now, that's great news! I'd like to keep
 you apprised of some upcoming changes. If you do wish to experiment and or start
 development on yeehaw I wouldn't be too afraid of these upcoming changes, I'll
 try'n help out anyone who needs a hand fixing things broken by upcoming
-refactors / update a breaking changes doc with upgrade instructions.
+refactors / update a breaking changes doc with upgrade instructions. 
+HAVE NO FEAR
 
 - There ain't much testing in here at all, soon a TUI snapshot tester is going to 
   be developed, which should bring up coverage from about 0% as it stands. 
 - Taffy is going to be integrated in. It shouldn't change the existing location
   mechanisms just build on top of them.
 - Proper window minimization behaviour is blocking on the Taffy integration such
-  that the minimized windows can follow a nice grid pattern. Currently
-  minimization works, however multiple minimized windows will stack on each
-  other in the same location. 
+  that the minimized windows can follow a nice easy grid pattern. Currently
+  minimization still somewhat works, however multiple minimized windows will
+  stack on each other in the same location. 
 - The $EDITOR text editor element - aka the element where you could use any
   editor like neovim/vim/emacs(I think?) currently doesn't provide good support
   for users who HAVEN'T set their $EDITOR env variable. This will be fixed at

@@ -9,17 +9,18 @@ pub struct Toggle {
     pub pane: SelectablePane,
     pub left: Rc<RefCell<String>>,
     pub right: Rc<RefCell<String>>,
-    pub left_selected: Rc<RefCell<bool>>,
     /// otherwise right is selected
-    pub clicked_down: Rc<RefCell<bool>>,
+    pub left_selected: Rc<RefCell<bool>>,
     /// activated when mouse is clicked down while over button
+    pub clicked_down: Rc<RefCell<bool>>,
+    /// the style of the selected side
     pub selected_sty: Rc<RefCell<Style>>,
     ///                                   selected
     pub toggled_fn: Rc<RefCell<dyn FnMut(Context, String) -> EventResponses>>,
 }
 
 impl Toggle {
-    const KIND: &'static str = "button";
+    const KIND: &'static str = "toggle";
 
     const STYLE: SelStyles = SelStyles {
         selected_style: Style::new_const(Color::BLACK, Color::LIGHT_YELLOW2),
@@ -74,7 +75,7 @@ impl Toggle {
     }
 
     // ----------------------------------------------
-    /// decorators
+    // decorators
 
     pub fn with_styles(self, styles: SelStyles) -> Self {
         self.pane.set_styles(styles);

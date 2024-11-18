@@ -107,7 +107,7 @@ impl ListBox {
     }
 
     // ----------------------------------------------
-    /// decorators
+    // decorators
 
     pub fn with_left_scrollbar(self, init_ctx: &Context) -> Self {
         self.with_scrollbar_inner(init_ctx, VerticalSBPositions::ToTheLeft)

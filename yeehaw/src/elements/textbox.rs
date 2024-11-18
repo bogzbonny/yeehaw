@@ -37,11 +37,6 @@ impl TextBox {
             .with_styles(TextBoxInner::STYLE);
         let inner = TextBoxInner::new(init_ctx, text);
 
-        debug!(
-            "STARTy-sb content_height: {:?}",
-            inner.pane.content_height()
-        );
-        debug!("STARTy-sb content_width: {:?}", inner.pane.content_width());
         pane.pane.add_element(Box::new(inner.clone()));
         let tb = TextBox {
             pane,
@@ -53,23 +48,10 @@ impl TextBox {
 
         *tb.inner.borrow().current_sty.borrow_mut() = tb.pane.get_current_style();
 
-        debug!(
-            "START inner loc: {:?}",
-            &tb.inner.borrow().pane.get_dyn_location()
-        );
-
-        debug!("START tb loc: {:?}", &tb.pane.get_dyn_location());
-
         let tb_ = tb.clone();
 
         tb.pane
             .set_post_hook_for_set_selectability(Box::new(move |_, _| {
-                //let sel = tb_.pane.get_selectability();
-                //*tb_.inner.borrow().selectedness.borrow_mut() = sel;
-                //*tb_.inner.borrow().current_sty.borrow_mut() = tb_.pane.get_current_style();
-                //if sel != Selectability::Selected {
-                //    *tb_.inner.borrow().visual_mode.borrow_mut() = false;
-                //}
                 tb_.post_hook_for_set_selectability();
             }));
 
@@ -233,12 +215,6 @@ impl TextBox {
             .must_get_parent_context()
             .child_context(&self.pane.get_dyn_location())
             .child_context(&self.inner.borrow().pane.get_dyn_location());
-        debug!(
-            "resetting sb sizes, init_ctx size: {:?}, inner size: {:?}",
-            init_ctx.s,
-            inner_ctx.s,
-            //&self.inner.borrow().pane.get_dyn_location()
-        );
         if let Some(y_sb) = &*self.y_scrollbar.borrow() {
             y_sb.set_scrollable_view_size(inner_ctx.s);
             *y_sb.scrollable_view_chs.borrow_mut() = DynVal::new_fixed(inner_ctx.s.height as i32);
@@ -865,12 +841,6 @@ impl TextBoxInner {
             ln_tb.pane.set_content_y_offset(ctx, y_offset);
         }
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
-            //debug!(
-            //    "correcting x scrollbar: x_offset: {:?}, width: {}, size: ctx.s: {:?}",
-            //    x_offset,
-            //    self.pane.content_width(),
-            //    ctx.s
-            //);
             sb.external_change(x_offset, self.pane.content_width(), ctx.s);
         }
         resp

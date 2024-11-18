@@ -62,6 +62,17 @@ impl Style {
         }
     }
 
+    /// create a style which is semi-transparent
+    pub fn opaque(mut c: Color, alpha: u8) -> Self {
+        c.set_alpha(alpha);
+        Self {
+            fg: Some((c.clone(), FgTranspSrc::LowerFg)),
+            bg: Some((c, BgTranspSrc::LowerBg)),
+            underline: Some((Color::TRANSPARENT, UlTranspSrc::LowerUl)),
+            attr: Attributes::new(),
+        }
+    }
+
     pub const fn standard() -> Self {
         Self {
             fg: Some((Color::WHITE, FgTranspSrc::LowerFg)),
@@ -154,6 +165,47 @@ impl Style {
         }
         if let Some(underline) = self.underline.as_mut() {
             underline.0.update_color(ctx, x, y);
+        }
+    }
+
+    // overlays the overlay style on top of self colors
+    pub fn overlay_style(&mut self, overlay: &Self) {
+        let (under_fg, under_bg, under_ul) =
+            (self.fg.clone(), self.bg.clone(), self.underline.clone());
+        if let Some(ol_bg) = overlay.bg.clone() {
+            let under = match ol_bg.1 {
+                BgTranspSrc::LowerFg => under_fg.clone().map(|(fg, _)| fg),
+                BgTranspSrc::LowerBg => under_bg.clone().map(|(bg, _)| bg),
+                BgTranspSrc::LowerUl => under_ul.clone().map(|(ul, _)| ul),
+            };
+            if let (Some(under), Some((bg, _))) = (under, &mut self.bg) {
+                *bg = under.overlay_color(ol_bg.0);
+            }
+        };
+        let this_bg = self.bg.clone();
+
+        if let Some(ol_fg) = overlay.fg.clone() {
+            let under = match ol_fg.1 {
+                FgTranspSrc::LowerFg => under_fg.clone().map(|(fg, _)| fg),
+                FgTranspSrc::LowerBg => under_bg.clone().map(|(bg, _)| bg),
+                FgTranspSrc::LowerUl => under_ul.clone().map(|(ul, _)| ul),
+                FgTranspSrc::ThisBg => this_bg.clone().map(|(bg, _)| bg),
+            };
+            if let (Some(under), Some((fg, _))) = (under, &mut self.fg) {
+                *fg = under.overlay_color(ol_fg.0);
+            }
+        };
+
+        if let Some(ol_ul) = overlay.underline.clone() {
+            let under = match ol_ul.1 {
+                UlTranspSrc::LowerFg => under_fg.clone().map(|(fg, _)| fg),
+                UlTranspSrc::LowerBg => under_bg.clone().map(|(bg, _)| bg),
+                UlTranspSrc::LowerUl => under_ul.clone().map(|(ul, _)| ul),
+                UlTranspSrc::ThisBg => this_bg.clone().map(|(bg, _)| bg),
+            };
+            if let (Some(under), Some((ul, _))) = (under, &mut self.underline) {
+                *ul = under.overlay_color(ol_ul.0);
+            }
         }
     }
 }

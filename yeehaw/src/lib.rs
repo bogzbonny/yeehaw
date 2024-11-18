@@ -31,8 +31,8 @@ pub use {
         FileViewerPane, HorizontalSBPositions, HorizontalScrollbar, HorizontalStack, ImageViewer,
         Label, ListBox, MenuBar, NumbersTextBox, Pane, PaneScrollable, ParentPane,
         ParentPaneOfSelectable, RadioButtons, RightClickMenu, ScrollbarSty, SelStyles,
-        Selectability, SelectablePane, Shadowed, Tabs, TermEditorPane, TerminalPane, TextBox,
-        Toggle, VerticalSBPositions, VerticalScrollbar, VerticalStack, WindowPane,
+        Selectability, SelectablePane, Shadowed, Slider, Tabs, TermEditorPane, TerminalPane,
+        TextBox, Toggle, VerticalSBPositions, VerticalScrollbar, VerticalStack, WindowPane,
     },
     errors::Error,
     event::{

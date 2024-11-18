@@ -13,35 +13,39 @@
      - Maybe there should be an Initialization context where the Size is an
        option and the regular context where the size is nolonger an option!?
          - makes it maybe a bit annoying with some duplicated logic however?
+01. right click menu of the textbox deselects the textbox
+
+01. scrollbars on textbox grow ever so slightly once the texbox is entered.
+      - scrollbars on textbox have bad starting size
+
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-01. right click menu of the textbox deselects the textbox
-
-05. introduce errors, remove all unwraps
-
-01. docs docs docs
-
-01. add docs, crates button banners to github readme
-
 10. element slider bars / track bars
-   ██████████████████━━━━━━━━━━━━━━   ┳   ┳ 1
-                                      ┃   ┃
-   ━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━   ╋   ╋ 2
-                                      ┃   ┃
-   ██████████╋━━━━━━━━━━━━━━━━━━━━━  ▶╋   ╋ 3
-                                      ┃  ▶┃
-   ━━━━━━━━━━╋██████████████╋━━━━━━   ╋   ╋ 4
-                                      ┃   ┃
-   ══════════╪═════════════════════   ╋   ╋ 5
-                                      ┃   ┃
-   ══════════╪██████████████╪══════   ╋   ╋ 6 
-                                      ┃   ┃
-   ══════════╪▓▓▓▓▓▓▓▓▓▓▓▓▓▓╪══════   ┻   ┻ 7 
-
+   ━━━━━━━━━━╉─────────────────────          
+   ━━━━━━━━━━⛊─────────────────────          
+   ██████████╋━━━━━━━━━━━━━━━━━━━━━          
    ━━━━━━━━━● 
-      ●━━━━━━━━━━━━━━━━━━━━● 
    ━━━━━━━━❍─────────────────────── 
+   Options:
+    - styles:
+      - one sided
+        - end ch
+        - left ch      NOTE to set it to a different color, just use a pos gradient
+        - right ch
+
+10. organize elements into subfolders
+      - containers
+      - widgets
+      - panes... keep in root?
+         - (pane,parent_pane)
+      - terminal 
+      - misc 
+         - shadow
+         - menu
+         - right_click_menu
+
+
 
 10. Dial 8 or 12 positions
     - if there are labels could bold the one which is selected
@@ -106,6 +110,12 @@ It'd be cool to come up with a "Complex Selector" generalization for the dials.
  - If the mouse is dragging outside of the selector zone, the nearest position
    could be "snapped to".
 
+05. introduce errors, remove all unwraps
+
+01. docs docs docs
+
+01. add docs, crates button banners to github readme
+
 01. showcase example 
       - sweet figlet text up top "Yeahaw showcase"
       - dial with window types 
@@ -127,10 +137,6 @@ It'd be cool to come up with a "Complex Selector" generalization for the dials.
 01. gifs gifs gifs
 
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-01. scrollbars on textbox grow ever so slightly once the texbox is entered.
-      - scrollbars on textbox have bad starting size
 
 01. running "top" inside terminal window shoots the cursor outside of the
     window! should correct for this
@@ -309,10 +315,17 @@ It'd be cool to come up with a "Complex Selector" generalization for the dials.
 
 
 10. progress bar
+
+   ██████████████                  end
+   ██████████████████              end
+
+   ▊▊▊▊▊▊▊▊▊▊▊▊                    oooo nice
     - optionally with an embedded word
     - use a gradient color! 
     - imagine that the progressbar was just a gradient changing around a box
       border
+
+10. Hyperlink element which can open in a browser when clicked
 
 10. allow for the time gradient to execute once instead of on repeat. 
 
@@ -333,6 +346,35 @@ It'd be cool to come up with a "Complex Selector" generalization for the dials.
     - ◢◥◤◣
     - ◥◢◣◤
 
+20. labelled element slider bars / track bars
+      - label locations (before or after bar)
+      - label chs on slider: start, middle, end
+      - inbetween label ch
+      - label positions 
+      - selector
+         - position (opposite-label-locations or ON)
+         - selector CH
+      ┳   ┳ 1
+      ┃   ┃
+      ╋   ╋ 2
+      ┃   ┃
+     ▶╋   ╋ 3
+      ┃  ▶┃
+      ╋   ╋ 4
+      ┃   ┃
+      ╋   ╋ 5                ▼
+      ┃   ┃      ┣━━╋━━╋━━╋━━╋━━╋━━╋━━╋━━╋━━╋━━╋━━┫
+      ╋   ╋ 6    1  2  3  4  5  6  7  8  9  1  1  1
+      ┃   ┃                                 0  1  2
+      ┻   ┻ 7 
+
+20. double sided slider bar
+     - start ch
+     - end ch
+     - inbetween ch
+     - exterior ch
+   ━━━━━━━━━━╋██████████████╋━━━━━━          
+      ●━━━━━━━━━━━━━━━━━━━━● 
 
 10. dragable file-like icon object:
        ┌────┐
@@ -366,6 +408,7 @@ It'd be cool to come up with a "Complex Selector" generalization for the dials.
 
 20. ScrollablePane: Ensure Element visible. Feed in an element-is then the scrollable pane 
     should move the view to ensure that the provided element is visible.
+
 
 20. listbox over entire elements
     - abstract the listbox selector except to allow for an
@@ -401,6 +444,11 @@ It'd be cool to come up with a "Complex Selector" generalization for the dials.
      - All this logic should exist at the Pane level 
        - will have to refactor code such that everything now DOES call the pane
          receive event function.
+
+30. graphs and charts obviously
+      - braille dots graph
+      - bar/column chart
+      - block pyramid 
 
 10. element: date selector
 

@@ -264,7 +264,7 @@ impl Button {
     }
 
     // ----------------------------------------------
-    /// decorators
+    // decorators
 
     pub fn with_styles(self, styles: SelStyles) -> Self {
         self.pane.set_styles(styles);

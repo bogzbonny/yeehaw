@@ -107,7 +107,7 @@ impl VerticalScrollbar {
     }
 
     // ----------------------------------------------
-    /// decorators
+    // decorators
 
     pub fn without_keyboard_events(self) -> Self {
         self.pane

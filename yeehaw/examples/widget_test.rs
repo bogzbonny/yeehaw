@@ -167,7 +167,19 @@ async fn main() -> Result<(), Error> {
         .with_min(-10.0)
         .with_max(10.0)
         .at(DynVal::new_flex(0.75), DynVal::new_flex(0.5));
-    el.add_element(Box::new(ntb));
+    el.add_element(Box::new(ntb.clone()));
+
+    let ntb_ = ntb.clone();
+    let slider = Slider::new_basic_block(&ctx)
+        .with_gradient(Color::AQUA, Color::ORANGE)
+        .with_width(DynVal::new_flex(0.1))
+        .at(DynVal::new_flex(0.8), DynVal::new_flex(0.5))
+        .with_fn(Box::new(move |_, sl| {
+            let p = sl.get_position();
+            ntb_.change_value(p);
+            EventResponses::default()
+        }));
+    el.add_element(Box::new(slider));
 
     tui.run(Box::new(el)).await
 }
