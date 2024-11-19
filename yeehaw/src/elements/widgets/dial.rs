@@ -251,22 +251,22 @@ impl Spacing {
 
         match self {
             Spacing::UltraCompact => {
-                let a_spc = " ".repeat(max_rh_width - a.len() - self.start_x_from_center(&0) as usize);
-                let b_spc = " ".repeat(max_rh_width - b.len() - self.start_x_from_center(&1) as usize);
-                let c_spc = " ".repeat(max_rh_width - c.len() - self.start_x_from_center(&2)as usize);
-                let d_spc = " ".repeat(max_rh_width - d.len() - self.start_x_from_center(&3) as usize);
-                let e_spc = " ".repeat(max_lh_width - e.len() - ((-self.start_x_from_center(&4)) as usize));
-                let f_spc = " ".repeat(max_lh_width - f.len() - ((-self.start_x_from_center(&5)) as usize));
-                let g_spc = " ".repeat(max_lh_width - g.len() - ((-self.start_x_from_center(&6)) as usize));
-                let h_spc = " ".repeat(max_lh_width - h.len() - ((-self.start_x_from_center(&7)) as usize));
-                let a_spc = DrawCh::str_to_draw_chs(&a_spc, Style::transparent());
-                let b_spc = DrawCh::str_to_draw_chs(&b_spc, Style::transparent());
-                let c_spc = DrawCh::str_to_draw_chs(&c_spc, Style::transparent());
-                let d_spc = DrawCh::str_to_draw_chs(&d_spc, Style::transparent());
-                let e_spc = DrawCh::str_to_draw_chs(&e_spc, Style::transparent());
-                let f_spc = DrawCh::str_to_draw_chs(&f_spc, Style::transparent());
-                let g_spc = DrawCh::str_to_draw_chs(&g_spc, Style::transparent());
-                let h_spc = DrawCh::str_to_draw_chs(&h_spc, Style::transparent());
+                let a_spc_len = max_rh_width - a.len() - self.start_x_from_center(&0) as usize;
+                let b_spc_len = max_rh_width - b.len() - self.start_x_from_center(&1) as usize;
+                let c_spc_len = max_rh_width - c.len() - self.start_x_from_center(&2)as usize;
+                let d_spc_len = max_rh_width - d.len() - self.start_x_from_center(&3) as usize;
+                let e_spc_len = max_lh_width - e.len() - ((-self.start_x_from_center(&4)) as usize);
+                let f_spc_len = max_lh_width - f.len() - ((-self.start_x_from_center(&5)) as usize);
+                let g_spc_len = max_lh_width - g.len() - ((-self.start_x_from_center(&6)) as usize);
+                let h_spc_len = max_lh_width - h.len() - ((-self.start_x_from_center(&7)) as usize);
+                let a_spc = DrawCh::str_to_draw_chs(&" ".repeat(a_spc_len), Style::transparent());
+                let b_spc = DrawCh::str_to_draw_chs(&" ".repeat(b_spc_len), Style::transparent());
+                let c_spc = DrawCh::str_to_draw_chs(&" ".repeat(c_spc_len), Style::transparent());
+                let d_spc = DrawCh::str_to_draw_chs(&" ".repeat(d_spc_len), Style::transparent());
+                let e_spc = DrawCh::str_to_draw_chs(&" ".repeat(e_spc_len), Style::transparent());
+                let f_spc = DrawCh::str_to_draw_chs(&" ".repeat(f_spc_len), Style::transparent());
+                let g_spc = DrawCh::str_to_draw_chs(&" ".repeat(g_spc_len), Style::transparent());
+                let h_spc = DrawCh::str_to_draw_chs(&" ".repeat(h_spc_len), Style::transparent());
                 let spc_1 = DrawCh::str_to_draw_chs(" ", Style::transparent()); // one space
 
                 let y0 = [h_spc.clone(), h.clone(), dial_y0.clone(), a.clone(), a_spc.clone()].concat();
@@ -281,67 +281,102 @@ impl Spacing {
                   .concat_top_bottom(y2)
                   .concat_top_bottom(y3);
 
+                let map_len_b_y0 = a_spc_len * 3 / 5;
+                let map_len_a_y0 = a.len() + a_spc_len - map_len_b_y0;
+                let map_len_b_y1 = b.len() + b_spc_len;
+                let map_len_c_y2 = c.len() + c_spc_len;
+                let map_len_c_y3 = d_spc_len * 3 / 5;
+                let map_len_d_y3 = d.len() + d_spc_len - map_len_c_y3;
+
+                let map_len_g_y0 = h_spc_len * 3 / 5;
+                let map_len_h_y0 = h.len() + h_spc_len - map_len_g_y0;
+                let map_len_g_y1 = g.len() + g_spc_len;
+                let map_len_f_y2 = f.len() + f_spc_len;
+                let map_len_f_y3 = e_spc_len * 3 / 5;
+                let map_len_e_y3 = e.len() + e_spc_len - map_len_f_y3;
+
+                let map_a_y0 = "A".repeat(map_len_a_y0);
+                let map_b_y0 = "B".repeat(map_len_b_y0);
+                let map_b_y1 = "B".repeat(map_len_b_y1);
+                let map_c_y2 = "C".repeat(map_len_c_y2);
+                let map_c_y3 = "C".repeat(map_len_c_y3);
+                let map_d_y3 = "D".repeat(map_len_d_y3);
+                let map_e_y3 = "E".repeat(map_len_e_y3);
+                let map_f_y3 = "F".repeat(map_len_f_y2);
+                let map_f_y2 = "F".repeat(map_len_f_y3);
+                let map_g_y1 = "G".repeat(map_len_g_y0);
+                let map_g_y0 = "G".repeat(map_len_g_y1);
+                let map_h_y0 = "H".repeat(map_len_h_y0);
+
+                let pos_map_str = format!("{map_g_y0}{map_h_y0}HA{map_a_y0}{map_b_y0}\n")
+                                       + &format!("{map_g_y1}GGHABB{map_b_y1}\n")
+                                       + &format!("{map_f_y2}FFEDCC{map_c_y2}\n")
+                               + &format!("{map_f_y3}{map_e_y3}ED{map_d_y3}{map_c_y3}");
+                let pos_map = ArbSelector::positions_string_to_map(&pos_map_str);
+
+
                 y0
             }
             Spacing::Compact => {
-                let a_spc = " ".repeat(max_rh_width - a.len() - self.start_x_from_center(&0) as usize);
-                let b_spc = " ".repeat(max_rh_width - b.len() - self.start_x_from_center(&1) as usize);
-                let c_spc = " ".repeat(max_rh_width - c.len() - self.start_x_from_center(&2)as usize);
-                let d_spc = " ".repeat(max_rh_width - d.len() - self.start_x_from_center(&3) as usize);
-                let e_spc = " ".repeat(max_lh_width - e.len() - ((-self.start_x_from_center(&4)) as usize));
-                let f_spc = " ".repeat(max_lh_width - f.len() - ((-self.start_x_from_center(&5)) as usize));
-                let g_spc = " ".repeat(max_lh_width - g.len() - ((-self.start_x_from_center(&6)) as usize));
-                let h_spc = " ".repeat(max_lh_width - h.len() - ((-self.start_x_from_center(&7)) as usize));
-                let dial_chs = format!("{h_spc}{h} __ {a}{a_spc}\n")
-                          + &format!("{g_spc}{g}  ╱  ╲  {b}{b_spc}\n")
-                          + &format!("{f_spc}{f}  ╲__╱  {c}{c_spc}\n")
-                            + &format!("{e_spc}{e}    {d}{d_spc}");
-                dial_chs
+                //let a_spc = " ".repeat(max_rh_width - a.len() - self.start_x_from_center(&0) as usize);
+                //let b_spc = " ".repeat(max_rh_width - b.len() - self.start_x_from_center(&1) as usize);
+                //let c_spc = " ".repeat(max_rh_width - c.len() - self.start_x_from_center(&2)as usize);
+                //let d_spc = " ".repeat(max_rh_width - d.len() - self.start_x_from_center(&3) as usize);
+                //let e_spc = " ".repeat(max_lh_width - e.len() - ((-self.start_x_from_center(&4)) as usize));
+                //let f_spc = " ".repeat(max_lh_width - f.len() - ((-self.start_x_from_center(&5)) as usize));
+                //let g_spc = " ".repeat(max_lh_width - g.len() - ((-self.start_x_from_center(&6)) as usize));
+                //let h_spc = " ".repeat(max_lh_width - h.len() - ((-self.start_x_from_center(&7)) as usize));
+                //let dial_chs = format!("{h_spc}{h} __ {a}{a_spc}\n")
+                //          + &format!("{g_spc}{g}  ╱  ╲  {b}{b_spc}\n")
+                //          + &format!("{f_spc}{f}  ╲__╱  {c}{c_spc}\n")
+                //            + &format!("{e_spc}{e}    {d}{d_spc}");
+                //dial_chs
+                todo!()
             }
             Spacing::SemiCompact => {
-                let a_spc = " ".repeat(max_rh_width - a.len() - self.start_x_from_center(&0) as usize);
-                let b_spc = " ".repeat(max_rh_width - b.len() - self.start_x_from_center(&1) as usize);
-                let c_spc = " ".repeat(max_rh_width - c.len() - self.start_x_from_center(&2)as usize);
-                let d_spc = " ".repeat(max_rh_width - d.len() - self.start_x_from_center(&3) as usize);
-                let e_spc = " ".repeat(max_lh_width - e.len() - self.start_x_from_center(&4) as usize);
-                let f_spc = " ".repeat(max_lh_width - f.len() - self.start_x_from_center(&5) as usize);
-                let g_spc = " ".repeat(max_lh_width - g.len() - ((-self.start_x_from_center(&6)) as usize));
-                let h_spc = " ".repeat(max_lh_width - h.len() - ((-self.start_x_from_center(&7)) as usize));
-                let i_spc = " ".repeat(max_lh_width - i.len() - ((-self.start_x_from_center(&8)) as usize));
-                let j_spc = " ".repeat(max_lh_width - j.len() - ((-self.start_x_from_center(&9)) as usize));
-                let k_spc = " ".repeat(max_lh_width - k.len() - ((-self.start_x_from_center(&10)) as usize));
-                let l_spc = " ".repeat(max_lh_width - l.len() - ((-self.start_x_from_center(&11)) as usize));
-                let dial_chs = format!("{l_spc}{l}  {a}{a_spc}\n")
-                         + &format!("{k_spc}{k}   __   {b}{b_spc}\n")
-                        + &format!("{j_spc}{j}   ╱  ╲   {c}{c_spc}\n")
-                        + &format!("{i_spc}{i}   ╲__╱   {d}{d_spc}\n")
-                         + &format!("{h_spc}{h}        {e}{e_spc}\n")
-                            + &format!("{g_spc}{g}  {f}{f_spc}");
-                dial_chs
+                //let a_spc = " ".repeat(max_rh_width - a.len() - self.start_x_from_center(&0) as usize);
+                //let b_spc = " ".repeat(max_rh_width - b.len() - self.start_x_from_center(&1) as usize);
+                //let c_spc = " ".repeat(max_rh_width - c.len() - self.start_x_from_center(&2)as usize);
+                //let d_spc = " ".repeat(max_rh_width - d.len() - self.start_x_from_center(&3) as usize);
+                //let e_spc = " ".repeat(max_lh_width - e.len() - self.start_x_from_center(&4) as usize);
+                //let f_spc = " ".repeat(max_lh_width - f.len() - self.start_x_from_center(&5) as usize);
+                //let g_spc = " ".repeat(max_lh_width - g.len() - ((-self.start_x_from_center(&6)) as usize));
+                //let h_spc = " ".repeat(max_lh_width - h.len() - ((-self.start_x_from_center(&7)) as usize));
+                //let i_spc = " ".repeat(max_lh_width - i.len() - ((-self.start_x_from_center(&8)) as usize));
+                //let j_spc = " ".repeat(max_lh_width - j.len() - ((-self.start_x_from_center(&9)) as usize));
+                //let k_spc = " ".repeat(max_lh_width - k.len() - ((-self.start_x_from_center(&10)) as usize));
+                //let l_spc = " ".repeat(max_lh_width - l.len() - ((-self.start_x_from_center(&11)) as usize));
+                //let dial_chs = format!("{l_spc}{l}  {a}{a_spc}\n")
+                //         + &format!("{k_spc}{k}   __   {b}{b_spc}\n")
+                //        + &format!("{j_spc}{j}   ╱  ╲   {c}{c_spc}\n")
+                //        + &format!("{i_spc}{i}   ╲__╱   {d}{d_spc}\n")
+                //         + &format!("{h_spc}{h}        {e}{e_spc}\n")
+                //            + &format!("{g_spc}{g}  {f}{f_spc}");
+                //dial_chs
+                todo!()
             }
             Spacing::Spacious => {
-                let a_spc = " ".repeat(max_rh_width - a.len() - self.start_x_from_center(&0) as usize);
-                let b_spc = " ".repeat(max_rh_width - b.len() - self.start_x_from_center(&1) as usize);
-                let c_spc = " ".repeat(max_rh_width - c.len() - self.start_x_from_center(&2)as usize);
-                let d_spc = " ".repeat(max_rh_width - d.len() - self.start_x_from_center(&3) as usize);
-                let e_spc = " ".repeat(max_lh_width - e.len() - self.start_x_from_center(&4) as usize);
-                let f_spc = " ".repeat(max_lh_width - f.len() - self.start_x_from_center(&5) as usize);
-                let g_spc = " ".repeat(max_lh_width - g.len() - ((-self.start_x_from_center(&6)) as usize));
-                let h_spc = " ".repeat(max_lh_width - h.len() - ((-self.start_x_from_center(&7)) as usize));
-                let i_spc = " ".repeat(max_lh_width - i.len() - ((-self.start_x_from_center(&8)) as usize));
-                let j_spc = " ".repeat(max_lh_width - j.len() - ((-self.start_x_from_center(&9)) as usize));
-                let k_spc = " ".repeat(max_lh_width - k.len() - ((-self.start_x_from_center(&10)) as usize));
-                let l_spc = " ".repeat(max_lh_width - l.len() - ((-self.start_x_from_center(&11)) as usize));
-                let dial_chs = format!("{l_spc}{l}  {a}{a_spc}\n")
-                        + &format!("{k_spc}{k}    __    {b}{b_spc}\n")
-                       + &format!("{j_spc}{j}    ╱  ╲    {c}{c_spc}\n")
-                       + &format!("{i_spc}{i}    ╲__╱    {d}{d_spc}\n")
-                        + &format!("{h_spc}{h}          {e}{e_spc}\n")
-                            + &format!("{g_spc}{g}  {f}{f_spc}");
-                dial_chs
+                //let a_spc = " ".repeat(max_rh_width - a.len() - self.start_x_from_center(&0) as usize);
+                //let b_spc = " ".repeat(max_rh_width - b.len() - self.start_x_from_center(&1) as usize);
+                //let c_spc = " ".repeat(max_rh_width - c.len() - self.start_x_from_center(&2)as usize);
+                //let d_spc = " ".repeat(max_rh_width - d.len() - self.start_x_from_center(&3) as usize);
+                //let e_spc = " ".repeat(max_lh_width - e.len() - self.start_x_from_center(&4) as usize);
+                //let f_spc = " ".repeat(max_lh_width - f.len() - self.start_x_from_center(&5) as usize);
+                //let g_spc = " ".repeat(max_lh_width - g.len() - ((-self.start_x_from_center(&6)) as usize));
+                //let h_spc = " ".repeat(max_lh_width - h.len() - ((-self.start_x_from_center(&7)) as usize));
+                //let i_spc = " ".repeat(max_lh_width - i.len() - ((-self.start_x_from_center(&8)) as usize));
+                //let j_spc = " ".repeat(max_lh_width - j.len() - ((-self.start_x_from_center(&9)) as usize));
+                //let k_spc = " ".repeat(max_lh_width - k.len() - ((-self.start_x_from_center(&10)) as usize));
+                //let l_spc = " ".repeat(max_lh_width - l.len() - ((-self.start_x_from_center(&11)) as usize));
+                //let dial_chs = format!("{l_spc}{l}  {a}{a_spc}\n")
+                //        + &format!("{k_spc}{k}    __    {b}{b_spc}\n")
+                //       + &format!("{j_spc}{j}    ╱  ╲    {c}{c_spc}\n")
+                //       + &format!("{i_spc}{i}    ╲__╱    {d}{d_spc}\n")
+                //        + &format!("{h_spc}{h}          {e}{e_spc}\n")
+                //            + &format!("{g_spc}{g}  {f}{f_spc}");
+                //dial_chs
+                todo!()
             }
-
-            todo!()
         }
     }
 }
