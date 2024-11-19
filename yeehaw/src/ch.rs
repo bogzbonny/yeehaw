@@ -122,6 +122,22 @@ pub struct DrawChPos {
     pub y: u16,
 }
 
+impl From<(DrawCh, u16, u16)> for DrawChPos {
+    fn from((ch, x, y): (DrawCh, u16, u16)) -> DrawChPos {
+        DrawChPos { ch, x, y }
+    }
+}
+
+impl From<(DrawCh, usize, usize)> for DrawChPos {
+    fn from((ch, x, y): (DrawCh, usize, usize)) -> DrawChPos {
+        DrawChPos {
+            ch,
+            x: x as u16,
+            y: y as u16,
+        }
+    }
+}
+
 impl DrawChPos {
     pub fn new(ch: DrawCh, x: u16, y: u16) -> DrawChPos {
         DrawChPos { ch, x, y }
@@ -495,6 +511,38 @@ impl DrawChs2D {
     pub fn pad_bottom(&mut self, ch: DrawCh, amount: usize) {
         for _ in 0..amount {
             self.0.push(vec![ch.clone(); self.width()]);
+        }
+    }
+
+    /// removes the leftmost `amount` number of columns from the DrawChs2D
+    pub fn remove_left(&mut self, amount: usize) {
+        for line in self.0.iter_mut() {
+            for _ in 0..amount {
+                line.remove(0);
+            }
+        }
+    }
+
+    /// removes the rightmost `amount` number of columns from the DrawChs2D
+    pub fn remove_right(&mut self, amount: usize) {
+        for line in self.0.iter_mut() {
+            for _ in 0..amount {
+                line.pop();
+            }
+        }
+    }
+
+    /// removes the topmost `amount` number of rows from the DrawChs2D
+    pub fn remove_top(&mut self, amount: usize) {
+        for _ in 0..amount {
+            self.0.remove(0);
+        }
+    }
+
+    /// removes the bottommost `amount` number of rows from the DrawChs2D
+    pub fn remove_bottom(&mut self, amount: usize) {
+        for _ in 0..amount {
+            self.0.pop();
         }
     }
 

@@ -1,10 +1,10 @@
 use yeehaw::{
-    //debug,
-    Tui,
     DebugSizePane,
     Error,
 
     Tabs,
+    //debug,
+    Tui,
 };
 
 #[tokio::main]

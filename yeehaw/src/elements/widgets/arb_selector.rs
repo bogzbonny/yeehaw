@@ -1,7 +1,11 @@
 use {
     crate::{Keyboard as KB, *},
     crossterm::event::{MouseButton, MouseEventKind},
-    std::{cell::RefCell, rc::Rc},
+    std::{
+        cell::RefCell,
+        ops::{Deref, DerefMut},
+        rc::Rc,
+    },
 };
 
 /// Arbitrary Selector is a selector object which can be used to construct
@@ -17,16 +21,18 @@ pub struct ArbSelector {
 
     pub max_position: Rc<RefCell<usize>>,
 
+    /// all positions that the selector can be in
+    /// these positions may have gaps (eg 2, 4, 6)
+    pub positions: Rc<RefCell<Vec<usize>>>,
+
     pub drawing_base: Rc<RefCell<DrawChs2D>>,
 
     /// y, x, position
     /// if the position is NONE then no selection change is to be made if that position is selected
     pub positions_map: Rc<RefCell<Vec<Vec<Option<usize>>>>>,
 
-
-    /// changes to be made on selection of an index
-    /// the first vec is the selection index, the inner vec within SelChanges is the changes to be made
-    pub selection_changes: Rc<RefCell<Vec<SelChanges>>>,
+    /// changes to be made on selection of a position, usize is the position
+    pub selection_changes: Rc<RefCell<Vec<(usize, SelChanges)>>>,
 
     /// activated when mouse is clicked down while over button
     pub clicked_down: Rc<RefCell<bool>>,
@@ -35,7 +41,22 @@ pub struct ArbSelector {
     pub select_fn: Rc<RefCell<SelectFn>>,
 }
 
+#[derive(Default)]
 pub struct SelChanges(Vec<DrawChPos>);
+
+impl Deref for SelChanges {
+    type Target = Vec<DrawChPos>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for SelChanges {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 pub type SelectFn = Box<dyn FnMut(Context, &ArbSelector) -> EventResponses>;
 
@@ -52,42 +73,52 @@ impl ArbSelector {
     }
 
     /// Create a new ArbSelector with the given drawing style and base drawing
-    /// and the positions map. The positions map is a 2D array of letters where 'A' is the 
-    /// 1st position, 'B' is the 2nd position, etc. 
+    /// and the positions map. The positions map is a 2D array of letters where 'A' is the
+    /// 1st position, 'B' is the 2nd position, etc.
     pub fn new_with_uniform_style<S: Into<String>>(
-        ctx: &Context, drawing_sty: Style,  drawing_base: S, positions_map: S,
+        ctx: &Context, drawing_sty: Style, drawing_base: S, positions_map: S,
         selection_changes: Vec<(char, u16, u16)>,
     ) -> Self {
         let drawing_base = DrawChs2D::from_string(drawing_base.into(), drawing_sty.clone());
-        let positions_map = positions_map.into()
+        let positions_map = positions_map
+            .into()
             .lines()
             .map(|line| {
                 line.chars()
-                    .map(|ch| 
+                    .map(
+                        |ch|
                         // parse the string to usize starting with A=0, B=1, etc.
                         if ch == '0' {
                             None
                         } else {
                             Some(ch as usize - 'A' as usize)
-                        }
-                        )
+                        },
+                    )
                     .collect()
             })
             .collect();
         let selection_changes = selection_changes
             .into_iter()
-            .map(|(ch, x, y)| {
-                SelChanges(vec![DrawChPos::new(DrawCh::new(ch, drawing_sty.clone()), x, y)])
+            .enumerate()
+            .map(|(i, (ch, x, y))| {
+                (
+                    i,
+                    SelChanges(vec![DrawChPos::new(
+                        DrawCh::new(ch, drawing_sty.clone()),
+                        x,
+                        y,
+                    )]),
+                )
             })
             .collect();
         Self::new_inner(ctx, drawing_base, positions_map, selection_changes)
     }
 
+    // selection changes: usize is the position
     pub fn new_inner(
         ctx: &Context, drawing_base: DrawChs2D, positions_map: Vec<Vec<Option<usize>>>,
-        selection_changes: Vec<SelChanges>,
+        selection_changes: Vec<(usize, SelChanges)>,
     ) -> Self {
-
         // verify that the drawing base and positions map are the same size
         let base_height = drawing_base.height();
         let base_width = drawing_base.width();
@@ -100,25 +131,32 @@ impl ArbSelector {
             );
         }
 
+        let mut min_pos = None;
+        let mut positions = Vec::new();
+
         // get the max position
         let mut max_pos = 0;
         for row in positions_map.iter() {
             for &pos in row.iter() {
                 if let Some(pos) = pos {
-                max_pos = max_pos.max(pos);
-            }
+                    max_pos = max_pos.max(pos);
+                    if !positions.contains(&pos) {
+                        positions.push(pos);
+                    }
+                    match min_pos {
+                        Some(min) => {
+                            if pos < min {
+                                min_pos.replace(pos);
+                            }
+                        }
+                        None => {
+                            min_pos.replace(pos);
+                        }
+                    }
+                }
             }
         }
-
-        // ensure that the selection changes are the same size as the positions map
-        if selection_changes.len()-1 != max_pos {
-            panic!(
-                "Selection changes must be the same size as the positions map. Selection changes: {}, Positions: {}",
-                selection_changes.len(),
-                max_pos
-            );
-        }
-
+        let min_pos = min_pos.unwrap_or(0);
 
         let pane = SelectablePane::new(ctx, Self::KIND)
             .with_self_receivable_events(Self::default_receivable_events())
@@ -129,8 +167,9 @@ impl ArbSelector {
         let t = ArbSelector {
             pane,
             is_dirty: Rc::new(RefCell::new(true)),
-            position: Rc::new(RefCell::new(0)),
+            position: Rc::new(RefCell::new(min_pos)),
             max_position: Rc::new(RefCell::new(max_pos)),
+            positions: Rc::new(RefCell::new(positions)),
             drawing_base: Rc::new(RefCell::new(drawing_base)),
             positions_map: Rc::new(RefCell::new(positions_map)),
             selection_changes: Rc::new(RefCell::new(selection_changes)),
@@ -151,19 +190,19 @@ impl ArbSelector {
             .lines()
             .map(|line| {
                 line.chars()
-                    .map(|ch| 
+                    .map(
+                        |ch|
                         // parse the string to usize starting with A=0, B=1, etc.
                         if ch == '0' {
                             None
                         } else {
                             Some(ch as usize - 'A' as usize)
-                        }
-                        )
+                        },
+                    )
                     .collect()
             })
             .collect()
     }
-
 
     // ----------------------------------------------
     // decorators
@@ -206,6 +245,10 @@ impl ArbSelector {
         self.is_dirty.replace(true);
     }
 
+    pub fn has_position(&self, pos: usize) -> bool {
+        self.positions.borrow().contains(&pos)
+    }
+
     pub fn get_pos_from_x_y(&self, x: u16, y: u16) -> Option<usize> {
         let pos_map = self.positions_map.borrow();
         let x = x as usize;
@@ -225,22 +268,32 @@ impl ArbSelector {
 
     pub fn increment_position(&self, ctx: &Context) -> EventResponses {
         let mut pos = self.get_position();
-        if pos < *self.max_position.borrow() {
-            pos += 1;
-        } else {
-            pos = 0;
+        loop {
+            if pos < *self.max_position.borrow() {
+                pos += 1;
+            } else {
+                pos = 0;
+            }
+            if self.has_position(pos) {
+                break;
+            }
         }
         self.perform_selection(ctx, pos)
     }
 
     pub fn decrement_position(&self, ctx: &Context) -> EventResponses {
         let mut pos = self.get_position();
-        if pos > 0 {
-            pos -= 1;
-        } else {
-            pos = *self.max_position.borrow();
+        loop {
+            if pos > 0 {
+                pos -= 1;
+            } else {
+                pos = *self.max_position.borrow();
+            }
+            if self.has_position(pos) {
+                break;
+            }
         }
-    
+
         self.perform_selection(ctx, pos)
     }
 
@@ -248,9 +301,21 @@ impl ArbSelector {
         let pos = *self.position.borrow();
 
         let mut content = self.drawing_base.borrow().clone();
-        let updates = self.selection_changes.borrow()[pos].0.clone();
-        for update in updates.iter() {
-            content.set_ch(update.x.into(), update.y.into(), update.ch.clone());
+        let sel_changes = self.selection_changes.borrow();
+        let updates = sel_changes.iter().find_map(
+            |(ref pos_, ref changes)| {
+                if *pos_ == pos {
+                    Some(changes)
+                } else {
+                    None
+                }
+            },
+        );
+
+        if let Some(updates) = updates {
+            for update in updates.0.iter() {
+                content.set_ch(update.x.into(), update.y.into(), update.ch.clone());
+            }
         }
 
         //update overlay styles everywhere
@@ -299,7 +364,7 @@ impl Element for ArbSelector {
                     | MouseEventKind::Up(MouseButton::Left)
                         if clicked_down =>
                     {
-                        let pos = self.get_pos_from_x_y( me.column, me.row);
+                        let pos = self.get_pos_from_x_y(me.column, me.row);
                         if let Some(pos) = pos {
                             let resps_ = self.perform_selection(ctx, pos);
                             resps.extend(resps_);

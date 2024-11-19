@@ -1,5 +1,5 @@
 use yeehaw::{
-    Tui, Error, EventResponses, FileNavPane, FileViewerPane, HorizontalStack, ParentPane,
+    Error, EventResponses, FileNavPane, FileViewerPane, HorizontalStack, ParentPane, Tui,
 };
 
 #[tokio::main]
