@@ -59,28 +59,45 @@ One letter labels
            OptionH __ OptionA         compact
          OptionG  ╱° ╲  OptionB
          OptionF  ╲__╱  OptionC
-           OptionE    OptionD
+           OptionE    OptionD  
 
            OptionL  OptionA           semi-compact 
         OptionK   __   OptionB
        OptionJ   ╱  ╲   OptionC
        OptionI   °__╱   OptionD
         OptionH        OptionE
-           OptionG  OptionF
+           OptionG  OptionF    
 
             OptionL  OptionA           Spacious
          OptionK   __   OptionB
        OptionJ    ╱  ╲    OptionC
        OptionI    °__╱    OptionD
          OptionH        OptionE
-            OptionG  OptionFS     
+            OptionG  OptionF      
 
       OptionL  OptionA        KKKLLLLLLLLLLAAAAAAAAAABBB
    OptionK   __   OptionB     JKKKKKKKKKLLLAAABBBBBBBBBC
  OptionJ    ╱  ╲    OptionC   JJJJJJJJJJJJJCCCCCCCCCCCCC
  OptionI    °__╱    OptionD   IIIIIIIIIIIIIDDDDDDDDDDDDD 
    OptionH        OptionE     IHHHHHHHHHGGGFFFEEEEEEEEED
-      OptionG  OptionFS       HHHGGGGGGGGGGFFFFFFFFFFEEE 
+      OptionG  OptionF        HHHGGGGGGGGGGFFFFFFFFFFEEE 
+ 
+    - exterior whitespace allocation: 
+       - top row divide 3/5 to B and 2/5 to A
+       - middle row divide 3/5 to B and 2/5 to C
+       - examples: 
+
+         OptionA        AAAAAAAAAABBB
+        _   OptionB     AAABBBBBBBBBC
+         ╲    OptionC   CCCCCCCCCCCCC
+
+         OptionA        AAAAAAAAAABBB
+        _   OpB         AAABBBBBBBBCC
+         ╲    OptionC   CCCCCCCCCCCCC
+
+         OptA           AAAAAAAABBBBB
+        _   OptionB     AAABBBBBBBCCC
+         ╲    OptionC   CCCCCCCCCCCCC
 
 
 05. introduce errors, remove all unwraps

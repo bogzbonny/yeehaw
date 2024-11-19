@@ -40,7 +40,7 @@ pub struct SelChanges(Vec<DrawChPos>);
 pub type SelectFn = Box<dyn FnMut(Context, &ArbSelector) -> EventResponses>;
 
 impl ArbSelector {
-    const KIND: &'static str = "slider";
+    const KIND: &'static str = "arb_selector";
 
     pub fn default_receivable_events() -> SelfReceivableEvents {
         SelfReceivableEvents(vec![

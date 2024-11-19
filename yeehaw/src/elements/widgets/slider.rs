@@ -41,7 +41,7 @@ impl Slider {
     pub fn new_basic_block(ctx: &Context) -> Self {
         Self::new(
             ctx,
-            DrawCh::new('▆', Style::new_const(Color::AQUA, Color::GREY13)),
+            DrawCh::new('■', Style::new_const(Color::AQUA, Color::GREY13)),
             DrawCh::new(' ', Style::new_const(Color::BLACK, Color::GREY13)),
             DrawCh::new('⛊', Style::new_const(Color::AQUA, Color::GREY13)),
         )

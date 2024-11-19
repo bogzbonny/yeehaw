@@ -1,6 +1,7 @@
 pub mod arb_selector;
 pub mod button;
 pub mod checkbox;
+pub mod dial;
 pub mod dropdownlist;
 pub mod figlet;
 pub mod image_viewer;
@@ -17,6 +18,7 @@ pub use {
     arb_selector::ArbSelector,
     button::{Button, ButtonMicroShadow, ButtonShadow, ButtonSides, ButtonStyle},
     checkbox::Checkbox,
+    dial::Dial,
     dropdownlist::DropdownList,
     figlet::FigletText,
     image_viewer::ImageViewer,
