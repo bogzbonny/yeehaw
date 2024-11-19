@@ -3,50 +3,7 @@
 01. running "top" inside terminal window shoots the cursor outside of the
     window! should correct for this
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-10. Dial 8 or 12 positions
-    - if there are labels could bold the one which is selected
-    - could provide continious value if pixel mode enabled
-
-               op                op                op                op 
-   __    __    __    __    __    __    __    __    __    __    __    __ 
-  ╱° ╲  ╱ °╲  ╱  °  ╱  ⚬  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ⚬  ╲  °  ╲
-  ╲__╱  ╲__╱  ╲__╱  ╲__╱  ╲__°  ╲__⚬  ╲_⚬╱  ╲⚬_╱  ⚬__╱  °__╱  ╲__╱  ╲__╱  
-                   
-One letter labels
-   A__B      A__B       A__B       A__B 
- H ╱° ╲ C  H ╱  ⚬ C   H ╱  ╲ C   H ╱° ╲ C
- G ╲__╱ D  G ╲__╱ D   G ╲__° D   G ╲__╱ D              
-   F  E      F  E       F  E       F  E  
-
-           OptionH __ OptionA
-         OptionG  ╱° ╲  OptionB
-         OptionF  ╲__╱  OptionC
-           OptionE    OptionD
-
-           OptionH  OptionA
-                ⟍ __ ⟋ 
-       OptionG - ╱  ╲ - OptionB
-       OptionF - °__╱ - OptionC
-                ⟋    ⟍ 
-           OptionE  OptionD
-
-            OptionL  OptionA
-         OptionK.⟍ __ ⟋.OptionB
-       OptionJ -  ╱  ╲  - OptionC
-       OptionI -  ⚬__╱  - OptionD    // can use lower then upper dots on these positions
-         OptionH´⟋    ⟍`OptionE
-            OptionG  OptionF      
-
-            OptionL  OptionA
-         OptionK   __   OptionB
-       OptionJ    ╱  ╲    OptionC
-       OptionI    °__╱    OptionD
-         OptionH        OptionE
-            OptionG  OptionF
-
-It'd be cool to come up with a "Arbitrary Selector" generalization for the dials. 
+01. It'd be cool to come up with a "Arbitrary Selector" generalization for the dials. 
  - for now, this arbitrary selector should probably be the only way to initialize
    a dial... eventually we could automatically produce the maps, but it can get
    complicated as the text of the different options changes.
@@ -73,6 +30,57 @@ It'd be cool to come up with a "Arbitrary Selector" generalization for the dials
     - selection-made DrawChPos changes
        - these are drawn on top of the base for each selection
        - for the dial for ex, this is all the differences
+
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+10. automated dial for arb selector
+    - feed in selection style
+    - feed in text for each dial position 
+      - dial to rectify positions to arb_selector positions
+      - aka you can easily skip the tight-inbetween positions
+    - feed in spacing option
+       - ultra-compact (like 1 letter options) - max 8 positions
+       - compact (first options)  - max 8 positions
+       - semi-compact - max 12 positions 
+       - spacious - max 12 positions 
+    - dial automatically create arb_selector position map from texts
+               op                op                op                op 
+   __    __    __    __    __    __    __    __    __    __    __    __ 
+  ╱° ╲  ╱ °╲  ╱  °  ╱  ⚬  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ⚬  ╲  °  ╲
+  ╲__╱  ╲__╱  ╲__╱  ╲__╱  ╲__°  ╲__⚬  ╲_⚬╱  ╲⚬_╱  ⚬__╱  °__╱  ╲__╱  ╲__╱  
+                   
+One letter labels
+   A__B      A__B       A__B       A__B     ultra compact
+ H ╱° ╲ C  H ╱  ⚬ C   H ╱  ╲ C   H ╱° ╲ C
+ G ╲__╱ D  G ╲__╱ D   G ╲__° D   G ╲__╱ D              
+   F  E      F  E       F  E       F  E  
+
+           OptionH __ OptionA         compact
+         OptionG  ╱° ╲  OptionB
+         OptionF  ╲__╱  OptionC
+           OptionE    OptionD
+
+           OptionL  OptionA           semi-compact 
+        OptionK   __   OptionB
+       OptionJ   ╱  ╲   OptionC
+       OptionI   °__╱   OptionD
+        OptionH        OptionE
+           OptionG  OptionF
+
+            OptionL  OptionA           Spacious
+         OptionK   __   OptionB
+       OptionJ    ╱  ╲    OptionC
+       OptionI    °__╱    OptionD
+         OptionH        OptionE
+            OptionG  OptionFS     
+
+      OptionL  OptionA        KKKLLLLLLLLLLAAAAAAAAAABBB
+   OptionK   __   OptionB     JKKKKKKKKKLLLAAABBBBBBBBBC
+ OptionJ    ╱  ╲    OptionC   JJJJJJJJJJJJJCCCCCCCCCCCCC
+ OptionI    °__╱    OptionD   IIIIIIIIIIIIIDDDDDDDDDDDDD 
+   OptionH        OptionE     IHHHHHHHHHGGGFFFEEEEEEEEED
+      OptionG  OptionFS       HHHGGGGGGGGGGFFFFFFFFFFEEE 
 
 
 05. introduce errors, remove all unwraps
