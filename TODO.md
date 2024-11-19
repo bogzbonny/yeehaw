@@ -83,9 +83,11 @@ It'd be cool to come up with a "Arbitrary Selector" generalization for the dials
 
 01. showcase example 
       - sweet figlet text up top "Yeahaw showcase"
-      - dial with window types 
-        - terminal as one of them
-      - window generator button
+      - window generator zone
+        - dial with window types: terminal, $editor, basic, scrollable,
+          scrollable-border. 
+        - dial which greys out for the border capability. 
+
       - a menu
          - some hidden funny stuff on some items
          - tic tac toe

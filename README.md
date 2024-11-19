@@ -21,8 +21,8 @@
 
 ~ Batteries Included Text Based Application Framework ~
 
-yeehaw was born out of a need for an adaptable and embeddable element design for
-sophisticated text based applications. Also it's just fun to program.
+yeehaw was born out of a need for an adaptable, embeddable, and fun element
+design for sophisticated text based applications. 
 
 **Reasons why you need your application to be text-based:**
 1) it's the only way you'll ever be cool again
@@ -55,10 +55,10 @@ sophisticated text based applications. Also it's just fun to program.
  - terminal (that can open other TUIs! ..dang)
  - figlet fonts (aka MONSTER FONTS)
  - buttons
- - checkboxs
+ - checkboxes
  - dropdown-lists
  - labels
- - listboxs
+ - listboxes
  - radio-buttons
  - scrollbars
  - toggles
@@ -84,9 +84,9 @@ sophisticated text based applications. Also it's just fun to program.
 # Design Overview
 
 Core to yeehaw is the element ownership model. TUI Elements are arranged in a
-hierarchical but still semi-autonoumous manner. Event information
+hierarchical but still semi-autonomous manner. Event information
 (keyboard/mouse/custom events) is routed from the top down, and responses can be
-repropogated upwards from deeply nested elements. Additionally elements may
+repropagated upwards from deeply nested elements. Additionally elements may
 maintain direct communication lines with any other elements through the use of
 hooks and other element-specific function variables (e.g. the button click
 function on a button element). Parent elements retain authority over child
@@ -118,7 +118,7 @@ Looking to understand more? Checkout:
    surrounding environment. This said, more complex elements should still be
    able to responsibly interact with its surroundings directly if necessary -
    elements should not be limited to only interacting with its parent in the
-   rigid element-heigherachy through event responses.  
+   rigid element-hierarchy through event responses.  
 
 ### Non-Objectives
 
@@ -127,15 +127,16 @@ Looking to understand more? Checkout:
 
 ## Stability, Upcoming Refactors, Bugs 
 
-If you plan to build on Yeehaw right now, that's great news! I'd like to keep
+If you plan to build on yeehaw right now, that's great news! I'd like to keep
 you apprised of some upcoming changes. If you do wish to experiment and or start
 development on yeehaw I wouldn't be too afraid of these upcoming changes, I'll
 try'n help out anyone who needs a hand fixing things broken by upcoming
 refactors / update a breaking changes doc with upgrade instructions. 
 HAVE NO FEAR
 
-- There ain't much testing in here at all, soon a TUI snapshot tester is going to 
-  be developed, which should bring up coverage from about 0% as it stands. 
+- There ain't much automated testing in here at all, soon a TUI snapshot tester
+  is going to be developed, which should bring up coverage from about 0% as it
+  stands. 
 - Taffy is going to be integrated in. It shouldn't change the existing location
   mechanisms just build on top of them.
 - Proper window minimization behaviour is blocking on the Taffy integration such
@@ -151,8 +152,8 @@ HAVE NO FEAR
   of each cell. Currently the angles work under an assumption of equal cell
   width and height, sometimes it produces funny/unexpected results for a
   gradient which has is supposed to just be at a 45-degree angle and occur only
-  once across the whole target area (DynVal::ful()). Gradients on angles which are
-  repetitive (DynVal::fixed), or gradients on right-angles (0, 90, 180, 270
+  once across the whole target area (`DynVal::full()`). Gradients on angles which are
+  repetitive (`DynVal::fixed(..)`), or gradients on right-angles (0, 90, 180, 270
   degrees) are considerably more stable.
 
 ## Tribute
@@ -167,16 +168,16 @@ HAVE NO FEAR
 
 ## Contributing 
 
-It'd be cool for this repo to become a "megarepo". I want all sorts of funky
-gadgets in this baby with first class support from this project. All ideas will
+It'd be cool for this repo to become a mega repo. I want all sorts of funky
+widgets in this baby with first class support from this project. All ideas will
 be considered with an open mind, if you'd like to build and element and merge it
 into yeehaw It'd be an honour. If you'd like to build a element with highly
-specific needs and the current Element trait is non-satisfactory, let's adjust
+specific needs and the current Element trait is non-satisfactory, let's upgrade
 it. 
 This repo will be transitioning to dynamic ownership based on contributions in
-the future, so if your code becomes merged then your be gaining a part piece of
-ownership in the project whenever dynamic ownership is integrated in (more on
-that later!).
+the future, so if your code becomes merged then your be gaining a specialized
+part piece of ownership in the project whenever dynamic ownership is integrated
+in (more on that later!).
 
 Any contribution you intentionally submit for inclusion in the work, as defined
 in the Apache-2.0 license, shall be Apache-2.0 license, without any additional

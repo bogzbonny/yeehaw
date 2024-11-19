@@ -358,7 +358,7 @@ impl DrawChs2D {
         let s = Size::get_text_size(&text);
         let mut out = Self::new_empty_of_size(s.width as usize, s.height as usize, sty.clone());
 
-        let lines = text.split('\n');
+        let lines = text.lines();
         for (y, line) in lines.enumerate() {
             for (x, c) in line.chars().enumerate() {
                 out[y][x] = DrawCh::new(c, sty.clone());
@@ -570,6 +570,14 @@ impl DrawChs2D {
         for y in 0..self.0.len() {
             for x in 0..self.0[y].len() {
                 self.0[y][x].style = sty.clone();
+            }
+        }
+    }
+
+    pub fn overlay_all_styles(&mut self, sty: &Style) {
+        for y in 0..self.0.len() {
+            for x in 0..self.0[y].len() {
+                self.0[y][x].overlay_style(sty);
             }
         }
     }

@@ -4,7 +4,7 @@ pub mod tabs;
 pub mod window;
 
 pub use {
-    border::Bordered,
+    border::{Bordered, CornerPos},
     stack::{HorizontalStack, VerticalStack},
     tabs::Tabs,
     window::WindowPane,

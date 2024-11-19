@@ -1,3 +1,4 @@
+pub mod arb_selector;
 pub mod button;
 pub mod checkbox;
 pub mod dropdownlist;
@@ -13,6 +14,7 @@ pub mod textbox_numbers;
 pub mod toggle;
 
 pub use {
+    arb_selector::ArbSelector,
     button::{Button, ButtonMicroShadow, ButtonShadow, ButtonSides, ButtonStyle},
     checkbox::Checkbox,
     dropdownlist::DropdownList,

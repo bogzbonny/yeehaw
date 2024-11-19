@@ -1040,7 +1040,7 @@ impl Element for HorizontalScrollbar {
 /// test
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use {super::*, std::fmt::Write};
 
     #[test]
     fn test_scrollbar_drawing() {
@@ -1058,11 +1058,13 @@ mod tests {
         let sb = HorizontalScrollbar::new(&ctx, width, ctx.s, w as usize * 2);
         assert!(*sb.has_arrows.borrow());
 
-        let dr = sb
-            .drawing_runes(ctx.get_width().into())
-            .iter()
-            .map(|dc| format!("{}", dc.ch))
-            .collect::<String>();
+        let dr = sb.drawing_runes(ctx.get_width().into()).iter().fold(
+            String::new(),
+            |mut output, dc| {
+                let _ = write!(output, "{}", dc.ch);
+                output
+            },
+        );
         assert_eq!(dr.to_string(), "◀███     ▶");
     }
 }
