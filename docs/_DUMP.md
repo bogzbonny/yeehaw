@@ -4,6 +4,133 @@ will eventually be sifted through and included in actual docs - at which point
 this document will be deleted
 __________________________________________________
 
+30. WONT DO the ArbSelector works fine
+PIXEL MODE SPLITS for Complex Selector
+ - SPLITS: for pixel selection mode need a way to represent split selection 
+   within one cell. Probably we just need to define special characters for these
+   positions. The user would have feed in manual definitions (NOTE don't attempt
+   to abstract more complex patterns, too much work too implement).
+
+      OptionL  OptionA          KKKLLLLLLLLLLAAAAAAAAAABBB     
+   OptionK.⟍ __ ⟋.OptionB       8KKKKKKKK2LLLAAA1BBBBBBBB5
+ OptionJ -  ╱  ╲  - OptionC     JJJJJJJJJ88885555CCCCCCCCC
+ OptionI -  ⚬__╱  - OptionD     IIIIIIIII77776666DDDDDDDDD 
+   OptionH´⟋    ⟍`OptionE       7HHHHHHHH3GGGFFF4EEEEEEEE6
+      OptionG  OptionF          HHHGGGGGGGGGGFFFFFFFFFFEEE 
+
+1 = upper A lower B
+2 = upper L lower K
+3 = upper H lower G
+4 = upper E lower F 
+5 = upper B lower C 
+6 = upper D lower E
+7 = upper I lower H
+8 = upper K lower J
+   > allow for possible splits:
+     - diagonal (both ways)
+     - half (horizontal and vertical)
+     - quarters (square and diagonal) 
+
+01. window_test: maximizing terminal window doesn't enlarge the inner terminal
+
+01. running "top" inside terminal window shoots the cursor outside of the
+    window! should correct for this
+
+01. It'd be cool to come up with a "Arbitrary Selector" generalization for the dials. 
+ - for now, this arbitrary selector should probably be the only way to initialize
+   a dial... eventually we could automatically produce the maps, but it can get
+   complicated as the text of the different options changes.
+ - probably each version of the dial (3 postion... 8 position etc) should be a
+   different arbitrary selector. 
+ - All the different states could be fed in manually as DrawCh2Ds 
+ - we would probably want different states for "selecting" (brighter colors) and
+   "selected" dimmer colors. 
+ - Feed in a map of all the different selection positions:
+
+      OptionL  OptionA          KKKLLLLLLLLLLAAAAAAAAAABBB
+   OptionK.⟍ __ ⟋.OptionB       JKKKKKKKKKLLLAAABBBBBBBBBC
+ OptionJ -  ╱  ╲  - OptionC     JJJJJJJJJJJJJCCCCCCCCCCCCC
+ OptionI -  ⚬__╱  - OptionD     IIIIIIIIIIIIIDDDDDDDDDDDDD 
+   OptionH´⟋    ⟍`OptionE       IHHHHHHHHHGGGFFFEEEEEEEEED
+      OptionG  OptionF          HHHGGGGGGGGGGFFFFFFFFFFEEE 
+
+ - if certain positions are excluded their selection positions could be a '0'
+ - If the mouse is dragging outside of the selector zone, the nearest position
+   could be "snapped to"
+ - Arbitrary Selector, feed in:
+    - positions map 
+    - base DrawCh2D
+    - selection-made DrawChPos changes
+       - these are drawn on top of the base for each selection
+       - for the dial for ex, this is all the differences
+
+
+10. automated dial for arb selector
+    - feed in selection style
+    - feed in text for each dial position 
+      - dial to rectify positions to arb_selector positions
+      - aka you can easily skip the tight-inbetween positions
+    - feed in spacing option
+       - ultra-compact (like 1 letter options) - max 8 positions
+       - compact (first options)  - max 8 positions
+       - semi-compact - max 12 positions 
+       - spacious - max 12 positions 
+    - dial automatically create arb_selector position map from texts
+               op                op                op                op 
+   __    __    __    __    __    __    __    __    __    __    __    __ 
+  ╱° ╲  ╱ °╲  ╱  °  ╱  ⚬  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ⚬  ╲  °  ╲
+  ╲__╱  ╲__╱  ╲__╱  ╲__╱  ╲__°  ╲__⚬  ╲_⚬╱  ╲⚬_╱  ⚬__╱  °__╱  ╲__╱  ╲__╱  
+                   
+One letter labels
+   A__B      A__B       A__B       A__B     ultra compact
+ H ╱° ╲ C  H ╱  ⚬ C   H ╱  ╲ C   H ╱° ╲ C
+ G ╲__╱ D  G ╲__╱ D   G ╲__° D   G ╲__╱ D              
+   F  E      F  E       F  E       F  E  
+
+           OptionH __ OptionA         compact
+         OptionG  ╱° ╲  OptionB
+         OptionF  ╲__╱  OptionC
+           OptionE    OptionD  
+
+           OptionL  OptionA           semi-compact 
+        OptionK   __   OptionB
+       OptionJ   ╱  ╲   OptionC
+       OptionI   °__╱   OptionD
+        OptionH        OptionE
+           OptionG  OptionF    
+
+            OptionL  OptionA           Spacious
+         OptionK   __   OptionB
+       OptionJ    ╱  ╲    OptionC
+       OptionI    °__╱    OptionD
+         OptionH        OptionE
+            OptionG  OptionF      
+
+      OptionL  OptionA        KKKLLLLLLLLLLAAAAAAAAAABBB
+   OptionK   __   OptionB     JKKKKKKKKKLLLAAABBBBBBBBBC
+ OptionJ    ╱  ╲    OptionC   JJJJJJJJJJJJJCCCCCCCCCCCCC
+ OptionI    °__╱    OptionD   IIIIIIIIIIIIIDDDDDDDDDDDDD 
+   OptionH        OptionE     IHHHHHHHHHGGGFFFEEEEEEEEED
+      OptionG  OptionF        HHHGGGGGGGGGGFFFFFFFFFFEEE 
+ 
+    - exterior whitespace allocation: 
+       - top row divide 3/5 to B and 2/5 to A
+       - middle row divide 3/5 to B and 2/5 to C
+       - examples: 
+
+         OptionA        AAAAAAAAAABBB
+        _   OptionB     AAABBBBBBBBBC
+         ╲    OptionC   CCCCCCCCCCCCC
+
+         OptionA        AAAAAAAAAABBB
+        _   OpB         AAABBBBBBBBCC
+         ╲    OptionC   CCCCCCCCCCCCC
+
+         OptA           AAAAAAAABBBBB
+        _   OptionB     AAABBBBBBBCCC
+         ╲    OptionC   CCCCCCCCCCCCC
+
+
 01. Make the context size more clear.
      - The context provided always contains the size of the element. However
        during initialization, before the size of an element is known, the
