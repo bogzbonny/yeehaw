@@ -4,6 +4,9 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
+// welcome to heck
+////////////////
+
 /// Arbitrary Selector is a selector object which can be used to construct
 /// cool selectors with arbitrary selection positions such as dials.
 #[derive(Clone)]
@@ -21,6 +24,7 @@ impl Dial {
     const KIND: &'static str = "dial";
 
     const DEFAULT_DIAL_COLOR: Color = Color::AQUA;
+    const DEFAULT_DIAL_KNOB_COLOR: Color = Color::LIME;
     const DEFAULT_LABEL_COLOR: Color = Color::GREY13;
     const DEFAULT_LABEL_SEL_COLOR: Color = Color::YELLOW;
 
@@ -69,7 +73,7 @@ impl Dial {
         let pane = spacing.dial_arb_selector(
             ctx,
             Self::DEFAULT_DIAL_COLOR,
-            Self::DEFAULT_DIAL_COLOR,
+            Self::DEFAULT_DIAL_KNOB_COLOR,
             Self::DEFAULT_LABEL_COLOR,
             Style::new_const(Self::DEFAULT_LABEL_SEL_COLOR, Color::BLACK),
             labels.clone(),
@@ -78,7 +82,7 @@ impl Dial {
         Self {
             pane,
             dial_color: Rc::new(RefCell::new(Self::DEFAULT_DIAL_COLOR)),
-            dial_knob_color: Rc::new(RefCell::new(Self::DEFAULT_DIAL_COLOR)),
+            dial_knob_color: Rc::new(RefCell::new(Self::DEFAULT_DIAL_KNOB_COLOR)),
             label_color: Rc::new(RefCell::new(Self::DEFAULT_LABEL_COLOR)),
             label_selected_color: Rc::new(RefCell::new(Style::new_const(
                 Self::DEFAULT_LABEL_SEL_COLOR,
@@ -165,10 +169,10 @@ pub enum Spacing {
     /// spacious dial spacing:
     /// ```text
     ///      OptionL  OptionA     
-    ///  OptionK    __    OptionB  
+    ///   OptionK   __   OptionB  
     /// OptionJ    ╱  ╲    OptionC
     /// OptionI    °__╱    OptionD
-    ///  OptionH          OptionE  
+    ///   OptionH        OptionE  
     ///      OptionG  OptionF     
     /// ```
     Spacious,
@@ -218,16 +222,16 @@ impl Spacing {
             },
             Spacing::Spacious => match option {
                 0 => 1,
-                1 => 5,
+                1 => 4,
                 2 => 6,
                 3 => 6,
-                4 => 5,
+                4 => 4,
                 5 => 1,
                 6 => -1,
-                7 => -5,
+                7 => -4,
                 8 => -6,
                 9 => -6,
-                10 => -5,
+                10 => -4,
                 11 => -1,
                 _ => panic!("Invalid option, Spacious dial only has 12 options"), // TODO error
             },
@@ -299,7 +303,7 @@ impl Spacing {
         // get the label with 0 as the first value
         let max_lh_width = self.max_lefthand_width(labels.clone());
         let max_rh_width = self.max_righthand_width(labels.clone());
-        debug!("max_lh_width: {}, max_rh_width: {}", max_lh_width, max_rh_width);
+        //debug!("max_lh_width: {}, max_rh_width: {}", max_lh_width, max_rh_width);
         let a = labels
             .iter()
             .find_map(|(i, l)| if *i == 0 { Some(l.clone()) } else { None })
@@ -406,13 +410,14 @@ impl Spacing {
 
                 let a_spc_len = max_rh_width.saturating_sub(a.len()).saturating_sub(self.start_x_from_center(&0) as usize);
                 let b_spc_len = max_rh_width.saturating_sub(b.len()).saturating_sub(self.start_x_from_center(&1) as usize);
-                let c_spc_len = max_rh_width.saturating_sub(c.len()).saturating_sub(self.start_x_from_center(&2)as usize);
+                let c_spc_len = max_rh_width.saturating_sub(c.len()).saturating_sub(self.start_x_from_center(&2) as usize);
                 let d_spc_len = max_rh_width.saturating_sub(d.len()).saturating_sub(self.start_x_from_center(&3) as usize);
+
                 let e_spc_len = max_lh_width.saturating_sub(e.len()).saturating_sub((-self.start_x_from_center(&4)) as usize);
                 let f_spc_len = max_lh_width.saturating_sub(f.len()).saturating_sub((-self.start_x_from_center(&5)) as usize);
                 let g_spc_len = max_lh_width.saturating_sub(g.len()).saturating_sub((-self.start_x_from_center(&6)) as usize);
                 let h_spc_len = max_lh_width.saturating_sub(h.len()).saturating_sub((-self.start_x_from_center(&7)) as usize);
-                debug!("h_spc_len: {}", h_spc_len);
+
                 let a_spc = DrawCh::str_to_draw_chs(&" ".repeat(a_spc_len), Style::transparent());
                 let b_spc = DrawCh::str_to_draw_chs(&" ".repeat(b_spc_len), Style::transparent());
                 let c_spc = DrawCh::str_to_draw_chs(&" ".repeat(c_spc_len), Style::transparent());
@@ -421,9 +426,18 @@ impl Spacing {
                 let f_spc = DrawCh::str_to_draw_chs(&" ".repeat(f_spc_len), Style::transparent());
                 let g_spc = DrawCh::str_to_draw_chs(&" ".repeat(g_spc_len), Style::transparent());
                 let h_spc = DrawCh::str_to_draw_chs(&" ".repeat(h_spc_len), Style::transparent());
-                let spc_1 = DrawCh::str_to_draw_chs(" ", Style::transparent()); // one space
-                let spc_2 = DrawCh::str_to_draw_chs("  ", Style::transparent()); // one space
-                let spc_4 = DrawCh::str_to_draw_chs("    ", Style::transparent()); // one space
+                let spc_1 = DrawCh::str_to_draw_chs(" ", Style::transparent()); 
+                let spc_2 = DrawCh::str_to_draw_chs(&" ".repeat(2), Style::transparent()); 
+                let spc_4 = DrawCh::str_to_draw_chs(&" ".repeat(4), Style::transparent()); 
+
+                //    H__A  
+                //  G ╱° ╲ B
+                //  F ╲__╱ C
+                //    E  D
+                //    OptionH __ OptionA  
+                //  OptionG  ╱° ╲  OptionB
+                //  OptionF  ╲__╱  OptionC
+                //    OptionE    OptionD
 
                 let (y0, y1, y2, y3) = if ultra {
                     ([h_spc.clone(), h.clone(), dial_y0.clone(), a.clone(), a_spc.clone()].concat(),
@@ -631,55 +645,417 @@ impl Spacing {
                     pos_map_str = pos_map_str.split("\n").take(3).collect::<Vec<&str>>().join("\n");
                 }
 
-                debug!("pos_map_str: \n{}", pos_map_str);
-                debug!("base: \n{}", base);
+                //debug!("pos_map_str: \n{}", pos_map_str);
+                //debug!("base: \n{}", base);
 
                 let pos_map = ArbSelector::positions_string_to_map(&pos_map_str);
                 ArbSelector::new_inner(ctx, base, pos_map, sel_changes)
             }
-            Spacing::SemiCompact => {
-                //let a_spc = " ".repeat(max_rh_width - a.len() - self.start_x_from_center(&0) as usize);
-                //let b_spc = " ".repeat(max_rh_width - b.len() - self.start_x_from_center(&1) as usize);
-                //let c_spc = " ".repeat(max_rh_width - c.len() - self.start_x_from_center(&2)as usize);
-                //let d_spc = " ".repeat(max_rh_width - d.len() - self.start_x_from_center(&3) as usize);
-                //let e_spc = " ".repeat(max_lh_width - e.len() - self.start_x_from_center(&4) as usize);
-                //let f_spc = " ".repeat(max_lh_width - f.len() - self.start_x_from_center(&5) as usize);
-                //let g_spc = " ".repeat(max_lh_width - g.len() - ((-self.start_x_from_center(&6)) as usize));
-                //let h_spc = " ".repeat(max_lh_width - h.len() - ((-self.start_x_from_center(&7)) as usize));
-                //let i_spc = " ".repeat(max_lh_width - i.len() - ((-self.start_x_from_center(&8)) as usize));
-                //let j_spc = " ".repeat(max_lh_width - j.len() - ((-self.start_x_from_center(&9)) as usize));
-                //let k_spc = " ".repeat(max_lh_width - k.len() - ((-self.start_x_from_center(&10)) as usize));
-                //let l_spc = " ".repeat(max_lh_width - l.len() - ((-self.start_x_from_center(&11)) as usize));
-                //let dial_chs = format!("{l_spc}{l}  {a}{a_spc}\n")
-                //         + &format!("{k_spc}{k}   __   {b}{b_spc}\n")
-                //        + &format!("{j_spc}{j}   ╱  ╲   {c}{c_spc}\n")
-                //        + &format!("{i_spc}{i}   ╲__╱   {d}{d_spc}\n")
-                //         + &format!("{h_spc}{h}        {e}{e_spc}\n")
-                //            + &format!("{g_spc}{g}  {f}{f_spc}");
-                //dial_chs
-                todo!()
-            }
-            Spacing::Spacious => {
-                //let a_spc = " ".repeat(max_rh_width - a.len() - self.start_x_from_center(&0) as usize);
-                //let b_spc = " ".repeat(max_rh_width - b.len() - self.start_x_from_center(&1) as usize);
-                //let c_spc = " ".repeat(max_rh_width - c.len() - self.start_x_from_center(&2)as usize);
-                //let d_spc = " ".repeat(max_rh_width - d.len() - self.start_x_from_center(&3) as usize);
-                //let e_spc = " ".repeat(max_lh_width - e.len() - self.start_x_from_center(&4) as usize);
-                //let f_spc = " ".repeat(max_lh_width - f.len() - self.start_x_from_center(&5) as usize);
-                //let g_spc = " ".repeat(max_lh_width - g.len() - ((-self.start_x_from_center(&6)) as usize));
-                //let h_spc = " ".repeat(max_lh_width - h.len() - ((-self.start_x_from_center(&7)) as usize));
-                //let i_spc = " ".repeat(max_lh_width - i.len() - ((-self.start_x_from_center(&8)) as usize));
-                //let j_spc = " ".repeat(max_lh_width - j.len() - ((-self.start_x_from_center(&9)) as usize));
-                //let k_spc = " ".repeat(max_lh_width - k.len() - ((-self.start_x_from_center(&10)) as usize));
-                //let l_spc = " ".repeat(max_lh_width - l.len() - ((-self.start_x_from_center(&11)) as usize));
-                //let dial_chs = format!("{l_spc}{l}  {a}{a_spc}\n")
-                //        + &format!("{k_spc}{k}    __    {b}{b_spc}\n")
-                //       + &format!("{j_spc}{j}    ╱  ╲    {c}{c_spc}\n")
-                //       + &format!("{i_spc}{i}    ╲__╱    {d}{d_spc}\n")
-                //        + &format!("{h_spc}{h}          {e}{e_spc}\n")
-                //            + &format!("{g_spc}{g}  {f}{f_spc}");
-                //dial_chs
-                todo!()
+            Spacing::SemiCompact | Spacing::Spacious=> {
+
+                let semi = matches!(self, Spacing::SemiCompact);
+
+                let (max_lh_width, max_rh_width) = if semi {
+                    (max_lh_width.max(5), max_rh_width.max(5))
+                } else {
+                    (max_lh_width.max(6), max_rh_width.max(6))  
+                };
+
+                let a_spc_len = max_rh_width.saturating_sub(a.len()).saturating_sub(self.start_x_from_center(&0) as usize);
+                let b_spc_len = max_rh_width.saturating_sub(b.len()).saturating_sub(self.start_x_from_center(&1) as usize);
+                let c_spc_len = max_rh_width.saturating_sub(c.len()).saturating_sub(self.start_x_from_center(&2) as usize);
+                let d_spc_len = max_rh_width.saturating_sub(d.len()).saturating_sub(self.start_x_from_center(&3) as usize);
+                let e_spc_len = max_rh_width.saturating_sub(e.len()).saturating_sub(self.start_x_from_center(&4) as usize);
+                let f_spc_len = max_rh_width.saturating_sub(f.len()).saturating_sub(self.start_x_from_center(&5) as usize);
+
+                let g_spc_len = max_lh_width.saturating_sub(g.len()).saturating_sub((-self.start_x_from_center(&6)) as usize);
+                let h_spc_len = max_lh_width.saturating_sub(h.len()).saturating_sub((-self.start_x_from_center(&7)) as usize);
+                let i_spc_len = max_lh_width.saturating_sub(i.len()).saturating_sub((-self.start_x_from_center(&8)) as usize);
+                let j_spc_len = max_lh_width.saturating_sub(j.len()).saturating_sub((-self.start_x_from_center(&9)) as usize);
+                let k_spc_len = max_lh_width.saturating_sub(k.len()).saturating_sub((-self.start_x_from_center(&10)) as usize);
+                let l_spc_len = max_lh_width.saturating_sub(l.len()).saturating_sub((-self.start_x_from_center(&11)) as usize);
+
+                let a_spc = DrawCh::str_to_draw_chs(&" ".repeat(a_spc_len), Style::transparent());
+                let b_spc = DrawCh::str_to_draw_chs(&" ".repeat(b_spc_len), Style::transparent());
+                let c_spc = DrawCh::str_to_draw_chs(&" ".repeat(c_spc_len), Style::transparent());
+                let d_spc = DrawCh::str_to_draw_chs(&" ".repeat(d_spc_len), Style::transparent());
+                let e_spc = DrawCh::str_to_draw_chs(&" ".repeat(e_spc_len), Style::transparent());
+                let f_spc = DrawCh::str_to_draw_chs(&" ".repeat(f_spc_len), Style::transparent());
+                let g_spc = DrawCh::str_to_draw_chs(&" ".repeat(g_spc_len), Style::transparent());
+                let h_spc = DrawCh::str_to_draw_chs(&" ".repeat(h_spc_len), Style::transparent());
+                let i_spc = DrawCh::str_to_draw_chs(&" ".repeat(i_spc_len), Style::transparent());
+                let j_spc = DrawCh::str_to_draw_chs(&" ".repeat(j_spc_len), Style::transparent());
+                let k_spc = DrawCh::str_to_draw_chs(&" ".repeat(k_spc_len), Style::transparent());
+                let l_spc = DrawCh::str_to_draw_chs(&" ".repeat(l_spc_len), Style::transparent());
+
+                let spc_2 = DrawCh::str_to_draw_chs(&" ".repeat(2), Style::transparent()); 
+                let spc_3 = DrawCh::str_to_draw_chs(&" ".repeat(3), Style::transparent()); 
+                let spc_4 = DrawCh::str_to_draw_chs(&" ".repeat(4), Style::transparent()); 
+                let spc_8 = DrawCh::str_to_draw_chs(&" ".repeat(8), Style::transparent()); 
+
+                let (y0, y1, y2, y3, y4, y5) = if semi {
+                    //     OptionL  OptionA    
+                    //  OptionK   __   OptionB
+                    // OptionJ   ╱  ╲   OptionC
+                    // OptionI   °__╱   OptionD
+                    //  OptionH        OptionE
+                    //     OptionG  OptionF    
+                    ([l_spc.clone(), l.clone(), spc_2.clone(), a.clone(), a_spc.clone()].concat(),
+                     [k_spc.clone(), k.clone(), spc_3.clone(), dial_y0.clone(), spc_3.clone(), b.clone(), b_spc.clone()].concat(),
+                     [j_spc.clone(), j.clone(), spc_3.clone(), dial_y1.clone(), spc_3.clone(), c.clone(), c_spc.clone()].concat(),
+                     [i_spc.clone(), i.clone(), spc_3.clone(), dial_y2.clone(), spc_3.clone(), d.clone(), d_spc.clone()].concat(),
+                     [h_spc.clone(), h.clone(), spc_8.clone(), e.clone(), e_spc.clone()].concat(),
+                     [g_spc.clone(), g.clone(), spc_2.clone(), f.clone(), f_spc.clone()].concat())
+                } else {
+                    //      OptionL  OptionA     
+                    //   OptionK   __   OptionB  
+                    // OptionJ    ╱  ╲    OptionC
+                    // OptionI    °__╱    OptionD
+                    //   OptionH        OptionE  
+                    //      OptionG  OptionF     
+                    ([l_spc.clone(), l.clone(), spc_2.clone(), a.clone(), a_spc.clone()].concat(),
+                     [k_spc.clone(), k.clone(), spc_3.clone(), dial_y0.clone(), spc_3.clone(), b.clone(), b_spc.clone()].concat(),
+                     [j_spc.clone(), j.clone(), spc_4.clone(), dial_y1.clone(), spc_4.clone(), c.clone(), c_spc.clone()].concat(),
+                     [i_spc.clone(), i.clone(), spc_4.clone(), dial_y2.clone(), spc_4.clone(), d.clone(), d_spc.clone()].concat(),
+                     [h_spc.clone(), h.clone(), spc_8.clone(), e.clone(), e_spc.clone()].concat(),
+                     [g_spc.clone(), g.clone(), spc_2.clone(), f.clone(), f_spc.clone()].concat())
+                };
+                let y0 = DrawChs2D::from_draw_chs_horizontal(y0);
+                let y1 = DrawChs2D::from_draw_chs_horizontal(y1);
+                let y2 = DrawChs2D::from_draw_chs_horizontal(y2);
+                let y3 = DrawChs2D::from_draw_chs_horizontal(y3);
+                let y4 = DrawChs2D::from_draw_chs_horizontal(y4);
+                let y5 = DrawChs2D::from_draw_chs_horizontal(y5);
+                let mut base = y0.concat_top_bottom(y1)
+                  .concat_top_bottom(y2)
+                  .concat_top_bottom(y3)
+                  .concat_top_bottom(y4)
+                  .concat_top_bottom(y5);
+
+                let map_len_b_y0 = a_spc_len * 3 / 5;
+                let map_len_a_y0 = a.len() + a_spc_len - map_len_b_y0;
+                let map_len_c_y1 = b_spc_len * 2 / 5;
+                let map_len_b_y1 = b.len() + b_spc_len - map_len_c_y1;
+                let map_len_c_y2 = c.len() + c_spc_len;
+                let map_len_d_y3 = d.len() + d_spc_len;
+                let map_len_d_y4 = e_spc_len * 2 / 5;
+                let map_len_e_y4 = e.len() + e_spc_len - map_len_d_y4;
+                let map_len_e_y5 = f_spc_len * 3 / 5;
+                let map_len_f_y5 = f.len() + f_spc_len - map_len_e_y5;
+
+                let map_len_k_y0 = l_spc_len * 3 / 5;
+                let map_len_l_y0 = l.len() + l_spc_len - map_len_k_y0;
+                let map_len_j_y1 = k_spc_len * 2 / 5;
+                let map_len_k_y1 = k.len() + k_spc_len - map_len_j_y1;
+                let map_len_j_y2 = j.len() + j_spc_len;
+                let map_len_i_y3 = i.len() + i_spc_len;
+                let map_len_i_y4 = h_spc_len * 2 / 5;
+                let map_len_h_y4 = h.len() + h_spc_len - map_len_i_y4;
+                let map_len_h_y5 = g_spc_len * 3 / 5;
+                let map_len_g_y5 = g.len() + g_spc_len - map_len_h_y5;
+
+                let map_b_y0 = b_ch.repeat(map_len_b_y0);
+                let map_a_y0 = a_ch.repeat(map_len_a_y0);
+                let map_c_y1 = c_ch.repeat(map_len_c_y1);
+                let map_b_y1 = b_ch.repeat(map_len_b_y1);
+                let map_c_y2 = c_ch.repeat(map_len_c_y2);
+                let map_d_y3 = d_ch.repeat(map_len_d_y3);
+                let map_d_y4 = d_ch.repeat(map_len_d_y4);
+                let map_e_y4 = e_ch.repeat(map_len_e_y4);
+                let map_e_y5 = e_ch.repeat(map_len_e_y5);
+                let map_f_y5 = f_ch.repeat(map_len_f_y5);
+                let map_k_y0 = k_ch.repeat(map_len_k_y0);
+                let map_l_y0 = l_ch.repeat(map_len_l_y0);
+                let map_j_y1 = j_ch.repeat(map_len_j_y1);
+                let map_k_y1 = k_ch.repeat(map_len_k_y1);
+                let map_j_y2 = j_ch.repeat(map_len_j_y2);
+                let map_i_y3 = i_ch.repeat(map_len_i_y3);
+                let map_i_y4 = i_ch.repeat(map_len_i_y4);
+                let map_h_y4 = h_ch.repeat(map_len_h_y4);
+                let map_h_y5 = h_ch.repeat(map_len_h_y5);
+                let map_g_y5 = g_ch.repeat(map_len_g_y5);
+
+                let a_ch_2 = a_ch.repeat(2);
+                let b_ch_2 = b_ch.repeat(2);
+                let l_ch_2 = l_ch.repeat(2);
+                let k_ch_2 = k_ch.repeat(2);
+                let e_ch_2 = e_ch.repeat(2);
+                let f_ch_2 = f_ch.repeat(2);
+                let g_ch_2 = g_ch.repeat(2);
+                let h_ch_2 = h_ch.repeat(2);
+                let c_ch_5 = c_ch.repeat(5);
+                let d_ch_5 = d_ch.repeat(5);
+                let j_ch_5 = j_ch.repeat(5);
+                let i_ch_5 = i_ch.repeat(5);
+
+                let c_ch_6 = c_ch.repeat(6);
+                let d_ch_6 = d_ch.repeat(6);
+                let j_ch_6 = j_ch.repeat(6);
+                let i_ch_6 = i_ch.repeat(6);
+
+                let mut pos_map_str = if semi {
+                    //     OptionL  OptionA    
+                    //  OptionK   __   OptionB
+                    // OptionJ   ╱  ╲   OptionC
+                    // OptionI   °__╱   OptionD
+                    //  OptionH        OptionE
+                    //     OptionG  OptionF    
+                                 format!("{map_k_y0}{map_l_y0}{l_ch}{a_ch}{map_a_y0}{map_b_y0}\n")
+                    + &format!("{map_j_y1}{map_k_y1}{k_ch_2}{l_ch_2}{a_ch_2}{b_ch_2}{map_b_y1}{map_c_y1}\n")
+                                      + &format!("{map_j_y2}{j_ch_5}{c_ch_5}{map_c_y2}\n")
+                                      + &format!("{map_i_y3}{i_ch_5}{d_ch_5}{map_d_y3}\n")
+                    + &format!("{map_i_y4}{map_h_y4}{h_ch_2}{g_ch_2}{f_ch_2}{e_ch_2}{map_e_y4}{map_d_y4}\n")
+                              + &format!("{map_h_y5}{map_g_y5}{g_ch}{f_ch}{map_f_y5}{map_e_y5}")
+                } else {
+                    //      OptionL  OptionA     
+                    //   OptionK   __   OptionB  
+                    // OptionJ    ╱  ╲    OptionC
+                    // OptionI    °__╱    OptionD
+                    //   OptionH        OptionE  
+                    //      OptionG  OptionF     
+                                 format!("{map_k_y0}{map_l_y0}{l_ch}{a_ch}{map_a_y0}{map_b_y0}\n")
+                    + &format!("{map_j_y1}{map_k_y1}{k_ch_2}{l_ch_2}{a_ch_2}{b_ch_2}{map_b_y1}{map_c_y1}\n")
+                                      + &format!("{map_j_y2}{j_ch_6}{c_ch_6}{map_c_y2}\n")
+                                      + &format!("{map_i_y3}{i_ch_6}{d_ch_6}{map_d_y3}\n")
+                    + &format!("{map_i_y4}{map_h_y4}{h_ch_2}{g_ch_2}{f_ch_2}{e_ch_2}{map_e_y4}{map_d_y4}\n")
+                              + &format!("{map_h_y5}{map_g_y5}{g_ch}{f_ch}{map_f_y5}{map_e_y5}")
+                };
+
+                let mut sel_changes = Vec::new();
+                if has_a {
+                    let mut a_sel_changes: SelChanges = SelChanges::default();
+                    let mut x = max_lh_width + self.start_x_from_center(&0) as usize;
+                    for ch in a.iter() {
+                        let ch = DrawCh::new(ch.ch.clone(), label_selected_color.clone());
+                        a_sel_changes.push((ch, x, 0).into());
+                        x += 1;
+                    }
+                    let x = max_lh_width;
+                    let ch = DrawCh::new('°', dial_knob_sty.clone());
+                    a_sel_changes.push((ch, x, 2).into());
+                    sel_changes.push((0, a_sel_changes));
+                }
+                if has_b {
+                    let mut b_sel_changes: SelChanges = SelChanges::default();
+                    let mut x = max_lh_width + self.start_x_from_center(&1) as usize;
+                    for ch in b.iter() {
+                        let ch = DrawCh::new(ch.ch.clone(), label_selected_color.clone());
+                        b_sel_changes.push((ch, x, 1).into());
+                        x += 1;
+                    }
+                    let x = max_lh_width + 1;
+                    let ch = DrawCh::new('°', dial_knob_sty.clone());
+                    b_sel_changes.push((ch, x, 2).into());
+                    sel_changes.push((1, b_sel_changes));
+                }
+                if has_c {
+                    let mut c_sel_changes: SelChanges = SelChanges::default();
+                    let mut x = max_lh_width + self.start_x_from_center(&2) as usize;
+                    for ch in c.iter() {
+                        let ch = DrawCh::new(ch.ch.clone(), label_selected_color.clone());
+                        c_sel_changes.push((ch, x, 2).into());
+                        x += 1;
+                    }
+                    let x = max_lh_width + 1;
+                    let ch = DrawCh::new('⚬', dial_knob_sty.clone());
+                    c_sel_changes.push((ch, x, 2).into());
+                    sel_changes.push((2, c_sel_changes));
+                }
+                if has_d {
+                    let mut d_sel_changes: SelChanges = SelChanges::default();
+                    let mut x = max_lh_width + self.start_x_from_center(&3) as usize;
+                    for ch in d.iter() {
+                        let ch = DrawCh::new(ch.ch.clone(), label_selected_color.clone());
+                        d_sel_changes.push((ch, x, 3).into());
+                        x += 1;
+                    }
+                    let x = max_lh_width + 1;
+                    let ch = DrawCh::new('°', dial_knob_sty.clone());
+                    d_sel_changes.push((ch, x, 3).into());
+                    sel_changes.push((3, d_sel_changes));
+                }
+                if has_e {
+                    let mut e_sel_changes: SelChanges = SelChanges::default();
+                    let mut x = max_lh_width + self.start_x_from_center(&4) as usize;
+                    for ch in e.iter() {
+                        let ch = DrawCh::new(ch.ch.clone(), label_selected_color.clone());
+                        e_sel_changes.push((ch, x, 4).into());
+                        x += 1
+                    }
+                    let x = max_lh_width + 1;
+                    let ch = DrawCh::new('⚬', dial_knob_sty.clone());
+                    e_sel_changes.push((ch, x, 3).into());
+                    sel_changes.push((4, e_sel_changes));
+                }
+                if has_f {
+                    let mut f_sel_changes: SelChanges = SelChanges::default();
+                    let mut x = max_lh_width + self.start_x_from_center(&5) as usize;
+                    for ch in f.iter() {
+                        let ch = DrawCh::new(ch.ch.clone(), label_selected_color.clone());
+                        f_sel_changes.push((ch, x, 5).into());
+                        x += 1
+                    }
+                    let x = max_lh_width;
+                    let ch = DrawCh::new('⚬', dial_knob_sty.clone());
+                    f_sel_changes.push((ch, x, 3).into());
+                    sel_changes.push((5, f_sel_changes));
+                }
+                if has_g {
+                    let mut g_sel_changes: SelChanges = SelChanges::default();
+                    let mut x = max_lh_width - 1 - (-self.start_x_from_center(&6)) as usize;
+                    for ch in g.iter().rev() {
+                        let ch = DrawCh::new(ch.ch.clone(), label_selected_color.clone());
+                        g_sel_changes.push((ch, x, 5).into());
+                        x = x.saturating_sub(1);
+                    }
+                    let x = max_lh_width - 1;
+                    let ch = DrawCh::new('⚬', dial_knob_sty.clone());
+                    g_sel_changes.push((ch, x, 3).into());
+                    sel_changes.push((6, g_sel_changes));
+                }
+                if has_h {
+                    let mut h_sel_changes: SelChanges = SelChanges::default();
+                    let mut x = max_lh_width - 1 - (-self.start_x_from_center(&7)) as usize;
+                    for ch in h.iter().rev() {
+                        let ch = DrawCh::new(ch.ch.clone(), label_selected_color.clone());
+                        h_sel_changes.push((ch, x, 4).into());
+                        x = x.saturating_sub(1);
+                    }
+                    let x = max_lh_width - 2;
+                    let ch = DrawCh::new('⚬', dial_knob_sty.clone());
+                    h_sel_changes.push((ch, x, 3).into());
+                    sel_changes.push((7, h_sel_changes));
+                }
+                if has_i {
+                    let mut i_sel_changes: SelChanges = SelChanges::default();
+                    let mut x = max_lh_width - 1 - (-self.start_x_from_center(&8)) as usize;
+                    for ch in i.iter().rev() {
+                        let ch = DrawCh::new(ch.ch.clone(), label_selected_color.clone());
+                        i_sel_changes.push((ch, x, 3).into());
+                        x = x.saturating_sub(1);
+                    }
+                    let x = max_lh_width - 2;
+                    let ch = DrawCh::new('°', dial_knob_sty.clone());
+                    i_sel_changes.push((ch, x, 3).into());
+                    sel_changes.push((8, i_sel_changes));
+                }
+                if has_j {
+                    let mut j_sel_changes: SelChanges = SelChanges::default();
+                    let mut x = max_lh_width - 1 - (-self.start_x_from_center(&9)) as usize;
+                    for ch in j.iter().rev() {
+                        let ch = DrawCh::new(ch.ch.clone(), label_selected_color.clone());
+                        j_sel_changes.push((ch, x, 2).into());
+                        x = x.saturating_sub(1);
+                    }
+                    let x = max_lh_width - 2;
+                    let ch = DrawCh::new('⚬', dial_knob_sty.clone());
+                    j_sel_changes.push((ch, x, 2).into());
+                    sel_changes.push((9, j_sel_changes));
+                }
+                if has_k {
+                    let mut k_sel_changes: SelChanges = SelChanges::default();
+                    let mut x = max_lh_width - 1 - (-self.start_x_from_center(&10)) as usize;
+                    for ch in k.iter().rev() {
+                        let ch = DrawCh::new(ch.ch.clone(), label_selected_color.clone());
+                        k_sel_changes.push((ch, x, 1).into());
+                        x = x.saturating_sub(1);
+                    }
+                    let x = max_lh_width - 2;
+                    let ch = DrawCh::new('°', dial_knob_sty.clone());
+                    k_sel_changes.push((ch, x, 2).into());
+                    sel_changes.push((10, k_sel_changes));
+                }
+                if has_l {
+                    let mut l_sel_changes: SelChanges = SelChanges::default();
+                    let mut x = max_lh_width - 1 - (-self.start_x_from_center(&11)) as usize;
+                    for ch in l.iter().rev() {
+                        let ch = DrawCh::new(ch.ch.clone(), label_selected_color.clone());
+                        l_sel_changes.push((ch, x, 0).into());
+                        x = x.saturating_sub(1);
+                    }
+                    let x = max_lh_width - 1;
+                    let ch = DrawCh::new('°', dial_knob_sty.clone());
+                    l_sel_changes.push((ch, x, 2).into());
+                    sel_changes.push((11, l_sel_changes));
+                }
+
+                //debug!("PRE removing");
+                //debug!("pos_map_str: \n{}", pos_map_str);
+                //debug!("base: \n{}", base);
+
+                // remove 3 or 4 right hand column if there are no right hand labels
+                if !has_a && !has_b && !has_c && !has_d && !has_e && !has_f{
+                    let n = if semi {3} else {4};
+                    base.remove_right(n);
+                    pos_map_str = pos_map_str.split("\n").map(|line| {
+                        let mut line = line.to_string();
+                        line.pop();
+                        line.pop();
+                        line.pop();
+                        if !semi {
+                            line.pop();
+                        }
+                        line
+                    }).collect::<Vec<String>>().join("\n");
+                }
+
+                // remove 3 or 4 left hand column if there are no left hand labels
+                if !has_g && !has_h && !has_i && !has_j && !has_k && !has_l {
+                    let n = if semi {3} else {4};
+                    base.remove_left(n);
+                    pos_map_str = pos_map_str.split("\n").map(|line| {
+                        let mut line = line.to_string();
+                        line.remove(0);
+                        line.remove(0);
+                        line.remove(0);
+                        if !semi {
+                            line.remove(0);
+                        }
+                        line
+                    }).collect::<Vec<String>>().join("\n");
+
+                    for sel_change in sel_changes.iter_mut() {
+                        for ch in sel_change.1.iter_mut() {
+                            ch.x -= n as u16;
+                        }
+                    }
+                }
+
+                // remove the top if there are no top labels
+                if !has_l && !has_a {
+                    //debug!("removing top");
+                    base.remove_top(1);
+                    pos_map_str = pos_map_str.split("\n").skip(1).collect::<Vec<&str>>().join("\n"); 
+                    for sel_change in sel_changes.iter_mut() {
+                        for ch in sel_change.1.iter_mut() {
+                            ch.y -= 1;
+                        }
+                    }
+                }
+
+                //   OptionH        OptionE  
+                //      OptionG  OptionF     
+                // remove the bottom of base and pos_map_str if there are no bottom labels
+                if !has_g && !has_f {
+                    //debug!("removing bottom");
+                    base.remove_bottom(1);
+                    let line_count = pos_map_str.split("\n").count();
+                    pos_map_str = pos_map_str.split("\n").take(line_count - 1).collect::<Vec<&str>>().join("\n");
+                }
+                // remove the bottom again if there are no bottom labels for last two rows
+                if !has_g && !has_f && !has_h && !has_e {
+                    //debug!("removing bottom again");
+                    base.remove_bottom(1);
+                    let line_count = pos_map_str.split("\n").count();
+                    pos_map_str = pos_map_str.split("\n").take(line_count - 1).collect::<Vec<&str>>().join("\n");
+                }
+
+                //debug!("POST removing");
+                //debug!("pos_map_str: \n{}", pos_map_str);
+                //debug!("base: \n{}", base);
+
+                let pos_map = ArbSelector::positions_string_to_map(&pos_map_str);
+                ArbSelector::new_inner(ctx, base, pos_map, sel_changes)
             }
         }
     }

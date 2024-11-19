@@ -4,7 +4,7 @@ use yeehaw::*;
 async fn main() -> Result<(), Error> {
     yeehaw::debug::set_log_file("./debug_test.log".to_string());
     yeehaw::debug::clear();
-    //std::env::set_var("RUST_BACKTRACE", "1");
+    std::env::set_var("RUST_BACKTRACE", "1");
 
     let (mut tui, ctx) = Tui::new()?;
 
@@ -213,18 +213,31 @@ async fn main() -> Result<(), Error> {
     .at(DynVal::new_flex(0.8), DynVal::new_flex(0.7));
     el.add_element(Box::new(dial));
 
-    let dial1 = Dial::new_compact(
+    //let dial1 = Dial::new_compact(
+    //let dial1 = Dial::new_ultra_compact(
+    //let dial1 = Dial::new_semi_compact(
+    let dial1 = Dial::new_spacious(
         &ctx,
         vec![
+            //(2, "OC"),
             //(0, "OptionA"),
-            (1, "OptionB"),
+            //(1, "OptionB"),
             //(2, "OptionC"),
-            (2, "OC"),
             //(3, "OptionD"),
-            (4, "OptionE"),
+            //(4, "OptionE"),
             //(5, "OptionF"),
+            (0, "OpA"),
+            (1, "OpB"),
+            (2, "OpC"),
+            (3, "OpD"),
+            (4, "OpE"),
+            (5, "OpF"),
             (6, "OptionG"),
             (7, "OptionH"),
+            (8, "OptionI"),
+            (9, "OptionJ"),
+            (10, "OptionK"),
+            (11, "OptionL"),
         ],
     )
     .at(DynVal::new_flex(0.6), DynVal::new_flex(0.7));
