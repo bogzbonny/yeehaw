@@ -213,11 +213,11 @@ async fn main() -> Result<(), Error> {
     .at(DynVal::new_flex(0.8), DynVal::new_flex(0.7));
     el.add_element(Box::new(dial));
 
-    let dial1 = Dial::new_ultra_compact(
+    let dial1 = Dial::new_compact(
         &ctx,
         vec![
             //(0, "OptionA"),
-            //(1, "OptionB"),
+            (1, "OptionB"),
             //(2, "OptionC"),
             (2, "OC"),
             //(3, "OptionD"),

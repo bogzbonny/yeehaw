@@ -394,10 +394,15 @@ impl Spacing {
         let dial_y2 = DrawCh::str_to_draw_chs("╲__╱", dial_sty.clone());
 
         match self {
-            Spacing::UltraCompact => {
+            Spacing::UltraCompact | Spacing::Compact => {
+                
+                let ultra = matches!(self, Spacing::UltraCompact);
 
-                let max_lh_width = max_lh_width.max(3);
-                let max_rh_width = max_rh_width.max(3);
+                let (max_lh_width, max_rh_width) = if ultra {
+                    (max_lh_width.max(3), max_rh_width.max(3))
+                } else {
+                    (max_lh_width.max(4), max_rh_width.max(4))  
+                };
 
                 let a_spc_len = max_rh_width.saturating_sub(a.len()).saturating_sub(self.start_x_from_center(&0) as usize);
                 let b_spc_len = max_rh_width.saturating_sub(b.len()).saturating_sub(self.start_x_from_center(&1) as usize);
@@ -407,6 +412,7 @@ impl Spacing {
                 let f_spc_len = max_lh_width.saturating_sub(f.len()).saturating_sub((-self.start_x_from_center(&5)) as usize);
                 let g_spc_len = max_lh_width.saturating_sub(g.len()).saturating_sub((-self.start_x_from_center(&6)) as usize);
                 let h_spc_len = max_lh_width.saturating_sub(h.len()).saturating_sub((-self.start_x_from_center(&7)) as usize);
+                debug!("h_spc_len: {}", h_spc_len);
                 let a_spc = DrawCh::str_to_draw_chs(&" ".repeat(a_spc_len), Style::transparent());
                 let b_spc = DrawCh::str_to_draw_chs(&" ".repeat(b_spc_len), Style::transparent());
                 let c_spc = DrawCh::str_to_draw_chs(&" ".repeat(c_spc_len), Style::transparent());
@@ -416,15 +422,20 @@ impl Spacing {
                 let g_spc = DrawCh::str_to_draw_chs(&" ".repeat(g_spc_len), Style::transparent());
                 let h_spc = DrawCh::str_to_draw_chs(&" ".repeat(h_spc_len), Style::transparent());
                 let spc_1 = DrawCh::str_to_draw_chs(" ", Style::transparent()); // one space
+                let spc_2 = DrawCh::str_to_draw_chs("  ", Style::transparent()); // one space
+                let spc_4 = DrawCh::str_to_draw_chs("    ", Style::transparent()); // one space
 
-                debug!("a_spc_len: {}, b_spc_len: {}, c_spc_len: {}, d_spc_len: {}, e_spc_len: {},
-                    f_spc_len: {}, g_spc_len: {}, h_spc_len: {}", a_spc_len, b_spc_len, c_spc_len,
-                    d_spc_len, e_spc_len, f_spc_len, g_spc_len, h_spc_len);
-
-                let y0 = [h_spc.clone(), h.clone(), dial_y0.clone(), a.clone(), a_spc.clone()].concat();
-                let y1 = [g_spc.clone(), g.clone(), spc_1.clone(), dial_y1.clone(), spc_1.clone(), b.clone(), b_spc.clone()].concat();
-                let y2 = [f_spc.clone(), f.clone(), spc_1.clone(), dial_y2.clone(), spc_1.clone(), c.clone(), c_spc.clone()].concat();
-                let y3 = [e_spc.clone(), e.clone(), spc_1.clone(), spc_1.clone(), d.clone(), d_spc.clone()].concat();
+                let (y0, y1, y2, y3) = if ultra {
+                    ([h_spc.clone(), h.clone(), dial_y0.clone(), a.clone(), a_spc.clone()].concat(),
+                     [g_spc.clone(), g.clone(), spc_1.clone(), dial_y1.clone(), spc_1.clone(), b.clone(), b_spc.clone()].concat(),
+                     [f_spc.clone(), f.clone(), spc_1.clone(), dial_y2.clone(), spc_1.clone(), c.clone(), c_spc.clone()].concat(),
+                     [e_spc.clone(), e.clone(), spc_2.clone(), d.clone(), d_spc.clone()].concat())
+                } else {
+                    ([h_spc.clone(), h.clone(), spc_1.clone(), dial_y0.clone(),spc_1.clone(), a.clone(), a_spc.clone()].concat(),
+                     [g_spc.clone(), g.clone(), spc_2.clone(), dial_y1.clone(), spc_2.clone(), b.clone(), b_spc.clone()].concat(),
+                     [f_spc.clone(), f.clone(), spc_2.clone(), dial_y2.clone(), spc_2.clone(), c.clone(), c_spc.clone()].concat(),
+                     [e_spc.clone(), e.clone(), spc_4.clone(), d.clone(), d_spc.clone()].concat())
+                };
                 let y0 = DrawChs2D::from_draw_chs_horizontal(y0);
                 let y1 = DrawChs2D::from_draw_chs_horizontal(y1);
                 let y2 = DrawChs2D::from_draw_chs_horizontal(y2);
@@ -442,14 +453,11 @@ impl Spacing {
 
                 let map_len_g_y0 = h_spc_len * 3 / 5;
                 let map_len_h_y0 = h.len() + h_spc_len - map_len_g_y0;
-                debug!("map_len_g_y0: {}", map_len_g_y0);
-                debug!("map_len_h_y0: {}", map_len_h_y0);
 
                 let map_len_g_y1 = g.len() + g_spc_len;
                 let map_len_f_y2 = f.len() + f_spc_len;
                 let map_len_f_y3 = e_spc_len * 3 / 5;
                 let map_len_e_y3 = e.len() + e_spc_len - map_len_f_y3;
-
 
                 let map_a_y0 = a_ch.repeat(map_len_a_y0);
                 let map_b_y0 = b_ch.repeat(map_len_b_y0);
@@ -464,10 +472,17 @@ impl Spacing {
                 let map_g_y0 = g_ch.repeat(map_len_g_y0);
                 let map_h_y0 = h_ch.repeat(map_len_h_y0);
 
-                let mut pos_map_str = format!("{map_g_y0}{map_h_y0}{h_ch}{a_ch}{map_a_y0}{map_b_y0}\n")
-                                       + &format!("{map_g_y1}{g_ch}{g_ch}{h_ch}{a_ch}{b_ch}{b_ch}{map_b_y1}\n")
-                                       + &format!("{map_f_y2}{f_ch}{f_ch}{e_ch}{d_ch}{c_ch}{c_ch}{map_c_y2}\n")
-                               + &format!("{map_f_y3}{map_e_y3}{e_ch}{d_ch}{map_d_y3}{map_c_y3}");
+                let mut pos_map_str = if ultra {
+                         format!("{map_g_y0}{map_h_y0}{h_ch}{a_ch}{map_a_y0}{map_b_y0}\n")
+                    + &format!("{map_g_y1}{g_ch}{g_ch}{h_ch}{a_ch}{b_ch}{b_ch}{map_b_y1}\n")
+                    + &format!("{map_f_y2}{f_ch}{f_ch}{e_ch}{d_ch}{c_ch}{c_ch}{map_c_y2}\n")
+                      + &format!("{map_f_y3}{map_e_y3}{e_ch}{d_ch}{map_d_y3}{map_c_y3}")
+                } else {
+                         format!("{map_g_y0}{map_h_y0}{h_ch}{h_ch}{a_ch}{a_ch}{map_a_y0}{map_b_y0}\n")
+                    + &format!("{map_g_y1}{g_ch}{g_ch}{g_ch}{h_ch}{a_ch}{b_ch}{b_ch}{b_ch}{map_b_y1}\n")
+                    + &format!("{map_f_y2}{f_ch}{f_ch}{f_ch}{e_ch}{d_ch}{c_ch}{c_ch}{c_ch}{map_c_y2}\n")
+                      + &format!("{map_f_y3}{map_e_y3}{e_ch}{e_ch}{d_ch}{d_ch}{map_d_y3}{map_c_y3}")
+                };
 
                 let mut sel_changes = Vec::new();
                 if has_a {
@@ -576,28 +591,36 @@ impl Spacing {
                 }
 
 
-                // remove one right hand column if there are no right hand labels
+                // remove 1 or 2 right hand column if there are no right hand labels
                 if !has_a && !has_b && !has_c && !has_d {
-                    base.remove_right(1);
+                    let n = if ultra {1} else {2};
+                    base.remove_right(n);
                     pos_map_str = pos_map_str.split("\n").map(|line| {
                         let mut line = line.to_string();
                         line.pop();
+                        if !ultra {
+                            line.pop();
+                        }
                         line
                     }).collect::<Vec<String>>().join("\n");
                 }
 
-                // remove one left hand column if there are no left hand labels
+                // remove 1 or 2 left hand column if there are no left hand labels
                 if !has_e && !has_f && !has_g && !has_h {
-                    base.remove_left(1);
+                    let n = if ultra {1} else {2};
+                    base.remove_left(n);
                     pos_map_str = pos_map_str.split("\n").map(|line| {
                         let mut line = line.to_string();
                         line.remove(0);
+                        if !ultra {
+                            line.remove(0);
+                        }
                         line
                     }).collect::<Vec<String>>().join("\n");
 
                     for sel_change in sel_changes.iter_mut() {
                         for ch in sel_change.1.iter_mut() {
-                            ch.x -= 1;
+                            ch.x -= n as u16;
                         }
                     }
                 }
@@ -613,22 +636,6 @@ impl Spacing {
 
                 let pos_map = ArbSelector::positions_string_to_map(&pos_map_str);
                 ArbSelector::new_inner(ctx, base, pos_map, sel_changes)
-            }
-            Spacing::Compact => {
-                //let a_spc = " ".repeat(max_rh_width - a.len() - self.start_x_from_center(&0) as usize);
-                //let b_spc = " ".repeat(max_rh_width - b.len() - self.start_x_from_center(&1) as usize);
-                //let c_spc = " ".repeat(max_rh_width - c.len() - self.start_x_from_center(&2)as usize);
-                //let d_spc = " ".repeat(max_rh_width - d.len() - self.start_x_from_center(&3) as usize);
-                //let e_spc = " ".repeat(max_lh_width - e.len() - ((-self.start_x_from_center(&4)) as usize));
-                //let f_spc = " ".repeat(max_lh_width - f.len() - ((-self.start_x_from_center(&5)) as usize));
-                //let g_spc = " ".repeat(max_lh_width - g.len() - ((-self.start_x_from_center(&6)) as usize));
-                //let h_spc = " ".repeat(max_lh_width - h.len() - ((-self.start_x_from_center(&7)) as usize));
-                //let dial_chs = format!("{h_spc}{h} __ {a}{a_spc}\n")
-                //          + &format!("{g_spc}{g}  ╱  ╲  {b}{b_spc}\n")
-                //          + &format!("{f_spc}{f}  ╲__╱  {c}{c_spc}\n")
-                //            + &format!("{e_spc}{e}    {d}{d_spc}");
-                //dial_chs
-                todo!()
             }
             Spacing::SemiCompact => {
                 //let a_spc = " ".repeat(max_rh_width - a.len() - self.start_x_from_center(&0) as usize);
