@@ -54,6 +54,15 @@ impl From<f64> for DynVal {
 }
 
 impl DynVal {
+    pub const FULL: DynVal = DynVal {
+        mul: 1.0,
+        fixed: 0,
+        flex: 1.0,
+        plus: Vec::new(),
+        plus_min_of: Vec::new(),
+        plus_max_of: Vec::new(),
+    };
+
     pub fn new<T: Into<DynVal>>(val: T) -> Self {
         val.into()
     }
@@ -70,10 +79,6 @@ impl DynVal {
             flex,
             ..DynVal::default()
         }
-    }
-
-    pub fn full() -> Self {
-        DynVal::new_flex(1.0)
     }
 
     /// Create a new DynVal with a flex but which bounds at a minimum fixed value
@@ -289,7 +294,7 @@ pub mod dyn_val_tests {
         let sv = DynVal::new_flex(0.5).plus(DynVal::new_fixed(1));
         assert_eq!(6, sv.get_val(10));
 
-        let sv = DynVal::full().minus(DynVal::new_fixed(1));
+        let sv = DynVal::FULL.minus(DynVal::new_fixed(1));
         assert_eq!(9, sv.get_val(10));
         assert_eq!(19, sv.get_val(20));
     }

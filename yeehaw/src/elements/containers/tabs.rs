@@ -59,7 +59,7 @@ impl TabsTop {
 
         // set the height/width of the tabs top
         tt.pane.pane.set_dyn_height(DynVal::new_fixed(1));
-        tt.pane.pane.set_dyn_width(DynVal::full());
+        tt.pane.pane.set_dyn_width(DynVal::FULL);
         tt
     }
 
@@ -148,7 +148,7 @@ impl Tabs {
         let tabs_top = TabsTop::new(ctx, Rc::new(RefCell::new(Vec::new())), Vec::new());
         let pane = VerticalStack::new(ctx);
         pane.pane.pane.set_kind(Self::KIND);
-        pane.push(ctx, Box::new(tabs_top.clone()));
+        pane.push(Box::new(tabs_top.clone()));
         Self {
             pane,
             tabs_top,
@@ -158,21 +158,19 @@ impl Tabs {
 
     /// add an element to the end of the stack resizing the other elements
     /// in order to fit the new element
-    pub fn push<S: Into<String>>(&self, _ctx: &Context, el: Box<dyn Element>, name: S) {
+    pub fn push<S: Into<String>>(&self, el: Box<dyn Element>, name: S) {
         Self::sanitize_el_location(&*el);
         self.els.borrow_mut().push(el.clone());
         self.tabs_top.names.borrow_mut().push(name.into());
     }
 
-    pub fn insert<S: Into<String>>(
-        &self, _ctx: &Context, idx: usize, el: Box<dyn Element>, name: S,
-    ) {
+    pub fn insert<S: Into<String>>(&self, idx: usize, el: Box<dyn Element>, name: S) {
         Self::sanitize_el_location(&*el);
         self.els.borrow_mut().insert(idx, el.clone());
         self.tabs_top.names.borrow_mut().insert(idx, name.into());
     }
 
-    pub fn remove(&self, _ctx: &Context, idx: usize) {
+    pub fn remove(&self, idx: usize) {
         self.els.borrow_mut().remove(idx);
     }
 
@@ -189,22 +187,22 @@ impl Tabs {
         el.set_dyn_location_set(loc); // set loc without triggering hooks
     }
 
-    pub fn set_tab_view_pane(&self, ctx: &Context, idx: Option<usize>) {
+    pub fn set_tab_view_pane(&self, idx: Option<usize>) {
         if let Some(el) = self.pane.get(1) {
             el.set_visible(false);
-            self.pane.remove(ctx, 1);
+            self.pane.remove(1);
         }
         if let Some(idx) = idx {
             if let Some(el) = self.els.borrow().get(idx) {
                 el.set_visible(true);
-                self.pane.push(ctx, el.clone());
+                self.pane.push(el.clone());
             }
         }
     }
 
-    pub fn select(&self, ctx: &Context, idx: usize) {
+    pub fn select(&self, idx: usize) {
         *self.tabs_top.selected.borrow_mut() = Some(idx);
-        self.set_tab_view_pane(ctx, Some(idx));
+        self.set_tab_view_pane(Some(idx));
     }
 }
 
@@ -215,7 +213,7 @@ impl Element for Tabs {
         let out = self.pane.receive_event(ctx, ev.clone());
         let end_selected = *self.tabs_top.selected.borrow();
         if start_selected != end_selected {
-            self.set_tab_view_pane(ctx, end_selected);
+            self.set_tab_view_pane(end_selected);
         }
         out
     }

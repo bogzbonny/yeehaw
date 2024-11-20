@@ -47,7 +47,7 @@ async fn main() -> Result<(), Error> {
     //let grad = vec![
     //    (DynVal::new_fixed(0), Color::RED),
     //    (DynVal::new_flex(0.5), Color::GREEN),
-    //    (DynVal::full(), Color::BLUE),
+    //    (DynVal::FULL, Color::BLUE),
     //];
 
     //let grad2 = vec![

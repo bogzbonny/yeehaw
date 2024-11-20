@@ -111,7 +111,7 @@ Looking to understand more? Checkout:
  - [DynVal](TODO) <- the basis for all layouts and sizes
 
 
-### Objectives [WIP]
+### Design Principles 
 
  - Elements should present information as cleanly as possible.
    - tooling should be provided to minimize the need for use of box character
@@ -123,12 +123,17 @@ Looking to understand more? Checkout:
    surrounding environment. This said, more complex elements should still be
    able to responsibly interact with its surroundings directly if necessary -
    elements should __not__ be limited to only interacting with its parent in the
-   rigid element-hierarchy through event responses.  
- - Keep as much stuff `pub` as possible to allow for more experimentation.
-   Eventually put all the excess pub under an `internals` feature flag to
-   reduce breaking changes.
+   rigid element-hierarchy through event responses. Although this rigidity
+   provides consistency for overall design, it can drastically complicate
+   certain inter-element interactions.
+ - Keep as much stuff `pub` as possible to allow for more experimentation
+   without requiring forks of the repo. (Eventually put all the excess pub under
+   an `internals` feature flag to reduce breaking changes).
+ - Favour robustness over correctness for release mode (but vise-versa during
+   debug mode). Many small and strange UI bugs are resolvable via user
+   intervention. Ideally the TUI should never panic during release mode.
 
-#### Non-Objectives
+### Non-Objectives
 
  - catering (too much) to non-UTF-8 or non-true-color terminals
  - minor performance improvements at the cost of developer ergonomics
@@ -137,15 +142,22 @@ Looking to understand more? Checkout:
 
 If you plan to build on yeehaw right now, that's great news! I'd like to keep
 you apprised of some upcoming changes. If you do wish to experiment and or start
-development on yeehaw I wouldn't be too afraid of these upcoming changes, I'll
-try'n help out anyone who needs a hand fixing things broken by upcoming
-refactors / update a breaking changes doc with upgrade instructions. 
+development on yeehaw I wouldn't be too afraid of these upcoming changes, the
+majority of foreseeable major refactors have already been completed.  While
+yeehaw is pre-1.0.0 all breaking changes will take place with a semver minor
+version upgrades which will be all new releases. In the short-term I don't plan
+on providing patch updates for bug fixes for minor versions.
+
+I'll try'n help out anyone who needs a hand understanding how to update their
+code if its been broken by a new release. Additionally a breaking changes doc
+with upgrade instructions shall be maintained. 
+
 HAVE NO FEAR
 
  - There ain't much automated testing in here at all, soon a TUI snapshot tester
    is going to be developed, which should bring up coverage from about 0% as it
    stands. 
- - Taffy is going to be integrated in as an extension to the DynVal location
+ - Taffy is going to be integrated in as an extension to the `DynLocationSet`
    system. It won't change the existing location mechanisms just build on
    top of them.
  - Proper window minimization behaviour is blocking on the Taffy integration such
@@ -153,21 +165,22 @@ HAVE NO FEAR
    minimization still somewhat works, however multiple minimized windows will
    stack on each other in the same location. 
  - The $EDITOR text editor element - aka the element where you could use any
-   editor like neovim/vim/emacs(I think?) currently doesn't provide good support
-   for users who HAVEN'T set their $EDITOR env variable. This will be fixed at
-   some point soon.
+   editor like neovim/vim(/emacs I think?) currently doesn't provide good
+   support for users who HAVEN'T set their $EDITOR env variable. This will be
+   fixed at some point soon.
  - Default colors everywhere are going to be replaced with a defaults in a theme
    manager. Using the Theme Manager the developer can start from a nice overall
    default then modify it to their liking. Note the Theme manager will not
    inhibit users from specifying specific colors anywhere they choose. 
- - Gradients on irregular angles are not fully stable, the goal is to have the
+ - Gradients on irregular angles are not stable, the goal is to have the
    gradient actually reflect a visual angle taking into account the width and
    the height of each cell. Currently the angles work under an assumption of
    equal cell width and height, sometimes it produces funny/unexpected results
    for a gradient which has is supposed to just be at a 45-degree angle and
-   occur only once across the whole target area (`DynVal::full()`). Gradients on
-   angles which are repetitive (`DynVal::fixed(..)`), or gradients on
-   right-angles (0, 90, 180, 270 degrees) are considerably more stable.
+   occur only once across the whole target area (\x60DynVal::FULL\x60). Gradients on
+   angles which are repetitive (`DynVal::fixed(..)`) work good, however the way
+   the angle is interpreted will likely change to account for cell dimensions.
+   Gradients on right-angles (0, 90, 180, 270 degrees) are stable.
 
 ## Tribute
 

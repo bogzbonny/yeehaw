@@ -20,9 +20,9 @@ impl DynLocation {
     pub fn full() -> DynLocation {
         DynLocation {
             start_x: DynVal::new_fixed(0),
-            end_x: DynVal::full(),
+            end_x: DynVal::FULL,
             start_y: DynVal::new_fixed(0),
-            end_y: DynVal::full(),
+            end_y: DynVal::FULL,
         }
     }
 
@@ -271,6 +271,26 @@ impl DynLocationSet {
 
     pub fn set_z(&mut self, z: ZIndex) {
         self.z = z;
+    }
+
+    pub fn with_start_x(mut self, start_x: DynVal) -> DynLocationSet {
+        self.l.start_x = start_x;
+        self
+    }
+
+    pub fn with_end_x(mut self, end_x: DynVal) -> DynLocationSet {
+        self.l.end_x = end_x;
+        self
+    }
+
+    pub fn with_start_y(mut self, start_y: DynVal) -> DynLocationSet {
+        self.l.start_y = start_y;
+        self
+    }
+
+    pub fn with_end_y(mut self, end_y: DynVal) -> DynLocationSet {
+        self.l.end_y = end_y;
+        self
     }
 
     /// convenience function to set the width of the primary location

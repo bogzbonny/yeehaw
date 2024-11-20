@@ -77,7 +77,7 @@ impl Slider {
         let pane = SelectablePane::new(ctx, Self::KIND)
             .with_self_receivable_events(Self::default_receivable_events())
             .with_styles(SelStyles::opaque())
-            .with_dyn_width(DynVal::full())
+            .with_dyn_width(DynVal::FULL)
             .with_dyn_height(DynVal::new_fixed(1));
 
         let t = Slider {

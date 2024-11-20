@@ -122,7 +122,7 @@ impl ListBox {
     }
 
     fn with_scrollbar_inner(self, init_ctx: &Context, pos: VerticalSBPositions) -> Self {
-        let height = DynVal::full();
+        let height = DynVal::FULL;
         let content_height = self.inner.borrow().pane.content_height();
 
         let sb = VerticalScrollbar::new(init_ctx, height, init_ctx.s, content_height)
@@ -133,11 +133,11 @@ impl ListBox {
                 self.inner.borrow().pane.set_start_x(1.into());
             }
             VerticalSBPositions::ToTheRight => {
-                sb.set_at(DynVal::full().minus_fixed(1), 0.into());
+                sb.set_at(DynVal::FULL.minus_fixed(1), 0.into());
                 self.inner
                     .borrow()
                     .pane
-                    .set_end_x(DynVal::full().minus_fixed(1));
+                    .set_end_x(DynVal::FULL.minus_fixed(1));
             }
             VerticalSBPositions::None => {
                 return self;
@@ -228,8 +228,8 @@ impl ListBoxInner {
 
         let pane = Pane::new(init_ctx, Self::KIND)
             .with_self_receivable_events(Self::default_receivable_events())
-            .with_dyn_width(DynVal::full())
-            .with_dyn_height(DynVal::full());
+            .with_dyn_width(DynVal::FULL)
+            .with_dyn_height(DynVal::FULL);
 
         let lb = ListBoxInner {
             pane,

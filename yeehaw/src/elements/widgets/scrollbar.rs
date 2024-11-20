@@ -1052,7 +1052,7 @@ mod tests {
             .with_height(1)
             .with_width(w);
 
-        let width = DynVal::full().minus(sub.into());
+        let width = DynVal::FULL.minus(sub.into());
         let width_val = width.get_val(ctx.get_width());
         assert_eq!(width_val, w as i32 - sub);
         let sb = HorizontalScrollbar::new(&ctx, width, ctx.s, w as usize * 2);

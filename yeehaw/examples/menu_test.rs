@@ -57,8 +57,8 @@ async fn main() -> Result<(), Error> {
     lower.add_element(Box::new(btn_b));
     lower.add_element(Box::new(btn_c));
 
-    vstack.push(&ctx, Box::new(mb.clone()));
-    vstack.push(&ctx, Box::new(lower));
+    vstack.push(Box::new(mb.clone()));
+    vstack.push(Box::new(lower));
 
     mb.add_item(&ctx, "hello/asdg/2222/3".to_string(), None);
     mb.add_item(&ctx, "hello/asdg/444ll/3adsf3/sdlkjf".to_string(), None);

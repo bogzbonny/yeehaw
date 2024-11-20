@@ -39,7 +39,7 @@ impl WindowPane {
         // adjust the inner size to account for the top bar
         let mut loc = inner.get_dyn_location_set().clone();
         loc.set_start_y(1.into());
-        loc.set_dyn_height(DynVal::full().minus(1.into()));
+        loc.set_dyn_height(DynVal::FULL.minus(1.into()));
         inner.set_dyn_location_set(loc);
 
         pane.add_element(top_bar.clone());
@@ -97,8 +97,8 @@ impl WindowPane {
             BorderPropertyCnr::DragResize,
         )
         .at(
-            DynVal::full().minus(1.into()),
-            DynVal::full().minus(1.into()),
+            DynVal::FULL.minus(1.into()),
+            DynVal::FULL.minus(1.into()),
         );
         self.pane.add_element(Box::new(ca));
 
@@ -260,8 +260,8 @@ impl WindowPane {
                 self.pane
                     .pane
                     .set_end_x(DynVal::new_fixed(minimize_width.into()));
-                self.pane.pane.set_start_y(DynVal::full().minus(1.into()));
-                self.pane.pane.set_end_y(DynVal::full());
+                self.pane.pane.set_start_y(DynVal::FULL.minus(1.into()));
+                self.pane.pane.set_end_y(DynVal::FULL);
                 let mut pane_ctx = ctx.clone();
                 pane_ctx.s.height = 1;
                 pane_ctx.s.width = minimize_width;
@@ -470,7 +470,7 @@ impl BasicWindowTopBar {
     ) -> Self {
         let pane = ParentPane::new(ctx, "basic_window_top_bar")
             .with_dyn_height(DynVal::new_fixed(1))
-            .with_dyn_width(DynVal::full())
+            .with_dyn_width(DynVal::FULL)
             .with_style(Style::default().with_bg(Color::WHITE).with_fg(Color::BLACK));
 
         let btn_styles = SelStyles::new(
@@ -509,7 +509,7 @@ impl BasicWindowTopBar {
             .with_micro_shadow(shadow_sty.clone())
             .with_styles(btn_styles.clone())
             .at(
-                DynVal::full().minus(button_rhs_spaces.into()),
+                DynVal::FULL.minus(button_rhs_spaces.into()),
                 DynVal::new_fixed(0),
             );
             pane.add_element(Box::new(close_button));
@@ -540,7 +540,7 @@ impl BasicWindowTopBar {
             .with_micro_shadow(shadow_sty.clone())
             .with_styles(btn_styles.clone())
             .at(
-                DynVal::full().minus(button_rhs_spaces.into()),
+                DynVal::FULL.minus(button_rhs_spaces.into()),
                 DynVal::new_fixed(0),
             );
             let b = Box::new(maximize_button);
@@ -566,7 +566,7 @@ impl BasicWindowTopBar {
             .with_micro_shadow(shadow_sty)
             .with_styles(btn_styles)
             .at(
-                DynVal::full().minus(button_rhs_spaces.into()),
+                DynVal::FULL.minus(button_rhs_spaces.into()),
                 DynVal::new_fixed(0),
             );
             pane.add_element(Box::new(minimize_button));
@@ -580,7 +580,7 @@ impl BasicWindowTopBar {
         let decor_label = Box::new(
             Label::new(ctx, "◹")
                 .with_style(Style::transparent())
-                .at(DynVal::full().minus(2.into()), DynVal::new_fixed(0)),
+                .at(DynVal::FULL.minus(2.into()), DynVal::new_fixed(0)),
         );
         pane.add_element(title_label.clone());
         pane.add_element(decor_label.clone());

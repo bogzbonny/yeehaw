@@ -20,10 +20,10 @@ async fn main() -> Result<(), Error> {
     let el2 = DebugSizePane::new(&ctx).with_text("tab 2".to_string());
     let el3 = DebugSizePane::new(&ctx).with_text("tab 3".to_string());
 
-    tabs.push(&ctx, Box::new(el1), "tab 1");
-    tabs.push(&ctx, Box::new(el2), "tab 2");
-    tabs.push(&ctx, Box::new(el3), "tab 3");
-    tabs.select(&ctx, 0);
+    tabs.push(Box::new(el1), "tab 1");
+    tabs.push(Box::new(el2), "tab 2");
+    tabs.push(Box::new(el3), "tab 3");
+    tabs.select(0);
 
     tui.run(Box::new(tabs)).await
 }

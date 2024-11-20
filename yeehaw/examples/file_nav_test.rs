@@ -36,7 +36,7 @@ async fn main() -> Result<(), Error> {
     });
     nav.set_open_fn(open_fn);
 
-    hstack.push(&ctx, Box::new(nav.clone()));
-    hstack.push(&ctx, Box::new(panebox.clone()));
+    hstack.push(Box::new(nav.clone()));
+    hstack.push(Box::new(panebox.clone()));
     tui.run(Box::new(hstack)).await
 }

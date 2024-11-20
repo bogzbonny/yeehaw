@@ -92,10 +92,10 @@ impl TextBox {
         // accounts for the other scrollbar
         let inner_start_y = self.inner.borrow().pane.get_dyn_start_y();
 
-        let sb = VerticalScrollbar::new(init_ctx, DynVal::full(), content_size, content_height)
+        let sb = VerticalScrollbar::new(init_ctx, DynVal::FULL, content_size, content_height)
             .without_keyboard_events();
         if self.x_scrollbar.borrow().is_some() {
-            sb.pane.set_end_y(DynVal::full().minus_fixed(1));
+            sb.pane.set_end_y(DynVal::FULL.minus_fixed(1));
         }
         match pos {
             VerticalSBPositions::ToTheLeft => {
@@ -106,13 +106,13 @@ impl TextBox {
                 self.inner.borrow().pane.set_start_x(1.into());
             }
             VerticalSBPositions::ToTheRight => {
-                sb.set_at(DynVal::full().minus_fixed(1), inner_start_y);
+                sb.set_at(DynVal::FULL.minus_fixed(1), inner_start_y);
                 self.inner
                     .borrow()
                     .pane
-                    .set_end_x(DynVal::full().minus_fixed(1));
+                    .set_end_x(DynVal::FULL.minus_fixed(1));
                 if let Some(x_sb) = &*self.x_scrollbar.borrow() {
-                    x_sb.pane.set_end_x(DynVal::full().minus_fixed(1));
+                    x_sb.pane.set_end_x(DynVal::FULL.minus_fixed(1));
                 }
             }
             VerticalSBPositions::None => {
@@ -161,10 +161,10 @@ impl TextBox {
             self.inner.borrow().pane.get_dyn_start_x()
         };
 
-        let sb = HorizontalScrollbar::new(init_ctx, DynVal::full(), content_size, content_width)
+        let sb = HorizontalScrollbar::new(init_ctx, DynVal::FULL, content_size, content_width)
             .without_keyboard_events();
         if self.x_scrollbar.borrow().is_some() {
-            sb.pane.set_end_y(DynVal::full().minus_fixed(1));
+            sb.pane.set_end_y(DynVal::FULL.minus_fixed(1));
         }
         match pos {
             HorizontalSBPositions::Above => {
@@ -178,16 +178,16 @@ impl TextBox {
                 }
             }
             HorizontalSBPositions::Below => {
-                sb.set_at(inner_start_x, DynVal::full().minus_fixed(1));
+                sb.set_at(inner_start_x, DynVal::FULL.minus_fixed(1));
                 self.inner
                     .borrow()
                     .pane
-                    .set_end_y(DynVal::full().minus_fixed(1));
+                    .set_end_y(DynVal::FULL.minus_fixed(1));
                 if let Some(ln_tb) = &*self.inner.borrow().line_number_tb.borrow() {
-                    ln_tb.pane.set_end_y(DynVal::full().minus_fixed(1));
+                    ln_tb.pane.set_end_y(DynVal::FULL.minus_fixed(1));
                 }
                 if let Some(y_sb) = &*self.y_scrollbar.borrow() {
-                    y_sb.pane.set_end_y(DynVal::full().minus_fixed(1));
+                    y_sb.pane.set_end_y(DynVal::FULL.minus_fixed(1));
                 }
             }
             HorizontalSBPositions::None => {
@@ -569,8 +569,8 @@ impl TextBoxInner {
     pub fn new<S: Into<String>>(ctx: &Context, text: S) -> Self {
         let text = text.into();
         let pane = Pane::new(ctx, Self::KIND)
-            .with_dyn_width(DynVal::full())
-            .with_dyn_height(DynVal::full())
+            .with_dyn_width(DynVal::FULL)
+            .with_dyn_height(DynVal::FULL)
             .with_self_receivable_events(Self::editable_receivable_events());
 
         let tb = TextBoxInner {

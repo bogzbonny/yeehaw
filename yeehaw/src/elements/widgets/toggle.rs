@@ -16,8 +16,10 @@ pub struct Toggle {
     /// the style of the selected side
     pub selected_sty: Rc<RefCell<Style>>,
     ///                                   selected
-    pub toggled_fn: Rc<RefCell<dyn FnMut(Context, String) -> EventResponses>>,
+    pub toggled_fn: Rc<RefCell<ToggleFn>>,
 }
+
+pub type ToggleFn = Box<dyn FnMut(Context, Toggle) -> EventResponses>;
 
 impl Toggle {
     const KIND: &'static str = "toggle";
@@ -41,10 +43,8 @@ impl Toggle {
         ])
     }
 
-    pub fn new(
-        ctx: &Context, left: String, right: String,
-        toggeld_fn: Box<dyn FnMut(Context, String) -> EventResponses>,
-    ) -> Self {
+    pub fn new<S: Into<String>>(ctx: &Context, left: S, right: S) -> Self {
+        let (left, right) = (left.into(), right.into());
         let pane = SelectablePane::new(ctx, Self::KIND)
             .with_self_receivable_events(Self::default_receivable_events())
             .with_styles(Self::STYLE)
@@ -62,7 +62,7 @@ impl Toggle {
             left_selected: Rc::new(RefCell::new(true)),
             clicked_down: Rc::new(RefCell::new(false)),
             selected_sty: Rc::new(RefCell::new(Self::DEFAULT_SELECTED_STY)),
-            toggled_fn: Rc::new(RefCell::new(toggeld_fn)),
+            toggled_fn: Rc::new(RefCell::new(Box::new(|_, _| EventResponses::default()))),
         };
         t.update_content();
 
@@ -87,7 +87,20 @@ impl Toggle {
         self
     }
 
+    pub fn with_fn(self, toggle_fn: ToggleFn) -> Self {
+        *self.toggled_fn.borrow_mut() = toggle_fn;
+        self
+    }
+
+    pub fn set_fn(&self, toggle_fn: ToggleFn) {
+        *self.toggled_fn.borrow_mut() = toggle_fn;
+    }
+
     // ----------------------------------------------
+
+    pub fn is_left(&self) -> bool {
+        *self.left_selected.borrow()
+    }
 
     pub fn selected(&self) -> String {
         if *self.left_selected.borrow() {
@@ -99,7 +112,7 @@ impl Toggle {
     pub fn perform_toggle(&self, ctx: &Context) -> EventResponses {
         let l_sel = *self.left_selected.borrow();
         *self.left_selected.borrow_mut() = !l_sel;
-        let resps = self.toggled_fn.borrow_mut()(ctx.clone(), self.selected());
+        let resps = self.toggled_fn.borrow_mut()(ctx.clone(), self.clone());
         self.update_content();
         resps
     }

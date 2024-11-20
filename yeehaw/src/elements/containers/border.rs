@@ -159,6 +159,58 @@ impl BorderProperies {
         }
     }
 
+    pub fn new_left_resizer() -> Self {
+        Self {
+            left: Some(PropertyVrt::DragResize),
+            right: None,
+            top: None,
+            bottom: None,
+            top_corner: PropertyCnr::DragResize,
+            bottom_corner: PropertyCnr::DragResize,
+            left_corner: PropertyCnr::DragResize,
+            right_corner: PropertyCnr::DragResize,
+        }
+    }
+
+    pub fn new_right_resizer() -> Self {
+        Self {
+            left: None,
+            right: Some(PropertyVrt::DragResize),
+            top: None,
+            bottom: None,
+            top_corner: PropertyCnr::DragResize,
+            bottom_corner: PropertyCnr::DragResize,
+            left_corner: PropertyCnr::DragResize,
+            right_corner: PropertyCnr::DragResize,
+        }
+    }
+
+    pub fn new_top_resizer() -> Self {
+        Self {
+            left: None,
+            right: None,
+            top: Some(PropertyHzt::DragResize),
+            bottom: None,
+            top_corner: PropertyCnr::DragResize,
+            bottom_corner: PropertyCnr::DragResize,
+            left_corner: PropertyCnr::DragResize,
+            right_corner: PropertyCnr::DragResize,
+        }
+    }
+
+    pub fn new_bottom_resizer() -> Self {
+        Self {
+            left: None,
+            right: None,
+            top: None,
+            bottom: Some(PropertyHzt::DragResize),
+            top_corner: PropertyCnr::DragResize,
+            bottom_corner: PropertyCnr::DragResize,
+            left_corner: PropertyCnr::DragResize,
+            right_corner: PropertyCnr::DragResize,
+        }
+    }
+
     pub fn new_resizer_with_scrollbars(ctx: &Context, sty: Style) -> Self {
         Self {
             left: Some(PropertyVrt::DragResize),
@@ -553,6 +605,7 @@ impl BorderSty {
     }
 }
 
+#[yeehaw_derive::impl_pane_basics_from(pane)]
 impl Bordered {
     pub const KIND: &'static str = "bordered";
 
@@ -586,7 +639,7 @@ impl Bordered {
         let bordered = Self::new(ctx, inner, chs, properties);
 
         let start_y: DynVal = 0.into();
-        let end_y = DynVal::full().minus(1.into());
+        let end_y = DynVal::FULL.minus(1.into());
         let left_loc = DynLocation::new(0.into(), 1.into(), start_y.clone(), end_y);
 
         let chs_left = DrawCh::new('▏', sty);
@@ -597,7 +650,7 @@ impl Bordered {
 
         let mut l = bordered.inner.borrow().get_dyn_location_set().clone();
         l.l.set_start_x(1.into());
-        //l.l.set_end_x(DynVal::full().minus(2.into()));
+        //l.l.set_end_x(DynVal::FULL.minus(2.into()));
         bordered.inner.borrow_mut().set_dyn_location_set(l);
 
         // shrink the view portal as understood by the x scrollbar
@@ -610,6 +663,30 @@ impl Bordered {
     pub fn new_resizer(ctx: &Context, inner: Box<dyn Element>, sty: Style) -> Self {
         let chs = BorderSty::new_thick_single(sty);
         let properties = BorderProperies::new_resizer();
+        Self::new(ctx, inner, chs, properties)
+    }
+
+    pub fn new_left_resizer(ctx: &Context, inner: Box<dyn Element>, sty: Style) -> Self {
+        let chs = BorderSty::new_thick_single(sty);
+        let properties = BorderProperies::new_left_resizer();
+        Self::new(ctx, inner, chs, properties)
+    }
+
+    pub fn new_right_resizer(ctx: &Context, inner: Box<dyn Element>, sty: Style) -> Self {
+        let chs = BorderSty::new_thick_single(sty);
+        let properties = BorderProperies::new_right_resizer();
+        Self::new(ctx, inner, chs, properties)
+    }
+
+    pub fn new_top_resizer(ctx: &Context, inner: Box<dyn Element>, sty: Style) -> Self {
+        let chs = BorderSty::new_thick_single(sty);
+        let properties = BorderProperies::new_top_resizer();
+        Self::new(ctx, inner, chs, properties)
+    }
+
+    pub fn new_bottom_resizer(ctx: &Context, inner: Box<dyn Element>, sty: Style) -> Self {
+        let chs = BorderSty::new_thick_single(sty);
+        let properties = BorderProperies::new_bottom_resizer();
         Self::new(ctx, inner, chs, properties)
     }
 
@@ -836,16 +913,10 @@ impl Bordered {
 
         let inner_start_x: DynVal = if properties.left.is_some() { 1.into() } else { 0.into() };
         let inner_start_y: DynVal = if properties.top.is_some() { 1.into() } else { 0.into() };
-        let inner_end_x = if properties.right.is_some() {
-            DynVal::full().minus(1.into())
-        } else {
-            DynVal::full()
-        };
-        let inner_end_y = if properties.bottom.is_some() {
-            DynVal::full().minus(1.into())
-        } else {
-            DynVal::full()
-        };
+        let inner_end_x =
+            if properties.right.is_some() { DynVal::FULL.minus(1.into()) } else { DynVal::FULL };
+        let inner_end_y =
+            if properties.bottom.is_some() { DynVal::FULL.minus(1.into()) } else { DynVal::FULL };
         let inner_loc = DynLocation::new(
             inner_start_x.clone(),
             inner_end_x,
@@ -871,7 +942,7 @@ impl Bordered {
                 CornerPos::TopRight,
                 properties.top_corner,
             )
-            .at(DynVal::full().minus(1.into()), 0.into());
+            .at(DynVal::FULL.minus(1.into()), 0.into());
             bordered.pane.add_element(Box::new(corner));
         }
         if has_bottom_left_corner {
@@ -881,7 +952,7 @@ impl Bordered {
                 CornerPos::BottomLeft,
                 properties.bottom_corner,
             )
-            .at(0.into(), DynVal::full().minus(1.into()));
+            .at(0.into(), DynVal::FULL.minus(1.into()));
             bordered.pane.add_element(Box::new(corner));
         }
         if has_bottom_right_corner {
@@ -891,10 +962,7 @@ impl Bordered {
                 CornerPos::BottomRight,
                 properties.bottom_corner,
             )
-            .at(
-                DynVal::full().minus(1.into()),
-                DynVal::full().minus(1.into()),
-            );
+            .at(DynVal::FULL.minus(1.into()), DynVal::FULL.minus(1.into()));
             bordered.pane.add_element(Box::new(corner));
         }
 
@@ -908,9 +976,9 @@ impl Bordered {
             };
             let end_y = if has_bottom_left_corner {
                 y_less += 1;
-                DynVal::full().minus(1.into())
+                DynVal::FULL.minus(1.into())
             } else {
-                DynVal::full()
+                DynVal::FULL
             };
             *bordered.y_scrollbar_sub_from_full.borrow_mut() = y_less;
             *bordered.y_scrollbar_view_sub_from_full.borrow_mut() = y_less;
@@ -952,16 +1020,16 @@ impl Bordered {
             };
             let end_y = if has_bottom_right_corner {
                 y_less += 1;
-                DynVal::full().minus(1.into())
+                DynVal::FULL.minus(1.into())
             } else {
-                DynVal::full()
+                DynVal::FULL
             };
             *bordered.y_scrollbar_sub_from_full.borrow_mut() = y_less;
             *bordered.y_scrollbar_view_sub_from_full.borrow_mut() = y_less;
 
             let right_loc = DynLocation::new(
-                DynVal::full().minus(1.into()),
-                DynVal::full(),
+                DynVal::FULL.minus(1.into()),
+                DynVal::FULL,
                 start_y.clone(),
                 end_y,
             );
@@ -1002,9 +1070,9 @@ impl Bordered {
             };
             let end_x = if has_top_right_corner {
                 x_less += 1;
-                DynVal::full().minus(1.into())
+                DynVal::FULL.minus(1.into())
             } else {
-                DynVal::full()
+                DynVal::FULL
             };
             *bordered.x_scrollbar_sub_from_full.borrow_mut() = x_less;
             *bordered.x_scrollbar_view_sub_from_full.borrow_mut() = x_less;
@@ -1042,19 +1110,15 @@ impl Bordered {
             };
             let end_x = if has_bottom_right_corner {
                 x_less += 1;
-                DynVal::full().minus(1.into())
+                DynVal::FULL.minus(1.into())
             } else {
-                DynVal::full()
+                DynVal::FULL
             };
             *bordered.x_scrollbar_sub_from_full.borrow_mut() = x_less;
             *bordered.x_scrollbar_view_sub_from_full.borrow_mut() = x_less;
 
-            let bottom_loc = DynLocation::new(
-                start_x,
-                end_x,
-                DynVal::full().minus(1.into()),
-                DynVal::full(),
-            );
+            let bottom_loc =
+                DynLocation::new(start_x, end_x, DynVal::FULL.minus(1.into()), DynVal::FULL);
             if let PropertyHzt::Scrollbar(sb) = bottom_property {
                 let inner_ = inner.clone();
                 let hook = Box::new(move |ctx, x| {
@@ -1091,11 +1155,11 @@ impl Bordered {
         if *self.last_size.borrow() != ctx.s {
             let x_sb = self.x_scrollbar.borrow();
             if let Some(x_sb) = x_sb.as_ref() {
-                let view_w: DynVal = DynVal::full()
+                let view_w: DynVal = DynVal::FULL
                     .minus((*self.x_scrollbar_view_sub_from_full.borrow()).into())
                     .get_val(ctx.s.width)
                     .into();
-                let w: DynVal = DynVal::full()
+                let w: DynVal = DynVal::FULL
                     .minus((*self.x_scrollbar_sub_from_full.borrow()).into())
                     .get_val(ctx.s.width)
                     .into();
@@ -1103,11 +1167,11 @@ impl Bordered {
             }
             let y_sb = self.y_scrollbar.borrow();
             if let Some(y_sb) = y_sb.as_ref() {
-                let view_h: DynVal = DynVal::full()
+                let view_h: DynVal = DynVal::FULL
                     .minus((*self.y_scrollbar_view_sub_from_full.borrow()).into())
                     .get_val(ctx.s.height)
                     .into();
-                let h: DynVal = DynVal::full()
+                let h: DynVal = DynVal::FULL
                     .minus((*self.y_scrollbar_sub_from_full.borrow()).into())
                     .get_val(ctx.s.height)
                     .into();
@@ -1123,7 +1187,7 @@ impl Element for Bordered {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         self.ensure_scrollbar_size(ctx);
 
-        let out = self.pane.receive_event_inner(ctx, ev);
+        let (captured, mut resps) = self.pane.receive_event_inner(ctx, ev);
         let inner_size = self.inner.borrow().get_dyn_location_set().l.get_size(ctx);
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
             sb.external_change(
@@ -1139,7 +1203,21 @@ impl Element for Bordered {
                 inner_size,
             );
         }
-        out
+
+        // update resize/move responses to this borders id
+        for resp in resps.iter_mut() {
+            match resp {
+                EventResponse::Resize(r) => {
+                    r.el_id = self.id();
+                }
+                EventResponse::Move(r) => {
+                    r.el_id = self.id();
+                }
+                _ => {}
+            }
+        }
+
+        (captured, resps)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.ensure_scrollbar_size(ctx);
@@ -1288,8 +1366,8 @@ impl VerticalSide {
     const Z_INDEX: ZIndex = 200;
 
     pub fn new(ctx: &Context, ch: DrawCh, pos: VerticalPos, property: PropertyVrt) -> Self {
-        let pane = Pane::new(ctx, "resize_corner")
-            .with_dyn_height(DynVal::full())
+        let pane = Pane::new(ctx, "vertical_side")
+            .with_dyn_height(DynVal::FULL)
             .with_dyn_width(1.into());
         pane.set_z(Self::Z_INDEX);
         Self {
@@ -1490,7 +1568,7 @@ impl HorizontalSide {
 
     /// The context provided determines the size of this element
     pub fn new(ctx: &Context, ch: DrawCh, pos: HorizontalPos, property: PropertyHzt) -> Self {
-        let pane = Pane::new(ctx, "resize_corner")
+        let pane = Pane::new(ctx, "horizontal_side")
             .with_dyn_height(1.into())
             .with_dyn_width(1.0.into());
         pane.set_z(Self::Z_INDEX);

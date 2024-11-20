@@ -20,13 +20,13 @@ async fn main() -> Result<(), Error> {
     let vstack = VerticalStack::new(&ctx);
     let sel_pane = ParentPaneOfSelectable::new(&ctx).with_dyn_height(3.into());
     let hstack = HorizontalStack::new(&ctx).with_height(1.0.into());
-    vstack.push(&ctx, Box::new(sel_pane.clone()));
-    vstack.push(&ctx, Box::new(hstack.clone()));
+    vstack.push(Box::new(sel_pane.clone()));
+    vstack.push(Box::new(hstack.clone()));
 
     let hstack__ = hstack.clone();
-    let remove_button_click_fn = Box::new(move |_, ctx_| {
+    let remove_button_click_fn = Box::new(move |_, _| {
         if !hstack__.is_empty() {
-            hstack__.remove(&ctx_, 0);
+            hstack__.remove(0);
         }
         EventResponses::default()
     });
@@ -39,11 +39,11 @@ async fn main() -> Result<(), Error> {
     let add_button_click_fn = Box::new(move |_, _| {
         if hstack_.len() == 3 {
             let el = ImageViewer::new(&ctx_, &img_path).with_width(hstack_.avg_width(&ctx_));
-            hstack_.push(&ctx_, Box::new(el));
+            hstack_.push(Box::new(el));
             EventResponses::default()
         } else {
-            let el = DebugSizePane::new(&ctx_).with_width(hstack_.avg_width(&ctx_));
-            hstack_.push(&ctx_, Box::new(el));
+            let el = DebugSizePane::new(&ctx_).with_dyn_width(hstack_.avg_width(&ctx_));
+            hstack_.push(Box::new(el));
             EventResponses::default()
         }
     });

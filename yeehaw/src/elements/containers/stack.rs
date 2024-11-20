@@ -7,12 +7,16 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
+// currently resizing stacks makes the resized dimention static for the two elements which have
+// changed dimension values during a resize.
+
 #[derive(Clone)]
 pub struct VerticalStack {
     pub pane: ParentPane,
     #[allow(clippy::type_complexity)]
     pub els: Rc<RefCell<Vec<Box<dyn Element>>>>,
     pub last_size: Rc<RefCell<Size>>,
+    pub is_dirty: Rc<RefCell<bool>>,
 }
 
 impl VerticalStack {
@@ -23,6 +27,7 @@ impl VerticalStack {
             pane: ParentPane::new(ctx, Self::KIND),
             els: Rc::new(RefCell::new(Vec::new())),
             last_size: Rc::new(RefCell::new(Size::new(0, 0))),
+            is_dirty: Rc::new(RefCell::new(true)),
         }
     }
 
@@ -31,33 +36,55 @@ impl VerticalStack {
             pane: ParentPane::new(ctx, kind),
             els: Rc::new(RefCell::new(Vec::new())),
             last_size: Rc::new(RefCell::new(Size::new(0, 0))),
+            is_dirty: Rc::new(RefCell::new(true)),
         }
+    }
+
+    pub fn with_height(self, h: DynVal) -> Self {
+        self.pane.pane.set_dyn_height(h);
+        self
+    }
+
+    pub fn with_width(self, w: DynVal) -> Self {
+        self.pane.pane.set_dyn_width(w);
+        self
     }
 
     /// add an element to the end of the stack resizing the other elements
     /// in order to fit the new element
-    pub fn push(&self, ctx: &Context, el: Box<dyn Element>) -> EventResponse {
+    pub fn push(&self, el: Box<dyn Element>) -> EventResponse {
         Self::sanitize_el_location(&*el);
         self.els.borrow_mut().push(el.clone());
-        self.normalize_locations(ctx);
+        self.is_dirty.replace(true);
         self.pane.add_element(el)
     }
 
-    pub fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>) -> EventResponse {
+    pub fn pop(&self) -> EventResponse {
+        let el = self.els.borrow_mut().pop();
+        if let Some(el) = el {
+            self.is_dirty.replace(true);
+            self.pane.remove_element(&el.id())
+        } else {
+            EventResponse::None
+        }
+    }
+
+    pub fn insert(&self, idx: usize, el: Box<dyn Element>) -> EventResponse {
         Self::sanitize_el_location(&*el);
         self.els.borrow_mut().insert(idx, el.clone());
-        self.normalize_locations(ctx);
+        self.is_dirty.replace(true);
         self.pane.add_element(el)
     }
 
-    pub fn remove(&self, ctx: &Context, idx: usize) -> EventResponse {
+    pub fn remove(&self, idx: usize) -> EventResponse {
         let el = self.els.borrow_mut().remove(idx);
-        self.normalize_locations(ctx);
+        self.is_dirty.replace(true);
         self.pane.remove_element(&el.id())
     }
 
     pub fn clear(&self) -> EventResponse {
         self.els.borrow_mut().clear();
+        self.is_dirty.replace(true);
         self.pane.clear_elements()
     }
 
@@ -67,6 +94,18 @@ impl VerticalStack {
 
     pub fn get(&self, idx: usize) -> Option<Box<dyn Element>> {
         self.els.borrow().get(idx).cloned()
+    }
+
+    pub fn first(&self) -> Option<Box<dyn Element>> {
+        self.els.borrow().first().cloned()
+    }
+
+    pub fn last(&self) -> Option<Box<dyn Element>> {
+        self.els.borrow().last().cloned()
+    }
+
+    pub fn get_index(&self, id: &ElementID) -> Option<usize> {
+        self.els.borrow().iter().position(|el| &el.id() == id)
     }
 
     pub fn is_empty(&self) -> bool {
@@ -107,13 +146,13 @@ impl VerticalStack {
         let mut loc = el.get_dyn_location_set().clone();
 
         // ignore the x-dimension everything must fit fully
-        loc.set_start_x(0.0.into()); // 0
-        loc.set_end_x(1.0.into()); // 100%
+        loc.set_start_x(0.into()); // 0
+        loc.set_end_x(DynVal::FULL); // 100%
         el.set_dyn_location_set(loc); // set loc without triggering hooks
     }
 
     pub fn ensure_normalized_sizes(&self, ctx: &Context) {
-        if *self.last_size.borrow() != ctx.s {
+        if *self.last_size.borrow() != ctx.s || self.is_dirty.replace(false) {
             self.normalize_locations(ctx);
             *self.last_size.borrow_mut() = ctx.s;
         }
@@ -132,6 +171,18 @@ impl VerticalStack {
 
         // set all the locations based on the heights
         self.adjust_locations_for_heights(&heights);
+
+        // ensure that the first element is at 0.0 and the last element is at 1.0
+        let Some(el) = self.first() else {
+            return;
+        };
+        let l = el.get_dyn_location_set().clone().with_start_y(0.into());
+        el.set_dyn_location_set(l);
+        let Some(el) = self.last() else {
+            return;
+        };
+        let l = el.get_dyn_location_set().clone().with_end_y(DynVal::FULL);
+        el.set_dyn_location_set(l);
     }
 
     /// incrementally change the flex value of each of the existing heights (evenly), until
@@ -159,6 +210,7 @@ pub struct HorizontalStack {
     #[allow(clippy::type_complexity)]
     pub els: Rc<RefCell<Vec<Box<dyn Element>>>>,
     pub last_size: Rc<RefCell<Size>>,
+    pub is_dirty: Rc<RefCell<bool>>,
 }
 
 impl HorizontalStack {
@@ -169,6 +221,7 @@ impl HorizontalStack {
             pane: ParentPane::new(ctx, Self::KIND),
             els: Rc::new(RefCell::new(Vec::new())),
             last_size: Rc::new(RefCell::new(Size::new(0, 0))),
+            is_dirty: Rc::new(RefCell::new(true)),
         }
     }
 
@@ -177,6 +230,7 @@ impl HorizontalStack {
             pane: ParentPane::new(ctx, kind),
             els: Rc::new(RefCell::new(Vec::new())),
             last_size: Rc::new(RefCell::new(Size::new(0, 0))),
+            is_dirty: Rc::new(RefCell::new(true)),
         }
     }
 
@@ -192,23 +246,33 @@ impl HorizontalStack {
 
     /// add an element to the end of the stack resizing the other elements
     /// in order to fit the new element
-    pub fn push(&self, ctx: &Context, el: Box<dyn Element>) -> EventResponse {
+    pub fn push(&self, el: Box<dyn Element>) -> EventResponse {
         Self::sanitize_el_location(&*el);
         self.els.borrow_mut().push(el.clone());
-        self.normalize_locations(ctx);
+        self.is_dirty.replace(true);
         self.pane.add_element(el)
     }
 
-    pub fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>) -> EventResponse {
+    pub fn pop(&self) -> EventResponse {
+        let el = self.els.borrow_mut().pop();
+        if let Some(el) = el {
+            self.is_dirty.replace(true);
+            self.pane.remove_element(&el.id())
+        } else {
+            EventResponse::None
+        }
+    }
+
+    pub fn insert(&self, idx: usize, el: Box<dyn Element>) -> EventResponse {
         Self::sanitize_el_location(&*el);
         self.els.borrow_mut().insert(idx, el.clone());
-        self.normalize_locations(ctx);
+        self.is_dirty.replace(true);
         self.pane.add_element(el)
     }
 
-    pub fn remove(&self, ctx: &Context, idx: usize) -> EventResponse {
+    pub fn remove(&self, idx: usize) -> EventResponse {
         let el = self.els.borrow_mut().remove(idx);
-        self.normalize_locations(ctx);
+        self.is_dirty.replace(true);
         self.pane.remove_element(&el.id())
     }
 
@@ -223,6 +287,18 @@ impl HorizontalStack {
 
     pub fn get(&self, idx: usize) -> Option<Box<dyn Element>> {
         self.els.borrow().get(idx).cloned()
+    }
+
+    pub fn first(&self) -> Option<Box<dyn Element>> {
+        self.els.borrow().first().cloned()
+    }
+
+    pub fn last(&self) -> Option<Box<dyn Element>> {
+        self.els.borrow().last().cloned()
+    }
+
+    pub fn get_index(&self, id: &ElementID) -> Option<usize> {
+        self.els.borrow().iter().position(|el| &el.id() == id)
     }
 
     pub fn is_empty(&self) -> bool {
@@ -263,13 +339,13 @@ impl HorizontalStack {
         let mut loc = el.get_dyn_location_set().clone();
 
         // ignore the y-dimension everything must fit fully
-        loc.set_start_y(0.0.into()); // 0
-        loc.set_end_y(1.0.into()); // 100%
+        loc.set_start_y(0.into()); // 0
+        loc.set_end_y(DynVal::FULL); // 100%
         el.set_dyn_location_set(loc); // set loc without triggering hooks
     }
 
     pub fn ensure_normalized_sizes(&self, ctx: &Context) {
-        if *self.last_size.borrow() != ctx.s {
+        if *self.last_size.borrow() != ctx.s || self.is_dirty.replace(false) {
             self.normalize_locations(ctx);
             *self.last_size.borrow_mut() = ctx.s;
         }
@@ -288,6 +364,18 @@ impl HorizontalStack {
 
         // set all the locations based on the widths
         self.adjust_locations_for_widths(&widths);
+
+        // ensure that the first element is at 0.0 and the last element is at 1.0
+        let Some(el) = self.first() else {
+            return;
+        };
+        let l = el.get_dyn_location_set().clone().with_start_x(0.into());
+        el.set_dyn_location_set(l);
+        let Some(el) = self.last() else {
+            return;
+        };
+        let l = el.get_dyn_location_set().clone().with_end_x(DynVal::FULL);
+        el.set_dyn_location_set(l);
     }
 
     /// incrementally change the flex value of each of the existing widths (evenly), until
@@ -316,23 +404,27 @@ impl HorizontalStack {
 /// ctx_size is either the height or width of the context
 /// vals is either element heights or widths to be adjusted
 fn adjust_els_to_fit_ctx_size(ctx_size: u16, vals: &mut [DynVal]) {
-    vals.iter_mut().for_each(|h| h.flatten_internal());
+    vals.iter_mut().for_each(|v| v.flatten_internal());
     for _i in 0..30 {
-        let total_size: i32 = vals.iter().map(|h| h.get_val(ctx_size)).sum();
+        let total_size: i32 = vals.iter().map(|v| v.get_val(ctx_size)).sum();
         if total_size == ctx_size as i32 {
             break;
         }
-        let total_static: i32 = vals.iter().map(|h| h.get_val(0)).sum();
+        let total_static: i32 = vals.iter().map(|v| v.get_val(0)).sum();
         let total_flex: i32 = total_size - total_static;
         if total_flex == 0 {
             break;
         }
 
         let next_change = (ctx_size as i32 - total_size) as f64 / (ctx_size as f64);
-        for h in vals.iter_mut() {
-            let h_flex = h.get_flex_val_portion_for_ctx(ctx_size);
-            let h_flex_change = next_change * h_flex as f64 / total_flex as f64;
-            h.flex += h_flex_change;
+        for v in vals.iter_mut() {
+            let v_flex = v.get_flex_val_portion_for_ctx(ctx_size);
+            let v_flex_change = next_change * v_flex as f64 / total_flex as f64;
+            v.flex += v_flex_change;
+            if v.get_val(ctx_size) < 1 {
+                // undo the change if it leads to a value of under 1
+                v.flex -= v_flex_change
+            }
         }
     }
 }
@@ -343,44 +435,73 @@ impl Element for VerticalStack {
         self.ensure_normalized_sizes(ctx);
         let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
 
-        //let mut resps_ = EventResponses::default();
-        //let mut just_minimized = false;
-        //for resp in resps.iter_mut() {
-        //    let (top_dy, bottom_dy) = match resp {
-        //        EventResponse::Resize(r) => (r.top_dy, r.bottom_dy),
-        //        _ => continue,
-        //    };
+        let mut resized = false;
+        for resp in resps.iter_mut() {
+            let (el_id, top_dy, bottom_dy) = match resp {
+                EventResponse::Resize(r) => (&r.el_id, r.top_dy, r.bottom_dy),
+                _ => continue,
+            };
+            let (top_el, bottom_el) = if top_dy != 0 {
+                let Some(el_index) = self.get_index(el_id) else {
+                    continue;
+                };
+                if el_index == 0 {
+                    // ignore resizing the first element on the top
+                    *resp = EventResponse::None;
+                    continue;
+                }
+                let top_el = self.get(el_index - 1).expect("top_dy, missing top el");
+                let bottom_el = self.get(el_index).expect("bottom_dy, missing bottom el");
+                (top_el, bottom_el)
+            } else if bottom_dy != 0 {
+                let Some(el_index) = self.get_index(el_id) else {
+                    continue;
+                };
+                if el_index == self.len() - 1 {
+                    // ignore resizing the last element on the bottom
+                    *resp = EventResponse::None;
+                    continue;
+                }
+                let top_el = self.get(el_index).expect("top_dy, missing top el");
+                let bottom_el = self
+                    .get(el_index + 1)
+                    .expect("bottom_dy, missing bottom el");
+                (top_el, bottom_el)
+            } else {
+                *resp = EventResponse::None;
+                continue;
+            };
 
-        //    // NOTE must set to a a fixed value (aka need to get the size for the pane DynVal
-        //    // using ctx here. if we do not then the next pane position drag will be off
-        //    let start_y = self.pane.pane.get_start_y(ctx);
-        //    let end_y = self.pane.pane.get_end_y(ctx);
-        //    let mut start_y_adj = start_y + top_dy;
-        //    let mut end_y_adj = end_y + bottom_dy;
+            let mut l_loc = top_el.get_dyn_location_set().clone();
+            let mut r_loc = bottom_el.get_dyn_location_set().clone();
 
-        //    if end_x_adj - start_x_adj < 2 || start_x_adj < 0 || start_y_adj < 0 {
-        //        start_x_adj = start_x;
-        //        end_x_adj = end_x;
-        //    }
+            // NOTE must set to a a fixed value (aka need to get the size for the pane DynVal
+            // using ctx here. if we do not then the next pane position drag will be off
+            let l_start_y = l_loc.get_start_y(ctx);
+            let l_end_y = l_loc.get_end_y(ctx);
+            let r_start_y = r_loc.get_start_y(ctx);
+            let r_end_y = r_loc.get_end_y(ctx);
 
-        //    self.pane.pane.set_start_y(start_y_adj.into());
-        //    self.pane.pane.set_end_y(end_y_adj.into());
+            let r_start_y_adj = r_start_y + top_dy;
+            let l_end_y_adj = l_end_y + top_dy;
 
-        //    let inner_ctx = ctx.clone().with_size(Size::new(
-        //        self.pane.pane.get_width(ctx) as u16,
-        //        (self.pane.pane.get_height(ctx) as u16).saturating_sub(1),
-        //    ));
+            if l_end_y_adj - l_start_y < 1 || r_end_y - r_start_y_adj < 1 || r_start_y_adj < 0 {
+                continue;
+            }
 
-        //    let mut top_bar_ctx = ctx.clone();
-        //    top_bar_ctx.s.height = 1;
+            l_loc.set_end_y(l_end_y_adj.into());
+            r_loc.set_start_y(r_start_y_adj.into());
+            bottom_el.set_dyn_location_set(r_loc);
+            top_el.set_dyn_location_set(l_loc);
+            resized = true;
 
-        //    let (_, r) = self.inner.receive_event(&inner_ctx, Event::Resize);
-        //    resps_.extend(r);
-
-        //    *resp = EventResponse::None;
-        //    continue;
-        //}
-        //resps.extend(resps_);
+            *resp = EventResponse::None;
+        }
+        if resized {
+            let (_, r) = self.pane.receive_event(ctx, Event::Resize);
+            resps.extend(r);
+            self.normalize_locations(ctx);
+        }
         (captured, resps)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
@@ -393,7 +514,74 @@ impl Element for VerticalStack {
 impl Element for HorizontalStack {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         self.ensure_normalized_sizes(ctx);
-        self.pane.receive_event(ctx, ev.clone())
+        let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
+
+        let mut resized = false;
+        for resp in resps.iter_mut() {
+            let (el_id, left_dx, right_dx) = match resp {
+                EventResponse::Resize(r) => (&r.el_id, r.left_dx, r.right_dx),
+                _ => continue,
+            };
+            let (left_el, right_el) = if left_dx != 0 {
+                let Some(el_index) = self.get_index(el_id) else {
+                    continue;
+                };
+                if el_index == 0 {
+                    // ignore resizing the first element on the left
+                    *resp = EventResponse::None;
+                    continue;
+                }
+                let left_el = self.get(el_index - 1).expect("left_dx, missing left el");
+                let right_el = self.get(el_index).expect("right_dx, missing right el");
+                (left_el, right_el)
+            } else if right_dx != 0 {
+                let Some(el_index) = self.get_index(el_id) else {
+                    continue;
+                };
+                if el_index == self.len() - 1 {
+                    // ignore resizing the last element on the right
+                    *resp = EventResponse::None;
+                    continue;
+                }
+                let left_el = self.get(el_index).expect("left_dx, missing left el");
+                let right_el = self.get(el_index + 1).expect("right_dx, missing right el");
+                (left_el, right_el)
+            } else {
+                *resp = EventResponse::None;
+                continue;
+            };
+
+            let mut l_loc = left_el.get_dyn_location_set().clone();
+            let mut r_loc = right_el.get_dyn_location_set().clone();
+
+            // NOTE must set to a a fixed value (aka need to get the size for the pane DynVal
+            // using ctx here. if we do not then the next pane position drag will be off
+            let l_start_x = l_loc.get_start_x(ctx);
+            let l_end_x = l_loc.get_end_x(ctx);
+            let r_start_x = r_loc.get_start_x(ctx);
+            let r_end_x = r_loc.get_end_x(ctx);
+
+            let r_start_x_adj = r_start_x + left_dx;
+            let l_end_x_adj = l_end_x + left_dx;
+
+            if l_end_x_adj - l_start_x < 1 || r_end_x - r_start_x_adj < 1 || r_start_x_adj < 0 {
+                continue;
+            }
+
+            l_loc.set_end_x(l_end_x_adj.into());
+            r_loc.set_start_x(r_start_x_adj.into());
+            right_el.set_dyn_location_set(r_loc);
+            left_el.set_dyn_location_set(l_loc);
+            resized = true;
+
+            *resp = EventResponse::None;
+        }
+        if resized {
+            let (_, r) = self.pane.receive_event(ctx, Event::Resize);
+            resps.extend(r);
+            self.normalize_locations(ctx);
+        }
+        (captured, resps)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.ensure_normalized_sizes(ctx);
@@ -409,9 +597,9 @@ trait StackTr {
     const KIND: &'static str;
     fn new(ctx: &Context) -> Self;
     fn new_with_kind(ctx: &Context, kind: &'static str) -> Self;
-    fn push(&self, ctx: &Context, el: Box<dyn Element>) -> EventResponse;
-    fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>) -> EventResponse;
-    fn remove(&self, ctx: &Context, idx: usize) -> EventResponse;
+    fn push(&self, el: Box<dyn Element>) -> EventResponse;
+    fn insert(&self, idx: usize, el: Box<dyn Element>) -> EventResponse;
+    fn remove(&self, idx: usize) -> EventResponse;
     fn clear(&self) -> EventResponse;
     fn len(&self) -> usize;
     fn get(&self, idx: usize) -> Option<Box<dyn Element>>;
@@ -431,14 +619,14 @@ impl StackTr for VerticalStack {
     fn new_with_kind(ctx: &Context, kind: &'static str) -> Self {
         VerticalStack::new_with_kind(ctx, kind)
     }
-    fn push(&self, ctx: &Context, el: Box<dyn Element>) -> EventResponse {
-        VerticalStack::push(self, ctx, el)
+    fn push(&self, el: Box<dyn Element>) -> EventResponse {
+        VerticalStack::push(self, el)
     }
-    fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>) -> EventResponse {
-        VerticalStack::insert(self, ctx, idx, el)
+    fn insert(&self, idx: usize, el: Box<dyn Element>) -> EventResponse {
+        VerticalStack::insert(self, idx, el)
     }
-    fn remove(&self, ctx: &Context, idx: usize) -> EventResponse {
-        VerticalStack::remove(self, ctx, idx)
+    fn remove(&self, idx: usize) -> EventResponse {
+        VerticalStack::remove(self, idx)
     }
     fn clear(&self) -> EventResponse {
         VerticalStack::clear(self)
@@ -477,14 +665,14 @@ impl StackTr for HorizontalStack {
     fn new_with_kind(ctx: &Context, kind: &'static str) -> Self {
         HorizontalStack::new_with_kind(ctx, kind)
     }
-    fn push(&self, ctx: &Context, el: Box<dyn Element>) -> EventResponse {
-        HorizontalStack::push(self, ctx, el)
+    fn push(&self, el: Box<dyn Element>) -> EventResponse {
+        HorizontalStack::push(self, el)
     }
-    fn insert(&self, ctx: &Context, idx: usize, el: Box<dyn Element>) -> EventResponse {
-        HorizontalStack::insert(self, ctx, idx, el)
+    fn insert(&self, idx: usize, el: Box<dyn Element>) -> EventResponse {
+        HorizontalStack::insert(self, idx, el)
     }
-    fn remove(&self, ctx: &Context, idx: usize) -> EventResponse {
-        HorizontalStack::remove(self, ctx, idx)
+    fn remove(&self, idx: usize) -> EventResponse {
+        HorizontalStack::remove(self, idx)
     }
     fn clear(&self) -> EventResponse {
         HorizontalStack::clear(self)
