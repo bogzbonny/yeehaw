@@ -341,7 +341,47 @@ fn adjust_els_to_fit_ctx_size(ctx_size: u16, vals: &mut [DynVal]) {
 impl Element for VerticalStack {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         self.ensure_normalized_sizes(ctx);
-        self.pane.receive_event(ctx, ev.clone())
+        let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
+
+        //let mut resps_ = EventResponses::default();
+        //let mut just_minimized = false;
+        //for resp in resps.iter_mut() {
+        //    let (top_dy, bottom_dy) = match resp {
+        //        EventResponse::Resize(r) => (r.top_dy, r.bottom_dy),
+        //        _ => continue,
+        //    };
+
+        //    // NOTE must set to a a fixed value (aka need to get the size for the pane DynVal
+        //    // using ctx here. if we do not then the next pane position drag will be off
+        //    let start_y = self.pane.pane.get_start_y(ctx);
+        //    let end_y = self.pane.pane.get_end_y(ctx);
+        //    let mut start_y_adj = start_y + top_dy;
+        //    let mut end_y_adj = end_y + bottom_dy;
+
+        //    if end_x_adj - start_x_adj < 2 || start_x_adj < 0 || start_y_adj < 0 {
+        //        start_x_adj = start_x;
+        //        end_x_adj = end_x;
+        //    }
+
+        //    self.pane.pane.set_start_y(start_y_adj.into());
+        //    self.pane.pane.set_end_y(end_y_adj.into());
+
+        //    let inner_ctx = ctx.clone().with_size(Size::new(
+        //        self.pane.pane.get_width(ctx) as u16,
+        //        (self.pane.pane.get_height(ctx) as u16).saturating_sub(1),
+        //    ));
+
+        //    let mut top_bar_ctx = ctx.clone();
+        //    top_bar_ctx.s.height = 1;
+
+        //    let (_, r) = self.inner.receive_event(&inner_ctx, Event::Resize);
+        //    resps_.extend(r);
+
+        //    *resp = EventResponse::None;
+        //    continue;
+        //}
+        //resps.extend(resps_);
+        (captured, resps)
     }
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.ensure_normalized_sizes(ctx);
@@ -352,7 +392,6 @@ impl Element for VerticalStack {
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for HorizontalStack {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        debug!("HorizontalStack::receive_event_inner: ev={:?}", ev);
         self.ensure_normalized_sizes(ctx);
         self.pane.receive_event(ctx, ev.clone())
     }

@@ -7,7 +7,6 @@
 01. just use an image for the banner (and include the existing text as 
     markdown comment
 
-
 01. add docs, crates button banners to github readme
 
 01. showcase example 
@@ -363,9 +362,10 @@
          receive event function.
 
 30. graphs and charts obviously
-      - braille dots graph
+      - braille dots graph or 4 quadrant blocks
       - bar/column chart
-      - block pyramid 
+      - area chart (use block 4 quarant characters)
+      - block pyramid chart
 
 10. element: date selector
 
@@ -387,7 +387,12 @@
     └────────────┘
          BOOM        
 
+WIMP features
+
 10. TGIF
+
+30. tui get the final color under the cursor (more than just what's in the
+    element, get the full final output with alpha's applied)
 
 10. When the keyboard is matching an event combo provided to it, it should be
     recording a partial match (and a suggested maximum wait time to recheck for
@@ -492,6 +497,7 @@
 40. volume bar (color in) 
    ▁▂▃▄▅▆▇
     - drag up/right to increase down/left to decrease 
+
 
 40. tui get the color under the cursor pixel - useful for color pickers or from actual image pallets
 

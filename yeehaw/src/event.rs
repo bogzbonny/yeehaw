@@ -1,5 +1,5 @@
 use {
-    crate::{prioritizer::Priority, Element},
+    crate::{prioritizer::Priority, Element, ElementID},
     std::ops::{Deref, DerefMut},
 };
 
@@ -290,14 +290,20 @@ pub enum EventResponse {
     ReceivableEventChanges(ReceivableEventChanges),
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct MoveResponse {
+    /// the element sending the move response
+    pub el_id: ElementID,
+
     pub dx: i32,
     pub dy: i32,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct ResizeResponse {
+    /// the element sending the resize response
+    pub el_id: ElementID,
+
     pub left_dx: i32,
     pub right_dx: i32,
     pub top_dy: i32,

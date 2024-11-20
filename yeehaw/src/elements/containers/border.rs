@@ -1227,6 +1227,7 @@ impl Element for Corner {
                                 CornerPos::BottomRight => (0, dx, 0, dy),
                             };
                             let resp = ResizeResponse {
+                                el_id: self.id(),
                                 left_dx,
                                 right_dx,
                                 top_dy,
@@ -1235,7 +1236,11 @@ impl Element for Corner {
                             return (true, EventResponse::Resize(resp).into());
                         }
                         PropertyCnr::DragMove => {
-                            let resp = MoveResponse { dx, dy };
+                            let resp = MoveResponse {
+                                el_id: self.id(),
+                                dx,
+                                dy,
+                            };
                             return (true, EventResponse::Move(resp).into());
                         }
                         PropertyCnr::None => {}
@@ -1404,7 +1409,11 @@ impl Element for VerticalSide {
                         let dy = me.row as i32 - start_y;
 
                         if matches!(*property, PropertyVrt::DragMove) {
-                            let resp = MoveResponse { dx: 0, dy };
+                            let resp = MoveResponse {
+                                el_id: self.id(),
+                                dx: 0,
+                                dy,
+                            };
                             return (true, EventResponse::Move(resp).into());
                         }
                     }
@@ -1423,6 +1432,7 @@ impl Element for VerticalSide {
                                 VerticalPos::Right => (0, dx),
                             };
                             let resp = ResizeResponse {
+                                el_id: self.id(),
                                 left_dx,
                                 right_dx,
                                 top_dy: 0,
@@ -1434,7 +1444,11 @@ impl Element for VerticalSide {
                             let (start_x, start_y) = dragging_start_pos.expect("impossible");
                             let dx = dx - start_x;
                             let dy = dy - start_y;
-                            let resp = MoveResponse { dx, dy };
+                            let resp = MoveResponse {
+                                el_id: self.id(),
+                                dx,
+                                dy,
+                            };
                             return (true, EventResponse::Move(resp).into());
                         }
                         PropertyVrt::Scrollbar(_) => {} // handled earlier
@@ -1597,7 +1611,11 @@ impl Element for HorizontalSide {
                         let dx = me.column as i32 - start_x;
 
                         if matches!(*property, PropertyHzt::DragMove) {
-                            let resp = MoveResponse { dx, dy: 0 };
+                            let resp = MoveResponse {
+                                el_id: self.id(),
+                                dx,
+                                dy: 0,
+                            };
                             return (true, EventResponse::Move(resp).into());
                         }
                     }
@@ -1616,6 +1634,7 @@ impl Element for HorizontalSide {
                                 HorizontalPos::Bottom => (0, dy),
                             };
                             let resp = ResizeResponse {
+                                el_id: self.id(),
                                 left_dx: 0,
                                 right_dx: 0,
                                 top_dy,
@@ -1627,7 +1646,11 @@ impl Element for HorizontalSide {
                             let (start_x, start_y) = dragging_start_pos.expect("impossible");
                             let dx = dx - start_x;
                             let dy = dy - start_y;
-                            let resp = MoveResponse { dx, dy };
+                            let resp = MoveResponse {
+                                el_id: self.id(),
+                                dx,
+                                dy,
+                            };
                             return (true, EventResponse::Move(resp).into());
                         }
                         PropertyHzt::Scrollbar(_) => {} // handled earlier
