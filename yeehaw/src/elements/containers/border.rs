@@ -38,7 +38,7 @@ pub struct Bordered {
 }
 
 /// property for the border
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub enum PropertyCnr {
     /// just for display
     None,
@@ -46,6 +46,98 @@ pub enum PropertyCnr {
     DragResize,
     /// drag to move
     DragMove,
+
+    Collapser(CollapserCnr),
+}
+
+/// Collapsing triangle in the vertical direction
+#[derive(Clone)]
+pub struct CollapserCnr {
+    is_collapsed: bool,
+    /// the size of the collapsed dimension when non-collapsed
+    non_collapse_val: DynVal,
+    vertical: bool, // collapse in the vertical direction
+    open_ch: char,
+    collapsed_ch: char,
+}
+
+/// Collapsing triangle in the vertical direction
+#[derive(Clone, Copy)]
+pub struct CollapserSide {
+    is_collapsed: bool,
+    vertical: bool, // collapse in the vertical direction
+    open_ch: char,
+    collapsed_ch: char,
+}
+
+impl CollapserCnr {
+    pub fn new(
+        vertical: bool, non_collapse_val: DynVal, open_ch: char, collapsed_ch: char,
+    ) -> Self {
+        Self {
+            is_collapsed: false,
+            non_collapse_val,
+            vertical,
+            open_ch,
+            collapsed_ch,
+        }
+    }
+
+    pub fn new_left_horizontal() -> Self {
+        Self {
+            is_collapsed: false,
+            non_collapse_val: 0.25.into(),
+            vertical: false,
+            open_ch: '▼',
+            collapsed_ch: '▶',
+        }
+    }
+
+    pub fn new_right_horizontal() -> Self {
+        Self {
+            is_collapsed: false,
+            non_collapse_val: 0.25.into(),
+            vertical: false,
+            open_ch: '▼',
+            collapsed_ch: '◀',
+        }
+    }
+
+    pub fn new_right_vertical() -> Self {
+        Self {
+            is_collapsed: false,
+            non_collapse_val: 0.25.into(),
+            vertical: true,
+            open_ch: '▶',
+            collapsed_ch: '▼',
+        }
+    }
+
+    pub fn new_left_vertical() -> Self {
+        Self {
+            is_collapsed: false,
+            non_collapse_val: 0.25.into(),
+            vertical: true,
+            open_ch: '◀',
+            collapsed_ch: '▼',
+        }
+    }
+
+    pub fn toggle_collapser(&mut self) {
+        self.is_collapsed = !self.is_collapsed;
+    }
+
+    pub fn set_collapsed(&mut self, collapsed: bool) {
+        self.is_collapsed = collapsed;
+    }
+
+    pub fn get_ch(&self) -> char {
+        if self.is_collapsed {
+            self.collapsed_ch
+        } else {
+            self.open_ch
+        }
+    }
 }
 
 /// property for the border
@@ -540,11 +632,13 @@ impl BorderSty {
         }
     }
 
+    /// NOTE this uses unicode characters that may not supported by all terminals
+    /// (Symbols for Legacy Computing)
     /// ```text
-    /// ▛▔▔▔▔▔▔▜
+    /// 🭽▔▔▔▔▔▔🭾
     /// ▏      ▕
     /// ▏      ▕
-    /// ▙▁▁▁▁▁▁▟
+    /// 🭼▁▁▁▁▁▁🭿
     /// ```
     pub fn new_large_eighth_block(sty: Style) -> Self {
         Self {
@@ -858,6 +952,9 @@ impl Bordered {
         }
     }
 
+    /// TODO I think the method described in this note is nolonger required after context system
+    /// refactor. Refactor out if possible.
+    ///
     /// NOTE SB-1
     /// THERE is a strange issue with the scrollbars here, using the HorizontalScrollbar as an
     /// example:
@@ -930,7 +1027,7 @@ impl Bordered {
                 ctx,
                 chs_top_left.clone(),
                 CornerPos::TopLeft,
-                properties.top_corner,
+                properties.top_corner.clone(),
             )
             .at(0.into(), 0.into());
             bordered.pane.add_element(Box::new(corner));
@@ -940,7 +1037,7 @@ impl Bordered {
                 ctx,
                 chs_top_right.clone(),
                 CornerPos::TopRight,
-                properties.top_corner,
+                properties.top_corner.clone(),
             )
             .at(DynVal::FULL.minus(1.into()), 0.into());
             bordered.pane.add_element(Box::new(corner));
@@ -950,7 +1047,7 @@ impl Bordered {
                 ctx,
                 chs_bottom_left.clone(),
                 CornerPos::BottomLeft,
-                properties.bottom_corner,
+                properties.bottom_corner.clone(),
             )
             .at(0.into(), DynVal::FULL.minus(1.into()));
             bordered.pane.add_element(Box::new(corner));
@@ -1267,6 +1364,10 @@ impl Corner {
         self
     }
 
+    pub fn set_ch(&self, ch: DrawCh) {
+        self.pane.set_content(ch.into());
+    }
+
     pub fn at(self, x: DynVal, y: DynVal) -> Self {
         self.pane.set_at(x, y);
         self
@@ -1288,6 +1389,19 @@ impl Element for Corner {
                 match me.kind {
                     MouseEventKind::Down(MouseButton::Left) => *self.dragging.borrow_mut() = true,
                     MouseEventKind::Drag(MouseButton::Left) => {}
+                    MouseEventKind::Up(MouseButton::Left) if *self.dragging.borrow() => {
+                        if let PropertyCnr::Collapser(cls) = property {
+                            let resps = cls.collapse();
+                            let resp = ResizeResponse {
+                                el_id: self.id(),
+                                left_dx,
+                                right_dx,
+                                top_dy,
+                                bottom_dy,
+                            };
+                            return (true, EventResponse::Resize(resp).into());
+                        }
+                    }
                     _ => *self.dragging.borrow_mut() = false,
                 }
             }
@@ -1321,7 +1435,7 @@ impl Element for Corner {
                             };
                             return (true, EventResponse::Move(resp).into());
                         }
-                        PropertyCnr::None => {}
+                        PropertyCnr::Collapser(..) | PropertyCnr::None => {}
                     }
                 }
                 _ => *self.dragging.borrow_mut() = false,

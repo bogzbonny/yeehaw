@@ -1,5 +1,15 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+05. Collapse Element Wrapper... -> same as accordion stack?
+     - This is just border with a special corner functionality.
+     - OLD
+       - should be able to collapse to a single line (vert or horiz) with custom
+         text. 
+       - when the element it open the collapse triangle button could just be a
+         single button or an entire line
+       - when an entire line is used it should be able to be draggable to effect
+         the size of the element
+
 05. introduce errors, remove all unwraps
 
 01. docs docs docs
@@ -52,6 +62,20 @@
        "button"" for example. This way the Color could be modifed at the theme
        level (day/night switch for example) and the colors would automatically
        refresh everywhere
+
+05. accordion stack
+     - Actually this is just a minor extension of a vertical stack. 
+     - need to make the Collapser Property for a whole border side and have it
+       work with the corner collapser.
+     - could have a static exterior dimension in which case one stack element
+       would always have to be open
+     - Optionally could allow for growing and shrinking its total size in which case it
+       could store its size if all the elements where minimized
+        - multiple stacks could be open in this situation
+     - Each header should remain when the element is open 
+     - optional vertical accordian stack
+
+
 
 05. ArbSelector users should be able to feed in which keys are used for moving
     forward or backwards instead of enforceing left and right
@@ -211,24 +235,6 @@
 
 05. tui export visual area to either DynamicImage, .png, (optionally or .ans)
       - useful for WIMP
-
-05. accordion stack
-     - could have a static exterior dimension in which case one stack element
-       would always have to be open
-     - Optionally could allow for growing and shrinking its total size in which case it
-       could store its size if all the elements where minimized
-        - multiple stacks could be open in this situation
-     - Each header should remain when the element is open 
-     - optional vertical accordian stack
-
-05. Collapse Element Wrapper... -> same as accordion stack?
-      - should be able to collapse to a single line (vert or horiz) with custom
-        text. 
-      - when the element it open the collapse triangle button could just be a
-        single button or an entire line
-      - when an entire line is used it should be able to be draggable to effect
-        the size of the element
-
 
 10. progress bar
 
