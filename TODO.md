@@ -4,6 +4,10 @@
 
 01. docs docs docs
 
+01. just use an image for the banner (and include the existing text as 
+    markdown comment
+
+
 01. add docs, crates button banners to github readme
 
 01. showcase example 
@@ -12,7 +16,8 @@
         - dial with window types: terminal, $editor, basic, scrollable,
           scrollable-border. 
         - dial which greys out for the border capability. 
-
+      - TWO dials as eyes (draw a mouth label below, maybe a nose too)
+        - make the mouth change with a button click 
       - a menu
          - some hidden funny stuff on some items
          - tic tac toe
@@ -29,6 +34,28 @@
 01. gifs gifs gifs
 
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+05. Theme Manager - it would be awesome to be able to just get the colors for
+    each element from a provided theme manager
+     - could replicate a new trait similar to Into<Color/Style> but where the
+       element KIND is actually fed in. regular colors could be provided but a 
+       single theme could just be passed around manually. 
+     - Alternatively maybe the theme could just be added into the Context (in
+       Rc<RefCell<>> like the hat). Furthermore the color could simply be taken 
+       from the theme in the default 'new' functions, then special colors could
+       be applied using with decorators. 
+        -  note even though the theme is in a context, an element could replace
+           the theme in a new context if there was going to be a different
+           sub-theme in a particular grouping of sub-elements
+     - Theme should use a map of of strings for the names of theme, so that its
+       fully extensible and future proof. 
+     - Note we could also make a new Color kind which is "Color from theme for
+       "button"" for example. This way the Color could be modifed at the theme
+       level (day/night switch for example) and the colors would automatically
+       refresh everywhere
+
+05. ArbSelector users should be able to feed in which keys are used for moving
+    forward or backwards instead of enforceing left and right
 
 05. integrate in is_dirty logic into the Pane to the drawing. if is_dirty is
     true the pane will call 'update_dirty_content', otherwise it will just
