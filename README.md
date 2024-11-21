@@ -67,7 +67,7 @@ pattern for sophisticated text based applications.
  - dials
 
 ## Planned Stuff:
- - put a whole dang yeehaw-TUI into a stateful ratatui widget, why not!
+ - embed a whole dang yeehaw TUI into stateful ratatui widget, why not!
  - mini-TUIs in the CLI (aka. use a TUI in-line with your command without taking
                          up the whole terminal)
  - accordion stack container
@@ -186,7 +186,7 @@ HAVE NO FEAR
 
 [notcurses](https://github.com/dankamongmen/notcurses) insane
 
-[jexer](https://gitlab.com/AutumnMeowMeow/jexer) what the heck!!!
+[jexer](https://gitlab.com/AutumnMeowMeow/jexer) what the [shell](https://www.youtube.com/watch?v=2_HT3ToY8G8&t=229s)!!!
 
 [ratatui](https://ratatui.rs/) obviously rocks, [well done](https://www.youtube.com/watch?v=9wm1D6Rk8TE)
 
@@ -194,12 +194,12 @@ HAVE NO FEAR
 
 ## Contributing 
 
-It'd be cool for this repo to become a mega repo. I want all sorts of funky
-widgets in this baby with first class support from this project. All ideas will
-be considered with an open mind, if you'd like to build and element and merge it
-into yeehaw It'd be an honour. If you'd like to build a element with highly
-specific needs and the current Element trait is non-satisfactory, let's upgrade
-it. 
+Yes! It'd be cool for this repo to become a mega repo. I want all sorts of funky
+widgets in this baby with first class support from this project (hiding behind
+feature flags to not gum up the compile times). All ideas will be considered
+with an open mind, if you'd like to build and element and merge it into yeehaw
+it'd be an honour. If you'd like to build a element with highly specific needs
+and the current Element trait is non-satisfactory, let's upgrade it. 
 This repo will be transitioning to dynamic ownership based on contributions in
 the future, so if your code becomes merged then your be gaining a specialized
 part piece of ownership in the project whenever dynamic ownership is integrated

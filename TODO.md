@@ -1,3 +1,13 @@
+40. WONT DO Subscription based events on common objects. 
+     - like leptos. any element could subscribe to an object (with any other
+       element can change). When that object changes it would send out events to
+       any other elements which subscribed to it... OR maybe it would just make
+       sense to use hooks this way you don't need all the parents of the
+       destination to also subscribe to the hook. USE HOOKS!
+       - Actually could be really easy with the Event Router - could use Custom
+         Event
+       - question is: what events should actually be broadcast?
+
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 05. Collapse Element Wrapper... -> same as accordion stack?
@@ -14,6 +24,8 @@
 
 01. docs docs docs
 
+01. README doc about performance and drawing
+
 01. just use an image for the banner (and include the existing text as 
     markdown comment
 
@@ -21,6 +33,7 @@
 
 01. showcase example 
       - sweet figlet text up top "Yeahaw showcase"
+      - right click menu with a popup window
       - window generator zone
         - dial with window types: terminal, $editor, basic, scrollable,
           scrollable-border. 
@@ -63,6 +76,8 @@
        level (day/night switch for example) and the colors would automatically
        refresh everywhere
 
+05. provide a sync api
+
 05. accordion stack
      - Actually this is just a minor extension of a vertical stack. 
      - need to make the Collapser Property for a whole border side and have it
@@ -74,8 +89,6 @@
         - multiple stacks could be open in this situation
      - Each header should remain when the element is open 
      - optional vertical accordian stack
-
-
 
 05. ArbSelector users should be able to feed in which keys are used for moving
     forward or backwards instead of enforceing left and right
@@ -257,6 +270,8 @@
     - maybe the easiest thing would be to allow for a character changes based on
       time (like a time gradient except for the character actually displayed).
        - could have position character changes too although maybe not as useful?
+    - SO many of the extended geometric shapes:
+       https://symbl.cc/en/unicode/blocks/geometric-shapes-extended/
     - 🌑🌒🌓🌔🌕🌖🌗🌘
     - braile movers
     - block movers of a few varieties
@@ -269,6 +284,7 @@
     - ◥◢◣◤
 
 20. labelled element slider bars / track bars
+      - Very similar to the radio bar.. except it expands
       - label locations (before or after bar)
       - label chs on slider: start, middle, end
       - inbetween label ch
@@ -318,6 +334,11 @@
          of the DrawCh based on the cell underneath of it
           - kind of like how transparency takes the cell underneath maybe
             the ChPlus could also have custom applications based on whats under
+
+10. Conditional ChPlus's 
+     - draw based on what's underneith
+     - would be nice to use for both wire connectors, as well as borders 
+       within borders (such as the shiftors within a stack
 
 20. Prompt-Window
      - basically an old school prompt window which says some biz then gives you
@@ -393,12 +414,6 @@
     └────────────┘
          BOOM        
 
-WIMP features
-
-10. TGIF
-
-30. tui get the final color under the cursor (more than just what's in the
-    element, get the full final output with alpha's applied)
 
 10. When the keyboard is matching an event combo provided to it, it should be
     recording a partial match (and a suggested maximum wait time to recheck for
@@ -451,7 +466,6 @@ WIMP features
     └───────┘└────────┘└──────────────┘└─────────────────┘
     [add another group]
 
-
 20. Add another cargo repo like AssertCmd for tui
      name: TuiTester?
      - https://github.com/aschey/tui-tester
@@ -475,7 +489,6 @@ WIMP features
      - preview mode where you could actually interact with all the elements
      - eventually the ability to load in code for an existing element then 
        play around with the sub-elements
-
 
 30. irregular gradient lines
     - OUTWARD
@@ -507,17 +520,13 @@ WIMP features
 
 40. tui get the color under the cursor pixel - useful for color pickers or from actual image pallets
 
-40. Subscription based events on common objects. 
-     - like leptos. any element could subscribe to an object (with any other
-       element can change). When that object changes it would send out events to
-       any other elements which subscribed to it... OR maybe it would just make
-       sense to use hooks this way you don't need all the parents of the
-       destination to also subscribe to the hook. USE HOOKS!
-       - Actually could be really easy with the Event Router - could use Custom
-         Event
-       - question is: what events should actually be broadcast?
-
 50. LOW PRIORITY CAN JUST USE $EDITOR. element: vim-style textbox
      - with two scrollbars the mode can be placed in 
        the decorations corner!
 
+_______________________________________________________________________
+WIMP reqd features
+
+10. TGIF
+30. tui get the final color under the cursor (more than just what's in the
+    element, get the full final output with alpha's applied)
