@@ -87,13 +87,8 @@ async fn main() -> Result<(), Error> {
     .at(DynVal::new_flex(0.1), DynVal::new_flex(0.6));
     el.add_element(Box::new(mtext));
 
-    let toggle = Toggle::new(
-        &ctx,
-        " ★ ".to_string(),
-        " ⏾ ".to_string(),
-        Box::new(|_, _| EventResponses::default()),
-    )
-    .at(DynVal::new_flex(0.1), DynVal::new_flex(0.4));
+    let toggle = Toggle::new(&ctx, " ★ ".to_string(), " ⏾ ".to_string())
+        .at(DynVal::new_flex(0.1), DynVal::new_flex(0.4));
     el.add_element(Box::new(toggle));
 
     // fill dd entries with 20 items

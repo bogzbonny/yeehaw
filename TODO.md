@@ -10,11 +10,9 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-05. introduce errors, remove all unwraps
-
 01. docs docs docs
 
-01. README doc about performance and drawing
+05. introduce errors, remove all unwraps
 
 01. just use an image for the banner (and include the existing text as 
     markdown comment
@@ -44,6 +42,8 @@
         in a textbox
 
 01. gif of showcase example
+
+01. README doc about performance and drawing
 
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -430,6 +430,10 @@
            problems.
     - fix the up-dir (..) button 
     - mouse functionality
+
+10. Emojiblast button 
+     - https://www.emojiblast.dev/demos/basic
+     - https://github.com/JoshuaKGoldberg/emoji-blast
 
 10. MousePossibility events: 
     - adjust mouse event logic to mirror that of the keyboard, each element
