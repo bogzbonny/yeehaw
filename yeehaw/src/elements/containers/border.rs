@@ -38,7 +38,7 @@ pub struct Bordered {
 }
 
 /// property for the border
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub enum PropertyCnr {
     /// just for display
     None,
@@ -46,11 +46,11 @@ pub enum PropertyCnr {
     DragResize,
     /// drag to move
     DragMove,
-
-    Collapser(CollapserCnr),
 }
 
-/// Collapsing triangle in the vertical direction
+// XXX
+/*
+// Collapsing triangle in the vertical direction
 #[derive(Clone)]
 pub struct CollapserCnr {
     is_collapsed: bool,
@@ -139,6 +139,7 @@ impl CollapserCnr {
         }
     }
 }
+*/
 
 /// property for the border
 /// including vertical scrollbar option
@@ -1027,7 +1028,7 @@ impl Bordered {
                 ctx,
                 chs_top_left.clone(),
                 CornerPos::TopLeft,
-                properties.top_corner.clone(),
+                properties.top_corner,
             )
             .at(0.into(), 0.into());
             bordered.pane.add_element(Box::new(corner));
@@ -1037,7 +1038,7 @@ impl Bordered {
                 ctx,
                 chs_top_right.clone(),
                 CornerPos::TopRight,
-                properties.top_corner.clone(),
+                properties.top_corner,
             )
             .at(DynVal::FULL.minus(1.into()), 0.into());
             bordered.pane.add_element(Box::new(corner));
@@ -1047,7 +1048,7 @@ impl Bordered {
                 ctx,
                 chs_bottom_left.clone(),
                 CornerPos::BottomLeft,
-                properties.bottom_corner.clone(),
+                properties.bottom_corner,
             )
             .at(0.into(), DynVal::FULL.minus(1.into()));
             bordered.pane.add_element(Box::new(corner));
@@ -1389,19 +1390,6 @@ impl Element for Corner {
                 match me.kind {
                     MouseEventKind::Down(MouseButton::Left) => *self.dragging.borrow_mut() = true,
                     MouseEventKind::Drag(MouseButton::Left) => {}
-                    MouseEventKind::Up(MouseButton::Left) if *self.dragging.borrow() => {
-                        if let PropertyCnr::Collapser(cls) = property {
-                            let resps = cls.collapse();
-                            let resp = ResizeResponse {
-                                el_id: self.id(),
-                                left_dx,
-                                right_dx,
-                                top_dy,
-                                bottom_dy,
-                            };
-                            return (true, EventResponse::Resize(resp).into());
-                        }
-                    }
                     _ => *self.dragging.borrow_mut() = false,
                 }
             }
@@ -1435,7 +1423,7 @@ impl Element for Corner {
                             };
                             return (true, EventResponse::Move(resp).into());
                         }
-                        PropertyCnr::Collapser(..) | PropertyCnr::None => {}
+                        PropertyCnr::None => {}
                     }
                 }
                 _ => *self.dragging.borrow_mut() = false,

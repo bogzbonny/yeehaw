@@ -10,16 +10,6 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-05. Collapse Element Wrapper... -> same as accordion stack?
-     - This is just border with a special corner functionality.
-     - OLD
-       - should be able to collapse to a single line (vert or horiz) with custom
-         text. 
-       - when the element it open the collapse triangle button could just be a
-         single button or an entire line
-       - when an entire line is used it should be able to be draggable to effect
-         the size of the element
-
 05. introduce errors, remove all unwraps
 
 01. docs docs docs
@@ -53,7 +43,7 @@
       - buncha widgets which dont do much but log their results 
         in a textbox
 
-01. gifs gifs gifs
+01. gif of showcase example
 
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -76,8 +66,6 @@
        level (day/night switch for example) and the colors would automatically
        refresh everywhere
 
-05. provide a sync api
-
 05. accordion stack
      - Actually this is just a minor extension of a vertical stack. 
      - need to make the Collapser Property for a whole border side and have it
@@ -90,8 +78,15 @@
      - Each header should remain when the element is open 
      - optional vertical accordian stack
 
-05. ArbSelector users should be able to feed in which keys are used for moving
-    forward or backwards instead of enforceing left and right
+05. Collapse Element Wrapper... -> same as accordion stack?
+     - This is just border with a special corner functionality.
+     - OLD
+       - should be able to collapse to a single line (vert or horiz) with custom
+         text. 
+       - when the element it open the collapse triangle button could just be a
+         single button or an entire line
+       - when an entire line is used it should be able to be draggable to effect
+         the size of the element
 
 05. integrate in is_dirty logic into the Pane to the drawing. if is_dirty is
     true the pane will call 'update_dirty_content', otherwise it will just
@@ -249,6 +244,21 @@
 05. tui export visual area to either DynamicImage, .png, (optionally or .ans)
       - useful for WIMP
 
+10. wire-connectors
+    - for visualizing routing of information between elements
+    - could be directional or non-directional (aka use an arrow or not)
+    - it would be cool if it could be used with a border pane WITHOUT
+      actually needing to do anything special in the border pane
+       - this may need new drawing logic to allow it perform conditional logic
+         of the DrawCh based on the cell underneath of it
+          - kind of like how transparency takes the cell underneath maybe
+            the ChPlus could also have custom applications based on whats under
+
+10. Conditional ChPlus's 
+     - draw based on what's underneith
+     - would be nice to use for both wire connectors, as well as borders 
+       within borders (such as the shiftors within a stack
+
 10. progress bar
 
    ██████████████                  end
@@ -283,6 +293,9 @@
     - ◢◥◤◣
     - ◥◢◣◤
 
+20. ArbSelector users should be able to feed in which keys are used for moving
+    forward or backwards instead of enforcing left and right
+
 20. labelled element slider bars / track bars
       - Very similar to the radio bar.. except it expands
       - label locations (before or after bar)
@@ -314,7 +327,7 @@
    ━━━━━━━━━━╋██████████████╋━━━━━━          
       ●━━━━━━━━━━━━━━━━━━━━● 
 
-10. dragable file-like icon object:
+20. dragable file-like/binary-like icon object:
        ┌────┐
        │prev│
        └────┘
@@ -325,20 +338,6 @@
 
 10. color-pallet element
 
-10. wire-connectors
-    - for visualizing routing of information between elements
-    - could be directional or non-directional (aka use an arrow or not)
-    - it would be cool if it could be used with a border pane WITHOUT
-      actually needing to do anything special in the border pane
-       - this may need new drawing logic to allow it perform conditional logic
-         of the DrawCh based on the cell underneath of it
-          - kind of like how transparency takes the cell underneath maybe
-            the ChPlus could also have custom applications based on whats under
-
-10. Conditional ChPlus's 
-     - draw based on what's underneith
-     - would be nice to use for both wire connectors, as well as borders 
-       within borders (such as the shiftors within a stack
 
 20. Prompt-Window
      - basically an old school prompt window which says some biz then gives you
@@ -351,7 +350,6 @@
 
 20. ScrollablePane: Ensure Element visible. Feed in an element-is then the scrollable pane 
     should move the view to ensure that the provided element is visible.
-
 
 20. listbox over entire elements
     - abstract the listbox selector except to allow for an
@@ -413,7 +411,6 @@
  T 0┤            │
     └────────────┘
          BOOM        
-
 
 10. When the keyboard is matching an event combo provided to it, it should be
     recording a partial match (and a suggested maximum wait time to recheck for
@@ -505,6 +502,8 @@
                                    │          │
                                    │          │
                                    └──────────┘
+
+30. provide a sync version of TUI 
 
 30. gradients on angles: get the actual aspect ratio from the terminal and integrate it in. 
 
