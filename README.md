@@ -177,10 +177,24 @@ HAVE NO FEAR
    the height of each cell. Currently the angles work under an assumption of
    equal cell width and height, sometimes it produces funny/unexpected results
    for a gradient which has is supposed to just be at a 45-degree angle and
+<<<<<<< Updated upstream
    occur only once across the whole target area (\x60DynVal::FULL\x60). Gradients on
    angles which are repetitive (`DynVal::fixed(..)`) work good, however the way
    the angle is interpreted will likely change to account for cell dimensions.
    Gradients on right-angles (0, 90, 180, 270 degrees) are stable.
+=======
+   occur only once across the whole target area (`DynVal::full()`). Gradients on
+   angles which are repetitive (`DynVal::fixed(..)`), or gradients on
+   right-angles (0, 90, 180, 270 degrees) are considerably more stable.
+ - Optimization: Lots of this code base has not been heavily optimized at the
+   granular level, although certain effort has been made for higher level
+   optimizations (printing cache, non-viewable elements are not rendered). As
+   yeehaw continues to evolve there will be a greater effort put into
+   optimizations, especially where visibly poor performance exists. Some
+   potential improvements will include more caching to `drawing` within
+   individual element implementions maybe even building in a few common caching
+   patterns which arise into the `pane` object.
+>>>>>>> Stashed changes
 
 ## Tribute
 
