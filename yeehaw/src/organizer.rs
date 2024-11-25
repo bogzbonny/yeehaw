@@ -746,9 +746,8 @@ impl ElementOrganizer {
         let z = el_details.loc.borrow().z;
         // current z of element
         // check if element exists at next z-index
-        if self.is_z_index_occupied(z + 1) {
+        if let Some(details2) = self.get_el_at_z_index(z + 1) {
             // recursively increment z-index of element at next z-index
-            let details2 = self.get_el_at_z_index(z + 1).unwrap();
             self.increment_z_index_for_el(details2);
         }
 

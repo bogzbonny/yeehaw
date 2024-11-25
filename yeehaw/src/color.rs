@@ -459,7 +459,7 @@ impl RadialGradient {
         start_clr.blend(ctx, x as u16, y as u16, end_clr, percent, BlendKind::Blend1)
 
         //// loop the pos if it is outside the maximum value
-        //let max_pos = self.grad.last().unwrap().0.get_val(max_ctx_val);
+        //let max_pos = self.grad.last().expect("TODO??").0.get_val(max_ctx_val);
         //while pos < 0 {
         //    pos += max_pos;
         //}
@@ -699,7 +699,12 @@ impl Gradient {
         };
 
         // loop the pos if it is outside the maximum value
-        let max_pos = self.grad.last().unwrap().0.get_val(max_ctx_val);
+        let max_pos = self
+            .grad
+            .last()
+            .expect("should not be empty")
+            .0
+            .get_val(max_ctx_val);
         while pos < 0 {
             pos += max_pos;
         }

@@ -190,7 +190,7 @@ impl Keyboard {
         }
         if !s.is_empty() {
             // convert s to a number
-            Some(s.parse::<u64>().unwrap()) // ignore errors this can't fail
+            Some(s.parse::<u64>().expect("impossible, must be number"))
         } else {
             None
         }

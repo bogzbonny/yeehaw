@@ -16,7 +16,7 @@ async fn main() -> Result<(), Error> {
     // if we don't use indirection then open_fn deadlocks
     let panebox = ParentPane::new(&ctx, "box");
 
-    let nav = FileNavPane::new(&ctx, std::env::current_dir().unwrap());
+    let nav = FileNavPane::new(&ctx, std::env::current_dir().expect("no current dir"));
     nav.pane.focus(&ctx);
 
     let nav_ = nav.clone();

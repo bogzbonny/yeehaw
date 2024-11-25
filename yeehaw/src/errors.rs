@@ -23,6 +23,12 @@ pub enum Error {
         source: arboard::Error,
         backtrace: Backtrace,
     },
+
+    #[snafu(context(false))]
+    TokioError {
+        source: tokio::sync::watch::error::SendError<bool>,
+        backtrace: Backtrace,
+    },
 }
 
 impl Error {

@@ -94,12 +94,12 @@ impl Tui {
         self.cup.eo.initialize(&ctx, Box::new(self.cup.clone()));
 
         sc_startup()?;
-        self.launch().await;
+        self.launch().await?;
         sc_closedown()?;
         Ok(())
     }
 
-    async fn launch(&mut self) {
+    async fn launch(&mut self) -> Result<(), Error> {
         let mut reader = EventStream::new();
         self.launch_instant = std::time::Instant::now();
 
@@ -114,13 +114,13 @@ impl Tui {
                             match ev {
                                 CTEvent::Key(key_ev) => {
                                     //debug!("tui Key event: {:?}", key_ev);
-                                    if self.process_event_key(key_ev) {
-                                        break;
+                                    if self.process_event_key(key_ev)? {
+                                        break Ok(());
                                     }
                                 }
                                 CTEvent::Mouse(mouse_ev) => {
-                                    if self.process_event_mouse(mouse_ev) {
-                                        break;
+                                    if self.process_event_mouse(mouse_ev)? {
+                                        break Ok(());
                                     }
                                 }
 
@@ -129,34 +129,34 @@ impl Tui {
                                     let loc = DynLocation::new_fixed(0, ctx.s.width as i32, 0, ctx.s.height as i32);
                                     // There should only be one element at index 0 in the upper level EO
                                     self.cup.eo.update_el_primary_location(self.main_el_id.clone(), loc);
-                                    self.cup.eo.get_element(&self.main_el_id).unwrap().receive_event(&ctx, Event::Resize{});
-                                    self.clear_screen();
-                                    self.render()
+                                    self.cup.eo.get_element(&self.main_el_id).expect("main element missing").receive_event(&ctx, Event::Resize{});
+                                    self.clear_screen()?;
+                                    self.render()?;
                                 }
                                 _ => {}
                             }
                         }
                         Some(Err(e)) => println!("Error: {e:?}\r"),
-                        None => break,
+                        None => break Ok(()),
                     }
                 }
 
                 Some(ev_res) = self.ev_recv.recv() => {
                     let (_, resps) = self.cup.eo.event_process(&self.context(), ev_res, Box::new(self.cup.clone()));
-                    if process_event_resps(resps, None) {
-                        break;
+                    if process_event_resps(resps, None)? {
+                        break Ok(());
                     }
                 }
 
                 // exit
                 _ = self.exit_recv.changed().fuse() => {
                     if *self.exit_recv.borrow() {
-                        break;
+                        break Ok(());
                     }
                 }
 
                 _ = delay => {
-                    self.render()
+                    self.render()?;
                 },
             };
         }
@@ -168,14 +168,14 @@ impl Tui {
 
     /// process_event_key handles key events
     ///                                                                 exit-tui
-    pub fn process_event_key(&mut self, key_ev: CTKeyEvent) -> bool {
+    pub fn process_event_key(&mut self, key_ev: CTKeyEvent) -> Result<bool, Error> {
         self.kb.add_ev(key_ev);
 
         if key_ev == Keyboard::KEY_CTRL_C && self.kill_on_ctrl_c {
             self.cup
                 .eo
                 .event_process(&self.context(), Event::Exit, Box::new(self.cup.clone()));
-            return true;
+            return Ok(true);
         }
 
         //debug!("tui Key event: {:?}", key_ev);
@@ -196,7 +196,7 @@ impl Tui {
             .get_destination_el_from_kb(&mut self.kb)
         else {
             //debug!("no dest");
-            return false;
+            return Ok(false);
         };
         let ctx = self.context();
         //debug!("tui destination: {:?}", dest);
@@ -211,7 +211,7 @@ impl Tui {
 
     /// process_event_mouse handles mouse events
     ///                                                                       exit-tui
-    pub fn process_event_mouse(&mut self, mouse_ev: CTMouseEvent) -> bool {
+    pub fn process_event_mouse(&mut self, mouse_ev: CTMouseEvent) -> Result<bool, Error> {
         let ctx = self.context();
         let (_, resps) =
             self.cup
@@ -221,14 +221,14 @@ impl Tui {
         process_event_resps(resps, None)
     }
 
-    pub fn clear_screen(&mut self) {
+    pub fn clear_screen(&mut self) -> Result<(), Error> {
         self.sc_last_flushed.clear();
         let mut sc = stdout();
         execute!(
             sc,
             crossterm::terminal::Clear(crossterm::terminal::ClearType::All)
-        )
-        .unwrap();
+        )?;
+        Ok(())
     }
 
     /// Render all elements, draws the screen using the DrawChPos array passed to it
@@ -242,7 +242,7 @@ impl Tui {
     /// provided by each element in order from the bottom of the tree to the top.
     /// This results in elements higher up the tree being able to overwrite elements
     /// lower down the tree.
-    pub fn render(&mut self) {
+    pub fn render(&mut self) -> Result<(), Error> {
         let mut sc = stdout();
         let ctx = self.context();
         let chs = self.cup.eo.all_drawing(&ctx);
@@ -272,16 +272,16 @@ impl Tui {
                     &mut sc,
                     MoveTo(x, y),
                     style::PrintStyledContent(sty.clone())
-                )
-                .unwrap();
+                )?;
                 self.sc_last_flushed.insert((x, y), sty);
                 do_flush = true;
             }
         }
 
         if do_flush {
-            sc.flush().unwrap();
+            sc.flush()?;
         }
+        Ok(())
     }
 
     pub fn is_ch_style_at_position_dirty(
@@ -294,17 +294,19 @@ impl Tui {
     }
 }
 
-pub fn process_event_resps(resps: EventResponses, exit_tx: Option<WatchSender<bool>>) -> bool {
+pub fn process_event_resps(
+    resps: EventResponses, exit_tx: Option<WatchSender<bool>>,
+) -> Result<bool, Error> {
     // only check for response for quit
     for resp in resps.iter() {
         if matches!(resp, EventResponse::Quit | EventResponse::Destruct) {
             if let Some(exit_tx) = exit_tx {
-                exit_tx.send(true).unwrap();
+                exit_tx.send(true)?;
             }
-            return true; // quit
+            return Ok(true); // quit
         }
     }
-    false
+    Ok(false)
 }
 
 #[derive(Clone)]
@@ -346,7 +348,12 @@ impl Parent for TuiParent {
         let b: Box<dyn Parent> = Box::new(self.clone());
         self.eo
             .partially_process_ev_resps(parent_ctx, child_el_id, &mut resps, &b);
-        process_event_resps(resps, Some(self.exit_tx.clone()));
+        if let Err(e) = process_event_resps(resps, Some(self.exit_tx.clone())) {
+            debug!(
+                "Error in propagate_responses_upward, process_event_resps: {:?}",
+                e
+            );
+        }
     }
 
     fn get_store_item(&self, key: &str) -> Option<Vec<u8>> {
@@ -397,7 +404,7 @@ pub fn set_panic_hook_with_closedown() {
 
     let prev_hook = panic::take_hook();
     panic::set_hook(Box::new(move |info| {
-        sc_closedown().unwrap();
+        sc_closedown().expect("failed to close screen");
         prev_hook(info);
     }));
 }

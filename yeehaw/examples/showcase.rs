@@ -16,7 +16,7 @@ async fn main() -> Result<(), Error> {
         &ctx,
         "yyeeehaaaaawww",
         figlet_rs::FIGfont::from_content(std::include_str!("../../assets/figlet/ANSI_Shadow.flf"))
-            .unwrap(),
+            .expect("missing asset"),
     )
     .with_style(Style::default().with_fg(Color::Gradient(gr)))
     .at(DynVal::new_flex(0.), DynVal::new_flex(0.));

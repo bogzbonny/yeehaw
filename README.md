@@ -53,7 +53,7 @@ pattern for sophisticated text based applications.
  - image viewer (thanks to [ratatui-image](https://github.com/benjajaja/ratatui-image))
  - windows
  - terminal (that can open other TUIs! ..dang)
- - figlet fonts (aka MONSTER FONTS)
+ - figlet fonts (aka MEGA TEXT)
  - buttons
  - checkboxes
  - dropdown-lists
@@ -89,14 +89,14 @@ pattern for sophisticated text based applications.
 Element ownership overview: TUI Elements are arranged in a hierarchical manner
 while retaining semi-autonomy. Events are routed from the top down, and
 responses can be propagated upwards from deeply nested elements. Additionally,
-elements may maintain direct communication lines with any other element through
-the use of hooks and other element-specific function variables (e.g. the button
-click function on a button element). Parent elements retain general authority
-over child elements; determining how the flow of events are channeled, and the
-location and size of child elements. Simple elements are only required to have
-spatial awareness within the confines provided to them - although autonomy is
-still given for them to change their ordering and position within their
-immediate parent element (with great power comes great responsibility).  
+elements may directly effect any other element through a variety of hooks (e.g.
+the button click function on a button element). Parent elements retain general
+authority over child elements; they determine how the flow of events are
+channeled, and the location and size of child elements. Simple elements are only
+required to have spatial awareness within the confines provided to them -
+although autonomy is still given for them to change their ordering and position
+within their immediate parent element (with great power comes great
+responsibility).  
 
 The core Element Trait has designed to be extensible for custom event/response
 kinds enabling developers to create entirely new sub-classes of elements which
@@ -177,15 +177,10 @@ HAVE NO FEAR
    the height of each cell. Currently the angles work under an assumption of
    equal cell width and height, sometimes it produces funny/unexpected results
    for a gradient which has is supposed to just be at a 45-degree angle and
-<<<<<<< Updated upstream
-   occur only once across the whole target area (\x60DynVal::FULL\x60). Gradients on
+   occur only once across the whole target area (`DynVal::full()`). Gradients on
    angles which are repetitive (`DynVal::fixed(..)`) work good, however the way
    the angle is interpreted will likely change to account for cell dimensions.
    Gradients on right-angles (0, 90, 180, 270 degrees) are stable.
-=======
-   occur only once across the whole target area (`DynVal::full()`). Gradients on
-   angles which are repetitive (`DynVal::fixed(..)`), or gradients on
-   right-angles (0, 90, 180, 270 degrees) are considerably more stable.
  - Optimization: Lots of this code base has not been heavily optimized at the
    granular level, although certain effort has been made for higher level
    optimizations (printing cache, non-viewable elements are not rendered). As
@@ -194,13 +189,12 @@ HAVE NO FEAR
    potential improvements will include more caching to `drawing` within
    individual element implementions maybe even building in a few common caching
    patterns which arise into the `pane` object.
->>>>>>> Stashed changes
 
 ## Tribute
 
 [notcurses](https://github.com/dankamongmen/notcurses) insane
 
-[jexer](https://gitlab.com/AutumnMeowMeow/jexer) what the [shell](https://www.youtube.com/watch?v=2_HT3ToY8G8&t=229s)!!!
+[jexer](https://gitlab.com/AutumnMeowMeow/jexer) what the shell!
 
 [ratatui](https://ratatui.rs/) obviously rocks, [well done](https://www.youtube.com/watch?v=9wm1D6Rk8TE)
 
@@ -212,10 +206,10 @@ Yes! It'd be cool for this repo to become a mega repo. I want all sorts of funky
 widgets in this baby with first class support from this project (hiding behind
 feature flags to not gum up the compile times). All ideas will be considered
 with an open mind, if you'd like to build and element and merge it into yeehaw
-it'd be an honour. If you'd like to build a element with highly specific needs
+it'd be an honour, if you'd like to build a element with highly specific needs
 and the current Element trait is non-satisfactory, let's upgrade it. 
-This repo will be transitioning to dynamic ownership based on contributions in
-the future, so if your code becomes merged then your be gaining a specialized
+In the future, This repo will be transitioning to dynamic ownership based on
+contributions, so if your code becomes merged then your be gaining a specialized
 part piece of ownership in the project whenever dynamic ownership is integrated
 in (more on that later!).
 

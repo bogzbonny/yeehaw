@@ -249,7 +249,12 @@ pub fn impl_pane_basics_from(attr: TokenStream, item: TokenStream) -> TokenStrea
             let fn_name = syn::Ident::new(
                 &format!(
                     "set_{}",
-                    tr_fn.sig.ident.to_string().strip_prefix("with_").unwrap()
+                    tr_fn
+                        .sig
+                        .ident
+                        .to_string()
+                        .strip_prefix("with_")
+                        .expect("Failed to strip with_ prefix")
                 ),
                 tr_fn.sig.ident.span(),
             );

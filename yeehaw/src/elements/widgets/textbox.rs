@@ -1325,11 +1325,14 @@ impl TextBoxInner {
                 if wr_ch.abs_pos.is_none() {
                     continue;
                 }
-                let sty = hook(ctx.clone(), wr_ch.abs_pos.unwrap(), existing_sty);
-                self.pane
-                    .content
-                    .borrow_mut()
-                    .change_style_at_xy(wr_ch.x_pos, wr_ch.y_pos, sty);
+                if let Some(abs_pos) = wr_ch.abs_pos {
+                    let sty = hook(ctx.clone(), abs_pos, existing_sty);
+                    self.pane.content.borrow_mut().change_style_at_xy(
+                        wr_ch.x_pos,
+                        wr_ch.y_pos,
+                        sty,
+                    );
+                }
             }
         }
 

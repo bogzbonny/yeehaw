@@ -76,8 +76,8 @@ pub fn log(content: String) {
             .create(true)
             .append(true)
             .open(file)
-            .unwrap();
-        writeln!(file, "{content}").unwrap();
+            .expect("could not open log file");
+        writeln!(file, "{content}").expect("could not write to log file");
     }
 }
 
@@ -91,7 +91,7 @@ pub fn clear() {
             .truncate(true)
             .write(true)
             .open(file)
-            .unwrap();
-        file.set_len(0).unwrap();
+            .expect("could not open log file");
+        file.set_len(0).expect("could not truncate log file");
     }
 }
