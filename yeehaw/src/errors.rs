@@ -41,6 +41,18 @@ pub enum Error {
         source: image::ImageError,
         backtrace: Backtrace,
     },
+
+    #[snafu(context(false))]
+    AnyhowError {
+        source: anyhow::Error,
+        backtrace: Backtrace,
+    },
+    //#[snafu(context(false))]
+    //PoisonError<std::sync::RwLockWriteGuard<'_, Parser>>
+    //Vt100Error {
+    //    source: std::sync::PoisonError<std::sync::RwLockWriteGuard<'static, vt100::Parser>>,
+    //    backtrace: Backtrace,
+    //},
 }
 
 impl Error {

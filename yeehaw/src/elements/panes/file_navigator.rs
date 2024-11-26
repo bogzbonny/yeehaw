@@ -289,7 +289,12 @@ impl File {
     }
 
     pub fn name(&self) -> String {
-        self.path.file_name().unwrap().to_str().unwrap().to_string()
+        self.path
+            .file_name()
+            .unwrap_or_default()
+            .to_str()
+            .unwrap_or_default()
+            .to_string()
     }
 
     /// Execute the file enter hook
@@ -344,7 +349,12 @@ impl Folder {
     }
 
     pub fn name(&self) -> String {
-        self.path.file_name().unwrap().to_str().unwrap().to_string()
+        self.path
+            .file_name()
+            .unwrap_or_default()
+            .to_str()
+            .unwrap_or_default()
+            .to_string()
     }
 
     pub fn indentation(&self) -> usize {
@@ -353,10 +363,26 @@ impl Folder {
 
     pub fn sub_items(&self, indent_size: usize) -> Vec<NavItem> {
         let mut sub_items = Vec::new();
-        let files = std::fs::read_dir(&self.path).unwrap();
+        let Ok(files) = std::fs::read_dir(&self.path) else {
+            log_err!("Error reading directory: {:?}", self.path);
+            return sub_items;
+        };
         for file in files {
-            let file = file.unwrap();
-            if file.file_type().unwrap().is_dir() {
+            let file = match file {
+                Ok(f) => f,
+                Err(e) => {
+                    log_err!("Error reading file: {:?}", e);
+                    continue;
+                }
+            };
+            let is_dir = match file.file_type() {
+                Ok(ft) => ft.is_dir(),
+                Err(e) => {
+                    log_err!("Error reading file type: {:?}", e);
+                    continue;
+                }
+            };
+            if is_dir {
                 let new_folder = Folder::new(
                     file.path(),
                     self.folder_style.clone(),

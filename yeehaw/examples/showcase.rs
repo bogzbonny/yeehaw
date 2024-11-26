@@ -2,8 +2,8 @@ use yeehaw::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    //yeehaw::debug::set_log_file("./debug_test.log".to_string());
-    //yeehaw::debug::clear();
+    //yeehaw::log::set_log_file("./debug_test.log".to_string());
+    //yeehaw::log::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let (mut tui, ctx) = Tui::new()?;
@@ -86,13 +86,8 @@ async fn main() -> Result<(), Error> {
     .at(DynVal::new_flex(0.1), DynVal::new_flex(0.1).plus_fixed(10));
     el.add_element(Box::new(rbs));
 
-    let toggle = Toggle::new(
-        &ctx,
-        " ★ ".to_string(),
-        " ⏾ ".to_string(),
-        Box::new(|_, _| EventResponses::default()),
-    )
-    .at(DynVal::new_flex(0.1), DynVal::new_flex(0.4));
+    let toggle = Toggle::new(&ctx, " ★ ".to_string(), " ⏾ ".to_string())
+        .at(DynVal::new_flex(0.1), DynVal::new_flex(0.4));
     el.add_element(Box::new(toggle));
 
     // fill dd entries with 20 items

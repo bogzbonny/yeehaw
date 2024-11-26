@@ -85,16 +85,24 @@ impl TermEditorPane {
                 let mut cmd = CommandBuilder::new(editor);
 
                 let prefix = format!("{}_", self.title.borrow());
-                let tempfile = tempfile::Builder::new()
-                    .prefix(prefix.as_str())
-                    .tempfile()
-                    .unwrap();
+                let Ok(tempfile) = tempfile::Builder::new().prefix(prefix.as_str()).tempfile()
+                else {
+                    log_err!("Could not create tempfile");
+                    return EventResponse::None;
+                };
                 if let Some(text) = text {
                     // set the tempfile contents to the text
-                    std::fs::write(tempfile.path(), text).unwrap();
+                    if let Err(e) = std::fs::write(tempfile.path(), text) {
+                        log_err!("Could not write to tempfile: {}", e);
+                        return EventResponse::None;
+                    }
                 }
 
-                let tempfile_path = tempfile.path().to_str().unwrap().to_string();
+                let tempfile_path = tempfile
+                    .path()
+                    .to_str()
+                    .expect("tempfile to_str is None")
+                    .to_string();
                 cmd.arg(tempfile_path.clone());
                 self.tempfile.replace(Some(tempfile));
                 self.just_created.replace(true);
@@ -102,8 +110,13 @@ impl TermEditorPane {
                 if let Ok(cwd) = std::env::current_dir() {
                     cmd.cwd(cwd);
                 }
-                let term = TerminalPane::new_with_builder(ctx, cmd);
-                self.pane.add_element(Box::new(term))
+                match TerminalPane::new_with_builder(ctx, cmd) {
+                    Ok(term) => self.pane.add_element(Box::new(term)),
+                    Err(e) => {
+                        log_err!("Could not open terminal: {}", e);
+                        EventResponse::None
+                    }
+                }
             }
             None => {
                 let start_text = self.editor_not_found_text.borrow().clone();
@@ -211,7 +224,11 @@ impl Element for TermEditorPane {
 
         // check for changes to the tempfile each draw
         if let Some(tempfile) = self.tempfile.borrow().as_ref() {
-            let tempfile_path = tempfile.path().to_str().unwrap().to_string();
+            let tempfile_path = tempfile
+                .path()
+                .to_str()
+                .expect("tempfile to_str is None")
+                .to_string();
             let Ok(file_contents) = std::fs::read_to_string(tempfile_path) else {
                 return out;
             };

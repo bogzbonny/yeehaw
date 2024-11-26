@@ -5,8 +5,8 @@ use {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    yeehaw::debug::set_log_file("./debug_test.log".to_string());
-    yeehaw::debug::clear();
+    yeehaw::log::set_log_file("./debug_test.log".to_string());
+    yeehaw::log::clear();
     //unsafe { std::env::set_var("RUST_BACKTRACE", "1") };
 
     let (mut tui, ctx) = Tui::new()?;
@@ -115,6 +115,7 @@ async fn main() -> Result<(), Error> {
         ctx_.s.height = 20;
         let title = format!("Pane {}", *counter_.borrow());
         let el = TerminalPane::new(&ctx_)
+            .expect("terminal pane can't be created")
             .with_width(DynVal::FULL)
             .with_height(DynVal::FULL);
 

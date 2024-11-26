@@ -8,42 +8,11 @@
          Event
        - question is: what events should actually be broadcast?
 
+05. introduce errors, remove all unwraps
+
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 01. docs docs docs
-
-05. introduce errors, remove all unwraps
-
-yeehaw/src/elements/panes/terminal_editor.rs:91:                    .unwrap();
-yeehaw/src/elements/panes/terminal_editor.rs:94:                    std::fs::write(tempfile.path(), text).unwrap();
-yeehaw/src/elements/panes/terminal_editor.rs:97:                let tempfile_path = tempfile.path().to_str().unwrap().to_string();
-yeehaw/src/elements/panes/terminal_editor.rs:215:            let tempfile_path = tempfile.path().to_str().unwrap().to_string();
-
-yeehaw/src/elements/panes/pane_selectable.rs:160:                    .unwrap(),
-yeehaw/src/elements/panes/pane_selectable.rs:176:                        .unwrap(),
-yeehaw/src/elements/panes/pane_selectable.rs:341:        let ev_bz = serde_json::to_vec(&s).unwrap();
-
-yeehaw/src/elements/panes/file_navigator.rs:294:        self.path.file_name().unwrap().to_str().unwrap().to_string()
-yeehaw/src/elements/panes/file_navigator.rs:294:        self.path.file_name().unwrap().to_str().unwrap().to_string()
-yeehaw/src/elements/panes/file_navigator.rs:349:        self.path.file_name().unwrap().to_str().unwrap().to_string()
-yeehaw/src/elements/panes/file_navigator.rs:349:        self.path.file_name().unwrap().to_str().unwrap().to_string()
-yeehaw/src/elements/panes/file_navigator.rs:358:        let files = std::fs::read_dir(&self.path).unwrap();
-yeehaw/src/elements/panes/file_navigator.rs:360:            let file = file.unwrap();
-yeehaw/src/elements/panes/file_navigator.rs:361:            if file.file_type().unwrap().is_dir() {
-
-yeehaw/src/elements/panes/terminal.rs:44:        let cwd = std::env::current_dir().unwrap();
-yeehaw/src/elements/panes/terminal.rs:62:            .unwrap();
-yeehaw/src/elements/panes/terminal.rs:65:        let mut child = pty_pair.slave.spawn_command(cmd).unwrap();
-yeehaw/src/elements/panes/terminal.rs:81:        let mut reader = pty_pair.master.try_clone_reader().unwrap();
-yeehaw/src/elements/panes/terminal.rs:89:                let size = reader.read(&mut buf).unwrap();
-yeehaw/src/elements/panes/terminal.rs:91:                    //killer_.kill().unwrap();
-yeehaw/src/elements/panes/terminal.rs:95:                parser_.write().unwrap().process(&processed_buf);
-yeehaw/src/elements/panes/terminal.rs:104:        let writer = BufWriter::new(pty_pair.master.take_writer().unwrap());
-yeehaw/src/elements/panes/terminal.rs:167:                    .unwrap()
-yeehaw/src/elements/panes/terminal.rs:177:                    .unwrap();
-yeehaw/src/elements/panes/terminal.rs:204:                .unwrap()
-yeehaw/src/elements/panes/terminal.rs:214:                .unwrap();
-yeehaw/src/elements/panes/terminal.rs:219:        let sc = self.parser.read().unwrap();
 
 01. just use an image for the banner (and include the existing text as 
     markdown comment

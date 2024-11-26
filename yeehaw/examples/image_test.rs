@@ -2,8 +2,8 @@ use yeehaw::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    //yeehaw::debug::set_log_file("./debug_test.log".to_string());
-    //yeehaw::debug::clear();
+    //yeehaw::log::set_log_file("./debug_test.log".to_string());
+    //yeehaw::log::clear();
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let (mut tui, ctx) = Tui::new()?;

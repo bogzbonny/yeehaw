@@ -151,14 +151,22 @@ impl SelectablePane {
                 let rec = ReceivableEventChanges::default().with_add_evs(self.receivable().0);
                 resps.push(EventResponse::ReceivableEventChanges(rec));
                 resps.push(EventResponse::BringToFront);
-                resps.push(EventResponse::Custom(
-                    Self::RESP_SELECTABILITY_WAS_SET.to_string(),
-                    serde_json::to_vec(&SelectabilityResp {
-                        sel: s,
-                        id: self.id().clone(),
-                    })
-                    .unwrap(),
-                ));
+
+                let bz = serde_json::to_vec(&SelectabilityResp {
+                    sel: s,
+                    id: self.id().clone(),
+                });
+                match bz {
+                    Ok(bz) => {
+                        resps.push(EventResponse::Custom(
+                            Self::RESP_SELECTABILITY_WAS_SET.to_string(),
+                            bz,
+                        ));
+                    }
+                    Err(e) => {
+                        log_err!("error serializing selectability resp: {}", e);
+                    }
+                }
             }
             Selectability::Ready | Selectability::Unselectable => {
                 if let Some(Selectability::Selected) = prev_sel {
@@ -167,14 +175,21 @@ impl SelectablePane {
                     );
                     resps.push(EventResponse::ReceivableEventChanges(rec));
 
-                    resps.push(EventResponse::Custom(
-                        Self::RESP_SELECTABILITY_WAS_SET.to_string(),
-                        serde_json::to_vec(&SelectabilityResp {
-                            sel: s,
-                            id: self.id().clone(),
-                        })
-                        .unwrap(),
-                    ));
+                    let bz = serde_json::to_vec(&SelectabilityResp {
+                        sel: s,
+                        id: self.id().clone(),
+                    });
+                    match bz {
+                        Ok(bz) => {
+                            resps.push(EventResponse::Custom(
+                                Self::RESP_SELECTABILITY_WAS_SET.to_string(),
+                                bz,
+                            ));
+                        }
+                        Err(e) => {
+                            log_err!("error serializing selectability resp: {}", e);
+                        }
+                    }
                 }
                 // NOTE this needs to after the prev line or else receivable will return the
                 // wrong value
@@ -335,11 +350,19 @@ impl ParentPaneOfSelectable {
     fn set_selectability_for_el(
         &self, ctx: &Context, el_id: &ElementID, s: Selectability,
     ) -> EventResponses {
-        let ev_bz = serde_json::to_vec(&s).unwrap();
-        let ev = Event::Custom(Self::EV_SET_SELECTABILITY.to_string(), ev_bz);
-        let mut resps = self.pane.send_event_to_el(ctx, el_id, ev);
-        self.partially_process_sel_resps(ctx, &mut resps);
-        resps
+        let ev_bz = serde_json::to_vec(&s);
+        match ev_bz {
+            Ok(ev_bz) => {
+                let ev = Event::Custom(Self::EV_SET_SELECTABILITY.to_string(), ev_bz);
+                let mut resps = self.pane.send_event_to_el(ctx, el_id, ev);
+                self.partially_process_sel_resps(ctx, &mut resps);
+                resps
+            }
+            Err(e) => {
+                log_err!("error serializing selectability: {}", e);
+                EventResponses::default()
+            }
+        }
     }
 
     pub fn remove_element(&self, el_id: &ElementID) {

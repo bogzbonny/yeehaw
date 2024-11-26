@@ -2,11 +2,7 @@
 /// https:///github.com/a-kenji/tui-term/blob/development/examples/smux.rs
 /// (MIT LICENSE)
 use {
-    crate::{
-        ChPlus, Color, Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID,
-        Event, EventResponse, EventResponses, KeyPossibility, Pane, Parent, Priority,
-        ReceivableEvent, ReceivableEventChanges, SelfReceivableEvents, Style, ZIndex,
-    },
+    crate::*,
     compact_str::CompactString,
     crossterm::event::{KeyCode, KeyEvent, KeyModifiers},
     portable_pty::{native_pty_system, ChildKiller, CommandBuilder, MasterPty, PtySize},
@@ -40,29 +36,27 @@ pub struct TerminalPane {
 impl TerminalPane {
     pub const KIND: &'static str = "terminal_pane";
 
-    pub fn new(ctx: &Context) -> Self {
-        let cwd = std::env::current_dir().unwrap();
+    pub fn new(ctx: &Context) -> Result<Self, Error> {
+        let cwd = std::env::current_dir()?;
         let mut cmd = CommandBuilder::new_default_prog();
         cmd.cwd(cwd);
         Self::new_with_builder(ctx, cmd)
     }
 
-    pub fn new_with_builder(ctx: &Context, cmd: CommandBuilder) -> Self {
+    pub fn new_with_builder(ctx: &Context, cmd: CommandBuilder) -> Result<Self, Error> {
         let size = ctx.s;
         let pane = Pane::new(ctx, Self::KIND);
 
         let pty_system = native_pty_system();
-        let pty_pair = pty_system
-            .openpty(PtySize {
-                rows: size.height,
-                cols: size.width,
-                pixel_width: 0,
-                pixel_height: 0,
-            })
-            .unwrap();
+        let pty_pair = pty_system.openpty(PtySize {
+            rows: size.height,
+            cols: size.width,
+            pixel_width: 0,
+            pixel_height: 0,
+        })?;
         let parser = Arc::new(RwLock::new(vt100::Parser::new(size.height, size.width, 0)));
 
-        let mut child = pty_pair.slave.spawn_command(cmd).unwrap();
+        let mut child = pty_pair.slave.spawn_command(cmd)?;
         let killer = child.clone_killer();
         let ev_tx_ = ctx.ev_tx.clone();
         let n = Self::custom_destruct_event_name(pane.id());
@@ -78,30 +72,33 @@ impl TerminalPane {
             let _ = ev_tx_.blocking_send(Event::Custom(n, Vec::with_capacity(0)));
         });
 
-        let mut reader = pty_pair.master.try_clone_reader().unwrap();
+        let mut reader = pty_pair.master.try_clone_reader()?;
         let parser_ = parser.clone();
 
         spawn_blocking(move || {
-            //debug!("Terminal 2nd thread started");
             let mut processed_buf = Vec::new();
             let mut buf = [0u8; 8192];
             loop {
-                let size = reader.read(&mut buf).unwrap();
+                let size = reader.read(&mut buf)?;
                 if size == 0 {
                     //killer_.kill().unwrap();
                     break;
                 }
                 processed_buf.extend_from_slice(&buf[..size]);
-                parser_.write().unwrap().process(&processed_buf);
+                let Ok(mut parser) = parser_.write() else {
+                    log_err!("error getting vt100 parser");
+                    break;
+                };
+                parser.process(&processed_buf);
 
                 // Clear the processed portion of the buffer
                 processed_buf.clear();
             }
-            //debug!("Terminal 2st thread complete")
+            Ok::<(), Error>(())
         });
 
         // NOTE can only take the writer once
-        let writer = BufWriter::new(pty_pair.master.take_writer().unwrap());
+        let writer = BufWriter::new(pty_pair.master.take_writer()?);
 
         let cur = DrawCh::new(
             ChPlus::Transparent,
@@ -118,7 +115,7 @@ impl TerminalPane {
             pty_killer: Rc::new(RefCell::new(killer)),
         };
         out.pane.set_self_receivable_events(out.receivable_events());
-        out
+        Ok(out)
     }
 
     pub fn receivable_events(&self) -> SelfReceivableEvents {
@@ -150,6 +147,22 @@ impl TerminalPane {
         self.pane.set_z(z);
         self
     }
+
+    pub fn resize_pty(&self, ctx: &Context) {
+        let Ok(mut parser) = self.parser.write() else {
+            log_err!("TerminalPane: failed to write to parser");
+            return;
+        };
+        parser.set_size(ctx.s.height, ctx.s.width);
+        if let Err(e) = self.master_pty.borrow().resize(PtySize {
+            rows: ctx.s.height,
+            cols: ctx.s.width,
+            pixel_width: 0,
+            pixel_height: 0,
+        }) {
+            log_err!("TerminalPane: failed to resize pty: {}", e);
+        }
+    }
 }
 
 #[yeehaw_derive::impl_element_from(pane)]
@@ -162,19 +175,7 @@ impl Element for TerminalPane {
                 return (captured, EventResponses::default());
             }
             Event::Resize => {
-                self.parser
-                    .write()
-                    .unwrap()
-                    .set_size(ctx.s.height, ctx.s.width);
-                self.master_pty
-                    .borrow()
-                    .resize(PtySize {
-                        rows: ctx.s.height,
-                        cols: ctx.s.width,
-                        pixel_width: 0,
-                        pixel_height: 0,
-                    })
-                    .unwrap();
+                self.resize_pty(ctx);
             }
             Event::Exit => {
                 // this will error is the pty_killer has already been killed
@@ -199,24 +200,15 @@ impl Element for TerminalPane {
             true
         };
         if resize {
-            self.parser
-                .write()
-                .unwrap()
-                .set_size(ctx.s.height, ctx.s.width);
-            self.master_pty
-                .borrow()
-                .resize(PtySize {
-                    rows: ctx.s.height,
-                    cols: ctx.s.width,
-                    pixel_width: 0,
-                    pixel_height: 0,
-                })
-                .unwrap();
+            self.resize_pty(ctx);
         }
 
         let mut out = vec![];
 
-        let sc = self.parser.read().unwrap();
+        let Ok(sc) = self.parser.read() else {
+            log_err!("TerminalPane: failed to read parser");
+            return out;
+        };
         let screen = sc.screen();
 
         let cols = ctx.s.width;
