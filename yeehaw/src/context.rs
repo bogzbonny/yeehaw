@@ -45,7 +45,6 @@ impl Default for Context {
 }
 
 impl Context {
-    // TODO return error
     pub fn new_context_for_screen_no_dur(hat: &SortingHat, ev_tx: Sender<Event>) -> Context {
         let (xmax, ymax) = crossterm::terminal::size().expect("no terminal size");
         Context {
@@ -59,7 +58,6 @@ impl Context {
         }
     }
 
-    // TODO return error
     pub fn new_context_for_screen(
         launch_instant: std::time::Instant, hat: &SortingHat, ev_tx: Sender<Event>,
     ) -> Context {

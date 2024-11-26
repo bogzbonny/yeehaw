@@ -1,5 +1,5 @@
 #[macro_use]
-pub mod debug; // note, must be first for the macro to work throughout
+pub mod log; // note, must be first for the macro to work throughout
 
 pub mod ch;
 pub mod color;

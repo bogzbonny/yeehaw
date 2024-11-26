@@ -114,6 +114,9 @@ impl ArbSelector {
         Self::new_inner(ctx, drawing_base, positions_map, selection_changes)
     }
 
+    // TODO it would be good to combine drawing_base and positions_map into a single type
+    // so that no incorrect dimensions can be input
+    //
     // selection changes: usize is the position
     pub fn new_inner(
         ctx: &Context, drawing_base: DrawChs2D, positions_map: Vec<Vec<Option<usize>>>,
@@ -125,7 +128,7 @@ impl ArbSelector {
         let pos_height = positions_map.len();
         let pos_width = positions_map[0].len();
         if base_height != pos_height || base_width != pos_width {
-            panic!(
+            log_err!(
                 "Drawing base and positions map must be the same size. Base: {}x{}, Positions: {}x{}",
                 base_height, base_width, pos_height, pos_width
             );

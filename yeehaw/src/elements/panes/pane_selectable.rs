@@ -111,8 +111,8 @@ impl SelectablePane {
         };
         match serde_json::from_slice(&bz) {
             Ok(v) => v,
-            Err(_e) => {
-                // TODO log error
+            Err(e) => {
+                log_err!("error deserializing selectability: {}", e);
                 Selectability::Ready
             }
         }
@@ -121,8 +121,8 @@ impl SelectablePane {
     fn set_attr_selectability(&self, s: Selectability) {
         let bz = match serde_json::to_vec(&s) {
             Ok(v) => v,
-            Err(_e) => {
-                // TODO log error
+            Err(e) => {
+                log_err!("error serializing selectability: {}", e);
                 return;
             }
         };
@@ -199,7 +199,6 @@ impl Element for SelectablePane {
     }
 
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        //debug!("IN select, id: {}, ev: {:?}", self.id(), ev);
         let (captured, mut resps) = match ev {
             Event::Mouse(me) => {
                 if matches!(me.kind, MouseEventKind::Up(MouseButton::Left)) {
@@ -216,7 +215,6 @@ impl Element for SelectablePane {
                         | MouseEventKind::Up(MouseButton::Left)
                 ) {
                     let resps = self.deselect();
-                    //debug!("deselect, id: {}, resps: {:?}", self.id(), resps);
                     (false, resps)
                 } else {
                     (false, EventResponses::default())
@@ -226,8 +224,8 @@ impl Element for SelectablePane {
                 if ev_name == ParentPaneOfSelectable::EV_SET_SELECTABILITY {
                     match serde_json::from_slice(bz) {
                         Ok(v) => (true, self.set_selectability(v)),
-                        Err(_e) => {
-                            // TODO log error
+                        Err(e) => {
+                            log_err!("error deserializing selectability: {}", e);
                             (true, EventResponses::default())
                         }
                     }
@@ -242,7 +240,6 @@ impl Element for SelectablePane {
         }
         let (captured, resps_) = self.pane.receive_event(ctx, ev);
         resps.extend(resps_);
-        //debug!("OUT deselect, id: {}, resps: {:?}", self.id(), resps);
         (captured, resps)
     }
 }
@@ -327,8 +324,8 @@ impl ParentPaneOfSelectable {
         let bz = self.pane.get_element_attribute(el_id, ATTR_SELECTABILITY)?;
         let sel = match serde_json::from_slice(&bz) {
             Ok(v) => v,
-            Err(_e) => {
-                // TODO log error
+            Err(e) => {
+                log_err!("error deserializing selectability: {}", e);
                 return None;
             }
         };
@@ -376,8 +373,8 @@ impl ParentPaneOfSelectable {
                 if k == SelectablePane::RESP_SELECTABILITY_WAS_SET {
                     let s_resp: SelectabilityResp = match serde_json::from_slice(v_bz) {
                         Ok(v) => v,
-                        Err(_e) => {
-                            // TODO log error
+                        Err(e) => {
+                            log_err!("error deserializing selectability resp: {}", e);
                             continue;
                         }
                     };

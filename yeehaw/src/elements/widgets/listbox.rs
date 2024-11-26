@@ -147,10 +147,7 @@ impl ListBox {
 
         // wire the scrollbar to the listbox
         let pane_ = self.inner.borrow().pane.clone();
-        let hook = Box::new(move |ctx, y| {
-            debug!("listbox scrollbar hook called, y: {}", y);
-            pane_.set_content_y_offset(&ctx, y)
-        });
+        let hook = Box::new(move |ctx, y| pane_.set_content_y_offset(&ctx, y));
         *sb.position_changed_hook.borrow_mut() = Some(hook);
         *self.scrollbar.borrow_mut() = Some(sb.clone());
         self.pane.pane.add_element(Box::new(sb.clone()));

@@ -658,8 +658,8 @@ impl Element for MenuBar {
 
         let menu_style_bz = match serde_json::to_vec(&*self.menu_style.borrow()) {
             Ok(v) => v,
-            Err(_e) => {
-                // TODO log error
+            Err(e) => {
+                log_err!("error serializing menu style: {}", e);
                 return vec![];
             }
         };
@@ -716,8 +716,8 @@ impl Element for MenuItem {
 
         let m_sty: MenuStyle = match serde_json::from_slice(md) {
             Ok(v) => v,
-            Err(_e) => {
-                // TODO log error
+            Err(e) => {
+                log_err!("error deserializing menu style: {}", e);
                 return vec![];
             }
         };

@@ -80,25 +80,6 @@ impl EventPrioritizer {
 
     pub fn include(&mut self, id: &ElementID, priority_ev: &Vec<(ReceivableEvent, Priority)>) {
         for pe in priority_ev {
-            // check for priority overloading.
-            // Panic if two children have registered the same ev/cmd at the same priority
-            // (excluding Unfocused). If false the event will be sent to the ev/cmd to which
-            // happens to be first in the prioritizer
-            //#[cfg(debug_assertions)]
-            //if pe.1 != Priority::Unfocused {
-            //    if let Some(existing_id) = self.get_priority_ev_id(pe) {
-            //        if existing_id != *id {
-            //            panic!(
-            //                "EvPrioritizer found at least 2 events registered to different \
-            //                 elements with the same priority. \
-            //                 \n\texisting-id: {existing_id} \
-            //                 \n\tregistering-id: {id}\n\tpr: {}\n\tev: {:?}",
-            //                pe.1, pe.0
-            //            )
-            //        }
-            //    }
-            //}
-
             let peie = PriorityIdEvent::new(pe.1, id.clone(), pe.0.clone());
             self.0.push(peie);
             self.0.sort();

@@ -8,12 +8,19 @@
 /// being debugged
 use {once_cell::sync::Lazy, parking_lot::RwLock, std::fs::OpenOptions, std::io::prelude::*};
 
-//let s = std::fmt::format(std::alloc::__export::format_args!($($arg)*));
 #[macro_export]
 macro_rules! debug {
     ($($arg:tt)*) => {{
         let s = format!($($arg)*);
-        $crate::debug::log(s);
+        $crate::log::log(s);
+    }}
+}
+
+#[macro_export]
+macro_rules! log_err {
+    ($($arg:tt)*) => {{
+        let s = format!($($arg)*);
+        $crate::log::log_or_panic(s);
     }}
 }
 
@@ -54,6 +61,13 @@ pub fn disable() {
 
 pub fn set_log_file(file: String) {
     (GLOBAL_DEBUGGER.write()).log_file = Some(file);
+}
+
+/// log or panic either logs the content or panics if the build mode is non-release
+pub fn log_or_panic(content: String) {
+    log(content.clone());
+    #[cfg(debug_assertions)]
+    panic!("{}", content);
 }
 
 pub fn log(content: String) {

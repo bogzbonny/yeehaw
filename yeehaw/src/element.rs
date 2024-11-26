@@ -186,16 +186,14 @@ pub trait Element: DynClone {
 
     fn get_description(&self) -> Option<String> {
         let bz = self.get_attribute(ATTR_DESCRIPTION)?;
-        match serde_json::from_slice(&bz) {
-            Ok(v) => v,
-            Err(_e) => None,
-        }
+        serde_json::from_slice(&bz).unwrap_or_default()
     }
 
     fn set_description(&self, desc: String) {
         let bz = match serde_json::to_vec(&desc) {
             Ok(v) => v,
-            Err(_e) => {
+            Err(e) => {
+                log_err!("failed to serialize description: {}", e);
                 return; // TODO log error
             }
         };

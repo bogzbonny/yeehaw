@@ -92,8 +92,8 @@ impl Element for RightClickMenu {
                 // of the right click.
                 let pos_bz = match serde_json::to_vec(&*self.pos.borrow()) {
                     Ok(v) => v,
-                    Err(_e) => {
-                        // TODO log error
+                    Err(e) => {
+                        log_err!("failed to serialize right click menu position: {}", e);
                         return (true, EventResponses::default());
                     }
                 };

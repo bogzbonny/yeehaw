@@ -38,7 +38,9 @@ async fn main() -> Result<(), Error> {
     let ctx_ = ctx.clone();
     let add_button_click_fn = Box::new(move |_, _| {
         if hstack_.len() == 3 {
-            let el = ImageViewer::new(&ctx_, &img_path).with_width(hstack_.avg_width(&ctx_));
+            let el = ImageViewer::new(&ctx_, &img_path)
+                .expect("could not create image viewer")
+                .with_width(hstack_.avg_width(&ctx_));
             hstack_.push(Box::new(el));
             EventResponses::default()
         } else {

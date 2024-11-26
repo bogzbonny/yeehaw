@@ -29,11 +29,15 @@ impl Dial {
     const DEFAULT_LABEL_SEL_COLOR: Color = Color::YELLOW;
 
     /// create a new Dial, the Dial spacing will be chosen based on the number of labels
-    pub fn new<S: Into<String>>(ctx: &Context, labels: Vec<S>) -> Self {
+    pub fn new<S: Into<String>>(ctx: &Context, mut labels: Vec<S>) -> Self {
         let spacing = match labels.len() {
             0..=8 => Spacing::Compact,
             9..=12 => Spacing::SemiCompact,
-            _ => panic!("Dial can only have 12 or fewer labels"), // TODO error
+            13.. => {
+                log_err!("Dial can only have 12 or fewer labels");
+                labels.truncate(12);
+                Spacing::SemiCompact
+            }
         };
 
         // assign positions to labels
@@ -192,7 +196,7 @@ impl Spacing {
                 5 => -3,
                 6 => -3,
                 7 => -1,
-                _ => panic!("Invalid option, UltraCompact dial only has 8 options"), // TODO error
+                _ => panic!("Invalid option, UltraCompact dial only has 8 options"), 
             },
             Spacing::Compact => match option {
                 0 => 2,
@@ -203,7 +207,7 @@ impl Spacing {
                 5 => -4,
                 6 => -4,
                 7 => -2,
-                _ => panic!("Invalid option, Compact dial only has 8 options"), // TODO error
+                _ => panic!("Invalid option, Compact dial only has 8 options"), 
             },
             Spacing::SemiCompact => match option {
                 0 => 1,
@@ -218,7 +222,7 @@ impl Spacing {
                 9 => -5,
                 10 => -4,
                 11 => -1,
-                _ => panic!("Invalid option, SemiCompact dial only has 12 options"), // TODO error
+                _ => panic!("Invalid option, SemiCompact dial only has 12 options"), 
             },
             Spacing::Spacious => match option {
                 0 => 1,
@@ -233,7 +237,7 @@ impl Spacing {
                 9 => -6,
                 10 => -4,
                 11 => -1,
-                _ => panic!("Invalid option, Spacious dial only has 12 options"), // TODO error
+                _ => panic!("Invalid option, Spacious dial only has 12 options"), 
             },
         }
     }

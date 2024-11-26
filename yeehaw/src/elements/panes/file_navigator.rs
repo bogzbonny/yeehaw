@@ -120,8 +120,6 @@ impl FileNavPane {
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for FileNavPane {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        debug!("FileNav({})::receive_event_inner: ev={:?}", self.id(), ev);
-
         match ev {
             Event::KeyCombo(ke) => match true {
                 _ if ke[0] == KB::KEY_J || ke[0] == KB::KEY_DOWN => {

@@ -349,7 +349,7 @@ impl Parent for TuiParent {
         self.eo
             .partially_process_ev_resps(parent_ctx, child_el_id, &mut resps, &b);
         if let Err(e) = process_event_resps(resps, Some(self.exit_tx.clone())) {
-            debug!(
+            log_err!(
                 "Error in propagate_responses_upward, process_event_resps: {:?}",
                 e
             );

@@ -13,29 +13,15 @@
 01. docs docs docs
 
 05. introduce errors, remove all unwraps
-     - replace "debug" with "log"
 
-yeehaw/src/context.rs:48:    // TODO return error
-yeehaw/src/context.rs:62:    // TODO return error
-yeehaw/src/organizer.rs:289:            // TODO log error
-yeehaw/src/element.rs:199:                return; // TODO log error
-yeehaw/src/elements/widgets/dial.rs:36:            _ => panic!("Dial can only have 12 or fewer labels"), // TODO error
-yeehaw/src/elements/widgets/dial.rs:195:                _ => panic!("Invalid option, UltraCompact dial only has 8 options"), // TODO error
-yeehaw/src/elements/widgets/dial.rs:206:                _ => panic!("Invalid option, Compact dial only has 8 options"), // TODO error
-yeehaw/src/elements/widgets/dial.rs:221:                _ => panic!("Invalid option, SemiCompact dial only has 12 options"), // TODO error
-yeehaw/src/elements/widgets/dial.rs:236:                _ => panic!("Invalid option, Spacious dial only has 12 options"), // TODO error
-yeehaw/src/elements/panes/pane_selectable.rs:115:                // TODO log error
-yeehaw/src/elements/panes/pane_selectable.rs:125:                // TODO log error
-yeehaw/src/elements/panes/pane_selectable.rs:230:                            // TODO log error
-yeehaw/src/elements/panes/pane_selectable.rs:331:                // TODO log error
-yeehaw/src/elements/panes/pane_selectable.rs:380:                            // TODO log error
-yeehaw/src/elements/misc/menu.rs:662:                // TODO log error
-yeehaw/src/elements/misc/menu.rs:720:                // TODO log error
-yeehaw/src/elements/misc/menu_right_click.rs:96:                        // TODO log error
+yeehaw/src/elements/panes/terminal_editor.rs:91:                    .unwrap();
+yeehaw/src/elements/panes/terminal_editor.rs:94:                    std::fs::write(tempfile.path(), text).unwrap();
+yeehaw/src/elements/panes/terminal_editor.rs:97:                let tempfile_path = tempfile.path().to_str().unwrap().to_string();
+yeehaw/src/elements/panes/terminal_editor.rs:215:            let tempfile_path = tempfile.path().to_str().unwrap().to_string();
 
-yeehaw/src/elements/widgets/textbox.rs:610:                        tb1.cut_to_clipboard(&ctx).unwrap()
-yeehaw/src/elements/widgets/textbox.rs:616:                        tb2.copy_to_clipboard().unwrap();
-yeehaw/src/elements/widgets/textbox.rs:623:                        tb3.paste_from_clipboard(&ctx).unwrap()
+yeehaw/src/elements/panes/pane_selectable.rs:160:                    .unwrap(),
+yeehaw/src/elements/panes/pane_selectable.rs:176:                        .unwrap(),
+yeehaw/src/elements/panes/pane_selectable.rs:341:        let ev_bz = serde_json::to_vec(&s).unwrap();
 
 yeehaw/src/elements/panes/file_navigator.rs:294:        self.path.file_name().unwrap().to_str().unwrap().to_string()
 yeehaw/src/elements/panes/file_navigator.rs:294:        self.path.file_name().unwrap().to_str().unwrap().to_string()
@@ -44,20 +30,6 @@ yeehaw/src/elements/panes/file_navigator.rs:349:        self.path.file_name().un
 yeehaw/src/elements/panes/file_navigator.rs:358:        let files = std::fs::read_dir(&self.path).unwrap();
 yeehaw/src/elements/panes/file_navigator.rs:360:            let file = file.unwrap();
 yeehaw/src/elements/panes/file_navigator.rs:361:            if file.file_type().unwrap().is_dir() {
-
-yeehaw/src/elements/widgets/image_viewer.rs:26:            .unwrap()
-yeehaw/src/elements/widgets/image_viewer.rs:28:            .unwrap();
-
-yeehaw/src/elements/panes/terminal_editor.rs:91:                    .unwrap();
-yeehaw/src/elements/panes/terminal_editor.rs:94:                    std::fs::write(tempfile.path(), text).unwrap();
-yeehaw/src/elements/panes/terminal_editor.rs:97:                let tempfile_path = tempfile.path().to_str().unwrap().to_string();
-yeehaw/src/elements/panes/terminal_editor.rs:215:            let tempfile_path = tempfile.path().to_str().unwrap().to_string();
-
-yeehaw/src/elements/panes/file_viewer.rs:13:        let content = std::fs::read_to_string(file_path).unwrap();
-
-yeehaw/src/elements/panes/pane_selectable.rs:160:                    .unwrap(),
-yeehaw/src/elements/panes/pane_selectable.rs:176:                        .unwrap(),
-yeehaw/src/elements/panes/pane_selectable.rs:341:        let ev_bz = serde_json::to_vec(&s).unwrap();
 
 yeehaw/src/elements/panes/terminal.rs:44:        let cwd = std::env::current_dir().unwrap();
 yeehaw/src/elements/panes/terminal.rs:62:            .unwrap();
@@ -72,7 +44,6 @@ yeehaw/src/elements/panes/terminal.rs:177:                    .unwrap();
 yeehaw/src/elements/panes/terminal.rs:204:                .unwrap()
 yeehaw/src/elements/panes/terminal.rs:214:                .unwrap();
 yeehaw/src/elements/panes/terminal.rs:219:        let sc = self.parser.read().unwrap();
-
 
 01. just use an image for the banner (and include the existing text as 
     markdown comment

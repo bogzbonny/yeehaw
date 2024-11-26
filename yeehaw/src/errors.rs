@@ -29,6 +29,18 @@ pub enum Error {
         source: tokio::sync::watch::error::SendError<bool>,
         backtrace: Backtrace,
     },
+
+    #[snafu(context(false))]
+    RatatuiImageError {
+        source: ratatui_image::errors::Errors,
+        backtrace: Backtrace,
+    },
+
+    #[snafu(context(false))]
+    ImageError {
+        source: image::ImageError,
+        backtrace: Backtrace,
+    },
 }
 
 impl Error {

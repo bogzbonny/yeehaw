@@ -312,6 +312,11 @@ impl TextBox {
         self
     }
 
+    pub fn set_text_when_empty(&self, text: String) {
+        *self.inner.borrow().text_when_empty.borrow_mut() = text;
+        self.set_dirty();
+    }
+
     pub fn with_text_when_empty_fg(self, fg: Color) -> Self {
         *self.inner.borrow().text_when_empty_fg.borrow_mut() = fg;
         self.set_dirty();
@@ -607,20 +612,20 @@ impl TextBoxInner {
                 MenuItem::new(ctx, MenuPath("Cut".to_string())).with_click_fn(Some(Box::new(
                     move |ctx| {
                         tb1.is_dirty.replace(true);
-                        tb1.cut_to_clipboard(&ctx).unwrap()
+                        tb1.cut_to_clipboard(&ctx)
                     },
                 ))),
                 MenuItem::new(ctx, MenuPath("Copy".to_string())).with_click_fn(Some(Box::new(
                     move |_ctx| {
                         tb2.is_dirty.replace(true);
-                        tb2.copy_to_clipboard().unwrap();
+                        tb2.copy_to_clipboard();
                         EventResponses::default()
                     },
                 ))),
                 MenuItem::new(ctx, MenuPath("Paste".to_string())).with_click_fn(Some(Box::new(
                     move |ctx| {
                         tb3.is_dirty.replace(true);
-                        tb3.paste_from_clipboard(&ctx).unwrap()
+                        tb3.paste_from_clipboard(&ctx)
                     },
                 ))),
             ],
@@ -902,23 +907,35 @@ impl TextBoxInner {
         resps
     }
 
-    pub fn copy_to_clipboard(&self) -> Result<(), Error> {
+    pub fn copy_to_clipboard(&self) {
         let text = self.visual_selected_text();
-        arboard::Clipboard::new()?.set_text(text)?;
-        Ok(())
+        let Ok(mut cb) = arboard::Clipboard::new() else {
+            log_err!("failed to get clipboard");
+            return;
+        };
+        if let Err(e) = cb.set_text(text) {
+            log_err!("failed to set text to clipboard: {}", e);
+        }
     }
 
-    pub fn cut_to_clipboard(&self, ctx: &Context) -> Result<EventResponses, Error> {
-        self.copy_to_clipboard()?;
-        Ok(self.delete_visual_selection(ctx))
+    pub fn cut_to_clipboard(&self, ctx: &Context) -> EventResponses {
+        self.copy_to_clipboard();
+        self.delete_visual_selection(ctx)
     }
 
-    pub fn paste_from_clipboard(&self, ctx: &Context) -> Result<EventResponses, Error> {
+    pub fn paste_from_clipboard(&self, ctx: &Context) -> EventResponses {
         let mut resps = self.delete_visual_selection(ctx);
 
-        let cliptext = arboard::Clipboard::new()?.get_text()?;
+        let Ok(mut cb) = arboard::Clipboard::new() else {
+            log_err!("failed to get clipboard");
+            return EventResponses::default();
+        };
+        let Ok(cliptext) = cb.get_text() else {
+            log_err!("failed to get text from clipboard");
+            return EventResponses::default();
+        };
         if cliptext.is_empty() {
-            return Ok(resps);
+            return resps;
         }
         let cliprunes = cliptext.chars().collect::<Vec<char>>();
         let mut rs = self.text.borrow().clone();
@@ -936,7 +953,7 @@ impl TextBoxInner {
         if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
             resps.extend(hook(ctx.clone(), self.get_text()));
         }
-        Ok(resps)
+        resps
     }
 
     pub fn receive_key_event(&self, ctx: &Context, ev: Vec<KeyEvent>) -> (bool, EventResponses) {

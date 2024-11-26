@@ -286,7 +286,7 @@ impl ElementOrganizer {
         parent: &Box<dyn Parent>,
     ) {
         let Some(details) = self.get_element_details(el_id) else {
-            // TODO log error
+            log_err!("no element for id in partially_process_ev_resps");
             return;
         };
 

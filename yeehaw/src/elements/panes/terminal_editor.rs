@@ -196,7 +196,6 @@ impl Element for TermEditorPane {
         let (captured, resps) = self.pane.receive_event(ctx, ev.clone());
 
         if !self.pane.has_elements() {
-            debug!("pane has no elements");
             self.tempfile.borrow_mut().take();
             let text = self.text.borrow().clone().unwrap_or_default();
             self.non_editing_textbox.borrow().set_text(text);
