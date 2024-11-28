@@ -29,7 +29,7 @@ pub struct ParentPane {
 #[yeehaw_derive::impl_pane_basics_from(pane)]
 impl ParentPane {
     pub fn new(ctx: &Context, kind: &'static str) -> Self {
-        let pane = Pane::new(ctx, kind).focused();
+        let pane = Pane::new(ctx, kind).with_focused(ctx);
         ParentPane {
             pane,
             eo: ElementOrganizer::default(),

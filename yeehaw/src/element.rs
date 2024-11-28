@@ -259,5 +259,3 @@ pub trait Parent: dyn_clone::DynClone {
 
     fn get_id(&self) -> ElementID;
 }
-
-// -------------------------------------------------------

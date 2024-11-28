@@ -17,7 +17,7 @@ async fn main() -> Result<(), Error> {
     let panebox = ParentPane::new(&ctx, "box");
 
     let nav = FileNavPane::new(&ctx, std::env::current_dir().expect("no current dir"));
-    nav.pane.focus(&ctx);
+    nav.pane.set_focused(&ctx);
 
     let nav_ = nav.clone();
     let panebox_ = panebox.clone();
@@ -27,7 +27,7 @@ async fn main() -> Result<(), Error> {
             panebox_.clear_elements();
         }
 
-        nav_.pane.unfocus(&ctx); // the only time which the inner ctx is relavent here
+        nav_.pane.set_unfocused(&ctx); // the only time which the inner ctx is relavent here
         let viewer = Box::new(FileViewerPane::new(&outer_ctx, path));
         let resp = panebox_.add_element(viewer).into();
         panebox_.pane.send_responses_upward(&outer_ctx, resp);

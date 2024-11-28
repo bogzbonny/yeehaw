@@ -33,7 +33,7 @@ impl WindowPane {
     pub fn new(ctx: &Context, inner: Box<dyn Element>, title: &str) -> Self {
         let pane = ParentPane::new(ctx, Self::KIND)
             .with_transparent()
-            .unfocused();
+            .with_unfocused(ctx);
         let top_bar = Box::new(BasicWindowTopBar::new(ctx, title, true, true, true));
 
         // adjust the inner size to account for the top bar
@@ -96,10 +96,7 @@ impl WindowPane {
             CornerPos::BottomRight,
             BorderPropertyCnr::DragResize,
         )
-        .at(
-            DynVal::FULL.minus(1.into()),
-            DynVal::FULL.minus(1.into()),
-        );
+        .at(DynVal::FULL.minus(1.into()), DynVal::FULL.minus(1.into()));
         self.pane.add_element(Box::new(ca));
 
         use crate::organizer::ElDetails;

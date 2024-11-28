@@ -107,6 +107,8 @@ pub fn impl_pane_basics_from(attr: TokenStream, item: TokenStream) -> TokenStrea
     // Parse the input tokens into a syntax tree
     let mut impl_block = parse_macro_input!(item as ItemImpl);
     let tr_code_with = r"pub trait PaneBasicsWith {
+        fn with_unfocused(self, ctx: &Context); 
+        fn with_focused(self, ctx: &Context); 
         fn with_kind(self, kind: &'static str); 
         fn with_z(self, z: ZIndex);
         fn with_start_x(self, x: DynVal);
@@ -117,6 +119,8 @@ pub fn impl_pane_basics_from(attr: TokenStream, item: TokenStream) -> TokenStrea
         fn with_content(self, content: DrawChs2D);
         fn with_default_ch(self, ch: DrawCh);
         fn with_style(self, style: Style);
+        fn with_bg(self, bg: Color);
+        fn with_fg(self, fg: Color);
         fn with_self_receivable_events(self, evs: SelfReceivableEvents);
     }
     ";
@@ -159,13 +163,15 @@ pub fn impl_pane_basics_from(attr: TokenStream, item: TokenStream) -> TokenStrea
     fn scroll_right(&self, ctx: &Context);
     fn set_style(&self, style: Style);
     fn get_style(&self) -> Style;
+    fn set_bg(&self, bg: Color);
+    fn set_fg(&self, fg: Color);
     fn set_default_ch(&self, ch: DrawCh);
     fn set_self_receivable_events(&self, evs: SelfReceivableEvents);
     fn get_element_priority(&self) -> Priority;
     fn send_responses_upward(&self, ctx: &Context, resps: EventResponses);
     fn has_parent(&self) -> bool;
-    fn focus(&self, ctx: &Context);
-    fn unfocus(&self, ctx: &Context);
+    fn set_focused(&self, ctx: &Context);
+    fn set_unfocused(&self, ctx: &Context);
     fn correct_offsets_to_view_position(&self, ctx: &Context, x: usize, y: usize);
 }";
     let tr_parsed_with = syn::parse_str::<ItemTrait>(tr_code_with).expect("Failed to parse trait");

@@ -1,6 +1,6 @@
 use {
     crate::{
-        Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal, Element,
+        Color, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal, Element,
         ElementID, Event, EventResponse, EventResponses, Parent, Priority, ReceivableEventChanges,
         SelfReceivableEvents, Size, Style, ZIndex,
     },
@@ -101,13 +101,23 @@ impl Pane {
         *self.kind.borrow_mut() = kind;
     }
 
-    pub fn focused(self) -> Pane {
-        *self.element_priority.borrow_mut() = Priority::Focused;
+    //pub fn with_focused(self) -> Pane {
+    //    *self.element_priority.borrow_mut() = Priority::Focused;
+    //    self
+    //}
+
+    //pub fn with_unfocused(self) -> Pane {
+    //    *self.element_priority.borrow_mut() = Priority::Unfocused;
+    //    self
+    //}
+
+    pub fn with_focused(self, ctx: &Context) -> Pane {
+        self.set_focused(ctx);
         self
     }
 
-    pub fn unfocused(self) -> Pane {
-        *self.element_priority.borrow_mut() = Priority::Unfocused;
+    pub fn with_unfocused(self, ctx: &Context) -> Pane {
+        self.set_unfocused(ctx);
         self
     }
 
@@ -327,6 +337,24 @@ impl Pane {
         self.default_ch.borrow().style.clone()
     }
 
+    pub fn with_bg(self, bg: Color) -> Pane {
+        self.default_ch.borrow_mut().style.set_bg(bg);
+        self
+    }
+
+    pub fn set_bg(&self, bg: Color) {
+        self.default_ch.borrow_mut().style.set_bg(bg);
+    }
+
+    pub fn with_fg(self, fg: Color) -> Pane {
+        self.default_ch.borrow_mut().style.set_fg(fg);
+        self
+    }
+
+    pub fn set_fg(&self, fg: Color) {
+        self.default_ch.borrow_mut().style.set_fg(fg);
+    }
+
     pub fn set_default_ch(&self, ch: DrawCh) {
         *self.default_ch.borrow_mut() = ch;
     }
@@ -359,7 +387,7 @@ impl Pane {
     }
 
     /// focus all prioritized events
-    pub fn focus(&self, ctx: &Context) {
+    pub fn set_focused(&self, ctx: &Context) {
         let rec = self.change_priority(Priority::Focused);
         if self.has_parent() {
             let resps = EventResponse::ReceivableEventChanges(rec);
@@ -367,8 +395,8 @@ impl Pane {
         }
     }
 
-    /// defocus all prioritized events
-    pub fn unfocus(&self, ctx: &Context) {
+    /// unfocus all prioritized events
+    pub fn set_unfocused(&self, ctx: &Context) {
         let rec = self.change_priority(Priority::Unfocused);
         if self.has_parent() {
             let resps = EventResponse::ReceivableEventChanges(rec);
