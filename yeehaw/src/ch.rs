@@ -546,6 +546,44 @@ impl DrawChs2D {
         }
     }
 
+    pub fn trim_bottom_whitespace(&mut self) {
+        let mut trim_lines = 0;
+        for line in self.0.iter().rev() {
+            let mut is_whitespace = true;
+            for ch in line.iter() {
+                if !matches!(ch.ch, ChPlus::Char(' ')) {
+                    is_whitespace = false;
+                    break;
+                }
+            }
+            if is_whitespace {
+                trim_lines += 1;
+            } else {
+                break;
+            }
+        }
+        self.remove_bottom(trim_lines);
+    }
+
+    pub fn trim_top_whitespace(&mut self) {
+        let mut trim_lines = 0;
+        for line in self.0.iter() {
+            let mut is_whitespace = true;
+            for ch in line.iter() {
+                if !matches!(ch.ch, ChPlus::Char(' ')) {
+                    is_whitespace = false;
+                    break;
+                }
+            }
+            if is_whitespace {
+                trim_lines += 1;
+            } else {
+                break;
+            }
+        }
+        self.remove_top(trim_lines);
+    }
+
     // TODO rename concat_right
     /// concats the two arrays with self to the left of chs2
     pub fn concat_left_right(&self, chs2: DrawChs2D) -> Result<DrawChs2D, Error> {

@@ -16,7 +16,7 @@ use {
 
 #[derive(Clone)]
 pub struct MenuBar {
-    pane: ParentPane,
+    pub pane: ParentPane,
     /// is the bar horizontal or vertical
     horizontal_bar: Rc<RefCell<bool>>,
     menu_items: Rc<RefCell<HashMap<ElementID, MenuItem>>>,
@@ -48,17 +48,23 @@ pub struct MenuStyle {
 
 impl Default for MenuStyle {
     fn default() -> Self {
+        let a = 100;
+        let selected_style = Style::default_const()
+            .with_bg(Color::BLUE.with_alpha(a))
+            .with_fg(Color::WHITE);
+        let unselected_style = Style::default_const()
+            .with_bg(Color::GREY10.with_alpha(a))
+            .with_fg(Color::WHITE);
+        let disabled_style = Style::default_const()
+            .with_bg(Color::GREY20.with_alpha(a))
+            .with_fg(Color::WHITE);
         MenuStyle {
             folder_arrow: " ❯".to_string(),
             left_padding: 1,
             right_padding: 1,
-            unselected_style: Style::default_const().with_fg(Color::WHITE),
-            selected_style: Style::default_const()
-                .with_bg(Color::BLUE)
-                .with_fg(Color::WHITE),
-            disabled_style: Style::default_const()
-                .with_bg(Color::GREY13)
-                .with_fg(Color::WHITE),
+            unselected_style,
+            selected_style,
+            disabled_style,
         }
     }
 }
@@ -664,7 +670,8 @@ impl Element for MenuBar {
             }
         };
 
-        let mut out = self.pane.drawing(ctx);
+        //let mut out = self.pane.drawing(ctx);
+        let mut out = Vec::new();
 
         // draw each menu item
         for el_details in self.pane.eo.els.borrow().values() {
@@ -672,8 +679,10 @@ impl Element for MenuBar {
             let child_ctx = ctx
                 .child_context(&el_details.loc.borrow().l)
                 .with_metadata(Self::MENU_STYLE_MD_KEY.to_string(), menu_style_bz.clone());
-            let dcps = el_details.el.drawing(&child_ctx);
-
+            let mut dcps = el_details.el.drawing(&child_ctx);
+            for dcp in &mut dcps {
+                dcp.update_colors_for_time_and_pos(&child_ctx);
+            }
             for mut dcp in dcps {
                 dcp.adjust_by_dyn_location(ctx, &el_details.loc.borrow().l);
                 out.push(dcp);

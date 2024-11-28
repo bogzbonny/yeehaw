@@ -321,6 +321,11 @@ impl Color {
         }
     }
 
+    pub fn with_alpha(mut self, alpha: u8) -> Self {
+        self.set_alpha(alpha);
+        self
+    }
+
     pub fn overlay_color(&self, overlay: Self) -> Self {
         match overlay {
             Color::Rgba(oc) => match self {

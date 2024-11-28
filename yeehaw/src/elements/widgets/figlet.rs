@@ -32,6 +32,13 @@ impl FigletText {
     // ----------------------------------------------
     // decorators
 
+    pub fn with_min_height(self) -> Self {
+        self.pane.content.borrow_mut().trim_bottom_whitespace();
+        let h = self.pane.content.borrow().height();
+        self.pane.set_dyn_height(DynVal::new_fixed(h as i32));
+        self
+    }
+
     pub fn with_style(self, sty: Style) -> Self {
         self.pane.set_style(sty.clone());
         self.pane.set_content_style(sty);
