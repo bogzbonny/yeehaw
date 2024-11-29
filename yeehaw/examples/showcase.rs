@@ -9,7 +9,8 @@ async fn main() -> Result<(), Error> {
 
     let (mut tui, ctx) = Tui::new()?;
     let el = VerticalStack::new(&ctx);
-    let header_pane = ParentPaneOfSelectable::new(&ctx)
+    //let header_pane = ParentPaneOfSelectable::new(&ctx)
+    let header_pane = ParentPane::new(&ctx, "header")
         .with_dyn_height(DynVal::new_fixed(7))
         .with_unfocused(&ctx);
     el.push(Box::new(header_pane.clone()));

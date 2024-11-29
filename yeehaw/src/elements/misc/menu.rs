@@ -33,6 +33,8 @@ pub struct MenuBar {
     menu_style: Rc<RefCell<MenuStyle>>,
     /// useful for right click menu
     make_invisible_on_closedown: Rc<RefCell<bool>>,
+    /// close the menubar on a click of a primary menu item
+    close_on_primary_click: Rc<RefCell<bool>>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
@@ -48,7 +50,7 @@ pub struct MenuStyle {
 
 impl Default for MenuStyle {
     fn default() -> Self {
-        let a = 100;
+        let a = 255;
         let selected_style = Style::default_const()
             .with_bg(Color::BLUE.with_alpha(a))
             .with_fg(Color::WHITE);
@@ -100,6 +102,7 @@ impl MenuBar {
             secondary_open_dir: Rc::new(RefCell::new(OpenDirection::RightThenDown)),
             menu_style: Rc::new(RefCell::new(MenuStyle::default())),
             make_invisible_on_closedown: Rc::new(RefCell::new(false)),
+            close_on_primary_click: Rc::new(RefCell::new(true)),
         }
     }
 
@@ -116,6 +119,7 @@ impl MenuBar {
             secondary_open_dir: Rc::new(RefCell::new(OpenDirection::RightThenDown)),
             menu_style: Rc::new(RefCell::new(MenuStyle::default())),
             make_invisible_on_closedown: Rc::new(RefCell::new(true)),
+            close_on_primary_click: Rc::new(RefCell::new(false)),
         }
     }
 
@@ -305,11 +309,9 @@ impl MenuBar {
         &self, ctx: &Context, ev: crossterm::event::MouseEvent,
     ) -> (bool, EventResponses) {
         // must check if bar is activated
-        let clicked = matches!(
-            ev.kind,
-            MouseEventKind::Up(_) | MouseEventKind::Down(_) | MouseEventKind::Drag(_)
-        );
-        if clicked {
+        let clicked = matches!(ev.kind, MouseEventKind::Down(_));
+        let active_at_start = *self.activated.borrow();
+        if !*self.activated.borrow() && clicked {
             *self.activated.borrow_mut() = true;
         }
 
@@ -339,6 +341,12 @@ impl MenuBar {
             && !*item.is_folder.borrow()
             && *item.selectable.borrow()
         {
+            return self.closedown();
+        }
+
+        // close if was a click on the primary bar
+        let c = *self.close_on_primary_click.borrow();
+        if c && active_at_start && clicked && item.is_primary() {
             return self.closedown();
         }
 

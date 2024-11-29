@@ -9,6 +9,7 @@
        - question is: what events should actually be broadcast?
 
 05. introduce errors, remove all unwraps
+05. clicking while on the menu bar should collapse & deselect the bar
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -20,6 +21,7 @@
 01. add docs, crates button banners to github readme
 
 01. showcase example 
+      - menu-bar background transparancy is to nothing because the figlet text has no bg
       - sweet figlet text up top "Yeahaw showcase"
       - right click menu with a popup window
       - window generator zone
@@ -46,6 +48,7 @@
 01. README doc about performance and drawing
 
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 
 05. Theme Manager - it would be awesome to be able to just get the colors for
     each element from a provided theme manager
