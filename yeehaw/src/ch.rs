@@ -4,6 +4,7 @@ use {
     compact_str::CompactString,
     crossterm::style::{ContentStyle, StyledContent},
     std::ops::{Deref, DerefMut},
+    std::time::Duration,
 };
 
 /// DrawCh is a character with a style and transparency
@@ -142,9 +143,9 @@ impl DrawChPos {
     pub fn new(ch: DrawCh, x: u16, y: u16) -> DrawChPos {
         DrawChPos { ch, x, y }
     }
-    pub fn adjust_by_dyn_location(&mut self, ctx: &Context, loc: &DynLocation) {
-        let mut start_x = loc.get_start_x(ctx);
-        let mut start_y = loc.get_start_y(ctx);
+    pub fn adjust_by_dyn_location(&mut self, s: Size, loc: &DynLocation) {
+        let mut start_x = loc.get_start_x_from_size(s);
+        let mut start_y = loc.get_start_y_from_size(s);
         // check for overflow
         if start_x < 0 {
             start_x = 0;
@@ -156,10 +157,10 @@ impl DrawChPos {
         self.y += start_y as u16;
     }
 
-    pub fn update_colors_for_time_and_pos(&mut self, ctx: &Context) {
+    pub fn update_colors_for_time_and_pos(&mut self, s: Size, dur_since_launch: Duration) {
         self.ch
             .style
-            .update_colors_for_time_and_pos(ctx, self.x, self.y);
+            .update_colors_for_time_and_pos(s, dur_since_launch, self.x, self.y);
     }
 
     pub fn new_from_string(s: String, start_x: u16, start_y: u16, sty: Style) -> Vec<DrawChPos> {

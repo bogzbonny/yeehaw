@@ -1,5 +1,5 @@
 use {
-    crate::{Context, DynVal},
+    crate::{Context, DynVal, Size},
     crossterm::style::Color as CrosstermColor,
     rand::Rng,
     std::time::Duration,
@@ -104,8 +104,8 @@ impl Color {
 
     /// blends two colors together with the given percentage of the other color
     pub fn blend(
-        &self, ctx: &Context, x: u16, y: u16, other: Color, percent_other: f64,
-        blend_kind: BlendKind,
+        &self, s: Size, dur_since_launch: Duration, x: u16, y: u16, other: Color,
+        percent_other: f64, blend_kind: BlendKind,
     ) -> Color {
         match self {
             Color::ANSI(_) => {
@@ -125,29 +125,32 @@ impl Color {
                 }
                 Color::Rgba(oc) => Color::Rgba(blend_kind.blend(*c, oc, percent_other)),
                 Color::Gradient(gr) => {
-                    let gr = gr.to_color(ctx, x, y);
-                    self.clone().blend(ctx, x, y, gr, percent_other, blend_kind)
+                    let gr = gr.to_color(s, dur_since_launch, x, y);
+                    self.clone()
+                        .blend(s, dur_since_launch, x, y, gr, percent_other, blend_kind)
                 }
                 Color::TimeGradient(tg) => {
-                    let tg = tg.to_color(ctx, x, y);
-                    self.clone().blend(ctx, x, y, tg, percent_other, blend_kind)
+                    let tg = tg.to_color(s, dur_since_launch, x, y);
+                    self.clone()
+                        .blend(s, dur_since_launch, x, y, tg, percent_other, blend_kind)
                 }
                 Color::RadialGradient(rg) => {
-                    let rg = rg.to_color(ctx, x, y);
-                    self.clone().blend(ctx, x, y, rg, percent_other, blend_kind)
+                    let rg = rg.to_color(s, dur_since_launch, x, y);
+                    self.clone()
+                        .blend(s, dur_since_launch, x, y, rg, percent_other, blend_kind)
                 }
             },
             Color::Gradient(gr) => {
-                let gr = gr.to_color(ctx, x, y);
-                gr.blend(ctx, x, y, other, percent_other, blend_kind)
+                let gr = gr.to_color(s, dur_since_launch, x, y);
+                gr.blend(s, dur_since_launch, x, y, other, percent_other, blend_kind)
             }
             Color::TimeGradient(gr) => {
-                let gr = gr.to_color(ctx, x, y);
-                gr.blend(ctx, x, y, other, percent_other, blend_kind)
+                let gr = gr.to_color(s, dur_since_launch, x, y);
+                gr.blend(s, dur_since_launch, x, y, other, percent_other, blend_kind)
             }
             Color::RadialGradient(gr) => {
-                let gr = gr.to_color(ctx, x, y);
-                gr.blend(ctx, x, y, other, percent_other, blend_kind)
+                let gr = gr.to_color(s, dur_since_launch, x, y);
+                gr.blend(s, dur_since_launch, x, y, other, percent_other, blend_kind)
             }
         }
     }
@@ -273,9 +276,15 @@ impl Color {
         match self {
             Color::ANSI(c) => *c,
             Color::Rgba(c) => c.to_crossterm_color(prev),
-            Color::Gradient(gr) => gr.to_color(ctx, x, y).to_crossterm_color(ctx, prev, x, y),
-            Color::TimeGradient(tg) => tg.to_color(ctx, x, y).to_crossterm_color(ctx, prev, x, y),
-            Color::RadialGradient(rg) => rg.to_color(ctx, x, y).to_crossterm_color(ctx, prev, x, y),
+            Color::Gradient(gr) => gr
+                .to_color(ctx.size, ctx.dur_since_launch, x, y)
+                .to_crossterm_color(ctx, prev, x, y),
+            Color::TimeGradient(tg) => tg
+                .to_color(ctx.size, ctx.dur_since_launch, x, y)
+                .to_crossterm_color(ctx, prev, x, y),
+            Color::RadialGradient(rg) => rg
+                .to_color(ctx.size, ctx.dur_since_launch, x, y)
+                .to_crossterm_color(ctx, prev, x, y),
         }
     }
 
@@ -283,18 +292,18 @@ impl Color {
     pub fn to_color(self, ctx: &Context, x: u16, y: u16) -> Color {
         match self {
             Color::ANSI(_) | Color::Rgba(_) => self,
-            Color::Gradient(gr) => gr.to_color(ctx, x, y),
-            Color::TimeGradient(tg) => tg.to_color(ctx, x, y),
-            Color::RadialGradient(rg) => rg.to_color(ctx, x, y),
+            Color::Gradient(gr) => gr.to_color(ctx.size, ctx.dur_since_launch, x, y),
+            Color::TimeGradient(tg) => tg.to_color(ctx.size, ctx.dur_since_launch, x, y),
+            Color::RadialGradient(rg) => rg.to_color(ctx.size, ctx.dur_since_launch, x, y),
         }
     }
 
     /// to color with the given context and position
-    pub fn update_color(&mut self, ctx: &Context, x: u16, y: u16) {
+    pub fn update_color(&mut self, s: Size, dur_since_launch: Duration, x: u16, y: u16) {
         match &self {
-            Color::Gradient(gr) => *self = gr.clone().to_color(ctx, x, y),
-            Color::TimeGradient(tg) => *self = tg.clone().to_color(ctx, x, y),
-            Color::RadialGradient(rg) => *self = rg.clone().to_color(ctx, x, y),
+            Color::Gradient(gr) => *self = gr.clone().to_color(s, dur_since_launch, x, y),
+            Color::TimeGradient(tg) => *self = tg.clone().to_color(s, dur_since_launch, x, y),
+            Color::RadialGradient(rg) => *self = rg.clone().to_color(s, dur_since_launch, x, y),
             _ => {}
         }
     }
@@ -385,7 +394,7 @@ impl RadialGradient {
         (dx * dx + dy * dy).sqrt()
     }
 
-    pub fn to_color(&self, ctx: &Context, x: u16, y: u16) -> Color {
+    pub fn to_color(&self, s: Size, dur_since_launch: Duration, x: u16, y: u16) -> Color {
         if self.grad.is_empty() {
             return Color::TRANSPARENT;
         }
@@ -393,8 +402,8 @@ impl RadialGradient {
         let x = x as f64;
         let y = y as f64;
         let (center_x, center_y) = (
-            self.center.0.get_val(ctx.size.width) as f64,
-            self.center.1.get_val(ctx.size.height) as f64,
+            self.center.0.get_val(s.width) as f64,
+            self.center.1.get_val(s.height) as f64,
         );
         let (skew_x, skew_y) = self.skew;
         let mut dist = Self::dist_from_center(x, y, center_x, center_y, skew_x, skew_y);
@@ -402,8 +411,8 @@ impl RadialGradient {
         // choose the furthest corner as the max distance
         let max_dist1 = Self::dist_from_center(0., 0., center_x, center_y, skew_x, skew_y);
         let max_dist2 = Self::dist_from_center(
-            (ctx.size.width - 1) as f64,
-            (ctx.size.height - 1) as f64,
+            (s.width - 1) as f64,
+            (s.height - 1) as f64,
             center_x,
             center_y,
             skew_x,
@@ -411,20 +420,14 @@ impl RadialGradient {
         );
         let max_dist3 = Self::dist_from_center(
             0.,
-            (ctx.size.height - 1) as f64,
+            (s.height - 1) as f64,
             center_x,
             center_y,
             skew_x,
             skew_y,
         );
-        let max_dist4 = Self::dist_from_center(
-            (ctx.size.width - 1) as f64,
-            0.,
-            center_x,
-            center_y,
-            skew_x,
-            skew_y,
-        );
+        let max_dist4 =
+            Self::dist_from_center((s.width - 1) as f64, 0., center_x, center_y, skew_x, skew_y);
         let max_dist = max_dist1.max(max_dist2).max(max_dist3).max(max_dist4);
 
         // loop the pos if it is outside the maximum value
@@ -440,28 +443,36 @@ impl RadialGradient {
         let mut start_pos: Option<f64> = None;
         let mut end_pos: Option<f64> = None;
         for ((p1, c1), (p2, c2)) in self.grad.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
-            if (p1.get_val(ctx.size.width.max(ctx.size.height)) as f64 <= dist)
-                && (dist < p2.get_val(ctx.size.width.max(ctx.size.height)) as f64)
+            if (p1.get_val(s.width.max(s.height)) as f64 <= dist)
+                && (dist < p2.get_val(s.width.max(s.height)) as f64)
             {
                 start_clr = Some(c1.clone());
                 end_clr = Some(c2.clone());
-                start_pos = Some(p1.get_val(ctx.size.width.max(ctx.size.height)) as f64);
-                end_pos = Some(p2.get_val(ctx.size.width.max(ctx.size.height)) as f64);
+                start_pos = Some(p1.get_val(s.width.max(s.height)) as f64);
+                end_pos = Some(p2.get_val(s.width.max(s.height)) as f64);
                 break;
             }
         }
 
         let start_clr = start_clr.unwrap_or_else(|| self.grad[0].1.clone());
         let end_clr = end_clr.unwrap_or_else(|| self.grad[self.grad.len() - 1].1.clone());
-        let start_pos = start_pos
-            .unwrap_or_else(|| self.grad[0].0.get_val(ctx.size.width.max(ctx.size.height)) as f64);
+        let start_pos =
+            start_pos.unwrap_or_else(|| self.grad[0].0.get_val(s.width.max(s.height)) as f64);
         let end_pos = end_pos.unwrap_or_else(|| {
             self.grad[self.grad.len() - 1]
                 .0
-                .get_val(ctx.size.width.max(ctx.size.height)) as f64
+                .get_val(s.width.max(s.height)) as f64
         });
         let percent = (dist - start_pos) / (end_pos - start_pos);
-        start_clr.blend(ctx, x as u16, y as u16, end_clr, percent, BlendKind::Blend1)
+        start_clr.blend(
+            s,
+            dur_since_launch,
+            x as u16,
+            y as u16,
+            end_clr,
+            percent,
+            BlendKind::Blend1,
+        )
 
         //// loop the pos if it is outside the maximum value
         //let max_pos = self.grad.last().expect("TODO??").0.get_val(max_ctx_val);
@@ -492,7 +503,7 @@ impl RadialGradient {
         //let end_pos =
         //    end_pos.unwrap_or_else(|| self.grad[self.grad.len() - 1].0.get_val(max_ctx_val));
         //let percent = (pos - start_pos) as f64 / (end_pos - start_pos) as f64;
-        //start_clr.blend(ctx, x, y, end_clr, percent, BlendKind::Blend1)
+        //start_clr.blend(s, dur_since_launch, x, y, end_clr, percent, BlendKind::Blend1)
     }
 }
 
@@ -628,10 +639,11 @@ impl Gradient {
     pub fn to_crossterm_color(
         &self, ctx: &Context, prev: Option<CrosstermColor>, x: u16, y: u16,
     ) -> CrosstermColor {
-        self.to_color(ctx, x, y).to_crossterm_color(ctx, prev, x, y)
+        self.to_color(ctx.size, ctx.dur_since_launch, x, y)
+            .to_crossterm_color(ctx, prev, x, y)
     }
 
-    pub fn to_color(&self, ctx: &Context, mut x: u16, mut y: u16) -> Color {
+    pub fn to_color(&self, s: Size, dur_since_launch: Duration, mut x: u16, mut y: u16) -> Color {
         if self.grad.is_empty() {
             return Color::TRANSPARENT;
         }
@@ -639,12 +651,12 @@ impl Gradient {
         // determine the maximum value of the context (used for computing the DynVal)
         let angle_rad = self.angle_deg * std::f64::consts::PI / 180.0;
         let max_ctx_val = if self.angle_deg == 0. || self.angle_deg == 180. {
-            ctx.size.width
+            s.width
         } else if self.angle_deg == 90. || self.angle_deg == 270. {
-            ctx.size.height
+            s.height
         } else {
-            let width1 = ctx.size.width as f64;
-            let height1 = ctx.size.height as f64;
+            let width1 = s.width as f64;
+            let height1 = s.height as f64;
             let angle_rad = angle_rad.abs();
             let width2 = height1 * (std::f64::consts::PI / 2. - angle_rad).tan();
             let height2 = width1 * angle_rad.tan();
@@ -658,16 +670,16 @@ impl Gradient {
 
         // determine the position on the gradient of the given x, y
         let mut pos = if self.angle_deg == 0. {
-            x %= ctx.size.width;
+            x %= s.width;
             x as i32
         } else if self.angle_deg == 90. {
-            y %= ctx.size.height;
+            y %= s.height;
             y as i32
         } else if self.angle_deg == 180. {
-            x %= ctx.size.width;
+            x %= s.width;
             -(x as i32)
         } else if self.angle_deg == 270. {
-            y %= ctx.size.height;
+            y %= s.height;
             -(y as i32)
         } else {
             //            x
@@ -737,7 +749,15 @@ impl Gradient {
         let end_pos =
             end_pos.unwrap_or_else(|| self.grad[self.grad.len() - 1].0.get_val(max_ctx_val));
         let percent = (pos - start_pos) as f64 / (end_pos - start_pos) as f64;
-        start_clr.blend(ctx, x, y, end_clr, percent, BlendKind::Blend1)
+        start_clr.blend(
+            s,
+            dur_since_launch,
+            x,
+            y,
+            end_clr,
+            percent,
+            BlendKind::Blend1,
+        )
     }
 }
 
@@ -753,12 +773,12 @@ impl TimeGradient {
         TimeGradient { total_dur, points }
     }
 
-    pub fn to_color(&self, ctx: &Context, x: u16, y: u16) -> Color {
+    pub fn to_color(&self, s: Size, dur_since_launch: Duration, x: u16, y: u16) -> Color {
         if self.points.is_empty() {
             return Color::TRANSPARENT;
         }
 
-        let mut d = ctx.dur_since_launch;
+        let mut d = dur_since_launch;
         // calculate d so that it is within the range
         while d >= self.total_dur {
             d -= self.total_dur;
@@ -781,7 +801,15 @@ impl TimeGradient {
         let start_time = start_time.unwrap_or_else(|| self.points[0].0);
         let end_time = end_time.unwrap_or_else(|| self.points[self.points.len() - 1].0);
         let percent = (d - start_time).as_secs_f64() / (end_time - start_time).as_secs_f64();
-        start_clr.blend(ctx, x, y, end_clr, percent, BlendKind::Blend1)
+        start_clr.blend(
+            s,
+            dur_since_launch,
+            x,
+            y,
+            end_clr,
+            percent,
+            BlendKind::Blend1,
+        )
     }
 }
 

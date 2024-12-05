@@ -26,7 +26,8 @@ use {
 /// the amount of time the tui will wait in between calls to re-render
 /// NOTE: Currently the tui does not re-render when an event it called, hence if
 /// this value is set too large it will give the tui a laggy feel.
-const ANIMATION_SPEED: Duration = Duration::from_micros(17);
+/// A value of
+const DEFAULT_ANIMATION_SPEED: Duration = Duration::from_micros(50);
 
 /// configuration of a tui instance
 pub struct Tui {
@@ -34,6 +35,8 @@ pub struct Tui {
     main_el_id: ElementID,
     kb: Keyboard,
     launch_instant: std::time::Instant,
+
+    pub animation_speed: Duration,
 
     pub kill_on_ctrl_c: bool,
 
@@ -60,6 +63,7 @@ impl Tui {
             main_el_id: "".to_string(),
             kb: Keyboard::default(),
             launch_instant: std::time::Instant::now(),
+            animation_speed: DEFAULT_ANIMATION_SPEED,
             kill_on_ctrl_c: true,
             sc_last_flushed: HashMap::new(),
             exit_recv,
@@ -104,7 +108,7 @@ impl Tui {
         self.launch_instant = std::time::Instant::now();
 
         loop {
-            let delay = time::sleep(ANIMATION_SPEED).fuse();
+            let delay = time::sleep(self.animation_speed).fuse();
             let event = reader.next().fuse();
 
             tokio::select! {

@@ -2248,6 +2248,7 @@ dependencies = [
  "rand",
  "ratatui",
  "ratatui-image",
+ "rayon",
  "serde",
  "serde_json",
  "snafu",

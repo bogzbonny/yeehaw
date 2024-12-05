@@ -2,8 +2,9 @@ use {
     crate::{
         prioritizer::EventPrioritizer, Context, DrawChPos, DynLocation, DynLocationSet, Element,
         ElementID, Event, EventResponse, EventResponses, Parent, Priority, ReceivableEventChanges,
-        RelMouseEvent, SelfReceivableEvents, Size, ZIndex,
+        RelMouseEvent, SelfReceivableEvents, ZIndex,
     },
+    rayon::prelude::*,
     std::collections::HashMap,
     std::{cell::RefCell, rc::Rc},
 };
@@ -14,13 +15,6 @@ use {
 pub struct ElementOrganizer {
     pub els: Rc<RefCell<HashMap<ElementID, ElDetails>>>,
     pub prioritizer: Rc<RefCell<EventPrioritizer>>,
-
-    #[allow(clippy::type_complexity)]
-    /// The draw cache keeps a record of the last draw of each element as well as the
-    /// size of the element at the draw. Additionally there is a dirty flag which will
-    /// for the element to be redrawn if it is set to true.
-    //                                            (                      dirty              )
-    pub draw_cache: Rc<RefCell<HashMap<ElementID, (DynLocationSet, Size, bool, Vec<DrawChPos>)>>>,
 }
 
 /// element details
@@ -247,7 +241,6 @@ impl ElementOrganizer {
         eoz.sort_by(|a, b| a.1.loc.borrow().z.cmp(&b.1.loc.borrow().z));
 
         // draw elements in order from highest z-index to lowest
-        let mut dc = self.draw_cache.borrow_mut();
         for el_id_z in eoz {
             let details = self.get_element_details(&el_id_z.0).expect("impossible");
             if !*details.vis.borrow() {
@@ -261,55 +254,18 @@ impl ElementOrganizer {
 
             let child_ctx = ctx.child_context(&el_id_z.1.loc.borrow().l);
 
-            // draw the element from either the cache or by calling the element's drawing function.
-            let cached = dc.get(&el_id_z.0);
-
-            let mut dcps = match cached {
-                Some((loc, size, dirty, dcps))
-                    if !*dirty && *size == child_ctx.size && *loc == *el_id_z.1.loc.borrow() =>
-                {
-                    dcps.clone()
-                }
-                _ => {
-                    //debug!("actually drawing el_id: {}", el_id_z.0);
-                    let mut dcps = details.el.drawing(&child_ctx);
-
-                    //let l = details.loc.borrow().l.clone();
-                    //for dcp in &mut dcps {
-                    //    dcp.update_colors_for_time_and_pos(&child_ctx);
-                    //    dcp.adjust_by_dyn_location(ctx, &l);
-                    //}
-
-                    dc.insert(
-                        el_id_z.0.clone(),
-                        (
-                            el_id_z.1.loc.borrow().clone(),
-                            child_ctx.size,
-                            false,
-                            dcps.clone(),
-                        ),
-                    );
-                    dcps
-                }
-            };
-
-            // if we were to cache this then any element which used time gradients would need to
-            // to signal manual redraws. This does impact performance a bit to not have this cached but
-            // it seems not horrible.
-            //
-            // TODO optimize
-            // it's only the most primary (non container) elements which need to have this updated
-            // here. It would be nice if we could somehow signal this and not call this for
-            // container elements which would have already called this for their children.
-            //for dcp in &mut dcps {
-            //    dcp.update_colors_for_time_and_pos(&child_ctx);
-            //}
-
+            let mut dcps = details.el.drawing(&child_ctx);
             let l = details.loc.borrow().l.clone();
-            for dcp in &mut dcps {
-                dcp.update_colors_for_time_and_pos(&child_ctx);
-                dcp.adjust_by_dyn_location(ctx, &l);
-            }
+            let s = ctx.size;
+            let child_s = child_ctx.size;
+            let d = child_ctx.dur_since_launch;
+
+            // NOTE this is a computational bottleneck
+            // currently using rayon for parallelization
+            dcps.par_iter_mut().for_each(|dcp| {
+                dcp.update_colors_for_time_and_pos(child_s, d);
+                dcp.adjust_by_dyn_location(s, &l);
+            });
 
             out.extend(dcps);
         }
@@ -394,12 +350,6 @@ impl ElementOrganizer {
                     // duplicate events, they will be removed by the UnfocusOthers call)
                     extend_resps.push(EventResponse::ReceivableEventChanges(rec_for_higher));
                     *r = EventResponse::None;
-                }
-                EventResponse::SetDirty => {
-                    if let Some((_, _, dirty, _)) = self.draw_cache.borrow_mut().get_mut(el_id) {
-                        *dirty = true;
-                    }
-                    // NOTE continue to propogate the SetDirty event to the parent
                 }
                 EventResponse::NewElement(new_el, ref mut new_el_resps) => {
                     // adjust the location of the window to be relative to the given element and adds the element
@@ -544,28 +494,11 @@ impl ElementOrganizer {
         let p_id = parent.get_id();
         let (captured, resps) = match ev {
             Event::KeyCombo(_) | Event::Custom(_, _) => {
-                let (el_id, mut resps) = self.routed_event_process(ctx, ev, parent);
-
-                if let Some(ref el_id) = el_id {
-                    // set the draw cache as dirty
-                    if let Some((_, _, dirty, _)) = self.draw_cache.borrow_mut().get_mut(el_id) {
-                        //debug!("setting dirty for el_id: {el_id:?}");
-                        *dirty = true;
-                    }
-                    resps.push(EventResponse::SetDirty);
-                }
+                let (el_id, resps) = self.routed_event_process(ctx, ev, parent);
                 (el_id.is_some(), resps)
             }
             Event::Mouse(me) => {
-                let (el_id, mut resps) = self.mouse_event_process(ctx, &me, parent);
-                if let Some(ref el_id) = el_id {
-                    // set the draw cache as dirty
-                    if let Some((_, _, dirty, _)) = self.draw_cache.borrow_mut().get_mut(el_id) {
-                        //debug!("setting dirty for el_id: {el_id:?}");
-                        *dirty = true;
-                    }
-                    resps.push(EventResponse::SetDirty);
-                }
+                let (el_id, resps) = self.mouse_event_process(ctx, &me, parent);
                 (el_id.is_some(), resps)
             }
             Event::ExternalMouse(me) => {

@@ -5,6 +5,7 @@ use {
         RelMouseEvent, SelfReceivableEvents, Style, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
+    rayon::prelude::*,
     std::collections::HashMap,
     std::{cell::RefCell, rc::Rc},
 };
@@ -682,7 +683,6 @@ impl Element for MenuBar {
         };
 
         let mut out = self.pane.drawing(ctx);
-        //let mut out = Vec::new();
 
         // draw each menu item
         for el_details in self.pane.eo.els.borrow().values() {
@@ -691,13 +691,26 @@ impl Element for MenuBar {
                 .child_context(&el_details.loc.borrow().l)
                 .with_metadata(Self::MENU_STYLE_MD_KEY.to_string(), menu_style_bz.clone());
             let mut dcps = el_details.el.drawing(&child_ctx);
-            for dcp in &mut dcps {
-                dcp.update_colors_for_time_and_pos(&child_ctx);
-            }
-            for mut dcp in dcps {
-                dcp.adjust_by_dyn_location(ctx, &el_details.loc.borrow().l);
-                out.push(dcp);
-            }
+            //for dcp in &mut dcps {
+            //    dcp.update_colors_for_time_and_pos(child_ctx.size, child_ctx.dur_since_launch);
+            //}
+            //for mut dcp in dcps {
+            //    dcp.adjust_by_dyn_location(ctx.size, &el_details.loc.borrow().l);
+            //    out.push(dcp);
+            //}
+
+            let l = el_details.loc.borrow().l.clone();
+            let s = ctx.size;
+            let child_s = child_ctx.size;
+            let d = child_ctx.dur_since_launch;
+
+            // NOTE this is a computational bottleneck
+            // currently using rayon for parallelization
+            dcps.par_iter_mut().for_each(|dcp| {
+                dcp.update_colors_for_time_and_pos(child_s, d);
+                dcp.adjust_by_dyn_location(s, &l);
+            });
+            out.extend(dcps);
         }
         out
     }

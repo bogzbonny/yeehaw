@@ -1,7 +1,8 @@
 use {
-    crate::{Color, Context},
+    crate::{Color, Size},
     crossterm::style::{Attribute as CrAttribute, Attributes as CrAttributes},
     ratatui::style::Modifier as RAttributes,
+    std::time::Duration,
 };
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug, Default)]
@@ -156,15 +157,17 @@ impl Style {
         self.attr = attr;
     }
 
-    pub fn update_colors_for_time_and_pos(&mut self, ctx: &Context, x: u16, y: u16) {
+    pub fn update_colors_for_time_and_pos(
+        &mut self, s: Size, dur_since_launch: Duration, x: u16, y: u16,
+    ) {
         if let Some(fg) = self.fg.as_mut() {
-            fg.0.update_color(ctx, x, y);
+            fg.0.update_color(s, dur_since_launch, x, y);
         }
         if let Some(bg) = self.bg.as_mut() {
-            bg.0.update_color(ctx, x, y);
+            bg.0.update_color(s, dur_since_launch, x, y);
         }
         if let Some(underline) = self.underline.as_mut() {
-            underline.0.update_color(ctx, x, y);
+            underline.0.update_color(s, dur_since_launch, x, y);
         }
     }
 

@@ -108,6 +108,14 @@ impl DynLocation {
     }
 
     /// X returns the start and end x values of the Location
+    pub fn get_start_x_from_size(&self, s: Size) -> i32 {
+        self.start_x.get_val(s.width)
+    }
+    pub fn get_start_y_from_size(&self, s: Size) -> i32 {
+        self.start_y.get_val(s.height)
+    }
+
+    /// X returns the start and end x values of the Location
     pub fn get_start_x(&self, ctx: &Context) -> i32 {
         self.start_x.get_val(ctx.get_width())
     }

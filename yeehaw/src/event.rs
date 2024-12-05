@@ -268,10 +268,6 @@ pub enum EventResponse {
     /// focus this element
     Focus,
 
-    /// set the element responding as dirty so the element organizer will
-    /// redraw it instead of using a cached value.
-    SetDirty,
-
     /// create an element, its location will be adjusted
     /// by the elements current location.
     ///
@@ -323,7 +319,6 @@ impl std::fmt::Debug for EventResponse {
             EventResponse::BringToFront => write!(f, "EventResponse::BringToFront"),
             EventResponse::UnfocusOthers => write!(f, "EventResponse::UnfocusOthers"),
             EventResponse::Focus => write!(f, "EventResponse::Focus"),
-            EventResponse::SetDirty => write!(f, "EventResponse::SetDirty"),
             EventResponse::NewElement(el, resp) => write!(
                 f,
                 "EventResponse::NewElement id: {:?}, resp: {:?}",

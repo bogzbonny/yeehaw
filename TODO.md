@@ -10,16 +10,6 @@
 
 05. introduce errors, remove all unwraps
 05. clicking while on the menu bar should collapse & deselect the bar
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-01. Draggin of border panes doesn't work in showcase
-
-01. resize event in the "wrong direction" for a stack should not just ignore the
-    resize but pass on that resize to the next higher element (such that if the
-    next higher element was a stack which could actually use that resize command
-    it would utilize it)
-
 01. improve efficiency the showcase already feels laggy
      - seems specifically to do with nesting things in element organizers
          - the widget_test has lots lots more elements but no lag
@@ -30,17 +20,14 @@
      - each element organizer could keep a queue of the previous draw characters
        which 
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    BUGS
-     - menu bar is capturing mouse movements even when not selected
-     - bordered borders are capturing mouse movements even when not selected
-     - ensure gradient colors update
-     - scrollbars dont work
-     - redraw on location diff not just size 
-     - updates based on external mouse events
-        - menu
-        - drop down list
+01. Draggin of border panes doesn't work in showcase
 
+01. resize event in the "wrong direction" for a stack should not just ignore the
+    resize but pass on that resize to the next higher element (such that if the
+    next higher element was a stack which could actually use that resize command
+    it would utilize it)
 
 01. showcase example 
       - menu-bar background transparancy is to nothing because the figlet text has no bg
@@ -65,7 +52,6 @@
       - buncha widgets which dont do much but log their results 
         in a textbox
 
-
 01. gif of showcase example
 
 01. docs docs docs
@@ -76,6 +62,8 @@
 01. add docs, crates button banners to github readme
 
 01. README doc about performance and drawing
+     - slightly laggy in debug mode but should be good in release mode
+        - due to nested element containers, more deeply nested calls 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
