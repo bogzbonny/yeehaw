@@ -21,10 +21,20 @@
     it would utilize it)
 
 01. improve efficiency the showcase already feels laggy
+     - seems specifically to do with nesting things in element organizers
+         - the widget_test has lots lots more elements but no lag
      - for time based redraws the element could have a receivable event which it
        registers
      - each element organizer could keep a queue of the previous draw characters
        which 
+
+    BUGS
+     - ensure gradient colors update
+     - scrollbars dont work
+     - updates based on external mouse events
+        - menu
+        - drop down list
+
 
 01. showcase example 
       - menu-bar background transparancy is to nothing because the figlet text has no bg

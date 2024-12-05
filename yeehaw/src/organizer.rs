@@ -264,22 +264,24 @@ impl ElementOrganizer {
             // draw the element from either the cache or by calling the element's drawing function.
             let cached = dc.get(&el_id_z.0);
 
-            let mut dcps = match cached {
+            let dcps = match cached {
                 Some((size, dirty, dcps)) if !*dirty && *size == child_ctx.size => dcps.clone(),
                 _ => {
-                    let dcps = details.el.drawing(&child_ctx);
+                    let mut dcps = details.el.drawing(&child_ctx);
+
+                    // XXX this fucks the time gradients
+                    for dcp in &mut dcps {
+                        dcp.update_colors_for_time_and_pos(&child_ctx);
+                    }
+                    for dcp in &mut dcps {
+                        dcp.adjust_by_dyn_location(ctx, &details.loc.borrow().l);
+                    }
                     dc.insert(el_id_z.0.clone(), (child_ctx.size, false, dcps.clone()));
                     dcps
                 }
             };
 
-            for dcp in &mut *dcps {
-                dcp.update_colors_for_time_and_pos(&child_ctx);
-            }
-            for mut dcp in dcps {
-                dcp.adjust_by_dyn_location(ctx, &details.loc.borrow().l);
-                out.push(dcp);
-            }
+            out.extend(dcps);
         }
 
         out
@@ -512,23 +514,27 @@ impl ElementOrganizer {
         let p_id = parent.get_id();
         let (captured, resps) = match ev {
             Event::KeyCombo(_) | Event::Custom(_, _) => {
-                let (el_id, resps) = self.routed_event_process(ctx, ev, parent);
+                let (el_id, mut resps) = self.routed_event_process(ctx, ev, parent);
 
                 if let Some(ref el_id) = el_id {
                     // set the draw cache as dirty
                     if let Some((_, dirty, _)) = self.draw_cache.borrow_mut().get_mut(el_id) {
+                        //debug!("setting dirty for el_id: {el_id:?}");
                         *dirty = true;
                     }
+                    resps.push(EventResponse::SetDirty);
                 }
                 (el_id.is_some(), resps)
             }
             Event::Mouse(me) => {
-                let (el_id, resps) = self.mouse_event_process(ctx, &me, parent);
+                let (el_id, mut resps) = self.mouse_event_process(ctx, &me, parent);
                 if let Some(ref el_id) = el_id {
                     // set the draw cache as dirty
                     if let Some((_, dirty, _)) = self.draw_cache.borrow_mut().get_mut(el_id) {
+                        //debug!("setting dirty for el_id: {el_id:?}");
                         *dirty = true;
                     }
+                    resps.push(EventResponse::SetDirty);
                 }
                 (el_id.is_some(), resps)
             }

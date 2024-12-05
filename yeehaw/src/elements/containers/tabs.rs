@@ -93,7 +93,8 @@ impl Element for TabsTop {
                             let name_len = name.chars().count();
                             if x >= pos && x < pos + name_len {
                                 *self.selected.borrow_mut() = Some(i);
-                                return self.pane.receive_event(ctx, ev);
+                                let (_, resps) = self.pane.receive_event(ctx, ev);
+                                return (true, resps);
                             }
                             pos += name_len;
                         }

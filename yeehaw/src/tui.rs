@@ -26,7 +26,7 @@ use {
 /// the amount of time the tui will wait in between calls to re-render
 /// NOTE: Currently the tui does not re-render when an event it called, hence if
 /// this value is set too large it will give the tui a laggy feel.
-const ANIMATION_SPEED: Duration = Duration::from_micros(100);
+const ANIMATION_SPEED: Duration = Duration::from_micros(17);
 
 /// configuration of a tui instance
 pub struct Tui {
