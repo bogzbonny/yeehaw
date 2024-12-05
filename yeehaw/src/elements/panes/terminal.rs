@@ -44,7 +44,7 @@ impl TerminalPane {
     }
 
     pub fn new_with_builder(ctx: &Context, cmd: CommandBuilder) -> Result<Self, Error> {
-        let size = ctx.s;
+        let size = ctx.size;
         let pane = Pane::new(ctx, Self::KIND);
 
         let pty_system = native_pty_system();
@@ -153,10 +153,10 @@ impl TerminalPane {
             log_err!("TerminalPane: failed to write to parser");
             return;
         };
-        parser.set_size(ctx.s.height, ctx.s.width);
+        parser.set_size(ctx.size.height, ctx.size.width);
         if let Err(e) = self.master_pty.borrow().resize(PtySize {
-            rows: ctx.s.height,
-            cols: ctx.s.width,
+            rows: ctx.size.height,
+            cols: ctx.size.width,
             pixel_width: 0,
             pixel_height: 0,
         }) {
@@ -195,7 +195,7 @@ impl Element for TerminalPane {
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let mp_size = self.master_pty.borrow().get_size();
         let resize = if let Ok(mp_size) = mp_size {
-            mp_size.rows != ctx.s.height || mp_size.cols != ctx.s.width
+            mp_size.rows != ctx.size.height || mp_size.cols != ctx.size.width
         } else {
             true
         };
@@ -211,13 +211,13 @@ impl Element for TerminalPane {
         };
         let screen = sc.screen();
 
-        let cols = ctx.s.width;
-        let rows = ctx.s.height;
+        let cols = ctx.size.width;
+        let rows = ctx.size.height;
 
         // The screen is made out of rows of cells
         for row in 0..rows {
             for col in 0..cols {
-                if row > ctx.s.height || col > ctx.s.width {
+                if row > ctx.size.height || col > ctx.size.width {
                     continue;
                 }
 

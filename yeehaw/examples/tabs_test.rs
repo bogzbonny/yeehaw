@@ -1,11 +1,4 @@
-use yeehaw::{
-    DebugSizePane,
-    Error,
-
-    Tabs,
-    //debug,
-    Tui,
-};
+use yeehaw::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -16,9 +9,19 @@ async fn main() -> Result<(), Error> {
     let (mut tui, ctx) = Tui::new()?;
 
     let tabs = Tabs::new(&ctx);
-    let el1 = DebugSizePane::new(&ctx).with_text("tab 1".to_string());
-    let el2 = DebugSizePane::new(&ctx).with_text("tab 2".to_string());
-    let el3 = DebugSizePane::new(&ctx).with_text("tab 3".to_string());
+    //let el1 = DebugSizePane::new(&ctx).with_text("tab 1".to_string());
+    //let el2 = DebugSizePane::new(&ctx).with_text("tab 2".to_string());
+    //let el3 = DebugSizePane::new(&ctx).with_text("tab 3".to_string());
+
+    let el1 = DebugSizePane::new(&ctx)
+        .with_bg(Color::RED)
+        .with_text("tab 1".to_string());
+    let el2 = DebugSizePane::new(&ctx)
+        .with_bg(Color::BLUE)
+        .with_text("tab 2".to_string());
+    let el3 = DebugSizePane::new(&ctx)
+        .with_bg(Color::GREEN)
+        .with_text("tab 3".to_string());
 
     tabs.push(Box::new(el1), "tab 1");
     tabs.push(Box::new(el2), "tab 2");

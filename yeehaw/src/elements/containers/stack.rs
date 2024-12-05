@@ -152,9 +152,9 @@ impl VerticalStack {
     }
 
     pub fn ensure_normalized_sizes(&self, ctx: &Context) {
-        if *self.last_size.borrow() != ctx.s || self.is_dirty.replace(false) {
+        if *self.last_size.borrow() != ctx.size || self.is_dirty.replace(false) {
             self.normalize_locations(ctx);
-            *self.last_size.borrow_mut() = ctx.s;
+            *self.last_size.borrow_mut() = ctx.size;
         }
     }
 
@@ -345,9 +345,9 @@ impl HorizontalStack {
     }
 
     pub fn ensure_normalized_sizes(&self, ctx: &Context) {
-        if *self.last_size.borrow() != ctx.s || self.is_dirty.replace(false) {
+        if *self.last_size.borrow() != ctx.size || self.is_dirty.replace(false) {
             self.normalize_locations(ctx);
-            *self.last_size.borrow_mut() = ctx.s;
+            *self.last_size.borrow_mut() = ctx.size;
         }
     }
 
@@ -401,7 +401,7 @@ impl HorizontalStack {
 /// width), until the total context size is reached. max out at 30 iterations. flex changes are
 /// applied additively evenly to all elements (as opposed to multiplicatively).
 ///
-/// ctx_size is either the height or width of the context
+/// ctx.size is either the height or width of the context
 /// vals is either element heights or widths to be adjusted
 fn adjust_els_to_fit_ctx_size(ctx_size: u16, vals: &mut [DynVal]) {
     vals.iter_mut().for_each(|v| v.flatten_internal());

@@ -63,7 +63,7 @@ impl ImageViewer {
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for ImageViewer {
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        let area = ratatui::layout::Rect::new(0, 0, ctx.s.width, ctx.s.height);
+        let area = ratatui::layout::Rect::new(0, 0, ctx.size.width, ctx.size.height);
         let mut buffer = ratatui::buffer::Buffer::empty(area);
         let st_image = StatefulImage::new(None).resize(Resize::Crop(None));
 

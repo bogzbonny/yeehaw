@@ -367,7 +367,7 @@ impl DrawChs2D {
     }
 
     pub fn new_empty_for_context(ctx: &Context, sty: Style) -> DrawChs2D {
-        DrawChs2D::new_empty_of_size(ctx.s.width as usize, ctx.s.height as usize, sty)
+        DrawChs2D::new_empty_of_size(ctx.size.width as usize, ctx.size.height as usize, sty)
     }
 
     pub fn from_string(text: String, sty: Style) -> DrawChs2D {

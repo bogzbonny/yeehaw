@@ -253,8 +253,8 @@ impl Pane {
         let lines = s.split('\n');
         let mut rs: Vec<Vec<char>> = Vec::new();
 
-        let mut width = ctx.s.width as usize;
-        let mut height = ctx.s.height as usize;
+        let mut width = ctx.size.width as usize;
+        let mut height = ctx.size.height as usize;
         for line in lines {
             if width < line.len() {
                 width = line.len();
@@ -409,8 +409,8 @@ impl Pane {
     pub fn correct_offsets_to_view_position(&self, ctx: &Context, x: usize, y: usize) {
         let view_offset_y = *self.content_view_offset_y.borrow();
         let view_offset_x = *self.content_view_offset_x.borrow();
-        let height = ctx.s.height as usize;
-        let width = ctx.s.width as usize;
+        let height = ctx.size.height as usize;
+        let width = ctx.size.width as usize;
 
         // set y offset if cursor out of bounds
         if y >= view_offset_y + height {
@@ -481,12 +481,12 @@ impl Element for Pane {
             (
                 // take the intersection of the visibile region and the elements region
                 (vis_region.start_x as usize).max(0),
-                (vis_region.end_x as usize).min(ctx.s.width as usize),
+                (vis_region.end_x as usize).min(ctx.size.width as usize),
                 (vis_region.start_y as usize).max(0),
-                (vis_region.end_y as usize).min(ctx.s.height as usize),
+                (vis_region.end_y as usize).min(ctx.size.height as usize),
             )
         } else {
-            (0, ctx.s.width as usize, 0, ctx.s.height as usize)
+            (0, ctx.size.width as usize, 0, ctx.size.height as usize)
         };
 
         let view_offset_y = *self.content_view_offset_y.borrow();
@@ -583,7 +583,7 @@ impl Element for Pane {
 
     fn set_content_x_offset(&self, ctx: &Context, x: usize) {
         let content_width = self.content.borrow().width();
-        let view_width = ctx.s.width as usize;
+        let view_width = ctx.size.width as usize;
         let x = if x > content_width.saturating_sub(view_width) {
             content_width.saturating_sub(view_width)
         } else {
@@ -594,7 +594,7 @@ impl Element for Pane {
 
     fn set_content_y_offset(&self, ctx: &Context, y: usize) {
         let content_height = self.content.borrow().height();
-        let view_height = ctx.s.height as usize;
+        let view_height = ctx.size.height as usize;
         let y = if y > content_height.saturating_sub(view_height) {
             content_height.saturating_sub(view_height)
         } else {

@@ -386,7 +386,7 @@ impl Scrollbar {
         *self.scrollable_position.borrow_mut() = position;
         if let Some(hook) = self.position_changed_hook.borrow_mut().as_mut() {
             let mut ctx = ctx.clone();
-            ctx.s = *self.scrollable_view_size.borrow();
+            ctx.size = *self.scrollable_view_size.borrow();
             hook(ctx, position);
         }
     }
@@ -423,7 +423,7 @@ impl Scrollbar {
         *self.scrollable_position.borrow_mut() -= 1;
         if let Some(hook) = self.position_changed_hook.borrow_mut().as_mut() {
             let mut ctx = ctx.clone();
-            ctx.s = *self.scrollable_view_size.borrow();
+            ctx.size = *self.scrollable_view_size.borrow();
             hook(ctx, *self.scrollable_position.borrow());
         }
     }
@@ -436,7 +436,7 @@ impl Scrollbar {
         *self.scrollable_position.borrow_mut() += 1;
         if let Some(hook) = self.position_changed_hook.borrow_mut().as_mut() {
             let mut ctx = ctx.clone();
-            ctx.s = *self.scrollable_view_size.borrow();
+            ctx.size = *self.scrollable_view_size.borrow();
             hook(ctx, *self.scrollable_position.borrow());
         }
     }
@@ -1055,7 +1055,7 @@ mod tests {
         let width = DynVal::FULL.minus(sub.into());
         let width_val = width.get_val(ctx.get_width());
         assert_eq!(width_val, w as i32 - sub);
-        let sb = HorizontalScrollbar::new(&ctx, width, ctx.s, w as usize * 2);
+        let sb = HorizontalScrollbar::new(&ctx, width, ctx.size, w as usize * 2);
         assert!(*sb.has_arrows.borrow());
 
         let dr = sb.drawing_runes(ctx.get_width().into()).iter().fold(

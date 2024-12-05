@@ -103,7 +103,7 @@ impl FileNavPane {
             if i < *self.offset.borrow() {
                 continue;
             }
-            let mut chs = item.draw(self.pane.default_ch.borrow().clone(), ctx.s.width.into());
+            let mut chs = item.draw(self.pane.default_ch.borrow().clone(), ctx.size.width.into());
 
             // cursor logic
             if i == *self.highlight_position.borrow() {
@@ -129,7 +129,7 @@ impl Element for FileNavPane {
 
                     // correct offsets
                     if *self.highlight_position.borrow()
-                        >= *self.offset.borrow() + ctx.s.height as usize - 1
+                        >= *self.offset.borrow() + ctx.size.height as usize - 1
                     {
                         *self.offset.borrow_mut() += 1;
                     }

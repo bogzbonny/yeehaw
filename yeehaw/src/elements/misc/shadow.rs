@@ -97,7 +97,7 @@ impl Shadowed {
 
     /// TODO could cache this
     pub fn set_shadow_content(&self, ctx: &Context) -> Vec<DrawChPos> {
-        let size = ctx.s;
+        let size = ctx.size;
         let sh_sty = self.sh_sty.borrow();
 
         let mut out = vec![];

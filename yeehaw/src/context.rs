@@ -16,7 +16,7 @@ pub struct Context {
     /// The size of the element, during initialization of an element this size will be unknown and
     /// will be set to a size of (0,0). During all subsiquent calls to the element, the size should
     /// be known.
-    pub s: Size,
+    pub size: Size,
     pub dur_since_launch: std::time::Duration,
     /// the visible region of the element for very large elements, this may be a subset of the
     /// entire element
@@ -33,7 +33,7 @@ impl Default for Context {
     fn default() -> Self {
         let (ev_tx, _) = tokio::sync::mpsc::channel::<Event>(1);
         Context {
-            s: Size::default(),
+            size: Size::default(),
             dur_since_launch: std::time::Duration::default(),
             visible_region: None,
             metadata: HashMap::new(),
@@ -48,7 +48,7 @@ impl Context {
     pub fn new_context_for_screen_no_dur(hat: &SortingHat, ev_tx: Sender<Event>) -> Context {
         let (xmax, ymax) = crossterm::terminal::size().expect("no terminal size");
         Context {
-            s: Size::new(xmax, ymax),
+            size: Size::new(xmax, ymax),
             dur_since_launch: std::time::Duration::default(),
             visible_region: None,
             metadata: HashMap::new(),
@@ -63,7 +63,7 @@ impl Context {
     ) -> Context {
         let (xmax, ymax) = crossterm::terminal::size().expect("no terminal size");
         Context {
-            s: Size::new(xmax, ymax),
+            size: Size::new(xmax, ymax),
             dur_since_launch: launch_instant.elapsed(),
             visible_region: None,
             metadata: HashMap::new(),
@@ -90,7 +90,7 @@ impl Context {
             None
         };
         Context {
-            s: size,
+            size,
             dur_since_launch: self.dur_since_launch,
             visible_region,
             metadata: self.metadata.clone(),
@@ -104,7 +104,7 @@ impl Context {
     /// not yet known
     pub fn child_init_context(&self) -> Context {
         Context {
-            s: Size::default(),
+            size: Size::default(),
             dur_since_launch: self.dur_since_launch,
             visible_region: None,
             metadata: self.metadata.clone(),
@@ -126,17 +126,17 @@ impl Context {
     }
 
     pub fn with_size(mut self, s: Size) -> Self {
-        self.s = s;
+        self.size = s;
         self
     }
 
     pub fn with_height(mut self, h: u16) -> Self {
-        self.s.height = h;
+        self.size.height = h;
         self
     }
 
     pub fn with_width(mut self, w: u16) -> Self {
-        self.s.width = w;
+        self.size.width = w;
         self
     }
 
@@ -154,10 +154,10 @@ impl Context {
     }
 
     pub fn get_width(&self) -> u16 {
-        self.s.width
+        self.size.width
     }
 
     pub fn get_height(&self) -> u16 {
-        self.s.height
+        self.size.height
     }
 }

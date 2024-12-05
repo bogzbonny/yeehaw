@@ -13,12 +13,18 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-01. docs docs docs
+01. Draggin of border panes doesn't work in showcase
 
-01. just use an image for the banner (and include the existing text as 
-    markdown comment
+01. resize event in the "wrong direction" for a stack should not just ignore the
+    resize but pass on that resize to the next higher element (such that if the
+    next higher element was a stack which could actually use that resize command
+    it would utilize it)
 
-01. add docs, crates button banners to github readme
+01. improve efficiency the showcase already feels laggy
+     - for time based redraws the element could have a receivable event which it
+       registers
+     - each element organizer could keep a queue of the previous draw characters
+       which 
 
 01. showcase example 
       - menu-bar background transparancy is to nothing because the figlet text has no bg
@@ -43,7 +49,15 @@
       - buncha widgets which dont do much but log their results 
         in a textbox
 
+
 01. gif of showcase example
+
+01. docs docs docs
+
+01. just use an image for the banner (and include the existing text as 
+    markdown comment
+
+01. add docs, crates button banners to github readme
 
 01. README doc about performance and drawing
 

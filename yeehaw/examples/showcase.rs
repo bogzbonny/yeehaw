@@ -10,7 +10,7 @@ async fn main() -> Result<(), Error> {
     let (mut tui, ctx) = Tui::new()?;
     let el = VerticalStack::new(&ctx);
     //let header_pane = ParentPaneOfSelectable::new(&ctx)
-    let header_pane = ParentPane::new(&ctx, "header")
+    let header_pane = ParentPaneOfSelectable::new(&ctx)
         .with_dyn_height(DynVal::new_fixed(7))
         .with_unfocused(&ctx);
     el.push(Box::new(header_pane.clone()));
@@ -20,7 +20,7 @@ async fn main() -> Result<(), Error> {
 
     let mtext = FigletText::new(
         &ctx,
-        "yyeeehaaaaawww",
+        "yeehaw",
         figlet_rs::FIGfont::from_content(std::include_str!("../../assets/figlet/ANSI_Shadow.flf"))
             .expect("missing asset"),
     )
@@ -28,6 +28,14 @@ async fn main() -> Result<(), Error> {
     .with_style(Style::default().with_fg(Color::Gradient(gr)))
     .at(0.into(), DynVal::new_fixed(1));
     header_pane.add_element(Box::new(mtext));
+
+    let button = Button::new(
+        &ctx,
+        "do not\nclick me",
+        Box::new(|_, _| EventResponses::default()),
+    )
+    .at(DynVal::new_flex(0.9), DynVal::new_flex(0.3));
+    header_pane.add_element(Box::new(button));
 
     let mb = MenuBar::top_menu_bar(&ctx)
         .with_height(1.into())
@@ -54,7 +62,22 @@ async fn main() -> Result<(), Error> {
         Style::default(),
     )));
     left_pane.push(Box::new(DebugSizePane::new(&ctx).with_bg(Color::BLUE)));
-    right_pane.push(Box::new(DebugSizePane::new(&ctx).with_bg(Color::RED)));
+
+    let tabs = Tabs::new(&ctx);
+    let el1 = DebugSizePane::new(&ctx)
+        .with_bg(Color::RED)
+        .with_text("tab 1".to_string());
+    let el2 = DebugSizePane::new(&ctx)
+        .with_bg(Color::BLUE)
+        .with_text("tab 2".to_string());
+    let el3 = DebugSizePane::new(&ctx)
+        .with_bg(Color::GREEN)
+        .with_text("tab 3".to_string());
+    tabs.push(Box::new(el1), " widgets-tab");
+    tabs.push(Box::new(el2), "tab 2");
+    tabs.push(Box::new(el3), "tab 3");
+    tabs.select(0);
+    right_pane.push(Box::new(tabs));
 
     let l = Label::new(&ctx, "window generation zone");
     left_top.add_element(Box::new(l));
@@ -79,6 +102,5 @@ async fn main() -> Result<(), Error> {
     .at(DynVal::new_flex(0.), DynVal::new_flex(0.3));
     left_top.add_element(Box::new(dial1));
 
-    println!("end");
     tui.run(Box::new(el)).await
 }

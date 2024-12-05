@@ -47,7 +47,7 @@ impl TabsTop {
             tab_suffix: Rc::new(RefCell::new(" ".to_string())),
             highlight_style: Rc::new(RefCell::new(
                 Style::default_const()
-                    .with_bg(Color::BLUE)
+                    .with_bg(Color::LIGHT_BLUE)
                     .with_fg(Color::BLACK),
             )),
             normal_style: Rc::new(RefCell::new(
@@ -127,8 +127,6 @@ impl Element for TabsTop {
             pos += name_len;
             chs.extend(name_chs);
         }
-        //debug!("TabsTop::drawing: chs.len() = {}", chs.len());
-        //debug!("TabsTop::drawing: chs = {:?}", chs);
         chs
     }
 }
@@ -188,6 +186,7 @@ impl Tabs {
     }
 
     pub fn set_tab_view_pane(&self, idx: Option<usize>) {
+        // the second element (1) is the tab view pane
         if let Some(el) = self.pane.get(1) {
             el.set_visible(false);
             self.pane.remove(1);

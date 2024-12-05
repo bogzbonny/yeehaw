@@ -79,7 +79,7 @@ impl Tui {
         self.main_el_id = main_el.id();
         // add the element here after the location has been created
         let ctx = Context::new_context_for_screen_no_dur(&self.cup.hat, self.cup.ev_tx.clone());
-        let loc = DynLocation::new_fixed(0, ctx.s.width as i32, 0, ctx.s.height as i32);
+        let loc = DynLocation::new_fixed(0, ctx.size.width as i32, 0, ctx.size.height as i32);
         let loc = DynLocationSet::new(loc, vec![], 0);
         main_el.set_dyn_location_set(loc);
         main_el.set_visible(true);
@@ -126,7 +126,7 @@ impl Tui {
 
                                 CTEvent::Resize(_, _) => {
                                     let ctx = self.context();
-                                    let loc = DynLocation::new_fixed(0, ctx.s.width as i32, 0, ctx.s.height as i32);
+                                    let loc = DynLocation::new_fixed(0, ctx.size.width as i32, 0, ctx.size.height as i32);
                                     // There should only be one element at index 0 in the upper level EO
                                     self.cup.eo.update_el_primary_location(self.main_el_id.clone(), loc);
                                     self.cup.eo.get_element(&self.main_el_id).expect("main element missing").receive_event(&ctx, Event::Resize{});
@@ -250,7 +250,7 @@ impl Tui {
         let mut dedup_chs: HashMap<(u16, u16), StyledContent<ChPlus>> = HashMap::new();
         for c in chs {
             // remove out of bounds
-            if c.x >= ctx.s.width || c.y >= ctx.s.height {
+            if c.x >= ctx.size.width || c.y >= ctx.size.height {
                 continue;
             }
 

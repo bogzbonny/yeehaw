@@ -150,19 +150,19 @@ impl Slider {
 
     /// get the position from the mouse x position
     pub fn get_pos_from_x(&self, ctx: &Context, x: i32) -> f64 {
-        if ctx.s.width == 0 {
+        if ctx.size.width == 0 {
             return 0.0;
         }
-        let width = (ctx.s.width - 1) as f64;
+        let width = (ctx.size.width - 1) as f64;
         (x as f64) / width
     }
 
     pub fn get_x_from_pos(&self, ctx: &Context) -> i32 {
         let pos = self.get_position();
-        if ctx.s.width == 0 {
+        if ctx.size.width == 0 {
             return 0;
         }
-        let width = (ctx.s.width - 1) as f64;
+        let width = (ctx.size.width - 1) as f64;
         (pos * width).round_ties_even() as i32
     }
 
@@ -177,7 +177,7 @@ impl Slider {
     }
 
     pub fn update_content(&self, ctx: &Context) {
-        let width = ctx.s.width;
+        let width = ctx.size.width;
         let pos = *self.position.borrow();
 
         let sty = self.pane.get_current_style();

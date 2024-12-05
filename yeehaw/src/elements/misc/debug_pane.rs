@@ -28,7 +28,7 @@ impl DebugSizePane {
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for DebugSizePane {
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        let size = ctx.s;
+        let size = ctx.size;
         let s = format!("{}x{} {}", size.width, size.height, self.text.borrow());
         let sty = self.pane.get_style();
         let content = DrawChs2D::from_string(s, sty);

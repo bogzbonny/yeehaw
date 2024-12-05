@@ -121,7 +121,7 @@ impl TextBox {
         }
         let size = init_ctx
             .child_context(&self.inner.borrow().pane.get_dyn_location())
-            .s;
+            .size;
         sb.set_scrollable_view_size(size);
         if let Some(x_sb) = &*self.x_scrollbar.borrow() {
             x_sb.set_scrollable_view_size(size);
@@ -212,14 +212,15 @@ impl TextBox {
             .child_context(&self.pane.get_dyn_location())
             .child_context(&self.inner.borrow().pane.get_dyn_location());
         if let Some(y_sb) = &*self.y_scrollbar.borrow() {
-            y_sb.set_scrollable_view_size(inner_ctx.s);
-            *y_sb.scrollable_view_chs.borrow_mut() = DynVal::new_fixed(inner_ctx.s.height as i32);
-            //y_sb.external_change(0, self.inner.borrow().pane.content_height(), inner_ctx.s);
+            y_sb.set_scrollable_view_size(inner_ctx.size);
+            *y_sb.scrollable_view_chs.borrow_mut() =
+                DynVal::new_fixed(inner_ctx.size.height as i32);
+            //y_sb.external_change(0, self.inner.borrow().pane.content_height(), inner_ctx.size);
         }
         if let Some(x_sb) = &*self.x_scrollbar.borrow() {
-            x_sb.set_scrollable_view_size(inner_ctx.s);
-            *x_sb.scrollable_view_chs.borrow_mut() = DynVal::new_fixed(inner_ctx.s.width as i32);
-            //x_sb.external_change(0, self.inner.borrow().pane.content_width(), inner_ctx.s);
+            x_sb.set_scrollable_view_size(inner_ctx.size);
+            *x_sb.scrollable_view_chs.borrow_mut() = DynVal::new_fixed(inner_ctx.size.width as i32);
+            //x_sb.external_change(0, self.inner.borrow().pane.content_width(), inner_ctx.size);
         }
 
         // correct offsets
@@ -826,7 +827,7 @@ impl TextBoxInner {
 
         // update the scrollbars/line numbers textbox
         if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
-            sb.external_change(y_offset, self.pane.content_height(), ctx.s);
+            sb.external_change(y_offset, self.pane.content_height(), ctx.size);
         }
         let resp = EventResponse::default();
         if let Some(ln_tb) = self.line_number_tb.borrow().as_ref() {
@@ -842,7 +843,7 @@ impl TextBoxInner {
             ln_tb.pane.set_content_y_offset(ctx, y_offset);
         }
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
-            sb.external_change(x_offset, self.pane.content_width(), ctx.s);
+            sb.external_change(x_offset, self.pane.content_width(), ctx.size);
         }
         resp
     }
@@ -1394,9 +1395,9 @@ impl Element for TextBoxInner {
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        if self.is_dirty.replace(false) || *self.last_size.borrow() != ctx.s {
+        if self.is_dirty.replace(false) || *self.last_size.borrow() != ctx.size {
             self.update_content(ctx);
-            self.last_size.replace(ctx.s);
+            self.last_size.replace(ctx.size);
         }
         self.pane.drawing(ctx)
     }

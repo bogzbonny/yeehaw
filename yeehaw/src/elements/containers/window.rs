@@ -156,7 +156,7 @@ impl WindowPane {
                 ));
 
                 let mut top_bar_ctx = ctx.clone();
-                top_bar_ctx.s.height = 1;
+                top_bar_ctx.size.height = 1;
 
                 let (_, r) = self.inner.receive_event(&inner_ctx, Event::Resize);
                 resps_.extend(r);
@@ -201,14 +201,14 @@ impl WindowPane {
                 match mr {
                     Some(restore_loc) => {
                         let mut pane_ctx = ctx.clone();
-                        pane_ctx.s.height = restore_loc.height(ctx) as u16;
-                        pane_ctx.s.width = restore_loc.width(ctx) as u16;
+                        pane_ctx.size.height = restore_loc.height(ctx) as u16;
+                        pane_ctx.size.width = restore_loc.width(ctx) as u16;
 
                         let mut top_bar_ctx = pane_ctx.clone();
-                        top_bar_ctx.s.height = 1;
+                        top_bar_ctx.size.height = 1;
 
                         let mut inner_ctx = pane_ctx.clone();
-                        inner_ctx.s.height -= 1;
+                        inner_ctx.size.height -= 1;
 
                         self.pane.pane.set_dyn_location(restore_loc);
 
@@ -225,10 +225,10 @@ impl WindowPane {
                         self.pane.pane.set_dyn_location(l);
 
                         let mut top_bar_ctx = ctx.clone();
-                        top_bar_ctx.s.height = 1;
+                        top_bar_ctx.size.height = 1;
 
                         let mut inner_ctx = ctx.clone();
-                        inner_ctx.s.height -= 1;
+                        inner_ctx.size.height -= 1;
 
                         let (_, r) = self.top_bar.receive_event(&top_bar_ctx, Event::Resize);
                         resps_.extend(r);
@@ -260,8 +260,8 @@ impl WindowPane {
                 self.pane.pane.set_start_y(DynVal::FULL.minus(1.into()));
                 self.pane.pane.set_end_y(DynVal::FULL);
                 let mut pane_ctx = ctx.clone();
-                pane_ctx.s.height = 1;
-                pane_ctx.s.width = minimize_width;
+                pane_ctx.size.height = 1;
+                pane_ctx.size.width = minimize_width;
 
                 // send an event telling the top bar to hide its buttons
                 let (_, r) = self.top_bar.receive_event(
@@ -308,11 +308,11 @@ impl WindowPane {
                         // maximize from minimized
 
                         let mut pane_ctx = ctx.clone();
-                        pane_ctx.s.height = restore_loc.height(ctx) as u16;
-                        pane_ctx.s.width = restore_loc.width(ctx) as u16;
+                        pane_ctx.size.height = restore_loc.height(ctx) as u16;
+                        pane_ctx.size.width = restore_loc.width(ctx) as u16;
 
                         let mut top_bar_ctx = pane_ctx.clone();
-                        top_bar_ctx.s.height = 1;
+                        top_bar_ctx.size.height = 1;
 
                         self.pane.pane.set_dyn_location(restore_loc);
 
@@ -618,7 +618,7 @@ impl Element for BasicWindowTopBar {
         let out = self.pane.drawing(ctx);
         // ensure that none of the positions are outside of the context
         out.iter()
-            .filter(|dc| dc.x < ctx.s.width && dc.y < ctx.s.height)
+            .filter(|dc| dc.x < ctx.size.width && dc.y < ctx.size.height)
             .cloned()
             .collect()
     }

@@ -50,12 +50,12 @@ impl PaneScrollable {
 
     pub fn inner_ctx(&self, ctx: &Context) -> Context {
         let mut inner_ctx = ctx.clone();
-        inner_ctx.s.height = *self.content_height.borrow() as u16;
-        inner_ctx.s.width = *self.content_width.borrow() as u16;
+        inner_ctx.size.height = *self.content_height.borrow() as u16;
+        inner_ctx.size.width = *self.content_width.borrow() as u16;
         let x1 = *self.content_offset_x.borrow() as u16;
         let y1 = *self.content_offset_y.borrow() as u16;
-        let x2 = x1 + ctx.s.width;
-        let y2 = y1 + ctx.s.height;
+        let x2 = x1 + ctx.size.width;
+        let y2 = y1 + ctx.size.height;
         //debug!(
         //    "visible region: \n\tx1: {}, \n\tx2: {}, \n\ty1: {}, \n\ty2: {}",
         //    x1, x2, y1, y2
@@ -159,11 +159,11 @@ impl Element for PaneScrollable {
         let x = if x > self
             .content_width
             .borrow()
-            .saturating_sub(ctx.s.width.into())
+            .saturating_sub(ctx.size.width.into())
         {
             self.content_width
                 .borrow()
-                .saturating_sub(ctx.s.width.into())
+                .saturating_sub(ctx.size.width.into())
         } else {
             x
         };
@@ -174,11 +174,11 @@ impl Element for PaneScrollable {
         let y = if y > self
             .content_height
             .borrow()
-            .saturating_sub(ctx.s.height.into())
+            .saturating_sub(ctx.size.height.into())
         {
             self.content_height
                 .borrow()
-                .saturating_sub(ctx.s.height.into())
+                .saturating_sub(ctx.size.height.into())
         } else {
             y
         };

@@ -393,8 +393,8 @@ impl RadialGradient {
         let x = x as f64;
         let y = y as f64;
         let (center_x, center_y) = (
-            self.center.0.get_val(ctx.s.width) as f64,
-            self.center.1.get_val(ctx.s.height) as f64,
+            self.center.0.get_val(ctx.size.width) as f64,
+            self.center.1.get_val(ctx.size.height) as f64,
         );
         let (skew_x, skew_y) = self.skew;
         let mut dist = Self::dist_from_center(x, y, center_x, center_y, skew_x, skew_y);
@@ -402,8 +402,8 @@ impl RadialGradient {
         // choose the furthest corner as the max distance
         let max_dist1 = Self::dist_from_center(0., 0., center_x, center_y, skew_x, skew_y);
         let max_dist2 = Self::dist_from_center(
-            (ctx.s.width - 1) as f64,
-            (ctx.s.height - 1) as f64,
+            (ctx.size.width - 1) as f64,
+            (ctx.size.height - 1) as f64,
             center_x,
             center_y,
             skew_x,
@@ -411,14 +411,14 @@ impl RadialGradient {
         );
         let max_dist3 = Self::dist_from_center(
             0.,
-            (ctx.s.height - 1) as f64,
+            (ctx.size.height - 1) as f64,
             center_x,
             center_y,
             skew_x,
             skew_y,
         );
         let max_dist4 = Self::dist_from_center(
-            (ctx.s.width - 1) as f64,
+            (ctx.size.width - 1) as f64,
             0.,
             center_x,
             center_y,
@@ -440,13 +440,13 @@ impl RadialGradient {
         let mut start_pos: Option<f64> = None;
         let mut end_pos: Option<f64> = None;
         for ((p1, c1), (p2, c2)) in self.grad.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
-            if (p1.get_val(ctx.s.width.max(ctx.s.height)) as f64 <= dist)
-                && (dist < p2.get_val(ctx.s.width.max(ctx.s.height)) as f64)
+            if (p1.get_val(ctx.size.width.max(ctx.size.height)) as f64 <= dist)
+                && (dist < p2.get_val(ctx.size.width.max(ctx.size.height)) as f64)
             {
                 start_clr = Some(c1.clone());
                 end_clr = Some(c2.clone());
-                start_pos = Some(p1.get_val(ctx.s.width.max(ctx.s.height)) as f64);
-                end_pos = Some(p2.get_val(ctx.s.width.max(ctx.s.height)) as f64);
+                start_pos = Some(p1.get_val(ctx.size.width.max(ctx.size.height)) as f64);
+                end_pos = Some(p2.get_val(ctx.size.width.max(ctx.size.height)) as f64);
                 break;
             }
         }
@@ -454,11 +454,11 @@ impl RadialGradient {
         let start_clr = start_clr.unwrap_or_else(|| self.grad[0].1.clone());
         let end_clr = end_clr.unwrap_or_else(|| self.grad[self.grad.len() - 1].1.clone());
         let start_pos = start_pos
-            .unwrap_or_else(|| self.grad[0].0.get_val(ctx.s.width.max(ctx.s.height)) as f64);
+            .unwrap_or_else(|| self.grad[0].0.get_val(ctx.size.width.max(ctx.size.height)) as f64);
         let end_pos = end_pos.unwrap_or_else(|| {
             self.grad[self.grad.len() - 1]
                 .0
-                .get_val(ctx.s.width.max(ctx.s.height)) as f64
+                .get_val(ctx.size.width.max(ctx.size.height)) as f64
         });
         let percent = (dist - start_pos) / (end_pos - start_pos);
         start_clr.blend(ctx, x as u16, y as u16, end_clr, percent, BlendKind::Blend1)
@@ -639,12 +639,12 @@ impl Gradient {
         // determine the maximum value of the context (used for computing the DynVal)
         let angle_rad = self.angle_deg * std::f64::consts::PI / 180.0;
         let max_ctx_val = if self.angle_deg == 0. || self.angle_deg == 180. {
-            ctx.s.width
+            ctx.size.width
         } else if self.angle_deg == 90. || self.angle_deg == 270. {
-            ctx.s.height
+            ctx.size.height
         } else {
-            let width1 = ctx.s.width as f64;
-            let height1 = ctx.s.height as f64;
+            let width1 = ctx.size.width as f64;
+            let height1 = ctx.size.height as f64;
             let angle_rad = angle_rad.abs();
             let width2 = height1 * (std::f64::consts::PI / 2. - angle_rad).tan();
             let height2 = width1 * angle_rad.tan();
@@ -658,16 +658,16 @@ impl Gradient {
 
         // determine the position on the gradient of the given x, y
         let mut pos = if self.angle_deg == 0. {
-            x %= ctx.s.width;
+            x %= ctx.size.width;
             x as i32
         } else if self.angle_deg == 90. {
-            y %= ctx.s.height;
+            y %= ctx.size.height;
             y as i32
         } else if self.angle_deg == 180. {
-            x %= ctx.s.width;
+            x %= ctx.size.width;
             -(x as i32)
         } else if self.angle_deg == 270. {
-            y %= ctx.s.height;
+            y %= ctx.size.height;
             -(y as i32)
         } else {
             //            x

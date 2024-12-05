@@ -995,7 +995,7 @@ impl Bordered {
             top: Rc::new(RefCell::new(None)),
             bottom: Rc::new(RefCell::new(None)),
 
-            last_size: Rc::new(RefCell::new(ctx.s)),
+            last_size: Rc::new(RefCell::new(ctx.size)),
             x_scrollbar: Rc::new(RefCell::new(None)),
             y_scrollbar: Rc::new(RefCell::new(None)),
             x_scrollbar_sub_from_full: Rc::new(RefCell::new(0)),
@@ -1250,16 +1250,16 @@ impl Bordered {
     }
 
     pub fn ensure_scrollbar_size(&self, ctx: &Context) {
-        if *self.last_size.borrow() != ctx.s {
+        if *self.last_size.borrow() != ctx.size {
             let x_sb = self.x_scrollbar.borrow();
             if let Some(x_sb) = x_sb.as_ref() {
                 let view_w: DynVal = DynVal::FULL
                     .minus((*self.x_scrollbar_view_sub_from_full.borrow()).into())
-                    .get_val(ctx.s.width)
+                    .get_val(ctx.size.width)
                     .into();
                 let w: DynVal = DynVal::FULL
                     .minus((*self.x_scrollbar_sub_from_full.borrow()).into())
-                    .get_val(ctx.s.width)
+                    .get_val(ctx.size.width)
                     .into();
                 x_sb.set_dyn_width(view_w, w, None);
             }
@@ -1267,15 +1267,15 @@ impl Bordered {
             if let Some(y_sb) = y_sb.as_ref() {
                 let view_h: DynVal = DynVal::FULL
                     .minus((*self.y_scrollbar_view_sub_from_full.borrow()).into())
-                    .get_val(ctx.s.height)
+                    .get_val(ctx.size.height)
                     .into();
                 let h: DynVal = DynVal::FULL
                     .minus((*self.y_scrollbar_sub_from_full.borrow()).into())
-                    .get_val(ctx.s.height)
+                    .get_val(ctx.size.height)
                     .into();
                 y_sb.set_dyn_height(view_h, h, None);
             }
-            *self.last_size.borrow_mut() = ctx.s;
+            *self.last_size.borrow_mut() = ctx.size;
         }
     }
 }
@@ -1537,21 +1537,21 @@ impl VerticalSide {
 impl Element for VerticalSide {
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let Some((ref text, ref j)) = *self.text.borrow() else {
-            return DrawChPos::new_repeated_vertical(self.ch.borrow().clone(), 0, 0, ctx.s.height);
+            return DrawChPos::new_repeated_vertical(self.ch.borrow().clone(), 0, 0, ctx.size.height);
         };
 
         let text_height = text.len() as u16;
         let (start_y, end_y) = match j {
             Justification::Start => (0u16, text_height),
             Justification::Center => {
-                let start_y = (ctx.s.height - text_height) / 2;
+                let start_y = (ctx.size.height - text_height) / 2;
                 (start_y, start_y + text_height)
             }
-            Justification::End => (ctx.s.height - text_height, ctx.s.height),
+            Justification::End => (ctx.size.height - text_height, ctx.size.height),
         };
-        let mut out = Vec::with_capacity(ctx.s.height as usize);
+        let mut out = Vec::with_capacity(ctx.size.height as usize);
         let mut text_i = 0;
-        for y in 0..ctx.s.height {
+        for y in 0..ctx.size.height {
             if y >= start_y && y < end_y {
                 if let Some(ch) = text.get(text_i) {
                     out.push(DrawChPos::new(ch.clone(), 0, y));
@@ -1739,21 +1739,21 @@ impl HorizontalSide {
 impl Element for HorizontalSide {
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let Some((ref text, ref j)) = *self.text.borrow() else {
-            return DrawChPos::new_repeated_horizontal(self.ch.borrow().clone(), 0, 0, ctx.s.width);
+            return DrawChPos::new_repeated_horizontal(self.ch.borrow().clone(), 0, 0, ctx.size.width);
         };
 
         let text_width = text.len() as u16;
         let (start_x, end_x) = match j {
             Justification::Start => (0u16, text_width),
             Justification::Center => {
-                let start_x = (ctx.s.width - text_width) / 2;
+                let start_x = (ctx.size.width - text_width) / 2;
                 (start_x, start_x + text_width)
             }
-            Justification::End => (ctx.s.width - text_width, ctx.s.width),
+            Justification::End => (ctx.size.width - text_width, ctx.size.width),
         };
-        let mut out = Vec::with_capacity(ctx.s.width as usize);
+        let mut out = Vec::with_capacity(ctx.size.width as usize);
         let mut text_i = 0;
-        for x in 0..ctx.s.width {
+        for x in 0..ctx.size.width {
             if x >= start_x && x < end_x {
                 if let Some(ch) = text.get(text_i) {
                     out.push(DrawChPos::new(ch.clone(), x, 0));

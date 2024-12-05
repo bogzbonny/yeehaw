@@ -90,7 +90,10 @@ impl MenuBar {
     const MENU_STYLE_MD_KEY: &'static str = "menu_style";
 
     pub fn top_menu_bar(ctx: &Context) -> Self {
-        let pane = ParentPane::new(ctx, MenuBar::KIND).with_z(MenuBar::Z_INDEX);
+        let menu_sty = MenuStyle::default();
+        let pane = ParentPane::new(ctx, MenuBar::KIND)
+            .with_z(MenuBar::Z_INDEX)
+            .with_style(menu_sty.unselected_style.clone());
         MenuBar {
             pane,
             horizontal_bar: Rc::new(RefCell::new(true)),
@@ -100,7 +103,7 @@ impl MenuBar {
             primary_has_show_arrow: Rc::new(RefCell::new(false)),
             primary_open_dir: Rc::new(RefCell::new(OpenDirection::Down)),
             secondary_open_dir: Rc::new(RefCell::new(OpenDirection::RightThenDown)),
-            menu_style: Rc::new(RefCell::new(MenuStyle::default())),
+            menu_style: Rc::new(RefCell::new(menu_sty)),
             make_invisible_on_closedown: Rc::new(RefCell::new(false)),
             close_on_primary_click: Rc::new(RefCell::new(true)),
         }
@@ -678,8 +681,8 @@ impl Element for MenuBar {
             }
         };
 
-        //let mut out = self.pane.drawing(ctx);
-        let mut out = Vec::new();
+        let mut out = self.pane.drawing(ctx);
+        //let mut out = Vec::new();
 
         // draw each menu item
         for el_details in self.pane.eo.els.borrow().values() {
@@ -763,7 +766,7 @@ impl Element for MenuItem {
 
         // add filler space
         while x
-            < (ctx.s.width as usize)
+            < (ctx.size.width as usize)
                 .saturating_sub(m_sty.right_padding + arrow_text.chars().count())
         {
             let dc = DrawCh::new(' ', sty.clone());
