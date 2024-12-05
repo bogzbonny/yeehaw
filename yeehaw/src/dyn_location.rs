@@ -4,7 +4,7 @@ use crate::{Context, DynVal, RelMouseEvent};
 /// The higher the z-index, further "on top" the element is.
 pub type ZIndex = u32;
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct DynLocation {
     /// inclusive
     pub start_x: DynVal,
@@ -219,7 +219,7 @@ impl DynLocation {
 /// DynLocationSet holds the primary location as well as the extra
 /// locations of an element. In addition it holds a ZIndex which all
 /// locations are said to exist at.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct DynLocationSet {
     pub l: DynLocation,
 

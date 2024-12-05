@@ -23,14 +23,20 @@
 01. improve efficiency the showcase already feels laggy
      - seems specifically to do with nesting things in element organizers
          - the widget_test has lots lots more elements but no lag
+         - each layer of element organizer causes additional redraw adjustments
+           to be required
      - for time based redraws the element could have a receivable event which it
        registers
      - each element organizer could keep a queue of the previous draw characters
        which 
 
+
     BUGS
+     - menu bar is capturing mouse movements even when not selected
+     - bordered borders are capturing mouse movements even when not selected
      - ensure gradient colors update
      - scrollbars dont work
+     - redraw on location diff not just size 
      - updates based on external mouse events
         - menu
         - drop down list
