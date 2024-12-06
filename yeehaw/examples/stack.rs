@@ -2,8 +2,7 @@ use yeehaw::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    yeehaw::log::set_log_file("./debug_test.log".to_string());
-    yeehaw::log::clear();
+    yeehaw::log::reset_log_file("./debug_test.log".to_string());
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let (mut tui, ctx) = Tui::new()?;
@@ -17,8 +16,8 @@ async fn main() -> Result<(), Error> {
     let vstack = VerticalStack::new(&ctx)
         .with_min_resize_height(2)
         .with_height(DynVal::FULL);
-    top.push(Box::new(sel_pane.clone()));
-    top.push(Box::new(vstack.clone()));
+    let _ = top.push(Box::new(sel_pane.clone()));
+    let _ = top.push(Box::new(vstack.clone()));
 
     let top_ = top.clone();
     let vstack_ = vstack.clone();
@@ -42,10 +41,10 @@ async fn main() -> Result<(), Error> {
     let remove_button_click_fn = Box::new(move |_, _| {
         if toggle_.selected() == " horizontal " {
             if !hstack_.is_empty() {
-                hstack_.remove(hstack_.len() - 1);
+                let _ = hstack_.remove(hstack_.len() - 1);
             }
         } else if !vstack_.is_empty() {
-            vstack_.remove(vstack_.len() - 1);
+            let _ = vstack_.remove(vstack_.len() - 1);
         }
         EventResponses::default()
     });
@@ -85,7 +84,7 @@ async fn main() -> Result<(), Error> {
                 .with_dyn_width(hstack_.avg_width(&ctx_)),
             );
 
-            hstack_.push(el);
+            let _ = hstack_.push(el);
         } else {
             //let el: Box<dyn Element> = if vstack_.is_empty() {
             //    Box::new(
@@ -112,16 +111,16 @@ async fn main() -> Result<(), Error> {
                 )
                 .with_dyn_height(vstack_.avg_height(&ctx_)),
             );
-            vstack_.push(el);
+            let _ = vstack_.push(el);
         }
 
         EventResponses::default()
     });
     let add_button = Button::new(&ctx, "add_pane", add_button_click_fn).at(1.into(), 1.into());
 
-    sel_pane.add_element(Box::new(add_button));
-    sel_pane.add_element(Box::new(remove_button));
-    sel_pane.add_element(Box::new(toggle));
+    let _ = sel_pane.add_element(Box::new(add_button));
+    let _ = sel_pane.add_element(Box::new(remove_button));
+    let _ = sel_pane.add_element(Box::new(toggle));
 
     tui.run(Box::new(top)).await
 }

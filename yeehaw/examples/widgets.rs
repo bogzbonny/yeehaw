@@ -2,8 +2,7 @@ use yeehaw::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    yeehaw::log::set_log_file("./debug_test.log".to_string());
-    yeehaw::log::clear();
+    yeehaw::log::reset_log_file("./debug_test.log".to_string());
     std::env::set_var("RUST_BACKTRACE", "1");
 
     let (mut tui, ctx) = Tui::new()?;
@@ -13,7 +12,7 @@ async fn main() -> Result<(), Error> {
     let l1 = Label::new(&ctx, "some label");
 
     let l = l1.clone().at(DynVal::new_flex(0.5), DynVal::new_flex(0.5));
-    el.add_element(Box::new(l));
+    let _ = el.add_element(Box::new(l));
 
     let button_click_fn = Box::new(move |_, _| {
         let t = l1.get_text();
@@ -29,8 +28,8 @@ async fn main() -> Result<(), Error> {
         button.get_dyn_location_set().l.clone(),
         "button-label",
     );
-    el.add_element(Box::new(button));
-    el.add_element(Box::new(button_label));
+    let _ = el.add_element(Box::new(button));
+    let _ = el.add_element(Box::new(button_label));
 
     let button = Button::new(
         &ctx,
@@ -39,29 +38,29 @@ async fn main() -> Result<(), Error> {
     )
     .with_description("a button!".to_string())
     .at(DynVal::new_flex(0.25), DynVal::new_flex(0.15));
-    el.add_element(Box::new(button));
+    let _ = el.add_element(Box::new(button));
 
     let button2 = Button::new(&ctx, "button2", Box::new(|_, _| EventResponses::default()))
         .with_description("a button!".to_string())
         .with_sides(ButtonSides::default())
         .at(DynVal::new_flex(0.25), DynVal::new_flex(0.29));
-    el.add_element(Box::new(button2));
+    let _ = el.add_element(Box::new(button2));
 
     let button3 = Button::new(&ctx, "b", Box::new(|_, _| EventResponses::default()))
         .with_description("a button!".to_string())
         .with_micro_shadow(ButtonMicroShadow::default())
         .at(DynVal::new_flex(0.25), DynVal::new_flex(0.10));
-    el.add_element(Box::new(button3));
+    let _ = el.add_element(Box::new(button3));
 
     let cb = Checkbox::new(&ctx).at(DynVal::new_flex(0.1), DynVal::new_flex(0.1));
     let cb_label = Label::new_for_el(&ctx, cb.get_dyn_location_set().l.clone(), "check me");
-    el.add_element(Box::new(cb));
-    el.add_element(Box::new(cb_label));
+    let _ = el.add_element(Box::new(cb));
+    let _ = el.add_element(Box::new(cb_label));
 
     let cb2 = Checkbox::new(&ctx).at(DynVal::new_flex(0.1), DynVal::new_flex(0.1).plus_fixed(1));
     let cb2_label = Label::new_for_el(&ctx, cb2.get_dyn_location_set().l.clone(), "check me");
-    el.add_element(Box::new(cb2));
-    el.add_element(Box::new(cb2_label));
+    let _ = el.add_element(Box::new(cb2));
+    let _ = el.add_element(Box::new(cb2_label));
 
     let rbs = RadioButtons::new(
         &ctx,
@@ -72,7 +71,7 @@ async fn main() -> Result<(), Error> {
         ],
     )
     .at(DynVal::new_flex(0.1), DynVal::new_flex(0.1).plus_fixed(10));
-    el.add_element(Box::new(rbs));
+    let _ = el.add_element(Box::new(rbs));
 
     let mut gr = Gradient::x_grad_rainbow(5);
     gr.angle_deg = 60.;
@@ -85,11 +84,11 @@ async fn main() -> Result<(), Error> {
     )
     .with_style(Style::default().with_fg(Color::Gradient(gr)))
     .at(DynVal::new_flex(0.1), DynVal::new_flex(0.6));
-    el.add_element(Box::new(mtext));
+    let _ = el.add_element(Box::new(mtext));
 
     let toggle = Toggle::new(&ctx, " ★ ".to_string(), " ⏾ ".to_string())
         .at(DynVal::new_flex(0.1), DynVal::new_flex(0.4));
-    el.add_element(Box::new(toggle));
+    let _ = el.add_element(Box::new(toggle));
 
     // fill dd entries with 20 items
     let dd_entries = (1..=20)
@@ -104,7 +103,7 @@ async fn main() -> Result<(), Error> {
                 .plus_max_of(DynVal::new_fixed(12)),
         )
         .at(DynVal::new_flex(0.1), DynVal::new_flex(0.8));
-    el.add_element(Box::new(dropdown));
+    let _ = el.add_element(Box::new(dropdown));
 
     let ld_entries = (1..=10)
         .map(|i| format!("entry {}", i))
@@ -127,7 +126,7 @@ async fn main() -> Result<(), Error> {
         )
         .with_scrollbar(&ctx)
         .at(DynVal::new_flex(0.5), DynVal::new_flex(0.1));
-    el.add_element(Box::new(listbox));
+    let _ = el.add_element(Box::new(listbox));
 
     let tb = TextBox::new(
         &ctx,
@@ -147,7 +146,7 @@ async fn main() -> Result<(), Error> {
     .editable(&ctx)
     .with_no_wordwrap(&ctx)
     .at(DynVal::new_flex(0.35), DynVal::new_flex(0.1));
-    el.add_element(Box::new(tb));
+    let _ = el.add_element(Box::new(tb));
 
     let tb_with_grey = TextBox::new(&ctx, "")
         .with_width(DynVal::new_fixed(18))
@@ -156,13 +155,13 @@ async fn main() -> Result<(), Error> {
         .with_text_when_empty("enter text here")
         .with_no_wordwrap(&ctx)
         .at(DynVal::new_flex(0.25), DynVal::new_fixed(3));
-    el.add_element(Box::new(tb_with_grey));
+    let _ = el.add_element(Box::new(tb_with_grey));
 
     let ntb = NumbersTextBox::new(&ctx, 0f64)
         .with_min(-10.0)
         .with_max(10.0)
         .at(DynVal::new_flex(0.75), DynVal::new_flex(0.5));
-    el.add_element(Box::new(ntb.clone()));
+    let _ = el.add_element(Box::new(ntb.clone()));
 
     let ntb_ = ntb.clone();
     let slider = Slider::new_basic_block(&ctx)
@@ -174,7 +173,7 @@ async fn main() -> Result<(), Error> {
             ntb_.change_value(p);
             EventResponses::default()
         }));
-    el.add_element(Box::new(slider));
+    let _ = el.add_element(Box::new(slider));
 
     let reg_sty = Style::transparent().with_fg(Color::WHITE);
 
@@ -206,7 +205,7 @@ async fn main() -> Result<(), Error> {
         sel_changes,
     )
     .at(DynVal::new_flex(0.8), DynVal::new_flex(0.7));
-    el.add_element(Box::new(dial));
+    let _ = el.add_element(Box::new(dial));
 
     //let dial1 = Dial::new_compact(
     //let dial1 = Dial::new_ultra_compact(
@@ -236,7 +235,7 @@ async fn main() -> Result<(), Error> {
         ],
     )
     .at(DynVal::new_flex(0.6), DynVal::new_flex(0.7));
-    el.add_element(Box::new(dial1));
+    let _ = el.add_element(Box::new(dial1));
 
     tui.run(Box::new(el)).await
 }

@@ -5,8 +5,7 @@ use {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    yeehaw::log::set_log_file("./debug_test.log".to_string());
-    yeehaw::log::clear();
+    yeehaw::log::reset_log_file("./debug_test.log".to_string());
     //unsafe { std::env::set_var("RUST_BACKTRACE", "1") };
 
     let (mut tui, ctx) = Tui::new()?;
@@ -76,7 +75,7 @@ async fn main() -> Result<(), Error> {
             .with_style(Style::default().with_bg(bg).with_fg(Color::BLACK));
 
         let sc_pane = PaneScrollable::new(&ctx_, 50, 50);
-        sc_pane.add_element(Box::new(el));
+        let _ = sc_pane.add_element(Box::new(el));
         //let sc_pane = Bordered::new_borderless_with_scrollbars(&ctx_, Box::new(sc_pane), sty);
         let border_sty = sty.clone().with_fg(Color::WHITE);
         let sc_pane = Bordered::new_borderless_with_scrollbars_and_thin_left(
@@ -224,7 +223,7 @@ async fn main() -> Result<(), Error> {
             .with_style(Style::default().with_bg(bg).with_fg(Color::BLACK));
 
         let sc_pane = PaneScrollable::new(&ctx_, 50, 50);
-        sc_pane.add_element(Box::new(el));
+        let _ = sc_pane.add_element(Box::new(el));
 
         let bordered = Bordered::new_resizer_with_scrollbars(
             &ctx_,
@@ -262,12 +261,12 @@ async fn main() -> Result<(), Error> {
         add_button_bordered_scr_click_fn,
     )
     .at(1.into(), 3.into());
-    pp.add_element(Box::new(add_button));
-    pp.add_element(Box::new(add_button2));
-    pp.add_element(Box::new(add_button3));
-    pp.add_element(Box::new(add_button4));
-    pp.add_element(Box::new(add_button5));
-    pp.add_element(Box::new(add_button6));
+    let _ = pp.add_element(Box::new(add_button));
+    let _ = pp.add_element(Box::new(add_button2));
+    let _ = pp.add_element(Box::new(add_button3));
+    let _ = pp.add_element(Box::new(add_button4));
+    let _ = pp.add_element(Box::new(add_button5));
+    let _ = pp.add_element(Box::new(add_button6));
 
     tui.run(Box::new(pp)).await
 }

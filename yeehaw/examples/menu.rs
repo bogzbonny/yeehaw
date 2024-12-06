@@ -2,8 +2,7 @@ use yeehaw::{Error, EventResponses, MenuBar, ParentPane, Tui, VerticalStack, *};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    //yeehaw::log::set_log_file("./debug_test.log".to_string());
-    //yeehaw::log::clear();
+    //yeehaw::log::reset_log_file("./debug_test.log".to_string());
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let (mut tui, ctx) = Tui::new()?;
@@ -52,13 +51,13 @@ async fn main() -> Result<(), Error> {
     )
     .at(9.into(), 0.into());
 
-    lower.add_element(Box::new(label));
-    lower.add_element(Box::new(btn_a));
-    lower.add_element(Box::new(btn_b));
-    lower.add_element(Box::new(btn_c));
+    let _ = lower.add_element(Box::new(label));
+    let _ = lower.add_element(Box::new(btn_a));
+    let _ = lower.add_element(Box::new(btn_b));
+    let _ = lower.add_element(Box::new(btn_c));
 
-    vstack.push(Box::new(mb.clone()));
-    vstack.push(Box::new(lower));
+    let _ = vstack.push(Box::new(mb.clone()));
+    let _ = vstack.push(Box::new(lower));
 
     mb.add_item(&ctx, "hello/asdg/2222/3".to_string(), None);
     mb.add_item(&ctx, "hello/asdg/444ll/3adsf3/sdlkjf".to_string(), None);

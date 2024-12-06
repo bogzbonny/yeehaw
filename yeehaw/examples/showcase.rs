@@ -3,8 +3,7 @@ use yeehaw::*;
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     // uncomment the following line to enable logging
-    yeehaw::log::set_log_file("./debug_test.log".to_string());
-    yeehaw::log::clear();
+    yeehaw::log::reset_log_file("./debug_test.log".to_string());
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let (mut tui, ctx) = Tui::new()?;
@@ -13,7 +12,7 @@ async fn main() -> Result<(), Error> {
     let header_pane = ParentPaneOfSelectable::new(&ctx)
         .with_dyn_height(DynVal::new_fixed(7))
         .with_unfocused(&ctx);
-    el.push(Box::new(header_pane.clone()));
+    let _ = el.push(Box::new(header_pane.clone()));
 
     let mut gr = Gradient::x_grad_rainbow(5);
     gr.angle_deg = 60.;
@@ -27,7 +26,7 @@ async fn main() -> Result<(), Error> {
     .with_min_height()
     .with_style(Style::default().with_fg(Color::Gradient(gr)))
     .at(0.into(), DynVal::new_fixed(1));
-    header_pane.add_element(Box::new(mtext));
+    let _ = header_pane.add_element(Box::new(mtext));
 
     let button = Button::new(
         &ctx,
@@ -35,7 +34,7 @@ async fn main() -> Result<(), Error> {
         Box::new(|_, _| EventResponses::default()),
     )
     .at(DynVal::new_flex(0.9), DynVal::new_flex(0.3));
-    header_pane.add_element(Box::new(button));
+    let _ = header_pane.add_element(Box::new(button));
 
     let mb = MenuBar::top_menu_bar(&ctx)
         .with_height(1.into())
@@ -47,24 +46,24 @@ async fn main() -> Result<(), Error> {
     mb.add_item(&ctx, "hello/yoyo/hi/asgd".to_string(), None);
     mb.add_item(&ctx, "world/yo".to_string(), None);
     mb.add_item(&ctx, "world/yosdfjldsffff/asdkjl".to_string(), None);
-    header_pane.add_element(Box::new(mb));
+    let _ = header_pane.add_element(Box::new(mb));
 
     let central_pane = HorizontalStack::new(&ctx);
-    el.push(Box::new(central_pane.clone()));
+    let _ = el.push(Box::new(central_pane.clone()));
     let left_pane = VerticalStack::new(&ctx);
     let right_pane = VerticalStack::new(&ctx);
-    central_pane.push(Box::new(left_pane.clone()));
-    central_pane.push(Box::new(right_pane.clone()));
+    let _ = central_pane.push(Box::new(left_pane.clone()));
+    let _ = central_pane.push(Box::new(right_pane.clone()));
     let left_top = ParentPaneOfSelectable::new(&ctx).with_dyn_height(DynVal::new_flex(1.));
     debug!("left_pane is {:?}", left_pane.id());
     let left_top_bordered =
         Bordered::new_resizer(&ctx, Box::new(left_top.clone()), Style::default())
             .with_dyn_height(left_pane.avg_height(&ctx));
-    left_pane.push(Box::new(left_top_bordered));
+    let _ = left_pane.push(Box::new(left_top_bordered));
     let dbg_pane = DebugSizePane::new(&ctx)
         .with_bg(Color::BLUE)
         .with_dyn_height(left_pane.avg_height(&ctx));
-    left_pane.push(Box::new(dbg_pane));
+    let _ = left_pane.push(Box::new(dbg_pane));
 
     let tabs = Tabs::new(&ctx);
     let el1 = DebugSizePane::new(&ctx)
@@ -86,11 +85,11 @@ async fn main() -> Result<(), Error> {
     tabs.push(Box::new(el4), "file-nav");
     tabs.push(Box::new(el5), "terminal");
 
-    tabs.select(0);
-    right_pane.push(Box::new(tabs));
+    let _ = tabs.select(0);
+    let _ = right_pane.push(Box::new(tabs));
 
     let l = Label::new(&ctx, "window generation zone");
-    left_top.add_element(Box::new(l));
+    let _ = left_top.add_element(Box::new(l));
 
     let dial1 = Dial::new_spacious(
         &ctx,
@@ -110,7 +109,7 @@ async fn main() -> Result<(), Error> {
         ],
     )
     .at(DynVal::new_flex(0.), DynVal::new_flex(0.3));
-    left_top.add_element(Box::new(dial1));
+    let _ = left_top.add_element(Box::new(dial1));
 
     tui.run(Box::new(el)).await
 }

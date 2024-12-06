@@ -52,6 +52,8 @@
       - buncha widgets which dont do much but log their results 
         in a textbox
 
+01. terminal not shutting down when showcase shuts down
+
 01. gif of showcase example
 
 01. docs docs docs

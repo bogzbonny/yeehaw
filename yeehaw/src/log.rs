@@ -63,6 +63,11 @@ pub fn set_log_file(file: String) {
     (GLOBAL_LOGGER.write()).log_file = Some(file);
 }
 
+pub fn reset_log_file(file: String) {
+    (GLOBAL_LOGGER.write()).log_file = Some(file);
+    clear();
+}
+
 /// log or panic either logs the content or panics if the build mode is non-release
 pub fn log_or_panic(content: String) {
     log(content.clone());
