@@ -20,14 +20,14 @@
      - each element organizer could keep a queue of the previous draw characters
        which 
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 01. Draggin of border panes doesn't work in showcase
 
 01. resize event in the "wrong direction" for a stack should not just ignore the
     resize but pass on that resize to the next higher element (such that if the
     next higher element was a stack which could actually use that resize command
     it would utilize it)
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 01. showcase example 
       - menu-bar background transparancy is to nothing because the figlet text has no bg

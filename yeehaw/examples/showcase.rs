@@ -76,9 +76,16 @@ async fn main() -> Result<(), Error> {
     let el3 = DebugSizePane::new(&ctx)
         .with_bg(Color::GREEN)
         .with_text("tab 3".to_string());
-    tabs.push(Box::new(el1), " widgets-tab");
-    tabs.push(Box::new(el2), "tab 2");
-    tabs.push(Box::new(el3), "tab 3");
+    let el4 = DebugSizePane::new(&ctx)
+        .with_bg(Color::PINK)
+        .with_text("tab 4".to_string());
+    let el5 = TerminalPane::new(&ctx)?;
+    tabs.push(Box::new(el1), " widgets");
+    tabs.push(Box::new(el2), "colors");
+    tabs.push(Box::new(el3), "images");
+    tabs.push(Box::new(el4), "file-nav");
+    tabs.push(Box::new(el5), "terminal");
+
     tabs.select(0);
     right_pane.push(Box::new(tabs));
 

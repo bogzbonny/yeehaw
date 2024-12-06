@@ -44,7 +44,16 @@ impl TerminalPane {
     }
 
     pub fn new_with_builder(ctx: &Context, cmd: CommandBuilder) -> Result<Self, Error> {
-        let size = ctx.size;
+        let mut size = ctx.size;
+
+        // need this as the pty will not open if the size is 0
+        if size.width == 0 {
+            size.width = 1;
+        }
+        if size.height == 0 {
+            size.height = 1;
+        }
+
         let pane = Pane::new(ctx, Self::KIND);
 
         let pty_system = native_pty_system();
@@ -54,6 +63,7 @@ impl TerminalPane {
             pixel_width: 0,
             pixel_height: 0,
         })?;
+
         let parser = Arc::new(RwLock::new(vt100::Parser::new(size.height, size.width, 0)));
 
         let mut child = pty_pair.slave.spawn_command(cmd)?;
