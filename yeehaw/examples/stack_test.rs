@@ -11,8 +11,12 @@ async fn main() -> Result<(), Error> {
     let top = VerticalStack::new(&ctx);
     //let mut sel_pane = WidgetPane::new(&ctx).with_height(DynVal::new_flex_with_max_fixed(0., 3));
     let sel_pane = ParentPaneOfSelectable::new(&ctx).with_dyn_height(3.into());
-    let hstack = HorizontalStack::new(&ctx).with_height(DynVal::FULL);
-    let vstack = VerticalStack::new(&ctx).with_height(DynVal::FULL);
+    let hstack = HorizontalStack::new(&ctx)
+        .with_min_resize_width(2)
+        .with_height(DynVal::FULL);
+    let vstack = VerticalStack::new(&ctx)
+        .with_min_resize_height(2)
+        .with_height(DynVal::FULL);
     top.push(Box::new(sel_pane.clone()));
     top.push(Box::new(vstack.clone()));
 
@@ -55,40 +59,59 @@ async fn main() -> Result<(), Error> {
         let sty = Style::default().with_fg(Color::WHITE).with_bg(Color::BLACK);
         if toggle_.selected() == " horizontal " {
             // NOTE this is the button context, but the size doesn't matter for these operations
-            let el: Box<dyn Element> = if hstack_.is_empty() {
-                Box::new(
-                    DebugSizePane::new(&ctx_)
-                        .with_style(sty)
-                        .with_dyn_width(hstack_.avg_width(&ctx_)),
+            //let el: Box<dyn Element> = if hstack_.is_empty() {
+            //    Box::new(
+            //        DebugSizePane::new(&ctx_)
+            //            .with_style(sty)
+            //            .with_dyn_width(hstack_.avg_width(&ctx_)),
+            //    )
+            //} else {
+            //    Box::new(
+            //        Bordered::new_left_resizer(
+            //            &ctx_,
+            //            Box::new(DebugSizePane::new(&ctx_).with_style(sty)),
+            //            Style::default(),
+            //        )
+            //        .with_dyn_width(hstack_.avg_width(&ctx_)),
+            //    )
+            //};
+
+            let el = Box::new(
+                Bordered::new_resizer(
+                    &ctx_,
+                    Box::new(DebugSizePane::new(&ctx_).with_style(sty)),
+                    Style::default(),
                 )
-            } else {
-                Box::new(
-                    Bordered::new_left_resizer(
-                        &ctx_,
-                        Box::new(DebugSizePane::new(&ctx_).with_style(sty)),
-                        Style::default(),
-                    )
-                    .with_dyn_width(hstack_.avg_width(&ctx_)),
-                )
-            };
+                .with_dyn_width(hstack_.avg_width(&ctx_)),
+            );
+
             hstack_.push(el);
         } else {
-            let el: Box<dyn Element> = if vstack_.is_empty() {
-                Box::new(
-                    DebugSizePane::new(&ctx_)
-                        .with_style(sty)
-                        .with_dyn_height(vstack_.avg_height(&ctx_)),
+            //let el: Box<dyn Element> = if vstack_.is_empty() {
+            //    Box::new(
+            //        DebugSizePane::new(&ctx_)
+            //            .with_style(sty)
+            //            .with_dyn_height(vstack_.avg_height(&ctx_)),
+            //    )
+            //} else {
+            //    Box::new(
+            //        Bordered::new_top_resizer(
+            //            &ctx_,
+            //            Box::new(DebugSizePane::new(&ctx_).with_style(sty)),
+            //            Style::default(),
+            //        )
+            //        .with_dyn_height(vstack_.avg_height(&ctx_)),
+            //    )
+            //};
+
+            let el = Box::new(
+                Bordered::new_resizer(
+                    &ctx_,
+                    Box::new(DebugSizePane::new(&ctx_).with_style(sty)),
+                    Style::default(),
                 )
-            } else {
-                Box::new(
-                    Bordered::new_top_resizer(
-                        &ctx_,
-                        Box::new(DebugSizePane::new(&ctx_).with_style(sty)),
-                        Style::default(),
-                    )
-                    .with_dyn_height(vstack_.avg_height(&ctx_)),
-                )
-            };
+                .with_dyn_height(vstack_.avg_height(&ctx_)),
+            );
             vstack_.push(el);
         }
 

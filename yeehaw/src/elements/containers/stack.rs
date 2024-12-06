@@ -16,6 +16,10 @@ pub struct VerticalStack {
     #[allow(clippy::type_complexity)]
     pub els: Rc<RefCell<Vec<Box<dyn Element>>>>,
     pub last_size: Rc<RefCell<Size>>,
+
+    /// minimum height allowable by resizes
+    pub min_resize_height: Rc<RefCell<usize>>,
+
     pub is_dirty: Rc<RefCell<bool>>,
 }
 
@@ -27,6 +31,7 @@ impl VerticalStack {
             pane: ParentPane::new(ctx, Self::KIND),
             els: Rc::new(RefCell::new(Vec::new())),
             last_size: Rc::new(RefCell::new(Size::new(0, 0))),
+            min_resize_height: Rc::new(RefCell::new(1)),
             is_dirty: Rc::new(RefCell::new(true)),
         }
     }
@@ -36,6 +41,7 @@ impl VerticalStack {
             pane: ParentPane::new(ctx, kind),
             els: Rc::new(RefCell::new(Vec::new())),
             last_size: Rc::new(RefCell::new(Size::new(0, 0))),
+            min_resize_height: Rc::new(RefCell::new(1)),
             is_dirty: Rc::new(RefCell::new(true)),
         }
     }
@@ -47,6 +53,11 @@ impl VerticalStack {
 
     pub fn with_width(self, w: DynVal) -> Self {
         self.pane.pane.set_dyn_width(w);
+        self
+    }
+
+    pub fn with_min_resize_height(self, min_resize_height: usize) -> Self {
+        *self.min_resize_height.borrow_mut() = min_resize_height;
         self
     }
 
@@ -167,7 +178,7 @@ impl VerticalStack {
             .map(|el| el.get_dyn_location_set().get_dyn_height())
             .collect();
 
-        Self::normalize_heights_to_context(ctx, &mut heights);
+        self.normalize_heights_to_context(ctx, &mut heights);
 
         // set all the locations based on the heights
         self.adjust_locations_for_heights(&heights);
@@ -187,8 +198,8 @@ impl VerticalStack {
 
     /// incrementally change the flex value of each of the existing heights (evenly), until
     /// the context height is reached. max out at 30 iterations.
-    pub fn normalize_heights_to_context(ctx: &Context, heights: &mut [DynVal]) {
-        adjust_els_to_fit_ctx_size(ctx.get_height(), heights);
+    pub fn normalize_heights_to_context(&self, ctx: &Context, heights: &mut [DynVal]) {
+        adjust_els_to_fit_ctx_size(ctx.get_height(), heights, *self.min_resize_height.borrow());
     }
 
     /// adjust all the locations based on the heights
@@ -210,6 +221,10 @@ pub struct HorizontalStack {
     #[allow(clippy::type_complexity)]
     pub els: Rc<RefCell<Vec<Box<dyn Element>>>>,
     pub last_size: Rc<RefCell<Size>>,
+
+    /// minimum width allowable by resizes
+    pub min_resize_width: Rc<RefCell<usize>>,
+
     pub is_dirty: Rc<RefCell<bool>>,
 }
 
@@ -221,6 +236,7 @@ impl HorizontalStack {
             pane: ParentPane::new(ctx, Self::KIND),
             els: Rc::new(RefCell::new(Vec::new())),
             last_size: Rc::new(RefCell::new(Size::new(0, 0))),
+            min_resize_width: Rc::new(RefCell::new(1)),
             is_dirty: Rc::new(RefCell::new(true)),
         }
     }
@@ -230,6 +246,7 @@ impl HorizontalStack {
             pane: ParentPane::new(ctx, kind),
             els: Rc::new(RefCell::new(Vec::new())),
             last_size: Rc::new(RefCell::new(Size::new(0, 0))),
+            min_resize_width: Rc::new(RefCell::new(1)),
             is_dirty: Rc::new(RefCell::new(true)),
         }
     }
@@ -241,6 +258,11 @@ impl HorizontalStack {
 
     pub fn with_width(self, w: DynVal) -> Self {
         self.pane.pane.set_dyn_width(w);
+        self
+    }
+
+    pub fn with_min_resize_width(self, min_resize_width: usize) -> Self {
+        *self.min_resize_width.borrow_mut() = min_resize_width;
         self
     }
 
@@ -360,7 +382,7 @@ impl HorizontalStack {
             .map(|el| el.get_dyn_location_set().get_dyn_width())
             .collect();
 
-        Self::normalize_widths_to_context(ctx, &mut widths);
+        self.normalize_widths_to_context(ctx, &mut widths);
 
         // set all the locations based on the widths
         self.adjust_locations_for_widths(&widths);
@@ -380,8 +402,8 @@ impl HorizontalStack {
 
     /// incrementally change the flex value of each of the existing widths (evenly), until
     /// the context width is reached. max out at 30 iterations.
-    pub fn normalize_widths_to_context(ctx: &Context, widths: &mut [DynVal]) {
-        adjust_els_to_fit_ctx_size(ctx.get_width(), widths);
+    pub fn normalize_widths_to_context(&self, ctx: &Context, widths: &mut [DynVal]) {
+        adjust_els_to_fit_ctx_size(ctx.get_width(), widths, *self.min_resize_width.borrow());
     }
 
     /// adjust all the locations based on the widths
@@ -403,7 +425,7 @@ impl HorizontalStack {
 ///
 /// ctx.size is either the height or width of the context
 /// vals is either element heights or widths to be adjusted
-fn adjust_els_to_fit_ctx_size(ctx_size: u16, vals: &mut [DynVal]) {
+fn adjust_els_to_fit_ctx_size(ctx_size: u16, vals: &mut [DynVal], min_size: usize) {
     vals.iter_mut().for_each(|v| v.flatten_internal());
     for _i in 0..30 {
         let total_size: i32 = vals.iter().map(|v| v.get_val(ctx_size)).sum();
@@ -421,8 +443,8 @@ fn adjust_els_to_fit_ctx_size(ctx_size: u16, vals: &mut [DynVal]) {
             let v_flex = v.get_flex_val_portion_for_ctx(ctx_size);
             let v_flex_change = next_change * v_flex as f64 / total_flex as f64;
             v.flex += v_flex_change;
-            if v.get_val(ctx_size) < 1 {
-                // undo the change if it leads to a value of under 1
+            if v.get_val(ctx_size) < min_size as i32 {
+                // undo the change if it leads to a value of under the min size
                 v.flex -= v_flex_change
             }
         }
@@ -441,7 +463,7 @@ impl Element for VerticalStack {
                 EventResponse::Resize(r) => (&r.el_id, r.top_dy, r.bottom_dy),
                 _ => continue,
             };
-            let (top_el, bottom_el) = if top_dy != 0 {
+            let (top_el, bottom_el, change_dy) = if top_dy != 0 {
                 let Some(el_index) = self.get_index(el_id) else {
                     continue;
                 };
@@ -452,7 +474,7 @@ impl Element for VerticalStack {
                 }
                 let top_el = self.get(el_index - 1).expect("top_dy, missing top el");
                 let bottom_el = self.get(el_index).expect("bottom_dy, missing bottom el");
-                (top_el, bottom_el)
+                (top_el, bottom_el, top_dy)
             } else if bottom_dy != 0 {
                 let Some(el_index) = self.get_index(el_id) else {
                     continue;
@@ -466,33 +488,37 @@ impl Element for VerticalStack {
                 let bottom_el = self
                     .get(el_index + 1)
                     .expect("bottom_dy, missing bottom el");
-                (top_el, bottom_el)
+                (top_el, bottom_el, bottom_dy)
             } else {
                 *resp = EventResponse::None;
                 continue;
             };
 
-            let mut l_loc = top_el.get_dyn_location_set().clone();
-            let mut r_loc = bottom_el.get_dyn_location_set().clone();
+            let mut t_loc = top_el.get_dyn_location_set().clone();
+            let mut b_loc = bottom_el.get_dyn_location_set().clone();
 
             // NOTE must set to a a fixed value (aka need to get the size for the pane DynVal
             // using ctx here. if we do not then the next pane position drag will be off
-            let l_start_y = l_loc.get_start_y(ctx);
-            let l_end_y = l_loc.get_end_y(ctx);
-            let r_start_y = r_loc.get_start_y(ctx);
-            let r_end_y = r_loc.get_end_y(ctx);
+            let t_start_y = t_loc.get_start_y(ctx);
+            let t_end_y = t_loc.get_end_y(ctx);
+            let b_start_y = b_loc.get_start_y(ctx);
+            let b_end_y = b_loc.get_end_y(ctx);
 
-            let r_start_y_adj = r_start_y + top_dy;
-            let l_end_y_adj = l_end_y + top_dy;
+            let b_start_y_adj = b_start_y + change_dy;
+            let t_end_y_adj = t_end_y + change_dy;
 
-            if l_end_y_adj - l_start_y < 1 || r_end_y - r_start_y_adj < 1 || r_start_y_adj < 0 {
+            let min_resize_height = *self.min_resize_height.borrow() as i32;
+            if t_end_y_adj - t_start_y < min_resize_height
+                || b_end_y - b_start_y_adj < min_resize_height
+                || b_start_y_adj < 0
+            {
                 continue;
             }
 
-            l_loc.set_end_y(l_end_y_adj.into());
-            r_loc.set_start_y(r_start_y_adj.into());
-            bottom_el.set_dyn_location_set(r_loc);
-            top_el.set_dyn_location_set(l_loc);
+            t_loc.set_end_y(t_end_y_adj.into());
+            b_loc.set_start_y(b_start_y_adj.into());
+            bottom_el.set_dyn_location_set(b_loc);
+            top_el.set_dyn_location_set(t_loc);
             resized = true;
 
             *resp = EventResponse::None;
@@ -504,6 +530,7 @@ impl Element for VerticalStack {
         }
         (captured, resps)
     }
+
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         self.ensure_normalized_sizes(ctx);
         self.pane.drawing(ctx)
@@ -522,7 +549,7 @@ impl Element for HorizontalStack {
                 EventResponse::Resize(r) => (&r.el_id, r.left_dx, r.right_dx),
                 _ => continue,
             };
-            let (left_el, right_el) = if left_dx != 0 {
+            let (left_el, right_el, change_dx) = if left_dx != 0 {
                 let Some(el_index) = self.get_index(el_id) else {
                     continue;
                 };
@@ -533,7 +560,7 @@ impl Element for HorizontalStack {
                 }
                 let left_el = self.get(el_index - 1).expect("left_dx, missing left el");
                 let right_el = self.get(el_index).expect("right_dx, missing right el");
-                (left_el, right_el)
+                (left_el, right_el, left_dx)
             } else if right_dx != 0 {
                 let Some(el_index) = self.get_index(el_id) else {
                     continue;
@@ -545,7 +572,7 @@ impl Element for HorizontalStack {
                 }
                 let left_el = self.get(el_index).expect("left_dx, missing left el");
                 let right_el = self.get(el_index + 1).expect("right_dx, missing right el");
-                (left_el, right_el)
+                (left_el, right_el, right_dx)
             } else {
                 *resp = EventResponse::None;
                 continue;
@@ -561,10 +588,14 @@ impl Element for HorizontalStack {
             let r_start_x = r_loc.get_start_x(ctx);
             let r_end_x = r_loc.get_end_x(ctx);
 
-            let r_start_x_adj = r_start_x + left_dx;
-            let l_end_x_adj = l_end_x + left_dx;
+            let r_start_x_adj = r_start_x + change_dx;
+            let l_end_x_adj = l_end_x + change_dx;
 
-            if l_end_x_adj - l_start_x < 1 || r_end_x - r_start_x_adj < 1 || r_start_x_adj < 0 {
+            let min_resize_width = *self.min_resize_width.borrow() as i32;
+            if l_end_x_adj - l_start_x < min_resize_width
+                || r_end_x - r_start_x_adj < min_resize_width
+                || r_start_x_adj < 0
+            {
                 continue;
             }
 

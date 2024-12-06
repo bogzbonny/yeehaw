@@ -56,12 +56,15 @@ async fn main() -> Result<(), Error> {
     central_pane.push(Box::new(left_pane.clone()));
     central_pane.push(Box::new(right_pane.clone()));
     let left_top = ParentPaneOfSelectable::new(&ctx).with_dyn_height(DynVal::new_flex(1.));
-    left_pane.push(Box::new(Bordered::new_resizer(
-        &ctx,
-        Box::new(left_top.clone()),
-        Style::default(),
-    )));
-    left_pane.push(Box::new(DebugSizePane::new(&ctx).with_bg(Color::BLUE)));
+    debug!("left_pane is {:?}", left_pane.id());
+    let left_top_bordered =
+        Bordered::new_resizer(&ctx, Box::new(left_top.clone()), Style::default())
+            .with_dyn_height(left_pane.avg_height(&ctx));
+    left_pane.push(Box::new(left_top_bordered));
+    let dbg_pane = DebugSizePane::new(&ctx)
+        .with_bg(Color::BLUE)
+        .with_dyn_height(left_pane.avg_height(&ctx));
+    left_pane.push(Box::new(dbg_pane));
 
     let tabs = Tabs::new(&ctx);
     let el1 = DebugSizePane::new(&ctx)
