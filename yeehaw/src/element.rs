@@ -44,6 +44,7 @@ pub trait Element: DynClone {
     ///
     /// NOTE in this current design, elements are always routed mouse events independently of
     /// whether or not they are receivable according to this function.
+    #[must_use]
     fn receivable(&self) -> SelfReceivableEvents;
 
     /// Receive an event from a parent. The receiving element may consume the event and/or pass it
@@ -51,8 +52,10 @@ pub trait Element: DynClone {
     /// changes receivable events. When the event is captured, the element is expected to returns
     /// captured=true.
     //                                                     (captured, response      )
+    #[must_use]
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses);
 
+    #[must_use]
     fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         self.call_hooks_of_kind(PRE_EVENT_HOOK_NAME);
         let (captured, resp) = self.receive_event_inner(ctx, ev);
@@ -75,6 +78,7 @@ pub trait Element: DynClone {
     ///
     /// In all cases the reponse of this function is intended to be passed to the element's
     /// parent's event prioritizer.
+    #[must_use]
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges;
 
     /// Get the element's full drawing for the provided context.

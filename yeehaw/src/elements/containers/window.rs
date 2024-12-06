@@ -42,8 +42,8 @@ impl WindowPane {
         loc.set_dyn_height(DynVal::FULL.minus(1.into()));
         inner.set_dyn_location_set(loc);
 
-        pane.add_element(top_bar.clone());
-        pane.add_element(inner.clone());
+        let _ = pane.add_element(top_bar.clone());
+        let _ = pane.add_element(inner.clone());
         pane.pane.set_z(Self::Z_INDEX);
 
         Self {
@@ -97,7 +97,7 @@ impl WindowPane {
             BorderPropertyCnr::DragResize,
         )
         .at(DynVal::FULL.minus(1.into()), DynVal::FULL.minus(1.into()));
-        self.pane.add_element(Box::new(ca));
+        let _ = self.pane.add_element(Box::new(ca));
 
         use crate::organizer::ElDetails;
         let mut eoz: Vec<(ElementID, ElDetails)> = Vec::new();
@@ -509,7 +509,7 @@ impl BasicWindowTopBar {
                 DynVal::FULL.minus(button_rhs_spaces.into()),
                 DynVal::new_fixed(0),
             );
-            pane.add_element(Box::new(close_button));
+            let _ = pane.add_element(Box::new(close_button));
             button_rhs_spaces += 2;
         }
 
@@ -541,7 +541,7 @@ impl BasicWindowTopBar {
                 DynVal::new_fixed(0),
             );
             let b = Box::new(maximize_button);
-            pane.add_element(b.clone());
+            let _ = pane.add_element(b.clone());
             maximizer_button = Some(b);
             button_rhs_spaces += 2;
         }
@@ -566,7 +566,7 @@ impl BasicWindowTopBar {
                 DynVal::FULL.minus(button_rhs_spaces.into()),
                 DynVal::new_fixed(0),
             );
-            pane.add_element(Box::new(minimize_button));
+            let _ = pane.add_element(Box::new(minimize_button));
         }
 
         let title_label = Box::new(
@@ -579,8 +579,8 @@ impl BasicWindowTopBar {
                 .with_style(Style::transparent())
                 .at(DynVal::FULL.minus(2.into()), DynVal::new_fixed(0)),
         );
-        pane.add_element(title_label.clone());
-        pane.add_element(decor_label.clone());
+        let _ = pane.add_element(title_label.clone());
+        let _ = pane.add_element(decor_label.clone());
         decor_label.set_visible(false);
 
         Self {

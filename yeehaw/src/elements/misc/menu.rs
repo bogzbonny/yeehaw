@@ -256,7 +256,11 @@ impl MenuBar {
         };
         item.set_dyn_location_set(loc);
         item.set_visible(vis);
-        self.pane.add_element(Box::new(item.clone()));
+
+        // NOTE ignore the resps, as items should not have any resps
+        // maybe fix one day
+        let _ = self.pane.add_element(Box::new(item.clone()));
+
         self.menu_items.borrow_mut().insert(item.id(), item.clone());
         self.menu_items_order.borrow_mut().push(item);
 

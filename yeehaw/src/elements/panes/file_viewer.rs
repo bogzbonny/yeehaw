@@ -32,7 +32,7 @@ impl FileViewerPane {
         if let Some(no_file_text) = no_file_text {
             tb.set_text_when_empty(no_file_text);
         }
-        pane.add_element(Box::new(tb));
+        let _ = pane.add_element(Box::new(tb));
 
         FileViewerPane { pane }
     }

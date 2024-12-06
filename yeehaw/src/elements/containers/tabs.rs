@@ -147,7 +147,7 @@ impl Tabs {
         let tabs_top = TabsTop::new(ctx, Rc::new(RefCell::new(Vec::new())), Vec::new());
         let pane = VerticalStack::new(ctx);
         pane.pane.pane.set_kind(Self::KIND);
-        pane.push(Box::new(tabs_top.clone()));
+        let _ = pane.push(Box::new(tabs_top.clone()));
         Self {
             pane,
             tabs_top,
@@ -186,23 +186,27 @@ impl Tabs {
         el.set_dyn_location_set(loc); // set loc without triggering hooks
     }
 
-    pub fn set_tab_view_pane(&self, idx: Option<usize>) {
+    #[must_use]
+    pub fn set_tab_view_pane(&self, idx: Option<usize>) -> EventResponses {
+        let mut resps = EventResponses::default();
         // the second element (1) is the tab view pane
         if let Some(el) = self.pane.get(1) {
             el.set_visible(false);
-            self.pane.remove(1);
+            resps.push(self.pane.remove(1));
         }
         if let Some(idx) = idx {
             if let Some(el) = self.els.borrow().get(idx) {
                 el.set_visible(true);
-                self.pane.push(el.clone());
+                resps.push(self.pane.push(el.clone()));
             }
         }
+        resps
     }
 
-    pub fn select(&self, idx: usize) {
+    #[must_use]
+    pub fn select(&self, idx: usize) -> EventResponses {
         *self.tabs_top.selected.borrow_mut() = Some(idx);
-        self.set_tab_view_pane(Some(idx));
+        self.set_tab_view_pane(Some(idx))
     }
 }
 
@@ -210,11 +214,12 @@ impl Tabs {
 impl Element for Tabs {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let start_selected = *self.tabs_top.selected.borrow();
-        let out = self.pane.receive_event(ctx, ev.clone());
+        let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
         let end_selected = *self.tabs_top.selected.borrow();
         if start_selected != end_selected {
-            self.set_tab_view_pane(end_selected);
+            let resps_ = self.set_tab_view_pane(end_selected);
+            resps.extend(resps_);
         }
-        out
+        (captured, resps)
     }
 }

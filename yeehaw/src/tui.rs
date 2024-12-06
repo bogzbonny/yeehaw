@@ -87,12 +87,13 @@ impl Tui {
         let loc = DynLocationSet::new(loc, vec![], 0);
         main_el.set_dyn_location_set(loc);
         main_el.set_visible(true);
-        main_el.change_priority(Priority::Focused);
+        let _ = main_el.change_priority(Priority::Focused);
 
         // when adding the main element, nil is passed in as the parent
         // this is because the top of the tree is the TUI's main EO and so no parent
         // is necessary
-        self.cup
+        let _ = self
+            .cup
             .eo
             .add_element(main_el.clone(), Some(Box::new(self.cup.clone())));
         self.cup.eo.initialize(&ctx, Box::new(self.cup.clone()));
@@ -133,7 +134,7 @@ impl Tui {
                                     let loc = DynLocation::new_fixed(0, ctx.size.width as i32, 0, ctx.size.height as i32);
                                     // There should only be one element at index 0 in the upper level EO
                                     self.cup.eo.update_el_primary_location(self.main_el_id.clone(), loc);
-                                    self.cup.eo.get_element(&self.main_el_id).expect("main element missing").receive_event(&ctx, Event::Resize{});
+                                    let _ = self.cup.eo.get_element(&self.main_el_id).expect("main element missing").receive_event(&ctx, Event::Resize{});
                                     self.clear_screen()?;
                                     self.render()?;
                                 }

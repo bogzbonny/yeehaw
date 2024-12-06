@@ -327,12 +327,13 @@ impl ParentPaneOfSelectable {
         }
     }
 
-    pub fn add_element(&self, el: Box<dyn Element>) {
+    #[must_use]
+    pub fn add_element(&self, el: Box<dyn Element>) -> EventResponse {
         // check if it is selectable
         if el.get_attribute(ATTR_SELECTABILITY).is_some() {
             self.selectables.borrow_mut().push(el.id());
         }
-        self.pane.add_element(el);
+        self.pane.add_element(el)
     }
 
     fn get_selectability_for_el(&self, el_id: &ElementID) -> Option<Selectability> {
@@ -347,6 +348,7 @@ impl ParentPaneOfSelectable {
         Some(sel)
     }
 
+    #[must_use]
     fn set_selectability_for_el(
         &self, ctx: &Context, el_id: &ElementID, s: Selectability,
     ) -> EventResponses {
@@ -365,16 +367,21 @@ impl ParentPaneOfSelectable {
         }
     }
 
-    pub fn remove_element(&self, el_id: &ElementID) {
-        self.pane.remove_element(el_id);
+    #[must_use]
+    pub fn remove_element(&self, el_id: &ElementID) -> EventResponse {
+        let resp = self.pane.remove_element(el_id);
         self.selectables.borrow_mut().retain(|id| id != el_id);
+        resp
     }
 
-    pub fn clear_elements(&self) {
-        self.pane.clear_elements();
+    #[must_use]
+    pub fn clear_elements(&self) -> EventResponse {
+        let resp = self.pane.clear_elements();
         self.selectables.borrow_mut().clear();
+        resp
     }
 
+    #[must_use]
     pub fn unselect_selected(&self, ctx: &Context) -> EventResponses {
         let sel_el_id = self.selected.borrow().clone();
         let resps = if let Some(ref sel_el_id) = sel_el_id {

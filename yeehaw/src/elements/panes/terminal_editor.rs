@@ -78,6 +78,7 @@ impl TermEditorPane {
         }
     }
 
+    #[must_use]
     pub fn open_editor(&self, ctx: &Context) -> EventResponse {
         let text = self.text.borrow().clone();
         match self.editor {
@@ -196,9 +197,12 @@ impl Element for TermEditorPane {
                         return (true, EventResponses::default());
                     }
                     MouseEventKind::Up(MouseButton::Left) if clicked_down => {
-                        self.pane.clear_elements();
+                        let mut resps = EventResponses::default();
+                        let resp = self.pane.clear_elements();
+                        resps.push(resp);
                         let resp = self.open_editor(ctx);
-                        return (true, resp.into());
+                        resps.push(resp);
+                        return (true, resps);
                     }
                     _ => {}
                 }
@@ -206,7 +210,7 @@ impl Element for TermEditorPane {
             *self.clicked_down.borrow_mut() = false;
         }
 
-        let (captured, resps) = self.pane.receive_event(ctx, ev.clone());
+        let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
 
         if !self.pane.has_elements() {
             self.tempfile.borrow_mut().take();
@@ -214,7 +218,8 @@ impl Element for TermEditorPane {
             self.non_editing_textbox.borrow().set_text(text);
             let non_editing_textbox = self.non_editing_textbox.borrow().clone();
 
-            self.pane.add_element(Box::new(non_editing_textbox));
+            let resp = self.pane.add_element(Box::new(non_editing_textbox));
+            resps.push(resp);
         }
 
         (captured, resps)

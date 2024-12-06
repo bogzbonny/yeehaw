@@ -61,6 +61,7 @@ impl VerticalStack {
         self
     }
 
+    #[must_use]
     /// add an element to the end of the stack resizing the other elements
     /// in order to fit the new element
     pub fn push(&self, el: Box<dyn Element>) -> EventResponse {
@@ -70,6 +71,7 @@ impl VerticalStack {
         self.pane.add_element(el)
     }
 
+    #[must_use]
     pub fn pop(&self) -> EventResponse {
         let el = self.els.borrow_mut().pop();
         if let Some(el) = el {
@@ -80,6 +82,7 @@ impl VerticalStack {
         }
     }
 
+    #[must_use]
     pub fn insert(&self, idx: usize, el: Box<dyn Element>) -> EventResponse {
         Self::sanitize_el_location(&*el);
         self.els.borrow_mut().insert(idx, el.clone());
@@ -87,12 +90,14 @@ impl VerticalStack {
         self.pane.add_element(el)
     }
 
+    #[must_use]
     pub fn remove(&self, idx: usize) -> EventResponse {
         let el = self.els.borrow_mut().remove(idx);
         self.is_dirty.replace(true);
         self.pane.remove_element(&el.id())
     }
 
+    #[must_use]
     pub fn clear(&self) -> EventResponse {
         self.els.borrow_mut().clear();
         self.is_dirty.replace(true);
@@ -266,6 +271,7 @@ impl HorizontalStack {
         self
     }
 
+    #[must_use]
     /// add an element to the end of the stack resizing the other elements
     /// in order to fit the new element
     pub fn push(&self, el: Box<dyn Element>) -> EventResponse {
@@ -275,6 +281,7 @@ impl HorizontalStack {
         self.pane.add_element(el)
     }
 
+    #[must_use]
     pub fn pop(&self) -> EventResponse {
         let el = self.els.borrow_mut().pop();
         if let Some(el) = el {
@@ -285,6 +292,7 @@ impl HorizontalStack {
         }
     }
 
+    #[must_use]
     pub fn insert(&self, idx: usize, el: Box<dyn Element>) -> EventResponse {
         Self::sanitize_el_location(&*el);
         self.els.borrow_mut().insert(idx, el.clone());
@@ -292,12 +300,14 @@ impl HorizontalStack {
         self.pane.add_element(el)
     }
 
+    #[must_use]
     pub fn remove(&self, idx: usize) -> EventResponse {
         let el = self.els.borrow_mut().remove(idx);
         self.is_dirty.replace(true);
         self.pane.remove_element(&el.id())
     }
 
+    #[must_use]
     pub fn clear(&self) -> EventResponse {
         self.els.borrow_mut().clear();
         self.pane.clear_elements()

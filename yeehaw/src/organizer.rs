@@ -47,6 +47,7 @@ impl ElDetails {
 }
 
 impl ElementOrganizer {
+    #[must_use]
     pub fn add_element(
         &self, el: Box<dyn Element>, parent: Option<Box<dyn Parent>>,
     ) -> EventResponse {
@@ -81,6 +82,7 @@ impl ElementOrganizer {
         EventResponse::ReceivableEventChanges(rec)
     }
 
+    #[must_use]
     pub fn remove_element(&self, el_id: &ElementID) -> EventResponse {
         self.els.borrow_mut().remove(el_id);
         let rm_evs = self.prioritizer.borrow_mut().remove_entire_element(el_id);
@@ -89,6 +91,7 @@ impl ElementOrganizer {
     }
 
     /// removes all elements from the element organizer
+    #[must_use]
     pub fn clear_elements(&self) -> EventResponse {
         self.els.borrow_mut().clear();
         let pes = self.receivable().drain(..).map(|(e, _)| e).collect();

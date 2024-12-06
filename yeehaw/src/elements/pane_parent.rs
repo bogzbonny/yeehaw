@@ -90,18 +90,21 @@ impl ParentPane {
     }
 
     pub fn with_element(self, el: Box<dyn Element>) -> Self {
-        self.add_element(el);
+        let _ = self.add_element(el); // ignore the response as this is used during initialization
         self
     }
 
+    #[must_use]
     pub fn add_element(&self, el: Box<dyn Element>) -> EventResponse {
         self.eo.add_element(el, Some(Box::new(self.clone())))
     }
 
+    #[must_use]
     pub fn remove_element(&self, el_id: &ElementID) -> EventResponse {
         self.eo.remove_element(el_id)
     }
 
+    #[must_use]
     pub fn clear_elements(&self) -> EventResponse {
         self.eo.clear_elements()
     }
@@ -197,6 +200,7 @@ impl ParentPane {
     }
 
     /// sends an event to a specific element
+    #[must_use]
     pub fn send_event_to_el(&self, ctx: &Context, el_id: &ElementID, ev: Event) -> EventResponses {
         self.eo
             .send_event_to_el(ctx, el_id, ev, Box::new(self.clone()))

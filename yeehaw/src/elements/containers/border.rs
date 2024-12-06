@@ -740,7 +740,7 @@ impl Bordered {
         let chs_left = DrawCh::new('▏', sty);
         let side = VerticalSide::new(ctx, chs_left.clone(), VerticalPos::Left, PropertyVrt::None);
         side.pane.set_dyn_location(left_loc);
-        bordered.pane.add_element(Box::new(side.clone()));
+        let _ = bordered.pane.add_element(Box::new(side.clone()));
         bordered.left.borrow_mut().replace(side);
 
         let mut l = bordered.inner.borrow().get_dyn_location_set().clone();
@@ -1031,7 +1031,7 @@ impl Bordered {
                 properties.top_corner,
             )
             .at(0.into(), 0.into());
-            bordered.pane.add_element(Box::new(corner));
+            let _ = bordered.pane.add_element(Box::new(corner));
         }
         if has_top_right_corner {
             let corner = Corner::new(
@@ -1041,7 +1041,7 @@ impl Bordered {
                 properties.top_corner,
             )
             .at(DynVal::FULL.minus(1.into()), 0.into());
-            bordered.pane.add_element(Box::new(corner));
+            let _ = bordered.pane.add_element(Box::new(corner));
         }
         if has_bottom_left_corner {
             let corner = Corner::new(
@@ -1051,7 +1051,7 @@ impl Bordered {
                 properties.bottom_corner,
             )
             .at(0.into(), DynVal::FULL.minus(1.into()));
-            bordered.pane.add_element(Box::new(corner));
+            let _ = bordered.pane.add_element(Box::new(corner));
         }
         if has_bottom_right_corner {
             let corner = Corner::new(
@@ -1061,7 +1061,7 @@ impl Bordered {
                 properties.bottom_corner,
             )
             .at(DynVal::FULL.minus(1.into()), DynVal::FULL.minus(1.into()));
-            bordered.pane.add_element(Box::new(corner));
+            let _ = bordered.pane.add_element(Box::new(corner));
         }
 
         if let Some(left_property) = properties.left.take() {
@@ -1098,12 +1098,12 @@ impl Bordered {
                 );
 
                 bordered.y_scrollbar.borrow_mut().replace(sb.clone());
-                bordered.pane.add_element(Box::new(sb));
+                let _ = bordered.pane.add_element(Box::new(sb));
             } else {
                 let side =
                     VerticalSide::new(ctx, chs_left.clone(), VerticalPos::Left, left_property);
                 side.pane.set_dyn_location(left_loc);
-                bordered.pane.add_element(Box::new(side.clone()));
+                let _ = bordered.pane.add_element(Box::new(side.clone()));
                 bordered.left.borrow_mut().replace(side);
             }
         }
@@ -1148,12 +1148,12 @@ impl Bordered {
                 );
 
                 bordered.y_scrollbar.borrow_mut().replace(sb.clone());
-                bordered.pane.add_element(Box::new(sb));
+                let _ = bordered.pane.add_element(Box::new(sb));
             } else {
                 let side =
                     VerticalSide::new(ctx, chs_right.clone(), VerticalPos::Right, right_property);
                 side.pane.set_dyn_location(right_loc);
-                bordered.pane.add_element(Box::new(side.clone()));
+                let _ = bordered.pane.add_element(Box::new(side.clone()));
                 bordered.right.borrow_mut().replace(side);
             }
         }
@@ -1188,12 +1188,12 @@ impl Bordered {
                 sb.set_dyn_width(sb_width.clone(), sb_width, Some(inner.get_content_width()));
 
                 bordered.x_scrollbar.borrow_mut().replace(sb.clone());
-                bordered.pane.add_element(Box::new(sb));
+                let _ = bordered.pane.add_element(Box::new(sb));
             } else {
                 let side =
                     HorizontalSide::new(ctx, chs_top.clone(), HorizontalPos::Top, top_property);
                 side.pane.set_dyn_location(top_loc);
-                bordered.pane.add_element(Box::new(side.clone()));
+                let _ = bordered.pane.add_element(Box::new(side.clone()));
                 bordered.top.borrow_mut().replace(side);
             }
         }
@@ -1231,7 +1231,7 @@ impl Bordered {
                 sb.set_dyn_width(sb_width.clone(), sb_width, Some(inner.get_content_width()));
 
                 bordered.x_scrollbar.borrow_mut().replace(sb.clone());
-                bordered.pane.add_element(Box::new(sb));
+                let _ = bordered.pane.add_element(Box::new(sb));
             } else {
                 let side = HorizontalSide::new(
                     ctx,
@@ -1240,12 +1240,12 @@ impl Bordered {
                     bottom_property,
                 );
                 side.pane.set_dyn_location(bottom_loc);
-                bordered.pane.add_element(Box::new(side.clone()));
+                let _ = bordered.pane.add_element(Box::new(side.clone()));
                 bordered.bottom.borrow_mut().replace(side);
             }
         }
 
-        bordered.pane.add_element(inner);
+        let _ = bordered.pane.add_element(inner);
         bordered
     }
 
@@ -1537,7 +1537,12 @@ impl VerticalSide {
 impl Element for VerticalSide {
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let Some((ref text, ref j)) = *self.text.borrow() else {
-            return DrawChPos::new_repeated_vertical(self.ch.borrow().clone(), 0, 0, ctx.size.height);
+            return DrawChPos::new_repeated_vertical(
+                self.ch.borrow().clone(),
+                0,
+                0,
+                ctx.size.height,
+            );
         };
 
         let text_height = text.len() as u16;
@@ -1739,7 +1744,12 @@ impl HorizontalSide {
 impl Element for HorizontalSide {
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let Some((ref text, ref j)) = *self.text.borrow() else {
-            return DrawChPos::new_repeated_horizontal(self.ch.borrow().clone(), 0, 0, ctx.size.width);
+            return DrawChPos::new_repeated_horizontal(
+                self.ch.borrow().clone(),
+                0,
+                0,
+                ctx.size.width,
+            );
         };
 
         let text_width = text.len() as u16;
