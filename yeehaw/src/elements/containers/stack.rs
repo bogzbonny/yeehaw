@@ -460,7 +460,23 @@ impl Element for VerticalStack {
         let mut resized = false;
         for resp in resps.iter_mut() {
             let (el_id, top_dy, bottom_dy) = match resp {
-                EventResponse::Resize(r) => (&r.el_id, r.top_dy, r.bottom_dy),
+                EventResponse::Resize(r) => {
+                    if r.top_dy == 0 && r.bottom_dy == 0 {
+                        if r.left_dx != 0 || r.right_dx != 0 {
+                            // allow the resize to continue to be passed to the next
+                            // parent element to resize this stacks width
+                            let mut r_ = r.clone();
+                            r_.el_id = self.id();
+                            *resp = EventResponse::Resize(r_);
+                            continue;
+                        }
+
+                        // this is an empty resize event
+                        *resp = EventResponse::None;
+                        continue;
+                    }
+                    (&r.el_id, r.top_dy, r.bottom_dy)
+                }
                 _ => continue,
             };
             let (top_el, bottom_el, change_dy) = if top_dy != 0 {
@@ -546,7 +562,23 @@ impl Element for HorizontalStack {
         let mut resized = false;
         for resp in resps.iter_mut() {
             let (el_id, left_dx, right_dx) = match resp {
-                EventResponse::Resize(r) => (&r.el_id, r.left_dx, r.right_dx),
+                EventResponse::Resize(r) => {
+                    if r.left_dx == 0 && r.right_dx == 0 {
+                        if r.top_dy != 0 || r.bottom_dy != 0 {
+                            // allow the resize to continue to be passed to the next
+                            // parent element to resize this stacks height
+                            let mut r_ = r.clone();
+                            r_.el_id = self.id();
+                            *resp = EventResponse::Resize(r_);
+                            continue;
+                        }
+
+                        // this is an empty resize event
+                        *resp = EventResponse::None;
+                        continue;
+                    }
+                    (&r.el_id, r.left_dx, r.right_dx)
+                }
                 _ => continue,
             };
             let (left_el, right_el, change_dx) = if left_dx != 0 {
