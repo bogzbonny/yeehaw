@@ -27,6 +27,8 @@
     next higher element was a stack which could actually use that resize command
     it would utilize it)
 01. fix the terminal_editor
+01. terminal not shutting down when showcase shuts down
+     - I think due to tabs not propogating the closedown events 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -60,8 +62,6 @@
       - neovim editor
       - buncha widgets which dont do much but log their results 
         in a textbox
-
-01. terminal not shutting down when showcase shuts down
 
 01. gif of showcase example
 
@@ -403,15 +403,6 @@
     
 10. vertical tabs (like brave)
 
-11. tabs with border:
-╭─────╮────╮────╮──────╮  ╭─────╭────╮────╮──────╮ ╭─────╭────╭────╮──────╮
-│tabs1│tab2│tab3│ tab4 │  │tabs1│tab2│tab3│ tab4 │ │tabs1│tab2│tab3│ tab4 │
-│     └────────────────╮  ├─────┘    └────┴──────┤ ├─────┴────┘    └──────┤
-│                      │  │                      │ │                      │
-│                      │  │                      │ │                      │
-│                      │  │                      │ │                      │
-│                      │  │                      │ │                      │
-└──────────────────────┘  └──────────────────────┘ └──────────────────────┘
 10. table element        
 
 10. hover comments
@@ -432,6 +423,11 @@
 10. element: date selector
 
 10. element: color selector
+
+10. container element: grid selector
+     - like a stack except with x and y, utilizing the stacks as sub elements
+       - if the middle line was to shift on a 2x2 grid it should shift for both
+         the left and right sides aka they are locked.
 
 10. 2D selector space
      - title and ticks as optional
@@ -547,6 +543,16 @@
 
 30. :Command pane and functionality
       - use custom event routing system
+
+30. tabs with border, LOW PRIORITY
+╭─────╮────╮────╮──────╮  ╭─────╭────╮────╮──────╮ ╭─────╭────╭────╮──────╮
+│tabs1│tab2│tab3│ tab4 │  │tabs1│tab2│tab3│ tab4 │ │tabs1│tab2│tab3│ tab4 │
+│     └────────────────╮  ├─────┘    └────┴──────┤ ├─────┴────┘    └──────┤
+│                      │  │                      │ │                      │
+│                      │  │                      │ │                      │
+│                      │  │                      │ │                      │
+│                      │  │                      │ │                      │
+└──────────────────────┘  └──────────────────────┘ └──────────────────────┘
 
 40. custom mouse types using images (requires image support, and mouse pixel tracking) 
 

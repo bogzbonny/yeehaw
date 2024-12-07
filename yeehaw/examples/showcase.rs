@@ -79,13 +79,15 @@ async fn main() -> Result<(), Error> {
         .with_bg(Color::PINK)
         .with_text("tab 4".to_string());
     let el5 = TerminalPane::new(&ctx)?;
-    tabs.push(Box::new(el1), " widgets");
-    tabs.push(Box::new(el2), "colors");
-    tabs.push(Box::new(el3), "images");
-    tabs.push(Box::new(el4), "file-nav");
-    tabs.push(Box::new(el5), "terminal");
-
+    let el6 = TerminalPane::new(&ctx)?;
+    let _ = tabs.push(Box::new(el1), "widgets");
+    let _ = tabs.push(Box::new(el2), "colors");
+    let _ = tabs.push(Box::new(el3), "images");
+    let _ = tabs.push(Box::new(el4), "file-nav");
+    let _ = tabs.push(Box::new(el5), "terminal");
+    let _ = tabs.push(Box::new(el6), "terminal2");
     let _ = tabs.select(0);
+
     let _ = right_pane.push(Box::new(tabs));
 
     let l = Label::new(&ctx, "window generation zone");

@@ -246,6 +246,12 @@ impl From<()> for EventResponse {
     }
 }
 
+impl From<ReceivableEventChanges> for EventResponse {
+    fn from(rec: ReceivableEventChanges) -> EventResponse {
+        EventResponse::ReceivableEventChanges(rec)
+    }
+}
+
 /// EventResponse is used to send information back to the parent that delivered
 /// the event to the element
 #[derive(Default)]

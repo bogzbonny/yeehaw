@@ -100,6 +100,47 @@ impl ElementOrganizer {
         EventResponse::ReceivableEventChanges(rec)
     }
 
+    #[must_use]
+    /// hide_element is similar to remove_element, it removees its receivable events from the
+    /// prioritizer, but does not remove the element from the element organizer, thus the hidden
+    /// element is still able to receive certain events such as exit or resize. The visibility of
+    /// the element is set to false.
+    pub fn hide_element(&self, el_id: &ElementID) -> EventResponse {
+        let Some(details) = self.get_element_details(el_id) else {
+            return EventResponse::None;
+        };
+        details.set_visibility(false);
+        let _ = details.el.change_priority(Priority::Unfocused);
+
+        let rm_evs = self.prioritizer.borrow_mut().remove_entire_element(el_id);
+        let add_evs = details.el.receivable(); // must also add evs again for evs that are not removed
+        self.prioritizer.borrow_mut().include(el_id, &add_evs);
+        let rec = ReceivableEventChanges::default()
+            .with_remove_evs(rm_evs)
+            .with_add_evs(add_evs.0);
+        EventResponse::ReceivableEventChanges(rec)
+    }
+
+    #[must_use]
+    /// unhide_element is used to unhide an element that was previously hidden. It sets the
+    /// visibility of the element to true and adds the elements receivable events to the
+    /// prioritizer.
+    pub fn unhide_element(&self, el_id: &ElementID) -> EventResponse {
+        let Some(details) = self.get_element_details(el_id) else {
+            return EventResponse::None;
+        };
+        details.set_visibility(true);
+        let _ = details.el.change_priority(Priority::Focused);
+
+        let rm_evs = self.prioritizer.borrow_mut().remove_entire_element(el_id);
+        let add_evs = details.el.receivable(); // must also add evs again for evs that are not removed
+        self.prioritizer.borrow_mut().include(el_id, &add_evs);
+        let rec = ReceivableEventChanges::default()
+            .with_remove_evs(rm_evs)
+            .with_add_evs(add_evs.0);
+        EventResponse::ReceivableEventChanges(rec)
+    }
+
     /// get_element_by_id returns the element registered under the given id in the eo
     pub fn get_element_details(&self, el_id: &ElementID) -> Option<ElDetails> {
         self.els.borrow().get(el_id).cloned()

@@ -1,9 +1,5 @@
 use {
-    crate::{
-        Color, Context, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponses, Parent, ParentPane, Priority, ReceivableEventChanges, SelfReceivableEvents,
-        Style, VerticalStack,
-    },
+    crate::*,
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
 };
@@ -17,7 +13,7 @@ use {
 pub struct TabsTop {
     pub pane: ParentPane,
     #[allow(clippy::type_complexity)]
-    pub els: Rc<RefCell<Vec<Box<dyn Element>>>>,
+    pub els: Rc<RefCell<Vec<ElementID>>>,
     /// the tab names
     pub names: Rc<RefCell<Vec<String>>>,
 
@@ -37,13 +33,13 @@ impl TabsTop {
     const KIND: &'static str = "tabs_top";
 
     #[allow(clippy::type_complexity)]
-    pub fn new(ctx: &Context, els: Rc<RefCell<Vec<Box<dyn Element>>>>, names: Vec<String>) -> Self {
+    pub fn new(ctx: &Context, els: Rc<RefCell<Vec<ElementID>>>, names: Vec<String>) -> Self {
         let tt = Self {
             pane: ParentPane::new(ctx, Self::KIND),
             els,
             names: Rc::new(RefCell::new(names)),
             selected: Rc::new(RefCell::new(None)),
-            tab_prefix: Rc::new(RefCell::new(String::new())),
+            tab_prefix: Rc::new(RefCell::new(" ".to_string())),
             tab_suffix: Rc::new(RefCell::new(" ".to_string())),
             highlight_style: Rc::new(RefCell::new(
                 Style::default_const()
@@ -75,6 +71,34 @@ impl TabsTop {
             names.push(full_name);
         }
         names
+    }
+
+    pub fn push<S: Into<String>>(&self, el: ElementID, name: S) {
+        self.names.borrow_mut().push(name.into());
+        self.els.borrow_mut().push(el);
+    }
+
+    pub fn insert<S: Into<String>>(&self, idx: usize, el: ElementID, name: S) {
+        self.names.borrow_mut().insert(idx, name.into());
+        self.els.borrow_mut().insert(idx, el);
+    }
+
+    pub fn remove(&self, idx: usize) -> ElementID {
+        self.names.borrow_mut().remove(idx);
+        self.els.borrow_mut().remove(idx)
+    }
+
+    pub fn clear(&self) {
+        self.els.borrow_mut().clear();
+    }
+
+    pub fn get_selected_id(&self) -> Option<ElementID> {
+        let i = *self.selected.borrow();
+        if let Some(i) = i {
+            self.els.borrow().get(i).cloned()
+        } else {
+            None
+        }
     }
 }
 
@@ -137,44 +161,96 @@ pub struct Tabs {
     pub pane: VerticalStack,
     pub tabs_top: TabsTop,
     #[allow(clippy::type_complexity)]
-    pub els: Rc<RefCell<Vec<Box<dyn Element>>>>,
+    pub lower: ParentPane,
 }
 
 impl Tabs {
     const KIND: &'static str = "tabs";
+    const LOWER_KIND: &'static str = "tabs_lower";
 
     pub fn new(ctx: &Context) -> Self {
         let tabs_top = TabsTop::new(ctx, Rc::new(RefCell::new(Vec::new())), Vec::new());
         let pane = VerticalStack::new(ctx);
         pane.pane.pane.set_kind(Self::KIND);
+        let lower = ParentPane::new(ctx, Self::LOWER_KIND);
         let _ = pane.push(Box::new(tabs_top.clone()));
+        let _ = pane.push(Box::new(lower.clone()));
         Self {
             pane,
             tabs_top,
-            els: Rc::new(RefCell::new(Vec::new())),
+            lower,
         }
     }
 
+    #[must_use]
     /// add an element to the end of the stack resizing the other elements
     /// in order to fit the new element
-    pub fn push<S: Into<String>>(&self, el: Box<dyn Element>, name: S) {
+    pub fn push<S: Into<String>>(&self, el: Box<dyn Element>, name: S) -> EventResponses {
         Self::sanitize_el_location(&*el);
-        self.els.borrow_mut().push(el.clone());
-        self.tabs_top.names.borrow_mut().push(name.into());
+        self.tabs_top.push(el.id(), name.into());
+        let mut resps = EventResponses::default();
+        let resp = self.lower.add_element(el.clone());
+        resps.push(resp);
+        let idx = self.tabs_top.els.borrow().len() - 1;
+        if self.tabs_top.selected.borrow().is_none() {
+            self.tabs_top.selected.replace(Some(idx));
+            let resps_ = self.set_tab_view_pane(None, Some(idx));
+            resps.extend(resps_);
+        } else {
+            el.set_visible(false);
+            let _ = el.change_priority(Priority::Unfocused);
+        }
+        resps
     }
 
-    pub fn insert<S: Into<String>>(&self, idx: usize, el: Box<dyn Element>, name: S) {
+    #[must_use]
+    pub fn insert<S: Into<String>>(
+        &self, idx: usize, el: Box<dyn Element>, name: S,
+    ) -> EventResponses {
         Self::sanitize_el_location(&*el);
-        self.els.borrow_mut().insert(idx, el.clone());
-        self.tabs_top.names.borrow_mut().insert(idx, name.into());
+
+        let mut resps = EventResponses::default();
+        let mut unfocus_old = false;
+        if let Some(old_idx) = *self.tabs_top.selected.borrow() {
+            if idx == old_idx {
+                unfocus_old = true;
+            }
+        }
+        if unfocus_old {
+            if let Some(old_id) = self.tabs_top.get_selected_id() {
+                if let Some(old_el) = self.lower.get_element(&old_id) {
+                    old_el.set_visible(false);
+                    let resp_ = old_el.change_priority(Priority::Unfocused);
+                    resps.push(resp_.into());
+                }
+            }
+        }
+
+        self.tabs_top.insert(idx, el.id(), name.into());
+        let resp = self.lower.add_element(el.clone());
+        resps.push(resp);
+        if self.tabs_top.selected.borrow().is_none() {
+            self.tabs_top.selected.replace(Some(idx));
+            let resps_ = self.set_tab_view_pane(None, Some(idx));
+            resps.extend(resps_);
+        } else if *self.tabs_top.selected.borrow() == Some(idx) {
+            el.set_visible(true);
+        } else {
+            el.set_visible(false);
+            let _ = el.change_priority(Priority::Unfocused);
+        }
+        resps
     }
 
-    pub fn remove(&self, idx: usize) {
-        self.els.borrow_mut().remove(idx);
+    #[must_use]
+    pub fn remove(&self, idx: usize) -> EventResponse {
+        let el_id = self.tabs_top.names.borrow_mut().remove(idx);
+        self.lower.remove_element(&el_id)
     }
 
-    pub fn clear(&self) {
-        self.els.borrow_mut().clear();
+    pub fn clear(&self) -> EventResponse {
+        self.tabs_top.clear();
+        self.lower.clear_elements()
     }
 
     fn sanitize_el_location(el: &dyn Element) {
@@ -187,17 +263,21 @@ impl Tabs {
     }
 
     #[must_use]
-    pub fn set_tab_view_pane(&self, idx: Option<usize>) -> EventResponses {
+    pub fn set_tab_view_pane(
+        &self, old_idx: Option<usize>, new_idx: Option<usize>,
+    ) -> EventResponses {
         let mut resps = EventResponses::default();
-        // the second element (1) is the tab view pane
-        if let Some(el) = self.pane.get(1) {
-            el.set_visible(false);
-            resps.push(self.pane.remove(1));
+        if let Some(idx) = old_idx {
+            if let Some(old_id) = self.tabs_top.els.borrow().get(idx) {
+                let resp = self.lower.eo.hide_element(old_id);
+                resps.push(resp);
+            }
         }
-        if let Some(idx) = idx {
-            if let Some(el) = self.els.borrow().get(idx) {
-                el.set_visible(true);
-                resps.push(self.pane.push(el.clone()));
+
+        if let Some(idx) = new_idx {
+            if let Some(new_id) = self.tabs_top.els.borrow().get(idx) {
+                let resp = self.lower.eo.unhide_element(new_id);
+                resps.push(resp);
             }
         }
         resps
@@ -205,8 +285,9 @@ impl Tabs {
 
     #[must_use]
     pub fn select(&self, idx: usize) -> EventResponses {
+        let start_selected = *self.tabs_top.selected.borrow();
         *self.tabs_top.selected.borrow_mut() = Some(idx);
-        self.set_tab_view_pane(Some(idx))
+        self.set_tab_view_pane(start_selected, Some(idx))
     }
 }
 
@@ -217,7 +298,7 @@ impl Element for Tabs {
         let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
         let end_selected = *self.tabs_top.selected.borrow();
         if start_selected != end_selected {
-            let resps_ = self.set_tab_view_pane(end_selected);
+            let resps_ = self.set_tab_view_pane(start_selected, end_selected);
             resps.extend(resps_);
         }
         (captured, resps)
