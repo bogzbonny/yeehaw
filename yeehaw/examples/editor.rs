@@ -3,17 +3,22 @@ use yeehaw::*;
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     yeehaw::log::reset_log_file("./debug_test.log".to_string());
-    //std::env::set_var("RUST_BACKTRACE", "1");
+    std::env::set_var("RUST_BACKTRACE", "1");
 
     let (mut tui, ctx) = Tui::new()?;
 
     let el = ParentPane::new(&ctx, "main").with_style(Style::default().with_bg(Color::GREY5));
 
-    //let editor = TermEditorPane::new(&ctx, "EDITOR")
-    let editor = TermEditorPane::new_with_custom_editor(&ctx, "EDITOR", None)
-        .with_height(30.into())
-        .with_width(30.into())
-        .at(1.into(), 1.into());
+    //let editor = TermEditorPane::new(&ctx, "custom")
+    let editor = TermEditorPane::new_with_custom_editor(
+        &ctx,
+        "custom",
+        Some("bloop".into()),
+        "editor not found",
+    ) // for testing no editor
+    .with_height(30.into())
+    .with_width(30.into())
+    .at(1.into(), 1.into());
 
     let label = Label::new(&ctx, "nothing yet set in $EDITOR textbox").at(50.into(), 1.into());
 

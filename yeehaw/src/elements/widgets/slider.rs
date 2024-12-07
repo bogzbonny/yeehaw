@@ -229,6 +229,16 @@ impl Element for Slider {
             Event::Mouse(me) => {
                 let clicked_down = *self.clicked_down.borrow();
                 match me.kind {
+                    MouseEventKind::ScrollUp | MouseEventKind::ScrollRight => {
+                        let resps_ = self.decrement_position(ctx);
+                        resps.extend(resps_);
+                        return (true, resps);
+                    }
+                    MouseEventKind::ScrollDown | MouseEventKind::ScrollLeft => {
+                        let resps_ = self.increment_position(ctx);
+                        resps.extend(resps_);
+                        return (true, resps);
+                    }
                     MouseEventKind::Down(MouseButton::Left) => {
                         *self.clicked_down.borrow_mut() = true;
                         return (true, resps);

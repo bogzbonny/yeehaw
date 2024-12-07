@@ -26,8 +26,17 @@
     resize but pass on that resize to the next higher element (such that if the
     next higher element was a stack which could actually use that resize command
     it would utilize it)
+01. fix the terminal_editor
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+01. fix the line_numbers textbox
+
+01. ensure that the line_numbers small textbox is the placed correctly in the
+    editor
+
+01. cleanup the widgets example 
+     - showcase should just use the same widgets example pane
 
 01. showcase example 
       - menu-bar background transparancy is to nothing because the figlet text has no bg

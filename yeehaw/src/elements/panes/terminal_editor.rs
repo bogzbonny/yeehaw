@@ -25,6 +25,7 @@ pub struct TermEditorPane {
     pub text: Rc<RefCell<Option<String>>>,
 
     pub tempfile: Rc<RefCell<Option<tempfile::NamedTempFile>>>,
+    pub editor_is_open: Rc<RefCell<bool>>,
 
     pub non_editing_textbox: Rc<RefCell<TextBox>>,
     /// the textbox when not being edited for viewing the text
@@ -44,14 +45,34 @@ impl TermEditorPane {
 
     pub fn new<S: Into<String>>(ctx: &Context, title: S) -> Self {
         let editor: Option<String> = std::env::var("EDITOR").ok();
-        Self::new_with_custom_editor(ctx, title, editor)
+        Self::new_with_custom_editor(
+            ctx,
+            title,
+            editor,
+            "No editor found (please set your $EDITOR environment var)",
+        )
     }
 
     /// use this if you want to specify a mandatory editor or use an alternative
     /// environment variable
-    pub fn new_with_custom_editor<S: Into<String>>(
-        ctx: &Context, title: S, editor: Option<String>,
+    ///
+    /// NOTE the caller of this function is expected to check for the editor
+    /// and provide a None if the editor is not found. Otherwise the editor
+    /// will error on first call. See the `new` function for expected behaviour.
+    pub fn new_with_custom_editor<S: Into<String>, T: Into<String>>(
+        ctx: &Context, title: S, mut editor: Option<String>, editor_missing_text: T,
     ) -> Self {
+        // ensure that the editor is found
+        let mut set_none = false;
+        if let Some(ref editor) = editor {
+            if !std::path::Path::new(editor).exists() {
+                set_none = true;
+            }
+        }
+        if set_none {
+            editor = None;
+        }
+
         let pane = ParentPane::new(ctx, Self::KIND);
 
         let non_editing_textbox = TextBox::new(ctx, "")
@@ -65,12 +86,11 @@ impl TermEditorPane {
         Self {
             pane,
             editor,
-            editor_not_found_text: Rc::new(RefCell::new(
-                "No editor found (please set your $EDITOR environment var)".into(),
-            )),
+            editor_not_found_text: Rc::new(RefCell::new(editor_missing_text.into())),
             title: Rc::new(RefCell::new(title.into())),
             text: Rc::new(RefCell::new(None)),
             tempfile: Rc::new(RefCell::new(None)),
+            editor_is_open: Rc::new(RefCell::new(false)),
             non_editing_textbox: Rc::new(RefCell::new(non_editing_textbox)),
             just_created: Rc::new(RefCell::new(true)),
             clicked_down: Rc::new(RefCell::new(false)),
@@ -81,6 +101,7 @@ impl TermEditorPane {
     #[must_use]
     pub fn open_editor(&self, ctx: &Context) -> EventResponse {
         let text = self.text.borrow().clone();
+        self.editor_is_open.replace(true);
         match self.editor {
             Some(ref editor) => {
                 let mut cmd = CommandBuilder::new(editor);
@@ -120,17 +141,41 @@ impl TermEditorPane {
                 }
             }
             None => {
+                let el = ParentPaneOfSelectable::new(ctx)
+                    .with_dyn_height(DynVal::FULL)
+                    .with_dyn_width(DynVal::FULL)
+                    .with_focused(ctx);
+
+                let title_label = Label::new(ctx, &self.title.borrow());
+                let _ = el.add_element(Box::new(title_label));
+
                 let start_text = self.editor_not_found_text.borrow().clone();
                 let tb = TextBox::new(ctx, "")
                     .with_text_when_empty(start_text)
                     .with_width(DynVal::FULL)
                     .with_height(DynVal::FULL)
-                    .with_no_wordwrap(ctx)
-                    .at(DynVal::new_fixed(0), DynVal::new_fixed(0));
+                    .with_line_numbers(ctx)
+                    .with_right_scrollbar(ctx)
+                    //.with_no_wordwrap(ctx)
+                    .at(DynVal::new_fixed(0), DynVal::new_fixed(2));
+                //tb.pane.select();
 
-                tb.pane.select();
+                let tb_ = tb.clone();
+                let self_ = self.clone();
+                let ctx_ = ctx.clone();
+                let save_fn = Box::new(move |_, _| {
+                    let t = tb_.get_text();
+                    self_.text.replace(Some(t.clone()));
+                    self_.text_changed_hook.borrow_mut()(ctx_.clone(), t);
+                    EventResponses::default()
+                });
 
-                self.pane.add_element(Box::new(tb))
+                let btn_save =
+                    Button::new(ctx, "save", save_fn).at(DynVal::FULL.minus(7.into()), 0.into());
+                let _ = el.add_element(Box::new(btn_save));
+
+                let _ = el.add_element(Box::new(tb));
+                self.pane.add_element(Box::new(el))
             }
         }
     }
@@ -187,14 +232,15 @@ impl TermEditorPane {
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for TermEditorPane {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        if self.tempfile.borrow().is_none() {
+        //if self.tempfile.borrow().is_none() {
+        if !*self.editor_is_open.borrow() {
             // activate the editor on click
             let clicked_down = *self.clicked_down.borrow();
             if let Event::Mouse(me) = ev {
                 match me.kind {
                     MouseEventKind::Down(MouseButton::Left) => {
                         *self.clicked_down.borrow_mut() = true;
-                        return (true, EventResponses::default());
+                        //return (true, EventResponses::default());
                     }
                     MouseEventKind::Up(MouseButton::Left) if clicked_down => {
                         let mut resps = EventResponses::default();
@@ -204,16 +250,20 @@ impl Element for TermEditorPane {
                         resps.push(resp);
                         return (true, resps);
                     }
-                    _ => {}
+                    _ => {
+                        *self.clicked_down.borrow_mut() = false;
+                    }
                 }
+            } else {
+                *self.clicked_down.borrow_mut() = false;
             }
-            *self.clicked_down.borrow_mut() = false;
         }
 
         let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
 
         if !self.pane.has_elements() {
             self.tempfile.borrow_mut().take();
+            self.editor_is_open.replace(false);
             let text = self.text.borrow().clone().unwrap_or_default();
             self.non_editing_textbox.borrow().set_text(text);
             let non_editing_textbox = self.non_editing_textbox.borrow().clone();
