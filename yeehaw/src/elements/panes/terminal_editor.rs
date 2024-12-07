@@ -153,12 +153,11 @@ impl TermEditorPane {
                 let tb = TextBox::new(ctx, "")
                     .with_text_when_empty(start_text)
                     .with_width(DynVal::FULL)
-                    .with_height(DynVal::FULL)
-                    .with_line_numbers(ctx)
+                    .with_height(DynVal::FULL.minus(2.into()))
                     .with_right_scrollbar(ctx)
-                    //.with_no_wordwrap(ctx)
-                    .at(DynVal::new_fixed(0), DynVal::new_fixed(2));
-                //tb.pane.select();
+                    .with_line_numbers(ctx)
+                    .at(0.into(), 2.into());
+                tb.pane.select();
 
                 let tb_ = tb.clone();
                 let self_ = self.clone();

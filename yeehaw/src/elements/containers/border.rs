@@ -1088,7 +1088,7 @@ impl Bordered {
                 *sb.position_changed_hook.borrow_mut() = Some(hook);
 
                 // set the scrollbar dimensions/location (as it wasn't done earlier)
-                // see NOTE SB-1 as to why we don't use the dynamic width
+                // see NOTE SB-1 as to why we don't use the dynamic width/height
                 let sb_height: DynVal = left_loc.height(ctx).into();
                 sb.set_dyn_location(left_loc);
                 sb.set_dyn_height(
@@ -1138,7 +1138,7 @@ impl Bordered {
                 *sb.position_changed_hook.borrow_mut() = Some(hook);
 
                 // set the scrollbar dimensions/location (as it wasn't done earlier)
-                // see NOTE SB-1 as to why we don't use the dynamic width
+                // see NOTE SB-1 as to why we don't use the dynamic width/height
                 let sb_height: DynVal = right_loc.height(ctx).into();
                 sb.set_dyn_location(right_loc);
                 sb.set_dyn_height(
@@ -1182,7 +1182,7 @@ impl Bordered {
                 *sb.position_changed_hook.borrow_mut() = Some(hook);
 
                 // set the scrollbar dimensions/location (as it wasn't done earlier)
-                // see NOTE SB-1 as to why we don't use the dynamic width
+                // see NOTE SB-1 as to why we don't use the dynamic width/height
                 let sb_width: DynVal = top_loc.width(ctx).into();
                 sb.set_dyn_location(top_loc);
                 sb.set_dyn_width(sb_width.clone(), sb_width, Some(inner.get_content_width()));
@@ -1225,7 +1225,7 @@ impl Bordered {
                 *sb.position_changed_hook.borrow_mut() = Some(hook);
 
                 // set the scrollbar dimensions/location (as it wasn't done earlier)
-                // see NOTE SB-1 as to why we don't use the dynamic width
+                // see NOTE SB-1 as to why we don't use the dynamic width/height
                 let sb_width: DynVal = bottom_loc.width(ctx).into();
                 sb.set_dyn_location(bottom_loc);
                 sb.set_dyn_width(sb_width.clone(), sb_width, Some(inner.get_content_width()));

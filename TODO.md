@@ -29,13 +29,17 @@
 01. fix the terminal_editor
 01. terminal not shutting down when showcase shuts down
      - I think due to tabs not propogating the closedown events 
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-01. fix the line_numbers textbox
-
 01. ensure that the line_numbers small textbox is the placed correctly in the
     editor
+01. fix the line_numbers textbox
+     - this seems that it may be a buffering issue, when I rescale it seems to
+       correct (in widgets test)
+01. scrollbars dont properly get created in editor (only later)
+    - seems to be using the height of the entire screen here
+    - the ctx height of the scrollbar is not adjusted when the screen size
+      changes (resize)
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 01. cleanup the widgets example 
      - showcase should just use the same widgets example pane

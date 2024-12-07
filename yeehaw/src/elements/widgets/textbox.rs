@@ -129,13 +129,19 @@ impl TextBox {
 
         // wire the scrollbar to the textbox
         let pane_ = self.inner.borrow().pane.clone();
-        let hook = Box::new(move |init_ctx, y| pane_.set_content_y_offset(&init_ctx, y));
+        let is_dirty = self.inner.borrow().is_dirty.clone();
+        let hook = Box::new(move |init_ctx, y| {
+            pane_.set_content_y_offset(&init_ctx, y);
+            is_dirty.replace(true);
+        });
         *sb.position_changed_hook.borrow_mut() = Some(hook);
         *self.y_scrollbar.borrow_mut() = Some(sb.clone());
         let _ = self.pane.pane.add_element(Box::new(sb.clone()));
         self.inner.borrow().y_scrollbar.replace(Some(sb));
 
-        self.reset_line_numbers(init_ctx);
+        if let VerticalSBPositions::ToTheLeft = pos {
+            self.reset_line_numbers(init_ctx);
+        }
         self.set_corner_decor(init_ctx);
         self.reset_sb_sizes(init_ctx);
     }
@@ -197,7 +203,11 @@ impl TextBox {
 
         // wire the scrollbar to the textbox
         let pane_ = self.inner.borrow().pane.clone();
-        let hook = Box::new(move |init_ctx, x| pane_.set_content_x_offset(&init_ctx, x));
+        let is_dirty = self.inner.borrow().is_dirty.clone();
+        let hook = Box::new(move |init_ctx, x| {
+            pane_.set_content_x_offset(&init_ctx, x);
+            is_dirty.replace(true);
+        });
         *sb.position_changed_hook.borrow_mut() = Some(hook);
         *self.x_scrollbar.borrow_mut() = Some(sb.clone());
         let _ = self.pane.pane.add_element(Box::new(sb.clone()));
@@ -215,12 +225,10 @@ impl TextBox {
             y_sb.set_scrollable_view_size(inner_ctx.size);
             *y_sb.scrollable_view_chs.borrow_mut() =
                 DynVal::new_fixed(inner_ctx.size.height as i32);
-            //y_sb.external_change(0, self.inner.borrow().pane.content_height(), inner_ctx.size);
         }
         if let Some(x_sb) = &*self.x_scrollbar.borrow() {
             x_sb.set_scrollable_view_size(inner_ctx.size);
             *x_sb.scrollable_view_chs.borrow_mut() = DynVal::new_fixed(inner_ctx.size.width as i32);
-            //x_sb.external_change(0, self.inner.borrow().pane.content_width(), inner_ctx.size);
         }
 
         // correct offsets
@@ -485,6 +493,9 @@ pub struct TextBoxInner {
     /// used for redrawing logic
     pub last_size: Rc<RefCell<Size>>,
 
+    /// the last size given to the sbs
+    pub last_size_for_sbs: Rc<RefCell<Size>>,
+
     pub text: Rc<RefCell<Vec<char>>>,
     pub text_when_empty: Rc<RefCell<String>>,
     /// greyed out text when the textbox is empty
@@ -585,6 +596,7 @@ impl TextBoxInner {
             selectedness: Rc::new(RefCell::new(Selectability::Ready)),
             is_dirty: Rc::new(RefCell::new(true)),
             last_size: Rc::new(RefCell::new(Size::default())),
+            last_size_for_sbs: Rc::new(RefCell::new(Size::default())),
             text: Rc::new(RefCell::new(text.chars().collect())),
             text_when_empty: Rc::new(RefCell::new("enter text...".to_string())),
             text_when_empty_fg: Rc::new(RefCell::new(Color::GREY6)),
@@ -694,6 +706,7 @@ impl TextBoxInner {
 
     pub fn set_text(&self, text: String) {
         *self.text.borrow_mut() = text.chars().collect();
+        self.is_dirty.replace(true);
     }
 
     // ---------------------------------------------------------
@@ -793,6 +806,9 @@ impl TextBoxInner {
             if (wr_ch.ch == '\n' && wr_ch.abs_pos.is_some()) || i == 0 {
                 max_line_num += 1;
             }
+            //if wr_ch.y_pos + 1 > max_line_num {
+            //    max_line_num = wr_ch.y_pos + 1;
+            //}
         }
 
         // get the largest amount of digits in the line numbers from the string
@@ -800,15 +816,24 @@ impl TextBoxInner {
 
         let mut s = String::new();
         let mut true_line_num = 1;
+
         for (i, wr_ch) in wr_chs.chs.iter().enumerate() {
-            if wr_ch.ch == '\n' || i == 0 {
-                if wr_ch.abs_pos.is_some() || i == 0 {
+            // NOTE this i=0 case needs to be seperate from the newline case
+            // for when the first character is a newline we need print two line numbers
+            if i == 0 {
+                s += &format!("{:line_num_width$} ", true_line_num);
+                true_line_num += 1;
+                s += "\n";
+            }
+            if wr_ch.ch == '\n' {
+                if wr_ch.abs_pos.is_some() {
                     s += &format!("{:line_num_width$} ", true_line_num);
                     true_line_num += 1;
                 }
                 s += "\n";
             }
         }
+
         (s, line_num_width + 1) // +1 for the extra space after the digits
     }
 
@@ -825,8 +850,21 @@ impl TextBoxInner {
         let y_offset = self.pane.get_content_y_offset();
         let x_offset = self.pane.get_content_x_offset();
 
+        let update_size = if *self.last_size_for_sbs.borrow() != ctx.size {
+            *self.last_size_for_sbs.borrow_mut() = ctx.size;
+            self.is_dirty.replace(true);
+            true
+        } else {
+            false
+        };
+
         // update the scrollbars/line numbers textbox
         if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
+            if update_size {
+                sb.set_scrollable_view_size(ctx.size);
+                *sb.scrollable_view_chs.borrow_mut() = DynVal::new_fixed(ctx.size.height as i32);
+            }
+
             sb.external_change(y_offset, self.pane.content_height(), ctx.size);
         }
         let resp = EventResponse::default();
@@ -843,6 +881,10 @@ impl TextBoxInner {
             ln_tb.pane.set_content_y_offset(ctx, y_offset);
         }
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
+            if update_size {
+                sb.set_scrollable_view_size(ctx.size);
+                *sb.scrollable_view_chs.borrow_mut() = DynVal::new_fixed(ctx.size.width as i32);
+            }
             sb.external_change(x_offset, self.pane.content_width(), ctx.size);
         }
         resp

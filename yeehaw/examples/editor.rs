@@ -9,16 +9,16 @@ async fn main() -> Result<(), Error> {
 
     let el = ParentPane::new(&ctx, "main").with_style(Style::default().with_bg(Color::GREY5));
 
-    //let editor = TermEditorPane::new(&ctx, "custom")
-    let editor = TermEditorPane::new_with_custom_editor(
-        &ctx,
-        "custom",
-        Some("bloop".into()),
-        "editor not found",
-    ) // for testing no editor
-    .with_height(30.into())
-    .with_width(30.into())
-    .at(1.into(), 1.into());
+    //let editor = TermEditorPane::new_with_custom_editor(
+    //    &ctx,
+    //    "custom",
+    //    Some("bloop".into()),
+    //    "editor not found",
+    //) // for testing no editor
+    let editor = TermEditorPane::new(&ctx, "custom")
+        .with_height(0.7.into())
+        .with_width(30.into())
+        .at(1.into(), 1.into());
 
     let label = Label::new(&ctx, "nothing yet set in $EDITOR textbox").at(50.into(), 1.into());
 
