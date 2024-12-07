@@ -8,6 +8,34 @@ async fn main() -> Result<(), Error> {
 
     let (mut tui, ctx) = Tui::new()?;
     let el = VerticalStack::new(&ctx);
+
+    let mb = MenuBar::top_menu_bar(&ctx)
+        .with_height(1.into())
+        .with_width(1.0.into());
+    mb.pane.set_at(0.into(), 0.into());
+    for i in 0..3 {
+        mb.add_item(&ctx, format!("upper/item-{i}"), None);
+        mb.add_item(&ctx, format!("menu/item-{i}"), None);
+        mb.add_item(&ctx, format!("bar/item-{i}"), None);
+    }
+    for j in 0..10 {
+        let i = 3;
+        mb.add_item(&ctx, format!("menu/item-{i}/sub-item-{j}"), None);
+        mb.add_item(&ctx, format!("bar/item-{i}/sub-item-{j}"), None);
+    }
+    for j in 0..10 {
+        for k in 0..3 {
+            let i = 3;
+            mb.add_item(
+                &ctx,
+                format!("upper/item-{i}/sub-{i}-item-{j}/sub-{i}-{j}-item-{k}"),
+                None,
+            );
+        }
+    }
+
+    let _ = el.push(Box::new(mb));
+
     //let header_pane = ParentPaneOfSelectable::new(&ctx)
     let header_pane = ParentPaneOfSelectable::new(&ctx)
         .with_dyn_height(DynVal::new_fixed(7))
@@ -19,7 +47,7 @@ async fn main() -> Result<(), Error> {
 
     let mtext = FigletText::new(
         &ctx,
-        "yeehaw",
+        "YEEEHAW!",
         figlet_rs::FIGfont::from_content(std::include_str!("../../assets/figlet/ANSI_Shadow.flf"))
             .expect("missing asset"),
     )
@@ -36,21 +64,9 @@ async fn main() -> Result<(), Error> {
     .at(DynVal::new_flex(0.9), DynVal::new_flex(0.3));
     let _ = header_pane.add_element(Box::new(button));
 
-    let mb = MenuBar::top_menu_bar(&ctx)
-        .with_height(1.into())
-        .with_width(1.0.into());
-    mb.pane.set_at(0.into(), 0.into());
-    mb.add_item(&ctx, "upper/asdg/2222/3".to_string(), None);
-    mb.add_item(&ctx, "menu/asdg/444ll/3adsf3/sdlkjf".to_string(), None);
-    mb.add_item(&ctx, "bar/as33/222222/33".to_string(), None);
-    mb.add_item(&ctx, "hello/yoyo/hi/asgd".to_string(), None);
-    mb.add_item(&ctx, "world/yo".to_string(), None);
-    mb.add_item(&ctx, "world/yosdfjldsffff/asdkjl".to_string(), None);
-    let _ = header_pane.add_element(Box::new(mb));
-
     let central_pane = HorizontalStack::new(&ctx);
     let _ = el.push(Box::new(central_pane.clone()));
-    let left_pane = VerticalStack::new(&ctx);
+    let left_pane = VerticalStack::new(&ctx).with_width(DynVal::new_flex(0.7));
     let right_pane = VerticalStack::new(&ctx);
     let _ = central_pane.push(Box::new(left_pane.clone()));
     let _ = central_pane.push(Box::new(right_pane.clone()));
@@ -62,7 +78,7 @@ async fn main() -> Result<(), Error> {
     let _ = left_pane.push(Box::new(left_top_bordered));
     let dbg_pane = DebugSizePane::new(&ctx)
         .with_bg(Color::BLUE)
-        .with_dyn_height(left_pane.avg_height(&ctx));
+        .with_dyn_height(0.7.into());
     let _ = left_pane.push(Box::new(dbg_pane));
 
     let tabs = Tabs::new(&ctx);

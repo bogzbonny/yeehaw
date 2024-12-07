@@ -82,7 +82,6 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
 05. Theme Manager - it would be awesome to be able to just get the colors for
     each element from a provided theme manager
      - could replicate a new trait similar to Into<Color/Style> but where the
@@ -223,7 +222,6 @@
                  location would be flattened down such that it was not a sub-item
                  of the menu-bar but of the same parent the menu-bar has 
 
-
 10. scrollbar style on pane option... use a half(widthwise) block character instead of the
     thick border line... looks nice
      - maybe dont use half characters for this one only full characters
@@ -335,6 +333,23 @@
     - △▷▽◁
     - ◢◥◤◣
     - ◥◢◣◤
+
+10. REMOVE/OR FIX USE OF extra locations (only used in menu currently)
+    menu items-extra-locations are not routed properly for higher level external panes
+     - this is because the parentpane element does not register extra-locations
+       so when the menu uses extra locations beyond the scope of its parent
+       pane, the menus parent pane is never routed to.
+        - complex to allow for routing, because really all of these extra
+          locations should also have an element-id associated with them, so that
+          if there are multiple duplicate extra-locations from sub-elements for
+          a parent pane, if one of the children wants to deregister, then it
+          should not effect the other child also using that extra-location.
+     - once fixed could change in the showcase example where the extra locations are
+       registered in the highest level element and not the header element
+         - // NOTE we are adding this to el instead of in the header_pane as there the extra-locations
+           // are not currently propogated upward. (so this becomes a problem is the menu bar extends
+           // beyond the header_pane). In the future this should be fixed.
+           //let _ = el.pane.add_element(Box::new(mb));
 
 20. ArbSelector users should be able to feed in which keys are used for moving
     forward or backwards instead of enforcing left and right

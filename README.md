@@ -110,7 +110,6 @@ Looking to understand more? Checkout:
  - [Context](TODO) <- an object which can be found nearly everywhere
  - [DynVal](TODO) <- the basis for all layouts and sizes
 
-
 ### Design Principles 
 
  - Elements should present information as cleanly as possible.
@@ -131,11 +130,12 @@ Looking to understand more? Checkout:
    an `internals` feature flag to reduce breaking changes).
  - Favour robustness over correctness for release mode (but vise-versa during
    debug mode). Many small and strange UI bugs are resolvable via user
-   intervention. Ideally the TUI should never panic during release mode.
+   intervention. Ideally yeehaw should never panic during release mode.
 
 ### Non-Objectives
 
- - catering (too much) to non-UTF-8 or non-true-color terminals
+ - catering to non-UTF-8 
+ - catering (too much) to non-true-color terminals
  - minor performance improvements at the cost of developer ergonomics
 
 ## Stability, Upcoming Refactors, Bugs 
@@ -164,10 +164,6 @@ HAVE NO FEAR
    that the minimized windows can follow a nice easy grid pattern. Currently
    minimization still somewhat works, however multiple minimized windows will
    stack on each other in the same location. 
- - The $EDITOR text editor element - aka the element where you could use any
-   editor like neovim/vim(/emacs I think?) currently doesn't provide good
-   support for users who HAVEN'T set their $EDITOR env variable. This will be
-   fixed at some point soon.
  - Default colors everywhere are going to be replaced with a defaults in a theme
    manager. Using the Theme Manager the developer can start from a nice overall
    default then modify it to their liking. Note the Theme manager will not
@@ -197,6 +193,8 @@ HAVE NO FEAR
 [jexer](https://gitlab.com/AutumnMeowMeow/jexer) what the shell!
 
 [ratatui](https://ratatui.rs/) obviously rocks, [well done](https://www.youtube.com/watch?v=9wm1D6Rk8TE)
+
+[cursive](https://github.com/gyscos/cursive) i like it
 
 [bubbletea](https://github.com/charmbracelet/bubbletea) lookin' good! (golang)
 
