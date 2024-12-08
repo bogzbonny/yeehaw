@@ -4,7 +4,7 @@
 use {
     crate::*,
     compact_str::CompactString,
-    crossterm::event::{KeyCode, KeyEvent, KeyModifiers},
+    crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
     portable_pty::{native_pty_system, ChildKiller, CommandBuilder, MasterPty, PtySize},
     std::{
         cell::RefCell,
@@ -15,11 +15,12 @@ use {
     tokio::task::spawn_blocking,
 };
 
-/// TODO use termwiz instead of vt100
-///      https:///docs.rs/termwiz/latest/termwiz/
-///      https:///github.com/wez/wezterm/blob/main/termwiz/examples/widgets_nested.rs
+// TODO use termwiz instead of vt100? ... would maybe have to use the wezterm-term crate too, which is not published
+// one issue is that to be to query for the terminal mouse state you'd need to use wezterm-term
+//      https:///docs.rs/termwiz/latest/termwiz/
+//      https:///github.com/wez/wezterm/blob/main/termwiz/examples/widgets_nested.rs
 
-/// TODO graceful shutdown of tokio tasks
+// TODO graceful shutdown of tokio tasks
 
 #[derive(Clone)]
 pub struct TerminalPane {
@@ -173,33 +174,74 @@ impl TerminalPane {
             log_err!("TerminalPane: failed to resize pty: {}", e);
         }
     }
+
+    pub fn handle_pane_mouse_event(&self, mouse: &MouseEvent) -> bool {
+        // query for the mouse protocol being used by the terminal
+        // either sgr_mouse, normal_mouse, or rxvt_mouse
+        let parser = match self.parser.read() {
+            Ok(parser) => parser,
+            Err(e) => {
+                log_err!("TerminalPane: failed to read parser: {}", e);
+                return false;
+            }
+        };
+        if (*parser).screen().mouse_protocol_encoding() == vt100::MouseProtocolEncoding::Sgr {
+            let input_bz = create_csi_sgr_mouse(*mouse);
+            if self.writer.borrow_mut().write_all(&input_bz).is_err() {
+                return false;
+            }
+            if self.writer.borrow_mut().flush().is_err() {
+                return false;
+            }
+        }
+        true
+    }
 }
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for TerminalPane {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        match ev {
+        let (captured, resps) = match ev {
             Event::KeyCombo(ref keys) => {
                 let captured = handle_pane_key_event(self, &keys[0]);
-                // handle empty case?
-                return (captured, EventResponses::default());
+                (captured, EventResponses::default())
+            }
+            Event::Mouse(ref mouse) => {
+                let captured = self.handle_pane_mouse_event(mouse);
+                (captured, EventResponses::default())
             }
             Event::Resize => {
                 self.resize_pty(ctx);
+                (false, EventResponses::default())
             }
             Event::Exit => {
                 // this will error is the pty_killer has already been killed
                 // ignore the error
                 let _ = self.pty_killer.borrow_mut().kill();
+                (false, EventResponses::default())
             }
             Event::Custom(name, _) => {
                 if name == Self::custom_destruct_event_name(self.id()) {
-                    return (true, EventResponse::Destruct.into());
+                    (true, EventResponse::Destruct.into())
+                } else {
+                    (false, EventResponses::default())
                 }
             }
-            _ => {}
-        }
-        (false, EventResponses::default())
+            _ => (false, EventResponses::default()),
+        };
+
+        // query for the mouse protocol being used by the terminal
+        // either sgr_mouse, normal_mouse, or rxvt_mouse
+        let parser = match self.parser.read() {
+            Ok(parser) => parser,
+            Err(e) => {
+                log_err!("TerminalPane: failed to read parser: {}", e);
+                return (captured, resps);
+            }
+        };
+        *self.hide_cursor.borrow_mut() = (*parser).screen().hide_cursor();
+
+        (captured, resps)
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
@@ -277,7 +319,7 @@ impl Element for TerminalPane {
 }
 
 pub fn handle_pane_key_event(pane: &TerminalPane, key: &KeyEvent) -> bool {
-    let input_bytes = match key.code {
+    let input_bz = match key.code {
         KeyCode::Char(ch) => {
             let mut send = vec![ch as u8];
             let upper = ch.to_ascii_uppercase();
@@ -329,11 +371,72 @@ pub fn handle_pane_key_event(pane: &TerminalPane, key: &KeyEvent) -> bool {
     // if there is an error here, the pty has been closed, therefor do not capture the event. this
     // could happen in the split second between the pty being closed and the exit event being
     // received by this terminal pane.
-    if pane.writer.borrow_mut().write_all(&input_bytes).is_err() {
+    if pane.writer.borrow_mut().write_all(&input_bz).is_err() {
         return false;
     }
     if pane.writer.borrow_mut().flush().is_err() {
         return false;
     }
     true
+}
+
+// this function takes a MouseEvent and returns the bytes that represent the mouse input.
+pub fn create_csi_sgr_mouse(ev: MouseEvent) -> Vec<u8> {
+    let kind = ev.kind;
+    let modifiers = ev.modifiers;
+    let button = match kind {
+        MouseEventKind::Down(button) => button,
+        MouseEventKind::Up(button) => button,
+        MouseEventKind::Drag(button) => button,
+        MouseEventKind::Moved => MouseButton::Left,
+        MouseEventKind::ScrollUp => MouseButton::Left,
+        MouseEventKind::ScrollDown => MouseButton::Left,
+        MouseEventKind::ScrollLeft => MouseButton::Left,
+        MouseEventKind::ScrollRight => MouseButton::Left,
+    };
+
+    let cb = create_cb(kind, modifiers);
+    let cx = ev.column + 1;
+    let cy = ev.row + 1;
+
+    let out = format!(
+        "\x1B[<{};{};{}{}",
+        cb,
+        cx,
+        cy,
+        if kind == MouseEventKind::Up(button) { "m" } else { "M" }
+    );
+    out.into_bytes()
+}
+
+// this function takes a MouseEventKind and KeyModifiers and returns the byte that represents the
+// mouse input.
+pub fn create_cb(kind: MouseEventKind, modifiers: KeyModifiers) -> u8 {
+    let mut out = match kind {
+        MouseEventKind::Down(MouseButton::Left) => 0,
+        MouseEventKind::Down(MouseButton::Middle) => 1,
+        MouseEventKind::Down(MouseButton::Right) => 2,
+        MouseEventKind::Drag(MouseButton::Left) => 0b0010_0000,
+        MouseEventKind::Drag(MouseButton::Middle) => 1 | 0b0010_0000,
+        MouseEventKind::Drag(MouseButton::Right) => 2 | 0b0010_0000,
+        MouseEventKind::Up(MouseButton::Left) => 3,
+        MouseEventKind::Up(MouseButton::Middle) => 3, // don't know if this is correct, crossterm doesn't parse this
+        MouseEventKind::Up(MouseButton::Right) => 3, // don't know if this is correct, crossterm doesn't parse this
+        MouseEventKind::Moved => 3 | 0b0010_0000,
+        MouseEventKind::ScrollUp => 4,
+        MouseEventKind::ScrollDown => 5,
+        MouseEventKind::ScrollLeft => 6,
+        MouseEventKind::ScrollRight => 7,
+    };
+
+    if modifiers.contains(KeyModifiers::SHIFT) {
+        out |= 0b0000_0100;
+    }
+    if modifiers.contains(KeyModifiers::ALT) {
+        out |= 0b0000_1000;
+    }
+    if modifiers.contains(KeyModifiers::CONTROL) {
+        out |= 0b0001_0000;
+    }
+    out
 }

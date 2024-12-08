@@ -1,4 +1,7 @@
 
+`yeehaw` is a batteries included TUI framework, its designed to be highly
+extensible and 
+
 ## Quickstart:   <!-- NOTE duplicate in README.md -->
 
 A hello world example with a label and a reactive button:

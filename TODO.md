@@ -8,6 +8,8 @@
 01. cleanup the widgets example 
      - showcase should just use the same widgets example pane
 
+01. passing mouse movements into terminal pane
+
 01. showcase example 
      - a big "DO NOT PRESS button" which instigates the blue screen of death
      - window generator zone
@@ -27,6 +29,7 @@
           - neovim editor
           - buncha widgets which dont do much but log their results 
             in a textbox
+        - the showcase within the showcase?? spiral
 
 01. gif of showcase example - will need to record with non-VHS/asciicinema-tool
     to get mouse movements
@@ -175,16 +178,22 @@ FEATURES
                  location would be flattened down such that it was not a sub-item
                  of the menu-bar but of the same parent the menu-bar has 
 
-10. Conditional ChPlus's 
-     - draw based on what's underneith
-     - would be nice to use for both wire connectors, as well as borders 
-       within borders (such as the shiftors within a stack
-
-10. Hyperlink element which can open in a browser when clicked
-
 10. allow for the time gradient to execute once instead of on repeat. 
 
-10. character content "gradients" - aka the characters change 
+10. character content "gradients" - aka the actual characters changes with time
+
+10. Conditional ChPlus's 
+     - use cases: wire connectors, border combiners
+     - draw based on what's underneith
+        - could alternatively have a draw based on whats beside this character
+          too... may be slighly computationally burdensome... 
+        - the alternative for the border combiner. 
+           - allow the border combiner to 
+     - would be nice to use for both wire connectors, as well as borders 
+       within borders (such as the shiftors within a stack
+ 
+
+10. Hyperlink element which can open in a browser when clicked
 
 10. hover comments
      - hover comment event which is triggered after a certain amount of time
