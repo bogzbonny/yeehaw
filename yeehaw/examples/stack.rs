@@ -23,7 +23,7 @@ async fn main() -> Result<(), Error> {
     let vstack_ = vstack.clone();
     let hstack_ = hstack.clone();
     let toggle = Toggle::new(&ctx, " vertical ", " horizontal ")
-        .at(28.into(), 1.into())
+        .at(28, 1)
         .with_fn(Box::new(move |_, tog| {
             let mut resps: EventResponses = top_.pop().into();
             let resps_ = if tog.selected() == " horizontal " {
@@ -48,8 +48,7 @@ async fn main() -> Result<(), Error> {
         }
         EventResponses::default()
     });
-    let remove_button =
-        Button::new(&ctx, "remove_pane", remove_button_click_fn).at(13.into(), 1.into());
+    let remove_button = Button::new(&ctx, "remove_pane", remove_button_click_fn).at(13, 1);
 
     let toggle_ = toggle.clone();
     let hstack_ = hstack.clone();
@@ -116,7 +115,7 @@ async fn main() -> Result<(), Error> {
 
         EventResponses::default()
     });
-    let add_button = Button::new(&ctx, "add_pane", add_button_click_fn).at(1.into(), 1.into());
+    let add_button = Button::new(&ctx, "add_pane", add_button_click_fn).at(1, 1);
 
     let _ = sel_pane.add_element(Box::new(add_button));
     let _ = sel_pane.add_element(Box::new(remove_button));

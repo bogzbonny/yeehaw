@@ -120,13 +120,13 @@ impl VerticalScrollbar {
         self
     }
 
-    pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.pane.set_at(loc_x, loc_y);
+    pub fn at<D: Into<DynVal>, D2: Into<DynVal>>(self, loc_x: D, loc_y: D2) -> Self {
+        self.pane.set_at(loc_x.into(), loc_y.into());
         self
     }
 
     pub fn set_at(&self, loc_x: DynVal, loc_y: DynVal) {
-        self.pane.set_at(loc_x, loc_y);
+        self.pane.set_at(loc_x.into(), loc_y.into());
     }
 
     pub fn without_arrows(self) -> Self {
@@ -203,13 +203,13 @@ impl HorizontalScrollbar {
         self
     }
 
-    pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.pane.set_at(loc_x, loc_y);
+    pub fn at<D: Into<DynVal>, D2: Into<DynVal>>(self, loc_x: D, loc_y: D2) -> Self {
+        self.pane.set_at(loc_x.into(), loc_y.into());
         self
     }
 
     pub fn set_at(&self, loc_x: DynVal, loc_y: DynVal) {
-        self.pane.set_at(loc_x, loc_y);
+        self.pane.set_at(loc_x.into(), loc_y.into());
     }
 
     pub fn without_arrows(self) -> Self {

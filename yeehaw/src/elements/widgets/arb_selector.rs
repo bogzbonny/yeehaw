@@ -225,8 +225,8 @@ impl ArbSelector {
         self
     }
 
-    pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.pane.set_at(loc_x, loc_y);
+    pub fn at<D: Into<DynVal>, D2: Into<DynVal>>(self, loc_x: D, loc_y: D2) -> Self {
+        self.pane.set_at(loc_x.into(), loc_y.into());
         self
     }
 

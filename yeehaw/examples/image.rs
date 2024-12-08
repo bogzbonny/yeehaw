@@ -29,8 +29,7 @@ async fn main() -> Result<(), Error> {
         }
         EventResponses::default()
     });
-    let remove_button =
-        Button::new(&ctx, "remove_pane", remove_button_click_fn).at(13.into(), 1.into());
+    let remove_button = Button::new(&ctx, "remove_pane", remove_button_click_fn).at(13, 1);
     let _ = sel_pane.add_element(Box::new(remove_button));
 
     let hstack_ = hstack.clone();
@@ -48,7 +47,7 @@ async fn main() -> Result<(), Error> {
             EventResponses::default()
         }
     });
-    let add_button = Button::new(&ctx, "add_pane", add_button_click_fn).at(1.into(), 1.into());
+    let add_button = Button::new(&ctx, "add_pane", add_button_click_fn).at(1, 1);
     let _ = sel_pane.add_element(Box::new(add_button));
 
     tui.run(Box::new(vstack)).await

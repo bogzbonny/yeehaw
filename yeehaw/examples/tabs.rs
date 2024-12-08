@@ -22,9 +22,9 @@ async fn main() -> Result<(), Error> {
         .with_bg(Color::GREEN)
         .with_text("tab 3".to_string());
 
-    tabs.push(Box::new(el1), "tab 1");
-    tabs.push(Box::new(el2), "tab 2");
-    tabs.push(Box::new(el3), "tab 3");
+    let _ = tabs.push(Box::new(el1), "tab 1");
+    let _ = tabs.push(Box::new(el2), "tab 2");
+    let _ = tabs.push(Box::new(el3), "tab 3");
     let _ = tabs.select(0);
 
     tui.run(Box::new(tabs)).await

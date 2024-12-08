@@ -156,7 +156,7 @@ impl TermEditorPane {
                     .with_height(DynVal::FULL.minus(2.into()))
                     .with_right_scrollbar(ctx)
                     .with_line_numbers(ctx)
-                    .at(0.into(), 2.into());
+                    .at(0, 2);
                 tb.pane.select();
 
                 let tb_ = tb.clone();
@@ -170,7 +170,7 @@ impl TermEditorPane {
                 });
 
                 let btn_save =
-                    Button::new(ctx, "save", save_fn).at(DynVal::FULL.minus(7.into()), 0.into());
+                    Button::new(ctx, "save", save_fn).at(DynVal::FULL.minus(7.into()), 0);
                 let _ = el.add_element(Box::new(btn_save));
 
                 let _ = el.add_element(Box::new(tb));
@@ -217,8 +217,8 @@ impl TermEditorPane {
         self
     }
 
-    pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.pane.set_at(loc_x, loc_y);
+    pub fn at<D: Into<DynVal>, D2: Into<DynVal>>(self, loc_x: D, loc_y: D2) -> Self {
+        self.pane.set_at(loc_x.into(), loc_y.into());
         self
     }
 

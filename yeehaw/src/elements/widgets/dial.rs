@@ -134,8 +134,8 @@ impl Dial {
         self.pane = pane;
     }
 
-    pub fn at(self, x: DynVal, y: DynVal) -> Self {
-        self.pane.pane.set_at(x, y);
+    pub fn at<D: Into<DynVal>, D2: Into<DynVal>>(self, x: D, y: D2) -> Self {
+        self.pane.pane.set_at(x.into(), y.into());
         self
     }
 }

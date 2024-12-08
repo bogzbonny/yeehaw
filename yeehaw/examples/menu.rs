@@ -16,7 +16,7 @@ async fn main() -> Result<(), Error> {
         .with_dyn_width(1.0.into())
         .with_z(100);
 
-    let label = Label::new(&ctx, "label").at(0.into(), 10.into());
+    let label = Label::new(&ctx, "label").at(0, 10);
 
     let label_ = label.clone();
     let btn_a = Button::new(
@@ -27,7 +27,7 @@ async fn main() -> Result<(), Error> {
             EventResponses::default()
         }),
     )
-    .at(1.into(), 0.into());
+    .at(1, 0);
 
     let label_ = label.clone();
     let btn_b = Button::new(
@@ -38,7 +38,7 @@ async fn main() -> Result<(), Error> {
             EventResponses::default()
         }),
     )
-    .at(5.into(), 0.into());
+    .at(5, 0);
 
     let label_ = label.clone();
     let btn_c = Button::new(
@@ -49,7 +49,7 @@ async fn main() -> Result<(), Error> {
             EventResponses::default()
         }),
     )
-    .at(9.into(), 0.into());
+    .at(9, 0);
 
     let _ = lower.add_element(Box::new(label));
     let _ = lower.add_element(Box::new(btn_a));

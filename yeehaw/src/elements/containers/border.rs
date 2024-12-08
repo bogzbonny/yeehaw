@@ -1030,7 +1030,7 @@ impl Bordered {
                 CornerPos::TopLeft,
                 properties.top_corner,
             )
-            .at(0.into(), 0.into());
+            .at(0, 0);
             let _ = bordered.pane.add_element(Box::new(corner));
         }
         if has_top_right_corner {
@@ -1040,7 +1040,7 @@ impl Bordered {
                 CornerPos::TopRight,
                 properties.top_corner,
             )
-            .at(DynVal::FULL.minus(1.into()), 0.into());
+            .at(DynVal::FULL.minus(1.into()), 0);
             let _ = bordered.pane.add_element(Box::new(corner));
         }
         if has_bottom_left_corner {
@@ -1050,7 +1050,7 @@ impl Bordered {
                 CornerPos::BottomLeft,
                 properties.bottom_corner,
             )
-            .at(0.into(), DynVal::FULL.minus(1.into()));
+            .at(0, DynVal::FULL.minus(1.into()));
             let _ = bordered.pane.add_element(Box::new(corner));
         }
         if has_bottom_right_corner {
@@ -1369,8 +1369,8 @@ impl Corner {
         self.pane.set_content(ch.into());
     }
 
-    pub fn at(self, x: DynVal, y: DynVal) -> Self {
-        self.pane.set_at(x, y);
+    pub fn at<D: Into<DynVal>, D2: Into<DynVal>>(self, x: D, y: D2) -> Self {
+        self.pane.set_at(x.into(), y.into());
         self
     }
 }
@@ -1527,8 +1527,8 @@ impl VerticalSide {
         *self.text.borrow_mut() = Some((text, j));
     }
 
-    pub fn at(self, x: DynVal, y: DynVal) -> Self {
-        self.pane.set_at(x, y);
+    pub fn at<D: Into<DynVal>, D2: Into<DynVal>>(self, x: D, y: D2) -> Self {
+        self.pane.set_at(x.into(), y.into());
         self
     }
 }
@@ -1734,8 +1734,8 @@ impl HorizontalSide {
         *self.text.borrow_mut() = Some((text, j));
     }
 
-    pub fn at(self, x: DynVal, y: DynVal) -> Self {
-        self.pane.set_at(x, y);
+    pub fn at<D: Into<DynVal>, D2: Into<DynVal>>(self, x: D, y: D2) -> Self {
+        self.pane.set_at(x.into(), y.into());
         self
     }
 }

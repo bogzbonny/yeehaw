@@ -53,7 +53,7 @@ async fn main() -> Result<(), Error> {
     )
     .with_min_height()
     .with_style(Style::default().with_fg(Color::Gradient(gr)))
-    .at(0.into(), DynVal::new_fixed(1));
+    .at(0, DynVal::new_fixed(1));
     let _ = header_pane.add_element(Box::new(mtext));
 
     let button = Button::new(

@@ -246,21 +246,19 @@ async fn main() -> Result<(), Error> {
         EventResponse::NewElement(Box::new(window.clone()), Some(inner_resps.into())).into()
     });
 
-    let add_button = Button::new(&ctx, "add_window", add_button_click_fn).at(1.into(), 1.into());
-    let add_button2 =
-        Button::new(&ctx, "add_window_scrollable", add_button_scr_click_fn).at(15.into(), 1.into());
-    let add_button3 =
-        Button::new(&ctx, "add_terminal_window", add_term_click_fn).at(40.into(), 1.into());
-    let add_button4 = Button::new(&ctx, "add_bordered_resizer", add_button_bordered_resizer_fn)
-        .at(63.into(), 1.into());
-    let add_button5 = Button::new(&ctx, "add_bordered_mover", add_button_bordered_mover_fn)
-        .at(87.into(), 1.into());
+    let add_button = Button::new(&ctx, "add_window", add_button_click_fn).at(1, 1);
+    let add_button2 = Button::new(&ctx, "add_window_scrollable", add_button_scr_click_fn).at(15, 1);
+    let add_button3 = Button::new(&ctx, "add_terminal_window", add_term_click_fn).at(40, 1);
+    let add_button4 =
+        Button::new(&ctx, "add_bordered_resizer", add_button_bordered_resizer_fn).at(63, 1);
+    let add_button5 =
+        Button::new(&ctx, "add_bordered_mover", add_button_bordered_mover_fn).at(87, 1);
     let add_button6 = Button::new(
         &ctx,
         "add_bordered_resizer_sbs",
         add_button_bordered_scr_click_fn,
     )
-    .at(1.into(), 3.into());
+    .at(1, 3);
     let _ = pp.add_element(Box::new(add_button));
     let _ = pp.add_element(Box::new(add_button2));
     let _ = pp.add_element(Box::new(add_button3));

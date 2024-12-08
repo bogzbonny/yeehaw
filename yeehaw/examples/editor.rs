@@ -18,9 +18,9 @@ async fn main() -> Result<(), Error> {
     let editor = TermEditorPane::new(&ctx, "custom")
         .with_height(0.7.into())
         .with_width(30.into())
-        .at(1.into(), 1.into());
+        .at(1, 1);
 
-    let label = Label::new(&ctx, "nothing yet set in $EDITOR textbox").at(50.into(), 1.into());
+    let label = Label::new(&ctx, "nothing yet set in $EDITOR textbox").at(50, 1);
 
     let label_ = label.clone();
     let hook = Box::new(move |_ctx, text: String| {

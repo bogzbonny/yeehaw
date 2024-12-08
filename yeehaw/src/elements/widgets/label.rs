@@ -230,13 +230,13 @@ impl Label {
         *self.text.borrow_mut() = text;
     }
 
-    pub fn at(self, loc_x: DynVal, loc_y: DynVal) -> Self {
-        self.pane.set_at(loc_x, loc_y);
+    pub fn at<D: Into<DynVal>, D2: Into<DynVal>>(self, loc_x: D, loc_y: D2) -> Self {
+        self.pane.set_at(loc_x.into(), loc_y.into());
         self
     }
 
     pub fn set_at(&self, x: DynVal, y: DynVal) {
-        self.pane.set_at(x, y);
+        self.pane.set_at(x.into(), y.into());
     }
 
     /// get the label location from the label position
@@ -267,7 +267,7 @@ impl Label {
             self.pane.get_width(ctx),
             self.pane.get_height(ctx),
         );
-        self.set_at(x, y);
+        self.set_at(x.into(), y.into());
     }
 
     pub fn position_above_then_left(&self, ctx: &Context, el_loc: DynLocation) {
