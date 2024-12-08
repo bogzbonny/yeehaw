@@ -1,44 +1,5 @@
-<!--
-░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-░ꕤ                                 |    |    |                                              ꕤ ░
-░         _________               \|/  \|/  \|/           _̉_̉_̉_̉         3                      ░
-░        /         \              \|/  \|/  \|/   ☉     \/  x \              ______.          ░
-░        | yeeeehhaaw!!!!!!!!!!   \|/  \|/  \|/        \       \         ___/_____ꕤ_\___,     ░
-░  \_____/   _    _ \_____/        |    |    |        \/    _\  \          /|||||||||\        ░
-░           >    o< ,                _______________  /   /     ..        / ⹁╷,   ⹁╷, \       ░
-░        C     \                    /   █ █  █ █   ma  \  \               ╳  .     .  ╳   7   ░
-░        `           \             / /   █   █▀█     j    |        well   ╳     /     ╳       ░
-░          \> \-̲̅-̲̅./   |            \/    ▀   ▀ ▀      e   \    howdee     ╳  \     r  ╳       ░
-░         | \     `.  /          \_/     __________/// s   |     there!   ╳     -̅     ╳_      ░
-░         |  \      `----<<<-        \     |        /   t /                       ╷    \      ░
-░        /    |__|__|                /     }       /    i \                                   ░
-░ꕤ                                  /     /        \   c  /                                 ꕤ ░
-░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
--->
-[IMAGE](TODO IMAGE OF BANNER HERE)
 
-# YEEHAW
-
-~ Batteries Included Text Based Application Framework ~
-
-yeehaw was born out of a need for an embeddable and reusable interface-element
-pattern for sophisticated text based applications. 
-
-**Reasons why you need your application to be text-based:**
-1) it's the only way you'll ever be cool again
-2) they're conceptually straightforward, it's just a grid 
-3) they're rapidly iterable during development
-4) they're extremely extensible -> nesting other TUIs in your TUI is a
-   flippin breeze with yeehaw
-5) they fas
-
-##  Example Usage:
-
-[>>>>>>>>>>>>>> MORE GIFS <<<<<<<<<<<<<<<<<<](TODO LINK TO MORE GIFS)
-
-[TODO] Insert Showcase gif
-
-## Quickstart:   <!-- NOTE duplicate in 01_getting_started.md -->
+## Quickstart:   <!-- NOTE duplicate in README.md -->
 
 A hello world example with a label and a reactive button:
 
@@ -71,7 +32,7 @@ async fn main() -> Result<(), Error> {
 }
 ```
 
-## Existing Elements:   <!-- NOTE duplicate in 01_getting_started.md -->
+## Existing Elements:  <!-- NOTE duplicate in README.md -->
 [TODO link to a separate markdown with a bunch of GIFS]
 
 #### Widgets
@@ -102,7 +63,7 @@ async fn main() -> Result<(), Error> {
  - stack panes (think vim-buffers) 
  - scrollable panes with scrollbars
 
-## Planned Stuff: <!-- NOTE duplicate in 01_getting_started.md -->
+## Planned Stuff: <!-- NOTE duplicate in README.md --> 
  - embed a whole dang yeehaw TUI into stateful ratatui widget, why not!
  - mini-TUIs in the CLI (aka. use a TUI in-line with your command without taking
                          up the whole terminal)
@@ -120,7 +81,7 @@ async fn main() -> Result<(), Error> {
  - build out a system of feature-flags for feature restriction / compile time
    improvement.
 
-# Design Overview <!-- NOTE duplicate in 01_getting_started.md -->
+# Design Overview <!-- NOTE duplicate in README.md -->
 
 Element ownership overview: TUI Elements are arranged in a hierarchical manner
 while retaining semi-autonomy. Events are routed from the top down, and
@@ -146,35 +107,7 @@ Looking to understand more? Checkout:
  - [Context](TODO) <- an object which can be found nearly everywhere
  - [DynVal](TODO) <- the basis for all layouts and sizes
 
-### Design Principles 
-
- - Elements should present information as cleanly as possible.
-   - tooling should be provided to minimize the need for use of box character
-     borders, for instance through contrasting backgrounds.
- - The element trait, and yeehaw's design in general should be as versatile as
-   possible - allowing for the development of highly specific obscure elements 
-   and features without having to break the core design.
- - Developing a simple element should require as no information about its
-   surrounding environment. This said, more complex elements should still be
-   able to responsibly interact with its surroundings directly if necessary -
-   elements should __not__ be limited to only interacting with its parent in the
-   rigid element-hierarchy through event responses. Although this rigidity
-   provides consistency for overall design, it can drastically complicate
-   certain inter-element interactions.
- - Keep as much stuff `pub` as possible to allow for more experimentation
-   without requiring forks of the repo. (Eventually put all the excess pub under
-   an `internals` feature flag to reduce breaking changes).
- - Favour robustness over correctness for release mode (but vise-versa during
-   debug mode). Many small and strange UI bugs are resolvable via user
-   intervention. Ideally yeehaw should never panic during release mode.
-
-### Non-Objectives <!-- NOTE duplicate in 01_getting_started.md -->
-
- - catering to non-UTF-8 
- - catering (too much) to non-true-color terminals
- - minor performance improvements at the cost of developer ergonomics
-
-## Stability, Upcoming Refactors, Bugs <!-- NOTE duplicate in 01_getting_started.md -->
+## Stability, Upcoming Refactors, Bugs <!-- NOTE duplicate in README.md -->
 
 If you plan to build on yeehaw right now, that's great news! I'd like to keep
 you apprised of some upcoming changes. If you do wish to experiment and or start
@@ -222,27 +155,26 @@ HAVE NO FEAR
    individual element implementions maybe even building in a few common caching
    patterns which arise into the `pane` object.
 
+## Performance Considerations <!-- NOTE duplicate in README.md -->
 
-## Tribute
+TL;DR - Elements should cache their own drawing content, also things may be
+slighly laggy while in debug mode if deeply nested containers are used.
 
- - [notcurses](https://github.com/dankamongmen/notcurses) insane
- - [jexer](https://gitlab.com/AutumnMeowMeow/jexer) what the shell!
- - [ratatui](https://ratatui.rs/) obviously rocks, [well done](https://www.youtube.com/watch?v=9wm1D6Rk8TE)
- - [bubbletea](https://github.com/charmbracelet/bubbletea) lookin' good! (golang)
-
-## Contributing 
-
-Yes! It'd be cool for this repo to become a mega repo. I want all sorts of funky
-widgets in this baby with first class support from this project (hiding behind
-feature flags to not gum up the compile times). All ideas will be considered
-with an open mind, if you'd like to build and element and merge it into yeehaw
-it'd be an honour, if you'd like to build a element with highly specific needs
-and the current Element trait is non-satisfactory, let's upgrade it. 
-In the future, This repo will be transitioning to dynamic ownership based on
-contributions, so if your code becomes merged then your be gaining a specialized
-part piece of ownership in the project whenever dynamic ownership is integrated
-in (more on that later!).
-
-Any contribution you intentionally submit for inclusion in the work, as defined
-in the Apache-2.0 license, shall be Apache-2.0 license, without any additional
-terms or conditions.
+The current design of the drawing system favours graphical flexibility over
+performance. Each element must implement the `Drawing` function which in turn
+returns a list of individual positions to draw (`DrawChPos`) which are relative
+to itself, for each redraw a container element will then reposition all the draw
+information of sub-elements. Additionally each container also processes styles
+which change relative to time or position (gradients), All this reprocessing
+which takes place in container elements is computationally inefficient as it
+occurs with each redraw frame. The inefficiency introduced by this design
+decision may lead to slightly laggy interfaces (but only) when compiled in debug
+mode and if deeply nested containers are used. Release mode should never
+experience noticeable lag. Use of parallel computation with rayon has been
+implemented to help mitigate these inefficiencies. A complex refactor which
+introduced caching at the ParentPane (specifically the organizer) level was once
+attempted but found to cause more problems for Element developers and only minor
+performance boosts. As such Elements are expected to cache their own drawing
+information to minimize the computational burden at render time. A common caching 
+pattern will soon be integrated into the `Pane` to make Element drawing
+development a little bit more straightforward. 

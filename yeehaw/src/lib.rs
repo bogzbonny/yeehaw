@@ -1,3 +1,5 @@
+#![doc = include_str!("../../docs/01_getting_started.md")]
+
 #[macro_use]
 pub mod log; // note, must be first for the macro to work throughout
 

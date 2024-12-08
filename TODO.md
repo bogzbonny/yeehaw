@@ -2,6 +2,7 @@
 01. README doc about performance and drawing
      - slightly laggy in debug mode but should be good in release mode
         - due to nested element containers, more deeply nested calls 
+01. hello world example in README.md
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 01. cleanup the widgets example 
@@ -32,6 +33,10 @@
      - put the gif in a seperate repo for now to keep the repo lean.
 
 01. add landing page docs for docs.rs
+     - better, doc specific intro text before the example 
+     - link to examples 
+     - resolve broken links 
+        cargo doc --open
 
 01. just use an image for the banner (and include the existing text as 
     markdown comment
