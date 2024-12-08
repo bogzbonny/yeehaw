@@ -186,6 +186,30 @@ HAVE NO FEAR
    individual element implementions maybe even building in a few common caching
    patterns which arise into the `pane` object.
 
+## Performance Considerations
+
+TL;DR - Elements should cache their own drawing content, also things may be
+slighly laggy while in debug mode if deeply nested containers are used.
+
+The current design of the drawing system favours graphical flexibility over
+performance. Each element must implement the `Drawing` function which in turn
+returns a list of individual positions to draw (`DrawChPos`) which are relative
+to itself, for each redraw a container element will then reposition all the draw
+information of sub-elements. Additionally each container also processes styles
+which change relative to time or position (gradients), All this reprocessing
+which takes place in container elements is computationally inefficient as it
+occurs with each redraw frame. The inefficiency introduced by this design
+decision may lead to slightly laggy interfaces (but only) when compiled in debug
+mode and if deeply nested containers are used. Release mode should never
+experience noticeable lag. Use of parallel computation with rayon has been
+implemented to help mitigate these inefficiencies. A complex refactor which
+introduced caching at the ParentPane (specifically the organizer) level was once
+attempted but found to cause more problems for Element developers and only minor
+performance boosts. As such Elements are expected to cache their own drawing
+information to minimize the computational burden at render time. A common caching 
+pattern will soon be integrated into the `Pane` to make Element drawing
+development a little bit more straightforward. 
+
 ## Tribute
 
 [notcurses](https://github.com/dankamongmen/notcurses) insane

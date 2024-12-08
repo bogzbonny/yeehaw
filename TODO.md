@@ -1,84 +1,42 @@
-40. WONT DO Subscription based events on common objects. 
-     - like leptos. any element could subscribe to an object (with any other
-       element can change). When that object changes it would send out events to
-       any other elements which subscribed to it... OR maybe it would just make
-       sense to use hooks this way you don't need all the parents of the
-       destination to also subscribe to the hook. USE HOOKS!
-       - Actually could be really easy with the Event Router - could use Custom
-         Event
-       - question is: what events should actually be broadcast?
 
-05. introduce errors, remove all unwraps
-05. clicking while on the menu bar should collapse & deselect the bar
-01. improve efficiency the showcase already feels laggy
-     - seems specifically to do with nesting things in element organizers
-         - the widget_test has lots lots more elements but no lag
-         - each layer of element organizer causes additional redraw adjustments
-           to be required
-     - for time based redraws the element could have a receivable event which it
-       registers
-     - each element organizer could keep a queue of the previous draw characters
-       which 
-
-01. Draggin of border panes doesn't work in showcase
-
-01. resize event in the "wrong direction" for a stack should not just ignore the
-    resize but pass on that resize to the next higher element (such that if the
-    next higher element was a stack which could actually use that resize command
-    it would utilize it)
-01. fix the terminal_editor
-01. terminal not shutting down when showcase shuts down
-     - I think due to tabs not propogating the closedown events 
-01. ensure that the line_numbers small textbox is the placed correctly in the
-    editor
-01. fix the line_numbers textbox
-     - this seems that it may be a buffering issue, when I rescale it seems to
-       correct (in widgets test)
-01. scrollbars dont properly get created in editor (only later)
-    - seems to be using the height of the entire screen here
-    - the ctx height of the scrollbar is not adjusted when the screen size
-      changes (resize)
+01. README doc about performance and drawing
+     - slightly laggy in debug mode but should be good in release mode
+        - due to nested element containers, more deeply nested calls 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 01. cleanup the widgets example 
      - showcase should just use the same widgets example pane
 
 01. showcase example 
-      - menu-bar background transparancy is to nothing because the figlet text has no bg
-      - sweet figlet text up top "Yeahaw showcase"
-      - right click menu with a popup window
-      - window generator zone
-        - dial with window types: terminal, $editor, basic, scrollable,
-          scrollable-border. 
-        - dial which greys out for the border capability. 
-      - TWO dials as eyes (draw a mouth label below, maybe a nose too)
-        - make the mouth change with a button click 
-      - a menu
-         - some hidden funny stuff on some items
-         - tic tac toe
-      - a split stack with some tabs
-        and funky gradient examples
-         - maybe some dials which can change the
-           gradient colors / angle / size
-      - a big "DO NOT PRESS button" 
-        which instigates the blue screen of death
-      - neovim editor
-      - buncha widgets which dont do much but log their results 
-        in a textbox
+     - a big "DO NOT PRESS button" which instigates the blue screen of death
+     - window generator zone
+       - dial with window types: terminal, $editor, basic, scrollable,
+         scrollable-border. 
+       - dial which greys out for the border capability. 
+       - TWO dials as eyes (draw a mouth label below, maybe a nose too)
+          - make the mouth change with a button click 
+     - a menu
+        - some hidden funny stuff on some items
+        - tic tac toe
+     - TABS Zone
+        - a split stack with some tabs and funky gradient examples
+           - maybe some dials /sliders which can change the
+             gradient colors / angle / size
+        - widgets
+          - neovim editor
+          - buncha widgets which dont do much but log their results 
+            in a textbox
 
-01. gif of showcase example
+01. gif of showcase example - will need to record with non-VHS/asciicinema-tool
+    to get mouse movements
+     - put the gif in a seperate repo for now to keep the repo lean.
 
-01. docs docs docs
+01. add landing page docs for docs.rs
 
 01. just use an image for the banner (and include the existing text as 
     markdown comment
 
 01. add docs, crates button banners to github readme
-
-01. README doc about performance and drawing
-     - slightly laggy in debug mode but should be good in release mode
-        - due to nested element containers, more deeply nested calls 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -101,27 +59,53 @@
        level (day/night switch for example) and the colors would automatically
        refresh everywhere
 
-05. accordion stack
-     - Actually this is just a minor extension of a vertical stack. 
-     - need to make the Collapser Property for a whole border side and have it
-       work with the corner collapser.
-     - could have a static exterior dimension in which case one stack element
-       would always have to be open
-     - Optionally could allow for growing and shrinking its total size in which case it
-       could store its size if all the elements where minimized
-        - multiple stacks could be open in this situation
-     - Each header should remain when the element is open 
-     - optional vertical accordian stack
+__________________________________________________________________________
+REFACTORS
 
-05. Collapse Element Wrapper... -> same as accordion stack?
-     - This is just border with a special corner functionality.
-     - OLD
-       - should be able to collapse to a single line (vert or horiz) with custom
-         text. 
-       - when the element it open the collapse triangle button could just be a
-         single button or an entire line
-       - when an entire line is used it should be able to be draggable to effect
-         the size of the element
+10. MousePossibility events: 
+    - adjust mouse event logic to mirror that of the keyboard, each element
+      can define what kind of mouse logic it is able to receive. 
+    - MAYBE NOT - Check if this already works. this way priority can be defined
+      between different types of mouse events, noteably within a scrollable
+      pane, the scroll event could be routed to the scrollpane if it is not over
+      a textbox element but routed to the textbox element if the the event takes
+      place over the element AND the priority of the element is greater than the
+      priority of the scrollpane
+    - This will be useful for pixel-mode mouse logic. Most elements likely do
+      not want pixel mode events
+
+10. REMOVE/OR FIX USE OF extra locations (only used in menu currently)
+    menu items-extra-locations are not routed properly for higher level external panes
+     - this is because the parentpane element does not register extra-locations
+       so when the menu uses extra locations beyond the scope of its parent
+       pane, the menus parent pane is never routed to.
+        - complex to allow for routing, because really all of these extra
+          locations should also have an element-id associated with them, so that
+          if there are multiple duplicate extra-locations from sub-elements for
+          a parent pane, if one of the children wants to deregister, then it
+          should not effect the other child also using that extra-location.
+     - once fixed could change in the showcase example where the extra locations are
+       registered in the highest level element and not the header element
+         - // NOTE we are adding this to el instead of in the header_pane as there the extra-locations
+           // are not currently propogated upward. (so this becomes a problem is the menu bar extends
+           // beyond the header_pane). In the future this should be fixed.
+           //let _ = el.pane.add_element(Box::new(mb));
+
+10. When the keyboard is matching an event combo provided to it, it should be
+    recording a partial match (and a suggested maximum wait time to recheck for
+    priority to this combo whether to wait the time before checking for other
+    matches or to ignore the wait and to proceed attempting to match the
+    character in other ways.  
+
+__________________________________________________________________________
+FEATURES
+
+05. Time Base Events. add a "future event" to a part of the EventResponse. In
+    the future event there is a timestamp which says when this event should be
+    activated. This can be triggered in the render loop and the event will then
+    routed through the standard event loop as normal. This can be used to
+    replicate a heartbeat for a element, or to simulate a visual effect such as
+    a button click (useful for button when Enter key is hit).
 
 05. integrate in is_dirty logic into the Pane to the drawing. if is_dirty is
     true the pane will call 'update_dirty_content', otherwise it will just
@@ -132,42 +116,6 @@
        check.
      - Users of the pane would then register a fn variable on the pane for 
        performing the content updates for when the pane is_dirty
-
-01. border pane text locations (either right, centre, left eg) should all be
-    possible at the same time not ONLY one of those three options
-
-01. dropdownlist option to deselect on enter (useful for usage in non-selection
-    parent pane)
-
-01. terminal_editor - get the no-editor elements hooked up.
-01. terminal_editor - autoexpanding based on text size in buffer (like zell
-    editing) 
-      - need to provide configuration arguments by editor type
-      - I think maybe it would work if we use the no-buffer option in neovim.
-      - need for zelt editing the buffer directly `set autoread`
-      - set swp file location manually so can access the swp files to read them
-         - nvim -c 'set directory=~/my_swap_files//' your_file.txt
-
-01. Snapshot TUI Tester (just call this tui-tester, binary: tuit (lol)) 
-     - always multi-stage
-       - record each action then take a snapshot, however don't save the
-         snapshot if it's the same as the previous snapshot. 
-       - Option to record with all time indices (slower to test)  
-       - Option to just take a snapshot every X ms.
-         - or Option to just record a screen change when it happens on its own?
-     - Binary Mode or Yeehaw Mode (start with Yeehaw Mode)
-     - Integrate into regular testing
-     - TUI ideally we should keep everything in one window.
-       - diff view (only show the differences)
-       - use a toggle to switch between result/expected/diff
-       - toggle to switch on and off the mouse
-       - top: Button Run
-       - playback: stack 
-         left                                right
-         scrollable pane with the actual     events playback
-     - Other similar:
-       - "script" standard binary
-       - microsoft has something
 
 01. support taffy as a layout structure.
      - Taffy low-level API (0.6.0 fixes ownership issues I was facing)
@@ -222,6 +170,40 @@
                  location would be flattened down such that it was not a sub-item
                  of the menu-bar but of the same parent the menu-bar has 
 
+10. Conditional ChPlus's 
+     - draw based on what's underneith
+     - would be nice to use for both wire connectors, as well as borders 
+       within borders (such as the shiftors within a stack
+
+10. Hyperlink element which can open in a browser when clicked
+
+10. allow for the time gradient to execute once instead of on repeat. 
+
+10. character content "gradients" - aka the characters change 
+
+10. hover comments
+     - hover comment event which is triggered after a certain amount of time
+     - TUI option to disable hover comments
+     - should just be a special floaty window (with "high z" use BrintToFront)
+     - destroyed on the first external event that it receives
+     - All this logic should exist at the Pane level 
+       - will have to refactor code such that everything now DOES call the pane
+         receive event function.
+
+
+__________________________________________________________________________
+BUGFIXES/PATCHES
+
+10. resizing a scrollable pane should modify the offset of that pane to account
+    for the extra space (instead of automatically extending out of range)
+
+01. dropdownlist option to deselect on enter (useful for usage in non-selection
+    parent pane)
+
+01. border pane text locations (either right, centre, left eg) should all be
+    possible at the same time not ONLY one of those three options
+
+
 10. scrollbar style on pane option... use a half(widthwise) block character instead of the
     thick border line... looks nice
      - maybe dont use half characters for this one only full characters
@@ -230,17 +212,23 @@
 
 ┌─────────────────────┐
 │                     │
-│                     │
-│                     │
-│                     ▌
-│                     ▌
 │                     ▌
 │                     ▌
 │                     │
 └────▀▀▀▀▀▀▀▀▀▀▀▀─────┘
 
-10. resizing a scrollable pane should modify the offset of that pane to account
-    for the extra space (instead of automatically extending out of range)
+10. File navigator updates 
+    - ability to hide dotfiles ("ex. .git") navigator (toggle this functionality
+      with Shift-i) 
+    - scroll when the expansion exceeds element size (this logic is already in
+     standard pane just needs to be hooked up)
+    - save sub-folder expansion when a parent folder closes and then reopens. 
+    this match) whereby the caller can then make a choice given the associated
+      - the folder keeps records of its navItems once they've been populated.
+         - would need to "refresh" this list with each open could cause
+           problems.
+    - fix the up-dir (..) button 
+    - mouse functionality
 
 05. STACKING of minimized windows in parent pane
     MAYBE do only after taffy is integrated... could help for these guys
@@ -268,22 +256,54 @@
            parent pane has this hook registered for resized on each
            minimization.
 
-05. Time Base Events. add a "future event" to a part of the EventResponse. In
-    the future event there is a timestamp which says when this event should be
-    activated. This can be triggered in the render loop and the event will then
-    routed through the standard event loop as normal. This can be used to
-    replicate a heartbeat for a element, or to simulate a visual effect such as
-    a button click (useful for button when Enter key is hit).
+20. when drag resizing stack panes, sometimes panes which are further in the
+    stack from drag location change by 1... should attempt to correct for this.
 
-10. Emojiblast
-     - https://www.emojiblast.dev/demos/basic
-     - https://github.com/JoshuaKGoldberg/emoji-blast
-     - needs time based events
-     - could be triggered by a button for instance
-     - single cell point of origin
-     - explode out at first then fall down
-     - reuse many of the options from the html version
+20. ArbSelector users should be able to feed in which keys are used for moving
+    forward or backwards instead of enforcing left and right
 
+20. gradient moving along the irregular line 
+      - could be used to simulate a gradient border (imagine the gradient
+        follows this line:         ┌──────────┐
+                                   │          │
+        imagine it just does a     │          │
+          shimmer once...          │          │
+                                   └──────────┘
+
+__________________________________________________________________________
+CONTAINERS
+
+05. accordion stack
+     - Actually this is just a minor extension of a vertical stack. 
+     - need to make the Collapser Property for a whole border side and have it
+       work with the corner collapser.
+     - could have a static exterior dimension in which case one stack element
+       would always have to be open
+     - Optionally could allow for growing and shrinking its total size in which case it
+       could store its size if all the elements where minimized
+        - multiple stacks could be open in this situation
+     - Each header should remain when the element is open 
+     - optional vertical accordian stack
+
+05. Collapse Element Wrapper... -> same as accordion stack?
+     - This is just border with a special corner functionality.
+     - OLD
+       - should be able to collapse to a single line (vert or horiz) with custom
+         text. 
+       - when the element it open the collapse triangle button could just be a
+         single button or an entire line
+       - when an entire line is used it should be able to be draggable to effect
+         the size of the element
+
+10. vertical tabs (like brave)
+
+10. container element: grid selector
+     - like a stack except with x and y, utilizing the stacks as sub elements
+       - if the middle line was to shift on a 2x2 grid it should shift for both
+         the left and right sides aka they are locked.
+
+__________________________________________________________________________
+WIDGETS
 
 10. wire-connectors
     - for visualizing routing of information between elements
@@ -295,27 +315,23 @@
           - kind of like how transparency takes the cell underneath maybe
             the ChPlus could also have custom applications based on whats under
 
-10. Conditional ChPlus's 
-     - draw based on what's underneith
-     - would be nice to use for both wire connectors, as well as borders 
-       within borders (such as the shiftors within a stack
-
 10. progress bar
-
    ██████████████                  end
    ██████████████████              end
-
    ▊▊▊▊▊▊▊▊▊▊▊▊                    oooo nice
     - optionally with an embedded word
     - use a gradient color! 
     - imagine that the progressbar was just a gradient changing around a box
       border
 
-10. Hyperlink element which can open in a browser when clicked
-
-10. allow for the time gradient to execute once instead of on repeat. 
-
-10. character content "gradients" - aka the characters change 
+10. Emojiblast
+     - https://www.emojiblast.dev/demos/basic
+     - https://github.com/JoshuaKGoldberg/emoji-blast
+     - needs time based events
+     - could be triggered by a button for instance
+     - single cell point of origin
+     - explode out at first then fall down
+     - reuse many of the options from the html version
 
 10. Loading spinners
     - maybe the easiest thing would be to allow for a character changes based on
@@ -329,30 +345,9 @@
       - these guy movers▁▂▃▄▅▆▇
       - https://symbl.cc/en/unicode/blocks/block-elements/
     - something with the sand timers 
-    - ◐◓◑◒
-    - △▷▽◁
-    - ◢◥◤◣
-    - ◥◢◣◤
-
-10. REMOVE/OR FIX USE OF extra locations (only used in menu currently)
-    menu items-extra-locations are not routed properly for higher level external panes
-     - this is because the parentpane element does not register extra-locations
-       so when the menu uses extra locations beyond the scope of its parent
-       pane, the menus parent pane is never routed to.
-        - complex to allow for routing, because really all of these extra
-          locations should also have an element-id associated with them, so that
-          if there are multiple duplicate extra-locations from sub-elements for
-          a parent pane, if one of the children wants to deregister, then it
-          should not effect the other child also using that extra-location.
-     - once fixed could change in the showcase example where the extra locations are
-       registered in the highest level element and not the header element
-         - // NOTE we are adding this to el instead of in the header_pane as there the extra-locations
-           // are not currently propogated upward. (so this becomes a problem is the menu bar extends
-           // beyond the header_pane). In the future this should be fixed.
-           //let _ = el.pane.add_element(Box::new(mb));
-
-20. ArbSelector users should be able to feed in which keys are used for moving
-    forward or backwards instead of enforcing left and right
+    - ◐◓◑◒ △▷▽◁ ◢◥◤◣ ◥◢◣◤
+    - could do larger multi-ch spinners too like a fancy sand timer with braille
+      sand... maybe this is something else
 
 20. labelled element slider bars / track bars
       - Very similar to the radio bar.. except it expands
@@ -394,7 +389,6 @@
    - double click hook action
    - make a few different fun icons, (a scroll for text files?)
 
-
 20. Prompt-Window
      - basically an old school prompt window which says some biz then gives you
        a couple options
@@ -404,8 +398,9 @@
          - could "flash" the topzone of the window when the users clicks
            elsewhere than the window
 
-20. ScrollablePane: Ensure Element visible. Feed in an element-is then the scrollable pane 
-    should move the view to ensure that the provided element is visible.
+10. table element
+     - option to use underline instead of box drawing ch
+     - autowidth or fixed width options
 
 20. listbox over entire elements
     - abstract the listbox selector except to allow for an
@@ -419,34 +414,20 @@
     - These elements would need to be able handling 
       special events: "cursor highlight", "select", "cursor unhighlight" 
     - would need ScrollablePane Ensure Element Visible
-    
-10. vertical tabs (like brave)
-
-10. table element        
-
-10. hover comments
-     - hover comment event which is triggered after a certain amount of time
-     - TUI option to disable hover comments
-     - should just be a special floaty window (with "high z" use BrintToFront)
-     - destroyed on the first external event that it receives
-     - All this logic should exist at the Pane level 
-       - will have to refactor code such that everything now DOES call the pane
-         receive event function.
-
-30. graphs and charts obviously
-      - braille dots graph or 4 quadrant blocks
-      - bar/column chart
-      - area chart (use block 4 quarant characters)
-      - block pyramid chart
+20. ScrollablePane: Ensure Element visible. Feed in an element-id then the scrollable pane 
+    should move the view to ensure that the provided element is visible.
+     - useful for listbox over entire element
 
 10. element: date selector
 
 10. element: color selector
 
-10. container element: grid selector
-     - like a stack except with x and y, utilizing the stacks as sub elements
-       - if the middle line was to shift on a 2x2 grid it should shift for both
-         the left and right sides aka they are locked.
+20. graphs and charts obviously
+      - braille dots graph or 4 quadrant blocks
+      - bar/column chart
+      - area chart (use block 4 quadrant characters)
+      - block pyramid chart
+      - also build in use of 6 quadrant chs
 
 10. 2D selector space
      - title and ticks as optional
@@ -454,7 +435,6 @@
      - could eventually provide inter-pixel values too
      - optional coloring function for bg
      - cursor obviously an option
-     
     ┌────────────┐ 
    1┤            │
  B  ┤    x       │
@@ -464,40 +444,51 @@
     └────────────┘
          BOOM        
 
-10. When the keyboard is matching an event combo provided to it, it should be
-    recording a partial match (and a suggested maximum wait time to recheck for
-    priority to this combo whether to wait the time before checking for other
-    matches or to ignore the wait and to proceed attempting to match the
-    character in other ways.  
+__________________________________________________________________________
+PROGRAMS
 
-10. File navigator updates 
-    - ability to hide dotfiles ("ex. .git") navigator (toggle this functionality
-      with Shift-i) 
-    - scroll when the expansion exceeds element size (this logic is already in
-     standard pane just needs to be hooked up)
-    - save sub-folder expansion when a parent folder closes and then reopens. 
-    this match) whereby the caller can then make a choice given the associated
-      - the folder keeps records of its navItems once they've been populated.
-         - would need to "refresh" this list with each open could cause
-           problems.
-    - fix the up-dir (..) button 
-    - mouse functionality
+01. Snapshot TUI Tester (just call this tui-tester, binary: tuit (lol)) 
+     - always multi-stage
+       - record each action then take a snapshot, however don't save the
+         snapshot if it's the same as the previous snapshot. 
+       - Option to record with all time indices (slower to test)  
+       - Option to just take a snapshot every X ms.
+         - or Option to just record a screen change when it happens on its own?
+     - Binary Mode or Yeehaw Mode (start with Yeehaw Mode)
+     - Integrate into regular testing
+     - TUI ideally we should keep everything in one window.
+       - diff view (only show the differences)
+       - use a toggle to switch between result/expected/diff
+       - toggle to switch on and off the mouse
+       - top: Button Run
+       - playback: stack 
+         left                                right
+         scrollable pane with the actual     events playback
+     - Other similar:
+       - "script" standard binary
+       OLD: Add another cargo project like AssertCmd for tui
+            name: TuiTester?
+         - https://github.com/aschey/tui-tester
+         - what about https://github.com/microsoft/tui-test is this necessary?
+         - open and record mouse and keystroke events
+         - save only the final tui output
+         - test for the final tui output being the same from
+           the provided binary.
+         - view what the output should look like
+         - if a test is failing, but the output is correct but just changed
+            there should be an option to quickly rerecord what the test should look
+            like now.
+         - use the .ans format (such as
+           https://terminalroot.com/use-ms-paint-directly-in-terminal/) uses. 
+           this format can be viewed in the terminal with "cat my_ansi_image.ans"
 
-
-10. MousePossibility events: 
-    - adjust mouse event logic to mirror that of the keyboard, each element
-      can define what kind of mouse logic it is able to receive. 
-    - this way priority can be defined between different types of mouse events,
-      noteably within a scrollable pane, the scroll event could be routed to the 
-      scrollpane if it is not over a textbox element but routed to the textbox
-      element if the the event takes place over the element AND the priority of
-      the element is greater than the priority of the scrollpane
-    - integrate in better capture event logic, if the mouse event is NOT
-      captured, send the event to the next priority down. [DONE]
-       - this could potentially also be applied to the accomplish the scroll
-         situation as described above.. first send the event to the inner pane,
-         then if the mouse scroll event is not captured then send it to the
-         scrollable pane. - maybe then wouldn't need the mouse event logic??
+20. Drag and Drop TUI Application Builder (as a TUI of course)
+     - basically drag and drop style element builder - with a "Code Copy" button
+     - resizing of the view-pane to test TUI pages at different 
+       sizes
+     - preview mode where you could actually interact with all the elements
+     - eventually the ability to load in code for an existing element then 
+       play around with the sub-elements
 
 20. Interactive debugging TUI application
    - use https://github.com/eclipse-iceoryx/iceoryx2 for communication?
@@ -516,45 +507,8 @@
     └───────┘└────────┘└──────────────┘└─────────────────┘
     [add another group]
 
-20. Add another cargo repo like AssertCmd for tui
-     name: TuiTester?
-     - https://github.com/aschey/tui-tester
-     - what about https://github.com/microsoft/tui-test is this necessary?
-     - open and record mouse and keystroke events
-     - save only the final tui output
-     - test for the final tui output being the same from
-       the provided binary.
-     - view what the output should look like
-     - if a test is failing, but the output is correct but just changed
-        there should be an option to quickly rerecord what the test should look
-        like now.
-     - use the .ans format (such as
-       https://terminalroot.com/use-ms-paint-directly-in-terminal/) uses. 
-       this format can be viewed in the terminal with "cat my_ansi_image.ans"
-
-20. Drag and Drop TUI Application Builder (as a TUI of course)
-     - basically drag and drop style element builder - with a "Code Copy" button
-     - resizing of the view-pane to test TUI pages at different 
-       sizes
-     - preview mode where you could actually interact with all the elements
-     - eventually the ability to load in code for an existing element then 
-       play around with the sub-elements
-
-30. irregular gradient lines
-    - OUTWARD
-      - a gradient moving outward from an irregular set of coordinates (making a
-        line
-      - basically just a bunch of radial point gradients however when they
-        interact the lowest gradient position should just be used (as opposed to
-        a blend)
-    - ALONG 
-      - gradient moving along the irregular line 
-      - could be used to simulate a gradient border (imagine the gradient
-        follows this line:         ┌──────────┐
-                                   │          │
-                                   │          │
-                                   │          │
-                                   └──────────┘
+__________________________________________________________________________
+LOW-PRIORITY
 
 30. provide a sync version of TUI 
 
@@ -575,17 +529,16 @@
 
 40. custom mouse types using images (requires image support, and mouse pixel tracking) 
 
-40. volume bar (color in) 
+40. volume bar (color in)  
    ▁▂▃▄▅▆▇
     - drag up/right to increase down/left to decrease 
-
+    - model this after the slider widget... pretty similar
 
 40. tui get the color under the cursor pixel - useful for color pickers or from actual image pallets
 
 50. LOW PRIORITY CAN JUST USE $EDITOR. element: vim-style textbox
      - with two scrollbars the mode can be placed in 
        the decorations corner!
-
 _______________________________________________________________________
 WIMP reqd features
 
@@ -595,3 +548,13 @@ WIMP reqd features
     element, get the full final output with alpha's applied)
 05. tui export visual area to either DynamicImage, .png, (optionally or .ans)
       - useful for WIMP
+
+_______________________________________________________________________
+ZELT reqd features
+10. terminal_editor - autoexpanding based on text size in buffer (like zell
+    editing) 
+      - need to provide configuration arguments by editor type
+      - I think maybe it would work if we use the no-buffer option in neovim.
+      - need for zelt editing the buffer directly `set autoread`
+      - set swp file location manually so can access the swp files to read them
+         - nvim -c 'set directory=~/my_swap_files//' your_file.txt

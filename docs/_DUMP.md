@@ -4,6 +4,64 @@ will eventually be sifted through and included in actual docs - at which point
 this document will be deleted
 __________________________________________________
 
+10. Mouse routing.
+    - integrate in better capture event logic, if the mouse event is NOT
+      captured, send the event to the next priority down. [DONE]
+       - this could potentially also be applied to the accomplish the scroll
+         situation as described above.. first send the event to the inner pane,
+         then if the mouse scroll event is not captured then send it to the
+         scrollable pane. - maybe then wouldn't need the mouse event logic??
+
+30. WONT DO irregular gradient lines
+    - OUTWARD
+      - a gradient moving outward from an irregular set of coordinates (making a
+        line
+      - basically just a bunch of radial point gradients however when they
+        interact the lowest gradient position should just be used (as opposed to
+        a blend)
+
+40. WONT DO Subscription based events on common objects. 
+     - like leptos. any element could subscribe to an object (with any other
+       element can change). When that object changes it would send out events to
+       any other elements which subscribed to it... OR maybe it would just make
+       sense to use hooks this way you don't need all the parents of the
+       destination to also subscribe to the hook. USE HOOKS!
+       - Actually could be really easy with the Event Router - could use Custom
+         Event
+       - question is: what events should actually be broadcast?
+
+05. introduce errors, remove all unwraps
+05. clicking while on the menu bar should collapse & deselect the bar
+01. improve efficiency the showcase already feels laggy
+     - seems specifically to do with nesting things in element organizers
+         - the widget_test has lots lots more elements but no lag
+         - each layer of element organizer causes additional redraw adjustments
+           to be required
+     - for time based redraws the element could have a receivable event which it
+       registers
+     - each element organizer could keep a queue of the previous draw characters
+       which 
+
+01. Draggin of border panes doesn't work in showcase
+
+01. resize event in the "wrong direction" for a stack should not just ignore the
+    resize but pass on that resize to the next higher element (such that if the
+    next higher element was a stack which could actually use that resize command
+    it would utilize it)
+01. fix the terminal_editor
+01. terminal not shutting down when showcase shuts down
+     - I think due to tabs not propogating the closedown events 
+01. ensure that the line_numbers small textbox is the placed correctly in the
+    editor
+01. fix the line_numbers textbox
+     - this seems that it may be a buffering issue, when I rescale it seems to
+       correct (in widgets test)
+01. scrollbars dont properly get created in editor (only later)
+    - seems to be using the height of the entire screen here
+    - the ctx height of the scrollbar is not adjusted when the screen size
+      changes (resize)
+01. terminal_editor - get the no-editor elements hooked up.
+
 30. WONT DO the ArbSelector works fine
 PIXEL MODE SPLITS for Complex Selector
  - SPLITS: for pixel selection mode need a way to represent split selection 
