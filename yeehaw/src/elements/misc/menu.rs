@@ -108,6 +108,8 @@ impl MenuBar {
             make_invisible_on_closedown: Rc::new(RefCell::new(false)),
             close_on_primary_click: Rc::new(RefCell::new(true)),
         }
+        .with_height(1.into())
+        .with_width(1.0.into())
     }
 
     pub fn right_click_menu(ctx: &Context) -> Self {
@@ -139,6 +141,11 @@ impl MenuBar {
 
     pub fn with_width(self, width: DynVal) -> Self {
         self.pane.pane.set_dyn_width(width);
+        self
+    }
+
+    pub fn at<T: Into<DynVal>>(self, x: T, y: T) -> Self {
+        self.pane.pane.set_at(x.into(), y.into());
         self
     }
 

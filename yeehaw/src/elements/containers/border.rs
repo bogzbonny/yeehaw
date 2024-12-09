@@ -745,7 +745,7 @@ impl Bordered {
 
         let mut l = bordered.inner.borrow().get_dyn_location_set().clone();
         l.l.set_start_x(1.into());
-        //l.l.set_end_x(DynVal::FULL.minus(2.into()));
+        //l.l.set_end_x(DynVal::FULL.minus(2));
         bordered.inner.borrow_mut().set_dyn_location_set(l);
 
         // shrink the view portal as understood by the x scrollbar
@@ -1348,8 +1348,8 @@ impl Corner {
 
     pub fn new(ctx: &Context, ch: DrawCh, pos: CornerPos, property: PropertyCnr) -> Self {
         let pane = Pane::new(ctx, "resize_corner")
-            .with_dyn_height(1.into())
-            .with_dyn_width(1.into())
+            .with_dyn_height(1)
+            .with_dyn_width(1)
             .with_content(ch.into());
         pane.set_z(Self::Z_INDEX);
         Self {
@@ -1470,7 +1470,7 @@ impl VerticalSide {
     pub fn new(ctx: &Context, ch: DrawCh, pos: VerticalPos, property: PropertyVrt) -> Self {
         let pane = Pane::new(ctx, "vertical_side")
             .with_dyn_height(DynVal::FULL)
-            .with_dyn_width(1.into());
+            .with_dyn_width(1);
         pane.set_z(Self::Z_INDEX);
         Self {
             pane,
@@ -1676,8 +1676,8 @@ impl HorizontalSide {
     /// The context provided determines the size of this element
     pub fn new(ctx: &Context, ch: DrawCh, pos: HorizontalPos, property: PropertyHzt) -> Self {
         let pane = Pane::new(ctx, "horizontal_side")
-            .with_dyn_height(1.into())
-            .with_dyn_width(1.0.into());
+            .with_dyn_height(1)
+            .with_dyn_width(1.0);
         pane.set_z(Self::Z_INDEX);
         Self {
             pane,

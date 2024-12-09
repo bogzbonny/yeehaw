@@ -312,23 +312,23 @@ impl DynLocationSet {
     }
 
     /// convenience function to set the start x of the primary location
-    pub fn set_start_x(&mut self, start_x: DynVal) {
-        self.l.set_start_x(start_x);
+    pub fn set_start_x<D: Into<DynVal>>(&mut self, start_x: D) {
+        self.l.set_start_x(start_x.into());
     }
 
     /// convenience function to set the start y of the primary location
-    pub fn set_start_y(&mut self, start_y: DynVal) {
-        self.l.set_start_y(start_y);
+    pub fn set_start_y<D: Into<DynVal>>(&mut self, start_y: D) {
+        self.l.set_start_y(start_y.into());
     }
 
     /// convenience function to set the end x of the primary location
-    pub fn set_end_x(&mut self, end_x: DynVal) {
-        self.l.set_end_x(end_x);
+    pub fn set_end_x<D: Into<DynVal>>(&mut self, end_x: D) {
+        self.l.set_end_x(end_x.into());
     }
 
     /// convenience function to set the end y of the primary location
-    pub fn set_end_y(&mut self, end_y: DynVal) {
-        self.l.set_end_y(end_y);
+    pub fn set_end_y<D: Into<DynVal>>(&mut self, end_y: D) {
+        self.l.set_end_y(end_y.into());
     }
 
     /// convenience function to get the start x of the primary location

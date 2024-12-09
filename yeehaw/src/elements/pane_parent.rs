@@ -69,16 +69,6 @@ impl ParentPane {
         self
     }
 
-    pub fn with_dyn_height(self, h: DynVal) -> Self {
-        self.pane.set_dyn_height(h);
-        self
-    }
-
-    pub fn with_dyn_width(self, w: DynVal) -> Self {
-        self.pane.set_dyn_width(w);
-        self
-    }
-
     pub fn focused(self) -> Self {
         *self.pane.element_priority.borrow_mut() = Priority::Focused;
         self

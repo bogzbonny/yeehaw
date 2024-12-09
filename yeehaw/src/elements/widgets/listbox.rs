@@ -130,7 +130,7 @@ impl ListBox {
         match pos {
             VerticalSBPositions::ToTheLeft => {
                 sb.set_at(0.into(), 0.into());
-                self.inner.borrow().pane.set_start_x(1.into());
+                self.inner.borrow().pane.set_start_x(1);
             }
             VerticalSBPositions::ToTheRight => {
                 sb.set_at(DynVal::FULL.minus_fixed(1), 0.into());

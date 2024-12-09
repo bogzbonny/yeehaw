@@ -38,7 +38,7 @@ impl WindowPane {
 
         // adjust the inner size to account for the top bar
         let mut loc = inner.get_dyn_location_set().clone();
-        loc.set_start_y(1.into());
+        loc.set_start_y(1);
         loc.set_dyn_height(DynVal::FULL.minus(1.into()));
         inner.set_dyn_location_set(loc);
 
@@ -145,10 +145,10 @@ impl WindowPane {
                     end_y_adj = end_y;
                 }
 
-                self.pane.pane.set_start_x(start_x_adj.into());
-                self.pane.pane.set_start_y(start_y_adj.into());
-                self.pane.pane.set_end_x(end_x_adj.into());
-                self.pane.pane.set_end_y(end_y_adj.into());
+                self.pane.pane.set_start_x(start_x_adj);
+                self.pane.pane.set_start_y(start_y_adj);
+                self.pane.pane.set_end_x(end_x_adj);
+                self.pane.pane.set_end_y(end_y_adj);
 
                 let inner_ctx = ctx.clone().with_size(Size::new(
                     self.pane.pane.get_width(ctx) as u16,

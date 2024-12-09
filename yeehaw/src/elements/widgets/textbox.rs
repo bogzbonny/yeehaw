@@ -101,9 +101,9 @@ impl TextBox {
             VerticalSBPositions::ToTheLeft => {
                 sb.set_at(0.into(), inner_start_y);
                 if let Some(x_sb) = &*self.x_scrollbar.borrow() {
-                    x_sb.pane.set_start_x(1.into());
+                    x_sb.pane.set_start_x(1);
                 }
-                self.inner.borrow().pane.set_start_x(1.into());
+                self.inner.borrow().pane.set_start_x(1);
             }
             VerticalSBPositions::ToTheRight => {
                 sb.set_at(DynVal::FULL.minus_fixed(1), inner_start_y);
@@ -175,12 +175,12 @@ impl TextBox {
         match pos {
             HorizontalSBPositions::Above => {
                 sb.set_at(inner_start_x, 0.into());
-                self.inner.borrow().pane.set_start_y(1.into());
+                self.inner.borrow().pane.set_start_y(1);
                 if let Some(ln_tb) = &*self.inner.borrow().line_number_tb.borrow() {
-                    ln_tb.pane.set_start_y(1.into());
+                    ln_tb.pane.set_start_y(1);
                 }
                 if let Some(y_sb) = &*self.y_scrollbar.borrow() {
-                    y_sb.pane.set_start_y(1.into());
+                    y_sb.pane.set_start_y(1);
                 }
             }
             HorizontalSBPositions::Below => {

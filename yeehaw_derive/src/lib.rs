@@ -111,10 +111,12 @@ pub fn impl_pane_basics_from(attr: TokenStream, item: TokenStream) -> TokenStrea
         fn with_focused(self, ctx: &Context); 
         fn with_kind(self, kind: &'static str); 
         fn with_z(self, z: ZIndex);
-        fn with_start_x(self, x: DynVal);
-        fn with_start_y(self, y: DynVal);
-        fn with_dyn_height(self, h: DynVal);
-        fn with_dyn_width(self, w: DynVal);
+        fn with_start_x<D: Into<DynVal>>(self, x: D);
+        fn with_start_y<D: Into<DynVal>>(self, y: D);
+        fn with_end_x<D: Into<DynVal>>(self, x: D);
+        fn with_end_y<D: Into<DynVal>>(self, y: D);
+        fn with_dyn_height<D: Into<DynVal>>(self, h: D);
+        fn with_dyn_width<D: Into<DynVal>>(self, w: D);
         fn with_dyn_location(self, l: DynLocation);
         fn with_content(self, content: DrawChs2D);
         fn with_default_ch(self, ch: DrawCh);
@@ -129,10 +131,10 @@ pub fn impl_pane_basics_from(attr: TokenStream, item: TokenStream) -> TokenStrea
     let tr_code_non_with = r"pub trait PaneBasicsNonWith {
     fn set_at(&self, x: DynVal, y: DynVal);
     fn set_kind(&self, kind: &'static str);
-    fn set_start_x(&self, x: DynVal);
-    fn set_start_y(&self, y: DynVal);
-    fn set_end_x(&self, x: DynVal);
-    fn set_end_y(&self, y: DynVal);
+    fn set_start_x<D: Into<DynVal>>(&self, x: D);
+    fn set_start_y<D: Into<DynVal>>(&self, y: D);
+    fn set_end_x<D: Into<DynVal>>(&self, x: D);
+    fn set_end_y<D: Into<DynVal>>(&self, y: D);
     fn get_start_x(&self, ctx: &Context) -> i32;
     fn get_start_y(&self, ctx: &Context) -> i32;
     fn get_end_x(&self, ctx: &Context) -> i32;
@@ -143,8 +145,8 @@ pub fn impl_pane_basics_from(attr: TokenStream, item: TokenStream) -> TokenStrea
     fn get_dyn_end_y(&self) -> DynVal;
     fn get_height(&self, ctx: &Context) -> usize;
     fn get_width(&self, ctx: &Context) -> usize;
-    fn set_dyn_height(&self, h: DynVal);
-    fn set_dyn_width(&self, w: DynVal);
+    fn set_dyn_height<D: Into<DynVal>>(&self, h: D);
+    fn set_dyn_width<D: Into<DynVal>>(&self, w: D);
     fn get_dyn_height(&self) -> DynVal;
     fn get_dyn_width(&self) -> DynVal;
     fn set_z(&self, z: ZIndex);

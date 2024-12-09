@@ -11,8 +11,8 @@ async fn main() -> Result<(), Error> {
     let (mut tui, ctx) = Tui::new()?;
 
     let pp = ParentPane::new(&ctx, "parent_pane")
-        .with_dyn_height(1.0.into())
-        .with_dyn_width(1.0.into())
+        .with_dyn_height(1.0)
+        .with_dyn_width(1.0)
         .with_bg_color(Color::DARK_BLUE);
 
     let counter = Rc::new(RefCell::new(0));

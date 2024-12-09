@@ -636,6 +636,11 @@ impl Gradient {
         )
     }
 
+    pub fn with_angle(mut self, angle_deg: f64) -> Self {
+        self.angle_deg = angle_deg;
+        self
+    }
+
     pub fn to_crossterm_color(
         &self, ctx: &Context, prev: Option<CrosstermColor>, x: u16, y: u16,
     ) -> CrosstermColor {

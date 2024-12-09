@@ -10,10 +10,7 @@ async fn main() -> Result<(), Error> {
     let el = VerticalStack::new(&ctx);
 
     // adding the menu bar and menu items
-    let mb = MenuBar::top_menu_bar(&ctx)
-        .with_height(1.into())
-        .with_width(1.0.into());
-    mb.pane.set_at(0.into(), 0.into());
+    let mb = MenuBar::top_menu_bar(&ctx).at(0, 0);
     for i in 0..3 {
         mb.add_item(&ctx, format!("upper/item-{i}"), None);
         mb.add_item(&ctx, format!("menu/item-{i}"), None);
@@ -36,15 +33,12 @@ async fn main() -> Result<(), Error> {
     }
     let _ = el.push(Box::new(mb));
 
-    //let header_pane = ParentPaneOfSelectable::new(&ctx)
     let header_pane = ParentPaneOfSelectable::new(&ctx)
         .with_dyn_height(DynVal::new_fixed(7))
         .with_unfocused(&ctx);
     let _ = el.push(Box::new(header_pane.clone()));
 
-    let mut gr = Gradient::x_grad_rainbow(5);
-    gr.angle_deg = 60.;
-
+    let gr = Gradient::x_grad_rainbow(5).with_angle(60.);
     let mtext = FigletText::new(
         &ctx,
         "YEEEHAW!",

@@ -162,7 +162,7 @@ impl VerticalStack {
         let mut loc = el.get_dyn_location_set().clone();
 
         // ignore the x-dimension everything must fit fully
-        loc.set_start_x(0.into()); // 0
+        loc.set_start_x(0);
         loc.set_end_x(DynVal::FULL); // 100%
         el.set_dyn_location_set(loc); // set loc without triggering hooks
     }
@@ -371,7 +371,7 @@ impl HorizontalStack {
         let mut loc = el.get_dyn_location_set().clone();
 
         // ignore the y-dimension everything must fit fully
-        loc.set_start_y(0.into()); // 0
+        loc.set_start_y(0);
         loc.set_end_y(DynVal::FULL); // 100%
         el.set_dyn_location_set(loc); // set loc without triggering hooks
     }
@@ -541,8 +541,8 @@ impl Element for VerticalStack {
                 continue;
             }
 
-            t_loc.set_end_y(t_end_y_adj.into());
-            b_loc.set_start_y(b_start_y_adj.into());
+            t_loc.set_end_y(t_end_y_adj);
+            b_loc.set_start_y(b_start_y_adj);
             bottom_el.set_dyn_location_set(b_loc);
             top_el.set_dyn_location_set(t_loc);
             resized = true;
@@ -641,8 +641,8 @@ impl Element for HorizontalStack {
                 continue;
             }
 
-            l_loc.set_end_x(l_end_x_adj.into());
-            r_loc.set_start_x(r_start_x_adj.into());
+            l_loc.set_end_x(l_end_x_adj);
+            r_loc.set_start_x(r_start_x_adj);
             right_el.set_dyn_location_set(r_loc);
             left_el.set_dyn_location_set(l_loc);
             resized = true;

@@ -101,16 +101,6 @@ impl Pane {
         *self.kind.borrow_mut() = kind;
     }
 
-    //pub fn with_focused(self) -> Pane {
-    //    *self.element_priority.borrow_mut() = Priority::Focused;
-    //    self
-    //}
-
-    //pub fn with_unfocused(self) -> Pane {
-    //    *self.element_priority.borrow_mut() = Priority::Unfocused;
-    //    self
-    //}
-
     pub fn with_focused(self, ctx: &Context) -> Pane {
         self.set_focused(ctx);
         self
@@ -136,20 +126,20 @@ impl Pane {
         self
     }
 
-    pub fn set_start_x(&self, x: DynVal) {
-        self.loc.borrow_mut().l.set_start_x(x);
+    pub fn set_start_x<D: Into<DynVal>>(&self, x: D) {
+        self.loc.borrow_mut().l.set_start_x(x.into());
     }
 
-    pub fn set_start_y(&self, y: DynVal) {
-        self.loc.borrow_mut().l.set_start_y(y);
+    pub fn set_start_y<D: Into<DynVal>>(&self, y: D) {
+        self.loc.borrow_mut().l.set_start_y(y.into());
     }
 
-    pub fn set_end_x(&self, x: DynVal) {
-        self.loc.borrow_mut().l.set_end_x(x);
+    pub fn set_end_x<D: Into<DynVal>>(&self, x: D) {
+        self.loc.borrow_mut().l.set_end_x(x.into());
     }
 
-    pub fn set_end_y(&self, y: DynVal) {
-        self.loc.borrow_mut().l.set_end_y(y);
+    pub fn set_end_y<D: Into<DynVal>>(&self, y: D) {
+        self.loc.borrow_mut().l.set_end_y(y.into());
     }
 
     pub fn get_start_x(&self, ctx: &Context) -> i32 {
@@ -192,22 +182,22 @@ impl Pane {
         self.loc.borrow().l.width(ctx)
     }
 
-    pub fn with_dyn_height(self, h: DynVal) -> Pane {
-        self.loc.borrow_mut().l.set_dyn_height(h);
+    pub fn with_dyn_height<D: Into<DynVal>>(self, h: D) -> Pane {
+        self.loc.borrow_mut().l.set_dyn_height(h.into());
         self
     }
 
-    pub fn with_dyn_width(self, w: DynVal) -> Pane {
-        self.loc.borrow_mut().l.set_dyn_width(w);
+    pub fn with_dyn_width<D: Into<DynVal>>(self, w: D) -> Pane {
+        self.loc.borrow_mut().l.set_dyn_width(w.into());
         self
     }
 
-    pub fn set_dyn_height(&self, h: DynVal) {
-        self.loc.borrow_mut().l.set_dyn_height(h);
+    pub fn set_dyn_height<D: Into<DynVal>>(&self, h: D) {
+        self.loc.borrow_mut().l.set_dyn_height(h.into());
     }
 
-    pub fn set_dyn_width(&self, w: DynVal) {
-        self.loc.borrow_mut().l.set_dyn_width(w);
+    pub fn set_dyn_width<D: Into<DynVal>>(&self, w: D) {
+        self.loc.borrow_mut().l.set_dyn_width(w.into());
     }
 
     pub fn get_dyn_height(&self) -> DynVal {

@@ -12,8 +12,8 @@ async fn main() -> Result<(), Error> {
         .with_height(1.into())
         .with_width(1.0.into());
     let lower = ParentPane::new(&ctx, "lower")
-        .with_dyn_height(1.0.into())
-        .with_dyn_width(1.0.into())
+        .with_dyn_height(1.0)
+        .with_dyn_width(1.0)
         .with_z(100);
 
     let label = Label::new(&ctx, "label").at(0, 10);
