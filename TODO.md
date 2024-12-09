@@ -21,15 +21,31 @@
         - some hidden funny stuff on some items
         - tic tac toe
      - TABS Zone
-        - a split stack with some tabs and funky gradient examples
-           - maybe some dials /sliders which can change the
-             gradient colors / angle / size
+        - gradient 
+           - could have some ascii art drawings to pick from for the FG
+              - a dial with a few choice ascii arts
+           - toggle for FG and BG gradients
+               - dial gradient kind: solid color, time-gradient, radial gradient, linear
+                 gradient. radial-time, linear-time
+               - slider, gradient size between colors (enforce static) 
+               - slider, change speed, ms for time gradients
+               - slider with numbers-tb for gradient angle
+               - dial, number of colors (greyed out for solid-color kind)
+               - some sliders: 1 for each color (greyed out when colors
+                 disabled) maybe with an RGB tb for css color input
+           - dial, fg ascii art (default as a butterfly)
         - widgets
           - neovim editor
           - buncha widgets which dont do much but log their results 
             in a textbox
         - terminal
         - the showcase within the showcase?? spiral 
+
+01. option to enforce that drawing which are outside of border are cropped?
+     - MAYBE?? do after window generator is complete
+
+01. execute a command on opening a tab (for the first time?) useful for showcase
+    tab
 
 01. gif of showcase example - will need to record with non-VHS/asciicinema-tool
     to get mouse movements
