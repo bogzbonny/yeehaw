@@ -29,6 +29,7 @@ pub struct TerminalPane {
     pub master_pty: Rc<RefCell<Box<dyn MasterPty>>>,
     pub writer: Rc<RefCell<BufWriter<Box<dyn Write + std::marker::Send>>>>,
     pub hide_cursor: Rc<RefCell<bool>>,
+    pub disable_cursor: Rc<RefCell<bool>>,
     pub cursor: Rc<RefCell<DrawCh>>,
 
     pub pty_killer: Rc<RefCell<Box<dyn ChildKiller>>>,
@@ -49,10 +50,10 @@ impl TerminalPane {
 
         // need this as the pty will not open if the size is 0
         if size.width == 0 {
-            size.width = 1;
+            size.width = 30;
         }
         if size.height == 0 {
-            size.height = 1;
+            size.height = 30;
         }
 
         let pane = Pane::new(ctx, Self::KIND);
@@ -122,6 +123,7 @@ impl TerminalPane {
             master_pty: Rc::new(RefCell::new(pty_pair.master)),
             writer: Rc::new(RefCell::new(writer)),
             hide_cursor: Rc::new(RefCell::new(false)),
+            disable_cursor: Rc::new(RefCell::new(false)),
             cursor: Rc::new(RefCell::new(cur)),
             pty_killer: Rc::new(RefCell::new(killer)),
         };
@@ -157,6 +159,19 @@ impl TerminalPane {
     pub fn with_z(self, z: ZIndex) -> Self {
         self.pane.set_z(z);
         self
+    }
+
+    pub fn disable_cursor(&self) {
+        *self.disable_cursor.borrow_mut() = true;
+    }
+
+    pub fn execute_command<S: Into<String>>(&self, cmd: S) {
+        for ch in cmd.into().chars() {
+            let key_ev = KeyEvent::new(KeyCode::Char(ch), KeyModifiers::empty());
+            let _ = self.handle_pane_key_event(&key_ev);
+        }
+        let key_ev = KeyEvent::new(KeyCode::Enter, KeyModifiers::empty());
+        let _ = self.handle_pane_key_event(&key_ev);
     }
 
     pub fn resize_pty(&self, ctx: &Context) {
@@ -196,6 +211,68 @@ impl TerminalPane {
         }
         true
     }
+
+    pub fn handle_pane_key_event(&self, key: &KeyEvent) -> bool {
+        let input_bz = match key.code {
+            KeyCode::Char(ch) => {
+                let mut send = vec![ch as u8];
+                let upper = ch.to_ascii_uppercase();
+                if key.modifiers == KeyModifiers::CONTROL {
+                    match upper {
+                        // https:///github.com/fyne-io/terminal/blob/master/input.go
+                        // https:///gist.github.com/ConnerWill/d4b6c776b509add763e17f9f113fd25b
+                        '2' | '@' | ' ' => send = vec![0],
+                        '3' | '[' => send = vec![27],
+                        '4' | '\\' => send = vec![28],
+                        '5' | ']' => send = vec![29],
+                        '6' | '^' => send = vec![30],
+                        '7' | '-' | '_' => send = vec![31],
+                        char if ('A'..='_').contains(&char) => {
+                            // Since A == 65,
+                            // we can safely subtract 64 to get the corresponding control character
+                            let ascii_val = char as u8;
+                            let ascii_to_send = ascii_val - 64;
+                            send = vec![ascii_to_send];
+                        }
+                        _ => {}
+                    }
+                }
+                send
+            }
+
+            #[cfg(unix)]
+            KeyCode::Enter => vec![b'\n'],
+            #[cfg(windows)]
+            KeyCode::Enter => vec![b'\r', b'\n'],
+
+            KeyCode::Backspace => vec![8],
+            KeyCode::Left => vec![27, 91, 68],
+            KeyCode::Right => vec![27, 91, 67],
+            KeyCode::Up => vec![27, 91, 65],
+            KeyCode::Down => vec![27, 91, 66],
+            KeyCode::Tab => vec![9],
+            KeyCode::Home => vec![27, 91, 72],
+            KeyCode::End => vec![27, 91, 70],
+            KeyCode::PageUp => vec![27, 91, 53, 126],
+            KeyCode::PageDown => vec![27, 91, 54, 126],
+            KeyCode::BackTab => vec![27, 91, 90],
+            KeyCode::Delete => vec![27, 91, 51, 126],
+            KeyCode::Insert => vec![27, 91, 50, 126],
+            KeyCode::Esc => vec![27],
+            _ => return true, // ignore key but still capture
+        };
+
+        // if there is an error here, the pty has been closed, therefor do not capture the event. this
+        // could happen in the split second between the pty being closed and the exit event being
+        // received by this terminal pane.
+        if self.writer.borrow_mut().write_all(&input_bz).is_err() {
+            return false;
+        }
+        if self.writer.borrow_mut().flush().is_err() {
+            return false;
+        }
+        true
+    }
 }
 
 #[yeehaw_derive::impl_element_from(pane)]
@@ -203,7 +280,7 @@ impl Element for TerminalPane {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let (captured, resps) = match ev {
             Event::KeyCombo(ref keys) => {
-                let captured = handle_pane_key_event(self, &keys[0]);
+                let captured = self.handle_pane_key_event(&keys[0]);
                 (captured, EventResponses::default())
             }
             Event::Mouse(ref mouse) => {
@@ -305,7 +382,7 @@ impl Element for TerminalPane {
             }
         }
 
-        if !*self.hide_cursor.borrow() {
+        if !*self.disable_cursor.borrow() && !*self.hide_cursor.borrow() {
             let (y, x) = screen.cursor_position();
             out.push(DrawChPos {
                 ch: self.cursor.borrow().clone(),
@@ -316,68 +393,6 @@ impl Element for TerminalPane {
 
         out
     }
-}
-
-pub fn handle_pane_key_event(pane: &TerminalPane, key: &KeyEvent) -> bool {
-    let input_bz = match key.code {
-        KeyCode::Char(ch) => {
-            let mut send = vec![ch as u8];
-            let upper = ch.to_ascii_uppercase();
-            if key.modifiers == KeyModifiers::CONTROL {
-                match upper {
-                    // https:///github.com/fyne-io/terminal/blob/master/input.go
-                    // https:///gist.github.com/ConnerWill/d4b6c776b509add763e17f9f113fd25b
-                    '2' | '@' | ' ' => send = vec![0],
-                    '3' | '[' => send = vec![27],
-                    '4' | '\\' => send = vec![28],
-                    '5' | ']' => send = vec![29],
-                    '6' | '^' => send = vec![30],
-                    '7' | '-' | '_' => send = vec![31],
-                    char if ('A'..='_').contains(&char) => {
-                        // Since A == 65,
-                        // we can safely subtract 64 to get the corresponding control character
-                        let ascii_val = char as u8;
-                        let ascii_to_send = ascii_val - 64;
-                        send = vec![ascii_to_send];
-                    }
-                    _ => {}
-                }
-            }
-            send
-        }
-
-        #[cfg(unix)]
-        KeyCode::Enter => vec![b'\n'],
-        #[cfg(windows)]
-        KeyCode::Enter => vec![b'\r', b'\n'],
-
-        KeyCode::Backspace => vec![8],
-        KeyCode::Left => vec![27, 91, 68],
-        KeyCode::Right => vec![27, 91, 67],
-        KeyCode::Up => vec![27, 91, 65],
-        KeyCode::Down => vec![27, 91, 66],
-        KeyCode::Tab => vec![9],
-        KeyCode::Home => vec![27, 91, 72],
-        KeyCode::End => vec![27, 91, 70],
-        KeyCode::PageUp => vec![27, 91, 53, 126],
-        KeyCode::PageDown => vec![27, 91, 54, 126],
-        KeyCode::BackTab => vec![27, 91, 90],
-        KeyCode::Delete => vec![27, 91, 51, 126],
-        KeyCode::Insert => vec![27, 91, 50, 126],
-        KeyCode::Esc => vec![27],
-        _ => return true, // ignore key but still capture
-    };
-
-    // if there is an error here, the pty has been closed, therefor do not capture the event. this
-    // could happen in the split second between the pty being closed and the exit event being
-    // received by this terminal pane.
-    if pane.writer.borrow_mut().write_all(&input_bz).is_err() {
-        return false;
-    }
-    if pane.writer.borrow_mut().flush().is_err() {
-        return false;
-    }
-    true
 }
 
 // this function takes a MouseEvent and returns the bytes that represent the mouse input.

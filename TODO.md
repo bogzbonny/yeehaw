@@ -3,12 +3,11 @@
      - slightly laggy in debug mode but should be good in release mode
         - due to nested element containers, more deeply nested calls 
 01. hello world example in README.md
+01. passing mouse movements into terminal pane
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 01. cleanup the widgets example 
      - showcase should just use the same widgets example pane
-
-01. passing mouse movements into terminal pane
 
 01. showcase example 
      - a big "DO NOT PRESS button" which instigates the blue screen of death
@@ -29,7 +28,8 @@
           - neovim editor
           - buncha widgets which dont do much but log their results 
             in a textbox
-        - the showcase within the showcase?? spiral
+        - terminal
+        - the showcase within the showcase?? spiral 
 
 01. gif of showcase example - will need to record with non-VHS/asciicinema-tool
     to get mouse movements

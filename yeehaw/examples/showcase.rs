@@ -9,6 +9,7 @@ async fn main() -> Result<(), Error> {
     let (mut tui, ctx) = Tui::new()?;
     let el = VerticalStack::new(&ctx);
 
+    // adding the menu bar and menu items
     let mb = MenuBar::top_menu_bar(&ctx)
         .with_height(1.into())
         .with_width(1.0.into());
@@ -33,7 +34,6 @@ async fn main() -> Result<(), Error> {
             );
         }
     }
-
     let _ = el.push(Box::new(mb));
 
     //let header_pane = ParentPaneOfSelectable::new(&ctx)
@@ -71,15 +71,17 @@ async fn main() -> Result<(), Error> {
     let _ = central_pane.push(Box::new(left_pane.clone()));
     let _ = central_pane.push(Box::new(right_pane.clone()));
     let left_top = ParentPaneOfSelectable::new(&ctx).with_dyn_height(DynVal::new_flex(1.));
-    debug!("left_pane is {:?}", left_pane.id());
     let left_top_bordered =
         Bordered::new_resizer(&ctx, Box::new(left_top.clone()), Style::default())
             .with_dyn_height(left_pane.avg_height(&ctx));
     let _ = left_pane.push(Box::new(left_top_bordered));
-    let dbg_pane = DebugSizePane::new(&ctx)
-        .with_bg(Color::BLUE)
-        .with_dyn_height(0.7.into());
-    let _ = left_pane.push(Box::new(dbg_pane));
+
+    let train_pane = TerminalPane::new(&ctx)?;
+    train_pane.pane.set_dyn_height(DynVal::new_flex(0.7));
+    train_pane.pane.set_unfocused(&ctx);
+    train_pane.disable_cursor();
+    train_pane.execute_command("for i in {1..7}; do sl -l; done ; exit");
+    let _ = left_pane.push(Box::new(train_pane));
 
     let tabs = Tabs::new(&ctx);
     let el1 = DebugSizePane::new(&ctx)
@@ -95,13 +97,19 @@ async fn main() -> Result<(), Error> {
         .with_bg(Color::PINK)
         .with_text("tab 4".to_string());
     let el5 = TerminalPane::new(&ctx)?;
-    let el6 = TerminalPane::new(&ctx)?;
+
+    let showcase = TerminalPane::new(&ctx)?;
+    showcase.pane.set_unfocused(&ctx);
+
+    // XXX maybe make this only execute on focus
+    //showcase.execute_command("cargo run --release --example showcase");
+
     let _ = tabs.push(Box::new(el1), "widgets");
     let _ = tabs.push(Box::new(el2), "colors");
     let _ = tabs.push(Box::new(el3), "images");
     let _ = tabs.push(Box::new(el4), "file-nav");
     let _ = tabs.push(Box::new(el5), "terminal");
-    let _ = tabs.push(Box::new(el6), "terminal2");
+    let _ = tabs.push(Box::new(showcase), "showcase");
     let _ = tabs.select(0);
 
     let _ = right_pane.push(Box::new(tabs));
