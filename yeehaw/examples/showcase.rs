@@ -41,7 +41,7 @@ async fn main() -> Result<(), Error> {
     let gr = Gradient::x_grad_rainbow(5).with_angle(60.);
     let mtext = FigletText::new(
         &ctx,
-        "YEEEHAW!",
+        "YEEEHAW!!",
         figlet_rs::FIGfont::from_content(std::include_str!("../../assets/figlet/ANSI_Shadow.flf"))
             .expect("missing asset"),
     )
@@ -100,15 +100,19 @@ async fn main() -> Result<(), Error> {
     let showcase = TerminalPane::new(&ctx)?;
     showcase.pane.set_unfocused(&ctx);
 
-    // XXX maybe make this only execute on focus
-    //showcase.execute_command("cargo run --release --example showcase");
+    let showcase_ = showcase.clone();
+    let on_showcase_open_fn = Some(Box::new(move || {
+        let command = "cargo run --release --example showcase";
+        showcase_.execute_command(command);
+    }) as Box<dyn FnOnce()>);
 
     let _ = tabs.push(Box::new(el1), "widgets");
     let _ = tabs.push(Box::new(el2), "colors");
     let _ = tabs.push(Box::new(el3), "images");
     let _ = tabs.push(Box::new(el4), "file-nav");
     let _ = tabs.push(Box::new(el5), "terminal");
-    let _ = tabs.push(Box::new(showcase), "showcase");
+    let _ = tabs.push_with_on_open_fn(Box::new(showcase), "showcase", on_showcase_open_fn);
+
     let _ = tabs.select(0);
 
     let _ = right_pane.push(Box::new(tabs));

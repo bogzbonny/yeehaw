@@ -4,6 +4,10 @@
         - due to nested element containers, more deeply nested calls 
 01. hello world example in README.md
 01. passing mouse movements into terminal pane
+01. option to enforce that drawing which are outside of border are cropped?
+     - MAYBE?? do after window generator is complete
+01. execute a command on opening a tab (for the first time?) useful for showcase
+    tab
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 01. cleanup the widgets example 
@@ -40,12 +44,6 @@
             in a textbox
         - terminal
         - the showcase within the showcase?? spiral 
-
-01. option to enforce that drawing which are outside of border are cropped?
-     - MAYBE?? do after window generator is complete
-
-01. execute a command on opening a tab (for the first time?) useful for showcase
-    tab
 
 01. gif of showcase example - will need to record with non-VHS/asciicinema-tool
     to get mouse movements
