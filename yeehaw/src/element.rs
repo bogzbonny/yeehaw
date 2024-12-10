@@ -166,6 +166,7 @@ pub trait Element: DynClone {
     /// that hooks are called.
     fn get_ref_cell_dyn_location_set(&self) -> Rc<RefCell<DynLocationSet>>;
     fn get_ref_cell_visible(&self) -> Rc<RefCell<bool>>;
+    fn get_ref_cell_overflow(&self) -> Rc<RefCell<bool>>;
 
     // -------------------------------------------------------
     /// used by scrollbars

@@ -136,8 +136,8 @@ PIXEL MODE SPLITS for Complex Selector
     - dial automatically create arb_selector position map from texts
                op                op                op                op 
    __    __    __    __    __    __    __    __    __    __    __    __ 
-  ╱° ╲  ╱ °╲  ╱  °  ╱  ⚬  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ⚬  ╲  °  ╲
-  ╲__╱  ╲__╱  ╲__╱  ╲__╱  ╲__°  ╲__⚬  ╲_⚬╱  ╲⚬_╱  ⚬__╱  °__╱  ╲__╱  ╲__╱  
+  ╱° ╲  ╱ °╲  ╱  °  ╱  ∘  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ╱  ╲  ⚬  ╲  °  ╲
+  ╲__╱  ╲__╱  ╲__╱  ╲__╱  ╲__°  ╲__∘  ╲_∘╱  ╲∘_╱  ⚬__╱  °__╱  ╲__╱  ╲__╱  
                    
 One letter labels
    A__B      A__B       A__B       A__B     ultra compact

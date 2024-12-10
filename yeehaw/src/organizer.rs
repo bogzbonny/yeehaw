@@ -1,8 +1,8 @@
 use {
     crate::{
-        prioritizer::EventPrioritizer, ChPlus, Context, DrawCh, DrawChPos, DynLocation,
-        DynLocationSet, Element, ElementID, Event, EventResponse, EventResponses, Parent, Priority,
-        ReceivableEventChanges, RelMouseEvent, SelfReceivableEvents, Style, ZIndex,
+        prioritizer::EventPrioritizer, Context, DrawCh, DrawChPos, DynLocation, DynLocationSet,
+        Element, ElementID, Event, EventResponse, EventResponses, Parent, Priority,
+        ReceivableEventChanges, RelMouseEvent, SelfReceivableEvents, ZIndex,
     },
     rayon::prelude::*,
     std::collections::HashMap,
@@ -28,13 +28,20 @@ pub struct ElDetails {
     pub loc: Rc<RefCell<DynLocationSet>>,
     /// whether the element is set to display
     pub vis: Rc<RefCell<bool>>,
+    pub overflow: Rc<RefCell<bool>>,
 }
 
 impl ElDetails {
     pub fn new(el: Box<dyn Element>) -> Self {
         let loc = el.get_ref_cell_dyn_location_set().clone();
         let vis = el.get_ref_cell_visible();
-        Self { el, loc, vis }
+        let overflow = el.get_ref_cell_overflow();
+        Self {
+            el,
+            loc,
+            vis,
+            overflow,
+        }
     }
 
     pub fn set_visibility(&self, vis: bool) {
@@ -316,19 +323,26 @@ impl ElementOrganizer {
 
             // NOTE this is a computational bottleneck
             // currently using rayon for parallelization
-            dcps.par_iter_mut().for_each(|dcp| {
-                dcp.update_colors_for_time_and_pos(child_s, d);
-                if dcp.x >= child_s.width || dcp.y >= child_s.height {
-                    // it'd be better to delete, but we can't delete from a parallel iterator
-                    // also using a filter here its slower that this
-                    dcp.ch = DrawCh::transparent();
-                    dcp.x = 0;
-                    dcp.y = 0;
-                } else {
+            if *details.overflow.borrow() {
+                dcps.par_iter_mut().for_each(|dcp| {
+                    dcp.update_colors_for_time_and_pos(child_s, d);
                     dcp.x += start_x as u16;
                     dcp.y += start_y as u16;
-                }
-            });
+                });
+            } else {
+                dcps.par_iter_mut().for_each(|dcp| {
+                    dcp.update_colors_for_time_and_pos(child_s, d);
+                    if dcp.x >= child_s.width || dcp.y >= child_s.height {
+                        // it'd be better to delete, but we can't delete from a parallel iterator
+                        // also using a filter here its slower that this
+                        dcp.ch = DrawCh::transparent();
+                        (dcp.x, dcp.y) = (0, 0);
+                    } else {
+                        dcp.x += start_x as u16;
+                        dcp.y += start_y as u16;
+                    }
+                });
+            }
             out.extend(dcps);
         }
 

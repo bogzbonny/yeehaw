@@ -58,6 +58,9 @@ pub struct Pane {
     /// NOTE use getters/setters to ensure hook calls
     loc: Rc<RefCell<DynLocationSet>>,
     visible: Rc<RefCell<bool>>,
+
+    /// allows a pane to overflow its bounds during drawing. Useful for menus
+    overflow: Rc<RefCell<bool>>,
 }
 
 impl Pane {
@@ -80,6 +83,7 @@ impl Pane {
             content_view_offset_y: Rc::new(RefCell::new(0)),
             loc: Rc::new(RefCell::new(DynLocationSet::full())),
             visible: Rc::new(RefCell::new(true)),
+            overflow: Rc::new(RefCell::new(false)),
         }
     }
 
@@ -99,6 +103,15 @@ impl Pane {
 
     pub fn set_kind(&self, kind: &'static str) {
         *self.kind.borrow_mut() = kind;
+    }
+
+    pub fn with_overflow(self) -> Pane {
+        *self.overflow.borrow_mut() = true;
+        self
+    }
+
+    pub fn set_overflow(&self) {
+        *self.overflow.borrow_mut() = true;
     }
 
     pub fn with_focused(self, ctx: &Context) -> Pane {
@@ -569,6 +582,9 @@ impl Element for Pane {
     }
     fn get_ref_cell_visible(&self) -> Rc<RefCell<bool>> {
         self.visible.clone()
+    }
+    fn get_ref_cell_overflow(&self) -> Rc<RefCell<bool>> {
+        self.overflow.clone()
     }
 
     fn set_content_x_offset(&self, ctx: &Context, x: usize) {

@@ -94,7 +94,9 @@ impl MenuBar {
         let menu_sty = MenuStyle::default();
         let pane = ParentPane::new(ctx, MenuBar::KIND)
             .with_z(MenuBar::Z_INDEX)
-            .with_style(menu_sty.unselected_style.clone());
+            .with_style(menu_sty.unselected_style.clone())
+            .with_overflow();
+
         MenuBar {
             pane,
             horizontal_bar: Rc::new(RefCell::new(true)),
@@ -113,7 +115,9 @@ impl MenuBar {
     }
 
     pub fn right_click_menu(ctx: &Context) -> Self {
-        let pane = ParentPane::new(ctx, MenuBar::KIND).with_z(MenuBar::Z_INDEX);
+        let pane = ParentPane::new(ctx, MenuBar::KIND)
+            .with_z(MenuBar::Z_INDEX)
+            .with_overflow();
         MenuBar {
             pane,
             horizontal_bar: Rc::new(RefCell::new(false)),

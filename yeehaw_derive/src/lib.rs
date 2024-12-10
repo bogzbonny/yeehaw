@@ -26,6 +26,7 @@ pub fn impl_element_from(attr: TokenStream, item: TokenStream) -> TokenStream {
     fn get_visible(&self) -> bool;
     fn get_ref_cell_dyn_location_set(&self) -> std::rc::Rc<std::cell::RefCell<DynLocationSet>>;
     fn get_ref_cell_visible(&self) -> std::rc::Rc<std::cell::RefCell<bool>>;
+    fn get_ref_cell_overflow(&self) -> std::rc::Rc<std::cell::RefCell<bool>>;
     fn set_content_x_offset(&self, ctx: &Context, x: usize);
     fn set_content_y_offset(&self, ctx: &Context, y: usize);
     fn get_content_x_offset(&self) -> usize;
@@ -110,6 +111,7 @@ pub fn impl_pane_basics_from(attr: TokenStream, item: TokenStream) -> TokenStrea
         fn with_unfocused(self, ctx: &Context); 
         fn with_focused(self, ctx: &Context); 
         fn with_kind(self, kind: &'static str); 
+        fn with_overflow(self);
         fn with_z(self, z: ZIndex);
         fn with_start_x<D: Into<DynVal>>(self, x: D);
         fn with_start_y<D: Into<DynVal>>(self, y: D);
@@ -131,6 +133,7 @@ pub fn impl_pane_basics_from(attr: TokenStream, item: TokenStream) -> TokenStrea
     let tr_code_non_with = r"pub trait PaneBasicsNonWith {
     fn set_at(&self, x: DynVal, y: DynVal);
     fn set_kind(&self, kind: &'static str);
+    fn set_overflow(&self);
     fn set_start_x<D: Into<DynVal>>(&self, x: D);
     fn set_start_y<D: Into<DynVal>>(&self, y: D);
     fn set_end_x<D: Into<DynVal>>(&self, x: D);

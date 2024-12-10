@@ -79,7 +79,7 @@ impl Dial {
             Self::DEFAULT_DIAL_COLOR,
             Self::DEFAULT_DIAL_KNOB_COLOR,
             Self::DEFAULT_LABEL_COLOR,
-            Style::new_const(Self::DEFAULT_LABEL_SEL_COLOR, Color::BLACK),
+            Style::default().with_fg(Self::DEFAULT_LABEL_SEL_COLOR),
             labels.clone(),
         );
         pane.pane.set_kind(Self::KIND);
@@ -88,10 +88,10 @@ impl Dial {
             dial_color: Rc::new(RefCell::new(Self::DEFAULT_DIAL_COLOR)),
             dial_knob_color: Rc::new(RefCell::new(Self::DEFAULT_DIAL_KNOB_COLOR)),
             label_color: Rc::new(RefCell::new(Self::DEFAULT_LABEL_COLOR)),
-            label_selected_color: Rc::new(RefCell::new(Style::new_const(
-                Self::DEFAULT_LABEL_SEL_COLOR,
-                Color::BLACK,
-            ))),
+            label_selected_color: Rc::new(RefCell::new(
+                Style::default().with_fg(Self::DEFAULT_LABEL_SEL_COLOR),
+            )),
+
             labels: Rc::new(RefCell::new(labels)),
             spacing: Rc::new(RefCell::new(spacing.clone())),
         }
@@ -127,7 +127,7 @@ impl Dial {
             self.dial_color.borrow().clone(),
             self.dial_knob_color.borrow().clone(),
             self.label_color.borrow().clone(),
-            Style::new_const(Self::DEFAULT_LABEL_SEL_COLOR, Color::BLACK),
+            self.label_selected_color.borrow().clone(),
             self.labels.borrow().clone(),
         );
         pane.pane.set_kind(Self::KIND);
@@ -196,7 +196,7 @@ impl Spacing {
                 5 => -3,
                 6 => -3,
                 7 => -1,
-                _ => panic!("Invalid option, UltraCompact dial only has 8 options"), 
+                _ => panic!("Invalid option, UltraCompact dial only has 8 options"),
             },
             Spacing::Compact => match option {
                 0 => 2,
@@ -207,7 +207,7 @@ impl Spacing {
                 5 => -4,
                 6 => -4,
                 7 => -2,
-                _ => panic!("Invalid option, Compact dial only has 8 options"), 
+                _ => panic!("Invalid option, Compact dial only has 8 options"),
             },
             Spacing::SemiCompact => match option {
                 0 => 1,
@@ -222,7 +222,7 @@ impl Spacing {
                 9 => -5,
                 10 => -4,
                 11 => -1,
-                _ => panic!("Invalid option, SemiCompact dial only has 12 options"), 
+                _ => panic!("Invalid option, SemiCompact dial only has 12 options"),
             },
             Spacing::Spacious => match option {
                 0 => 1,
@@ -237,7 +237,7 @@ impl Spacing {
                 9 => -6,
                 10 => -4,
                 11 => -1,
-                _ => panic!("Invalid option, Spacious dial only has 12 options"), 
+                _ => panic!("Invalid option, Spacious dial only has 12 options"),
             },
         }
     }
@@ -403,13 +403,13 @@ impl Spacing {
 
         match self {
             Spacing::UltraCompact | Spacing::Compact => {
-                
+
                 let ultra = matches!(self, Spacing::UltraCompact);
 
                 let (max_lh_width, max_rh_width) = if ultra {
                     (max_lh_width.max(3), max_rh_width.max(3))
                 } else {
-                    (max_lh_width.max(4), max_rh_width.max(4))  
+                    (max_lh_width.max(4), max_rh_width.max(4))
                 };
 
                 let a_spc_len = max_rh_width.saturating_sub(a.len()).saturating_sub(self.start_x_from_center(&0) as usize);
@@ -525,7 +525,7 @@ impl Spacing {
                         x += 1;
                     }
                     let x = max_lh_width + 1;
-                    let ch = DrawCh::new('⚬', dial_knob_sty.clone());
+                    let ch = DrawCh::new('∘', dial_knob_sty.clone());
                     b_sel_changes.push((ch, x, 1).into());
                     sel_changes.push((1, b_sel_changes));
                 }
@@ -551,7 +551,7 @@ impl Spacing {
                         x += 1;
                     }
                     let x = max_lh_width;
-                    let ch = DrawCh::new('⚬', dial_knob_sty.clone());
+                    let ch = DrawCh::new('∘', dial_knob_sty.clone());
                     d_sel_changes.push((ch, x, 2).into());
                     sel_changes.push((3, d_sel_changes));
                 }
@@ -564,7 +564,7 @@ impl Spacing {
                         x = x.saturating_sub(1);
                     }
                     let x = max_lh_width - 1;
-                    let ch = DrawCh::new('⚬', dial_knob_sty.clone());
+                    let ch = DrawCh::new('∘', dial_knob_sty.clone());
                     e_sel_changes.push((ch, x, 2).into());
                     sel_changes.push((4, e_sel_changes));
                 }
@@ -590,7 +590,7 @@ impl Spacing {
                         x = x.saturating_sub(1);
                     }
                     let x = max_lh_width - 2;
-                    let ch = DrawCh::new('⚬', dial_knob_sty.clone());
+                    let ch = DrawCh::new('∘', dial_knob_sty.clone());
                     g_sel_changes.push((ch, x, 1).into());
                     sel_changes.push((6, g_sel_changes));
                 }
@@ -662,7 +662,7 @@ impl Spacing {
                 let (max_lh_width, max_rh_width) = if semi {
                     (max_lh_width.max(5), max_rh_width.max(5))
                 } else {
-                    (max_lh_width.max(6), max_rh_width.max(6))  
+                    (max_lh_width.max(6), max_rh_width.max(6))
                 };
 
                 let a_spc_len = max_rh_width.saturating_sub(a.len()).saturating_sub(self.start_x_from_center(&0) as usize);
@@ -861,7 +861,7 @@ impl Spacing {
                         x += 1;
                     }
                     let x = max_lh_width + 1;
-                    let ch = DrawCh::new('⚬', dial_knob_sty.clone());
+                    let ch = DrawCh::new('∘', dial_knob_sty.clone());
                     c_sel_changes.push((ch, x, 2).into());
                     sel_changes.push((2, c_sel_changes));
                 }
@@ -887,7 +887,7 @@ impl Spacing {
                         x += 1
                     }
                     let x = max_lh_width + 1;
-                    let ch = DrawCh::new('⚬', dial_knob_sty.clone());
+                    let ch = DrawCh::new('∘', dial_knob_sty.clone());
                     e_sel_changes.push((ch, x, 3).into());
                     sel_changes.push((4, e_sel_changes));
                 }
@@ -900,7 +900,7 @@ impl Spacing {
                         x += 1
                     }
                     let x = max_lh_width;
-                    let ch = DrawCh::new('⚬', dial_knob_sty.clone());
+                    let ch = DrawCh::new('∘', dial_knob_sty.clone());
                     f_sel_changes.push((ch, x, 3).into());
                     sel_changes.push((5, f_sel_changes));
                 }
@@ -913,7 +913,7 @@ impl Spacing {
                         x = x.saturating_sub(1);
                     }
                     let x = max_lh_width - 1;
-                    let ch = DrawCh::new('⚬', dial_knob_sty.clone());
+                    let ch = DrawCh::new('∘', dial_knob_sty.clone());
                     g_sel_changes.push((ch, x, 3).into());
                     sel_changes.push((6, g_sel_changes));
                 }
@@ -926,7 +926,7 @@ impl Spacing {
                         x = x.saturating_sub(1);
                     }
                     let x = max_lh_width - 2;
-                    let ch = DrawCh::new('⚬', dial_knob_sty.clone());
+                    let ch = DrawCh::new('∘', dial_knob_sty.clone());
                     h_sel_changes.push((ch, x, 3).into());
                     sel_changes.push((7, h_sel_changes));
                 }
@@ -952,7 +952,7 @@ impl Spacing {
                         x = x.saturating_sub(1);
                     }
                     let x = max_lh_width - 2;
-                    let ch = DrawCh::new('⚬', dial_knob_sty.clone());
+                    let ch = DrawCh::new('∘', dial_knob_sty.clone());
                     j_sel_changes.push((ch, x, 2).into());
                     sel_changes.push((9, j_sel_changes));
                 }
