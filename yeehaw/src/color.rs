@@ -919,6 +919,12 @@ impl Rgba {
     /// considers the alpha of the self and blends with the previous color
     pub fn to_crossterm_color(&self, prev: Option<CrosstermColor>) -> CrosstermColor {
         let (r, g, b, a) = self.to_tuple();
+        if a == 0 {
+            return match prev {
+                Some(prev) => prev,
+                _ => CrosstermColor::Reset,
+            };
+        }
         let a = a as f64 / 255.0;
         let prev = prev.unwrap_or(CrosstermColor::Rgb { r: 0, g: 0, b: 0 });
         let (pr, pg, pb) = match prev {
