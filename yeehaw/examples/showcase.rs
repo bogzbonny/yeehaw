@@ -64,18 +64,23 @@ async fn main() -> Result<(), Error> {
     let right_pane = VerticalStack::new(&ctx);
     let _ = central_pane.push(Box::new(left_pane.clone()));
     let _ = central_pane.push(Box::new(right_pane.clone()));
-    let left_top = ParentPaneOfSelectable::new(&ctx).with_dyn_height(DynVal::new_flex(1.));
+    let left_top = ParentPaneOfSelectable::new(&ctx);
     let left_top_bordered =
         Bordered::new_resizer(&ctx, Box::new(left_top.clone()), Style::default())
-            .with_dyn_height(left_pane.avg_height(&ctx));
+            .with_dyn_height(1.5);
     let _ = left_pane.push(Box::new(left_top_bordered));
 
-    let train_pane = TerminalPane::new(&ctx)?;
-    train_pane.pane.set_dyn_height(DynVal::new_flex(0.7));
-    train_pane.pane.set_unfocused(&ctx);
-    train_pane.disable_cursor();
-    train_pane.execute_command("for i in {1..7}; do sl -l; done ; exit");
-    let _ = left_pane.push(Box::new(train_pane));
+    //let train_pane = TerminalPane::new(&ctx)?;
+    //train_pane.pane.set_dyn_height(DynVal::new_flex(0.7));
+    //train_pane.pane.set_unfocused(&ctx);
+    //train_pane.disable_cursor();
+    //train_pane.execute_command("for i in {1..7}; do sl -l; done ; exit");
+
+    // XXX remove
+    let el_tp = DebugSizePane::new(&ctx)
+        .with_bg(Color::BLACK)
+        .with_text("tab 1".to_string());
+    let _ = left_pane.push(Box::new(el_tp));
 
     let tabs = Tabs::new(&ctx);
     let el1 = DebugSizePane::new(&ctx)
@@ -128,7 +133,7 @@ async fn main() -> Result<(), Error> {
             (11, "OptionL"),
         ],
     )
-    .at(DynVal::new_flex(0.), DynVal::new_flex(0.3));
+    .at(0, 7);
     let _ = left_top.add_element(Box::new(dial1));
 
     tui.run(Box::new(el)).await

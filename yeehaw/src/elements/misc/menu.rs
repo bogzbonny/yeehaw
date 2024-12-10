@@ -717,9 +717,19 @@ impl Element for MenuBar {
 
             // NOTE this is a computational bottleneck
             // currently using rayon for parallelization
+            let mut start_x = l.get_start_x_from_size(s);
+            let mut start_y = l.get_start_y_from_size(s);
+            // check for overflow
+            if start_x < 0 {
+                start_x = 0;
+            }
+            if start_y < 0 {
+                start_y = 0;
+            }
             dcps.par_iter_mut().for_each(|dcp| {
                 dcp.update_colors_for_time_and_pos(child_s, d);
-                dcp.adjust_by_dyn_location(s, &l);
+                dcp.x += start_x as u16;
+                dcp.y += start_y as u16;
             });
             out.extend(dcps);
         }

@@ -1285,7 +1285,7 @@ impl Element for Bordered {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         self.ensure_scrollbar_size(ctx);
 
-        let (captured, mut resps) = self.pane.receive_event_inner(ctx, ev);
+        let (captured, mut resps) = self.pane.receive_event(ctx, ev);
         let inner_size = self.inner.borrow().get_dyn_location_set().l.get_size(ctx);
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
             sb.external_change(

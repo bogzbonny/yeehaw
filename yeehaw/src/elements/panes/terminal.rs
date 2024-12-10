@@ -333,6 +333,7 @@ impl Element for TerminalPane {
         }
 
         let mut out = vec![];
+        //let mut out = self.pane.drawing(ctx);
 
         let Ok(sc) = self.parser.read() else {
             log_err!("TerminalPane: failed to read parser");
@@ -378,6 +379,17 @@ impl Element for TerminalPane {
                         x: col,
                         y: row,
                     });
+
+                    //} else {
+                    // if the cell is empty, draw a space
+                    //out.push(DrawChPos {
+                    //    ch: DrawCh::new(
+                    //        ChPlus::Char(' '),
+                    //        Style::default().with_fg(Color::BLACK).with_bg(Color::WHITE),
+                    //    ),
+                    //    x: col,
+                    //    y: row,
+                    //});
                 }
             }
         }

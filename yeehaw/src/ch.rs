@@ -86,7 +86,7 @@ impl DrawCh {
         }
     }
 
-    pub fn transparent() -> DrawCh {
+    pub const fn transparent() -> DrawCh {
         DrawCh {
             ch: ChPlus::Transparent,
             style: Style::transparent(),
