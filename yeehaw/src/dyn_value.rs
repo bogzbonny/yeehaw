@@ -47,6 +47,12 @@ impl From<usize> for DynVal {
     }
 }
 
+impl From<u16> for DynVal {
+    fn from(fixed: u16) -> Self {
+        DynVal::new_fixed(fixed as i32)
+    }
+}
+
 impl From<f64> for DynVal {
     fn from(flex: f64) -> Self {
         DynVal::new_flex(flex)

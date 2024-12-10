@@ -11,10 +11,17 @@ use {
 pub struct PaneScrollable {
     pane: ParentPane,
     content_width: Rc<RefCell<usize>>,
-    /// TODO will need to adjust with scrollbar hooks
     content_height: Rc<RefCell<usize>>,
     content_offset_x: Rc<RefCell<usize>>,
     content_offset_y: Rc<RefCell<usize>>,
+
+    /// if true, then the pane will grow to fill the width of the parent
+    /// when the parent pane is larger than `content_width`
+    pub expand_to_fill_width: Rc<RefCell<bool>>,
+
+    /// if true, then the pane will grow to fill the height of the parent
+    /// when the parent pane is larger than `content_height`
+    pub expand_to_fill_height: Rc<RefCell<bool>>,
 
     /// how many characters to scroll on a scroll event, if None, then disable scroll
     pub scroll_rate: Rc<RefCell<Option<i16>>>,
@@ -30,6 +37,21 @@ impl PaneScrollable {
             content_height: Rc::new(RefCell::new(height)),
             content_offset_x: Rc::new(RefCell::new(0)),
             content_offset_y: Rc::new(RefCell::new(0)),
+            expand_to_fill_width: Rc::new(RefCell::new(false)),
+            expand_to_fill_height: Rc::new(RefCell::new(false)),
+            scroll_rate: Rc::new(RefCell::new(Some(3))),
+        }
+    }
+
+    pub fn new_expanding(ctx: &Context, width: usize, height: usize) -> Self {
+        Self {
+            pane: ParentPane::new(ctx, Self::KIND).with_transparent(),
+            content_width: Rc::new(RefCell::new(width)),
+            content_height: Rc::new(RefCell::new(height)),
+            content_offset_x: Rc::new(RefCell::new(0)),
+            content_offset_y: Rc::new(RefCell::new(0)),
+            expand_to_fill_width: Rc::new(RefCell::new(true)),
+            expand_to_fill_height: Rc::new(RefCell::new(true)),
             scroll_rate: Rc::new(RefCell::new(Some(3))),
         }
     }
@@ -53,8 +75,13 @@ impl PaneScrollable {
 
     pub fn inner_ctx(&self, ctx: &Context) -> Context {
         let mut inner_ctx = ctx.clone();
-        inner_ctx.size.height = *self.content_height.borrow() as u16;
-        inner_ctx.size.width = *self.content_width.borrow() as u16;
+
+        inner_ctx.size.width = self.get_content_width(ctx) as u16;
+        inner_ctx.size.height = self.get_content_height(ctx) as u16;
+        //debug!(
+        //    "ctx: \twidth: {}, \theight: {}, inner_ctx: \twidth: {}, \theight: {}",
+        //    ctx.size.width, ctx.size.height, inner_ctx.size.width, inner_ctx.size.height
+        //);
         let x1 = *self.content_offset_x.borrow() as u16;
         let y1 = *self.content_offset_y.borrow() as u16;
         let x2 = x1 + ctx.size.width;
@@ -147,8 +174,8 @@ impl Element for PaneScrollable {
         let mut out = DrawChPosVec::new(out);
         let x_off = *self.content_offset_x.borrow();
         let y_off = *self.content_offset_y.borrow();
-        let max_x = x_off + *self.content_width.borrow();
-        let max_y = y_off + *self.content_height.borrow();
+        let max_x = x_off + self.get_content_width(ctx);
+        let max_y = y_off + self.get_content_height(ctx);
         out.adjust_for_offset_and_truncate(
             *self.content_offset_x.borrow(),
             *self.content_offset_y.borrow(),
@@ -159,33 +186,19 @@ impl Element for PaneScrollable {
     }
 
     fn set_content_x_offset(&self, ctx: &Context, x: usize) {
-        let x = if x > self
-            .content_width
-            .borrow()
-            .saturating_sub(ctx.size.width.into())
-        {
-            self.content_width
-                .borrow()
-                .saturating_sub(ctx.size.width.into())
-        } else {
-            x
-        };
-        *self.content_offset_x.borrow_mut() = x
+        let offset = self
+            .get_content_width(ctx)
+            .saturating_sub(ctx.size.width.into());
+        let offset = if x > offset { offset } else { x };
+        *self.content_offset_x.borrow_mut() = offset
     }
 
     fn set_content_y_offset(&self, ctx: &Context, y: usize) {
-        let y = if y > self
-            .content_height
-            .borrow()
-            .saturating_sub(ctx.size.height.into())
-        {
-            self.content_height
-                .borrow()
-                .saturating_sub(ctx.size.height.into())
-        } else {
-            y
-        };
-        *self.content_offset_y.borrow_mut() = y;
+        let offset = self
+            .get_content_height(ctx)
+            .saturating_sub(ctx.size.height.into());
+        let offset = if y > offset { offset } else { y };
+        *self.content_offset_y.borrow_mut() = offset
     }
 
     fn get_content_x_offset(&self) -> usize {
@@ -194,10 +207,22 @@ impl Element for PaneScrollable {
     fn get_content_y_offset(&self) -> usize {
         *self.content_offset_y.borrow()
     }
-    fn get_content_width(&self) -> usize {
-        *self.content_width.borrow()
+    fn get_content_width(&self, ctx: &Context) -> usize {
+        if *self.expand_to_fill_width.borrow()
+            && ctx.size.width as usize > *self.content_width.borrow()
+        {
+            ctx.size.width as usize
+        } else {
+            *self.content_width.borrow()
+        }
     }
-    fn get_content_height(&self) -> usize {
-        *self.content_height.borrow()
+    fn get_content_height(&self, ctx: &Context) -> usize {
+        if *self.expand_to_fill_height.borrow()
+            && ctx.size.height as usize > *self.content_height.borrow()
+        {
+            ctx.size.height as usize
+        } else {
+            *self.content_height.borrow()
+        }
     }
 }

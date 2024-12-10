@@ -8,6 +8,7 @@ use {
 pub struct Shadowed {
     pub inner: Box<dyn Element>,
     pub sh_sty: Rc<RefCell<ShadowSty>>,
+    pub overflow: Rc<RefCell<bool>>,
 }
 
 #[derive(Clone)]
@@ -58,6 +59,7 @@ impl Shadowed {
         let out = Shadowed {
             inner,
             sh_sty: Rc::new(RefCell::new(ShadowSty::new_thin(shadow_color))),
+            overflow: Rc::new(RefCell::new(true)),
         };
         out.set_shadow_content(ctx);
         out
@@ -69,6 +71,7 @@ impl Shadowed {
         let out = Shadowed {
             inner,
             sh_sty: Rc::new(RefCell::new(ShadowSty::new_thin(shadow_color))),
+            overflow: Rc::new(RefCell::new(true)),
         };
         out.set_shadow_content(ctx);
         out
@@ -79,6 +82,7 @@ impl Shadowed {
         let out = Shadowed {
             inner,
             sh_sty: Rc::new(RefCell::new(ShadowSty::new_thick(shadow_color))),
+            overflow: Rc::new(RefCell::new(true)),
         };
         out.set_shadow_content(ctx);
         out
@@ -90,6 +94,7 @@ impl Shadowed {
         let out = Shadowed {
             inner,
             sh_sty: Rc::new(RefCell::new(ShadowSty::new_thick(shadow_color))),
+            overflow: Rc::new(RefCell::new(true)),
         };
         out.set_shadow_content(ctx);
         out
@@ -124,7 +129,23 @@ impl Shadowed {
 impl Element for Shadowed {
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let mut out = self.inner.drawing(ctx);
+
+        // because the shadow allows overflow, we must deal with any overflows here
+        if *self.inner.get_ref_cell_overflow().borrow() {
+            for dcp in out.iter_mut() {
+                if dcp.x >= ctx.size.width || dcp.y >= ctx.size.height {
+                    // it'd be better to delete, but we can't delete from a parallel iterator
+                    // also using a filter here its slower that this
+                    dcp.ch = DrawCh::transparent();
+                    (dcp.x, dcp.y) = (0, 0);
+                }
+            }
+        }
         out.extend(self.set_shadow_content(ctx));
         out
+    }
+
+    fn get_ref_cell_overflow(&self) -> Rc<RefCell<bool>> {
+        self.overflow.clone()
     }
 }

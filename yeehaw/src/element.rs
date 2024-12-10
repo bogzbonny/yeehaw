@@ -175,8 +175,8 @@ pub trait Element: DynClone {
     fn set_content_y_offset(&self, ctx: &Context, y: usize);
     fn get_content_x_offset(&self) -> usize;
     fn get_content_y_offset(&self) -> usize;
-    fn get_content_width(&self) -> usize;
-    fn get_content_height(&self) -> usize;
+    fn get_content_width(&self, ctx: &Context) -> usize;
+    fn get_content_height(&self, ctx: &Context) -> usize;
 
     // -------------------------------------------------------
     /// Freebies

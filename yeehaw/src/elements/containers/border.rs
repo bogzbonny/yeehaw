@@ -1091,10 +1091,12 @@ impl Bordered {
                 // see NOTE SB-1 as to why we don't use the dynamic width/height
                 let sb_height: DynVal = left_loc.height(ctx).into();
                 sb.set_dyn_location(left_loc);
+
+                let inner_ctx = ctx.child_context(&inner.get_dyn_location_set().l);
                 sb.set_dyn_height(
                     sb_height.clone(),
                     sb_height,
-                    Some(inner.get_content_height()),
+                    Some(inner.get_content_height(&inner_ctx)),
                 );
 
                 bordered.y_scrollbar.borrow_mut().replace(sb.clone());
@@ -1141,10 +1143,12 @@ impl Bordered {
                 // see NOTE SB-1 as to why we don't use the dynamic width/height
                 let sb_height: DynVal = right_loc.height(ctx).into();
                 sb.set_dyn_location(right_loc);
+
+                let inner_ctx = ctx.child_context(&inner.get_dyn_location_set().l);
                 sb.set_dyn_height(
                     sb_height.clone(),
                     sb_height,
-                    Some(inner.get_content_height()),
+                    Some(inner.get_content_height(&inner_ctx)),
                 );
 
                 bordered.y_scrollbar.borrow_mut().replace(sb.clone());
@@ -1185,7 +1189,13 @@ impl Bordered {
                 // see NOTE SB-1 as to why we don't use the dynamic width/height
                 let sb_width: DynVal = top_loc.width(ctx).into();
                 sb.set_dyn_location(top_loc);
-                sb.set_dyn_width(sb_width.clone(), sb_width, Some(inner.get_content_width()));
+
+                let inner_ctx = ctx.child_context(&inner.get_dyn_location_set().l);
+                sb.set_dyn_width(
+                    sb_width.clone(),
+                    sb_width,
+                    Some(inner.get_content_width(&inner_ctx)),
+                );
 
                 bordered.x_scrollbar.borrow_mut().replace(sb.clone());
                 let _ = bordered.pane.add_element(Box::new(sb));
@@ -1228,7 +1238,12 @@ impl Bordered {
                 // see NOTE SB-1 as to why we don't use the dynamic width/height
                 let sb_width: DynVal = bottom_loc.width(ctx).into();
                 sb.set_dyn_location(bottom_loc);
-                sb.set_dyn_width(sb_width.clone(), sb_width, Some(inner.get_content_width()));
+                let inner_ctx = ctx.child_context(&inner.get_dyn_location_set().l);
+                sb.set_dyn_width(
+                    sb_width.clone(),
+                    sb_width,
+                    Some(inner.get_content_width(&inner_ctx)),
+                );
 
                 bordered.x_scrollbar.borrow_mut().replace(sb.clone());
                 let _ = bordered.pane.add_element(Box::new(sb));
@@ -1287,17 +1302,18 @@ impl Element for Bordered {
 
         let (captured, mut resps) = self.pane.receive_event(ctx, ev);
         let inner_size = self.inner.borrow().get_dyn_location_set().l.get_size(ctx);
+        let inner_ctx = ctx.child_context(&self.inner.borrow().get_dyn_location_set().l);
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
             sb.external_change(
                 self.inner.borrow().get_content_x_offset(),
-                self.inner.borrow().get_content_width(),
+                self.inner.borrow().get_content_width(&inner_ctx),
                 inner_size,
             );
         }
         if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
             sb.external_change(
                 self.inner.borrow().get_content_y_offset(),
-                self.inner.borrow().get_content_height(),
+                self.inner.borrow().get_content_height(&inner_ctx),
                 inner_size,
             );
         }

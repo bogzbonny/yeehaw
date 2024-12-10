@@ -74,7 +74,7 @@ async fn main() -> Result<(), Error> {
             .with_default_ch(def_ch)
             .with_style(Style::default().with_bg(bg).with_fg(Color::BLACK));
 
-        let sc_pane = PaneScrollable::new(&ctx_, 50, 50);
+        let sc_pane = PaneScrollable::new_expanding(&ctx_, 30, 20);
         let _ = sc_pane.add_element(Box::new(el));
         //let sc_pane = Bordered::new_borderless_with_scrollbars(&ctx_, Box::new(sc_pane), sty);
         let border_sty = sty.clone().with_fg(Color::WHITE);

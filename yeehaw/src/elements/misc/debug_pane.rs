@@ -17,6 +17,8 @@ impl DebugSizePane {
             pane: Pane::new(ctx, "debug_size_pane"),
             text: Rc::new(RefCell::new(String::new())),
         }
+        .with_dyn_height(DynVal::FULL)
+        .with_dyn_width(DynVal::FULL)
     }
 
     pub fn with_text(self, text: String) -> Self {

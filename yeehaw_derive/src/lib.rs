@@ -31,8 +31,8 @@ pub fn impl_element_from(attr: TokenStream, item: TokenStream) -> TokenStream {
     fn set_content_y_offset(&self, ctx: &Context, y: usize);
     fn get_content_x_offset(&self) -> usize;
     fn get_content_y_offset(&self) -> usize;
-    fn get_content_width(&self) -> usize;
-    fn get_content_height(&self) -> usize;
+    fn get_content_width(&self, ctx: &Context) -> usize;
+    fn get_content_height(&self, ctx: &Context) -> usize;
 }";
     let tr_parsed = syn::parse_str::<ItemTrait>(tr_code).expect("Failed to parse trait");
 

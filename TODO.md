@@ -13,37 +13,44 @@
 01. cleanup the widgets example 
      - showcase should just use the same widgets example pane
 
+01. scrollable pane which grows if above min dimension
+
 01. showcase example 
+     - a menu
+       - some hidden funny stuff on some items
+     - tabs
+       - terminal
+       - the showcase within the showcase?? spiral 
+     ^ DONE
+
      - a big "DO NOT PRESS button" which instigates the blue screen of death
      - window generator zone
-       - dial with window types: terminal, $editor, basic, scrollable,
-         scrollable-border. 
-       - dial which greys out for the border capability. 
-       - TWO dials as eyes (draw a mouth label below, maybe a nose too)
-          - make the mouth change with a button click 
-     - a menu
-        - some hidden funny stuff on some items
-        - tic tac toe
+       - dial with window pane types: basic, scrollable, scrollable-expanding, terminal, 
+       - border-kind: none, basic, normal scrollbars, resizer with border-scrollbars, double width, large, tight, 
+                      border-with-text, border-resizer, border-mover
+       - generate button
      - TABS Zone
-        - gradient 
-           - could have some ascii art drawings to pick from for the FG
-              - a dial with a few choice ascii arts
-           - toggle for FG and BG gradients
-               - dial gradient kind: solid color, time-gradient, radial gradient, linear
-                 gradient. radial-time, linear-time
-               - slider, gradient size between colors (enforce static) 
-               - slider, change speed, ms for time gradients
-               - slider with numbers-tb for gradient angle
-               - dial, number of colors (greyed out for solid-color kind)
-               - some sliders: 1 for each color (greyed out when colors
-                 disabled) maybe with an RGB tb for css color input
-           - dial, fg ascii art (default as a butterfly)
-        - widgets
-          - neovim editor
-          - buncha widgets which dont do much but log their results 
-            in a textbox
-        - terminal
-        - the showcase within the showcase?? spiral 
+       - gradient 
+          - could have some ascii art drawings to pick from for the FG
+             - a dial with a few choice ascii arts
+          - toggle for FG and BG gradients
+              - dial gradient kind: solid color, time-gradient, radial gradient, linear
+                gradient. radial-time, linear-time
+              - slider, gradient size between colors (enforce static) 
+              - slider, change speed, ms for time gradients
+              - slider with numbers-tb for gradient angle
+              - dial, number of colors (greyed out for solid-color kind)
+              - some sliders: 1 for each color (greyed out when colors
+                disabled) maybe with an RGB tb for css color input
+          - dial, fg ascii art (default as a butterfly)
+       - widgets
+         - neovim editor
+         - buncha widgets which dont do much but log their results 
+           in a textbox
+         - TWO dials as eyes (draw a mouth label below, maybe a nose too)
+           - no labels for the eyes
+           - make them lock together, and change the mouth based on their 
+             position
 
 01. gif of showcase example - will need to record with non-VHS/asciicinema-tool
     to get mouse movements

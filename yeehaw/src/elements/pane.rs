@@ -615,10 +615,10 @@ impl Element for Pane {
     fn get_content_y_offset(&self) -> usize {
         *self.content_view_offset_y.borrow()
     }
-    fn get_content_width(&self) -> usize {
+    fn get_content_width(&self, _: &Context) -> usize {
         self.content.borrow().width()
     }
-    fn get_content_height(&self) -> usize {
+    fn get_content_height(&self, _: &Context) -> usize {
         self.content.borrow().height()
     }
 }

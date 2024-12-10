@@ -70,17 +70,12 @@ async fn main() -> Result<(), Error> {
             .with_dyn_height(1.5);
     let _ = left_pane.push(Box::new(left_top_bordered));
 
-    //let train_pane = TerminalPane::new(&ctx)?;
-    //train_pane.pane.set_dyn_height(DynVal::new_flex(0.7));
-    //train_pane.pane.set_unfocused(&ctx);
-    //train_pane.disable_cursor();
-    //train_pane.execute_command("for i in {1..7}; do sl -l; done ; exit");
-
-    // XXX remove
-    let el_tp = DebugSizePane::new(&ctx)
-        .with_bg(Color::BLACK)
-        .with_text("tab 1".to_string());
-    let _ = left_pane.push(Box::new(el_tp));
+    let train_pane = TerminalPane::new(&ctx)?;
+    train_pane.pane.set_dyn_height(DynVal::new_flex(0.7));
+    train_pane.pane.set_unfocused(&ctx);
+    train_pane.disable_cursor();
+    train_pane.execute_command("for i in {1..7}; do sl -l; done ; exit");
+    let _ = left_pane.push(Box::new(train_pane));
 
     let tabs = Tabs::new(&ctx);
     let el1 = DebugSizePane::new(&ctx)
