@@ -2,7 +2,6 @@ use {
     crate::*,
     crossterm::event::{MouseButton, MouseEventKind},
     portable_pty::CommandBuilder,
-    std::{cell::RefCell, rc::Rc},
 };
 
 /// TODO implement/test editor missing case

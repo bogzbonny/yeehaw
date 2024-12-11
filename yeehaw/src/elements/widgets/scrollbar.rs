@@ -1,8 +1,8 @@
 use {
     crate::{Keyboard as KB, *},
     crossterm::event::{KeyEvent, MouseButton, MouseEvent, MouseEventKind},
+    std::cmp::Ordering,
     std::ops::{Deref, DerefMut},
-    std::{cell::RefCell, cmp::Ordering, rc::Rc},
 };
 
 /// NOTE the code in this file is structured in a "zipper" fashion between vertical and horizontal

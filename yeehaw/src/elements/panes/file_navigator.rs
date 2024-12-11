@@ -1,10 +1,8 @@
 use {
     crate::{Keyboard as KB, *},
     std::{
-        cell::RefCell,
         ops::{Deref, DerefMut},
         path::PathBuf,
-        rc::Rc,
     },
 };
 
@@ -113,7 +111,7 @@ impl FileNavPane {
             }
             content.push(chs);
         }
-        *self.pane.content.borrow_mut() = content.into();
+        self.pane.set_content(content.into())
     }
 }
 

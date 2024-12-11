@@ -1,11 +1,7 @@
 use {
     crate::{Keyboard as KB, *},
     crossterm::event::{MouseButton, MouseEventKind},
-    std::{
-        cell::RefCell,
-        ops::{Deref, DerefMut},
-        rc::Rc,
-    },
+    std::ops::{Deref, DerefMut},
 };
 
 /// Arbitrary Selector is a selector object which can be used to construct

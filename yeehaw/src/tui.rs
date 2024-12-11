@@ -27,7 +27,7 @@ use {
 /// NOTE: Currently the tui does not re-render when an event it called, hence if
 /// this value is set too large it will give the tui a laggy feel.
 /// A value of
-const DEFAULT_ANIMATION_SPEED: Duration = Duration::from_micros(50);
+const DEFAULT_ANIMATION_SPEED: Duration = Duration::from_micros(100);
 
 /// configuration of a tui instance
 pub struct Tui {

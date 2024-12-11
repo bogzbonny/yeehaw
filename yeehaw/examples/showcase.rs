@@ -11,9 +11,10 @@ async fn main() -> Result<(), Error> {
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let (mut tui, ctx) = Tui::new()?;
-    let main = PaneScrollable::new_expanding(&ctx, 90, 30);
+    //let main = PaneScrollable::new_expanding(&ctx, 90, 30);
+    //let main_vstack = VerticalStack::new(&ctx);
+    //let _ = main.add_element(Box::new(main_vstack.clone()));
     let main_vstack = VerticalStack::new(&ctx);
-    let _ = main.add_element(Box::new(main_vstack.clone()));
 
     // adding the menu bar and menu items
     let mb = MenuBar::top_menu_bar(&ctx).at(0, 0);
@@ -72,11 +73,12 @@ async fn main() -> Result<(), Error> {
     let _ = central_pane.push(Box::new(right_pane.clone()));
     let _ = left_pane.push(window_generation_zone(&ctx));
 
-    let train_pane = TerminalPane::new(&ctx)?;
-    train_pane.pane.set_dyn_height(DynVal::new_flex(0.7));
-    train_pane.pane.set_unfocused(&ctx);
-    train_pane.disable_cursor();
-    train_pane.execute_command("for i in {1..7}; do sl -l; done ; exit");
+    let train_pane = DebugSizePane::new(&ctx);
+    //let train_pane = TerminalPane::new(&ctx)?;
+    //train_pane.pane.set_dyn_height(DynVal::new_flex(0.7));
+    //train_pane.pane.set_unfocused(&ctx);
+    //train_pane.disable_cursor();
+    //train_pane.execute_command("for i in {1..7}; do sl -l; done ; exit");
     let _ = left_pane.push(Box::new(train_pane));
 
     let tabs = Tabs::new(&ctx);
@@ -113,16 +115,20 @@ async fn main() -> Result<(), Error> {
     let _ = tabs.select(0);
     let _ = right_pane.push(Box::new(tabs));
 
-    tui.run(Box::new(main)).await
+    //tui.run(Box::new(main)).await
+    tui.run(Box::new(main_vstack)).await
 }
 
 pub fn window_generation_zone(ctx: &Context) -> Box<dyn Element> {
     //let sc = PaneScrollable::new_expanding(ctx, 30, 10);
-    let el = PaneScrollable::new_expanding(ctx, 100, 100);
+    let sc = PaneScrollable::new_expanding(ctx, 100, 100);
+    let el = ParentPaneOfSelectable::new(ctx);
+    let _ = sc.add_element(Box::new(el.clone()));
+    let bordered =
+        Bordered::new_resizer(ctx, Box::new(sc.clone()), Style::default()).with_dyn_height(1.5);
     //let el = ParentPaneOfSelectable::new(ctx);
-    //let _ = sc.add_element(Box::new(el.clone()));
     //let bordered =
-    //    Bordered::new_resizer(ctx, Box::new(sc.clone()), Style::default()).with_dyn_height(1.5);
+    //    Bordered::new_resizer(ctx, Box::new(el.clone()), Style::default()).with_dyn_height(1.5);
 
     let l = Label::new(ctx, "window generation zone");
     let _ = el.add_element(Box::new(l));
@@ -148,6 +154,5 @@ pub fn window_generation_zone(ctx: &Context) -> Box<dyn Element> {
 
     let _ = el.add_element(Box::new(dial1));
 
-    //Box::new(bordered)
-    Box::new(el)
+    Box::new(bordered)
 }

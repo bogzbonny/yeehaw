@@ -7,9 +7,7 @@ use {
     crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
     portable_pty::{native_pty_system, ChildKiller, CommandBuilder, MasterPty, PtySize},
     std::{
-        cell::RefCell,
         io::{BufWriter, Read, Write},
-        rc::Rc,
         sync::{Arc, RwLock},
     },
     tokio::task::spawn_blocking,

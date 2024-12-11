@@ -7,7 +7,7 @@ use {
     std::{
         collections::HashMap,
         {
-            cell::{Ref, RefCell},
+            cell::{Ref, RefCell, RefMut},
             rc::Rc,
         },
     },
@@ -43,13 +43,11 @@ pub struct Pane {
     pub hooks:
         Rc<RefCell<HashMap<String, Vec<(ElementID, Box<dyn FnMut(&str, Box<dyn Element>)>)>>>>,
 
-    /// The pane's Content need not be the dimensions provided within
-    /// the Location, however the Content will simply be cut off if it exceeds
-    /// any dimension of the Location. If the Content is less than the dimensions
-    /// of the Location all extra characters will be filled with the DefaultCh.
-    /// The location of where to begin drawing from within the Content can be
-    /// offset using content_view_offset_x and content_view_offset_y
-    pub content: Rc<RefCell<DrawChs2D>>,
+    content: Rc<RefCell<DrawChs2D>>,
+    is_content_dirty: Rc<RefCell<bool>>,
+    drawing_cache: Rc<RefCell<Vec<DrawChPos>>>,
+    last_size: Rc<RefCell<Size>>,
+
     pub default_ch: Rc<RefCell<DrawCh>>,
     pub content_view_offset_x: Rc<RefCell<usize>>,
     pub content_view_offset_y: Rc<RefCell<usize>>,
@@ -78,6 +76,9 @@ impl Pane {
             parent: Rc::new(RefCell::new(None)),
             hooks: Rc::new(RefCell::new(HashMap::new())),
             content: Rc::new(RefCell::new(DrawChs2D::default())),
+            is_content_dirty: Rc::new(RefCell::new(true)),
+            last_size: Rc::new(RefCell::new(ctx.size)),
+            drawing_cache: Rc::new(RefCell::new(Vec::new())),
             default_ch: Rc::new(RefCell::new(DrawCh::default())),
             content_view_offset_x: Rc::new(RefCell::new(0)),
             content_view_offset_y: Rc::new(RefCell::new(0)),
@@ -239,16 +240,12 @@ impl Pane {
     }
 
     pub fn with_content(self, content: DrawChs2D) -> Pane {
-        *self.content.borrow_mut() = content;
+        self.set_content(content);
         self
     }
 
-    pub fn set_content(&self, content: DrawChs2D) {
-        *self.content.borrow_mut() = content;
-    }
-
     pub fn set_content_from_string<S: Into<String>>(&self, s: S) {
-        *self.content.borrow_mut() = DrawChs2D::from_string(s.into(), self.get_style());
+        self.set_content(DrawChs2D::from_string(s.into(), self.get_style()));
     }
 
     /// sets content from string
@@ -288,6 +285,26 @@ impl Pane {
 
     pub fn set_content_style(&self, sty: Style) {
         self.content.borrow_mut().change_all_styles(sty);
+    }
+
+    /// The pane's Content need not be the dimensions provided within
+    /// the Location, however the Content will simply be cut off if it exceeds
+    /// any dimension of the Location. If the Content is less than the dimensions
+    /// of the Location all extra characters will be filled with the DefaultCh.
+    /// The location of where to begin drawing from within the Content can be
+    /// offset using content_view_offset_x and content_view_offset_y
+    pub fn set_content(&self, content: DrawChs2D) {
+        *self.content.borrow_mut() = content;
+        *self.is_content_dirty.borrow_mut() = true;
+    }
+
+    pub fn get_content(&self) -> Ref<DrawChs2D> {
+        self.content.borrow()
+    }
+
+    pub fn get_content_mut(&self) -> RefMut<DrawChs2D> {
+        *self.is_content_dirty.borrow_mut() = true;
+        self.content.borrow_mut()
     }
 
     pub fn content_width(&self) -> usize {
@@ -478,6 +495,13 @@ impl Element for Pane {
 
     /// Drawing compiles all of the DrawChPos necessary to draw this element
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+        if !*self.is_content_dirty.borrow() && *self.last_size.borrow() == ctx.size {
+            return self.drawing_cache.borrow().clone();
+        }
+
+        self.is_content_dirty.replace(false);
+        self.last_size.replace(ctx.size.clone());
+
         let mut chs = vec![];
 
         let (xmin, xmax, ymin, ymax) = if let Some(vis_region) = ctx.visible_region {
@@ -517,6 +541,7 @@ impl Element for Pane {
                 chs.push(DrawChPos::new(ch_out, x as u16, y as u16))
             }
         }
+        *self.drawing_cache.borrow_mut() = chs.clone();
         chs
     }
 

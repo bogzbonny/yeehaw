@@ -1,7 +1,6 @@
 use {
     crate::{Keyboard as KB, *},
     crossterm::event::{MouseButton, MouseEventKind},
-    std::{cell::RefCell, rc::Rc},
 };
 
 /// TODO DynVal button width

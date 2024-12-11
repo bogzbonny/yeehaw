@@ -2,7 +2,6 @@ use {
     super::{VerticalSBPositions, VerticalScrollbar},
     crate::{Keyboard as KB, *},
     crossterm::event::{MouseButton, MouseEventKind},
-    std::{cell::RefCell, rc::Rc},
 };
 
 #[derive(Clone)]
@@ -363,8 +362,7 @@ impl ListBoxInner {
             let (y_start, y_end) = self.get_content_y_range_for_item_index(i);
             for y in y_start..=y_end {
                 self.pane
-                    .content
-                    .borrow_mut()
+                    .get_content_mut()
                     .change_style_along_y(y, sty.clone());
             }
 
@@ -372,7 +370,7 @@ impl ListBoxInner {
             let entries_len = self.entries.borrow().len();
             for i in entries_len * *self.lines_per_item.borrow()..self.pane.get_height(ctx) {
                 let sty = self.current_sty.borrow().clone();
-                self.pane.content.borrow_mut().change_style_along_y(i, sty);
+                self.pane.get_content_mut().change_style_along_y(i, sty);
             }
         }
     }

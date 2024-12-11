@@ -156,6 +156,8 @@ pub fn impl_pane_basics_from(attr: TokenStream, item: TokenStream) -> TokenStrea
     fn get_dyn_location(&self) -> DynLocation;
     fn set_dyn_location(&self, l: DynLocation);
     fn set_content(&self, content: DrawChs2D);
+    fn get_content(&self) -> Ref<DrawChs2D>;
+    fn get_content_mut(&self) -> RefMut<DrawChs2D>;
     fn set_content_from_string<S: Into<String>>(&self, s: S);
     fn set_content_from_string_with_style(&self, ctx: &Context, s: &str, sty: Style);
     fn set_content_style(&self, sty: Style);

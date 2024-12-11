@@ -4,7 +4,6 @@ use {
         Keyboard as KB, *,
     },
     crossterm::event::{KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
-    std::{cell::RefCell, rc::Rc},
 };
 
 // TODO better multiline cursor movement
@@ -1387,11 +1386,9 @@ impl TextBoxInner {
                 }
                 if let Some(abs_pos) = wr_ch.abs_pos {
                     let sty = hook(ctx.clone(), abs_pos, existing_sty);
-                    self.pane.content.borrow_mut().change_style_at_xy(
-                        wr_ch.x_pos,
-                        wr_ch.y_pos,
-                        sty,
-                    );
+                    self.pane
+                        .get_content_mut()
+                        .change_style_at_xy(wr_ch.x_pos, wr_ch.y_pos, sty);
                 }
             }
         }
@@ -1400,7 +1397,7 @@ impl TextBoxInner {
         if *self.selectedness.borrow() == Selectability::Selected && *self.ch_cursor.borrow() {
             let (cur_x, cur_y) = w.cursor_x_and_y(self.get_cursor_pos());
             if let (Some(cur_x), Some(cur_y)) = (cur_x, cur_y) {
-                self.pane.content.borrow_mut().change_style_at_xy(
+                self.pane.get_content_mut().change_style_at_xy(
                     cur_x,
                     cur_y,
                     self.cursor_style.borrow().clone(),
@@ -1415,7 +1412,7 @@ impl TextBoxInner {
             let end = if start_pos < cur_pos { cur_pos } else { start_pos };
             for i in start..=end {
                 if let (Some(cur_x), Some(cur_y)) = w.cursor_x_and_y(i) {
-                    self.pane.content.borrow_mut().change_style_at_xy(
+                    self.pane.get_content_mut().change_style_at_xy(
                         cur_x,
                         cur_y,
                         self.cursor_style.borrow().clone(),

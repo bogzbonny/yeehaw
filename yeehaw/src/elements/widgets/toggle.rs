@@ -1,7 +1,6 @@
 use {
     crate::{Keyboard as KB, *},
     crossterm::event::{MouseButton, MouseEventKind},
-    std::{cell::RefCell, rc::Rc},
 };
 
 #[derive(Clone)]
@@ -127,12 +126,12 @@ impl Toggle {
         self.pane.set_content_from_string(&(left.clone() + &right));
         if *self.left_selected.borrow() {
             for i in 0..left_len {
-                self.pane.pane.pane.content.borrow_mut()[0][i].style =
+                self.pane.pane.pane.get_content_mut()[0][i].style =
                     self.selected_sty.borrow().clone();
             }
         } else {
             for i in left_len..left_len + right_len {
-                self.pane.pane.pane.content.borrow_mut()[0][i].style =
+                self.pane.pane.pane.get_content_mut()[0][i].style =
                     self.selected_sty.borrow().clone();
             }
         }

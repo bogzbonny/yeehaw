@@ -1,7 +1,4 @@
-use {
-    //std::env,
-    yeehaw::{Color, DynVal, Error, ParentPane, /*Gradient,*/ RadialGradient, TimeGradient, Tui,},
-};
+use yeehaw::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {

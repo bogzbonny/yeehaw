@@ -40,3 +40,10 @@ pub use {
     style::{Attributes, BgTranspSrc, FgTranspSrc, Style, UlTranspSrc},
     tui::Tui,
 };
+
+// we re-export these so that the user doesn't have to import them from std
+// if they are using yeehaw-derive
+pub use std::{
+    cell::{Ref, RefCell, RefMut},
+    rc::Rc,
+};

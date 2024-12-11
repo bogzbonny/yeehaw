@@ -7,7 +7,10 @@ use {
     std::collections::HashMap,
     std::{
         ops::Deref,
-        {cell::RefCell, rc::Rc},
+        {
+            cell::{Ref, RefCell, RefMut},
+            rc::Rc,
+        },
     },
 };
 
@@ -250,7 +253,7 @@ impl Element for ParentPane {
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         if !self.get_visible() {
-            return vec![];
+            return Vec::with_capacity(0);
         }
         let mut out = self.pane.drawing(ctx);
         out.extend(self.eo.all_drawing(ctx));

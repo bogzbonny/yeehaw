@@ -1,7 +1,7 @@
 use {
     crate::*,
     crossterm::event::{KeyModifiers, MouseEventKind},
-    std::{cell::RefCell, rc::Rc},
+    rayon::prelude::*,
 };
 
 /// PaneScrollable is a simple pane which exhibits offsets for the content.
@@ -168,19 +168,33 @@ impl Element for PaneScrollable {
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         let inner_ctx = self.inner_ctx(ctx);
-        let out = self.pane.drawing(&inner_ctx);
-        let mut out = DrawChPosVec::new(out);
+        let mut dcps = self.pane.drawing(&inner_ctx);
         let x_off = *self.content_offset_x.borrow();
         let y_off = *self.content_offset_y.borrow();
         let max_x = x_off + self.get_content_width(ctx);
         let max_y = y_off + self.get_content_height(ctx);
-        out.adjust_for_offset_and_truncate(
-            *self.content_offset_x.borrow(),
-            *self.content_offset_y.borrow(),
-            max_x,
-            max_y,
-        );
-        out.0
+
+        let offset_x = *self.content_offset_x.borrow();
+        let offset_y = *self.content_offset_y.borrow();
+
+        // NOTE computational bottleneck, use rayon
+        dcps.par_iter_mut().for_each(|dcp| {
+            if (dcp.x as usize) < offset_x
+                || (dcp.y as usize) < offset_y
+                || (dcp.x as usize) > max_x
+                || (dcp.y as usize) > max_y
+            {
+                // it'd be better to delete, but we can't delete from a parallel iterator
+                // also using a filter here its slower that this
+                dcp.ch = DrawCh::transparent();
+                (dcp.x, dcp.y) = (0, 0);
+            } else {
+                dcp.x = (dcp.x as usize - offset_x) as u16;
+                dcp.y = (dcp.y as usize - offset_y) as u16;
+            }
+        });
+
+        dcps
     }
 
     fn set_content_x_offset(&self, ctx: &Context, x: usize) {

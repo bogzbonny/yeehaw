@@ -4,7 +4,6 @@ use {
     ratatui::widgets::StatefulWidget,
     //ratatui::widgets::StatefulWidget;
     ratatui_image::{picker::Picker, protocol::StatefulProtocol, Resize, StatefulImage},
-    std::{cell::RefCell, rc::Rc},
 };
 
 // TODO integrate in resize kind

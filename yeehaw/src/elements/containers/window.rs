@@ -1,7 +1,6 @@
 use {
     crate::*,
     crossterm::event::{MouseButton, MouseEventKind},
-    std::{cell::RefCell, rc::Rc},
 };
 
 // TODO Top bar movements should be added to the Top Bar logic instead of the window logic

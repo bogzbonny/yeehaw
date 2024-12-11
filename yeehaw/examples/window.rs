@@ -1,7 +1,4 @@
-use {
-    std::{cell::RefCell, rc::Rc},
-    yeehaw::*,
-};
+use yeehaw::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {

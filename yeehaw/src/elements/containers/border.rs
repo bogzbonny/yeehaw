@@ -1,7 +1,6 @@
 use {
     crate::*,
     crossterm::event::{MouseButton, MouseEventKind},
-    std::{cell::RefCell, rc::Rc},
 };
 
 /// displays the size

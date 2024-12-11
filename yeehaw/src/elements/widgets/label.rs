@@ -1,7 +1,4 @@
-use {
-    crate::*,
-    std::{cell::RefCell, rc::Rc},
-};
+use crate::*;
 
 #[derive(Clone)]
 pub struct Label {
@@ -196,8 +193,8 @@ impl Label {
     /// Rotate the text by 90 degrees
     /// intended to be used with WithDownJustification or WithUpJustification
     pub fn with_rotated_text(self) -> Self {
-        let rotated = self.pane.content.borrow().rotate_90_deg();
-        *self.pane.content.borrow_mut() = rotated;
+        let rotated = self.pane.get_content().rotate_90_deg();
+        self.pane.set_content(rotated);
         let old_height = self.pane.get_dyn_height();
         let old_width = self.pane.get_dyn_width();
         self.pane.set_dyn_width(old_height);
