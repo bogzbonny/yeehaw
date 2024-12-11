@@ -321,12 +321,6 @@ impl ElementOrganizer {
                 start_y = 0;
             }
 
-            //dcps.par_iter_mut().for_each(|dcp| {
-            //    dcp.update_colors_for_time_and_pos(child_s, d);
-            //    dcp.x += start_x as u16;
-            //    dcp.y += start_y as u16;
-            //});
-
             // NOTE this is a computational bottleneck
             // currently using rayon for parallelization
             if *details.overflow.borrow() {

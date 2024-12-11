@@ -171,16 +171,17 @@ impl Element for PaneScrollable {
         let mut dcps = self.pane.drawing(&inner_ctx);
         let x_off = *self.content_offset_x.borrow();
         let y_off = *self.content_offset_y.borrow();
+        if x_off == 0 && y_off == 0 {
+            return dcps;
+        }
+
         let max_x = x_off + self.get_content_width(ctx);
         let max_y = y_off + self.get_content_height(ctx);
 
-        let offset_x = *self.content_offset_x.borrow();
-        let offset_y = *self.content_offset_y.borrow();
-
         // NOTE computational bottleneck, use rayon
         dcps.par_iter_mut().for_each(|dcp| {
-            if (dcp.x as usize) < offset_x
-                || (dcp.y as usize) < offset_y
+            if (dcp.x as usize) < x_off
+                || (dcp.y as usize) < y_off
                 || (dcp.x as usize) > max_x
                 || (dcp.y as usize) > max_y
             {
@@ -189,8 +190,8 @@ impl Element for PaneScrollable {
                 dcp.ch = DrawCh::transparent();
                 (dcp.x, dcp.y) = (0, 0);
             } else {
-                dcp.x = (dcp.x as usize - offset_x) as u16;
-                dcp.y = (dcp.y as usize - offset_y) as u16;
+                dcp.x = (dcp.x as usize - x_off) as u16;
+                dcp.y = (dcp.y as usize - y_off) as u16;
             }
         });
 

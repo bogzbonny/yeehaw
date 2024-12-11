@@ -11,10 +11,7 @@ async fn main() -> Result<(), Error> {
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let (mut tui, ctx) = Tui::new()?;
-    //let main = PaneScrollable::new_expanding(&ctx, 90, 30);
-    //let main_vstack = VerticalStack::new(&ctx);
-    //let _ = main.add_element(Box::new(main_vstack.clone()));
-    let main_vstack = VerticalStack::new(&ctx);
+    let main = VerticalStack::new(&ctx);
 
     // adding the menu bar and menu items
 
@@ -39,12 +36,12 @@ async fn main() -> Result<(), Error> {
             );
         }
     }
-    let _ = main_vstack.push(Box::new(mb));
+    let _ = main.push(Box::new(mb));
 
     let header_pane = ParentPaneOfSelectable::new(&ctx)
         .with_dyn_height(DynVal::new_fixed(7))
         .with_unfocused(&ctx);
-    let _ = main_vstack.push(Box::new(header_pane.clone()));
+    let _ = main.push(Box::new(header_pane.clone()));
 
     let gr = Gradient::x_grad_rainbow(5).with_angle(60.);
     let mtext = FigletText::new(
@@ -67,7 +64,7 @@ async fn main() -> Result<(), Error> {
     let _ = header_pane.add_element(Box::new(button));
 
     let central_pane = HorizontalStack::new(&ctx);
-    let _ = main_vstack.push(Box::new(central_pane.clone()));
+    let _ = main.push(Box::new(central_pane.clone()));
     let left_pane = VerticalStack::new(&ctx).with_width(DynVal::new_flex(0.7));
     let right_pane = VerticalStack::new(&ctx);
     let _ = central_pane.push(Box::new(left_pane.clone()));
@@ -115,20 +112,15 @@ async fn main() -> Result<(), Error> {
     let _ = tabs.select(0);
     let _ = right_pane.push(Box::new(tabs));
 
-    //tui.run(Box::new(main)).await
-    tui.run(Box::new(main_vstack)).await
+    tui.run(Box::new(main)).await
 }
 
 pub fn window_generation_zone(ctx: &Context) -> Box<dyn Element> {
-    //let sc = PaneScrollable::new_expanding(ctx, 30, 10);
-    let sc = PaneScrollable::new_expanding(ctx, 100, 100);
+    let sc = PaneScrollable::new_expanding(ctx, 30, 10);
     let el = ParentPaneOfSelectable::new(ctx);
     let _ = sc.add_element(Box::new(el.clone()));
     let bordered =
         Bordered::new_resizer(ctx, Box::new(sc.clone()), Style::default()).with_dyn_height(1.5);
-    //let el = ParentPaneOfSelectable::new(ctx);
-    //let bordered =
-    //    Bordered::new_resizer(ctx, Box::new(el.clone()), Style::default()).with_dyn_height(1.5);
 
     let l = Label::new(ctx, "window generation zone");
     let _ = el.add_element(Box::new(l));
