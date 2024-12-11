@@ -1,5 +1,9 @@
 use yeehaw::*;
 
+/// NOTE this example requires steam locomotive (`sl`) to be installed if you want
+/// to see the train. Additionally it should be run from this showcase directory
+/// for the showcase-tab to work (which runs `cargo run --release --example showcase`).
+
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     // uncomment the following line to enable logging
@@ -7,7 +11,9 @@ async fn main() -> Result<(), Error> {
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let (mut tui, ctx) = Tui::new()?;
-    let el = VerticalStack::new(&ctx);
+    let main = PaneScrollable::new_expanding(&ctx, 90, 30);
+    let main_vstack = VerticalStack::new(&ctx);
+    let _ = main.add_element(Box::new(main_vstack.clone()));
 
     // adding the menu bar and menu items
     let mb = MenuBar::top_menu_bar(&ctx).at(0, 0);
@@ -31,12 +37,12 @@ async fn main() -> Result<(), Error> {
             );
         }
     }
-    let _ = el.push(Box::new(mb));
+    let _ = main_vstack.push(Box::new(mb));
 
     let header_pane = ParentPaneOfSelectable::new(&ctx)
         .with_dyn_height(DynVal::new_fixed(7))
         .with_unfocused(&ctx);
-    let _ = el.push(Box::new(header_pane.clone()));
+    let _ = main_vstack.push(Box::new(header_pane.clone()));
 
     let gr = Gradient::x_grad_rainbow(5).with_angle(60.);
     let mtext = FigletText::new(
@@ -59,16 +65,12 @@ async fn main() -> Result<(), Error> {
     let _ = header_pane.add_element(Box::new(button));
 
     let central_pane = HorizontalStack::new(&ctx);
-    let _ = el.push(Box::new(central_pane.clone()));
+    let _ = main_vstack.push(Box::new(central_pane.clone()));
     let left_pane = VerticalStack::new(&ctx).with_width(DynVal::new_flex(0.7));
     let right_pane = VerticalStack::new(&ctx);
     let _ = central_pane.push(Box::new(left_pane.clone()));
     let _ = central_pane.push(Box::new(right_pane.clone()));
-    let left_top = ParentPaneOfSelectable::new(&ctx);
-    let left_top_bordered =
-        Bordered::new_resizer(&ctx, Box::new(left_top.clone()), Style::default())
-            .with_dyn_height(1.5);
-    let _ = left_pane.push(Box::new(left_top_bordered));
+    let _ = left_pane.push(window_generation_zone(&ctx));
 
     let train_pane = TerminalPane::new(&ctx)?;
     train_pane.pane.set_dyn_height(DynVal::new_flex(0.7));
@@ -109,14 +111,24 @@ async fn main() -> Result<(), Error> {
     let _ = tabs.push_with_on_open_fn(Box::new(showcase), "showcase", on_showcase_open_fn);
 
     let _ = tabs.select(0);
-
     let _ = right_pane.push(Box::new(tabs));
 
-    let l = Label::new(&ctx, "window generation zone");
-    let _ = left_top.add_element(Box::new(l));
+    tui.run(Box::new(main)).await
+}
+
+pub fn window_generation_zone(ctx: &Context) -> Box<dyn Element> {
+    //let sc = PaneScrollable::new_expanding(ctx, 30, 10);
+    let el = PaneScrollable::new_expanding(ctx, 100, 100);
+    //let el = ParentPaneOfSelectable::new(ctx);
+    //let _ = sc.add_element(Box::new(el.clone()));
+    //let bordered =
+    //    Bordered::new_resizer(ctx, Box::new(sc.clone()), Style::default()).with_dyn_height(1.5);
+
+    let l = Label::new(ctx, "window generation zone");
+    let _ = el.add_element(Box::new(l));
 
     let dial1 = Dial::new_spacious(
-        &ctx,
+        ctx,
         vec![
             (0, "OpA"),
             (1, "OpB"),
@@ -133,7 +145,9 @@ async fn main() -> Result<(), Error> {
         ],
     )
     .at(0, 7);
-    let _ = left_top.add_element(Box::new(dial1));
 
-    tui.run(Box::new(el)).await
+    let _ = el.add_element(Box::new(dial1));
+
+    //Box::new(bordered)
+    Box::new(el)
 }

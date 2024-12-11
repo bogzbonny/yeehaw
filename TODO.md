@@ -8,12 +8,11 @@
      - MAYBE?? do after window generator is complete
 01. execute a command on opening a tab (for the first time?) useful for showcase
     tab
+01. scrollable pane which grows if above min dimension
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 01. cleanup the widgets example 
      - showcase should just use the same widgets example pane
-
-01. scrollable pane which grows if above min dimension
 
 01. showcase example 
      - a menu
@@ -28,6 +27,7 @@
        - dial with window pane types: basic, scrollable, scrollable-expanding, terminal, 
        - border-kind: none, basic, normal scrollbars, resizer with border-scrollbars, double width, large, tight, 
                       border-with-text, border-resizer, border-mover
+       - shadow cb
        - generate button
      - TABS Zone
        - gradient 

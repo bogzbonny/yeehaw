@@ -43,6 +43,8 @@ impl PaneScrollable {
         }
     }
 
+    /// Create a scrollable pane which expands to fill the parent pane when the parent pane is
+    /// larger than the width and height provided.
     pub fn new_expanding(ctx: &Context, width: usize, height: usize) -> Self {
         Self {
             pane: ParentPane::new(ctx, Self::KIND).with_transparent(),
@@ -107,65 +109,61 @@ impl PaneScrollable {
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for PaneScrollable {
     fn receive_event_inner(&self, ctx: &Context, mut ev: Event) -> (bool, EventResponses) {
-        match &mut ev {
-            Event::Mouse(me) => {
-                // adjust the pos of the mouse event
-                me.column += *self.content_offset_x.borrow() as u16;
-                me.row += *self.content_offset_y.borrow() as u16;
+        let inner_ctx = self.inner_ctx(ctx);
+        let (captured, resps) = self.pane.receive_event(&inner_ctx, ev.clone());
+        if captured {
+            return (captured, resps);
+        }
+        if let Event::Mouse(me) = &mut ev {
+            // adjust the pos of the mouse event
+            me.column += *self.content_offset_x.borrow() as u16;
+            me.row += *self.content_offset_y.borrow() as u16;
 
-                let Some(sc_rate) = *self.scroll_rate.borrow() else {
-                    let inner_ctx = self.inner_ctx(ctx);
-                    return self.pane.receive_event(&inner_ctx, ev);
-                };
+            let Some(sc_rate) = *self.scroll_rate.borrow() else {
+                let inner_ctx = self.inner_ctx(ctx);
+                return self.pane.receive_event(&inner_ctx, ev);
+            };
 
-                let scroll = match me.kind {
-                    MouseEventKind::ScrollDown if me.modifiers == KeyModifiers::NONE => {
-                        Some((0i16, sc_rate))
-                    }
-                    MouseEventKind::ScrollUp if me.modifiers == KeyModifiers::NONE => {
-                        Some((0, -sc_rate))
-                    }
-                    MouseEventKind::ScrollDown if me.modifiers == KeyModifiers::SHIFT => {
-                        Some((sc_rate, 0))
-                    }
-                    MouseEventKind::ScrollUp if me.modifiers == KeyModifiers::SHIFT => {
-                        Some((-sc_rate, 0))
-                    }
-                    MouseEventKind::ScrollLeft => Some((-sc_rate, 0)),
-                    MouseEventKind::ScrollRight => Some((sc_rate, 0)),
-                    _ => None,
-                };
-                match scroll {
-                    Some((dx, dy)) => {
-                        let x = if dx < 0 {
-                            self.content_offset_x
-                                .borrow()
-                                .saturating_sub((-dx) as usize)
-                        } else {
-                            *self.content_offset_x.borrow() + dx as usize
-                        };
-                        let y = if dy < 0 {
-                            self.content_offset_y
-                                .borrow()
-                                .saturating_sub((-dy) as usize)
-                        } else {
-                            *self.content_offset_y.borrow() + dy as usize
-                        };
-                        self.set_content_x_offset(ctx, x);
-                        self.set_content_y_offset(ctx, y);
-                        (true, EventResponses::default())
-                    }
-                    None => {
-                        let inner_ctx = self.inner_ctx(ctx);
-                        self.pane.receive_event(&inner_ctx, ev)
-                    }
+            let scroll = match me.kind {
+                MouseEventKind::ScrollDown if me.modifiers == KeyModifiers::NONE => {
+                    Some((0i16, sc_rate))
+                }
+                MouseEventKind::ScrollUp if me.modifiers == KeyModifiers::NONE => {
+                    Some((0, -sc_rate))
+                }
+                MouseEventKind::ScrollDown if me.modifiers == KeyModifiers::SHIFT => {
+                    Some((sc_rate, 0))
+                }
+                MouseEventKind::ScrollUp if me.modifiers == KeyModifiers::SHIFT => {
+                    Some((-sc_rate, 0))
+                }
+                MouseEventKind::ScrollLeft => Some((-sc_rate, 0)),
+                MouseEventKind::ScrollRight => Some((sc_rate, 0)),
+                _ => None,
+            };
+            if let Some((dx, dy)) = scroll {
+                if !(dx == 0 && dy == 0) {
+                    let x = if dx < 0 {
+                        self.content_offset_x
+                            .borrow()
+                            .saturating_sub((-dx) as usize)
+                    } else {
+                        *self.content_offset_x.borrow() + dx as usize
+                    };
+                    let y = if dy < 0 {
+                        self.content_offset_y
+                            .borrow()
+                            .saturating_sub((-dy) as usize)
+                    } else {
+                        *self.content_offset_y.borrow() + dy as usize
+                    };
+                    self.set_content_x_offset(ctx, x);
+                    self.set_content_y_offset(ctx, y);
+                    return (true, resps);
                 }
             }
-            _ => {
-                let inner_ctx = self.inner_ctx(ctx);
-                self.pane.receive_event(&inner_ctx, ev)
-            }
         }
+        (captured, resps)
     }
 
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
