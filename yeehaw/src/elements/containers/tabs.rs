@@ -1,7 +1,6 @@
 use {
     crate::*,
     crossterm::event::{MouseButton, MouseEventKind},
-    std::{cell::RefCell, rc::Rc},
 };
 
 /// TODO dragging tabs
@@ -28,6 +27,9 @@ pub struct TabsTop {
     pub highlight_style: Rc<RefCell<Style>>,
     /// the style for the normal tabs
     pub normal_style: Rc<RefCell<Style>>,
+
+    pub is_dirty: Rc<RefCell<bool>>,
+    pub cached_drawing: Rc<RefCell<Vec<DrawChPos>>>,
 }
 
 pub type OnOpenFn = Option<Box<dyn FnOnce()>>;
@@ -53,6 +55,8 @@ impl TabsTop {
                     .with_bg(Color::LIGHT_YELLOW)
                     .with_fg(Color::BLACK),
             )),
+            is_dirty: Rc::new(RefCell::new(true)),
+            cached_drawing: Rc::new(RefCell::new(Vec::new())),
         };
 
         // set the height/width of the tabs top
@@ -77,18 +81,22 @@ impl TabsTop {
 
     pub fn push<S: Into<String>>(&self, el: ElementID, name: S, on_open_fn: OnOpenFn) {
         self.els.borrow_mut().push((el, name.into(), on_open_fn));
+        self.is_dirty.replace(true);
     }
 
     pub fn insert<S: Into<String>>(&self, idx: usize, el: ElementID, name: S) {
         self.els.borrow_mut().insert(idx, (el, name.into(), None));
+        self.is_dirty.replace(true);
     }
 
     pub fn remove(&self, idx: usize) -> ElementID {
         let (el_id, _, _) = self.els.borrow_mut().remove(idx);
+        self.is_dirty.replace(true);
         el_id
     }
 
     pub fn clear(&self) {
+        self.is_dirty.replace(true);
         self.els.borrow_mut().clear();
     }
 
@@ -118,6 +126,7 @@ impl Element for TabsTop {
                             if x >= pos && x < pos + name_len {
                                 *self.selected.borrow_mut() = Some(i);
                                 let (_, resps) = self.pane.receive_event(ctx, ev);
+                                self.is_dirty.replace(true);
                                 return (true, resps);
                             }
                             pos += name_len;
@@ -132,6 +141,12 @@ impl Element for TabsTop {
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
         // set the names of the tabs
         let mut chs = self.pane.drawing(ctx);
+        if !*self.is_dirty.borrow() {
+            let out = self.cached_drawing.borrow().clone();
+            chs.extend(out);
+            return chs;
+        }
+        let mut out = Vec::new();
         let mut pos = 0usize;
         for (i, name_) in self
             .els
@@ -156,8 +171,11 @@ impl Element for TabsTop {
             let name_len = name.chars().count();
             let name_chs = DrawChPos::new_from_string(name, pos as u16, 0, style);
             pos += name_len;
-            chs.extend(name_chs);
+            out.extend(name_chs);
         }
+        self.is_dirty.replace(false);
+        *self.cached_drawing.borrow_mut() = out.clone();
+        chs.extend(out);
         chs
     }
 }

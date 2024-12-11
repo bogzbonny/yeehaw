@@ -17,6 +17,7 @@ async fn main() -> Result<(), Error> {
     let main_vstack = VerticalStack::new(&ctx);
 
     // adding the menu bar and menu items
+
     let mb = MenuBar::top_menu_bar(&ctx).at(0, 0);
     for i in 0..3 {
         mb.add_item(&ctx, format!("upper/item-{i}"), None);
@@ -111,7 +112,6 @@ async fn main() -> Result<(), Error> {
     let _ = tabs.push(Box::new(el4), "file-nav");
     let _ = tabs.push(Box::new(el5), "terminal");
     let _ = tabs.push_with_on_open_fn(Box::new(showcase), "showcase", on_showcase_open_fn);
-
     let _ = tabs.select(0);
     let _ = right_pane.push(Box::new(tabs));
 
