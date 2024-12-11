@@ -221,7 +221,7 @@ impl DrawChPos {
             };
             fg.0.to_crossterm_color(ctx, transp_src, self.x, self.y)
         });
-        let ul = self.ch.style.underline.clone().map(|ul| {
+        let ul = self.ch.style.underline_color.clone().map(|ul| {
             let transp_src = match ul.1 {
                 UlTranspSrc::LowerFg => prev_fg,
                 UlTranspSrc::LowerBg => prev_bg,

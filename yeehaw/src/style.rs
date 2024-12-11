@@ -9,7 +9,7 @@ use {
 pub struct Style {
     pub fg: Option<(Color, FgTranspSrc)>,
     pub bg: Option<(Color, BgTranspSrc)>,
-    pub underline: Option<(Color, UlTranspSrc)>,
+    pub underline_color: Option<(Color, UlTranspSrc)>,
     pub attr: Attributes,
 }
 
@@ -49,7 +49,7 @@ impl Style {
         Self {
             fg: None,
             bg: None,
-            underline: None,
+            underline_color: None,
             attr: Attributes::new(),
         }
     }
@@ -58,7 +58,7 @@ impl Style {
         Self {
             fg: Some((Color::TRANSPARENT, FgTranspSrc::LowerFg)),
             bg: Some((Color::TRANSPARENT, BgTranspSrc::LowerBg)),
-            underline: Some((Color::TRANSPARENT, UlTranspSrc::LowerUl)),
+            underline_color: Some((Color::TRANSPARENT, UlTranspSrc::LowerUl)),
             attr: Attributes::new(),
         }
     }
@@ -69,7 +69,7 @@ impl Style {
         Self {
             fg: Some((c.clone(), FgTranspSrc::LowerFg)),
             bg: Some((c, BgTranspSrc::LowerBg)),
-            underline: Some((Color::TRANSPARENT, UlTranspSrc::LowerUl)),
+            underline_color: Some((Color::TRANSPARENT, UlTranspSrc::LowerUl)),
             attr: Attributes::new(),
         }
     }
@@ -78,7 +78,7 @@ impl Style {
         Self {
             fg: Some((Color::WHITE, FgTranspSrc::LowerFg)),
             bg: Some((Color::TRANSPARENT, BgTranspSrc::LowerBg)),
-            underline: Some((Color::TRANSPARENT, UlTranspSrc::LowerUl)),
+            underline_color: Some((Color::TRANSPARENT, UlTranspSrc::LowerUl)),
             attr: Attributes::new(),
         }
     }
@@ -88,7 +88,7 @@ impl Style {
         Self {
             fg: Some((fg, FgTranspSrc::LowerFg)),
             bg: Some((bg, BgTranspSrc::LowerBg)),
-            underline: None,
+            underline_color: None,
             attr: Attributes::new(),
         }
     }
@@ -103,8 +103,8 @@ impl Style {
         self
     }
 
-    pub fn with_underline(mut self, underline: Color) -> Self {
-        self.underline = Some((underline, UlTranspSrc::default()));
+    pub fn with_underline_color(mut self, underline: Color) -> Self {
+        self.underline_color = Some((underline, UlTranspSrc::default()));
         self
     }
 
@@ -123,13 +123,13 @@ impl Style {
     }
 
     pub fn with_ul_transp_src(mut self, ul_transp_src: UlTranspSrc) -> Self {
-        if let Some(ul) = self.underline.as_mut() {
+        if let Some(ul) = self.underline_color.as_mut() {
             ul.1 = ul_transp_src;
         }
         self
     }
 
-    pub const fn with_attr(mut self, attr: Attributes) -> Self {
+    pub const fn with_attrs(mut self, attr: Attributes) -> Self {
         self.attr = attr;
         self
     }
@@ -147,14 +147,99 @@ impl Style {
         }
     }
 
-    pub fn set_underline(&mut self, underline: Color) {
-        match self.underline {
+    pub fn set_underline_color(&mut self, underline: Color) {
+        match self.underline_color {
             Some(ref mut underline_) => underline_.0 = underline,
-            None => self.underline = Some((underline, UlTranspSrc::default())),
+            None => self.underline_color = Some((underline, UlTranspSrc::default())),
         }
     }
-    pub fn set_attr(&mut self, attr: Attributes) {
+    pub fn set_attrs(&mut self, attr: Attributes) {
         self.attr = attr;
+    }
+
+    pub const fn with_bold(mut self) -> Self {
+        self.attr.bold = true;
+        self
+    }
+
+    pub const fn with_faded(mut self) -> Self {
+        self.attr.faded = true;
+        self
+    }
+
+    pub const fn with_italic(mut self) -> Self {
+        self.attr.italic = true;
+        self
+    }
+
+    pub const fn with_underlined(mut self) -> Self {
+        self.attr.underlined = true;
+        self
+    }
+
+    pub const fn with_doubleunderlined(mut self) -> Self {
+        self.attr.doubleunderlined = true;
+        self
+    }
+
+    pub const fn with_undercurled(mut self) -> Self {
+        self.attr.undercurled = true;
+        self
+    }
+
+    pub const fn with_underdotted(mut self) -> Self {
+        self.attr.underdotted = true;
+        self
+    }
+
+    pub const fn with_underdashed(mut self) -> Self {
+        self.attr.underdashed = true;
+        self
+    }
+
+    pub const fn with_slowblink(mut self) -> Self {
+        self.attr.slowblink = true;
+        self
+    }
+
+    pub const fn with_rapidblink(mut self) -> Self {
+        self.attr.rapidblink = true;
+        self
+    }
+
+    pub const fn with_reverse(mut self) -> Self {
+        self.attr.reverse = true;
+        self
+    }
+
+    pub const fn with_hidden(mut self) -> Self {
+        self.attr.hidden = true;
+        self
+    }
+
+    pub const fn with_crossedout(mut self) -> Self {
+        self.attr.crossedout = true;
+        self
+    }
+
+    pub const fn with_fraktur(mut self) -> Self {
+        self.attr.fraktur = true;
+        self
+    }
+
+    pub const fn with_framed(mut self) -> Self {
+        self.attr.framed = true;
+        self
+    }
+
+    pub const fn with_encircled(mut self) -> Self {
+        self.attr.encircled = true;
+        self
+    }
+
+    pub const fn with_overlined(mut self) -> Self {
+        self.attr.overlined = true;
+        self
     }
 
     pub fn update_colors_for_time_and_pos(
@@ -166,15 +251,18 @@ impl Style {
         if let Some(bg) = self.bg.as_mut() {
             bg.0.update_color(s, dur_since_launch, x, y);
         }
-        if let Some(underline) = self.underline.as_mut() {
+        if let Some(underline) = self.underline_color.as_mut() {
             underline.0.update_color(s, dur_since_launch, x, y);
         }
     }
 
     // overlays the overlay style on top of self colors
     pub fn overlay_style(&mut self, overlay: &Self) {
-        let (under_fg, under_bg, under_ul) =
-            (self.fg.clone(), self.bg.clone(), self.underline.clone());
+        let (under_fg, under_bg, under_ul) = (
+            self.fg.clone(),
+            self.bg.clone(),
+            self.underline_color.clone(),
+        );
         if let Some(ol_bg) = overlay.bg.clone() {
             let under = match ol_bg.1 {
                 BgTranspSrc::LowerFg => under_fg.clone().map(|(fg, _)| fg),
@@ -199,14 +287,14 @@ impl Style {
             }
         };
 
-        if let Some(ol_ul) = overlay.underline.clone() {
+        if let Some(ol_ul) = overlay.underline_color.clone() {
             let under = match ol_ul.1 {
                 UlTranspSrc::LowerFg => under_fg.clone().map(|(fg, _)| fg),
                 UlTranspSrc::LowerBg => under_bg.clone().map(|(bg, _)| bg),
                 UlTranspSrc::LowerUl => under_ul.clone().map(|(ul, _)| ul),
                 UlTranspSrc::ThisBg => this_bg.clone().map(|(bg, _)| bg),
             };
-            if let (Some(under), Some((ul, _))) = (under, &mut self.underline) {
+            if let (Some(under), Some((ul, _))) = (under, &mut self.underline_color) {
                 *ul = under.overlay_color(ol_ul.0);
             }
         }
@@ -218,7 +306,7 @@ impl From<(Color, Color)> for Style {
         Self {
             fg: Some((fg, FgTranspSrc::LowerFg)),
             bg: Some((bg, BgTranspSrc::LowerBg)),
-            underline: None,
+            underline_color: None,
             attr: Attributes::new(),
         }
     }
@@ -229,7 +317,7 @@ impl From<ratatui::buffer::Cell> for Style {
         Self {
             fg: Some((cell.fg.into(), FgTranspSrc::default())),
             bg: Some((cell.bg.into(), BgTranspSrc::default())),
-            underline: Some((cell.underline_color.into(), UlTranspSrc::default())),
+            underline_color: Some((cell.underline_color.into(), UlTranspSrc::default())),
             attr: cell.modifier.into(),
         }
     }

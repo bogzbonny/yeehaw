@@ -67,6 +67,8 @@
 
 01. add docs, crates button banners to github readme
 
+01. make sure duf can run it
+
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 05. Theme Manager - it would be awesome to be able to just get the colors for

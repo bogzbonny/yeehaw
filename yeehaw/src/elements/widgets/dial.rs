@@ -7,7 +7,7 @@ use {super::arb_selector::SelChanges, crate::*};
 /// cool selectors with arbitrary selection positions such as dials.
 #[derive(Clone)]
 pub struct Dial {
-    pane: ArbSelector,
+    pub pane: ArbSelector,
     dial_color: Rc<RefCell<Color>>,
     dial_knob_color: Rc<RefCell<Color>>,
     label_color: Rc<RefCell<Color>>,

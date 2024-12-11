@@ -26,11 +26,11 @@ impl Checkbox {
     const STYLE: SelStyles = SelStyles {
         //selected_style: Style::new_const(Color::BLACK, Color::LIGHT_YELLOW2)
         selected_style: Style::new_const(Color::BLACK, Color::YELLOW)
-            .with_attr(Attributes::new().with_bold()),
+            .with_attrs(Attributes::new().with_bold()),
         ready_style: Style::new_const(Color::BLACK, Color::WHITE)
-            .with_attr(Attributes::new().with_bold()),
+            .with_attrs(Attributes::new().with_bold()),
         unselectable_style: Style::new_const(Color::BLACK, Color::GREY13)
-            .with_attr(Attributes::new().with_bold()),
+            .with_attrs(Attributes::new().with_bold()),
     };
 
     pub fn default_receivable_events() -> SelfReceivableEvents {

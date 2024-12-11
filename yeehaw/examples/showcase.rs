@@ -125,26 +125,54 @@ pub fn window_generation_zone(ctx: &Context) -> Box<dyn Element> {
     let l = Label::new(ctx, "window generation zone");
     let _ = el.add_element(Box::new(l));
 
-    let dial1 = Dial::new_spacious(
+    let dial_type = Dial::new_spacious(
         ctx,
         vec![
-            (0, "OpA"),
-            (1, "OpB"),
-            (2, "OpC"),
-            (3, "OpD"),
-            (4, "OpE"),
-            (5, "OpF"),
-            (6, "OptionG"),
-            (7, "OptionH"),
-            (8, "OptionI"),
-            (9, "OptionJ"),
-            (10, "OptionK"),
-            (11, "OptionL"),
+            (0, "Basic"),
+            (1, "Fixed-Size"),
+            (2, "Min-Size"),
+            (3, "Terminal"),
         ],
     )
-    .at(0, 7);
+    .at(0, 3);
+    let label =
+        Label::new_for_el(ctx, dial_type.get_dyn_location_set().l.clone(), "content:").underlined();
+    let _ = el.add_element(Box::new(label));
 
-    let _ = el.add_element(Box::new(dial1));
+    let dial_border = Dial::new_spacious(
+        ctx,
+        vec![
+            (0, "None"),
+            (1, "Basic"),
+            (2, "Large"),
+            (3, "Tight"),
+            (6, "Double-Line"),
+            (4, "Scrollbars"),
+            (5, "Line-Scrollbars"),
+            (7, "Text"),
+            (8, "Resizer"),
+            (9, "Mover"),
+        ],
+    )
+    .at(DynVal::new_flex_with_min_fixed(0.35, 19), 3);
+    let label = Label::new_for_el(
+        ctx,
+        dial_border.get_dyn_location_set().l.clone(),
+        "border options:",
+    )
+    .underlined();
+    let _ = el.add_element(Box::new(label));
+
+    let shadow_cb = Checkbox::new(ctx).at(1, 8);
+    let cb_label = Label::new_for_el(ctx, shadow_cb.get_dyn_location_set().l.clone(), "shadow");
+
+    let button = Button::new(ctx, "generate", Box::new(|_, _| EventResponses::default())).at(1, 10);
+
+    let _ = el.add_element(Box::new(dial_type));
+    let _ = el.add_element(Box::new(dial_border));
+    let _ = el.add_element(Box::new(shadow_cb));
+    let _ = el.add_element(Box::new(cb_label));
+    let _ = el.add_element(Box::new(button));
 
     Box::new(bordered)
 }

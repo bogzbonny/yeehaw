@@ -51,14 +51,20 @@ impl Label {
     const KIND: &'static str = "label";
 
     pub fn new(ctx: &Context, text: &str) -> Self {
+        Self::new_with_style(
+            ctx,
+            text,
+            Style::default()
+                .with_fg(Color::WHITE)
+                .with_bg(Color::TRANSPARENT),
+        )
+    }
+
+    pub fn new_with_style(ctx: &Context, text: &str, sty: Style) -> Self {
         let s = Size::get_text_size(text);
         let pane = Pane::new(ctx, Self::KIND)
             .with_self_receivable_events(LABEL_EV_COMBOS.clone())
-            .with_style(
-                Style::default()
-                    .with_fg(Color::WHITE)
-                    .with_bg(Color::TRANSPARENT),
-            )
+            .with_style(sty)
             .with_dyn_width(DynVal::new_fixed(s.width as i32))
             .with_dyn_height(DynVal::new_fixed(s.height as i32));
 
@@ -202,6 +208,109 @@ impl Label {
         self
     }
 
+    pub fn bold(self) -> Self {
+        let sty = self.pane.get_style().with_bold();
+        self.pane.set_content_style(sty.clone());
+        self.pane.set_style(sty);
+        self
+    }
+    pub fn faded(self) -> Self {
+        let sty = self.pane.get_style().with_faded();
+        self.pane.set_content_style(sty.clone());
+        self.pane.set_style(sty);
+        self
+    }
+    pub fn italic(self) -> Self {
+        let sty = self.pane.get_style().with_italic();
+        self.pane.set_content_style(sty.clone());
+        self.pane.set_style(sty);
+        self
+    }
+    pub fn underlined(self) -> Self {
+        let sty = self.pane.get_style().with_underlined();
+        self.pane.set_content_style(sty.clone());
+        self.pane.set_style(sty);
+        self
+    }
+    pub fn doubleunderlined(self) -> Self {
+        let sty = self.pane.get_style().with_doubleunderlined();
+        self.pane.set_content_style(sty.clone());
+        self.pane.set_style(sty);
+        self
+    }
+    pub fn undercurled(self) -> Self {
+        let sty = self.pane.get_style().with_undercurled();
+        self.pane.set_content_style(sty.clone());
+        self.pane.set_style(sty);
+        self
+    }
+    pub fn underdotted(self) -> Self {
+        let sty = self.pane.get_style().with_underdotted();
+        self.pane.set_content_style(sty.clone());
+        self.pane.set_style(sty);
+        self
+    }
+    pub fn underdashed(self) -> Self {
+        let sty = self.pane.get_style().with_underdashed();
+        self.pane.set_content_style(sty.clone());
+        self.pane.set_style(sty);
+        self
+    }
+    pub fn slowblink(self) -> Self {
+        let sty = self.pane.get_style().with_slowblink();
+        self.pane.set_content_style(sty.clone());
+        self.pane.set_style(sty);
+        self
+    }
+    pub fn rapidblink(self) -> Self {
+        let sty = self.pane.get_style().with_rapidblink();
+        self.pane.set_content_style(sty.clone());
+        self.pane.set_style(sty);
+        self
+    }
+    pub fn reverse(self) -> Self {
+        let sty = self.pane.get_style().with_reverse();
+        self.pane.set_content_style(sty.clone());
+        self.pane.set_style(sty);
+        self
+    }
+    pub fn hidden(self) -> Self {
+        let sty = self.pane.get_style().with_hidden();
+        self.pane.set_content_style(sty.clone());
+        self.pane.set_style(sty);
+        self
+    }
+    pub fn crossedout(self) -> Self {
+        let sty = self.pane.get_style().with_crossedout();
+        self.pane.set_content_style(sty.clone());
+        self.pane.set_style(sty);
+        self
+    }
+    pub fn fraktur(self) -> Self {
+        let sty = self.pane.get_style().with_fraktur();
+        self.pane.set_content_style(sty.clone());
+        self.pane.set_style(sty);
+        self
+    }
+    pub fn framed(self) -> Self {
+        let sty = self.pane.get_style().with_framed();
+        self.pane.set_content_style(sty.clone());
+        self.pane.set_style(sty);
+        self
+    }
+    pub fn encircled(self) -> Self {
+        let sty = self.pane.get_style().with_encircled();
+        self.pane.set_content_style(sty.clone());
+        self.pane.set_style(sty);
+        self
+    }
+    pub fn overlined(self) -> Self {
+        let sty = self.pane.get_style().with_overlined();
+        self.pane.set_content_style(sty.clone());
+        self.pane.set_style(sty);
+        self
+    }
+
     pub fn with_style(self, sty: Style) -> Self {
         self.pane.set_style(sty);
 
@@ -233,7 +342,7 @@ impl Label {
     }
 
     pub fn set_at(&self, x: DynVal, y: DynVal) {
-        self.pane.set_at(x.into(), y.into());
+        self.pane.set_at(x, y);
     }
 
     /// get the label location from the label position
@@ -264,7 +373,7 @@ impl Label {
             self.pane.get_width(ctx),
             self.pane.get_height(ctx),
         );
-        self.set_at(x.into(), y.into());
+        self.set_at(x, y);
     }
 
     pub fn position_above_then_left(&self, ctx: &Context, el_loc: DynLocation) {
