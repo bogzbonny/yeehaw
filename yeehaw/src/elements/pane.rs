@@ -250,6 +250,7 @@ impl Pane {
 
     /// sets content from string
     pub fn set_content_from_string_with_style(&self, ctx: &Context, s: &str, sty: Style) {
+        *self.is_content_dirty.borrow_mut() = true;
         let lines = s.split('\n');
         let mut rs: Vec<Vec<char>> = Vec::new();
 
@@ -285,6 +286,7 @@ impl Pane {
 
     pub fn set_content_style(&self, sty: Style) {
         self.content.borrow_mut().change_all_styles(sty);
+        *self.is_content_dirty.borrow_mut() = true;
     }
 
     /// The pane's Content need not be the dimensions provided within
