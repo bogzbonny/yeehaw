@@ -1,8 +1,8 @@
 use {
     crate::{
         Color, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal, Element,
-        ElementID, Event, EventResponse, EventResponses, Parent, Priority, ReceivableEventChanges,
-        SelfReceivableEvents, Size, Style, ZIndex,
+        ElementID, Event, EventResponse, EventResponses, Loc, Parent, Priority,
+        ReceivableEventChanges, SelfReceivableEvents, Size, Style, ZIndex,
     },
     std::{
         collections::HashMap,
@@ -47,6 +47,7 @@ pub struct Pane {
     is_content_dirty: Rc<RefCell<bool>>,
     drawing_cache: Rc<RefCell<Vec<DrawChPos>>>,
     last_size: Rc<RefCell<Size>>,
+    last_visible_region: Rc<RefCell<Option<Loc>>>,
 
     pub default_ch: Rc<RefCell<DrawCh>>,
     pub content_view_offset_x: Rc<RefCell<usize>>,
@@ -78,6 +79,7 @@ impl Pane {
             content: Rc::new(RefCell::new(DrawChs2D::default())),
             is_content_dirty: Rc::new(RefCell::new(true)),
             last_size: Rc::new(RefCell::new(ctx.size)),
+            last_visible_region: Rc::new(RefCell::new(ctx.visible_region.clone())),
             drawing_cache: Rc::new(RefCell::new(Vec::new())),
             default_ch: Rc::new(RefCell::new(DrawCh::default())),
             content_view_offset_x: Rc::new(RefCell::new(0)),
@@ -497,12 +499,16 @@ impl Element for Pane {
 
     /// Drawing compiles all of the DrawChPos necessary to draw this element
     fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        if !*self.is_content_dirty.borrow() && *self.last_size.borrow() == ctx.size {
+        if !*self.is_content_dirty.borrow()
+            && *self.last_size.borrow() == ctx.size
+            && *self.last_visible_region.borrow() == ctx.visible_region
+        {
             return self.drawing_cache.borrow().clone();
         }
 
         self.is_content_dirty.replace(false);
-        self.last_size.replace(ctx.size.clone());
+        self.last_size.replace(ctx.size);
+        self.last_visible_region.replace(ctx.visible_region);
 
         let mut chs = vec![];
 

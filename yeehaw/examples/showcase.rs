@@ -116,7 +116,7 @@ async fn main() -> Result<(), Error> {
 }
 
 pub fn window_generation_zone(ctx: &Context) -> Box<dyn Element> {
-    let sc = PaneScrollable::new_expanding(ctx, 30, 10);
+    let sc = PaneScrollable::new_expanding(ctx, 50, 10);
     let el = ParentPaneOfSelectable::new(ctx);
     let _ = sc.add_element(Box::new(el.clone()));
     let bordered =
