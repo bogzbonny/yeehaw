@@ -4,6 +4,34 @@ use {
     std::ops::{Deref, DerefMut},
 };
 
+// basic usage:
+//#[rustfmt::skip]
+//let drawing_base = "  H__A  \n".to_string()
+//                 + "G ╱  ╲ B\n"
+//                 + "F ╲__╱ C\n"
+//                 + "  E  D  ";
+//let positions = "GHHHAAAB\n\
+//                 GGGHABBB\n\
+//                 FFFEDCCC\n\
+//                 FEEEDDDC";
+//let sel_changes = vec![
+//    ('°', 4, 1),
+//    ('∘', 5, 1),
+//    ('°', 5, 2),
+//    ('∘', 4, 2),
+//    ('∘', 3, 2),
+//    ('°', 2, 2),
+//    ('∘', 2, 1),
+//    ('°', 3, 1),
+//];
+//let dial = ArbSelector::new_with_uniform_style(
+//    &ctx,
+//    reg_sty,
+//    drawing_base.to_string(),
+//    positions.to_string(),
+//    sel_changes,
+//)
+
 /// Arbitrary Selector is a selector object which can be used to construct
 /// cool selectors with arbitrary selection positions such as dials.
 #[derive(Clone)]
