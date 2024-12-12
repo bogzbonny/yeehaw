@@ -1,7 +1,7 @@
 use {
     crate::{
         prioritizer::Priority, Context, DrawChPos, DynLocation, DynLocationSet, ElementID, Event,
-        EventResponses, ReceivableEventChanges, SelfReceivableEvents,
+        EventResponses, Label, ReceivableEventChanges, SelfReceivableEvents,
     },
     dyn_clone::DynClone,
     std::{
@@ -203,6 +203,35 @@ pub trait Element: DynClone {
             }
         };
         self.set_attribute(ATTR_DESCRIPTION, bz)
+    }
+
+    /// create a label for this element
+    fn label(&self, ctx: &Context, label: &str) -> Label {
+        Label::new_for_el(ctx, self.get_dyn_location_set().l.clone(), label)
+    }
+    fn label_above_right(&self, ctx: &Context, label: &str) -> Label {
+        Label::new_above_right_for_el(ctx, self.get_dyn_location_set().l.clone(), label)
+    }
+    fn label_above_left(&self, ctx: &Context, label: &str) -> Label {
+        Label::new_above_left_for_el(ctx, self.get_dyn_location_set().l.clone(), label)
+    }
+    fn label_below_right(&self, ctx: &Context, label: &str) -> Label {
+        Label::new_below_right_for_el(ctx, self.get_dyn_location_set().l.clone(), label)
+    }
+    fn label_below_left(&self, ctx: &Context, label: &str) -> Label {
+        Label::new_below_left_for_el(ctx, self.get_dyn_location_set().l.clone(), label)
+    }
+    fn label_left_top(&self, ctx: &Context, label: &str) -> Label {
+        Label::new_left_top_for_el(ctx, self.get_dyn_location_set().l.clone(), label)
+    }
+    fn label_left_bottom(&self, ctx: &Context, label: &str) -> Label {
+        Label::new_left_bottom_for_el(ctx, self.get_dyn_location_set().l.clone(), label)
+    }
+    fn label_right_top(&self, ctx: &Context, label: &str) -> Label {
+        Label::new_right_top_for_el(ctx, self.get_dyn_location_set().l.clone(), label)
+    }
+    fn label_right_bottom(&self, ctx: &Context, label: &str) -> Label {
+        Label::new_right_bottom_for_el(ctx, self.get_dyn_location_set().l.clone(), label)
     }
 }
 

@@ -141,9 +141,9 @@ pub fn window_generation_zone(
         ],
     )
     .at(0, 3);
-    let label =
-        Label::new_for_el(ctx, dial_type.get_dyn_location_set().l.clone(), "content:").underlined();
+    let label = dial_type.label(ctx, "content:").underlined();
     let _ = el.add_element(Box::new(label));
+    let _ = el.add_element(Box::new(dial_type.clone()));
 
     let dial_border = Dial::new_spacious(
         ctx,
@@ -161,27 +161,20 @@ pub fn window_generation_zone(
         ],
     )
     .at(DynVal::new_flex_with_min_fixed(0.35, 19), 3);
-    let label = Label::new_for_el(
-        ctx,
-        dial_border.get_dyn_location_set().l.clone(),
-        "border options:",
-    )
-    .underlined();
+    let label = dial_border.label(ctx, "border options:").underlined();
     let _ = el.add_element(Box::new(label));
+    let _ = el.add_element(Box::new(dial_border.clone()));
 
     let shadow_cb = Checkbox::new(ctx).at(1, 8);
-    let cb_label = Label::new_for_el(ctx, shadow_cb.get_dyn_location_set().l.clone(), "shadow");
+    let label = shadow_cb.label(ctx, "shadow");
+    let _ = el.add_element(Box::new(shadow_cb.clone()));
+    let _ = el.add_element(Box::new(label));
 
     let alpha_slider = Slider::new_basic_block(ctx)
         .with_position(0.9)
         .with_width(DynVal::new_flex(0.4))
         .at(1, 11);
-    let label = Label::new_for_el(
-        ctx,
-        alpha_slider.get_dyn_location_set().l.clone(),
-        "background alpha:",
-    )
-    .underlined();
+    let label = alpha_slider.label(ctx, "background alpha:").underlined();
     let _ = el.add_element(Box::new(label));
     let _ = el.add_element(Box::new(alpha_slider.clone()));
 
@@ -189,10 +182,7 @@ pub fn window_generation_zone(
 
     let mut ctx_ = ctx.clone();
     let counter_ = counter.clone();
-    let shadow_cb_ = shadow_cb.clone();
-    let windows_generated_in_ = windows_generated_in.clone();
-    let dial_type_ = dial_type.clone();
-    let dial_border_ = dial_border.clone();
+
     let generate_window_fn = Box::new(move |_, _| {
         ctx_.size.width = 30;
         ctx_.size.height = 20;
@@ -205,7 +195,7 @@ pub fn window_generation_zone(
         let sty = Style::default().with_bg(bg.clone()).with_fg(fg.clone());
         let def_ch = DrawCh::new(ChPlus::Transparent, sty.clone());
 
-        let el: Box<dyn Element> = match dial_type_.get_value().as_str() {
+        let el: Box<dyn Element> = match dial_type.get_value().as_str() {
             "Basic" => Box::new(
                 DebugSizePane::new(&ctx_)
                     .with_text(title.clone())
@@ -240,7 +230,7 @@ pub fn window_generation_zone(
             _ => panic!("missing type implementation"),
         };
 
-        let el: Box<dyn Element> = match dial_border_.get_value().as_str() {
+        let el: Box<dyn Element> = match dial_border.get_value().as_str() {
             "None" => el,
             "Basic" => Box::new(Bordered::new_basic(
                 &ctx_,
@@ -298,7 +288,7 @@ pub fn window_generation_zone(
             .with_width(DynVal::new_fixed(30))
             .at(DynVal::new_fixed(10), DynVal::new_fixed(10));
 
-        let window: Box<dyn Element> = if shadow_cb_.is_checked() {
+        let window: Box<dyn Element> = if shadow_cb.is_checked() {
             let shadow_color = Color::new_with_alpha(100, 100, 100, 150);
             Box::new(Shadowed::thick_with_color(
                 &ctx_,
@@ -315,7 +305,7 @@ pub fn window_generation_zone(
             EventResponse::Focus,
         ];
         let resp = EventResponse::NewElement(window, Some(inner_resps.into()));
-        windows_generated_in_
+        windows_generated_in
             .pane
             .send_responses_upward(&ctx_, resp.into());
 
@@ -323,11 +313,6 @@ pub fn window_generation_zone(
     });
 
     let button = Button::new(ctx, "generate", generate_window_fn).at(1, 13);
-
-    let _ = el.add_element(Box::new(dial_type));
-    let _ = el.add_element(Box::new(dial_border));
-    let _ = el.add_element(Box::new(shadow_cb));
-    let _ = el.add_element(Box::new(cb_label));
     let _ = el.add_element(Box::new(button));
 
     Box::new(bordered)

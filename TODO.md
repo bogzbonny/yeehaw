@@ -9,10 +9,11 @@
 01. execute a command on opening a tab (for the first time?) useful for showcase
     tab
 01. scrollable pane which grows if above min dimension
+01. better labels for elements - build into element
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 01. cleanup the widgets example 
-     - showcase should just use the same widgets example pane
+    - showcase should just use the same widgets example pane
 
 01. showcase example 
      - a menu
