@@ -67,7 +67,10 @@ impl FileNavPane {
         );
 
         let sub_items = top_dir.folder.sub_items(Self::INDENT_SIZE);
-        let mut nav_items = NavItems(vec![NavItem::UpDir(up_dir), NavItem::TopDir(top_dir)]);
+        let mut nav_items = NavItems(vec![
+            NavItem::UpDir(Box::new(up_dir)),
+            NavItem::TopDir(Box::new(top_dir)),
+        ]);
         nav_items.extend(sub_items);
 
         pane.self_evs
@@ -170,12 +173,13 @@ impl Element for FileNavPane {
     }
 }
 
+// NOTE use box due to large widely varying variant sizes.
 #[derive(Clone)]
 pub enum NavItem {
-    File(File),
-    Folder(Folder),
-    TopDir(TopDir),
-    UpDir(UpDir),
+    File(Box<File>),
+    Folder(Box<Folder>),
+    TopDir(Box<TopDir>),
+    UpDir(Box<UpDir>),
 }
 
 impl NavItem {
@@ -388,14 +392,14 @@ impl Folder {
                     self.indentation + indent_size,
                     false,
                 );
-                sub_items.push(NavItem::Folder(new_folder));
+                sub_items.push(NavItem::Folder(Box::new(new_folder)));
             } else {
                 let new_file = File::new(
                     file.path(),
                     self.file_style.clone(),
                     self.indentation + indent_size,
                 );
-                sub_items.push(NavItem::File(new_file));
+                sub_items.push(NavItem::File(Box::new(new_file)));
             }
         }
         sub_items.sort_by(|a, b| match (a, b) {

@@ -79,7 +79,7 @@ impl Pane {
             content: Rc::new(RefCell::new(DrawChs2D::default())),
             is_content_dirty: Rc::new(RefCell::new(true)),
             last_size: Rc::new(RefCell::new(ctx.size)),
-            last_visible_region: Rc::new(RefCell::new(ctx.visible_region.clone())),
+            last_visible_region: Rc::new(RefCell::new(ctx.visible_region)),
             drawing_cache: Rc::new(RefCell::new(Vec::new())),
             default_ch: Rc::new(RefCell::new(DrawCh::default())),
             content_view_offset_x: Rc::new(RefCell::new(0)),

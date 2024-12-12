@@ -126,7 +126,7 @@ impl VerticalScrollbar {
     }
 
     pub fn set_at(&self, loc_x: DynVal, loc_y: DynVal) {
-        self.pane.set_at(loc_x.into(), loc_y.into());
+        self.pane.set_at(loc_x, loc_y);
     }
 
     pub fn without_arrows(self) -> Self {
@@ -209,7 +209,7 @@ impl HorizontalScrollbar {
     }
 
     pub fn set_at(&self, loc_x: DynVal, loc_y: DynVal) {
-        self.pane.set_at(loc_x.into(), loc_y.into());
+        self.pane.set_at(loc_x, loc_y);
     }
 
     pub fn without_arrows(self) -> Self {

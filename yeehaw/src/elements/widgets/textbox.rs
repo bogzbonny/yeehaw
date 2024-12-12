@@ -366,7 +366,7 @@ impl TextBox {
     }
 
     pub fn set_at(&self, loc_x: DynVal, loc_y: DynVal) {
-        self.pane.set_at(loc_x.into(), loc_y.into());
+        self.pane.set_at(loc_x, loc_y);
         self.set_dirty();
     }
 

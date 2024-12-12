@@ -102,6 +102,7 @@ impl Color {
         (h, s, v)
     }
 
+    #[allow(clippy::too_many_arguments)]
     /// blends two colors together with the given percentage of the other color
     pub fn blend(
         &self, s: Size, dur_since_launch: Duration, x: u16, y: u16, other: Color,
