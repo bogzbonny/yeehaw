@@ -87,17 +87,20 @@ async fn main() -> Result<(), Error> {
 
 # Design Overview <!-- NOTE duplicate in README.md -->
 
-Element ownership overview: TUI Elements are arranged in a hierarchical manner
-while retaining semi-autonomy. Events are routed from the top down, and
-responses can be propagated upwards from deeply nested elements. Additionally,
-elements may directly effect any other element through a variety of hooks (e.g.
-the button click function on a button element). Parent elements retain general
+Elements are arranged in a hierarchical manner while retaining semi-autonomy.
+Events (keyboard/mouse/custom) are routed from the top down (adjusted to be
+relative to the each destination Element) and responses then propagate back
+upwards along the Element ownership tree. Parent elements retain general
 authority over child elements; they determine how the flow of events are
-channeled, and the location and size of child elements. Simple elements are only
-required to have spatial awareness within the confines provided to them -
-although autonomy is still given for them to change their ordering and position
-within their immediate parent element (with great power comes great
-responsibility).  
+channeled and the location and size of child elements. Simple elements are only
+required to have spatial awareness within the confines provided to them (events
+are made relative to them by their parents) - although autonomy is still given
+for them to change their ordering and position within their immediate parent
+element (with great power comes great responsibility).  
+
+In addition to the event-response communication structure elements may directly
+interact through element-specific hooks (e.g. the button click function on a
+button element). 
 
 The core Element Trait has designed to be extensible for custom event/response
 kinds enabling developers to create entirely new sub-classes of elements which
@@ -127,6 +130,13 @@ with upgrade instructions shall be maintained.
 
 HAVE NO FEAR
 
+ - Currently rendering happens on a continuous basis which creates many niceties
+   for element development however also leads to inefficiencies particularly
+   with (nested) container elements and most noticeable when code is compiled in
+   debug mode. A refactor of this drawing system is to be undertaken to allow
+   for intelligent caching within containers while hopefully not majorly
+   effecting the niceties. The `drawing` function signature of `Element` may
+   change slightly in this refactor. 
  - There ain't much automated testing in here at all, soon a TUI snapshot tester
    is going to be developed, which should bring up coverage from about 0% as it
    stands. 
@@ -159,7 +169,7 @@ HAVE NO FEAR
    individual element implementions maybe even building in a few common caching
    patterns which arise into the `pane` object.
 
-## Performance Considerations <!-- NOTE duplicate in README.md -->
+## Performance Considerations
 
 TL;DR - Elements should cache their own drawing content, also things may be
 slighly laggy while in debug mode if deeply nested containers are used.
@@ -171,14 +181,14 @@ to itself, for each redraw a container element will then reposition all the draw
 information of sub-elements. Additionally each container also processes styles
 which change relative to time or position (gradients), All this reprocessing
 which takes place in container elements is computationally inefficient as it
-occurs with each redraw frame. The inefficiency introduced by this design
-decision may lead to slightly laggy interfaces (but only) when compiled in debug
-mode and if deeply nested containers are used. Release mode should never
-experience noticeable lag. Use of parallel computation with rayon has been
-implemented to help mitigate these inefficiencies. A complex refactor which
-introduced caching at the ParentPane (specifically the organizer) level was once
-attempted but found to cause more problems for Element developers and only minor
-performance boosts. As such Elements are expected to cache their own drawing
-information to minimize the computational burden at render time. A common caching 
-pattern will soon be integrated into the `Pane` to make Element drawing
-development a little bit more straightforward. 
+occurs with each redraw cycle. The inefficiency introduced by the current design
+may lead to slightly laggy interfaces but primarily only when compiled in debug
+mode and if deeply nested containers are used. Use of parallel computation with
+rayon has been implemented to help mitigate these inefficiencies. As such
+Elements are expected to cache their own drawing information to minimize the
+computational burden at render time. A common caching pattern will soon be
+integrated into the `Pane` to make Element drawing development a little bit more
+straightforward. Also, A refactor of this drawing system is to be undertaken to
+allow for intelligent caching within containers while hopefully not majorly
+effecting the niceties of this design. The `drawing` function signature of
+`Element` may change slightly in this refactor.

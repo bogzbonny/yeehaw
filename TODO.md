@@ -29,7 +29,6 @@
        - generate button
      ^ DONE
 
-     - a big "DO NOT PRESS button" which instigates the blue screen of death
      - TABS Zone
        - image
        - file_nav
@@ -54,6 +53,7 @@
            - no labels for the eyes
            - make them lock together, and change the mouth based on their 
              position
+     - a big "DO NOT PRESS button" which instigates the blue screen of death
 
 01. gif of showcase example - will need to record with non-VHS/asciicinema-tool
     to get mouse movements
@@ -95,6 +95,23 @@
 
 __________________________________________________________________________
 REFACTORS
+
+01. Drawing overhaul
+    - add an offset to the position gradient (so that the gradient can have an
+      offset baked in without actually drawing the gradient).
+    - move the time/position based gradient calculations from the organizer 
+      and to the high level TUI
+    - now caching by element should work
+    - Also consider the old approach where there will be a each element actually 
+      sends its changes upstream as opposed to being called every draw cycle
+      - All the DrawChPos of a container could be cached by element everytime 
+        an element makes a change simply that one cache could be updated...
+          - nested containers:
+            - the parent-parent-container should be able to update a sub-section 
+              of the child-container, this will maybe introduce slight more
+              complexity as `fn drawing` should likely be able to return
+              multiple (ElementID, Vec<DrawPosCh>) chunks - that or a slightly 
+              new mechanism.
 
 10. MousePossibility events: 
     - adjust mouse event logic to mirror that of the keyboard, each element
