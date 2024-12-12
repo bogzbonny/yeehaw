@@ -47,7 +47,6 @@ impl Color {
     pub const fn new(r: u8, g: u8, b: u8) -> Color {
         Color::Rgba(Rgba::new(r, g, b))
     }
-
     pub const fn new_with_alpha(r: u8, g: u8, b: u8, a: u8) -> Color {
         Color::Rgba(Rgba::new_with_alpha(r, g, b, a))
     }

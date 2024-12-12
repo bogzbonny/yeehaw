@@ -124,6 +124,11 @@ impl Slider {
         self
     }
 
+    pub fn with_position(self, pos: f64) -> Self {
+        self.set_position(pos);
+        self
+    }
+
     pub fn at<D: Into<DynVal>, D2: Into<DynVal>>(self, loc_x: D, loc_y: D2) -> Self {
         self.pane.set_at(loc_x.into(), loc_y.into());
         self

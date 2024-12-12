@@ -98,6 +98,10 @@ impl Checkbox {
         self.pane.set_content_from_string(self.text());
         (self.clicked_fn.borrow_mut())(ctx.clone(), checked)
     }
+
+    pub fn is_checked(&self) -> bool {
+        *self.checked.borrow()
+    }
 }
 
 #[yeehaw_derive::impl_element_from(pane)]

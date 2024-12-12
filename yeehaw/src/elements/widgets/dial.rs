@@ -134,6 +134,19 @@ impl Dial {
         self.pane.pane.set_at(x.into(), y.into());
         self
     }
+
+    // ----------------------------------------------
+
+    /// Get the current value on the dial
+    pub fn get_value(&self) -> String {
+        let pos = *self.pane.position.borrow();
+        self.labels
+            .borrow()
+            .iter()
+            .find(|(i, _)| *i == pos)
+            .map(|(_, s)| s.clone())
+            .unwrap_or_default()
+    }
 }
 
 /// dial spacing determines how the labels are drawn around the dial

@@ -646,10 +646,10 @@ impl BorderSty {
             right: DrawCh::new('▕', sty.clone()),
             top: DrawCh::new('▔', sty.clone()),
             bottom: DrawCh::new('▁', sty.clone()),
-            top_left: DrawCh::new('▛', sty.clone()),
-            top_right: DrawCh::new('▜', sty.clone()),
-            bottom_left: DrawCh::new('▙', sty.clone()),
-            bottom_right: DrawCh::new('▟', sty),
+            top_left: DrawCh::new('🭽', sty.clone()),
+            top_right: DrawCh::new('🭾', sty.clone()),
+            bottom_left: DrawCh::new('🭼', sty.clone()),
+            bottom_right: DrawCh::new('🭿', sty),
         }
     }
 
@@ -659,12 +659,12 @@ impl BorderSty {
     /// ▕whats up▏
     ///  ▔▔▔▔▔▔▔▔
     /// ```
-    pub fn new_thin_eighth_block(sty: Style) -> Self {
+    pub fn new_tight_eighth_block(sty: Style) -> Self {
         Self {
-            left: DrawCh::new('▏', sty.clone()),
-            right: DrawCh::new('▕', sty.clone()),
-            top: DrawCh::new('▔', sty.clone()),
-            bottom: DrawCh::new('▁', sty.clone()),
+            left: DrawCh::new('▕', sty.clone()),
+            right: DrawCh::new('▏', sty.clone()),
+            top: DrawCh::new('▁', sty.clone()),
+            bottom: DrawCh::new('▔', sty.clone()),
             top_left: DrawCh::new(' ', sty.clone()),
             top_right: DrawCh::new(' ', sty.clone()),
             bottom_left: DrawCh::new(' ', sty.clone()),
@@ -705,6 +705,24 @@ impl Bordered {
 
     pub fn new_basic(ctx: &Context, inner: Box<dyn Element>, sty: Style) -> Self {
         let chs = BorderSty::new_thick_single(sty);
+        let properties = BorderProperies::new_basic();
+        Self::new(ctx, inner, chs, properties)
+    }
+
+    pub fn new_large(ctx: &Context, inner: Box<dyn Element>, sty: Style) -> Self {
+        let chs = BorderSty::new_large_eighth_block(sty);
+        let properties = BorderProperies::new_basic();
+        Self::new(ctx, inner, chs, properties)
+    }
+
+    pub fn new_tight(ctx: &Context, inner: Box<dyn Element>, sty: Style) -> Self {
+        let chs = BorderSty::new_tight_eighth_block(sty);
+        let properties = BorderProperies::new_basic();
+        Self::new(ctx, inner, chs, properties)
+    }
+
+    pub fn new_double(ctx: &Context, inner: Box<dyn Element>, sty: Style) -> Self {
+        let chs = BorderSty::new_double(sty);
         let properties = BorderProperies::new_basic();
         Self::new(ctx, inner, chs, properties)
     }

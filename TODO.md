@@ -231,6 +231,7 @@ FEATURES
 __________________________________________________________________________
 BUGFIXES/PATCHES
 
+
 10. resizing a scrollable pane should modify the offset of that pane to account
     for the extra space (instead of automatically extending out of range)
 
@@ -266,6 +267,12 @@ BUGFIXES/PATCHES
            problems.
     - fix the up-dir (..) button 
     - mouse functionality
+
+05. showcase window generator bugs
+    - weirdness with underline color and alpha, sometimes makes it faded,
+      sometimes not.  
+
+05. label underline colors dont seem to work at all
 
 05. STACKING of minimized windows in parent pane
     MAYBE do only after taffy is integrated... could help for these guys
