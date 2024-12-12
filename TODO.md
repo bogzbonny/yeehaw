@@ -21,16 +21,18 @@
      - tabs
        - terminal
        - the showcase within the showcase?? spiral 
-     ^ DONE
-
-     - a big "DO NOT PRESS button" which instigates the blue screen of death
      - window generator zone
        - dial with window pane types: basic, scrollable, scrollable-expanding, terminal, 
        - border-kind: none, basic, normal scrollbars, resizer with border-scrollbars, double width, large, tight, 
                       border-with-text, border-resizer, border-mover
        - shadow cb
        - generate button
+     ^ DONE
+
+     - a big "DO NOT PRESS button" which instigates the blue screen of death
      - TABS Zone
+       - image
+       - file_nav
        - gradient 
           - could have some ascii art drawings to pick from for the FG
              - a dial with a few choice ascii arts

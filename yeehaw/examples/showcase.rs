@@ -71,12 +71,12 @@ async fn main() -> Result<(), Error> {
     let _ = central_pane.push(Box::new(right_pane.clone()));
     let _ = left_pane.push(window_generation_zone(&ctx, Box::new(main.pane.clone())));
 
-    let train_pane = DebugSizePane::new(&ctx);
-    //let train_pane = TerminalPane::new(&ctx)?;
-    //train_pane.pane.set_dyn_height(DynVal::new_flex(0.7));
-    //train_pane.pane.set_unfocused(&ctx);
-    //train_pane.disable_cursor();
-    //train_pane.execute_command("for i in {1..7}; do sl -l; done ; exit");
+    //let train_pane = DebugSizePane::new(&ctx);
+    let train_pane = TerminalPane::new(&ctx)?;
+    train_pane.pane.set_dyn_height(DynVal::new_flex(0.7));
+    train_pane.pane.set_unfocused(&ctx);
+    train_pane.disable_cursor();
+    train_pane.execute_command("for i in {1..7}; do sl -l; done ; exit");
     let _ = left_pane.push(Box::new(train_pane));
 
     let tabs = Tabs::new(&ctx);
@@ -230,8 +230,12 @@ pub fn window_generation_zone(
             _ => panic!("missing type implementation"),
         };
 
+        let mut corner_resizer = false;
         let el: Box<dyn Element> = match dial_border.get_value().as_str() {
-            "None" => el,
+            "None" => {
+                corner_resizer = true;
+                el
+            }
             "Basic" => Box::new(Bordered::new_basic(
                 &ctx_,
                 el,
@@ -252,11 +256,14 @@ pub fn window_generation_zone(
                 el,
                 sty.clone().with_fg(Color::BLACK),
             )),
-            "Scrollbars" => Box::new(Bordered::new_borderless_with_scrollbars_and_thin_left(
-                &ctx_,
-                el,
-                sty.clone().with_fg(Color::WHITE),
-            )),
+            "Scrollbars" => {
+                corner_resizer = true;
+                Box::new(Bordered::new_borderless_with_scrollbars_and_thin_left(
+                    &ctx_,
+                    el,
+                    sty.clone().with_fg(Color::WHITE),
+                ))
+            }
             "Line-Scrollbars" => Box::new(Bordered::new_resizer_with_scrollbars(
                 &ctx_,
                 el,
@@ -283,10 +290,14 @@ pub fn window_generation_zone(
         };
 
         *counter_.borrow_mut() += 1;
-        let window = WindowPane::new(&ctx_, el, &title)
+        let mut window = WindowPane::new(&ctx_, el, &title)
             .with_height(DynVal::new_fixed(20))
             .with_width(DynVal::new_fixed(30))
             .at(DynVal::new_fixed(10), DynVal::new_fixed(10));
+
+        if corner_resizer {
+            window.set_corner_resizer(&ctx_);
+        }
 
         let window: Box<dyn Element> = if shadow_cb.is_checked() {
             let shadow_color = Color::new_with_alpha(100, 100, 100, 150);

@@ -82,7 +82,12 @@ impl WindowPane {
         self
     }
 
-    pub fn with_corner_resizer(self, ctx: &Context) -> Self {
+    pub fn with_corner_resizer(mut self, ctx: &Context) -> Self {
+        self.set_corner_resizer(ctx);
+        self
+    }
+
+    pub fn set_corner_resizer(&mut self, ctx: &Context) {
         let corner_ch = DrawCh::new(
             '◢',
             Style::default()
@@ -103,8 +108,6 @@ impl WindowPane {
         for (el_id, details) in self.pane.eo.els.borrow().iter() {
             eoz.push((el_id.clone(), details.clone()));
         }
-
-        self
     }
 
     /// partially process the resp for the inner elements of the window
