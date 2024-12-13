@@ -72,6 +72,8 @@
 
 01. make sure duf can run it
 
+01. update rust version, update deps
+
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 05. Theme Manager - it would be awesome to be able to just get the colors for
@@ -102,16 +104,39 @@ REFACTORS
     - move the time/position based gradient calculations from the organizer 
       and to the high level TUI
     - now caching by element should work
-    - Also consider the old approach where there will be a each element actually 
-      sends its changes upstream as opposed to being called every draw cycle
-      - All the DrawChPos of a container could be cached by element everytime 
-        an element makes a change simply that one cache could be updated...
+    - MAYBE don't explicitly cache (and not call drawing) but still call drawing 
+      each draw cycle, however each element can return special "Unchanged"
+      messages which then tells the parent to use its cached value. 
           - nested containers:
             - the parent-parent-container should be able to update a sub-section 
               of the child-container, this will maybe introduce slight more
               complexity as `fn drawing` should likely be able to return
               multiple (ElementID, Vec<DrawPosCh>) chunks - that or a slightly 
               new mechanism.
+``` rust
+fn drawing() -> Vec<DrawUpdate>
+
+pub struct DrawUpdate {
+   pub sub_id: Vec<ElementID>,
+   pub action: DrawAction,
+}
+
+pub enum DrawAction {
+    /// delete everything at or prefixed with this sub_id
+    ClearAll
+
+    /// deletes everything at this sub_id, does not effect 
+    /// other items with this sub_id prefix
+    Remove
+
+    /// remove-all then add DrawChPos's at this sub_id
+    Update(Vec<DrawChPos>)
+    
+    /// extend to the DrawChPos's at the sub_id
+    Extend(Vec<DrawChPos>)
+}
+```
+
 
 10. MousePossibility events: 
     - adjust mouse event logic to mirror that of the keyboard, each element
