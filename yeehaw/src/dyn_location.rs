@@ -441,7 +441,7 @@ impl DynLocationSet {
 
 // --------------------------------------------------
 /// Size holds the width and height of an element
-#[derive(Clone, Copy, Default, Debug, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Default, Debug, PartialEq)]
 pub struct Size {
     pub width: u16,
     pub height: u16,

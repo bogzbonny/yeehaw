@@ -71,6 +71,8 @@ async fn main() -> Result<(), Error> {
     ];
 
     let el_bg = Color::RadialGradient(RadialGradient {
+        draw_size: None,
+        offset: (0, 0),
         center: (0.25.into(), 0.5.into()),
         skew: (1., 1. / 0.55),
         grad: rgrad,

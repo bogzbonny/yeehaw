@@ -10,8 +10,8 @@ pub enum Color {
     ANSI(CrosstermColor),
     Rgba(Rgba),
     Gradient(Gradient),
-    TimeGradient(TimeGradient),
     RadialGradient(RadialGradient),
+    TimeGradient(TimeGradient),
 }
 
 impl Default for Color {
@@ -179,6 +179,8 @@ impl Color {
                     grad.push((x.clone(), c.darken()));
                 }
                 Color::Gradient(Gradient {
+                    draw_size: gr.draw_size,
+                    offset: gr.offset,
                     grad,
                     angle_deg: gr.angle_deg,
                 })
@@ -196,6 +198,8 @@ impl Color {
                     grad.push((x.clone(), c.darken()));
                 }
                 Color::RadialGradient(RadialGradient {
+                    draw_size: rg.draw_size,
+                    offset: rg.offset,
                     center: rg.center.clone(),
                     skew: rg.skew,
                     grad,
@@ -214,6 +218,8 @@ impl Color {
                     grad.push((x.clone(), c.lighten()));
                 }
                 Color::Gradient(Gradient {
+                    draw_size: gr.draw_size,
+                    offset: gr.offset,
                     grad,
                     angle_deg: gr.angle_deg,
                 })
@@ -231,6 +237,8 @@ impl Color {
                     grad.push((x.clone(), c.lighten()));
                 }
                 Color::RadialGradient(RadialGradient {
+                    draw_size: rg.draw_size,
+                    offset: rg.offset,
                     center: rg.center.clone(),
                     skew: rg.skew,
                     grad,
@@ -308,6 +316,24 @@ impl Color {
         }
     }
 
+    /// set the offset of position dependent colors
+    pub fn set_draw_size_if_unset(&mut self, s: Size) {
+        match self {
+            Color::Gradient(ref mut gr) => gr.set_draw_size_if_unset(s),
+            Color::RadialGradient(ref mut rg) => rg.set_draw_size_if_unset(s),
+            _ => {}
+        }
+    }
+
+    /// set the offset of position dependent colors
+    pub fn add_to_offset(&mut self, x: u16, y: u16) {
+        match self {
+            Color::Gradient(ref mut gr) => gr.add_to_offset(x, y),
+            Color::RadialGradient(ref mut rg) => rg.add_to_offset(x, y),
+            _ => {}
+        }
+    }
+
     pub fn set_alpha(&mut self, alpha: u8) {
         match self {
             Color::Rgba(c) => c.a = alpha,
@@ -346,6 +372,8 @@ impl Color {
                         grad.push((x.clone(), c.overlay_color(overlay.clone())));
                     }
                     Color::Gradient(Gradient {
+                        draw_size: gr.draw_size,
+                        offset: gr.offset,
                         grad,
                         angle_deg: gr.angle_deg,
                     })
@@ -363,6 +391,8 @@ impl Color {
                         grad.push((x.clone(), c.overlay_color(overlay.clone())));
                     }
                     Color::RadialGradient(RadialGradient {
+                        draw_size: rg.draw_size,
+                        offset: rg.offset,
                         center: rg.center.clone(),
                         skew: rg.skew,
                         grad,
@@ -376,6 +406,14 @@ impl Color {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
 pub struct RadialGradient {
+    /// the draw size is the size to consider when drawing the gradient
+    /// useful so that the gradient can be evaluated passively
+    pub draw_size: Option<Size>,
+
+    /// used to offset the gradient so that the gradient can be moved
+    /// useful so that the gradient can be evaluated passively
+    pub offset: (u16, u16),
+
     pub center: (DynVal, DynVal),
     /// x, y
     pub skew: (f64, f64),
@@ -394,19 +432,31 @@ impl RadialGradient {
         (dx * dx + dy * dy).sqrt()
     }
 
+    pub fn set_draw_size_if_unset(&mut self, s: Size) {
+        if self.draw_size.is_none() {
+            self.draw_size = Some(s);
+        }
+    }
+
+    pub fn add_to_offset(&mut self, x: u16, y: u16) {
+        self.offset.0 += x;
+        self.offset.1 += y;
+    }
+
     pub fn to_color(&self, s: Size, dur_since_launch: Duration, x: u16, y: u16) -> Color {
         if self.grad.is_empty() {
             return Color::TRANSPARENT;
         }
 
-        let x = x as f64;
-        let y = y as f64;
+        let s = self.draw_size.unwrap_or(s);
+        let x_off = x as f64 - self.offset.0 as f64;
+        let y_off = y as f64 - self.offset.1 as f64;
         let (center_x, center_y) = (
             self.center.0.get_val(s.width) as f64,
             self.center.1.get_val(s.height) as f64,
         );
         let (skew_x, skew_y) = self.skew;
-        let mut dist = Self::dist_from_center(x, y, center_x, center_y, skew_x, skew_y);
+        let mut dist = Self::dist_from_center(x_off, y_off, center_x, center_y, skew_x, skew_y);
 
         // choose the furthest corner as the max distance
         let max_dist1 = Self::dist_from_center(0., 0., center_x, center_y, skew_x, skew_y);
@@ -467,43 +517,12 @@ impl RadialGradient {
         start_clr.blend(
             s,
             dur_since_launch,
-            x as u16,
-            y as u16,
+            x,
+            y,
             end_clr,
             percent,
             BlendKind::Blend1,
         )
-
-        //// loop the pos if it is outside the maximum value
-        //let max_pos = self.grad.last().expect("TODO??").0.get_val(max_ctx_val);
-        //while pos < 0 {
-        //    pos += max_pos;
-        //}
-        //while pos > max_pos {
-        //    pos -= max_pos;
-        //}
-
-        //// find the two colors to blend
-        //let mut start_clr: Option<Color> = None;
-        //let mut end_clr: Option<Color> = None;
-        //let mut start_pos: Option<i32> = None;
-        //let mut end_pos: Option<i32> = None;
-        //for ((p1, c1), (p2, c2)) in self.grad.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
-        //    if (p1.get_val(max_ctx_val) <= pos) && (pos < p2.get_val(max_ctx_val)) {
-        //        start_clr = Some(c1.clone());
-        //        end_clr = Some(c2.clone());
-        //        start_pos = Some(p1.get_val(max_ctx_val));
-        //        end_pos = Some(p2.get_val(max_ctx_val));
-        //        break;
-        //    }
-        //}
-        //let start_clr = start_clr.unwrap_or_else(|| self.grad[0].1.clone());
-        //let end_clr = end_clr.unwrap_or_else(|| self.grad[self.grad.len() - 1].1.clone());
-        //let start_pos = start_pos.unwrap_or_else(|| self.grad[0].0.get_val(max_ctx_val));
-        //let end_pos =
-        //    end_pos.unwrap_or_else(|| self.grad[self.grad.len() - 1].0.get_val(max_ctx_val));
-        //let percent = (pos - start_pos) as f64 / (end_pos - start_pos) as f64;
-        //start_clr.blend(s, dur_since_launch, x, y, end_clr, percent, BlendKind::Blend1)
     }
 }
 
@@ -515,6 +534,14 @@ impl RadialGradient {
 /// of the DynVal will be determined by the distance from the line
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Default)]
 pub struct Gradient {
+    /// the draw size is the size to consider when drawing the gradient
+    /// useful so that the gradient can be evaluated passively
+    pub draw_size: Option<Size>,
+
+    /// used to offset the gradient so that the gradient can be moved
+    /// useful so that the gradient can be evaluated passively
+    pub offset: (u16, u16),
+
     /// pos, color
     pub grad: Vec<(DynVal, Color)>,
     /// angle in degrees, starting from the positive-x-axis, moving clockwise
@@ -522,21 +549,25 @@ pub struct Gradient {
 }
 
 impl Gradient {
-    pub fn new(grad: Vec<(DynVal, Color)>, angle_deg: f64) -> Self {
+    pub fn new(grad: Vec<(DynVal, Color)>, mut angle_deg: f64) -> Self {
         if angle_deg < 0.0 {
-            let angle_deg = 360.0 + angle_deg;
-            Gradient { grad, angle_deg }
+            angle_deg += 360.0;
         } else if angle_deg >= 360.0 {
-            let angle_deg = angle_deg - 360.0;
-            Gradient { grad, angle_deg }
-        } else {
-            Gradient { grad, angle_deg }
+            angle_deg -= 360.0;
+        }
+        Gradient {
+            draw_size: None,
+            offset: (0, 0),
+            grad,
+            angle_deg,
         }
     }
 
     pub fn new_x_grad_2_color(c1: Color, c2: Color) -> Self {
         let grad = vec![(DynVal::new_flex(0.), c1), (DynVal::FULL, c2)];
         Gradient {
+            draw_size: None,
+            offset: (0, 0),
             grad,
             angle_deg: 0.,
         }
@@ -545,6 +576,8 @@ impl Gradient {
     pub fn new_y_grad_2_color(c1: Color, c2: Color) -> Self {
         let grad = vec![(DynVal::new_flex(0.), c1), (DynVal::FULL, c2)];
         Gradient {
+            draw_size: None,
+            offset: (0, 0),
             grad,
             angle_deg: 90.,
         }
@@ -558,6 +591,8 @@ impl Gradient {
             (DynVal::new_fixed(2 * length as i32), c1),
         ];
         Gradient {
+            draw_size: None,
+            offset: (0, 0),
             grad,
             angle_deg: 0.,
         }
@@ -570,6 +605,8 @@ impl Gradient {
             (DynVal::new_fixed(2 * length as i32), c1),
         ];
         Gradient {
+            draw_size: None,
+            offset: (0, 0),
             grad,
             angle_deg: 90.,
         }
@@ -586,6 +623,8 @@ impl Gradient {
         }
         v.push((DynVal::new_fixed((v.len() * length) as i32), v[0].1.clone()));
         Gradient {
+            draw_size: None,
+            offset: (0, 0),
             grad: v,
             angle_deg: 0.,
         }
@@ -601,6 +640,8 @@ impl Gradient {
         }
         v.push((DynVal::new_fixed((v.len() * length) as i32), v[0].1.clone()));
         Gradient {
+            draw_size: None,
+            offset: (0, 0),
             grad: v,
             angle_deg: 90.,
         }
@@ -641,6 +682,17 @@ impl Gradient {
         self
     }
 
+    pub fn set_draw_size_if_unset(&mut self, s: Size) {
+        if self.draw_size.is_none() {
+            self.draw_size = Some(s);
+        }
+    }
+
+    pub fn add_to_offset(&mut self, x: u16, y: u16) {
+        self.offset.0 += x;
+        self.offset.1 += y;
+    }
+
     pub fn to_crossterm_color(
         &self, ctx: &Context, prev: Option<CrosstermColor>, x: u16, y: u16,
     ) -> CrosstermColor {
@@ -648,10 +700,12 @@ impl Gradient {
             .to_crossterm_color(ctx, prev, x, y)
     }
 
-    pub fn to_color(&self, s: Size, dur_since_launch: Duration, mut x: u16, mut y: u16) -> Color {
+    pub fn to_color(&self, s: Size, dur_since_launch: Duration, x: u16, y: u16) -> Color {
         if self.grad.is_empty() {
             return Color::TRANSPARENT;
         }
+
+        let s = self.draw_size.unwrap_or(s);
 
         // determine the maximum value of the context (used for computing the DynVal)
         let angle_rad = self.angle_deg * std::f64::consts::PI / 180.0;
@@ -675,17 +729,21 @@ impl Gradient {
 
         // determine the position on the gradient of the given x, y
         let mut pos = if self.angle_deg == 0. {
-            x %= s.width;
-            x as i32
+            let mut x_off = x as i32 - self.offset.0 as i32;
+            x_off %= s.width as i32;
+            x_off
         } else if self.angle_deg == 90. {
-            y %= s.height;
-            y as i32
+            let mut y_off = y as i32 - self.offset.1 as i32;
+            y_off %= s.height as i32;
+            y_off
         } else if self.angle_deg == 180. {
-            x %= s.width;
-            -(x as i32)
+            let mut x_off = x as i32 - self.offset.0 as i32;
+            x_off %= s.width as i32;
+            -x_off
         } else if self.angle_deg == 270. {
-            y %= s.height;
-            -(y as i32)
+            let mut y_off = y as i32 - self.offset.1 as i32;
+            y_off %= s.height as i32;
+            -y_off
         } else {
             //            x
             //   ┌───────────────┐
@@ -704,8 +762,10 @@ impl Gradient {
             //   │         ╲╱
             //
 
-            let x = x as f64;
-            let y = y as f64;
+            let x_off = x as i32 - self.offset.0 as i32;
+            let y_off = y as i32 - self.offset.1 as i32;
+            let x = x_off as f64;
+            let y = y_off as f64;
             #[allow(non_snake_case)]
             let sin_A = angle_rad.sin();
             #[allow(non_snake_case)]

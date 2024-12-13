@@ -15,6 +15,7 @@ use {
         terminal,
     },
     futures::{future::FutureExt, StreamExt},
+    rayon::prelude::*,
     std::collections::HashMap,
     std::io::{stdout, Write},
     std::{cell::RefCell, rc::Rc},

@@ -163,6 +163,13 @@ impl DrawChPos {
             .update_colors_for_time_and_pos(s, dur_since_launch, self.x, self.y);
     }
 
+    /// apply offsets to all position based colors, also set the draw size if unset
+    pub fn set_draw_size_offset_colors(&mut self, s: Size, offset_x: u16, offset_y: u16) {
+        self.ch
+            .style
+            .set_draw_size_offset_colors(s, offset_x, offset_y);
+    }
+
     pub fn new_from_string(s: String, start_x: u16, start_y: u16, sty: Style) -> Vec<DrawChPos> {
         DrawChs2D::from_string(s.to_string(), sty).to_draw_ch_pos(start_x, start_y)
     }

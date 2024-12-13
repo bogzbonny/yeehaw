@@ -103,6 +103,10 @@ REFACTORS
       offset baked in without actually drawing the gradient).
     - move the time/position based gradient calculations from the organizer 
       and to the high level TUI
+      - also need to set draw size (instead will always draw will big one)
+         - set only once the first time 
+    ^ DONE
+
     - now caching by element should work
     - MAYBE don't explicitly cache (and not call drawing) but still call drawing 
       each draw cycle, however each element can return special "Unchanged"

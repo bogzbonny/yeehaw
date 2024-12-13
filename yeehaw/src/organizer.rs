@@ -309,7 +309,6 @@ impl ElementOrganizer {
             let l = details.loc.borrow().l.clone();
             let s = ctx.size;
             let child_s = child_ctx.size;
-            let d = child_ctx.dur_since_launch;
 
             let mut start_x = l.get_start_x_from_size(s);
             let mut start_y = l.get_start_y_from_size(s);
@@ -325,13 +324,13 @@ impl ElementOrganizer {
             // currently using rayon for parallelization
             if *details.overflow.borrow() {
                 dcps.par_iter_mut().for_each(|dcp| {
-                    dcp.update_colors_for_time_and_pos(child_s, d);
+                    dcp.set_draw_size_offset_colors(child_s, start_x as u16, start_y as u16);
                     dcp.x += start_x as u16;
                     dcp.y += start_y as u16;
                 });
             } else {
                 dcps.par_iter_mut().for_each(|dcp| {
-                    dcp.update_colors_for_time_and_pos(child_s, d);
+                    dcp.set_draw_size_offset_colors(child_s, start_x as u16, start_y as u16);
                     if dcp.x >= child_s.width || dcp.y >= child_s.height {
                         // it'd be better to delete, but we can't delete from a parallel iterator
                         // also using a filter here its slower that this
