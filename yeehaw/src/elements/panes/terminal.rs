@@ -13,10 +13,11 @@ use {
     tokio::task::spawn_blocking,
 };
 
-// TODO use termwiz instead of vt100? ... would maybe have to use the wezterm-term crate too, which is not published
+// TODO use termwiz+wezterm_term instead of vt100? ... would maybe have to use the wezterm-term crate too, which is not published
 // one issue is that to be to query for the terminal mouse state you'd need to use wezterm-term
-//      https:///docs.rs/termwiz/latest/termwiz/
-//      https:///github.com/wez/wezterm/blob/main/termwiz/examples/widgets_nested.rs
+//          https://docs.rs/termwiz/latest/termwiz/
+//          https://github.com/wez/wezterm/blob/main/termwiz/examples/widgets_nested.rs
+//  code -> https://github.com/doy/vt100-rust/issues/7
 
 // TODO graceful shutdown of tokio tasks
 
@@ -29,6 +30,9 @@ pub struct TerminalPane {
     pub hide_cursor: Rc<RefCell<bool>>,
     pub disable_cursor: Rc<RefCell<bool>>,
     pub cursor: Rc<RefCell<DrawCh>>,
+
+    /// previous draw by the terminal
+    pub prev_draw: Rc<RefCell<Vec<DrawChPos>>>,
 
     pub pty_killer: Rc<RefCell<Box<dyn ChildKiller>>>,
 }
@@ -123,6 +127,7 @@ impl TerminalPane {
             hide_cursor: Rc::new(RefCell::new(false)),
             disable_cursor: Rc::new(RefCell::new(false)),
             cursor: Rc::new(RefCell::new(cur)),
+            prev_draw: Rc::new(RefCell::new(Vec::new())),
             pty_killer: Rc::new(RefCell::new(killer)),
         };
         out.pane.set_self_receivable_events(out.receivable_events());
@@ -318,8 +323,7 @@ impl Element for TerminalPane {
 
         (captured, resps)
     }
-
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
         let mp_size = self.master_pty.borrow().get_size();
         let resize = if let Ok(mp_size) = mp_size {
             mp_size.rows != ctx.size.height || mp_size.cols != ctx.size.width
@@ -334,12 +338,21 @@ impl Element for TerminalPane {
 
         let Ok(sc) = self.parser.read() else {
             log_err!("TerminalPane: failed to read parser");
-            return out;
+            return Vec::new();
         };
         let screen = sc.screen();
 
         let cols = ctx.size.width;
         let rows = ctx.size.height;
+
+        // TODO this iteration could be made better by actually iterating through the Rows
+        // functionality is not actually exposed right now in the vt100 crate
+        // update once it is and or move to a fork and or make a fork
+
+        // TODO subdivide into sections which are updated seperately
+
+        let mut dirty = false;
+        let mut prev_draw_i = 0;
 
         // The screen is made out of rows of cells
         for row in 0..rows {
@@ -371,11 +384,23 @@ impl Element for TerminalPane {
                     if screen_cell.inverse() {
                         sty.attr.reverse = true;
                     }
-                    out.push(DrawChPos {
+                    let ch_out = DrawChPos {
                         ch: DrawCh::new(ch, sty),
                         x: col,
                         y: row,
-                    });
+                    };
+                    if !dirty {
+                        if let Some(prev_draw) = self.prev_draw.borrow().get(prev_draw_i) {
+                            if prev_draw != &ch_out {
+                                dirty = true;
+                            }
+                        } else {
+                            dirty = true;
+                        }
+                        prev_draw_i += 1;
+                    }
+                    out.push(ch_out);
+
                     //} else {
                     //    //if the cell is empty, draw a space
                     //    out.push(DrawChPos {
@@ -399,7 +424,11 @@ impl Element for TerminalPane {
             });
         }
 
-        out
+        if dirty {
+            DrawUpdate::update(out).into()
+        } else {
+            Vec::new()
+        }
     }
 }
 

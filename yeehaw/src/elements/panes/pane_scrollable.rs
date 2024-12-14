@@ -25,6 +25,15 @@ pub struct PaneScrollable {
 
     /// how many characters to scroll on a scroll event, if None, then disable scroll
     pub scroll_rate: Rc<RefCell<Option<i16>>>,
+
+    last_draw_details: Rc<RefCell<Option<PSDrawDetails>>>,
+}
+
+struct PSDrawDetails {
+    x_off: usize,
+    y_off: usize,
+    max_x: usize,
+    max_y: usize,
 }
 
 impl PaneScrollable {
@@ -40,6 +49,7 @@ impl PaneScrollable {
             expand_to_fill_width: Rc::new(RefCell::new(false)),
             expand_to_fill_height: Rc::new(RefCell::new(false)),
             scroll_rate: Rc::new(RefCell::new(Some(3))),
+            last_draw_details: Rc::new(RefCell::new(None)),
         }
     }
 
@@ -55,6 +65,7 @@ impl PaneScrollable {
             expand_to_fill_width: Rc::new(RefCell::new(true)),
             expand_to_fill_height: Rc::new(RefCell::new(true)),
             scroll_rate: Rc::new(RefCell::new(Some(3))),
+            last_draw_details: Rc::new(RefCell::new(None)),
         }
     }
 
@@ -166,36 +177,62 @@ impl Element for PaneScrollable {
         (captured, resps)
     }
 
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
         let inner_ctx = self.inner_ctx(ctx);
-        let mut dcps = self.pane.drawing(&inner_ctx);
+        let mut upds = self.pane.drawing(&inner_ctx);
         let x_off = *self.content_offset_x.borrow();
         let y_off = *self.content_offset_y.borrow();
         if x_off == 0 && y_off == 0 {
-            return dcps;
+            return upds;
         }
 
         let max_x = x_off + self.get_content_width(ctx);
         let max_y = y_off + self.get_content_height(ctx);
 
-        // NOTE computational bottleneck, use rayon
-        dcps.par_iter_mut().for_each(|dcp| {
-            if (dcp.x as usize) < x_off
-                || (dcp.y as usize) < y_off
-                || (dcp.x as usize) > max_x
-                || (dcp.y as usize) > max_y
+        if let Some(last_draw_details) = self.last_draw_details.borrow().as_ref() {
+            if last_draw_details.x_off == x_off
+                && last_draw_details.y_off == y_off
+                && last_draw_details.max_x == max_x
+                && last_draw_details.max_y == max_y
             {
-                // it'd be better to delete, but we can't delete from a parallel iterator
-                // also using a filter here its slower that this
-                dcp.ch = DrawCh::transparent();
-                (dcp.x, dcp.y) = (0, 0);
-            } else {
-                dcp.x = (dcp.x as usize - x_off) as u16;
-                dcp.y = (dcp.y as usize - y_off) as u16;
+                return upds;
+            }
+        }
+        // update the last draw details
+        *self.last_draw_details.borrow_mut() = Some(PSDrawDetails {
+            x_off,
+            y_off,
+            max_x,
+            max_y,
+        });
+
+        // TODO does this make sense to have nested rayon here?
+        // NOTE computational bottleneck, use rayon
+        upds.par_iter_mut().for_each(|upd| {
+            match upd.action {
+                DrawAction::Update(ref mut dcps) | DrawAction::Extend(ref mut dcps) => {
+                    dcps.par_iter_mut().for_each(|dcp| {
+                        if (dcp.x as usize) < x_off
+                            || (dcp.y as usize) < y_off
+                            || (dcp.x as usize) > max_x
+                            || (dcp.y as usize) > max_y
+                        {
+                            // it'd be better to delete, but we can't delete from a parallel iterator
+                            // also using a filter here its slower that this
+                            dcp.ch = DrawCh::transparent();
+                            (dcp.x, dcp.y) = (0, 0);
+                        } else {
+                            dcp.x = (dcp.x as usize - x_off) as u16;
+                            dcp.y = (dcp.y as usize - y_off) as u16;
+                        }
+                    })
+                }
+                DrawAction::Remove => {}
+                DrawAction::ClearAll => {}
             }
         });
 
-        dcps
+        upds
     }
 
     fn set_content_x_offset(&self, ctx: &Context, x: usize) {

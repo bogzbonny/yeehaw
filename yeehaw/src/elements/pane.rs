@@ -1,7 +1,7 @@
 use {
     crate::{
-        Color, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal, Element,
-        ElementID, Event, EventResponse, EventResponses, Loc, Parent, Priority,
+        Color, Context, DrawCh, DrawChPos, DrawChs2D, DrawUpdate, DynLocation, DynLocationSet,
+        DynVal, Element, ElementID, Event, EventResponse, EventResponses, Loc, Parent, Priority,
         ReceivableEventChanges, SelfReceivableEvents, Size, Style, ZIndex,
     },
     std::{
@@ -45,7 +45,6 @@ pub struct Pane {
 
     content: Rc<RefCell<DrawChs2D>>,
     is_content_dirty: Rc<RefCell<bool>>,
-    drawing_cache: Rc<RefCell<Vec<DrawChPos>>>,
     last_size: Rc<RefCell<Size>>,
     last_visible_region: Rc<RefCell<Option<Loc>>>,
 
@@ -80,7 +79,6 @@ impl Pane {
             is_content_dirty: Rc::new(RefCell::new(true)),
             last_size: Rc::new(RefCell::new(ctx.size)),
             last_visible_region: Rc::new(RefCell::new(ctx.visible_region)),
-            drawing_cache: Rc::new(RefCell::new(Vec::new())),
             default_ch: Rc::new(RefCell::new(DrawCh::default())),
             content_view_offset_x: Rc::new(RefCell::new(0)),
             content_view_offset_y: Rc::new(RefCell::new(0)),
@@ -291,6 +289,16 @@ impl Pane {
         *self.is_content_dirty.borrow_mut() = true;
     }
 
+    /// set the content, if its different from the current content. If the
+    /// content is the same then the dirty flag is not set. NOTE that checking
+    /// if the content is the same is an expensive comparison so this function should
+    /// not be used if the content is known to be different.
+    pub fn set_content_if_diff(&self, content: DrawChs2D) {
+        if *self.content.borrow() != content {
+            self.set_content(content);
+        }
+    }
+
     /// The pane's Content need not be the dimensions provided within
     /// the Location, however the Content will simply be cut off if it exceeds
     /// any dimension of the Location. If the Content is less than the dimensions
@@ -498,12 +506,12 @@ impl Element for Pane {
     }
 
     /// Drawing compiles all of the DrawChPos necessary to draw this element
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
         if !*self.is_content_dirty.borrow()
             && *self.last_size.borrow() == ctx.size
             && *self.last_visible_region.borrow() == ctx.visible_region
         {
-            return self.drawing_cache.borrow().clone();
+            return Vec::with_capacity(0);
         }
 
         self.is_content_dirty.replace(false);
@@ -549,8 +557,7 @@ impl Element for Pane {
                 chs.push(DrawChPos::new(ch_out, x as u16, y as u16))
             }
         }
-        *self.drawing_cache.borrow_mut() = chs.clone();
-        chs
+        DrawUpdate::update(chs).into()
     }
 
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {

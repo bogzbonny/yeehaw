@@ -138,15 +138,13 @@ impl Element for TabsTop {
         }
         self.pane.receive_event(ctx, ev)
     }
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
         // set the names of the tabs
-        let mut chs = self.pane.drawing(ctx);
+        let mut upds = self.pane.drawing(ctx);
         if !*self.is_dirty.borrow() {
-            let out = self.cached_drawing.borrow().clone();
-            chs.extend(out);
-            return chs;
+            return upds;
         }
-        let mut out = Vec::new();
+        let mut chs = Vec::new();
         let mut pos = 0usize;
         for (i, name_) in self
             .els
@@ -171,12 +169,12 @@ impl Element for TabsTop {
             let name_len = name.chars().count();
             let name_chs = DrawChPos::new_from_string(name, pos as u16, 0, style);
             pos += name_len;
-            out.extend(name_chs);
+            chs.extend(name_chs);
         }
         self.is_dirty.replace(false);
-        *self.cached_drawing.borrow_mut() = out.clone();
-        chs.extend(out);
-        chs
+        let upd = DrawUpdate::update(chs);
+        upds.push(upd);
+        upds
     }
 }
 

@@ -301,12 +301,11 @@ impl DropdownList {
         // set the scrollbar on top of the content
         if open && self.display_scrollbar() {
             let sb_ctx = ctx.child_context(&self.scrollbar.get_dyn_location_set().l);
-            let mut sb_chs = self.scrollbar.drawing(&sb_ctx);
-            // shift the scrollbar content to below the arrow
-            for ch in sb_chs.iter_mut() {
-                ch.x += width.saturating_sub(1);
-                ch.y += 1 + offset;
-            }
+            let sb_chs = self
+                .scrollbar
+                .get_content(&sb_ctx)
+                // shift the scrollbar content to below the arrow
+                .to_draw_ch_pos(width.saturating_sub(1), 1 + offset);
             content.apply_vec_draw_ch_pos(sb_chs);
         }
 
@@ -477,7 +476,7 @@ impl Element for DropdownList {
         (false, resps)
     }
 
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
         if *self.dirty.borrow() {
             self.update_content(ctx);
             *self.dirty.borrow_mut() = false;

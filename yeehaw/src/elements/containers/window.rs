@@ -616,14 +616,17 @@ impl BasicWindowTopBar {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for BasicWindowTopBar {
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        let out = self.pane.drawing(ctx);
-        // ensure that none of the positions are outside of the context
-        out.iter()
-            .filter(|dc| dc.x < ctx.size.width && dc.y < ctx.size.height)
-            .cloned()
-            .collect()
-    }
+    // XXX delete, make sure that things don't extend beyond top bar limits
+    // by making the top bar real small (title should not extend)
+    //
+    //fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
+    //    let out = self.pane.drawing(ctx);
+    //    // ensure that none of the positions are outside of the context
+    //    out.iter()
+    //        .filter(|dc| dc.x < ctx.size.width && dc.y < ctx.size.height)
+    //        .cloned()
+    //        .collect()
+    //}
 
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {

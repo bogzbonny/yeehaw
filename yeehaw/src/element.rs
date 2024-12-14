@@ -82,7 +82,7 @@ pub trait Element: DynClone {
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges;
 
     /// Get the element's full drawing for the provided context.
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos>;
+    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate>;
 
     /// Element attributes can be used to store arbitrary values (as encoded bytes) within the
     /// element. Typically if you are developing a new Element, you can simply store local values
@@ -292,4 +292,155 @@ pub trait Parent: dyn_clone::DynClone {
     fn get_priority(&self) -> Priority;
 
     fn get_id(&self) -> ElementID;
+}
+
+// -----------------------------------------------------
+
+#[derive(Clone)]
+/// The `DrawUpdate` is a primitive type used to convey draw updates of an element.
+/// A sub-id is provided to allow for an element to sub-divide its draw updates into
+/// sub-sections. This is useful for container elements which contain sub-elements which
+/// may only be updated individually.
+pub struct DrawUpdate {
+    /// sub element-id attributed to these changes too. This is useful for container elements which
+    /// contain sub-elements which may only be updated individually.
+    /// For non-container elements, this should just be an empty vector.
+    pub sub_id: Vec<ElementID>,
+
+    /// The draw update action to take
+    pub action: DrawAction,
+}
+
+impl From<DrawUpdate> for Vec<DrawUpdate> {
+    fn from(d: DrawUpdate) -> Self {
+        vec![d]
+    }
+}
+
+#[derive(Clone)]
+pub enum DrawAction {
+    /// delete everything at or prefixed with this sub_id
+    ClearAll,
+
+    /// deletes everything at this sub_id, does not effect
+    /// other items with this sub_id prefix
+    Remove,
+
+    /// remove-all then add DrawChPos's
+    Update(Vec<DrawChPos>),
+
+    /// extend to the DrawChPos's at the sub_id.
+    /// no old draw items are removed.
+    Extend(Vec<DrawChPos>),
+}
+
+impl DrawUpdate {
+    pub fn clear_all() -> Self {
+        Self {
+            sub_id: Vec::new(),
+            action: DrawAction::ClearAll,
+        }
+    }
+
+    pub fn remove() -> Self {
+        Self {
+            sub_id: Vec::new(),
+            action: DrawAction::Remove,
+        }
+    }
+
+    pub fn update(updates: Vec<DrawChPos>) -> Self {
+        Self {
+            sub_id: Vec::new(),
+            action: DrawAction::Update(updates),
+        }
+    }
+
+    pub fn extend(updates: Vec<DrawChPos>) -> Self {
+        Self {
+            sub_id: Vec::new(),
+            action: DrawAction::Extend(updates),
+        }
+    }
+
+    pub fn new_at_sub_id(sub_id: Vec<ElementID>, action: DrawAction) -> Self {
+        Self { sub_id, action }
+    }
+
+    pub fn clear_all_at_sub_id(sub_id: Vec<ElementID>) -> Self {
+        Self {
+            sub_id,
+            action: DrawAction::ClearAll,
+        }
+    }
+
+    pub fn remove_at_sub_id(sub_id: Vec<ElementID>) -> Self {
+        Self {
+            sub_id,
+            action: DrawAction::Remove,
+        }
+    }
+
+    pub fn update_at_sub_id(sub_id: Vec<ElementID>, updates: Vec<DrawChPos>) -> Self {
+        Self {
+            sub_id,
+            action: DrawAction::Update(updates),
+        }
+    }
+
+    pub fn extend_at_sub_id(sub_id: Vec<ElementID>, updates: Vec<DrawChPos>) -> Self {
+        Self {
+            sub_id,
+            action: DrawAction::Extend(updates),
+        }
+    }
+
+    pub fn prepend_id(&mut self, id: ElementID) {
+        self.sub_id.insert(0, id);
+    }
+}
+
+// ------------------------------------
+
+#[derive(Default, Clone)]
+pub struct DrawingCache(Vec<(Vec<ElementID>, Vec<DrawChPos>)>);
+
+impl DrawingCache {
+    pub fn update_and_get(&mut self, updates: Vec<DrawUpdate>) -> impl Iterator<Item = &DrawChPos> {
+        self.update(updates);
+        self.get_drawing()
+    }
+
+    // update the cache based on DrawUpdates provided
+    pub fn update(&mut self, updates: Vec<DrawUpdate>) {
+        for update in updates {
+            match update.action {
+                DrawAction::ClearAll => {
+                    self.0.retain(|(ids, _)| !ids.starts_with(&update.sub_id));
+                }
+                DrawAction::Remove => {
+                    self.0.retain(|(ids, _)| ids != &update.sub_id);
+                }
+                DrawAction::Update(d) => {
+                    for (ids, draw) in self.0.iter_mut() {
+                        if ids == &update.sub_id {
+                            *draw = d.clone();
+                        }
+                    }
+                }
+                DrawAction::Extend(d) => {
+                    for (ids, draw) in self.0.iter_mut() {
+                        if ids == &update.sub_id {
+                            draw.extend(d.clone());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// flatten the drawing cache into a single DrawChPos array
+    pub fn get_drawing(&self) -> impl Iterator<Item = &DrawChPos> {
+        self.0.iter().flat_map(|(_, d)| d.iter())
+    }
 }

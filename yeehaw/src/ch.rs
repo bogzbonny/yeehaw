@@ -267,11 +267,28 @@ impl From<Vec<DrawChPos>> for DrawChPosVec {
     }
 }
 
-impl From<ratatui::buffer::Buffer> for DrawChPosVec {
+//impl From<ratatui::buffer::Buffer> for DrawChPosVec {
+//    fn from(buf: ratatui::buffer::Buffer) -> Self {
+//        let mut out = Vec::new();
+
+//        buf.content.iter().enumerate().for_each(|(i, cell)| {
+//            let (x, y) = buf.pos_of(i);
+//            let mut ch: ChPlus = cell.symbol().into();
+
+//            if cell.skip {
+//                ch = ChPlus::Skip;
+//            }
+//            let sty = Style::from(cell.clone());
+//            out.push(DrawChPos::new(DrawCh::new(ch, sty), x, y));
+//        });
+//        DrawChPosVec(out)
+//    }
+//}
+
+impl From<ratatui::buffer::Buffer> for DrawChs2D {
     fn from(buf: ratatui::buffer::Buffer) -> Self {
         let mut out = Vec::new();
-
-        buf.content.iter().enumerate().for_each(|(i, cell)| {
+        for (i, cell) in buf.content.iter().enumerate() {
             let (x, y) = buf.pos_of(i);
             let mut ch: ChPlus = cell.symbol().into();
 
@@ -279,9 +296,19 @@ impl From<ratatui::buffer::Buffer> for DrawChPosVec {
                 ch = ChPlus::Skip;
             }
             let sty = Style::from(cell.clone());
-            out.push(DrawChPos::new(DrawCh::new(ch, sty), x, y));
-        });
-        DrawChPosVec(out)
+            let line = if let Some(line) = out.get_mut(y as usize) {
+                line
+            } else {
+                out.push(Vec::new());
+                out.last_mut().expect("impossible")
+            };
+            let x = x as usize;
+            if x >= line.len() {
+                line.resize(x + 1, DrawCh::default());
+            }
+            line[x] = DrawCh::new(ch, sty);
+        }
+        DrawChs2D(out)
     }
 }
 
@@ -293,7 +320,7 @@ impl DrawChPosVec {
 
 // ----------------------------------------------------
 
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Default, Debug, PartialEq)]
 pub struct DrawChs2D(pub Vec<Vec<DrawCh>>); // y, x
 
 impl Deref for DrawChs2D {

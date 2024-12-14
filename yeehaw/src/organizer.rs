@@ -1,7 +1,7 @@
 use {
     crate::{
-        prioritizer::EventPrioritizer, Context, DrawCh, DrawChPos, DynLocation, DynLocationSet,
-        Element, ElementID, Event, EventResponse, EventResponses, Parent, Priority,
+        prioritizer::EventPrioritizer, Context, DrawAction, DrawCh, DrawUpdate, DynLocation,
+        DynLocationSet, Element, ElementID, Event, EventResponse, EventResponses, Parent, Priority,
         ReceivableEventChanges, RelMouseEvent, SelfReceivableEvents, ZIndex,
     },
     rayon::prelude::*,
@@ -280,8 +280,7 @@ impl ElementOrganizer {
     /// back to furthest forward) and then drawn in that order, such that the element
     /// with the highest z-index is drawn last and thus is on top of all others in the
     /// DrawChPos slice
-    pub fn all_drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        let mut out = Vec::new();
+    pub fn all_drawing_updates(&self, ctx: &Context) -> Vec<DrawUpdate> {
         let mut eoz: Vec<(ElementID, ElDetails)> = Vec::new();
 
         for (el_id, details) in self.els.borrow().iter() {
@@ -290,6 +289,8 @@ impl ElementOrganizer {
 
         // sort z index from low to high
         eoz.sort_by(|a, b| a.1.loc.borrow().z.cmp(&b.1.loc.borrow().z));
+
+        let mut updates = Vec::new();
 
         // draw elements in order from highest z-index to lowest
         for el_id_z in eoz {
@@ -305,47 +306,67 @@ impl ElementOrganizer {
 
             let child_ctx = ctx.child_context(&el_id_z.1.loc.borrow().l);
 
-            let mut dcps = details.el.drawing(&child_ctx);
-            let l = details.loc.borrow().l.clone();
-            let s = ctx.size;
-            let child_s = child_ctx.size;
+            let mut el_upds = details.el.drawing(&child_ctx);
 
-            let mut start_x = l.get_start_x_from_size(s);
-            let mut start_y = l.get_start_y_from_size(s);
-            // check for overflow
-            if start_x < 0 {
-                start_x = 0;
-            }
-            if start_y < 0 {
-                start_y = 0;
-            }
+            for mut el_upd in el_upds.drain(..) {
+                // prepend the element_id to the DrawUpdate
+                el_upd.prepend_id(el_id_z.0.clone());
 
-            // NOTE this is a computational bottleneck
-            // currently using rayon for parallelization
-            if *details.overflow.borrow() {
-                dcps.par_iter_mut().for_each(|dcp| {
-                    dcp.set_draw_size_offset_colors(child_s, start_x as u16, start_y as u16);
-                    dcp.x += start_x as u16;
-                    dcp.y += start_y as u16;
-                });
-            } else {
-                dcps.par_iter_mut().for_each(|dcp| {
-                    dcp.set_draw_size_offset_colors(child_s, start_x as u16, start_y as u16);
-                    if dcp.x >= child_s.width || dcp.y >= child_s.height {
-                        // it'd be better to delete, but we can't delete from a parallel iterator
-                        // also using a filter here its slower that this
-                        dcp.ch = DrawCh::transparent();
-                        (dcp.x, dcp.y) = (0, 0);
-                    } else {
-                        dcp.x += start_x as u16;
-                        dcp.y += start_y as u16;
+                match el_upd.action {
+                    DrawAction::ClearAll => {}
+                    DrawAction::Remove => {}
+                    DrawAction::Update(ref mut dcps) | DrawAction::Extend(ref mut dcps) => {
+                        //let mut dcps = details.el.drawing(&child_ctx);
+                        let l = details.loc.borrow().l.clone();
+                        let s = ctx.size;
+                        let child_s = child_ctx.size;
+
+                        let mut start_x = l.get_start_x_from_size(s);
+                        let mut start_y = l.get_start_y_from_size(s);
+                        // check for overflow
+                        if start_x < 0 {
+                            start_x = 0;
+                        }
+                        if start_y < 0 {
+                            start_y = 0;
+                        }
+
+                        // NOTE this is a computational bottleneck
+                        // currently using rayon for parallelization
+                        if *details.overflow.borrow() {
+                            dcps.par_iter_mut().for_each(|dcp| {
+                                dcp.set_draw_size_offset_colors(
+                                    child_s,
+                                    start_x as u16,
+                                    start_y as u16,
+                                );
+                                dcp.x += start_x as u16;
+                                dcp.y += start_y as u16;
+                            });
+                        } else {
+                            dcps.par_iter_mut().for_each(|dcp| {
+                                dcp.set_draw_size_offset_colors(
+                                    child_s,
+                                    start_x as u16,
+                                    start_y as u16,
+                                );
+                                if dcp.x >= child_s.width || dcp.y >= child_s.height {
+                                    // it'd be better to delete, but we can't delete from a parallel iterator
+                                    // also using a filter here its slower that this
+                                    dcp.ch = DrawCh::transparent();
+                                    (dcp.x, dcp.y) = (0, 0);
+                                } else {
+                                    dcp.x += start_x as u16;
+                                    dcp.y += start_y as u16;
+                                }
+                            });
+                        }
                     }
-                });
+                }
+                updates.push(el_upd);
             }
-            out.extend(dcps);
         }
-
-        out
+        updates
     }
 
     /// write func to remove/add evCombos and commands from EvPrioritizer and

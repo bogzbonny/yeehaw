@@ -1,7 +1,7 @@
 use {
     crate::{
-        keyboard::Keyboard, ChPlus, Context, DynLocation, DynLocationSet, Element, ElementID,
-        ElementOrganizer, Error, Event, EventResponse, EventResponses, Parent, Priority,
+        keyboard::Keyboard, ChPlus, Context, DrawingCache, DynLocation, DynLocationSet, Element,
+        ElementID, ElementOrganizer, Error, Event, EventResponse, EventResponses, Parent, Priority,
         SortingHat,
     },
     crossterm::{
@@ -15,7 +15,6 @@ use {
         terminal,
     },
     futures::{future::FutureExt, StreamExt},
-    rayon::prelude::*,
     std::collections::HashMap,
     std::io::{stdout, Write},
     std::{cell::RefCell, rc::Rc},
@@ -36,6 +35,8 @@ pub struct Tui {
     main_el_id: ElementID,
     kb: Keyboard,
     launch_instant: std::time::Instant,
+
+    pub drawing_cache: DrawingCache,
 
     pub animation_speed: Duration,
 
@@ -64,6 +65,7 @@ impl Tui {
             main_el_id: "".to_string(),
             kb: Keyboard::default(),
             launch_instant: std::time::Instant::now(),
+            drawing_cache: DrawingCache::default(),
             animation_speed: DEFAULT_ANIMATION_SPEED,
             kill_on_ctrl_c: true,
             sc_last_flushed: HashMap::new(),
@@ -240,8 +242,8 @@ impl Tui {
     /// Render all elements, draws the screen using the DrawChPos array passed to it
     /// by the element organizers.
     ///
-    /// NOTE: when the tui calls all_drawing on the top level ElementOrganizer,
-    /// all_drawing gets recursively called on every element organizer in the tree.
+    /// NOTE: when the tui calls all_drawing_updates on the top level ElementOrganizer,
+    /// all_drawing_updates gets recursively called on every element organizer in the tree.
     /// Each one returns a DrawChPos array which is then passed to the next level up
     /// in the tree, with that level appending its own DrawChPos array to the end.
     /// Render then iterates through the DrawChPos array and sets the content
@@ -251,7 +253,8 @@ impl Tui {
     pub fn render(&mut self) -> Result<(), Error> {
         let mut sc = stdout();
         let ctx = self.context();
-        let chs = self.cup.eo.all_drawing(&ctx);
+        let updates = self.cup.eo.all_drawing_updates(&ctx);
+        let chs = self.drawing_cache.update_and_get(updates);
 
         let mut dedup_chs: HashMap<(u16, u16), StyledContent<ChPlus>> = HashMap::new();
         for c in chs {

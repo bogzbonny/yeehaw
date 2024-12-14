@@ -230,7 +230,6 @@ impl TermEditorPane {
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for TermEditorPane {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        //if self.tempfile.borrow().is_none() {
         if !*self.editor_is_open.borrow() {
             // activate the editor on click
             let clicked_down = *self.clicked_down.borrow();
@@ -272,9 +271,10 @@ impl Element for TermEditorPane {
 
         (captured, resps)
     }
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
         let out = self.pane.drawing(ctx);
 
+        // TODO maybe do this somewhere else? on a different thread?
         // check for changes to the tempfile each draw
         if let Some(tempfile) = self.tempfile.borrow().as_ref() {
             let tempfile_path = tempfile

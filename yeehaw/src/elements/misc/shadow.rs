@@ -1,4 +1,4 @@
-use crate::*;
+use {crate::*, rayon::prelude::*};
 
 /// displays the size
 #[derive(Clone)]
@@ -124,22 +124,52 @@ impl Shadowed {
 
 #[yeehaw_derive::impl_element_from(inner)]
 impl Element for Shadowed {
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        let mut out = self.inner.drawing(ctx);
+    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
+        let mut upds = self.inner.drawing(ctx);
 
         // because the shadow allows overflow, we must deal with any overflows here
-        if *self.inner.get_ref_cell_overflow().borrow() {
-            for dcp in out.iter_mut() {
-                if dcp.x >= ctx.size.width || dcp.y >= ctx.size.height {
-                    // it'd be better to delete, but we can't delete from a parallel iterator
-                    // also using a filter here its slower that this
-                    dcp.ch = DrawCh::transparent();
-                    (dcp.x, dcp.y) = (0, 0);
+        for upd in &mut upds {
+            match upd.action {
+                DrawAction::Update(ref mut dcps) | DrawAction::Extend(ref mut dcps) => {
+                    if *self.inner.get_ref_cell_overflow().borrow() {
+                        let width = ctx.size.width;
+                        let height = ctx.size.height;
+                        dcps.par_iter_mut().for_each(move |dcp| {
+                            if dcp.x >= width || dcp.y >= height {
+                                // it'd be better to delete, but we can't delete from a parallel iterator
+                                // also using a filter here its slower that this
+                                dcp.ch = DrawCh::transparent();
+                                (dcp.x, dcp.y) = (0, 0);
+                            }
+                        })
+                    }
+                }
+                DrawAction::Remove | DrawAction::ClearAll => {}
+            }
+        }
+
+        // add the shadow content
+        for upd in &mut upds {
+            if upd.sub_id.is_empty() {
+                if let DrawAction::Update(ref mut dcps) = upd.action {
+                    dcps.extend(self.set_shadow_content(ctx));
+                    break;
                 }
             }
         }
-        out.extend(self.set_shadow_content(ctx));
-        out
+
+        // XXX delete
+        //if *self.inner.get_ref_cell_overflow().borrow() {
+        //    for dcp in out.iter_mut() {
+        //        if dcp.x >= ctx.size.width || dcp.y >= ctx.size.height {
+        //            // it'd be better to delete, but we can't delete from a parallel iterator
+        //            // also using a filter here its slower that this
+        //            dcp.ch = DrawCh::transparent();
+        //            (dcp.x, dcp.y) = (0, 0);
+        //        }
+        //    }
+        //}
+        upds
     }
 
     fn get_ref_cell_overflow(&self) -> Rc<RefCell<bool>> {

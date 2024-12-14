@@ -1433,7 +1433,7 @@ impl Element for TextBoxInner {
         }
     }
 
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
         if self.is_dirty.replace(false) || *self.last_size.borrow() != ctx.size {
             self.update_content(ctx);
             self.last_size.replace(ctx.size);

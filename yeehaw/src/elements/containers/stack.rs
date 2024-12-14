@@ -1,6 +1,6 @@
 use {
     crate::{
-        Context, DrawCh, DrawChPos, DynLocationSet, DynVal, Element, ElementID, Event,
+        Context, DrawCh, DrawUpdate, DynLocationSet, DynVal, Element, ElementID, Event,
         EventResponse, EventResponses, Parent, ParentPane, Priority, ReceivableEventChanges,
         SelfReceivableEvents, Size, Style,
     },
@@ -557,7 +557,7 @@ impl Element for VerticalStack {
         (captured, resps)
     }
 
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
         self.ensure_normalized_sizes(ctx);
         self.pane.drawing(ctx)
     }
@@ -656,7 +656,7 @@ impl Element for HorizontalStack {
         }
         (captured, resps)
     }
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
         self.ensure_normalized_sizes(ctx);
         self.pane.drawing(ctx)
     }

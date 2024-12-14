@@ -1350,7 +1350,7 @@ impl Element for Bordered {
 
         (captured, resps)
     }
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
         self.ensure_scrollbar_size(ctx);
         self.pane.drawing(ctx)
     }
@@ -1488,6 +1488,8 @@ pub struct VerticalSide {
     pub text: Rc<RefCell<Option<(Vec<DrawCh>, Justification)>>>,
     /// postion where dragging started x, y
     pub dragging_start_pos: Rc<RefCell<Option<(i32, i32)>>>,
+
+    pub last_draw: Rc<RefCell<Vec<DrawChPos>>>,
 }
 
 /// corner position
@@ -1512,6 +1514,7 @@ impl VerticalSide {
             property: Rc::new(RefCell::new(property)),
             text: Rc::new(RefCell::new(None)),
             dragging_start_pos: Rc::new(RefCell::new(None)),
+            last_draw: Rc::new(RefCell::new(Vec::new())),
         }
     }
 
@@ -1568,38 +1571,39 @@ impl VerticalSide {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for VerticalSide {
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        let Some((ref text, ref j)) = *self.text.borrow() else {
-            return DrawChPos::new_repeated_vertical(
-                self.ch.borrow().clone(),
-                0,
-                0,
-                ctx.size.height,
-            );
+    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
+        let out = if let Some((ref text, ref j)) = *self.text.borrow() {
+            let text_height = text.len() as u16;
+            let (start_y, end_y) = match j {
+                Justification::Start => (0u16, text_height),
+                Justification::Center => {
+                    let start_y = (ctx.size.height - text_height) / 2;
+                    (start_y, start_y + text_height)
+                }
+                Justification::End => (ctx.size.height - text_height, ctx.size.height),
+            };
+            let mut out = Vec::with_capacity(ctx.size.height as usize);
+            let mut text_i = 0;
+            for y in 0..ctx.size.height {
+                if y >= start_y && y < end_y {
+                    if let Some(ch) = text.get(text_i) {
+                        out.push(DrawChPos::new(ch.clone(), 0, y));
+                        text_i += 1;
+                        continue;
+                    }
+                }
+                out.push(DrawChPos::new(self.ch.borrow().clone(), 0, y));
+            }
+            out
+        } else {
+            DrawChPos::new_repeated_vertical(self.ch.borrow().clone(), 0, 0, ctx.size.height)
         };
 
-        let text_height = text.len() as u16;
-        let (start_y, end_y) = match j {
-            Justification::Start => (0u16, text_height),
-            Justification::Center => {
-                let start_y = (ctx.size.height - text_height) / 2;
-                (start_y, start_y + text_height)
-            }
-            Justification::End => (ctx.size.height - text_height, ctx.size.height),
-        };
-        let mut out = Vec::with_capacity(ctx.size.height as usize);
-        let mut text_i = 0;
-        for y in 0..ctx.size.height {
-            if y >= start_y && y < end_y {
-                if let Some(ch) = text.get(text_i) {
-                    out.push(DrawChPos::new(ch.clone(), 0, y));
-                    text_i += 1;
-                    continue;
-                }
-            }
-            out.push(DrawChPos::new(self.ch.borrow().clone(), 0, y));
+        if out != *self.last_draw.borrow() {
+            *self.last_draw.borrow_mut() = out.clone();
+            return DrawUpdate::update(out).into();
         }
-        out
+        Vec::with_capacity(0)
     }
 
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
@@ -1694,6 +1698,8 @@ pub struct HorizontalSide {
     pub text: Rc<RefCell<Option<(Vec<DrawCh>, Justification)>>>,
     /// x, y
     pub dragging_start_pos: Rc<RefCell<Option<(i32, i32)>>>,
+
+    pub last_draw: Rc<RefCell<Vec<DrawChPos>>>,
 }
 
 /// corner position
@@ -1719,6 +1725,7 @@ impl HorizontalSide {
             property: Rc::new(RefCell::new(property)),
             text: Rc::new(RefCell::new(None)),
             dragging_start_pos: Rc::new(RefCell::new(None)),
+            last_draw: Rc::new(RefCell::new(Vec::new())),
         }
     }
 
@@ -1775,38 +1782,39 @@ impl HorizontalSide {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for HorizontalSide {
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        let Some((ref text, ref j)) = *self.text.borrow() else {
-            return DrawChPos::new_repeated_horizontal(
-                self.ch.borrow().clone(),
-                0,
-                0,
-                ctx.size.width,
-            );
+    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
+        let out = if let Some((ref text, ref j)) = *self.text.borrow() {
+            let text_width = text.len() as u16;
+            let (start_x, end_x) = match j {
+                Justification::Start => (0u16, text_width),
+                Justification::Center => {
+                    let start_x = (ctx.size.width - text_width) / 2;
+                    (start_x, start_x + text_width)
+                }
+                Justification::End => (ctx.size.width - text_width, ctx.size.width),
+            };
+            let mut out = Vec::with_capacity(ctx.size.width as usize);
+            let mut text_i = 0;
+            for x in 0..ctx.size.width {
+                if x >= start_x && x < end_x {
+                    if let Some(ch) = text.get(text_i) {
+                        out.push(DrawChPos::new(ch.clone(), x, 0));
+                        text_i += 1;
+                        continue;
+                    }
+                }
+                out.push(DrawChPos::new(self.ch.borrow().clone(), x, 0));
+            }
+            out
+        } else {
+            DrawChPos::new_repeated_horizontal(self.ch.borrow().clone(), 0, 0, ctx.size.width)
         };
 
-        let text_width = text.len() as u16;
-        let (start_x, end_x) = match j {
-            Justification::Start => (0u16, text_width),
-            Justification::Center => {
-                let start_x = (ctx.size.width - text_width) / 2;
-                (start_x, start_x + text_width)
-            }
-            Justification::End => (ctx.size.width - text_width, ctx.size.width),
-        };
-        let mut out = Vec::with_capacity(ctx.size.width as usize);
-        let mut text_i = 0;
-        for x in 0..ctx.size.width {
-            if x >= start_x && x < end_x {
-                if let Some(ch) = text.get(text_i) {
-                    out.push(DrawChPos::new(ch.clone(), x, 0));
-                    text_i += 1;
-                    continue;
-                }
-            }
-            out.push(DrawChPos::new(self.ch.borrow().clone(), x, 0));
+        if out != *self.last_draw.borrow() {
+            *self.last_draw.borrow_mut() = out.clone();
+            return DrawUpdate::update(out).into();
         }
-        out
+        Vec::with_capacity(0)
     }
 
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {

@@ -25,7 +25,7 @@ pub use {
     context::Context,
     dyn_location::{DynLocation, DynLocationSet, Loc, Point, Size, ZIndex},
     dyn_value::DynVal,
-    element::{Element, HookFn as ElementHookFn, Parent},
+    element::{DrawAction, DrawUpdate, DrawingCache, Element, HookFn as ElementHookFn, Parent},
     elements::{border::Corner as BorderCorner, border::PropertyCnr as BorderPropertyCnr, *},
     errors::Error,
     event::{

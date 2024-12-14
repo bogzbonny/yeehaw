@@ -18,6 +18,8 @@ pub struct FileNavPane {
     pub offset: Rc<RefCell<usize>>,
     #[allow(clippy::type_complexity)]
     pub file_enter_hook: Rc<RefCell<Box<dyn FnMut(Context, PathBuf) -> EventResponses>>>,
+
+    pub is_dirty: Rc<RefCell<bool>>,
 }
 
 #[derive(Clone)]
@@ -89,6 +91,7 @@ impl FileNavPane {
             file_enter_hook: Rc::new(RefCell::new(Box::new(|_ctx, _path| {
                 EventResponses::default()
             }))),
+            is_dirty: Rc::new(RefCell::new(true)),
         };
         out.update_content(ctx);
         out
@@ -99,7 +102,10 @@ impl FileNavPane {
     }
 
     pub fn update_content(&self, ctx: &Context) {
-        let mut content = vec![vec![]];
+        if !*self.is_dirty.borrow() {
+            return;
+        }
+        let mut content = vec![Vec::new()];
         for (i, item) in self.nav_items.borrow().0.iter().enumerate() {
             if i < *self.offset.borrow() {
                 continue;
@@ -122,52 +128,58 @@ impl FileNavPane {
 impl Element for FileNavPane {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
-            Event::KeyCombo(ke) => match true {
-                _ if ke[0] == KB::KEY_J || ke[0] == KB::KEY_DOWN => {
-                    if *self.highlight_position.borrow() < (*self.nav_items.borrow()).len() - 1 {
-                        *self.highlight_position.borrow_mut() += 1;
-                    }
+            Event::KeyCombo(ke) => {
+                self.is_dirty.replace(true);
+                match true {
+                    _ if ke[0] == KB::KEY_J || ke[0] == KB::KEY_DOWN => {
+                        if *self.highlight_position.borrow() < (*self.nav_items.borrow()).len() - 1
+                        {
+                            *self.highlight_position.borrow_mut() += 1;
+                        }
 
-                    // correct offsets
-                    if *self.highlight_position.borrow()
-                        >= *self.offset.borrow() + ctx.size.height as usize - 1
-                    {
-                        *self.offset.borrow_mut() += 1;
+                        // correct offsets
+                        if *self.highlight_position.borrow()
+                            >= *self.offset.borrow() + ctx.size.height as usize - 1
+                        {
+                            *self.offset.borrow_mut() += 1;
+                        }
                     }
-                }
-                _ if ke[0] == KB::KEY_K || ke[0] == KB::KEY_UP => {
-                    if *self.highlight_position.borrow() > 0 {
-                        *self.highlight_position.borrow_mut() -= 1;
-                    }
+                    _ if ke[0] == KB::KEY_K || ke[0] == KB::KEY_UP => {
+                        if *self.highlight_position.borrow() > 0 {
+                            *self.highlight_position.borrow_mut() -= 1;
+                        }
 
-                    // correct offsets
-                    if *self.highlight_position.borrow() < *self.offset.borrow() {
-                        *self.offset.borrow_mut() -= 1;
+                        // correct offsets
+                        if *self.highlight_position.borrow() < *self.offset.borrow() {
+                            *self.offset.borrow_mut() -= 1;
+                        }
                     }
-                }
-                _ if ke[0] == KB::KEY_ENTER => {
-                    let (ni, resps) = {
-                        let nav_items = self.nav_items.borrow().clone();
-                        self.nav_items.borrow_mut()[*self.highlight_position.borrow()].enter(
-                            ctx,
-                            &nav_items,
-                            &mut self.file_enter_hook.borrow_mut(),
-                            *self.highlight_position.borrow(),
-                        )
-                    };
-                    if let Some(ni) = ni {
-                        *self.nav_items.borrow_mut() = ni;
+                    _ if ke[0] == KB::KEY_ENTER => {
+                        let (ni, resps) = {
+                            let nav_items = self.nav_items.borrow().clone();
+                            self.nav_items.borrow_mut()[*self.highlight_position.borrow()].enter(
+                                ctx,
+                                &nav_items,
+                                &mut self.file_enter_hook.borrow_mut(),
+                                *self.highlight_position.borrow(),
+                            )
+                        };
+                        if let Some(ni) = ni {
+                            *self.nav_items.borrow_mut() = ni;
+                        }
+                        return (true, resps);
                     }
-                    return (true, resps);
+                    _ => {}
                 }
-                _ => {}
-            },
-            Event::Initialize => {}
+            }
+            Event::Initialize => {
+                self.is_dirty.replace(true);
+            }
             _ => {}
         }
         (true, EventResponses::default())
     }
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
         self.update_content(ctx);
         self.pane.drawing(ctx)
     }

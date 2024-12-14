@@ -14,7 +14,7 @@ pub fn impl_element_from(attr: TokenStream, item: TokenStream) -> TokenStream {
     fn receivable(&self) -> SelfReceivableEvents;
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses);
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges;
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos>;
+    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate>;
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>>;
     fn set_attribute_inner(&self, key: &str, value: Vec<u8>);
     fn set_hook(&self, kind: &str, el_id: ElementID, hook: Box<dyn FnMut(&str, Box<dyn Element>)>);

@@ -1,8 +1,8 @@
 use {
     crate::{
-        Color, Context, DrawCh, DrawChPos, DynLocation, DynLocationSet, DynVal, Element, ElementID,
-        Event, EventResponses, Pane, Parent, ParentPane, Priority, ReceivableEventChanges,
-        RelMouseEvent, SelfReceivableEvents, Style, ZIndex,
+        Color, Context, DrawAction, DrawCh, DrawChPos, DrawUpdate, DynLocation, DynLocationSet,
+        DynVal, Element, ElementID, Event, EventResponses, Pane, Parent, ParentPane, Priority,
+        ReceivableEventChanges, RelMouseEvent, SelfReceivableEvents, Style, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     rayon::prelude::*,
@@ -684,7 +684,7 @@ impl Element for MenuBar {
         }
     }
 
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
         if !self.get_visible() {
             return vec![];
         }
@@ -705,37 +705,39 @@ impl Element for MenuBar {
             let child_ctx = ctx
                 .child_context(&el_details.loc.borrow().l)
                 .with_metadata(Self::MENU_STYLE_MD_KEY.to_string(), menu_style_bz.clone());
-            let mut dcps = el_details.el.drawing(&child_ctx);
-            //for dcp in &mut dcps {
-            //    dcp.update_colors_for_time_and_pos(child_ctx.size, child_ctx.dur_since_launch);
-            //}
-            //for mut dcp in dcps {
-            //    dcp.adjust_by_dyn_location(ctx.size, &el_details.loc.borrow().l);
-            //    out.push(dcp);
-            //}
+            let mut upds = el_details.el.drawing(&child_ctx);
 
-            let l = el_details.loc.borrow().l.clone();
-            let s = ctx.size;
-            let child_s = child_ctx.size;
-            let d = child_ctx.dur_since_launch;
+            for upd in &mut upds {
+                match upd.action {
+                    DrawAction::Update(ref mut dcps) | DrawAction::Extend(ref mut dcps) => {
+                        let l = el_details.loc.borrow().l.clone();
+                        let s = ctx.size;
+                        let child_s = child_ctx.size;
+                        let d = child_ctx.dur_since_launch;
 
-            // NOTE this is a computational bottleneck
-            // currently using rayon for parallelization
-            let mut start_x = l.get_start_x_from_size(s);
-            let mut start_y = l.get_start_y_from_size(s);
-            // check for overflow
-            if start_x < 0 {
-                start_x = 0;
+                        // NOTE this is a computational bottleneck
+                        // currently using rayon for parallelization
+                        let mut start_x = l.get_start_x_from_size(s);
+                        let mut start_y = l.get_start_y_from_size(s);
+                        // check for overflow
+                        if start_x < 0 {
+                            start_x = 0;
+                        }
+                        if start_y < 0 {
+                            start_y = 0;
+                        }
+                        dcps.par_iter_mut().for_each(|dcp| {
+                            dcp.update_colors_for_time_and_pos(child_s, d);
+                            dcp.x += start_x as u16;
+                            dcp.y += start_y as u16;
+                        });
+                    }
+                    DrawAction::Remove => {}
+                    DrawAction::ClearAll => {}
+                }
             }
-            if start_y < 0 {
-                start_y = 0;
-            }
-            dcps.par_iter_mut().for_each(|dcp| {
-                dcp.update_colors_for_time_and_pos(child_s, d);
-                dcp.x += start_x as u16;
-                dcp.y += start_y as u16;
-            });
-            out.extend(dcps);
+
+            out.extend(upds);
         }
         out
     }
@@ -763,20 +765,20 @@ impl Element for MenuItem {
         }
     }
 
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
         if !self.get_visible() {
-            return vec![];
+            return Vec::with_capacity(0);
         }
 
         let Some(ref md) = ctx.get_metadata(MenuBar::MENU_STYLE_MD_KEY) else {
-            return vec![];
+            return Vec::with_capacity(0);
         };
 
         let m_sty: MenuStyle = match serde_json::from_slice(md) {
             Ok(v) => v,
             Err(e) => {
                 log_err!("error deserializing menu style: {}", e);
-                return vec![];
+                return Vec::with_capacity(0);
             }
         };
 
@@ -799,7 +801,7 @@ impl Element for MenuItem {
         {
             m_sty.folder_arrow
         } else {
-            "".to_string()
+            String::new()
         };
 
         // add filler space
@@ -820,7 +822,7 @@ impl Element for MenuItem {
 
         // add right padding
         let (_, out) = MenuItem::draw_padding(m_sty.right_padding, x, sty.clone(), out);
-        out
+        DrawUpdate::update(out).into()
     }
 }
 

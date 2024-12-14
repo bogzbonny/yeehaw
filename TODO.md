@@ -12,6 +12,29 @@
 01. better labels for elements - build into element
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+01. Drawing overhaul
+    - add an offset to the position gradient (so that the gradient can have an
+      offset baked in without actually drawing the gradient).
+    - move the time/position based gradient calculations from the organizer 
+      and to the high level TUI
+      - also need to set draw size (instead will always draw will big one)
+         - set only once the first time 
+    - now caching by element should work
+     ^DONE
+  
+   - MAYBE don't explicitly cache (and not call drawing) but still call drawing 
+      each draw cycle, however each element can return special "Unchanged"
+      messages which then tells the parent to use its cached value. 
+          - nested containers:
+            - the parent-parent-container should be able to update a sub-section 
+              of the child-container, this will maybe introduce slight more
+              complexity as `fn drawing` should likely be able to return
+              multiple (ElementID, Vec<DrawPosCh>) chunks - that or a slightly 
+              new mechanism.
+   - will still need a new fn flattened_all_drawing which reads from the cache 
+     and provides all DrawChPos's for the tui
+
 01. cleanup the widgets example 
     - showcase should just use the same widgets example pane
 
@@ -74,6 +97,8 @@
 
 01. update rust version, update deps
 
+01. go through and remove / or make dyn element fns named with_width with_height
+
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 05. Theme Manager - it would be awesome to be able to just get the colors for
@@ -98,49 +123,18 @@
 __________________________________________________________________________
 REFACTORS
 
-01. Drawing overhaul
-    - add an offset to the position gradient (so that the gradient can have an
-      offset baked in without actually drawing the gradient).
-    - move the time/position based gradient calculations from the organizer 
-      and to the high level TUI
-      - also need to set draw size (instead will always draw will big one)
-         - set only once the first time 
-    ^ DONE
 
-    - now caching by element should work
-    - MAYBE don't explicitly cache (and not call drawing) but still call drawing 
-      each draw cycle, however each element can return special "Unchanged"
-      messages which then tells the parent to use its cached value. 
-          - nested containers:
-            - the parent-parent-container should be able to update a sub-section 
-              of the child-container, this will maybe introduce slight more
-              complexity as `fn drawing` should likely be able to return
-              multiple (ElementID, Vec<DrawPosCh>) chunks - that or a slightly 
-              new mechanism.
-``` rust
-fn drawing() -> Vec<DrawUpdate>
-
-pub struct DrawUpdate {
-   pub sub_id: Vec<ElementID>,
-   pub action: DrawAction,
-}
-
-pub enum DrawAction {
-    /// delete everything at or prefixed with this sub_id
-    ClearAll
-
-    /// deletes everything at this sub_id, does not effect 
-    /// other items with this sub_id prefix
-    Remove
-
-    /// remove-all then add DrawChPos's at this sub_id
-    Update(Vec<DrawChPos>)
-    
-    /// extend to the DrawChPos's at the sub_id
-    Extend(Vec<DrawChPos>)
-}
-```
-
+01. Improving speed for Terminal Element
+    - The terminal can't really be optimized in quite the same way as the
+      element; although it would be possible to take a diff on the terminal 
+      and then only feed back the changed terminal-chs, we would need the
+      ability to quickly replace a limited subset of chs - two options: 
+ DO THIS -> (1) setup a higher level grid over the Terminal Element and update
+            piecemeal on this grid using the standard Update DrawAction
+            (2) create a new kind of update like Extend but which actually replaces
+            individual positions if they exist... this would require storing the
+            DrawChPos in either a hashmap, or iterating through it all the time,
+            either option seems not super ideal. 
 
 10. MousePossibility events: 
     - adjust mouse event logic to mirror that of the keyboard, each element
@@ -170,12 +164,19 @@ pub enum DrawAction {
            // are not currently propogated upward. (so this becomes a problem is the menu bar extends
            // beyond the header_pane). In the future this should be fixed.
            //let _ = el.pane.add_element(Box::new(mb));
+     - Simple solution: Make the menu-item a first class element which gets
+       registered with the parent pane, then have that menu item, check with its
+       host menu-bar before drawing 
 
 10. When the keyboard is matching an event combo provided to it, it should be
     recording a partial match (and a suggested maximum wait time to recheck for
     priority to this combo whether to wait the time before checking for other
     matches or to ignore the wait and to proceed attempting to match the
     character in other ways.  
+
+10. switch to vt100_ctt or fork https://docs.rs/vt100-ctt/latest/vt100_ctt/struct.Screen.html
+     - make a PR to expose the grid so that one can actually iterate the cells
+     - integrate in SGR-Pixel mode into vt100
 
 __________________________________________________________________________
 FEATURES

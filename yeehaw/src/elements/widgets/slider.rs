@@ -271,7 +271,7 @@ impl Element for Slider {
         }
         (false, resps)
     }
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
         if self.is_dirty.replace(false) {
             self.update_content(ctx);
         }

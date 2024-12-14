@@ -712,19 +712,15 @@ impl HorizontalScrollbar {
 }
 
 impl VerticalScrollbar {
-    pub fn drawing_(&self, ctx: &Context) -> Vec<DrawChPos> {
+    pub fn get_content(&self, ctx: &Context) -> DrawChs2D {
         let chs = self.drawing_runes(ctx.get_height().into());
-        let content = DrawChs2D::from_draw_chs_vertical(chs);
-        self.pane.set_content(content);
-        self.pane.drawing(ctx)
+        DrawChs2D::from_draw_chs_vertical(chs)
     }
 }
 impl HorizontalScrollbar {
-    pub fn drawing_(&self, ctx: &Context) -> Vec<DrawChPos> {
+    pub fn get_content(&self, ctx: &Context) -> DrawChs2D {
         let chs = self.drawing_runes(ctx.get_width().into());
-        let content = DrawChs2D::from_draw_chs_horizontal(chs);
-        self.pane.set_content(content);
-        self.pane.drawing(ctx)
+        DrawChs2D::from_draw_chs_horizontal(chs)
     }
 }
 
@@ -1017,8 +1013,10 @@ impl Element for VerticalScrollbar {
             _ => (false, EventResponses::default()),
         }
     }
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        self.drawing_(ctx)
+    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
+        let content = self.get_content(ctx);
+        self.pane.set_content_if_diff(content);
+        self.pane.drawing(ctx)
     }
 }
 
@@ -1032,8 +1030,10 @@ impl Element for HorizontalScrollbar {
             _ => (false, EventResponses::default()),
         }
     }
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
-        self.drawing_(ctx)
+    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
+        let content = self.get_content(ctx);
+        self.pane.set_content_if_diff(content);
+        self.pane.drawing(ctx)
     }
 }
 

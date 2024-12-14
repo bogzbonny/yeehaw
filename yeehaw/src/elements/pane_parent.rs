@@ -1,8 +1,8 @@
 use {
     crate::{
-        Color, Context, DrawCh, DrawChPos, DrawChs2D, DynLocation, DynLocationSet, DynVal, Element,
-        ElementID, ElementOrganizer, Event, EventResponse, EventResponses, Pane, Parent, Priority,
-        ReceivableEventChanges, SelfReceivableEvents, Size, Style, ZIndex,
+        Color, Context, DrawCh, DrawChs2D, DrawUpdate, DynLocation, DynLocationSet, DynVal,
+        Element, ElementID, ElementOrganizer, Event, EventResponse, EventResponses, Pane, Parent,
+        Priority, ReceivableEventChanges, SelfReceivableEvents, Size, Style, ZIndex,
     },
     std::collections::HashMap,
     std::{
@@ -251,12 +251,12 @@ impl Element for ParentPane {
         rec
     }
 
-    fn drawing(&self, ctx: &Context) -> Vec<DrawChPos> {
+    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
         if !self.get_visible() {
             return Vec::with_capacity(0);
         }
         let mut out = self.pane.drawing(ctx);
-        out.extend(self.eo.all_drawing(ctx));
+        out.extend(self.eo.all_drawing_updates(ctx));
         out
     }
 }
