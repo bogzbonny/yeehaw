@@ -684,20 +684,20 @@ impl Element for MenuBar {
         }
     }
 
-    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
         if !self.get_visible() {
-            return vec![];
+            return Vec::with_capacity(0);
         }
 
         let menu_style_bz = match serde_json::to_vec(&*self.menu_style.borrow()) {
             Ok(v) => v,
             Err(e) => {
                 log_err!("error serializing menu style: {}", e);
-                return vec![];
+                return Vec::with_capacity(0);
             }
         };
 
-        let mut out = self.pane.drawing(ctx);
+        let mut out = self.pane.drawing(ctx, force_update);
 
         // draw each menu item
         for el_details in self.pane.eo.els.borrow().values() {
@@ -705,7 +705,7 @@ impl Element for MenuBar {
             let child_ctx = ctx
                 .child_context(&el_details.loc.borrow().l)
                 .with_metadata(Self::MENU_STYLE_MD_KEY.to_string(), menu_style_bz.clone());
-            let mut upds = el_details.el.drawing(&child_ctx);
+            let mut upds = el_details.el.drawing(&child_ctx, force_update);
 
             for upd in &mut upds {
                 match upd.action {
@@ -765,7 +765,8 @@ impl Element for MenuItem {
         }
     }
 
-    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
+    // TODO refactor to cache instead of just returning updates every drawing
+    fn drawing(&self, ctx: &Context, _force_update: bool) -> Vec<DrawUpdate> {
         if !self.get_visible() {
             return Vec::with_capacity(0);
         }

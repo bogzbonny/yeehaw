@@ -557,9 +557,9 @@ impl Element for VerticalStack {
         (captured, resps)
     }
 
-    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
         self.ensure_normalized_sizes(ctx);
-        self.pane.drawing(ctx)
+        self.pane.drawing(ctx, force_update)
     }
 }
 
@@ -656,9 +656,9 @@ impl Element for HorizontalStack {
         }
         (captured, resps)
     }
-    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
         self.ensure_normalized_sizes(ctx);
-        self.pane.drawing(ctx)
+        self.pane.drawing(ctx, force_update)
     }
 }
 

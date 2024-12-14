@@ -177,27 +177,21 @@ impl Element for PaneScrollable {
         (captured, resps)
     }
 
-    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
-        let inner_ctx = self.inner_ctx(ctx);
-        let mut upds = self.pane.drawing(&inner_ctx);
+    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
         let x_off = *self.content_offset_x.borrow();
         let y_off = *self.content_offset_y.borrow();
-        if x_off == 0 && y_off == 0 {
-            return upds;
-        }
-
         let max_x = x_off + self.get_content_width(ctx);
         let max_y = y_off + self.get_content_height(ctx);
 
-        if let Some(last_draw_details) = self.last_draw_details.borrow().as_ref() {
-            if last_draw_details.x_off == x_off
-                && last_draw_details.y_off == y_off
-                && last_draw_details.max_x == max_x
-                && last_draw_details.max_y == max_y
-            {
-                return upds;
-            }
-        }
+        let scope_changed =
+            if let Some(last_draw_details) = self.last_draw_details.borrow().as_ref() {
+                !(last_draw_details.x_off == x_off
+                    && last_draw_details.y_off == y_off
+                    && last_draw_details.max_x == max_x
+                    && last_draw_details.max_y == max_y)
+            } else {
+                true
+            };
         // update the last draw details
         *self.last_draw_details.borrow_mut() = Some(PSDrawDetails {
             x_off,
@@ -205,6 +199,14 @@ impl Element for PaneScrollable {
             max_x,
             max_y,
         });
+
+        let force_update = force_update || scope_changed;
+
+        let inner_ctx = self.inner_ctx(ctx);
+        let mut upds = self.pane.drawing(&inner_ctx, force_update);
+        if (x_off == 0 && y_off == 0) || !scope_changed {
+            return upds;
+        }
 
         // TODO does this make sense to have nested rayon here?
         // NOTE computational bottleneck, use rayon

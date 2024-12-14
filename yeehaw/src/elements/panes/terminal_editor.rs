@@ -132,7 +132,10 @@ impl TermEditorPane {
                     cmd.cwd(cwd);
                 }
                 match TerminalPane::new_with_builder(ctx, cmd) {
-                    Ok(term) => self.pane.add_element(Box::new(term)),
+                    Ok(term) => {
+                        //term.reset_prev_draw(); // XXX remove
+                        self.pane.add_element(Box::new(term))
+                    }
                     Err(e) => {
                         log_err!("Could not open terminal: {}", e);
                         EventResponse::None
@@ -262,8 +265,10 @@ impl Element for TermEditorPane {
             self.tempfile.borrow_mut().take();
             self.editor_is_open.replace(false);
             let text = self.text.borrow().clone().unwrap_or_default();
+            debug!("text: {}", text);
             self.non_editing_textbox.borrow().set_text(text);
             let non_editing_textbox = self.non_editing_textbox.borrow().clone();
+            non_editing_textbox.set_dirty();
 
             let resp = self.pane.add_element(Box::new(non_editing_textbox));
             resps.push(resp);
@@ -271,8 +276,8 @@ impl Element for TermEditorPane {
 
         (captured, resps)
     }
-    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
-        let out = self.pane.drawing(ctx);
+    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
+        let out = self.pane.drawing(ctx, force_update);
 
         // TODO maybe do this somewhere else? on a different thread?
         // check for changes to the tempfile each draw
@@ -288,9 +293,12 @@ impl Element for TermEditorPane {
             let old_text = self.text.borrow().clone();
 
             if old_text.as_deref() != Some(file_contents.as_str()) {
+                debug!("old_text: {:?}", old_text);
+                debug!("file_contents: {}", file_contents);
                 let is_empty = file_contents.is_empty();
                 if !*self.just_created.borrow() {
                     self.text.replace(Some(file_contents.clone()));
+                    debug!("text changed to: {}", file_contents);
                     self.text_changed_hook.borrow_mut()(ctx.clone(), file_contents);
                 }
                 if *self.just_created.borrow() && !is_empty {

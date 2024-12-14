@@ -145,6 +145,10 @@ impl TerminalPane {
         .into()
     }
 
+    //pub fn reset_prev_draw(&self) {
+    //    *self.prev_draw.borrow_mut() = Vec::new();
+    //}
+
     pub fn custom_destruct_event_name(id: ElementID) -> String {
         format!("destruct_{id}")
     }
@@ -323,7 +327,7 @@ impl Element for TerminalPane {
 
         (captured, resps)
     }
-    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
         let mp_size = self.master_pty.borrow().get_size();
         let resize = if let Ok(mp_size) = mp_size {
             mp_size.rows != ctx.size.height || mp_size.cols != ctx.size.width
@@ -351,7 +355,7 @@ impl Element for TerminalPane {
 
         // TODO subdivide into sections which are updated seperately
 
-        let mut dirty = false;
+        let mut dirty = force_update;
         let mut prev_draw_i = 0;
 
         // The screen is made out of rows of cells

@@ -75,11 +75,11 @@ impl ImageViewer {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for ImageViewer {
-    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
-        if ctx.size == *self.last_size.borrow() {
+    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
+        if ctx.size == *self.last_size.borrow() && !force_update {
             return Vec::with_capacity(0);
         }
         self.update_content(ctx);
-        self.pane.drawing(ctx)
+        self.pane.drawing(ctx, force_update)
     }
 }

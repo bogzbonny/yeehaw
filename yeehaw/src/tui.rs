@@ -253,7 +253,7 @@ impl Tui {
     pub fn render(&mut self) -> Result<(), Error> {
         let mut sc = stdout();
         let ctx = self.context();
-        let updates = self.cup.eo.all_drawing_updates(&ctx);
+        let updates = self.cup.eo.all_drawing_updates(&ctx, false);
         let chs = self.drawing_cache.update_and_get(updates);
 
         let mut dedup_chs: HashMap<(u16, u16), StyledContent<ChPlus>> = HashMap::new();

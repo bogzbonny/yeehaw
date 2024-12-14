@@ -15,6 +15,14 @@ use {
 pub struct ElementOrganizer {
     pub els: Rc<RefCell<HashMap<ElementID, ElDetails>>>,
     pub prioritizer: Rc<RefCell<EventPrioritizer>>,
+
+    #[allow(clippy::type_complexity)]
+    /// the last draw details for each element
+    ///                                              (location, visibility, overflow)
+    last_draw_details: Rc<RefCell<Vec<(ElementID, (DynLocationSet, bool, bool))>>>,
+
+    /// the queue of elements to be removed on the next draw
+    removed_element_queue: Rc<RefCell<Vec<ElementID>>>,
 }
 
 /// element details
@@ -28,6 +36,8 @@ pub struct ElDetails {
     pub loc: Rc<RefCell<DynLocationSet>>,
     /// whether the element is set to display
     pub vis: Rc<RefCell<bool>>,
+
+    /// whether the element is allowed to overflow its the context
     pub overflow: Rc<RefCell<bool>>,
 }
 
@@ -91,6 +101,10 @@ impl ElementOrganizer {
 
     #[must_use]
     pub fn remove_element(&self, el_id: &ElementID) -> EventResponse {
+        self.last_draw_details
+            .borrow_mut()
+            .retain(|(id, _)| id != el_id);
+        self.removed_element_queue.borrow_mut().push(el_id.clone());
         self.els.borrow_mut().remove(el_id);
         let rm_evs = self.prioritizer.borrow_mut().remove_entire_element(el_id);
         let rec = ReceivableEventChanges::default().with_remove_evs(rm_evs);
@@ -100,7 +114,12 @@ impl ElementOrganizer {
     /// removes all elements from the element organizer
     #[must_use]
     pub fn clear_elements(&self) -> EventResponse {
-        self.els.borrow_mut().clear();
+        self.removed_element_queue.borrow_mut().extend(
+            self.last_draw_details
+                .borrow_mut()
+                .drain(..)
+                .map(|(id, _)| id),
+        );
         let pes = self.receivable().drain(..).map(|(e, _)| e).collect();
         *self.prioritizer.borrow_mut() = EventPrioritizer::default();
         let rec = ReceivableEventChanges::default().with_remove_evs(pes);
@@ -280,7 +299,9 @@ impl ElementOrganizer {
     /// back to furthest forward) and then drawn in that order, such that the element
     /// with the highest z-index is drawn last and thus is on top of all others in the
     /// DrawChPos slice
-    pub fn all_drawing_updates(&self, ctx: &Context) -> Vec<DrawUpdate> {
+    /// if force update is set to true then all elements will be drawn, regardless of
+    /// if they have changed since the last draw
+    pub fn all_drawing_updates(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
         let mut eoz: Vec<(ElementID, ElDetails)> = Vec::new();
 
         for (el_id, details) in self.els.borrow().iter() {
@@ -290,12 +311,54 @@ impl ElementOrganizer {
         // sort z index from low to high
         eoz.sort_by(|a, b| a.1.loc.borrow().z.cmp(&b.1.loc.borrow().z));
 
-        let mut updates = Vec::new();
+        let mut updates = self
+            .removed_element_queue
+            .borrow_mut()
+            .drain(..)
+            .map(|el_id| DrawUpdate::clear_all_at_sub_id(vec![el_id]))
+            .collect::<Vec<DrawUpdate>>();
 
         // draw elements in order from highest z-index to lowest
         for el_id_z in eoz {
             let details = self.get_element_details(&el_id_z.0).expect("impossible");
+
+            // set force update if vis or location has changed since last draw
+            let mut force_update = force_update;
+            let mut push_update = false;
+            if let Some((_, (ref mut last_loc, ref mut last_vis, ref mut last_overflow))) = self
+                .last_draw_details
+                .borrow_mut()
+                .iter_mut()
+                .find(|(el_id, _)| el_id == &el_id_z.0)
+            {
+                if last_loc != &*details.loc.borrow()
+                    || last_vis != &*details.vis.borrow()
+                    || last_overflow != &*details.overflow.borrow()
+                {
+                    force_update = true;
+                }
+
+                // update the last draw details
+                *last_loc = details.loc.borrow().clone();
+                *last_vis = *details.vis.borrow();
+                *last_overflow = *details.overflow.borrow();
+            } else {
+                push_update = true
+            }
+            if push_update {
+                // update the last draw details
+                self.last_draw_details.borrow_mut().push((
+                    el_id_z.0.clone(),
+                    (
+                        details.loc.borrow().clone(),
+                        *details.vis.borrow(),
+                        *details.overflow.borrow(),
+                    ),
+                ));
+            }
+
             if !*details.vis.borrow() {
+                updates.push(DrawUpdate::clear_all_at_sub_id(vec![el_id_z.0]));
                 continue;
             }
             if let Some(vis_loc) = ctx.visible_region {
@@ -305,8 +368,7 @@ impl ElementOrganizer {
             }
 
             let child_ctx = ctx.child_context(&el_id_z.1.loc.borrow().l);
-
-            let mut el_upds = details.el.drawing(&child_ctx);
+            let mut el_upds = details.el.drawing(&child_ctx, force_update);
 
             for mut el_upd in el_upds.drain(..) {
                 // prepend the element_id to the DrawUpdate

@@ -476,11 +476,11 @@ impl Element for DropdownList {
         (false, resps)
     }
 
-    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
-        if *self.dirty.borrow() {
+    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
+        if *self.dirty.borrow() || force_update {
             self.update_content(ctx);
             *self.dirty.borrow_mut() = false;
         }
-        self.pane.drawing(ctx)
+        self.pane.drawing(ctx, force_update)
     }
 }

@@ -251,12 +251,12 @@ impl Element for ParentPane {
         rec
     }
 
-    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
         if !self.get_visible() {
             return Vec::with_capacity(0);
         }
-        let mut out = self.pane.drawing(ctx);
-        out.extend(self.eo.all_drawing_updates(ctx));
+        let mut out = self.pane.drawing(ctx, force_update);
+        out.extend(self.eo.all_drawing_updates(ctx, force_update));
         out
     }
 }

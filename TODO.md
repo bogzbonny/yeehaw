@@ -21,8 +21,6 @@
       - also need to set draw size (instead will always draw will big one)
          - set only once the first time 
     - now caching by element should work
-     ^DONE
-  
    - MAYBE don't explicitly cache (and not call drawing) but still call drawing 
       each draw cycle, however each element can return special "Unchanged"
       messages which then tells the parent to use its cached value. 
@@ -34,6 +32,32 @@
               new mechanism.
    - will still need a new fn flattened_all_drawing which reads from the cache 
      and provides all DrawChPos's for the tui
+   - Bugs
+      - tabs - tabs will show when selected for the first time, but then they
+        will never show when reselected
+      - image test - the final pane is not being removed visually
+      - stack test - borders are not refreshing properly 
+      - window - moving the window around leaves stuff in the dust
+          -  I think this is because the context fed into the window doesn't
+            change but the location of the sub-elements does. SO the element
+            organizer DOES need to keep a cache of the previous inputs so that
+            it can update the positions of the content, even if the content
+            doesn't change. - either that or force the drawing to give an update 
+            even when one isn't neccesary based on the context
+          -  window closing doesn't work
+          - scrollable pane doesn't change positions work
+     ^DONE
+   - Bugs
+      - showcase duplicate priorities
+      - file_nav shows nothing
+      - menu test - only the final 1 menu item is ever showing 
+          - kinda random
+      - nvim editor (example editor) doesn't refresh right when closed
+
+      
+
+  
+
 
 01. cleanup the widgets example 
     - showcase should just use the same widgets example pane

@@ -124,8 +124,8 @@ impl Shadowed {
 
 #[yeehaw_derive::impl_element_from(inner)]
 impl Element for Shadowed {
-    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
-        let mut upds = self.inner.drawing(ctx);
+    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
+        let mut upds = self.inner.drawing(ctx, force_update);
 
         // because the shadow allows overflow, we must deal with any overflows here
         for upd in &mut upds {
@@ -157,18 +157,6 @@ impl Element for Shadowed {
                 }
             }
         }
-
-        // XXX delete
-        //if *self.inner.get_ref_cell_overflow().borrow() {
-        //    for dcp in out.iter_mut() {
-        //        if dcp.x >= ctx.size.width || dcp.y >= ctx.size.height {
-        //            // it'd be better to delete, but we can't delete from a parallel iterator
-        //            // also using a filter here its slower that this
-        //            dcp.ch = DrawCh::transparent();
-        //            (dcp.x, dcp.y) = (0, 0);
-        //        }
-        //    }
-        //}
         upds
     }
 

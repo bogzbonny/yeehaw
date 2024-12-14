@@ -47,7 +47,7 @@ pub enum PropertyCnr {
     DragMove,
 }
 
-// XXX
+// XXX TODO remove once accordian stack implemented
 /*
 // Collapsing triangle in the vertical direction
 #[derive(Clone)]
@@ -1350,9 +1350,9 @@ impl Element for Bordered {
 
         (captured, resps)
     }
-    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
         self.ensure_scrollbar_size(ctx);
-        self.pane.drawing(ctx)
+        self.pane.drawing(ctx, force_update)
     }
 }
 
@@ -1571,7 +1571,7 @@ impl VerticalSide {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for VerticalSide {
-    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
         let out = if let Some((ref text, ref j)) = *self.text.borrow() {
             let text_height = text.len() as u16;
             let (start_y, end_y) = match j {
@@ -1599,7 +1599,7 @@ impl Element for VerticalSide {
             DrawChPos::new_repeated_vertical(self.ch.borrow().clone(), 0, 0, ctx.size.height)
         };
 
-        if out != *self.last_draw.borrow() {
+        if out != *self.last_draw.borrow() || force_update {
             *self.last_draw.borrow_mut() = out.clone();
             return DrawUpdate::update(out).into();
         }
@@ -1782,7 +1782,7 @@ impl HorizontalSide {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for HorizontalSide {
-    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
         let out = if let Some((ref text, ref j)) = *self.text.borrow() {
             let text_width = text.len() as u16;
             let (start_x, end_x) = match j {
@@ -1810,7 +1810,7 @@ impl Element for HorizontalSide {
             DrawChPos::new_repeated_horizontal(self.ch.borrow().clone(), 0, 0, ctx.size.width)
         };
 
-        if out != *self.last_draw.borrow() {
+        if out != *self.last_draw.borrow() || force_update {
             *self.last_draw.borrow_mut() = out.clone();
             return DrawUpdate::update(out).into();
         }

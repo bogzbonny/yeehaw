@@ -506,8 +506,9 @@ impl Element for Pane {
     }
 
     /// Drawing compiles all of the DrawChPos necessary to draw this element
-    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
-        if !*self.is_content_dirty.borrow()
+    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
+        if !force_update
+            && !*self.is_content_dirty.borrow()
             && *self.last_size.borrow() == ctx.size
             && *self.last_visible_region.borrow() == ctx.visible_region
         {

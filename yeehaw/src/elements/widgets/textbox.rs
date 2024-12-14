@@ -50,7 +50,7 @@ impl TextBox {
                 tb_.post_hook_for_set_selectability();
             }));
 
-        let _ = tb.drawing(&init_ctx.child_context(&tb.pane.get_dyn_location())); // to set the pane content
+        let _ = tb.drawing(&init_ctx.child_context(&tb.pane.get_dyn_location()), true); // to set the pane content
         tb
     }
 
@@ -232,7 +232,7 @@ impl TextBox {
 
         // correct offsets
         let _ = self.inner.borrow().correct_ln_and_sbs(&inner_ctx);
-        let _ = self.drawing(&init_ctx.child_context(&self.pane.get_dyn_location())); // to set the pane content
+        let _ = self.drawing(&init_ctx.child_context(&self.pane.get_dyn_location()), true); // to set the pane content
         self.set_dirty();
     }
 
@@ -1433,12 +1433,12 @@ impl Element for TextBoxInner {
         }
     }
 
-    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
-        if self.is_dirty.replace(false) || *self.last_size.borrow() != ctx.size {
+    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
+        if self.is_dirty.replace(false) || *self.last_size.borrow() != ctx.size || force_update {
             self.update_content(ctx);
             self.last_size.replace(ctx.size);
         }
-        self.pane.drawing(ctx)
+        self.pane.drawing(ctx, force_update)
     }
 }
 

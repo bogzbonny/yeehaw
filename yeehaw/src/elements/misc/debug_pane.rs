@@ -33,7 +33,7 @@ impl DebugSizePane {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for DebugSizePane {
-    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
         let size = ctx.size;
         let s = format!("{}x{} {}", size.width, size.height, self.text.borrow());
         let sty = if let Some(sty) = &*self.text_sty.borrow() {
@@ -42,10 +42,10 @@ impl Element for DebugSizePane {
             self.pane.get_style()
         };
         let content = DrawChs2D::from_string(s, sty);
-        if *self.pane.get_content() == content {
+        if !force_update && *self.pane.get_content() == content {
             return vec![];
         }
         self.pane.set_content(content);
-        self.pane.drawing(ctx)
+        self.pane.drawing(ctx, force_update)
     }
 }

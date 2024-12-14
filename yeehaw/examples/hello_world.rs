@@ -2,6 +2,7 @@ use yeehaw::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
+    yeehaw::log::reset_log_file("./debug_test.log".to_string());
     let (mut tui, ctx) = Tui::new()?;
     let main_el = ParentPane::new(&ctx, "main_element");
 

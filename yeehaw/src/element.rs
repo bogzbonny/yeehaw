@@ -82,7 +82,9 @@ pub trait Element: DynClone {
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges;
 
     /// Get the element's full drawing for the provided context.
-    fn drawing(&self, ctx: &Context) -> Vec<DrawUpdate>;
+    /// if force update is set to true then an DrawUpdate should be provided regardless of
+    /// if the element has changed since the last draw
+    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate>;
 
     /// Element attributes can be used to store arbitrary values (as encoded bytes) within the
     /// element. Typically if you are developing a new Element, you can simply store local values
@@ -296,7 +298,7 @@ pub trait Parent: dyn_clone::DynClone {
 
 // -----------------------------------------------------
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 /// The `DrawUpdate` is a primitive type used to convey draw updates of an element.
 /// A sub-id is provided to allow for an element to sub-divide its draw updates into
 /// sub-sections. This is useful for container elements which contain sub-elements which
@@ -317,7 +319,7 @@ impl From<DrawUpdate> for Vec<DrawUpdate> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum DrawAction {
     /// delete everything at or prefixed with this sub_id
     ClearAll,
@@ -412,8 +414,8 @@ impl DrawingCache {
     }
 
     // update the cache based on DrawUpdates provided
-    pub fn update(&mut self, updates: Vec<DrawUpdate>) {
-        for update in updates {
+    pub fn update(&mut self, mut updates: Vec<DrawUpdate>) {
+        for update in updates.drain(..) {
             match update.action {
                 DrawAction::ClearAll => {
                     self.0.retain(|(ids, _)| !ids.starts_with(&update.sub_id));
@@ -422,17 +424,21 @@ impl DrawingCache {
                     self.0.retain(|(ids, _)| ids != &update.sub_id);
                 }
                 DrawAction::Update(d) => {
-                    for (ids, draw) in self.0.iter_mut() {
-                        if ids == &update.sub_id {
-                            *draw = d.clone();
-                        }
+                    if let Some((_, draw)) =
+                        self.0.iter_mut().find(|(ids, _)| ids == &update.sub_id)
+                    {
+                        *draw = d;
+                    } else {
+                        self.0.push((update.sub_id, d));
                     }
                 }
                 DrawAction::Extend(d) => {
-                    for (ids, draw) in self.0.iter_mut() {
-                        if ids == &update.sub_id {
-                            draw.extend(d.clone());
-                        }
+                    if let Some((_, draw)) =
+                        self.0.iter_mut().find(|(ids, _)| ids == &update.sub_id)
+                    {
+                        draw.extend(d.clone());
+                    } else {
+                        self.0.push((update.sub_id, d));
                     }
                 }
             }
