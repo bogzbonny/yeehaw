@@ -81,6 +81,7 @@ impl FileNavPane {
 
         pane.set_dyn_height(DynVal::FULL);
         pane.set_dyn_width(DynVal::new_fixed(32));
+        debug!("nav items: {:?}", nav_items);
 
         let out = Self {
             pane,
@@ -181,12 +182,17 @@ impl Element for FileNavPane {
     }
     fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
         self.update_content(ctx, force_update);
-        self.pane.drawing(ctx, force_update)
+        let upd = self.pane.drawing(ctx, force_update);
+        //debug!(
+        //    "drawing file nav pane. content: \n{}",
+        //    self.pane.get_content()
+        //);
+        upd
     }
 }
 
 // NOTE use box due to large widely varying variant sizes.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum NavItem {
     File(Box<File>),
     Folder(Box<Folder>),
@@ -242,7 +248,7 @@ impl NavItem {
     }
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct NavItems(Vec<NavItem>);
 
 impl Deref for NavItems {
@@ -282,7 +288,7 @@ impl NavItems {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct File {
     pub path: PathBuf,
     pub style: Style,
@@ -339,7 +345,7 @@ impl File {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Folder {
     pub path: PathBuf,
     pub folder_style: Style,
@@ -470,7 +476,7 @@ impl Folder {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TopDir {
     pub folder: Folder,
     pub sty: Style,
@@ -489,7 +495,7 @@ impl TopDir {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct UpDir {
     pub text: String,
     pub sty: Style,

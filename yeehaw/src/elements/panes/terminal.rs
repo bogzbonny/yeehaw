@@ -18,6 +18,9 @@ use {
 //          https://docs.rs/termwiz/latest/termwiz/
 //          https://github.com/wez/wezterm/blob/main/termwiz/examples/widgets_nested.rs
 //  code -> https://github.com/doy/vt100-rust/issues/7
+// issue publishing while depending on unpublished crate:
+//    https://github.com/rust-lang/cargo/issues/6738
+//    https://users.rust-lang.org/t/publishing-a-package-with-a-vendored-crate-but-is-not-listed-as-a-dependency-because-the-vendored-crate-author-did-not-publish-his-crate-onto-crates-io-lol/108971/3
 
 // TODO graceful shutdown of tokio tasks
 
