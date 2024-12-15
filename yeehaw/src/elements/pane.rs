@@ -536,8 +536,8 @@ impl Element for Pane {
         let view_offset_y = *self.content_view_offset_y.borrow();
         let view_offset_x = *self.content_view_offset_x.borrow();
         let default_ch = self.default_ch.borrow().clone();
-        let content_height = self.content.borrow().height();
-        let content_width = self.content.borrow().width();
+        //let content_height = self.content.borrow().height();
+        //let content_width = self.content.borrow().width();
 
         // convert the Content to DrawChPos
         for y in ymin..ymax {
@@ -548,11 +548,14 @@ impl Element for Pane {
                 // if the offset isn't pushing all the content out of view,
                 // assign the next ch to be the one at the offset in the Content
                 // matrix
-                let ch_out = if offset_y < content_height && offset_x < content_width {
-                    self.content.borrow().0[offset_y][offset_x].clone()
-                } else {
-                    default_ch.clone()
-                };
+                let ch_out = self
+                    .content
+                    .borrow()
+                    .0
+                    .get(offset_y)
+                    .and_then(|row| row.get(offset_x))
+                    .unwrap_or(&default_ch)
+                    .clone();
 
                 // convert the DrawCh to a DrawChPos
                 chs.push(DrawChPos::new(ch_out, x as u16, y as u16))
