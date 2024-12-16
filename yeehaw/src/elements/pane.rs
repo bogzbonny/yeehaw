@@ -505,6 +505,10 @@ impl Element for Pane {
         self.self_evs.borrow().to_receivable_event_changes()
     }
 
+    fn get_priority(&self) -> Priority {
+        *self.element_priority.borrow()
+    }
+
     /// Drawing compiles all of the DrawChPos necessary to draw this element
     fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
         if !force_update

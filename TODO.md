@@ -56,6 +56,7 @@
 
       
 
+01. textbox paste shouldn't work when non-editable
   
 
 

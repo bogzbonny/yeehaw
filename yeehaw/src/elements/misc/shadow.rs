@@ -1,6 +1,6 @@
 use {crate::*, rayon::prelude::*};
 
-/// displays the size
+/// displays a shadow around the element
 #[derive(Clone)]
 pub struct Shadowed {
     pub inner: Box<dyn Element>,

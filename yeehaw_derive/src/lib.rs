@@ -14,6 +14,7 @@ pub fn impl_element_from(attr: TokenStream, item: TokenStream) -> TokenStream {
     fn receivable(&self) -> SelfReceivableEvents;
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses);
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges;
+    fn get_priority(&self) -> Priority;
     fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate>;
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>>;
     fn set_attribute_inner(&self, key: &str, value: Vec<u8>);

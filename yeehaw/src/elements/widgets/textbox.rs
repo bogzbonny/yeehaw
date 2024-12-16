@@ -6,6 +6,8 @@ use {
     crossterm::event::{KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
 };
 
+// TODO cache WrChs for efficiency. Also get_wrapped should return a Ref<WrChs>
+
 // TODO better multiline cursor movement
 // retain greater cursor position between lines, ex:
 //    123456789<cursor, starting position>
@@ -679,6 +681,7 @@ impl TextBoxInner {
     }
 
     pub fn set_non_editable(&self) {
+        *self.editable.borrow_mut() = false;
         self.pane
             .set_self_receivable_events(TextBoxInner::non_editable_receivable_events());
     }
@@ -1083,7 +1086,7 @@ impl TextBoxInner {
                 }
             }
 
-            _ if ev[0] == KB::KEY_LEFT => {
+            _ if ev[0] == KB::KEY_LEFT || (!*self.editable.borrow() && ev[0] == KB::KEY_H) => {
                 if cursor_pos > 0 && cursor_pos <= self.text.borrow().len() {
                     // do not move left if at the beginning of a line
                     if self.text.borrow()[cursor_pos - 1] != '\n' {
@@ -1094,7 +1097,7 @@ impl TextBoxInner {
                 }
             }
 
-            _ if ev[0] == KB::KEY_RIGHT => {
+            _ if ev[0] == KB::KEY_RIGHT || (!*self.editable.borrow() && ev[0] == KB::KEY_L) => {
                 // don't allow moving to the next line
                 if cursor_pos < self.text.borrow().len() && self.text.borrow()[cursor_pos] != '\n' {
                     self.incr_cursor_pos(1);
@@ -1103,7 +1106,7 @@ impl TextBoxInner {
                 }
             }
 
-            _ if ev[0] == KB::KEY_UP => {
+            _ if ev[0] == KB::KEY_UP || (!*self.editable.borrow() && ev[0] == KB::KEY_K) => {
                 let w = self.get_wrapped(ctx);
                 if let Some(new_pos) = w.get_cursor_above_position(cursor_pos) {
                     self.set_cursor_pos(new_pos);
@@ -1111,7 +1114,7 @@ impl TextBoxInner {
                 }
             }
 
-            _ if ev[0] == KB::KEY_DOWN => {
+            _ if ev[0] == KB::KEY_DOWN || (!*self.editable.borrow() && ev[0] == KB::KEY_J) => {
                 let w = self.get_wrapped(ctx);
                 if let Some(new_pos) = w.get_cursor_below_position(cursor_pos) {
                     self.set_cursor_pos(new_pos);

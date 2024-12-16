@@ -484,7 +484,7 @@ impl ElementOrganizer {
                         }
                         let rec = self.change_priority_for_el(el_id_, Priority::Unfocused);
                         let add_ = Self::generate_perceived_priorities(
-                            parent.get_priority(),
+                            parent.get_parent_priority(),
                             rec.add.clone().into(),
                         );
                         let remove_ = add_.iter().map(|a| a.0.clone()).collect();
@@ -496,7 +496,7 @@ impl ElementOrganizer {
                 EventResponse::Focus => {
                     let rec = self.change_priority_for_el(el_id, Priority::Focused);
                     let add_ = Self::generate_perceived_priorities(
-                        parent.get_priority(),
+                        parent.get_parent_priority(),
                         rec.add.clone().into(),
                     );
                     let remove_ = add_.iter().map(|a| a.0.clone()).collect();
@@ -533,7 +533,7 @@ impl ElementOrganizer {
                     // up the chain further to the next parent element.
                     // TODO could remove clones and drain each vec.
                     let add_ = Self::generate_perceived_priorities(
-                        parent.get_priority(),
+                        parent.get_parent_priority(),
                         rec.add.clone().into(),
                     );
                     let remove_ = add_.iter().map(|a| a.0.clone()).collect();

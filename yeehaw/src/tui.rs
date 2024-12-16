@@ -373,7 +373,7 @@ impl Parent for TuiParent {
         self.el_store.borrow_mut().insert(key.to_string(), value);
     }
 
-    fn get_priority(&self) -> Priority {
+    fn get_parent_priority(&self) -> Priority {
         Priority::Focused
     }
 

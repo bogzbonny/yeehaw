@@ -6,6 +6,7 @@ pub struct FileViewerPane {
     pub pane: ParentPane,
 }
 
+#[yeehaw_derive::impl_pane_basics_from(pane)]
 impl FileViewerPane {
     const KIND: &'static str = "file_viewer_pane";
 
@@ -26,7 +27,7 @@ impl FileViewerPane {
             .with_height(DynVal::FULL)
             .with_right_scrollbar(ctx)
             .with_bottom_scrollbar(ctx)
-            .editable(ctx)
+            .non_editable(ctx)
             .with_no_wordwrap(ctx)
             .at(DynVal::new_fixed(0), DynVal::new_fixed(0));
         if let Some(no_file_text) = no_file_text {

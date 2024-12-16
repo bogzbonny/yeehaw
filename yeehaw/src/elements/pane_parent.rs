@@ -308,8 +308,8 @@ impl Parent for ParentPane {
         self.el_store.borrow_mut().insert(key.to_string(), value);
     }
 
-    fn get_priority(&self) -> Priority {
-        self.pane.get_element_priority()
+    fn get_parent_priority(&self) -> Priority {
+        self.pane.get_priority()
     }
 
     fn get_id(&self) -> ElementID {

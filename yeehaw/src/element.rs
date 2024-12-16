@@ -81,6 +81,8 @@ pub trait Element: DynClone {
     #[must_use]
     fn change_priority(&self, p: Priority) -> ReceivableEventChanges;
 
+    fn get_priority(&self) -> Priority;
+
     /// Get the element's full drawing for the provided context.
     /// if force update is set to true then an DrawUpdate should be provided regardless of
     /// if the element has changed since the last draw
@@ -256,7 +258,7 @@ pub const POST_ATTR_CHANGE_HOOK_NAME_PREFIX: &str = "post-attr-change-";
 
 dyn_clone::clone_trait_object!(Parent);
 
-pub trait Parent: dyn_clone::DynClone {
+pub trait Parent: DynClone {
     /// DO NOT CALL THIS FUNCTION DIRECTLY
     /// This function is intended for internal propogation ONLY if you need to propogate changes
     /// use the function: send_responses_upward found in Pane and ParentPane
@@ -291,7 +293,7 @@ pub trait Parent: dyn_clone::DynClone {
     fn set_store_item(&self, key: &str, value: Vec<u8>);
 
     /// Get the priority of the parent element, useful for processing in the organizer.
-    fn get_priority(&self) -> Priority;
+    fn get_parent_priority(&self) -> Priority;
 
     fn get_id(&self) -> ElementID;
 }
