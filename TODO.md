@@ -13,6 +13,9 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+01. terminal pane always has receivable events, even when it is unfocused (it
+    should never have them) 
+
 01. Drawing overhaul
     - add an offset to the position gradient (so that the gradient can have an
       offset baked in without actually drawing the gradient).
@@ -50,9 +53,10 @@
      ^DONE
    - Bugs
       - showcase duplicate priorities
+         - focuser not switching properly
+      - nvim editor (example editor) doesn't refresh right when closed
       - menu test - only the final 1 menu item is ever showing 
           - kinda random
-      - nvim editor (example editor) doesn't refresh right when closed
 
 
 01. textbox paste shouldn't work when non-editable

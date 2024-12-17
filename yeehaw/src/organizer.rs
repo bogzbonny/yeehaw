@@ -491,7 +491,6 @@ impl ElementOrganizer {
                         let rec_for_higher = ReceivableEventChanges::new(add_.0, remove_);
                         extend_resps.push(EventResponse::ReceivableEventChanges(rec_for_higher));
                     }
-                    *r = EventResponse::None;
                 }
                 EventResponse::Focus => {
                     let rec = self.change_priority_for_el(el_id, Priority::Focused);
@@ -507,7 +506,6 @@ impl ElementOrganizer {
                     // will be processed after this *r (AND if this rec_for_higher contains
                     // duplicate events, they will be removed by the UnfocusOthers call)
                     extend_resps.push(EventResponse::ReceivableEventChanges(rec_for_higher));
-                    *r = EventResponse::None;
                 }
                 EventResponse::NewElement(new_el, ref mut new_el_resps) => {
                     // adjust the location of the window to be relative to the given element and adds the element

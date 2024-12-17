@@ -11,7 +11,7 @@ async fn main() -> Result<(), Error> {
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let (mut tui, ctx) = Tui::new()?;
-    let main = VerticalStack::new(&ctx);
+    let main = VerticalStackFocuser::new(&ctx);
 
     // adding the menu bar and menu items
 
@@ -63,13 +63,16 @@ async fn main() -> Result<(), Error> {
     .at(DynVal::new_flex(0.9), DynVal::new_flex(0.3));
     let _ = header_pane.add_element(Box::new(button));
 
-    let central_pane = HorizontalStack::new(&ctx);
+    let central_pane = HorizontalStackFocuser::new(&ctx);
     let _ = main.push(Box::new(central_pane.clone()));
     let left_pane = VerticalStackFocuser::new(&ctx).with_dyn_width(0.7);
-    let right_pane = VerticalStack::new(&ctx);
+    let right_pane = VerticalStackFocuser::new(&ctx);
     let _ = central_pane.push(Box::new(left_pane.clone()));
     let _ = central_pane.push(Box::new(right_pane.clone()));
-    let _ = left_pane.push(window_generation_zone(&ctx, Box::new(main.pane.clone())));
+    let _ = left_pane.push(window_generation_zone(
+        &ctx,
+        Box::new(main.pane.pane.clone()),
+    ));
 
     //let train_pane = DebugSizePane::new(&ctx);
     let train_pane = TerminalPane::new(&ctx)?;
@@ -80,12 +83,13 @@ async fn main() -> Result<(), Error> {
     let _ = left_pane.push(Box::new(train_pane));
 
     let tabs = Tabs::new(&ctx);
-    //let widgets_tab = widgets_demo(&ctx);
-    let widgets_tab = Box::new(
-        DebugSizePane::new(&ctx)
-            .with_bg(Color::RED)
-            .with_text("widgets".to_string()),
-    );
+    tabs.pane.set_unfocused(&ctx);
+    let widgets_tab = widgets_demo(&ctx);
+    //let widgets_tab = Box::new(
+    //    DebugSizePane::new(&ctx)
+    //        .with_bg(Color::RED)
+    //        .with_text("widgets".to_string()),
+    //);
     let el2 = DebugSizePane::new(&ctx)
         .with_bg(Color::BLUE)
         .with_text("tab 2".to_string());

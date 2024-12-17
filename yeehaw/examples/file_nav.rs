@@ -7,7 +7,7 @@ async fn main() -> Result<(), Error> {
 
     let (mut tui, ctx) = Tui::new()?;
 
-    let hstack = HorizontalStack::new(&ctx);
+    let hstack = HorizontalStackFocuser::new(&ctx);
 
     let nav = FileNavPane::new(&ctx, std::env::current_dir().expect("no current dir"));
     nav.pane.set_focused(&ctx);
@@ -21,7 +21,7 @@ async fn main() -> Result<(), Error> {
 
         let mut resps =
             if hstack_.len() > 1 { hstack_.pop().into() } else { EventResponses::default() };
-        let resp = hstack_.push(Box::new(Focuser::new(Box::new(viewer))));
+        let resp = hstack_.push(Box::new(viewer));
         resps.push(resp);
 
         // ignore the resps because this is the main element
@@ -33,6 +33,6 @@ async fn main() -> Result<(), Error> {
     });
     nav.set_open_fn(open_fn);
 
-    let _ = hstack.push(Box::new(Focuser::new(Box::new(nav.clone()))));
+    let _ = hstack.push(Box::new(nav));
     tui.run(Box::new(hstack)).await
 }

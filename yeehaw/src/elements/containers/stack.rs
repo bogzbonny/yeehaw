@@ -1,7 +1,4 @@
-use {
-    crate::*,
-    std::ops::{Deref, DerefMut},
-};
+use crate::*;
 
 // currently resizing stacks makes the resized dimention static for the two elements which have
 // changed dimension values during a resize.
@@ -13,19 +10,6 @@ pub struct VerticalStackFocuser {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for VerticalStackFocuser {}
-
-impl Deref for VerticalStackFocuser {
-    type Target = VerticalStack;
-    fn deref(&self) -> &Self::Target {
-        &self.pane
-    }
-}
-
-impl DerefMut for VerticalStackFocuser {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.pane
-    }
-}
 
 #[yeehaw_derive::impl_pane_basics_from(pane)]
 impl VerticalStackFocuser {
@@ -50,7 +34,7 @@ impl VerticalStackFocuser {
     }
 
     pub fn with_min_resize_height(self, min_resize_height: usize) -> Self {
-        self.set_min_resize_height(min_resize_height);
+        self.pane.set_min_resize_height(min_resize_height);
         self
     }
 }
@@ -58,19 +42,6 @@ impl VerticalStackFocuser {
 #[derive(Clone)]
 pub struct HorizontalStackFocuser {
     pub pane: HorizontalStack,
-}
-
-impl Deref for HorizontalStackFocuser {
-    type Target = HorizontalStack;
-    fn deref(&self) -> &Self::Target {
-        &self.pane
-    }
-}
-
-impl DerefMut for HorizontalStackFocuser {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.pane
-    }
 }
 
 #[yeehaw_derive::impl_element_from(pane)]
@@ -99,7 +70,7 @@ impl HorizontalStackFocuser {
     }
 
     pub fn with_min_resize_width(self, min_resize_width: usize) -> Self {
-        self.set_min_resize_width(min_resize_width);
+        self.pane.set_min_resize_width(min_resize_width);
         self
     }
 }
