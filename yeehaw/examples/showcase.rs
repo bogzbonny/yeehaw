@@ -65,7 +65,7 @@ async fn main() -> Result<(), Error> {
 
     let central_pane = HorizontalStack::new(&ctx);
     let _ = main.push(Box::new(central_pane.clone()));
-    let left_pane = VerticalStack::new(&ctx).with_width(DynVal::new_flex(0.7));
+    let left_pane = VerticalStackFocuser::new(&ctx).with_dyn_width(0.7);
     let right_pane = VerticalStack::new(&ctx);
     let _ = central_pane.push(Box::new(left_pane.clone()));
     let _ = central_pane.push(Box::new(right_pane.clone()));
@@ -73,14 +73,19 @@ async fn main() -> Result<(), Error> {
 
     //let train_pane = DebugSizePane::new(&ctx);
     let train_pane = TerminalPane::new(&ctx)?;
-    train_pane.pane.set_dyn_height(DynVal::new_flex(0.7));
+    train_pane.pane.set_dyn_height(0.7);
     train_pane.pane.set_unfocused(&ctx);
     train_pane.disable_cursor();
     train_pane.execute_command("for i in {1..7}; do sl -l; done ; exit");
     let _ = left_pane.push(Box::new(train_pane));
 
     let tabs = Tabs::new(&ctx);
-    let widgets_tab = widgets_demo(&ctx);
+    //let widgets_tab = widgets_demo(&ctx);
+    let widgets_tab = Box::new(
+        DebugSizePane::new(&ctx)
+            .with_bg(Color::RED)
+            .with_text("widgets".to_string()),
+    );
     let el2 = DebugSizePane::new(&ctx)
         .with_bg(Color::BLUE)
         .with_text("tab 2".to_string());

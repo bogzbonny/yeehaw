@@ -12,10 +12,10 @@ async fn main() -> Result<(), Error> {
     let sel_pane = ParentPaneOfSelectable::new(&ctx).with_dyn_height(3);
     let hstack = HorizontalStack::new(&ctx)
         .with_min_resize_width(2)
-        .with_height(DynVal::FULL);
+        .with_dyn_height(DynVal::FULL);
     let vstack = VerticalStack::new(&ctx)
         .with_min_resize_height(2)
-        .with_height(DynVal::FULL);
+        .with_dyn_height(DynVal::FULL);
     let _ = top.push(Box::new(sel_pane.clone()));
     let _ = top.push(Box::new(vstack.clone()));
 

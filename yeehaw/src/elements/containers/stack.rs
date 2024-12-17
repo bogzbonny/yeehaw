@@ -1,14 +1,108 @@
 use {
-    crate::{
-        Context, DrawCh, DrawUpdate, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponse, EventResponses, Parent, ParentPane, Priority, ReceivableEventChanges,
-        SelfReceivableEvents, Size, Style,
-    },
-    std::{cell::RefCell, rc::Rc},
+    crate::*,
+    std::ops::{Deref, DerefMut},
 };
 
 // currently resizing stacks makes the resized dimention static for the two elements which have
 // changed dimension values during a resize.
+
+#[derive(Clone)]
+pub struct VerticalStackFocuser {
+    pub pane: VerticalStack,
+}
+
+#[yeehaw_derive::impl_element_from(pane)]
+impl Element for VerticalStackFocuser {}
+
+impl Deref for VerticalStackFocuser {
+    type Target = VerticalStack;
+    fn deref(&self) -> &Self::Target {
+        &self.pane
+    }
+}
+
+impl DerefMut for VerticalStackFocuser {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.pane
+    }
+}
+
+#[yeehaw_derive::impl_pane_basics_from(pane)]
+impl VerticalStackFocuser {
+    pub fn new(ctx: &Context) -> Self {
+        Self {
+            pane: VerticalStack::new(ctx),
+        }
+    }
+
+    #[must_use]
+    /// add an element to the end of the stack resizing the other elements
+    /// in order to fit the new element
+    pub fn push(&self, el: Box<dyn Element>) -> EventResponse {
+        //let el = Box::new(Focuser::new(el));
+        self.pane.push(el)
+    }
+
+    #[must_use]
+    pub fn insert(&self, idx: usize, el: Box<dyn Element>) -> EventResponse {
+        let el = Box::new(Focuser::new(el));
+        self.pane.insert(idx, el)
+    }
+
+    pub fn with_min_resize_height(self, min_resize_height: usize) -> Self {
+        self.set_min_resize_height(min_resize_height);
+        self
+    }
+}
+
+#[derive(Clone)]
+pub struct HorizontalStackFocuser {
+    pub pane: HorizontalStack,
+}
+
+impl Deref for HorizontalStackFocuser {
+    type Target = HorizontalStack;
+    fn deref(&self) -> &Self::Target {
+        &self.pane
+    }
+}
+
+impl DerefMut for HorizontalStackFocuser {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.pane
+    }
+}
+
+#[yeehaw_derive::impl_element_from(pane)]
+impl Element for HorizontalStackFocuser {}
+
+#[yeehaw_derive::impl_pane_basics_from(pane)]
+impl HorizontalStackFocuser {
+    pub fn new(ctx: &Context) -> Self {
+        Self {
+            pane: HorizontalStack::new(ctx),
+        }
+    }
+
+    #[must_use]
+    /// add an element to the end of the stack resizing the other elements
+    /// in order to fit the new element
+    pub fn push(&self, el: Box<dyn Element>) -> EventResponse {
+        let el = Box::new(Focuser::new(el));
+        self.pane.push(el)
+    }
+
+    #[must_use]
+    pub fn insert(&self, idx: usize, el: Box<dyn Element>) -> EventResponse {
+        let el = Box::new(Focuser::new(el));
+        self.pane.insert(idx, el)
+    }
+
+    pub fn with_min_resize_width(self, min_resize_width: usize) -> Self {
+        self.set_min_resize_width(min_resize_width);
+        self
+    }
+}
 
 #[derive(Clone)]
 pub struct VerticalStack {
@@ -23,6 +117,7 @@ pub struct VerticalStack {
     pub is_dirty: Rc<RefCell<bool>>,
 }
 
+#[yeehaw_derive::impl_pane_basics_from(pane)]
 impl VerticalStack {
     const KIND: &'static str = "vertical_stack";
 
@@ -46,19 +141,13 @@ impl VerticalStack {
         }
     }
 
-    pub fn with_height(self, h: DynVal) -> Self {
-        self.pane.pane.set_dyn_height(h);
-        self
-    }
-
-    pub fn with_width(self, w: DynVal) -> Self {
-        self.pane.pane.set_dyn_width(w);
-        self
-    }
-
     pub fn with_min_resize_height(self, min_resize_height: usize) -> Self {
-        *self.min_resize_height.borrow_mut() = min_resize_height;
+        self.set_min_resize_height(min_resize_height);
         self
+    }
+
+    pub fn set_min_resize_height(&self, min_resize_height: usize) {
+        *self.min_resize_height.borrow_mut() = min_resize_height;
     }
 
     #[must_use]
@@ -126,17 +215,6 @@ impl VerticalStack {
 
     pub fn is_empty(&self) -> bool {
         self.els.borrow().is_empty()
-    }
-
-    pub fn with_style(self, style: Style) -> Self {
-        self.pane.pane.set_style(style);
-        self
-    }
-
-    pub fn with_transparent(self) -> Self {
-        let ch = DrawCh::transparent();
-        self.pane.pane.set_default_ch(ch);
-        self
     }
 
     /// get the average value of the elements in the stack
@@ -233,6 +311,7 @@ pub struct HorizontalStack {
     pub is_dirty: Rc<RefCell<bool>>,
 }
 
+#[yeehaw_derive::impl_pane_basics_from(pane)]
 impl HorizontalStack {
     const KIND: &'static str = "horizontal_stack";
 
@@ -256,19 +335,13 @@ impl HorizontalStack {
         }
     }
 
-    pub fn with_height(self, h: DynVal) -> Self {
-        self.pane.pane.set_dyn_height(h);
-        self
-    }
-
-    pub fn with_width(self, w: DynVal) -> Self {
-        self.pane.pane.set_dyn_width(w);
-        self
-    }
-
     pub fn with_min_resize_width(self, min_resize_width: usize) -> Self {
-        *self.min_resize_width.borrow_mut() = min_resize_width;
+        self.set_min_resize_width(min_resize_width);
         self
+    }
+
+    pub fn set_min_resize_width(&self, min_resize_width: usize) {
+        *self.min_resize_width.borrow_mut() = min_resize_width;
     }
 
     #[must_use]
@@ -335,17 +408,6 @@ impl HorizontalStack {
 
     pub fn is_empty(&self) -> bool {
         self.els.borrow().is_empty()
-    }
-
-    pub fn with_style(self, style: Style) -> Self {
-        self.pane.pane.set_style(style);
-        self
-    }
-
-    pub fn with_transparent(self) -> Self {
-        let ch = DrawCh::transparent();
-        self.pane.pane.set_default_ch(ch);
-        self
     }
 
     /// get the average value of the elements in the stack

@@ -123,6 +123,7 @@ pub fn impl_pane_basics_from(attr: TokenStream, item: TokenStream) -> TokenStrea
         fn with_dyn_location(self, l: DynLocation);
         fn with_content(self, content: DrawChs2D);
         fn with_default_ch(self, ch: DrawCh);
+        fn with_transparent(self);
         fn with_style(self, style: Style);
         fn with_bg(self, bg: Color);
         fn with_fg(self, fg: Color);
@@ -174,6 +175,7 @@ pub fn impl_pane_basics_from(attr: TokenStream, item: TokenStream) -> TokenStrea
     fn set_bg(&self, bg: Color);
     fn set_fg(&self, fg: Color);
     fn set_default_ch(&self, ch: DrawCh);
+    fn set_transparent(&self);
     fn set_self_receivable_events(&self, evs: SelfReceivableEvents);
     fn get_element_priority(&self) -> Priority;
     fn send_responses_upward(&self, ctx: &Context, resps: EventResponses);

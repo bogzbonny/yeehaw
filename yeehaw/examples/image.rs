@@ -18,7 +18,7 @@ async fn main() -> Result<(), Error> {
 
     let vstack = VerticalStack::new(&ctx);
     let sel_pane = ParentPaneOfSelectable::new(&ctx).with_dyn_height(3);
-    let hstack = HorizontalStack::new(&ctx).with_height(1.0.into());
+    let hstack = HorizontalStack::new(&ctx).with_dyn_height(1.0);
     let _ = vstack.push(Box::new(sel_pane.clone()));
     let _ = vstack.push(Box::new(hstack.clone()));
 

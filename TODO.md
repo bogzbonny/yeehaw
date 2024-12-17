@@ -46,19 +46,16 @@
             even when one isn't neccesary based on the context
           -  window closing doesn't work
           - scrollable pane doesn't change positions work
+      - file_nav shows nothing
      ^DONE
    - Bugs
       - showcase duplicate priorities
-      - file_nav shows nothing
       - menu test - only the final 1 menu item is ever showing 
           - kinda random
       - nvim editor (example editor) doesn't refresh right when closed
 
-      
 
 01. textbox paste shouldn't work when non-editable
-  
-
 
 01. cleanup the widgets example 
     - showcase should just use the same widgets example pane
@@ -125,6 +122,11 @@
 01. go through and remove / or make dyn element fns named with_width with_height
 
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+05. showcase window generator
+     - the selectable pane keyboard stops working after the first window is generated.
+        - maybe because window generation calles unfocus others
+05. showcase bugs with keyboard event routing within recursive showcase tab
 
 05. Theme Manager - it would be awesome to be able to just get the colors for
     each element from a provided theme manager
@@ -677,3 +679,7 @@ ZELT reqd features
       - need for zelt editing the buffer directly `set autoread`
       - set swp file location manually so can access the swp files to read them
          - nvim -c 'set directory=~/my_swap_files//' your_file.txt
+      - EASY
+         - keep expanding the ctx until the upper left box (prev context)
+           doesn't change. (ignoreing bottom 2 or 3 lines)
+    

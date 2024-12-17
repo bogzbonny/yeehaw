@@ -391,6 +391,16 @@ impl Pane {
         *self.default_ch.borrow_mut() = ch;
     }
 
+    pub fn with_transparent(self) -> Self {
+        self.set_transparent();
+        self
+    }
+
+    pub fn set_transparent(&self) {
+        let ch = DrawCh::transparent();
+        self.set_default_ch(ch);
+    }
+
     pub fn with_self_receivable_events(self, evs: SelfReceivableEvents) -> Pane {
         *self.self_evs.borrow_mut() = evs;
         self

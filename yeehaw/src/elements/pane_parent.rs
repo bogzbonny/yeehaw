@@ -60,18 +60,6 @@ impl ParentPane {
         self
     }
 
-    pub fn with_style(self, sty: Style) -> Self {
-        let ch = DrawCh::new(' ', sty);
-        self.pane.set_default_ch(ch);
-        self
-    }
-
-    pub fn with_transparent(self) -> Self {
-        let ch = DrawCh::transparent();
-        self.pane.set_default_ch(ch);
-        self
-    }
-
     pub fn focused(self) -> Self {
         *self.pane.element_priority.borrow_mut() = Priority::Focused;
         self
