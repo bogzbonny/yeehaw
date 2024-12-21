@@ -66,9 +66,7 @@ async fn main() -> Result<(), Error> {
     let central_pane = HorizontalStackFocuser::new(&ctx);
     let _ = main.push(Box::new(central_pane.clone()));
     let left_pane = VerticalStackFocuser::new(&ctx).with_dyn_width(0.7);
-    let right_pane = VerticalStackFocuser::new(&ctx);
     let _ = central_pane.push(Box::new(left_pane.clone()));
-    let _ = central_pane.push(Box::new(right_pane.clone()));
     let _ = left_pane.push(window_generation_zone(
         &ctx,
         Box::new(main.pane.pane.clone()),
@@ -117,7 +115,7 @@ async fn main() -> Result<(), Error> {
     let _ = tabs.push(Box::new(el5), "terminal");
     let _ = tabs.push_with_on_open_fn(Box::new(showcase), "showcase", on_showcase_open_fn);
     let _ = tabs.select(0);
-    let _ = right_pane.push(Box::new(tabs));
+    let _ = central_pane.push(Box::new(tabs));
 
     tui.run(Box::new(main)).await
 }

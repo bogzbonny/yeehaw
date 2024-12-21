@@ -23,7 +23,7 @@ impl VerticalStackFocuser {
     /// add an element to the end of the stack resizing the other elements
     /// in order to fit the new element
     pub fn push(&self, el: Box<dyn Element>) -> EventResponse {
-        //let el = Box::new(Focuser::new(el));
+        let el = Box::new(Focuser::new(el));
         self.pane.push(el)
     }
 

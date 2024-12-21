@@ -10,6 +10,8 @@
     tab
 01. scrollable pane which grows if above min dimension
 01. better labels for elements - build into element
+10. slider element, allow better dragging were you don't have to stay inside the
+    element
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -51,11 +53,11 @@
           - scrollable pane doesn't change positions work
       - file_nav shows nothing
       - menu test - only the final 1 menu item is ever showing 
+      - nvim editor (example editor) doesn't refresh right when closed
      ^DONE
    - Bugs
       - showcase duplicate priorities
          - focuser not switching properly
-      - nvim editor (example editor) doesn't refresh right when closed
 
 
 01. textbox paste shouldn't work when non-editable
@@ -379,6 +381,9 @@ BUGFIXES/PATCHES
            - shouldn't be that complex. Each window could just ensure that the 
            parent pane has this hook registered for resized on each
            minimization.
+
+05. Ability to use arrow keys to select menu item when menu is open
+
 
 20. when drag resizing stack panes, sometimes panes which are further in the
     stack from drag location change by 1... should attempt to correct for this.

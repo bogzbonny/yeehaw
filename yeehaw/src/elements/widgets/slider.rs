@@ -263,6 +263,25 @@ impl Element for Slider {
                 }
                 return (false, resps);
             }
+            Event::ExternalMouse(me) => {
+                let clicked_down = *self.clicked_down.borrow();
+                match me.kind {
+                    MouseEventKind::Drag(MouseButton::Left)
+                    | MouseEventKind::Up(MouseButton::Left)
+                        if clicked_down =>
+                    {
+                        let x = me.column as usize;
+                        let pos = self.get_pos_from_x(ctx, x as i32);
+                        let resps_ = self.perform_adjustment(ctx, pos);
+                        resps.extend(resps_);
+                        return (true, resps);
+                    }
+                    _ if clicked_down => {
+                        *self.clicked_down.borrow_mut() = false;
+                    }
+                    _ => {}
+                }
+            }
             Event::Resize => {
                 self.is_dirty.replace(true);
                 return (false, resps);
