@@ -291,15 +291,16 @@ impl Element for TermEditorPane {
                 return out;
             };
             let old_text = self.text.borrow().clone();
+            let new_text = file_contents.trim_end_matches('\n').to_string();
 
-            if old_text.as_deref() != Some(file_contents.as_str()) {
+            if old_text.as_deref() != Some(&new_text) {
                 debug!("old_text: {:?}", old_text);
-                debug!("file_contents: {}", file_contents);
-                let is_empty = file_contents.is_empty();
+                debug!("new_text: {}", new_text);
+                let is_empty = new_text.is_empty();
                 if !*self.just_created.borrow() {
-                    self.text.replace(Some(file_contents.clone()));
-                    debug!("text changed to: {}", file_contents);
-                    self.text_changed_hook.borrow_mut()(ctx.clone(), file_contents);
+                    self.text.replace(Some(new_text.clone()));
+                    debug!("text changed to: {}", new_text);
+                    self.text_changed_hook.borrow_mut()(ctx.clone(), new_text);
                 }
                 if *self.just_created.borrow() && !is_empty {
                     *self.just_created.borrow_mut() = false;

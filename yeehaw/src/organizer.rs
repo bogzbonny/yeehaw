@@ -21,7 +21,9 @@ pub struct ElementOrganizer {
     ///                                              (location, visibility, overflow)
     last_draw_details: Rc<RefCell<Vec<(ElementID, (DynLocationSet, bool, bool))>>>,
 
-    /// the queue of elements to be removed on the next draw
+    /// the queue of elements to be visually removed on the next draw
+    /// NOTE the elements will already be removed from the els and prioritizer, however
+    /// we wait until next draw to propogate messages to clear those elements from the screen
     removed_element_queue: Rc<RefCell<Vec<ElementID>>>,
 }
 
@@ -121,6 +123,7 @@ impl ElementOrganizer {
                 .map(|(id, _)| id),
         );
         let pes = self.receivable().drain(..).map(|(e, _)| e).collect();
+        self.els.borrow_mut().clear();
         *self.prioritizer.borrow_mut() = EventPrioritizer::default();
         let rec = ReceivableEventChanges::default().with_remove_evs(pes);
         EventResponse::ReceivableEventChanges(rec)

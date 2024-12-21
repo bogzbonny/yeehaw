@@ -24,7 +24,7 @@ async fn main() -> Result<(), Error> {
 
     let label_ = label.clone();
     let hook = Box::new(move |_ctx, text: String| {
-        label_.set_text(format!("text set to:\n {text}"));
+        label_.set_text(format!("text set to:\n{text}"));
         EventResponses::default()
     });
 
