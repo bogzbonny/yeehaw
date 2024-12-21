@@ -119,7 +119,7 @@ impl Button {
     };
 
     pub fn default_receivable_events() -> SelfReceivableEvents {
-        SelfReceivableEvents(vec![(KB::KEY_ENTER.into(), Priority::Focused)]) // when "active" hitting enter will click the button
+        SelfReceivableEvents(vec![(KB::KEY_ENTER.into())]) // when "active" hitting enter will click the button
     }
 
     pub fn new(

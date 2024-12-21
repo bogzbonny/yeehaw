@@ -32,7 +32,7 @@ impl WindowPane {
     pub fn new(ctx: &Context, inner: Box<dyn Element>, title: &str) -> Self {
         let pane = ParentPane::new(ctx, Self::KIND)
             .with_transparent()
-            .with_unfocused(ctx);
+            .with_focused(ctx, false);
         let top_bar = Box::new(BasicWindowTopBar::new(ctx, title, true, true, true));
 
         // adjust the inner size to account for the top bar

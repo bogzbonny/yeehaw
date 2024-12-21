@@ -34,11 +34,11 @@ impl Toggle {
 
     pub fn default_receivable_events() -> SelfReceivableEvents {
         SelfReceivableEvents(vec![
-            (KB::KEY_ENTER.into(), Priority::Focused),
-            (KB::KEY_LEFT.into(), Priority::Focused),
-            (KB::KEY_RIGHT.into(), Priority::Focused),
-            (KB::KEY_H.into(), Priority::Focused),
-            (KB::KEY_L.into(), Priority::Focused),
+            (KB::KEY_ENTER.into()),
+            (KB::KEY_LEFT.into()),
+            (KB::KEY_RIGHT.into()),
+            (KB::KEY_H.into()),
+            (KB::KEY_L.into()),
         ])
     }
 

@@ -139,7 +139,7 @@ impl TerminalPane {
 
     pub fn receivable_events(&self) -> SelfReceivableEvents {
         vec![
-            (KeyPossibility::Anything.into(), Priority::Focused),
+            (KeyPossibility::Anything.into()),
             (
                 ReceivableEvent::Custom(Self::custom_destruct_event_name(self.id())),
                 Priority::Focused,

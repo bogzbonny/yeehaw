@@ -1,8 +1,8 @@
 use {
     crate::{
         Color, Context, DrawAction, DrawCh, DrawChPos, DrawUpdate, DynLocation, DynLocationSet,
-        DynVal, Element, ElementID, Event, EventResponses, Pane, Parent, ParentPane, Priority,
-        ReceivableEventChanges, RelMouseEvent, SelfReceivableEvents, Style, ZIndex,
+        DynVal, Element, ElementID, Event, EventResponses, Pane, Parent, ParentPane, RelMouseEvent,
+        Style, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     rayon::prelude::*,

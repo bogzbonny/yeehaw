@@ -1,8 +1,8 @@
 use {
     crate::{
         Color, Context, DrawCh, DrawChs2D, DrawUpdate, DynLocation, DynLocationSet, DynVal,
-        Element, ElementID, ElementOrganizer, Event, EventResponse, EventResponses, Pane, Parent,
-        Priority, ReceivableEventChanges, SelfReceivableEvents, Size, Style, ZIndex,
+        Element, ElementID, ElementOrganizer, Event, EventResponses, Pane, Parent,
+        SelfReceivableEvents, Size, Style, ZIndex,
     },
     std::collections::HashMap,
     std::{
@@ -32,7 +32,7 @@ pub struct ParentPane {
 #[yeehaw_derive::impl_pane_basics_from(pane)]
 impl ParentPane {
     pub fn new(ctx: &Context, kind: &'static str) -> Self {
-        let pane = Pane::new(ctx, kind).with_focused(ctx);
+        let pane = Pane::new(ctx, kind).with_focused(true);
         ParentPane {
             pane,
             eo: ElementOrganizer::default(),
@@ -61,12 +61,12 @@ impl ParentPane {
     }
 
     pub fn focused(self) -> Self {
-        *self.pane.element_priority.borrow_mut() = Priority::Focused;
+        *self.pane.focused.borrow_mut() = true;
         self
     }
 
     pub fn unfocused(self) -> Self {
-        *self.pane.element_priority.borrow_mut() = Priority::Unfocused;
+        *self.pane.focused.borrow_mut() = false;
         self
     }
 
@@ -75,18 +75,15 @@ impl ParentPane {
         self
     }
 
-    #[must_use]
-    pub fn add_element(&self, el: Box<dyn Element>) -> EventResponse {
+    pub fn add_element(&self, el: Box<dyn Element>) {
         self.eo.add_element(el, Some(Box::new(self.clone())))
     }
 
-    #[must_use]
-    pub fn remove_element(&self, el_id: &ElementID) -> EventResponse {
+    pub fn remove_element(&self, el_id: &ElementID) {
         self.eo.remove_element(el_id)
     }
 
-    #[must_use]
-    pub fn clear_elements(&self) -> EventResponse {
+    pub fn clear_elements(&self) {
         self.eo.clear_elements()
     }
 
@@ -94,16 +91,10 @@ impl ParentPane {
         !self.eo.els.borrow().is_empty()
     }
 
-    pub fn perceived_priorities_of_eo(&self) -> SelfReceivableEvents {
-        let pr = self.pane.get_element_priority();
-        let pes = self.eo.receivable(); // registered receivable events
-        ElementOrganizer::generate_perceived_priorities(pr, pes)
-    }
-
-    //pub fn change_priority_for_el(
+    //pub fn change_focused_for_el(
     //    &self, ctx: &Context, el_id: ElementID, p: Priority,
     //) -> ReceivableEventChanges {
-    //    let mut ic = self.eo.change_priority_for_el(ctx, el_id, p);
+    //    let mut ic = self.eo.change_focused_for_el(ctx, el_id, p);
     //    let mut to_add = vec![];
     //    // Check if any of the ic.remove match pane.self_evs. If so, add those events to
     //    // the ic.add.
@@ -164,20 +155,12 @@ impl ParentPane {
         self.pane.send_responses_upward(ctx, resps);
     }
 
-    pub fn focus(&self, ctx: &Context) {
-        let rec = self.change_priority(Priority::Focused);
-        if self.pane.has_parent() {
-            let resps = EventResponse::ReceivableEventChanges(rec);
-            self.send_responses_upward(ctx, resps.into());
-        }
+    pub fn focus(&self) {
+        self.set_focused(true);
     }
 
-    pub fn unfocus(&self, ctx: &Context) {
-        let rec = self.change_priority(Priority::Unfocused);
-        if self.pane.has_parent() {
-            let resps = EventResponse::ReceivableEventChanges(rec);
-            self.send_responses_upward(ctx, resps.into());
-        }
+    pub fn unfocus(&self) {
+        self.set_focused(false);
     }
 
     /// sends an event to a specific element
@@ -190,53 +173,13 @@ impl ParentPane {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for ParentPane {
-    fn receivable(&self) -> SelfReceivableEvents {
-        let mut pes = self.perceived_priorities_of_eo();
-        pes.extend(self.pane.receivable().0);
-        pes
+    fn can_receive(&self, ev: &Event) -> bool {
+        self.get_focused() && (self.pane.can_receive(ev) || self.eo.can_receive(ev))
     }
 
-    /// primarily a placeholder function. An element using the parent pane should
-    /// write their own receive_event function.
-    /// TODO verify that this code is or isn't used anywhere
-    ///                                               (captured, resp         )
+    //                                                     (captured, resp         )
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        //debug!(
-        //    "ParentPane({})::receive_event_inner: ev={:?}",
-        //    self.id(),
-        //    ev,
-        //);
-
         self.eo.event_process(ctx, ev, Box::new(self.clone()))
-    }
-
-    /// ChangePriority returns a priority change (InputabilityChanges) to its
-    /// parent organizer so as to update the priority of all events registered to
-    /// this element.
-    ///
-    /// NOTE: The receivable event changes (rec) that this parent pane sends up is the
-    /// combination of:
-    ///   - this element's priority changes (the SelfEvs, aka the
-    ///     Self Receivable Events)
-    ///   - the "perceived priorities" of the childens' Receivable Events
-    ///     (aka the results of the child's Receivable() function) The "perceived
-    ///     priorities" are the effective priority FROM the perspective of the
-    ///     element ABOVE this element in the tree.
-    fn change_priority(&self, pr: Priority) -> ReceivableEventChanges {
-        // first change the priority of the self evs. These are "this elements
-        // priority changes". NO changes should be made to the childen,
-        // the perceived priorities of the children should be interpreted.
-        let mut rec = self.pane.change_priority(pr);
-
-        // update the perceived priorities of the children and update the prioritizer
-        for (_, el_details) in self.eo.els.borrow().iter() {
-            let pes = el_details.el.receivable(); // self evs (and child eo's evs)
-            for pe in ElementOrganizer::generate_perceived_priorities(pr, pes).0 {
-                rec.update_priority_for_ev(pe.0, pe.1);
-            }
-        }
-
-        rec
     }
 
     fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
@@ -296,8 +239,8 @@ impl Parent for ParentPane {
         self.el_store.borrow_mut().insert(key.to_string(), value);
     }
 
-    fn get_parent_priority(&self) -> Priority {
-        self.pane.get_priority()
+    fn get_parent_focused(&self) -> bool {
+        self.pane.get_focused()
     }
 
     fn get_id(&self) -> ElementID {

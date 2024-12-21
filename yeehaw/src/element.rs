@@ -1,7 +1,6 @@
 use {
     crate::{
-        prioritizer::Priority, Context, DrawChPos, DynLocation, DynLocationSet, ElementID, Event,
-        EventResponses, Label, ReceivableEventChanges, SelfReceivableEvents,
+        Context, DrawChPos, DynLocation, DynLocationSet, ElementID, Event, EventResponses, Label,
     },
     dyn_clone::DynClone,
     std::{
@@ -32,20 +31,14 @@ dyn_clone::clone_trait_object!(Element);
 /// expected to fulfill
 pub trait Element: DynClone {
     /// TODO consider removing kind
-    fn kind(&self) -> &'static str;
     /// a name for the kind of the element
+    fn kind(&self) -> &'static str;
 
-    fn id(&self) -> ElementID;
     /// the element id as assigned by the SortingHat
+    fn id(&self) -> ElementID;
 
-    /// Returns all event kinds (key events and commands, etc.) which are receivable by the element.
-    /// This includes all events that are registered to the element itself, as well as its children,
-    /// via its ElementOrganizer (if it has one).
-    ///
-    /// NOTE in this current design, elements are always routed mouse events independently of
-    /// whether or not they are receivable according to this function.
-    #[must_use]
-    fn receivable(&self) -> SelfReceivableEvents;
+    /// can the element receive the event provided
+    fn can_receive(&self, ev: &Event) -> bool;
 
     /// Receive an event from a parent. The receiving element may consume the event and/or pass it
     /// to a child. The element is expected to return a response to the event, along with any
@@ -63,25 +56,8 @@ pub trait Element: DynClone {
         (captured, resp)
     }
 
-    /// change_priority is expected to change the priority of an element relative to its parents.
-    /// All receivable-events registered directly by the element should have their local priority
-    /// changed to 'p' while everything registered in this element's prioritizers will remain
-    /// unchanged (if this element is a parent element). The element will then respond with the
-    /// appropriate changes to its receivable events through the function return variable.
-    ///
-    /// If the priority is changing from Focused to Unfocused, then the element should respond with
-    /// ReceivableEventChanges where all events (local, and of its children) are set to Unfocused.
-    ///
-    /// If the priority is changed from Unfocused to Focused, then the element should respond with
-    /// ReceivableEventChanges with the element's local receivable events set to Focused, and all of
-    /// the elements children's receivable events set to whatever their local priority is.
-    ///
-    /// In all cases the reponse of this function is intended to be passed to the element's
-    /// parent's event prioritizer.
-    #[must_use]
-    fn change_priority(&self, p: Priority) -> ReceivableEventChanges;
-
-    fn get_priority(&self) -> Priority;
+    fn set_focused(&self, focused: bool);
+    fn get_focused(&self) -> bool;
 
     /// Get the element's full drawing for the provided context.
     /// if force update is set to true then an DrawUpdate should be provided regardless of
@@ -293,7 +269,7 @@ pub trait Parent: DynClone {
     fn set_store_item(&self, key: &str, value: Vec<u8>);
 
     /// Get the priority of the parent element, useful for processing in the organizer.
-    fn get_parent_priority(&self) -> Priority;
+    fn get_parent_focused(&self) -> bool;
 
     fn get_id(&self) -> ElementID;
 }

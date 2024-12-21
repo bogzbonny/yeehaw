@@ -1,7 +1,7 @@
 use {
     crate::{
         keyboard::Keyboard, ChPlus, Context, DrawingCache, DynLocation, DynLocationSet, Element,
-        ElementID, ElementOrganizer, Error, Event, EventResponse, EventResponses, Parent, Priority,
+        ElementID, ElementOrganizer, Error, Event, EventResponse, EventResponses, Parent,
         SortingHat,
     },
     crossterm::{
@@ -90,7 +90,7 @@ impl Tui {
         let loc = DynLocationSet::new(loc, vec![], 0);
         main_el.set_dyn_location_set(loc);
         main_el.set_visible(true);
-        let _ = main_el.change_priority(Priority::Focused);
+        let _ = main_el.set_focused(true);
 
         // when adding the main element, nil is passed in as the parent
         // this is because the top of the tree is the TUI's main EO and so no parent
@@ -373,7 +373,7 @@ impl Parent for TuiParent {
         self.el_store.borrow_mut().insert(key.to_string(), value);
     }
 
-    fn get_parent_priority(&self) -> Priority {
+    fn get_parent_focused(&self) -> bool {
         Priority::Focused
     }
 

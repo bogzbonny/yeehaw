@@ -42,10 +42,10 @@ impl RadioButtons {
 
     pub fn default_receivable_events() -> SelfReceivableEvents {
         SelfReceivableEvents(vec![
-            (KB::KEY_UP.into(), Priority::Focused),
-            (KB::KEY_DOWN.into(), Priority::Focused),
-            (KB::KEY_J.into(), Priority::Focused),
-            (KB::KEY_K.into(), Priority::Focused),
+            (KB::KEY_UP.into()),
+            (KB::KEY_DOWN.into()),
+            (KB::KEY_J.into()),
+            (KB::KEY_K.into()),
         ])
     }
 

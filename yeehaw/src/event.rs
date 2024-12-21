@@ -1,5 +1,5 @@
 use {
-    crate::{prioritizer::Priority, Element, ElementID},
+    crate::{Element, ElementID},
     std::ops::{Deref, DerefMut},
 };
 
@@ -291,9 +291,6 @@ pub enum EventResponse {
     /// arbitrary custom value which can be passed back to the parent
     ///       key,   , value
     Custom(String, Vec<u8>),
-
-    /// contains priority updates that should be made to the receiver's prioritizer
-    ReceivableEventChanges(ReceivableEventChanges),
 }
 
 #[derive(Clone, Debug)]
@@ -400,93 +397,6 @@ impl EventResponses {
     }
 }
 
-// ----------------------------------------------------------------------------
-
-/// ReceivableEventChanges is used to update the receivable events of an element
-/// registered in the prioritizers of all ancestors
-/// NOTE: While processing inputability changes, element organizers remove events
-/// BEFORE adding events.
-
-#[derive(Clone, Default, Debug)]
-pub struct ReceivableEventChanges {
-    pub add: Vec<(ReceivableEvent, Priority)>,
-    /// receivable events being added to the element
-
-    /// Receivable events to deregistered from an element.
-    /// NOTE: one instance of an event being passed up the hierarchy through
-    /// RmRecEvs will remove ALL instances of that event from the prioritizer of
-    /// every element higher in the hierarchy that processes the
-    /// ReceivableEventChanges.
-    pub remove: Vec<ReceivableEvent>,
-}
-
-impl ReceivableEventChanges {
-    pub fn new(
-        add: Vec<(ReceivableEvent, Priority)>, remove: Vec<ReceivableEvent>,
-    ) -> ReceivableEventChanges {
-        ReceivableEventChanges { add, remove }
-    }
-
-    pub fn with_add_ev(mut self, p: Priority, ev: ReceivableEvent) -> ReceivableEventChanges {
-        self.add.push((ev, p));
-        self
-    }
-
-    pub fn with_add_evs(mut self, evs: Vec<(ReceivableEvent, Priority)>) -> ReceivableEventChanges {
-        self.add.extend(evs);
-        self
-    }
-
-    pub fn with_remove_ev(mut self, ev: ReceivableEvent) -> ReceivableEventChanges {
-        self.remove.push(ev);
-        self
-    }
-
-    pub fn with_remove_evs(mut self, evs: Vec<ReceivableEvent>) -> ReceivableEventChanges {
-        self.remove.extend(evs);
-        self
-    }
-
-    pub fn push_add_ev(&mut self, ev: ReceivableEvent, p: Priority) {
-        self.add.push((ev, p));
-    }
-
-    pub fn push_add_evs(&mut self, evs: Vec<(ReceivableEvent, Priority)>) {
-        self.add.extend(evs);
-    }
-
-    pub fn push_add_evs_single_priority(&mut self, evs: Vec<ReceivableEvent>, pr: Priority) {
-        for ev in evs {
-            self.add.push((ev, pr));
-        }
-    }
-
-    pub fn push_remove_ev(&mut self, ev: ReceivableEvent) {
-        self.remove.push(ev);
-    }
-
-    pub fn push_remove_evs(&mut self, evs: Vec<ReceivableEvent>) {
-        self.remove.extend(evs);
-    }
-
-    pub fn update_priority_for_ev(&mut self, ev: ReceivableEvent, p: Priority) {
-        self.remove.push(ev.clone());
-        self.add.push((ev, p));
-    }
-
-    pub fn update_priority_for_evs(&mut self, evs: Vec<ReceivableEvent>, p: Priority) {
-        for ev in evs {
-            self.remove.push(ev.clone());
-            self.add.push((ev, p));
-        }
-    }
-
-    pub fn extend(&mut self, rec: ReceivableEventChanges) {
-        self.remove.extend(rec.remove);
-        self.add.extend(rec.add);
-    }
-}
-
 // -------------------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
@@ -500,10 +410,10 @@ impl ReceivableEventChanges {
 /// NOTE: these fulfill a similar function to the prioritizers
 /// in that they manage inclusion/removal more cleanly and can be sorted
 #[derive(Clone, Default, Debug)]
-pub struct SelfReceivableEvents(pub Vec<(ReceivableEvent, Priority)>);
+pub struct SelfReceivableEvents(pub Vec<ReceivableEvent>);
 
 impl Deref for SelfReceivableEvents {
-    type Target = Vec<(ReceivableEvent, Priority)>;
+    type Target = Vec<ReceivableEvent>;
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -515,69 +425,48 @@ impl DerefMut for SelfReceivableEvents {
     }
 }
 
-impl From<Vec<(ReceivableEvent, Priority)>> for SelfReceivableEvents {
-    fn from(v: Vec<(ReceivableEvent, Priority)>) -> SelfReceivableEvents {
+impl From<Vec<ReceivableEvent>> for SelfReceivableEvents {
+    fn from(v: Vec<ReceivableEvent>) -> SelfReceivableEvents {
         SelfReceivableEvents(v)
     }
 }
 
 impl SelfReceivableEvents {
-    pub fn new_from_receivable_events(
-        p: Priority, evs: Vec<ReceivableEvent>,
-    ) -> SelfReceivableEvents {
-        SelfReceivableEvents(evs.into_iter().map(|ev| (ev, p)).collect())
+    // XXX delete
+    //pub fn new_from_receivable_events(
+    //    p: Priority, evs: Vec<ReceivableEvent>,
+    //) -> SelfReceivableEvents {
+    //    SelfReceivableEvents(evs.into_iter().map(|ev| (ev, p)).collect())
+    //}
+
+    pub fn push(&mut self, ev: ReceivableEvent) {
+        self.0.push(ev)
     }
 
-    pub fn push(&mut self, ev: ReceivableEvent, p: Priority) {
-        self.0.push((ev, p))
-    }
-
-    pub fn push_many_at_priority(&mut self, evs: Vec<ReceivableEvent>, p: Priority) {
-        for ev in evs {
-            self.push(ev, p)
-        }
-    }
-
-    pub fn extend(&mut self, evs: Vec<(ReceivableEvent, Priority)>) {
+    pub fn extend(&mut self, evs: Vec<ReceivableEvent>) {
         self.0.extend(evs)
     }
 
     pub fn remove(&mut self, ev: ReceivableEvent) {
-        self.0.retain(|(e, _)| e != &ev)
+        self.0.retain(|e| e != &ev)
     }
 
     pub fn remove_many(&mut self, evs: Vec<ReceivableEvent>) {
-        self.0.retain(|(e, _)| !evs.contains(e))
-    }
-
-    /// update_priority_for_ev updates the priority of the given event
-    /// registered directly to this element
-    pub fn update_priority_for_ev(&mut self, ev: ReceivableEvent, p: Priority) {
-        for i in 0..self.0.len() {
-            if self.0[i].0 != ev {
-                continue;
-            }
-            self.0[i].1 = p;
-            break;
-        }
-    }
-
-    pub fn update_priority_for_evs(&mut self, evs: Vec<ReceivableEvent>, p: Priority) {
-        for ev in evs {
-            self.update_priority_for_ev(ev, p)
-        }
-    }
-
-    pub fn update_priority_for_all(&mut self, p: Priority) {
-        for i in self.0.iter_mut() {
-            i.1 = p;
-        }
+        self.0.retain(|e| !evs.contains(e))
     }
 
     pub fn to_receivable_event_changes(&self) -> ReceivableEventChanges {
-        let remove_evs = self.0.iter().map(|(ev, _)| ev.clone()).collect();
         ReceivableEventChanges::default()
             .with_add_evs(self.0.clone())
-            .with_remove_evs(remove_evs)
+            .with_remove_evs(self.0.clone())
+    }
+
+    pub fn contains_match(&self, ev: &Event) -> bool {
+        for ev_ in &self.0 {
+            if ev_.matches(&ev) {
+                return true;
+            }
+        }
+        false
     }
 }

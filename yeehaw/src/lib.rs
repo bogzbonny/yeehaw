@@ -14,7 +14,6 @@ pub mod errors;
 pub mod event;
 pub mod keyboard;
 pub mod organizer;
-pub mod prioritizer;
 pub mod sorting_hat;
 pub mod style;
 pub mod tui;
@@ -35,7 +34,6 @@ pub use {
     },
     keyboard::Keyboard,
     organizer::ElementOrganizer,
-    prioritizer::Priority,
     sorting_hat::{ElementID, SortingHat},
     style::{Attributes, BgTranspSrc, FgTranspSrc, Style, UlTranspSrc},
     tui::Tui,

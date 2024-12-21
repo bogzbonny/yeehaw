@@ -61,9 +61,9 @@ impl VerticalScrollbar {
     const KIND: &'static str = "vertical_scrollbar";
     pub fn default_receivable_events() -> SelfReceivableEvents {
         SelfReceivableEvents(vec![
-            (KB::KEY_UP.into(), Priority::Focused),
-            (KB::KEY_DOWN.into(), Priority::Focused),
-            (KB::KEY_SPACE.into(), Priority::Focused),
+            (KB::KEY_UP.into()),
+            (KB::KEY_DOWN.into()),
+            (KB::KEY_SPACE.into()),
         ])
     }
     pub fn new(
@@ -143,8 +143,8 @@ impl HorizontalScrollbar {
     const KIND: &'static str = "horizontal_scrollbar";
     pub fn default_receivable_events() -> SelfReceivableEvents {
         SelfReceivableEvents(vec![
-            (KB::KEY_LEFT.into(), Priority::Focused),
-            (KB::KEY_RIGHT.into(), Priority::Focused),
+            (KB::KEY_LEFT.into()),
+            (KB::KEY_RIGHT.into()),
         ])
     }
     pub fn new(

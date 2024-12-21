@@ -11,10 +11,10 @@ pub fn impl_element_from(attr: TokenStream, item: TokenStream) -> TokenStream {
     let tr_code = r"pub trait Element: DynClone {
     fn kind(&self) -> &'static str;
     fn id(&self) -> ElementID;
-    fn receivable(&self) -> SelfReceivableEvents;
+    fn can_receive(&self, ev: &Event) -> bool;
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses);
-    fn change_priority(&self, p: Priority) -> ReceivableEventChanges;
-    fn get_priority(&self) -> Priority;
+    fn set_focused(&self, focused: bool);
+    fn get_focused(&self) -> bool;
     fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate>;
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>>;
     fn set_attribute_inner(&self, key: &str, value: Vec<u8>);
@@ -109,8 +109,7 @@ pub fn impl_pane_basics_from(attr: TokenStream, item: TokenStream) -> TokenStrea
     // Parse the input tokens into a syntax tree
     let mut impl_block = parse_macro_input!(item as ItemImpl);
     let tr_code_with = r"pub trait PaneBasicsWith {
-        fn with_unfocused(self, ctx: &Context); 
-        fn with_focused(self, ctx: &Context); 
+        fn with_focused(self, focused: bool); 
         fn with_kind(self, kind: &'static str); 
         fn with_overflow(self);
         fn with_z(self, z: ZIndex);
@@ -177,11 +176,9 @@ pub fn impl_pane_basics_from(attr: TokenStream, item: TokenStream) -> TokenStrea
     fn set_default_ch(&self, ch: DrawCh);
     fn set_transparent(&self);
     fn set_self_receivable_events(&self, evs: SelfReceivableEvents);
-    fn get_element_priority(&self) -> Priority;
     fn send_responses_upward(&self, ctx: &Context, resps: EventResponses);
     fn has_parent(&self) -> bool;
-    fn set_focused(&self, ctx: &Context);
-    fn set_unfocused(&self, ctx: &Context);
+    fn set_focused(&self, focused: bool);
     fn correct_offsets_to_view_position(&self, ctx: &Context, x: usize, y: usize);
 }";
     let tr_parsed_with = syn::parse_str::<ItemTrait>(tr_code_with).expect("Failed to parse trait");

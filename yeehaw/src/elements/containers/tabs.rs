@@ -229,7 +229,7 @@ impl Tabs {
             resps.extend(resps_);
         } else {
             el.set_visible(false);
-            let _ = el.change_priority(Priority::Unfocused);
+            let _ = el.set_focused(false);
         }
         resps
     }
@@ -251,7 +251,7 @@ impl Tabs {
             if let Some(old_id) = self.tabs_top.get_selected_id() {
                 if let Some(old_el) = self.lower.get_element(&old_id) {
                     old_el.set_visible(false);
-                    let resp_ = old_el.change_priority(Priority::Unfocused);
+                    let resp_ = old_el.set_focused(false);
                     resps.push(resp_.into());
                 }
             }
@@ -268,7 +268,7 @@ impl Tabs {
             el.set_visible(true);
         } else {
             el.set_visible(false);
-            let _ = el.change_priority(Priority::Unfocused);
+            let _ = el.set_focused(false);
         }
         resps
     }

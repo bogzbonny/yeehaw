@@ -40,7 +40,7 @@ async fn main() -> Result<(), Error> {
 
     let header_pane = ParentPaneOfSelectable::new(&ctx)
         .with_dyn_height(DynVal::new_fixed(7))
-        .with_unfocused(&ctx);
+        .with_focused(&ctx, false);
     let _ = main.push(Box::new(header_pane.clone()));
 
     let gr = Gradient::x_grad_rainbow(5).with_angle(60.);

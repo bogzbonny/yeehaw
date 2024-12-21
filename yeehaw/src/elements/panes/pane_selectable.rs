@@ -311,9 +311,9 @@ impl ParentPaneOfSelectable {
 
     pub fn default_receivable_events() -> SelfReceivableEvents {
         SelfReceivableEvents(vec![
-            (KB::KEY_ESC.into(), Priority::Focused),
-            (KB::KEY_TAB.into(), Priority::Focused),
-            (KB::KEY_BACKTAB.into(), Priority::Focused),
+            (KB::KEY_ESC.into()),
+            (KB::KEY_TAB.into()),
+            (KB::KEY_BACKTAB.into()),
         ])
     }
 

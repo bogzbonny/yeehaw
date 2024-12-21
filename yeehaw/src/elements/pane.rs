@@ -1,8 +1,8 @@
 use {
     crate::{
         Color, Context, DrawCh, DrawChPos, DrawChs2D, DrawUpdate, DynLocation, DynLocationSet,
-        DynVal, Element, ElementID, Event, EventResponse, EventResponses, Loc, Parent, Priority,
-        ReceivableEventChanges, SelfReceivableEvents, Size, Style, ZIndex,
+        DynVal, Element, ElementID, Event, EventResponses, Loc, Parent, SelfReceivableEvents, Size,
+        Style, ZIndex,
     },
     std::{
         collections::HashMap,
@@ -30,12 +30,8 @@ pub struct Pane {
     /// listing the receivable events when Receivable() is called
     pub self_evs: Rc<RefCell<SelfReceivableEvents>>,
 
-    /// This elements "overall" reference priority
-    ///
-    /// TODO this is only used currently by the ParentPane,
-    /// consider moving this field into the ParentPane, if nothing
-    /// else ever uses it.
-    pub element_priority: Rc<RefCell<Priority>>,
+    /// Element focus
+    pub focused: Rc<RefCell<bool>>,
 
     pub parent: Rc<RefCell<Option<Box<dyn Parent>>>>,
 
@@ -72,7 +68,7 @@ impl Pane {
             id: Rc::new(RefCell::new(ctx.hat.create_element_id(kind))),
             attributes: Rc::new(RefCell::new(HashMap::new())),
             self_evs: Rc::new(RefCell::new(SelfReceivableEvents::default())),
-            element_priority: Rc::new(RefCell::new(Priority::Unfocused)),
+            focused: Rc::new(RefCell::new(false)),
             parent: Rc::new(RefCell::new(None)),
             hooks: Rc::new(RefCell::new(HashMap::new())),
             content: Rc::new(RefCell::new(DrawChs2D::default())),
@@ -115,13 +111,8 @@ impl Pane {
         *self.overflow.borrow_mut() = true;
     }
 
-    pub fn with_focused(self, ctx: &Context) -> Pane {
-        self.set_focused(ctx);
-        self
-    }
-
-    pub fn with_unfocused(self, ctx: &Context) -> Pane {
-        self.set_unfocused(ctx);
+    pub fn with_focused(self, focused: bool) -> Pane {
+        self.set_focused(focused);
         self
     }
 
@@ -412,10 +403,6 @@ impl Pane {
 
     // -----------------------
 
-    pub fn get_element_priority(&self) -> Priority {
-        *self.element_priority.borrow()
-    }
-
     /// NOTE this name was chosen to distinguish itself from propagate_responses_upward
     pub fn send_responses_upward(&self, ctx: &Context, resps: EventResponses) {
         if let Some(parent) = self.parent.borrow().as_ref() {
@@ -426,24 +413,6 @@ impl Pane {
 
     pub fn has_parent(&self) -> bool {
         self.parent.borrow().is_some()
-    }
-
-    /// focus all prioritized events
-    pub fn set_focused(&self, ctx: &Context) {
-        let rec = self.change_priority(Priority::Focused);
-        if self.has_parent() {
-            let resps = EventResponse::ReceivableEventChanges(rec);
-            self.send_responses_upward(ctx, resps.into());
-        }
-    }
-
-    /// unfocus all prioritized events
-    pub fn set_unfocused(&self, ctx: &Context) {
-        let rec = self.change_priority(Priority::Unfocused);
-        if self.has_parent() {
-            let resps = EventResponse::ReceivableEventChanges(rec);
-            self.send_responses_upward(ctx, resps.into());
-        }
     }
 
     /// correct_offsets_to_view_position changes the content offsets within the
@@ -491,10 +460,8 @@ impl Element for Pane {
         self.id.borrow().clone()
     }
 
-    /// Receivable returns the event keys and commands that can
-    /// be received by this element along with their priorities
-    fn receivable(&self) -> SelfReceivableEvents {
-        self.self_evs.borrow().clone()
+    fn can_receive(&self, ev: &Event) -> bool {
+        *self.focused.borrow() && self.self_evs.borrow().contains_match(ev)
     }
 
     ///                                                       (captured, resp          )
@@ -506,17 +473,12 @@ impl Element for Pane {
     /// as to update the priority of all commands registered to this element.
     /// The element iterates through its registered cmds/evCombos, and returns a
     /// priority change request for each one.
-    fn change_priority(&self, p: Priority) -> ReceivableEventChanges {
-        // update the priority of all registered events
-        for pef in self.self_evs.borrow_mut().iter_mut() {
-            pef.1 = p;
-        }
-        *self.element_priority.borrow_mut() = p;
-        self.self_evs.borrow().to_receivable_event_changes()
+    fn set_focused(&self, focused: bool) {
+        *self.focused.borrow_mut() = focused;
     }
 
-    fn get_priority(&self) -> Priority {
-        *self.element_priority.borrow()
+    fn get_focused(&self) -> bool {
+        *self.focused.borrow()
     }
 
     /// Drawing compiles all of the DrawChPos necessary to draw this element

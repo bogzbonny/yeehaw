@@ -555,32 +555,32 @@ impl TextBoxInner {
     /// for textboxes which are editable
     pub fn editable_receivable_events() -> SelfReceivableEvents {
         SelfReceivableEvents(vec![
-            (KeyPossibility::Chars.into(), Priority::Focused),
-            (KB::KEY_BACKSPACE.into(), Priority::Focused),
-            (KB::KEY_ENTER.into(), Priority::Focused),
-            (KB::KEY_SHIFT_ENTER.into(), Priority::Focused),
-            (KB::KEY_LEFT.into(), Priority::Focused),
-            (KB::KEY_RIGHT.into(), Priority::Focused),
-            (KB::KEY_UP.into(), Priority::Focused),
-            (KB::KEY_DOWN.into(), Priority::Focused),
-            (KB::KEY_SHIFT_LEFT.into(), Priority::Focused),
-            (KB::KEY_SHIFT_RIGHT.into(), Priority::Focused),
-            (KB::KEY_SHIFT_UP.into(), Priority::Focused),
-            (KB::KEY_SHIFT_DOWN.into(), Priority::Focused),
+            (KeyPossibility::Chars.into()),
+            (KB::KEY_BACKSPACE.into()),
+            (KB::KEY_ENTER.into()),
+            (KB::KEY_SHIFT_ENTER.into()),
+            (KB::KEY_LEFT.into()),
+            (KB::KEY_RIGHT.into()),
+            (KB::KEY_UP.into()),
+            (KB::KEY_DOWN.into()),
+            (KB::KEY_SHIFT_LEFT.into()),
+            (KB::KEY_SHIFT_RIGHT.into()),
+            (KB::KEY_SHIFT_UP.into()),
+            (KB::KEY_SHIFT_DOWN.into()),
         ])
     }
 
     /// non-editable textboxes can still scroll
     pub fn non_editable_receivable_events() -> SelfReceivableEvents {
         SelfReceivableEvents(vec![
-            (KB::KEY_LEFT.into(), Priority::Focused),
-            (KB::KEY_RIGHT.into(), Priority::Focused),
-            (KB::KEY_UP.into(), Priority::Focused),
-            (KB::KEY_DOWN.into(), Priority::Focused),
-            (KB::KEY_H.into(), Priority::Focused),
-            (KB::KEY_J.into(), Priority::Focused),
-            (KB::KEY_K.into(), Priority::Focused),
-            (KB::KEY_L.into(), Priority::Focused),
+            (KB::KEY_LEFT.into()),
+            (KB::KEY_RIGHT.into()),
+            (KB::KEY_UP.into()),
+            (KB::KEY_DOWN.into()),
+            (KB::KEY_H.into()),
+            (KB::KEY_J.into()),
+            (KB::KEY_K.into()),
+            (KB::KEY_L.into()),
         ])
     }
 

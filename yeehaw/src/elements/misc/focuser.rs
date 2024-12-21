@@ -25,7 +25,7 @@ impl Element for Focuser {
             match me.kind {
                 MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Up(MouseButton::Left) => {
                     // set focused if unfocused
-                    if self.get_priority() != Priority::Focused {
+                    if !self.get_focused() {
                         resps.push(EventResponse::UnfocusOthers);
                         resps.push(EventResponse::Focus);
                     }
