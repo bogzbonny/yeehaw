@@ -50,13 +50,12 @@
           -  window closing doesn't work
           - scrollable pane doesn't change positions work
       - file_nav shows nothing
+      - menu test - only the final 1 menu item is ever showing 
      ^DONE
    - Bugs
       - showcase duplicate priorities
          - focuser not switching properly
       - nvim editor (example editor) doesn't refresh right when closed
-      - menu test - only the final 1 menu item is ever showing 
-          - kinda random
 
 
 01. textbox paste shouldn't work when non-editable

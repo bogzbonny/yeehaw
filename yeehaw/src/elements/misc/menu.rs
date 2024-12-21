@@ -698,6 +698,7 @@ impl Element for MenuBar {
         };
 
         let mut out = self.pane.drawing(ctx, force_update);
+        //return out;
 
         // draw each menu item
         for el_details in self.pane.eo.els.borrow().values() {
@@ -708,6 +709,7 @@ impl Element for MenuBar {
             let mut upds = el_details.el.drawing(&child_ctx, force_update);
 
             for upd in &mut upds {
+                upd.prepend_id(el_details.el.id());
                 match upd.action {
                     DrawAction::Update(ref mut dcps) | DrawAction::Extend(ref mut dcps) => {
                         let l = el_details.loc.borrow().l.clone();
