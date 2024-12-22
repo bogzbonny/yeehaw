@@ -65,7 +65,9 @@ async fn main() -> Result<(), Error> {
 
     let central_pane = HorizontalStackFocuser::new(&ctx);
     main.push(Box::new(central_pane.clone()));
-    let left_pane = VerticalStackFocuser::new(&ctx).with_dyn_width(0.7);
+    let left_pane = VerticalStackFocuser::new(&ctx)
+        .with_dyn_width(0.7)
+        .with_bg(Color::GREEN);
     central_pane.push(Box::new(left_pane.clone()));
     left_pane.push(window_generation_zone(
         &ctx,

@@ -296,7 +296,6 @@ impl WindowPane {
             Event::Mouse(me) => {
                 *captured = true;
                 if let MouseEventKind::Down(_) = me.kind {
-                    //self.pane.pane.focus();
                     resps.push(EventResponse::BringToFront);
                     resps.push(EventResponse::UnfocusOthers);
                     resps.push(EventResponse::Focus);

@@ -65,6 +65,8 @@
               focused so it wont send a focus event upward
      ^DONE
    - Bugs
+      - clicking on the window doesn't bring it forward
+      - terminal popup from window generator isn't receiving events
       - showcase train completion doesn't reset the color of the pane (should be
         black and not say exit
 
