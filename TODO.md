@@ -55,10 +55,18 @@
       - nvim editor (example editor) doesn't refresh right when closed
       - textbox doesn't have keyboard events
       - listbox doesn't keyboard events
-     ^DONE
-   - Bugs
       - showcase window generated is unfocusing other widgets beyond return 
          - focuser isn't working properly it seems
+            - the window-generation-zone still seems to be considered focused,
+              because if I click the tabs then back again it will once again
+              focus
+            - the highest level vertical stack is being set to unfocused.. and
+              then the lower level receives the event but is already considered
+              focused so it wont send a focus event upward
+     ^DONE
+   - Bugs
+      - showcase train completion doesn't reset the color of the pane (should be
+        black and not say exit
 
 01. textbox paste shouldn't work when non-editable
 

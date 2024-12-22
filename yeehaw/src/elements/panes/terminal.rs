@@ -404,7 +404,6 @@ impl Element for TerminalPane {
                         prev_draw_i += 1;
                     }
                     out.push(ch_out);
-
                     //} else {
                     //    //if the cell is empty, draw a space
                     //    out.push(DrawChPos {

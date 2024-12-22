@@ -9,7 +9,15 @@ pub struct VerticalStackFocuser {
 }
 
 #[yeehaw_derive::impl_element_from(pane)]
-impl Element for VerticalStackFocuser {}
+impl Element for VerticalStackFocuser {
+    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        // this code is important for when this element is the highest level main element
+        let mut resps = focuser::focus_on_click(&ev, self.get_focused());
+        let (captured, resps_) = self.pane.receive_event(ctx, ev.clone());
+        resps.extend(resps_);
+        (captured, resps)
+    }
+}
 
 #[yeehaw_derive::impl_pane_basics_from(pane)]
 impl VerticalStackFocuser {
@@ -43,7 +51,15 @@ pub struct HorizontalStackFocuser {
 }
 
 #[yeehaw_derive::impl_element_from(pane)]
-impl Element for HorizontalStackFocuser {}
+impl Element for HorizontalStackFocuser {
+    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        // this code is important for when this element is the highest level main element
+        let mut resps = focuser::focus_on_click(&ev, self.get_focused());
+        let (captured, resps_) = self.pane.receive_event(ctx, ev.clone());
+        resps.extend(resps_);
+        (captured, resps)
+    }
+}
 
 #[yeehaw_derive::impl_pane_basics_from(pane)]
 impl HorizontalStackFocuser {
@@ -479,6 +495,7 @@ fn adjust_els_to_fit_ctx_size(ctx_size: u16, vals: &mut [DynVal], min_size: usiz
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for VerticalStack {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        //debug!("id: {}, focused: {}", self.id(), self.get_focused());
         self.ensure_normalized_sizes(ctx);
         let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
 
@@ -581,6 +598,7 @@ impl Element for VerticalStack {
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for HorizontalStack {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        //debug!("id: {}, focused: {}", self.id(), self.get_focused());
         self.ensure_normalized_sizes(ctx);
         let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
 

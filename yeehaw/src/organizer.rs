@@ -419,8 +419,8 @@ impl ElementOrganizer {
                             continue;
                         }
                         self.change_focused_for_el(el_id_, false);
-                        // NOTE continue to propogate the focus event upwards
                     }
+                    // NOTE continue to propogate the focus event upwards
                 }
                 EventResponse::Focus => {
                     self.change_focused_for_el(el_id, true);

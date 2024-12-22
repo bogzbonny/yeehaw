@@ -20,21 +20,26 @@ impl Focuser {
 #[yeehaw_derive::impl_element_from(inner)]
 impl Element for Focuser {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        let mut resps = EventResponses::default();
-        if let Event::Mouse(me) = ev {
-            match me.kind {
-                MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Up(MouseButton::Left) => {
-                    // set focused if unfocused
-                    if !self.get_focused() {
-                        resps.push(EventResponse::UnfocusOthers);
-                        resps.push(EventResponse::Focus);
-                    }
-                }
-                _ => {}
-            }
-        }
+        let mut resps = focus_on_click(&ev, self.get_focused());
         let (captured, resps_) = self.inner.receive_event(ctx, ev.clone());
         resps.extend(resps_);
         (captured, resps)
     }
+}
+
+pub fn focus_on_click(ev: &Event, focused: bool) -> EventResponses {
+    let mut resps = EventResponses::default();
+    if let Event::Mouse(me) = ev {
+        match me.kind {
+            MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Up(MouseButton::Left) => {
+                // set focused if unfocused
+                if !focused {
+                    resps.push(EventResponse::UnfocusOthers);
+                    resps.push(EventResponse::Focus);
+                }
+            }
+            _ => {}
+        }
+    }
+    resps
 }
