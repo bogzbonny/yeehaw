@@ -437,18 +437,17 @@ impl Element for TerminalPane {
 
 // this function takes a MouseEvent and returns the bytes that represent the mouse input.
 pub fn create_csi_sgr_mouse(ev: MouseEvent) -> Vec<u8> {
-    let kind = ev.kind;
+    let mut kind = ev.kind;
     let modifiers = ev.modifiers;
-    let button = match kind {
-        MouseEventKind::Down(button) => button,
-        MouseEventKind::Up(button) => button,
-        MouseEventKind::Drag(button) => button,
-        MouseEventKind::Moved => MouseButton::Left,
-        MouseEventKind::ScrollUp => MouseButton::Left,
-        MouseEventKind::ScrollDown => MouseButton::Left,
-        MouseEventKind::ScrollLeft => MouseButton::Left,
-        MouseEventKind::ScrollRight => MouseButton::Left,
-    };
+
+    // shenanigans because up buttons aren't encoded
+    let is_up = matches!(kind, MouseEventKind::Up(_));
+    if is_up {
+        kind = match kind {
+            MouseEventKind::Up(button) => MouseEventKind::Down(button),
+            _ => kind,
+        };
+    }
 
     let cb = create_cb(kind, modifiers);
     let cx = ev.column + 1;
@@ -459,7 +458,7 @@ pub fn create_csi_sgr_mouse(ev: MouseEvent) -> Vec<u8> {
         cb,
         cx,
         cy,
-        if kind == MouseEventKind::Up(button) { "m" } else { "M" }
+        if is_up { "m" } else { "M" }
     );
     out.into_bytes()
 }
@@ -467,31 +466,37 @@ pub fn create_csi_sgr_mouse(ev: MouseEvent) -> Vec<u8> {
 // this function takes a MouseEventKind and KeyModifiers and returns the byte that represents the
 // mouse input.
 pub fn create_cb(kind: MouseEventKind, modifiers: KeyModifiers) -> u8 {
-    let mut out = match kind {
-        MouseEventKind::Down(MouseButton::Left) => 0,
-        MouseEventKind::Down(MouseButton::Middle) => 1,
-        MouseEventKind::Down(MouseButton::Right) => 2,
-        MouseEventKind::Drag(MouseButton::Left) => 0b0010_0000,
-        MouseEventKind::Drag(MouseButton::Middle) => 1 | 0b0010_0000,
-        MouseEventKind::Drag(MouseButton::Right) => 2 | 0b0010_0000,
-        MouseEventKind::Up(MouseButton::Left) => 3,
-        MouseEventKind::Up(MouseButton::Middle) => 3, // don't know if this is correct, crossterm doesn't parse this
-        MouseEventKind::Up(MouseButton::Right) => 3, // don't know if this is correct, crossterm doesn't parse this
-        MouseEventKind::Moved => 3 | 0b0010_0000,
-        MouseEventKind::ScrollUp => 4,
-        MouseEventKind::ScrollDown => 5,
-        MouseEventKind::ScrollLeft => 6,
-        MouseEventKind::ScrollRight => 7,
+    let (button_number, dragging) = match kind {
+        MouseEventKind::Down(MouseButton::Left) => (0, false),
+        MouseEventKind::Down(MouseButton::Middle) => (1, false),
+        MouseEventKind::Down(MouseButton::Right) => (2, false),
+        MouseEventKind::Drag(MouseButton::Left) => (0, true),
+        MouseEventKind::Drag(MouseButton::Middle) => (1, true),
+        MouseEventKind::Drag(MouseButton::Right) => (2, true),
+        MouseEventKind::Up(MouseButton::Left) => (3, false),
+        MouseEventKind::Up(MouseButton::Middle) => (3, false), // don't know if this is correct, crossterm doesn't parse this
+        MouseEventKind::Up(MouseButton::Right) => (3, false), // don't know if this is correct, crossterm doesn't parse this
+        MouseEventKind::Moved => (3, true),
+        MouseEventKind::ScrollUp => (4, false),
+        MouseEventKind::ScrollDown => (5, false),
+        MouseEventKind::ScrollLeft => (6, false),
+        MouseEventKind::ScrollRight => (7, false),
     };
 
+    let mut cb = (button_number & 0b0000_0011) | ((button_number << 4) & 0b1100_0000);
+    if dragging {
+        cb |= 0b0010_0000;
+    }
+
     if modifiers.contains(KeyModifiers::SHIFT) {
-        out |= 0b0000_0100;
+        cb |= 0b0000_0100;
     }
     if modifiers.contains(KeyModifiers::ALT) {
-        out |= 0b0000_1000;
+        cb |= 0b0000_1000;
     }
     if modifiers.contains(KeyModifiers::CONTROL) {
-        out |= 0b0001_0000;
+        cb |= 0b0001_0000;
     }
-    out
+
+    cb
 }

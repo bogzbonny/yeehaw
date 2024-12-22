@@ -373,6 +373,8 @@ BUGFIXES/PATCHES
     - weirdness with underline color and alpha, sometimes makes it faded,
       sometimes not.  
 
+05. terminal doesn't receive scroll events
+
 05. label underline colors dont seem to work at all
 
 05. STACKING of minimized windows in parent pane

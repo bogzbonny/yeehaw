@@ -39,6 +39,7 @@ pub struct Tui {
     pub drawing_cache: DrawingCache,
 
     pub animation_speed: Duration,
+    pub rendering: bool, // true if currently rendering
     // the last time the screen was rendered
     pub last_render: std::time::Instant,
 
@@ -68,6 +69,7 @@ impl Tui {
             kb: Keyboard::default(),
             launch_instant: std::time::Instant::now(),
             drawing_cache: DrawingCache::default(),
+            rendering: false,
             last_render: std::time::Instant::now(),
             animation_speed: DEFAULT_ANIMATION_SPEED,
             kill_on_ctrl_c: true,
@@ -249,9 +251,10 @@ impl Tui {
     /// This results in elements higher up the tree being able to overwrite elements
     /// lower down the tree.
     pub fn render(&mut self) -> Result<(), Error> {
-        if self.last_render.elapsed() < self.animation_speed {
+        if self.last_render.elapsed() < self.animation_speed || self.rendering {
             return Ok(());
         }
+        self.rendering = true;
 
         let mut sc = stdout();
         let ctx = self.context();
@@ -293,6 +296,7 @@ impl Tui {
             sc.flush()?;
         }
         self.last_render = std::time::Instant::now(); // important only set this at the end
+        self.rendering = false;
         Ok(())
     }
 
