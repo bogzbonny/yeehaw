@@ -24,7 +24,8 @@ use {
 };
 
 /// the amount of time the tui will wait in between calls to re-render.
-/// If this value is set too large it will give the tui a laggy feel.
+/// If this value is set too large it will give the tui a laggy feel, but if it's set too low then
+/// drawing may consume excessive CPU time and starve events from being processed.
 /// recommended setting: 10ms (100 frames per second)
 const DEFAULT_ANIMATION_SPEED: Duration = Duration::from_millis(10);
 
