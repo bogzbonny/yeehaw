@@ -210,6 +210,7 @@ impl Element for Slider {
         if captured {
             return (true, resps);
         }
+        let sel = self.pane.get_selectability();
         match ev {
             Event::KeyCombo(ke) => {
                 if self.pane.get_selectability() != Selectability::Selected || ke.is_empty() {
@@ -233,12 +234,16 @@ impl Element for Slider {
             Event::Mouse(me) => {
                 let clicked_down = *self.clicked_down.borrow();
                 match me.kind {
-                    MouseEventKind::ScrollUp | MouseEventKind::ScrollRight => {
+                    MouseEventKind::ScrollUp | MouseEventKind::ScrollRight
+                        if sel == Selectability::Selected =>
+                    {
                         let resps_ = self.decrement_position(ctx);
                         resps.extend(resps_);
                         return (true, resps);
                     }
-                    MouseEventKind::ScrollDown | MouseEventKind::ScrollLeft => {
+                    MouseEventKind::ScrollDown | MouseEventKind::ScrollLeft
+                        if sel == Selectability::Selected =>
+                    {
                         let resps_ = self.increment_position(ctx);
                         resps.extend(resps_);
                         return (true, resps);

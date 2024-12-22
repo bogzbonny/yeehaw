@@ -74,6 +74,10 @@
    - Bugs
       - showcase train completion doesn't reset the color of the pane (should be
         black and not say exit
+      - terminal inner-showcase has funny bg color on widget dial
+      - terminal inner-showcase is not removing cursor in sl
+      - expanding pane scrollable is not refershing properly on scrolls
+         - looks like the leftmost chs are not being moved
 
 01. textbox paste shouldn't work when non-editable
 

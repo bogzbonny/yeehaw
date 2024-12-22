@@ -471,6 +471,7 @@ impl Size {
     }
 }
 
+/// inclusive start, exclusive end
 #[derive(Clone, Copy, Default, Debug, PartialEq)]
 pub struct Loc {
     pub start_x: u16,

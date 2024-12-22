@@ -93,6 +93,13 @@ impl DrawCh {
         }
     }
 
+    pub const fn skip() -> DrawCh {
+        DrawCh {
+            ch: ChPlus::Skip,
+            style: Style::transparent(),
+        }
+    }
+
     pub fn at(self, x: u16, y: u16) -> DrawChPos {
         DrawChPos { ch: self, x, y }
     }

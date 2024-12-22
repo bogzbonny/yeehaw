@@ -365,7 +365,7 @@ impl ElementOrganizer {
                                 if dcp.x >= child_s.width || dcp.y >= child_s.height {
                                     // it'd be better to delete, but we can't delete from a parallel iterator
                                     // also using a filter here its slower that this
-                                    dcp.ch = DrawCh::transparent();
+                                    dcp.ch = DrawCh::skip();
                                     (dcp.x, dcp.y) = (0, 0);
                                 } else {
                                     dcp.x += start_x as u16;

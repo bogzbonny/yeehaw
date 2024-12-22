@@ -198,6 +198,8 @@ impl Element for PaneScrollable {
         });
 
         let force_update = force_update || scope_changed;
+        //let force_update = true;
+        //let scope_changed = true;
 
         let inner_ctx = self.inner_ctx(ctx);
         let mut upds = self.pane.drawing(&inner_ctx, force_update);
@@ -205,7 +207,8 @@ impl Element for PaneScrollable {
             return upds;
         }
 
-        // TODO does this make sense to have nested rayon here?
+        upds.insert(0, DrawUpdate::clear_all());
+
         // NOTE computational bottleneck, use rayon
         upds.par_iter_mut().for_each(|upd| {
             match upd.action {
@@ -213,12 +216,12 @@ impl Element for PaneScrollable {
                     dcps.par_iter_mut().for_each(|dcp| {
                         if (dcp.x as usize) < x_off
                             || (dcp.y as usize) < y_off
-                            || (dcp.x as usize) > max_x
-                            || (dcp.y as usize) > max_y
+                            || (dcp.x as usize) >= max_x
+                            || (dcp.y as usize) >= max_y
                         {
                             // it'd be better to delete, but we can't delete from a parallel iterator
-                            // also using a filter here its slower that this
-                            dcp.ch = DrawCh::transparent();
+                            // also using a filter here is slower that this
+                            dcp.ch = DrawCh::skip();
                             (dcp.x, dcp.y) = (0, 0);
                         } else {
                             dcp.x = (dcp.x as usize - x_off) as u16;

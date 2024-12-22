@@ -138,7 +138,7 @@ impl Element for Shadowed {
                             if dcp.x >= width || dcp.y >= height {
                                 // it'd be better to delete, but we can't delete from a parallel iterator
                                 // also using a filter here its slower that this
-                                dcp.ch = DrawCh::transparent();
+                                dcp.ch = DrawCh::skip();
                                 (dcp.x, dcp.y) = (0, 0);
                             }
                         })

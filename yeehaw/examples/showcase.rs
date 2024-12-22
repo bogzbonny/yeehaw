@@ -8,10 +8,12 @@ use yeehaw::*;
 async fn main() -> Result<(), Error> {
     // uncomment the following line to enable logging
     yeehaw::log::reset_log_file("./debug_test.log".to_string());
-    //std::env::set_var("RUST_BACKTRACE", "1");
+    std::env::set_var("RUST_BACKTRACE", "1");
 
     let (mut tui, ctx) = Tui::new()?;
+    let main_outer = PaneScrollable::new_expanding(&ctx, 100, 40);
     let main = VerticalStackFocuser::new(&ctx);
+    main_outer.add_element(Box::new(main.clone()));
 
     // adding the menu bar and menu items
 
@@ -119,13 +121,13 @@ async fn main() -> Result<(), Error> {
     tabs.select(0);
     central_pane.push(Box::new(tabs));
 
-    tui.run(Box::new(main)).await
+    tui.run(Box::new(main_outer)).await
 }
 
 pub fn window_generation_zone(
     ctx: &Context, windows_generated_in: Box<ParentPane>,
 ) -> Box<dyn Element> {
-    let sc = PaneScrollable::new_expanding(ctx, 50, 10);
+    let sc = PaneScrollable::new_expanding(ctx, 50, 16);
     let el = ParentPaneOfSelectable::new(ctx);
     sc.add_element(Box::new(el.clone()));
     let bordered = Bordered::new_resizer(
