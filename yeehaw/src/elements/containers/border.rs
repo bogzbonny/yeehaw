@@ -1601,7 +1601,7 @@ impl Element for VerticalSide {
 
         if out != *self.last_draw.borrow() || force_update {
             *self.last_draw.borrow_mut() = out.clone();
-            return DrawUpdate::update(self.get_z(), out).into();
+            return DrawUpdate::update(out).into();
         }
         Vec::with_capacity(0)
     }
@@ -1812,7 +1812,7 @@ impl Element for HorizontalSide {
 
         if out != *self.last_draw.borrow() || force_update {
             *self.last_draw.borrow_mut() = out.clone();
-            return DrawUpdate::update(self.get_z(), out).into();
+            return DrawUpdate::update(out).into();
         }
         Vec::with_capacity(0)
     }

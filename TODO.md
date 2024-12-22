@@ -68,6 +68,8 @@
       - clicking on the window doesn't bring it forward
          - broke with original code refactor, TUI draw cache never reorders
            items, need z index in there. 
+            - HOWEVER z-index is only supposed to be WITHIN 1 element organizer. 
+              - "bring to front" only ever looks at local z
 
       - terminal popup from window generator isn't receiving events
       - showcase train completion doesn't reset the color of the pane (should be

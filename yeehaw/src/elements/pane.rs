@@ -545,7 +545,7 @@ impl Element for Pane {
                 chs.push(DrawChPos::new(ch_out, x as u16, y as u16))
             }
         }
-        DrawUpdate::update(self.get_z(), chs).into()
+        DrawUpdate::update(chs).into()
     }
 
     fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {

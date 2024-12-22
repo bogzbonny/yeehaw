@@ -322,12 +322,12 @@ impl ElementOrganizer {
 
             for mut el_upd in el_upds.drain(..) {
                 // prepend the element_id to the DrawUpdate
-                el_upd.prepend_id(el_id_z.0.clone());
+                el_upd.prepend_id(el_id_z.0.clone(), el_id_z.1.loc.borrow().z);
 
                 match el_upd.action {
                     DrawAction::ClearAll => {}
                     DrawAction::Remove => {}
-                    DrawAction::Update(_, ref mut dcps) | DrawAction::Extend(_, ref mut dcps) => {
+                    DrawAction::Update(ref mut dcps) | DrawAction::Extend(ref mut dcps) => {
                         //let mut dcps = details.el.drawing(&child_ctx);
                         let l = details.loc.borrow().l.clone();
                         let s = ctx.size;

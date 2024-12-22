@@ -209,7 +209,7 @@ impl Element for PaneScrollable {
         // NOTE computational bottleneck, use rayon
         upds.par_iter_mut().for_each(|upd| {
             match upd.action {
-                DrawAction::Update(_, ref mut dcps) | DrawAction::Extend(_, ref mut dcps) => {
+                DrawAction::Update(ref mut dcps) | DrawAction::Extend(ref mut dcps) => {
                     dcps.par_iter_mut().for_each(|dcp| {
                         if (dcp.x as usize) < x_off
                             || (dcp.y as usize) < y_off

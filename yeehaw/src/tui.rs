@@ -23,11 +23,10 @@ use {
     tokio::time::{self, Duration},
 };
 
-/// the amount of time the tui will wait in between calls to re-render
-/// NOTE: Currently the tui does not re-render when an event it called, hence if
-/// this value is set too large it will give the tui a laggy feel.
-/// A value of
-const DEFAULT_ANIMATION_SPEED: Duration = Duration::from_micros(100);
+/// the amount of time the tui will wait in between calls to re-render.
+/// If this value is set too large it will give the tui a laggy feel.
+/// recommended setting: 10ms (100 frames per second)
+const DEFAULT_ANIMATION_SPEED: Duration = Duration::from_millis(10);
 
 /// configuration of a tui instance
 pub struct Tui {
@@ -39,6 +38,8 @@ pub struct Tui {
     pub drawing_cache: DrawingCache,
 
     pub animation_speed: Duration,
+    // the last time the screen was rendered
+    pub last_render: std::time::Instant,
 
     pub kill_on_ctrl_c: bool,
 
@@ -66,6 +67,7 @@ impl Tui {
             kb: Keyboard::default(),
             launch_instant: std::time::Instant::now(),
             drawing_cache: DrawingCache::default(),
+            last_render: std::time::Instant::now(),
             animation_speed: DEFAULT_ANIMATION_SPEED,
             kill_on_ctrl_c: true,
             sc_last_flushed: HashMap::new(),
@@ -138,10 +140,13 @@ impl Tui {
                                     self.cup.eo.update_el_primary_location(self.main_el_id.clone(), loc);
                                     let _ = self.cup.eo.get_element(&self.main_el_id).expect("main element missing").receive_event(&ctx, Event::Resize{});
                                     self.clear_screen()?;
-                                    self.render()?;
                                 }
                                 _ => {}
                             }
+                            // important to render here to not starve rendering when there
+                            // are ample events coming in. Within render it will skip renders if
+                            // the animation speed is not met
+                            self.render()?;
                         }
                         Some(Err(e)) => println!("Error: {e:?}\r"),
                         None => break Ok(()),
@@ -243,6 +248,10 @@ impl Tui {
     /// This results in elements higher up the tree being able to overwrite elements
     /// lower down the tree.
     pub fn render(&mut self) -> Result<(), Error> {
+        if self.last_render.elapsed() < self.animation_speed {
+            return Ok(());
+        }
+
         let mut sc = stdout();
         let ctx = self.context();
         let updates = self.cup.eo.all_drawing_updates(&ctx, false);
@@ -282,6 +291,7 @@ impl Tui {
         if do_flush {
             sc.flush()?;
         }
+        self.last_render = std::time::Instant::now(); // important only set this at the end
         Ok(())
     }
 

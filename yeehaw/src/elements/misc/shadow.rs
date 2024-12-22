@@ -130,7 +130,7 @@ impl Element for Shadowed {
         // because the shadow allows overflow, we must deal with any overflows here
         for upd in &mut upds {
             match upd.action {
-                DrawAction::Update(_, ref mut dcps) | DrawAction::Extend(_, ref mut dcps) => {
+                DrawAction::Update(ref mut dcps) | DrawAction::Extend(ref mut dcps) => {
                     if *self.inner.get_ref_cell_overflow().borrow() {
                         let width = ctx.size.width;
                         let height = ctx.size.height;
@@ -151,7 +151,7 @@ impl Element for Shadowed {
         // add the shadow content
         for upd in &mut upds {
             if upd.sub_id.is_empty() {
-                if let DrawAction::Update(_, ref mut dcps) = upd.action {
+                if let DrawAction::Update(ref mut dcps) = upd.action {
                     dcps.extend(self.set_shadow_content(ctx));
                     break;
                 }
