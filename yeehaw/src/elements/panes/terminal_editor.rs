@@ -132,7 +132,6 @@ impl TermEditorPane {
                 }
                 match TerminalPane::new_with_builder(ctx, cmd) {
                     Ok(term) => {
-                        //term.reset_prev_draw(); // XXX remove
                         self.pane.add_element(Box::new(term));
                     }
                     Err(e) => {

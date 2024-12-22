@@ -278,8 +278,8 @@ pub fn window_generation_zone(
                 Bordered::new_basic(&ctx_, el, sty.clone().with_fg(Color::BLACK))
                     .with_title("upper")
                     .with_bottom_right_text("lower")
-                    .with_left_top_text("left-top")
-                    .with_right_bottom_text("right-bottom"),
+                    .with_left_top_text("left")
+                    .with_right_bottom_text("right"),
             ),
             "Resizer" => Box::new(Bordered::new_resizer(
                 &ctx_,

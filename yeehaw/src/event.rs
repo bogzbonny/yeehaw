@@ -413,13 +413,6 @@ impl From<Vec<ReceivableEvent>> for SelfReceivableEvents {
 }
 
 impl SelfReceivableEvents {
-    // XXX delete
-    //pub fn new_from_receivable_events(
-    //    p: Priority, evs: Vec<ReceivableEvent>,
-    //) -> SelfReceivableEvents {
-    //    SelfReceivableEvents(evs.into_iter().map(|ev| (ev, p)).collect())
-    //}
-
     pub fn push(&mut self, ev: ReceivableEvent) {
         self.0.push(ev)
     }

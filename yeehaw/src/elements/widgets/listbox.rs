@@ -225,7 +225,8 @@ impl ListBoxInner {
         let pane = Pane::new(init_ctx, Self::KIND)
             .with_self_receivable_events(Self::default_receivable_events())
             .with_dyn_width(DynVal::FULL)
-            .with_dyn_height(DynVal::FULL);
+            .with_dyn_height(DynVal::FULL)
+            .with_focused(true);
 
         let lb = ListBoxInner {
             pane,

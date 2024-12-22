@@ -12,11 +12,10 @@
 01. better labels for elements - build into element
 10. slider element, allow better dragging were you don't have to stay inside the
     element
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 01. terminal pane always has receivable events, even when it is unfocused (it
     should never have them) 
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 01. Drawing overhaul
     - add an offset to the position gradient (so that the gradient can have an
@@ -54,11 +53,12 @@
       - file_nav shows nothing
       - menu test - only the final 1 menu item is ever showing 
       - nvim editor (example editor) doesn't refresh right when closed
+      - textbox doesn't have keyboard events
+      - listbox doesn't keyboard events
      ^DONE
    - Bugs
-      - showcase duplicate priorities
-         - focuser not switching properly
-
+      - showcase window generated is unfocusing other widgets beyond return 
+         - focuser isn't working properly it seems
 
 01. textbox paste shouldn't work when non-editable
 

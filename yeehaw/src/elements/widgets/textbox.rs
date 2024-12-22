@@ -589,7 +589,8 @@ impl TextBoxInner {
         let pane = Pane::new(ctx, Self::KIND)
             .with_dyn_width(DynVal::FULL)
             .with_dyn_height(DynVal::FULL)
-            .with_self_receivable_events(Self::editable_receivable_events());
+            .with_self_receivable_events(Self::editable_receivable_events())
+            .with_focused(true);
 
         let tb = TextBoxInner {
             pane,

@@ -9,8 +9,7 @@ use {
     std::{cell::RefCell, rc::Rc},
 };
 
-/// ElementOrganizer prioritizes and organizes all the elements contained
-/// within it
+/// TODO description
 #[derive(Clone, Default)]
 pub struct ElementOrganizer {
     pub els: Rc<RefCell<HashMap<ElementID, ElDetails>>>,
@@ -107,10 +106,9 @@ impl ElementOrganizer {
         self.els.borrow_mut().clear();
     }
 
-    /// hide_element is similar to remove_element, it removees its receivable events from the
-    /// prioritizer, but does not remove the element from the element organizer, thus the hidden
-    /// element is still able to receive certain events such as exit or resize. The visibility of
-    /// the element is set to false.
+    /// hide_element is similar to remove_element, but does not remove the element from the element
+    /// organizer, thus the hidden element is still able to receive certain events such as exit or
+    /// resize. The visibility of the element is set to false.
     pub fn hide_element(&self, el_id: &ElementID) {
         let Some(details) = self.get_element_details(el_id) else {
             return;
@@ -120,8 +118,7 @@ impl ElementOrganizer {
     }
 
     /// unhide_element is used to unhide an element that was previously hidden. It sets the
-    /// visibility of the element to true and adds the elements receivable events to the
-    /// prioritizer.
+    /// visibility of the element to true
     pub fn unhide_element(&self, el_id: &ElementID) {
         let Some(details) = self.get_element_details(el_id) else {
             return;
@@ -383,17 +380,6 @@ impl ElementOrganizer {
         updates
     }
 
-    // XXX delete
-    // write func to remove/add evCombos and commands from EvPrioritizer and
-    // CommandPrioritizer, using the ReceivableEventChanges struct
-    //pub fn process_receivable_event_changes(
-    //    &self, el_id: &ElementID, rec: &ReceivableEventChanges,
-    //) {
-    //    self.prioritizer
-    //        .borrow_mut()
-    //        .process_receivable_event_changes(el_id, rec);
-    //}
-
     /// Partially process the event response for whatever is possible to be processed
     /// in the element organizer. Further processing may be required by the element
     /// which owns this element organizer.
@@ -503,13 +489,40 @@ impl ElementOrganizer {
             }
             Event::Exit | Event::Resize => self.propogate_event_to_all(ctx, ev, parent),
         };
+
+        // TODO uncomment/fix
+        // ensure_no_duplicate_priorities(parent.get_id);
+
         (captured, resps)
     }
+
+    //// check for priority overloading.
+    //// Panic if two children have registered the same ev/cmd at the same priority
+    //// (excluding Unfocused). If false the event will be sent to the ev/cmd to which
+    //// happens to be first in the prioritizer
+    //pub fn ensure_no_duplicate_priorities(&self, _parent: &ElementID) {
+    //    #[cfg(debug_assertions)]
+    //    for pe in self.0.iter() {
+    //        if pe.priority != Priority::Unfocused {
+    //            if let Some(existing_id) = self.get_priority_ev_id(&(pe.event.clone(), pe.priority))
+    //            {
+    //                if existing_id != *pe.id {
+    //                    panic!(
+    //                        "EvPrioritizer found at least 2 events registered to different \
+    //                         elements with the same priority for parent {_parent}. \
+    //                         \n\tid1: {existing_id} \
+    //                         \n\tid2: {}\n\tpr: {}\n\tev: {:?}",
+    //                        pe.id, pe.priority, pe.event
+    //                    )
+    //                }
+    //            }
+    //        }
+    //    }
+    //}
 
     /// routed_event_process:
     /// - determines the appropriate element to send the event to then sends the event
     ///    - if the event isn't captured then send it to the next element able to receive this event
-    ///      (ordered by priority)
     /// - partially processes changes to the elements receivable events
     ///
     /// NOTE elements may choose to not capture events in order to continue sending the
@@ -598,7 +611,7 @@ impl ElementOrganizer {
         resps
     }
 
-    /// initialize updates the prioritizers essentially refreshing the state of the element organizer.
+    /// initialize essentially refreshes the state of the element organizer.
     ///
     /// NOTE: the refresh allows for less meticulous construction of the main.go file. Elements can
     /// be added in whatever order, so long as your_main_el.refresh() is called after all elements
@@ -615,9 +628,7 @@ impl ElementOrganizer {
         resps
     }
 
-    /// change_focused_for_el updates a child element to a new priority. It does
-    /// this by asking the child element to return its registered events w/
-    /// priorities updated to a given priority.
+    /// change_focused_for_el updates a child element to a new focus.
     pub fn change_focused_for_el(&self, el_id: &ElementID, focused: bool) {
         let details = self
             .get_element_details(el_id)
