@@ -71,8 +71,13 @@ async fn main() -> Result<(), Error> {
         .with_dyn_width(0.7)
         .with_bg(Color::GREEN);
     central_pane.push(Box::new(left_pane.clone()));
+
+    // need to generate the context for the main pane
+    // for upward propogation of events from the main element
+    let main_ctx = ctx.child_context(&main.get_dyn_location());
+
     left_pane.push(window_generation_zone(
-        &ctx,
+        &main_ctx,
         Box::new(main.pane.pane.clone()),
     ));
 
@@ -122,6 +127,7 @@ async fn main() -> Result<(), Error> {
     central_pane.push(Box::new(tabs));
 
     tui.run(Box::new(main_outer)).await
+    //tui.run(Box::new(main)).await
 }
 
 pub fn window_generation_zone(
