@@ -79,12 +79,14 @@ impl Context {
         let size = child_loc.get_size(self);
         let visible_region = if let Some(mut vr) = self.visible_region {
             // make the visible region relative to the el
-            let el_x = child_loc.get_start_x(self) as u16;
-            let el_y = child_loc.get_start_y(self) as u16;
-            vr.start_x = vr.start_x.saturating_sub(el_x);
-            vr.end_x = vr.end_x.saturating_sub(el_x);
-            vr.start_y = vr.start_y.saturating_sub(el_y);
-            vr.end_y = vr.end_y.saturating_sub(el_y);
+            // NOTE because this is a saturating_sub, if the visible region is outside the start
+            // bounds of the child, the visible region will be bounded to 0
+            let start_x = child_loc.get_start_x(self) as u16;
+            let start_y = child_loc.get_start_y(self) as u16;
+            vr.start_x = vr.start_x.saturating_sub(start_x);
+            vr.end_x = vr.end_x.saturating_sub(start_x);
+            vr.start_y = vr.start_y.saturating_sub(start_y);
+            vr.end_y = vr.end_y.saturating_sub(start_y);
             Some(vr)
         } else {
             None

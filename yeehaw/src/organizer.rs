@@ -307,14 +307,15 @@ impl ElementOrganizer {
                 ));
             }
 
-            if !*details.vis.borrow() {
+            let mut vis = *details.vis.borrow();
+            if vis {
+                if let Some(vis_loc) = ctx.visible_region {
+                    vis = vis_loc.intersects_dyn_location_set(ctx, &details.loc.borrow());
+                }
+            }
+            if !vis {
                 updates.push(DrawUpdate::clear_all_at_sub_id(vec![el_id_z.0]));
                 continue;
-            }
-            if let Some(vis_loc) = ctx.visible_region {
-                if !vis_loc.intersects_dyn_location_set(ctx, &details.loc.borrow()) {
-                    continue;
-                }
             }
 
             let child_ctx = ctx.child_context(&el_id_z.1.loc.borrow().l);

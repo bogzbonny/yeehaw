@@ -48,7 +48,7 @@ impl PaneScrollable {
             content_offset_y: Rc::new(RefCell::new(0)),
             expand_to_fill_width: Rc::new(RefCell::new(false)),
             expand_to_fill_height: Rc::new(RefCell::new(false)),
-            scroll_rate: Rc::new(RefCell::new(Some(3))),
+            scroll_rate: Rc::new(RefCell::new(Some(1))),
             last_draw_details: Rc::new(RefCell::new(None)),
         }
     }
@@ -64,7 +64,7 @@ impl PaneScrollable {
             content_offset_y: Rc::new(RefCell::new(0)),
             expand_to_fill_width: Rc::new(RefCell::new(true)),
             expand_to_fill_height: Rc::new(RefCell::new(true)),
-            scroll_rate: Rc::new(RefCell::new(Some(3))),
+            scroll_rate: Rc::new(RefCell::new(Some(1))),
             last_draw_details: Rc::new(RefCell::new(None)),
         }
     }
@@ -118,18 +118,27 @@ impl PaneScrollable {
 impl Element for PaneScrollable {
     fn receive_event_inner(&self, ctx: &Context, mut ev: Event) -> (bool, EventResponses) {
         let inner_ctx = self.inner_ctx(ctx);
-        let (captured, resps) = self.pane.receive_event(&inner_ctx, ev.clone());
-        if captured {
-            return (captured, resps);
-        }
+
         if let Event::Mouse(me) = &mut ev {
             // adjust the pos of the mouse event
             me.column += *self.content_offset_x.borrow() as u16;
             me.row += *self.content_offset_y.borrow() as u16;
+        }
 
+        if let Event::ExternalMouse(me) = &mut ev {
+            // adjust the pos of the mouse event
+            me.column += *self.content_offset_x.borrow() as i32;
+            me.row += *self.content_offset_y.borrow() as i32;
+        }
+
+        let (captured, resps) = self.pane.receive_event(&inner_ctx, ev.clone());
+        if captured {
+            return (captured, resps);
+        }
+
+        if let Event::Mouse(me) = &mut ev {
             let Some(sc_rate) = *self.scroll_rate.borrow() else {
-                let inner_ctx = self.inner_ctx(ctx);
-                return self.pane.receive_event(&inner_ctx, ev);
+                return (captured, resps);
             };
 
             let scroll = match me.kind {
@@ -207,7 +216,7 @@ impl Element for PaneScrollable {
             return upds;
         }
 
-        upds.insert(0, DrawUpdate::clear_all());
+        //upds.insert(0, DrawUpdate::clear_all());
 
         // NOTE computational bottleneck, use rayon
         upds.par_iter_mut().for_each(|upd| {
