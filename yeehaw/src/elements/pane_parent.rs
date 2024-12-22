@@ -71,7 +71,7 @@ impl ParentPane {
     }
 
     pub fn with_element(self, el: Box<dyn Element>) -> Self {
-        let _ = self.add_element(el); // ignore the response as this is used during initialization
+        self.add_element(el); // ignore the response as this is used during initialization
         self
     }
 
@@ -175,6 +175,16 @@ impl ParentPane {
 impl Element for ParentPane {
     fn can_receive(&self, ev: &Event) -> bool {
         self.get_focused() && (self.pane.can_receive(ev) || self.eo.can_receive(ev))
+    }
+
+    fn receivable(&self) -> Vec<Rc<RefCell<SelfReceivableEvents>>> {
+        if self.get_focused() {
+            let mut rec = self.eo.receivable();
+            rec.extend(self.pane.receivable());
+            rec
+        } else {
+            Vec::with_capacity(0)
+        }
     }
 
     //                                                     (captured, resp         )

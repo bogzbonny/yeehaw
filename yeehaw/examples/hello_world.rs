@@ -21,7 +21,7 @@ async fn main() -> Result<(), Error> {
     // place the button at 30% of the screen width and 30% of the screen height + 1 character
     .at(0.3, DynVal::new_flex(0.3).plus(1.into()));
 
-    let _ = main_el.add_element(Box::new(label));
-    let _ = main_el.add_element(Box::new(button));
+    main_el.add_element(Box::new(label));
+    main_el.add_element(Box::new(button));
     tui.run(Box::new(main_el)).await
 }

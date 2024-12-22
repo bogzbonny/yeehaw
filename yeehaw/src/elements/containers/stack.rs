@@ -19,18 +19,16 @@ impl VerticalStackFocuser {
         }
     }
 
-    #[must_use]
     /// add an element to the end of the stack resizing the other elements
     /// in order to fit the new element
-    pub fn push(&self, el: Box<dyn Element>) -> EventResponse {
+    pub fn push(&self, el: Box<dyn Element>) {
         let el = Box::new(Focuser::new(el));
-        self.pane.push(el)
+        self.pane.push(el);
     }
 
-    #[must_use]
-    pub fn insert(&self, idx: usize, el: Box<dyn Element>) -> EventResponse {
+    pub fn insert(&self, idx: usize, el: Box<dyn Element>) {
         let el = Box::new(Focuser::new(el));
-        self.pane.insert(idx, el)
+        self.pane.insert(idx, el);
     }
 
     pub fn with_min_resize_height(self, min_resize_height: usize) -> Self {
@@ -55,18 +53,16 @@ impl HorizontalStackFocuser {
         }
     }
 
-    #[must_use]
     /// add an element to the end of the stack resizing the other elements
     /// in order to fit the new element
-    pub fn push(&self, el: Box<dyn Element>) -> EventResponse {
+    pub fn push(&self, el: Box<dyn Element>) {
         let el = Box::new(Focuser::new(el));
-        self.pane.push(el)
+        self.pane.push(el);
     }
 
-    #[must_use]
-    pub fn insert(&self, idx: usize, el: Box<dyn Element>) -> EventResponse {
+    pub fn insert(&self, idx: usize, el: Box<dyn Element>) {
         let el = Box::new(Focuser::new(el));
-        self.pane.insert(idx, el)
+        self.pane.insert(idx, el);
     }
 
     pub fn with_min_resize_width(self, min_resize_width: usize) -> Self {
@@ -121,47 +117,40 @@ impl VerticalStack {
         *self.min_resize_height.borrow_mut() = min_resize_height;
     }
 
-    #[must_use]
     /// add an element to the end of the stack resizing the other elements
     /// in order to fit the new element
-    pub fn push(&self, el: Box<dyn Element>) -> EventResponse {
+    pub fn push(&self, el: Box<dyn Element>) {
         Self::sanitize_el_location(&*el);
         self.els.borrow_mut().push(el.clone());
         self.is_dirty.replace(true);
         self.pane.add_element(el)
     }
 
-    #[must_use]
-    pub fn pop(&self) -> EventResponse {
+    pub fn pop(&self) {
         let el = self.els.borrow_mut().pop();
         if let Some(el) = el {
             self.is_dirty.replace(true);
             self.pane.remove_element(&el.id())
-        } else {
-            EventResponse::None
         }
     }
 
-    #[must_use]
-    pub fn insert(&self, idx: usize, el: Box<dyn Element>) -> EventResponse {
+    pub fn insert(&self, idx: usize, el: Box<dyn Element>) {
         Self::sanitize_el_location(&*el);
         self.els.borrow_mut().insert(idx, el.clone());
         self.is_dirty.replace(true);
         self.pane.add_element(el)
     }
 
-    #[must_use]
-    pub fn remove(&self, idx: usize) -> EventResponse {
+    pub fn remove(&self, idx: usize) {
         let el = self.els.borrow_mut().remove(idx);
         self.is_dirty.replace(true);
-        self.pane.remove_element(&el.id())
+        self.pane.remove_element(&el.id());
     }
 
-    #[must_use]
-    pub fn clear(&self) -> EventResponse {
+    pub fn clear(&self) {
         self.els.borrow_mut().clear();
         self.is_dirty.replace(true);
-        self.pane.clear_elements()
+        self.pane.clear_elements();
     }
 
     pub fn len(&self) -> usize {
@@ -315,46 +304,39 @@ impl HorizontalStack {
         *self.min_resize_width.borrow_mut() = min_resize_width;
     }
 
-    #[must_use]
     /// add an element to the end of the stack resizing the other elements
     /// in order to fit the new element
-    pub fn push(&self, el: Box<dyn Element>) -> EventResponse {
+    pub fn push(&self, el: Box<dyn Element>) {
         Self::sanitize_el_location(&*el);
         self.els.borrow_mut().push(el.clone());
         self.is_dirty.replace(true);
-        self.pane.add_element(el)
+        self.pane.add_element(el);
     }
 
-    #[must_use]
-    pub fn pop(&self) -> EventResponse {
+    pub fn pop(&self) {
         let el = self.els.borrow_mut().pop();
         if let Some(el) = el {
             self.is_dirty.replace(true);
             self.pane.remove_element(&el.id())
-        } else {
-            EventResponse::None
         }
     }
 
-    #[must_use]
-    pub fn insert(&self, idx: usize, el: Box<dyn Element>) -> EventResponse {
+    pub fn insert(&self, idx: usize, el: Box<dyn Element>) {
         Self::sanitize_el_location(&*el);
         self.els.borrow_mut().insert(idx, el.clone());
         self.is_dirty.replace(true);
-        self.pane.add_element(el)
+        self.pane.add_element(el);
     }
 
-    #[must_use]
-    pub fn remove(&self, idx: usize) -> EventResponse {
+    pub fn remove(&self, idx: usize) {
         let el = self.els.borrow_mut().remove(idx);
         self.is_dirty.replace(true);
-        self.pane.remove_element(&el.id())
+        self.pane.remove_element(&el.id());
     }
 
-    #[must_use]
-    pub fn clear(&self) -> EventResponse {
+    pub fn clear(&self) {
         self.els.borrow_mut().clear();
-        self.pane.clear_elements()
+        self.pane.clear_elements();
     }
 
     pub fn len(&self) -> usize {
@@ -703,10 +685,10 @@ trait StackTr {
     const KIND: &'static str;
     fn new(ctx: &Context) -> Self;
     fn new_with_kind(ctx: &Context, kind: &'static str) -> Self;
-    fn push(&self, el: Box<dyn Element>) -> EventResponse;
-    fn insert(&self, idx: usize, el: Box<dyn Element>) -> EventResponse;
-    fn remove(&self, idx: usize) -> EventResponse;
-    fn clear(&self) -> EventResponse;
+    fn push(&self, el: Box<dyn Element>);
+    fn insert(&self, idx: usize, el: Box<dyn Element>);
+    fn remove(&self, idx: usize);
+    fn clear(&self);
     fn len(&self) -> usize;
     fn get(&self, idx: usize) -> Option<Box<dyn Element>>;
     fn is_empty(&self) -> bool;
@@ -725,16 +707,16 @@ impl StackTr for VerticalStack {
     fn new_with_kind(ctx: &Context, kind: &'static str) -> Self {
         VerticalStack::new_with_kind(ctx, kind)
     }
-    fn push(&self, el: Box<dyn Element>) -> EventResponse {
+    fn push(&self, el: Box<dyn Element>) {
         VerticalStack::push(self, el)
     }
-    fn insert(&self, idx: usize, el: Box<dyn Element>) -> EventResponse {
+    fn insert(&self, idx: usize, el: Box<dyn Element>) {
         VerticalStack::insert(self, idx, el)
     }
-    fn remove(&self, idx: usize) -> EventResponse {
+    fn remove(&self, idx: usize) {
         VerticalStack::remove(self, idx)
     }
-    fn clear(&self) -> EventResponse {
+    fn clear(&self) {
         VerticalStack::clear(self)
     }
     fn len(&self) -> usize {
@@ -771,16 +753,16 @@ impl StackTr for HorizontalStack {
     fn new_with_kind(ctx: &Context, kind: &'static str) -> Self {
         HorizontalStack::new_with_kind(ctx, kind)
     }
-    fn push(&self, el: Box<dyn Element>) -> EventResponse {
+    fn push(&self, el: Box<dyn Element>) {
         HorizontalStack::push(self, el)
     }
-    fn insert(&self, idx: usize, el: Box<dyn Element>) -> EventResponse {
+    fn insert(&self, idx: usize, el: Box<dyn Element>) {
         HorizontalStack::insert(self, idx, el)
     }
-    fn remove(&self, idx: usize) -> EventResponse {
+    fn remove(&self, idx: usize) {
         HorizontalStack::remove(self, idx)
     }
-    fn clear(&self) -> EventResponse {
+    fn clear(&self) {
         HorizontalStack::clear(self)
     }
     fn len(&self) -> usize {

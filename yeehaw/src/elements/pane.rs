@@ -464,6 +464,14 @@ impl Element for Pane {
         *self.focused.borrow() && self.self_evs.borrow().contains_match(ev)
     }
 
+    fn receivable(&self) -> Vec<Rc<RefCell<SelfReceivableEvents>>> {
+        if *self.focused.borrow() {
+            vec![self.self_evs.clone()]
+        } else {
+            Vec::with_capacity(0)
+        }
+    }
+
     ///                                                       (captured, resp          )
     fn receive_event_inner(&self, _ctx: &Context, _ev: Event) -> (bool, EventResponses) {
         (false, EventResponses::default())

@@ -246,12 +246,6 @@ impl From<()> for EventResponse {
     }
 }
 
-impl From<ReceivableEventChanges> for EventResponse {
-    fn from(rec: ReceivableEventChanges) -> EventResponse {
-        EventResponse::ReceivableEventChanges(rec)
-    }
-}
-
 /// EventResponse is used to send information back to the parent that delivered
 /// the event to the element
 #[derive(Default)]
@@ -331,9 +325,6 @@ impl std::fmt::Debug for EventResponse {
             EventResponse::Move(m) => write!(f, "EventResponse::Move({:?})", m),
             EventResponse::Resize(r) => write!(f, "EventResponse::Resize({:?})", r),
             EventResponse::Custom(k, v) => write!(f, "EventResponse::Custom({}, {:?})", k, v),
-            EventResponse::ReceivableEventChanges(rec) => {
-                write!(f, "EventResponse::ReceivableEventChanges({:?})", rec)
-            }
         }
     }
 }
@@ -382,16 +373,6 @@ impl DerefMut for EventResponses {
 impl EventResponses {
     /// retrieves only the ReceivableEventChanges from the EventResponses
     /// and concats them together
-    pub fn get_receivable_event_changes(&self) -> ReceivableEventChanges {
-        let mut rec = ReceivableEventChanges::default();
-        for er in &self.0 {
-            if let EventResponse::ReceivableEventChanges(r) = er {
-                rec.extend(r.clone());
-            }
-        }
-        rec
-    }
-
     pub fn extend(&mut self, other: EventResponses) {
         self.0.extend(other.0)
     }
@@ -455,15 +436,9 @@ impl SelfReceivableEvents {
         self.0.retain(|e| !evs.contains(e))
     }
 
-    pub fn to_receivable_event_changes(&self) -> ReceivableEventChanges {
-        ReceivableEventChanges::default()
-            .with_add_evs(self.0.clone())
-            .with_remove_evs(self.0.clone())
-    }
-
     pub fn contains_match(&self, ev: &Event) -> bool {
         for ev_ in &self.0 {
-            if ev_.matches(&ev) {
+            if ev_.matches(ev) {
                 return true;
             }
         }

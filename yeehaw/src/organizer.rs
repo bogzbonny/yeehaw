@@ -1,7 +1,8 @@
 use {
     crate::{
         Context, DrawAction, DrawCh, DrawUpdate, DynLocation, DynLocationSet, Element, ElementID,
-        Event, EventResponse, EventResponses, Parent, RelMouseEvent, ZIndex,
+        Event, EventResponse, EventResponses, Keyboard, Parent, ReceivableEvent, RelMouseEvent,
+        SelfReceivableEvents, ZIndex,
     },
     rayon::prelude::*,
     std::collections::HashMap,
@@ -470,6 +471,15 @@ impl ElementOrganizer {
         false
     }
 
+    pub fn receivable(&self) -> Vec<Rc<RefCell<SelfReceivableEvents>>> {
+        let mut rec = Vec::new();
+        for (_, details) in self.els.borrow().iter() {
+            let rec_ = details.el.receivable();
+            rec.extend(rec_);
+        }
+        rec
+    }
+
     pub fn event_process(
         &self, ctx: &Context, ev: Event, parent: Box<dyn Parent>,
     ) -> (bool, EventResponses) {
@@ -540,6 +550,25 @@ impl ElementOrganizer {
             }
         }
         dests
+    }
+
+    pub fn get_destination_el_from_kb(
+        &self, kb: &mut Keyboard,
+    ) -> Option<(ElementID, Vec<crossterm::event::KeyEvent>)> {
+        for (el_id, el_det) in self.els.borrow().iter() {
+            let recs = el_det.el.receivable();
+            for rec in recs {
+                for rec in rec.borrow().0.iter() {
+                    let ReceivableEvent::KeyCombo(ref ekc) = rec else {
+                        continue;
+                    };
+                    if let Some(eks) = kb.matches(ekc, true) {
+                        return Some((el_id.clone(), eks));
+                    }
+                }
+            }
+        }
+        None
     }
 
     pub fn propogate_event_to_all(

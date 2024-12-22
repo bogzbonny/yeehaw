@@ -90,13 +90,12 @@ impl Tui {
         let loc = DynLocationSet::new(loc, vec![], 0);
         main_el.set_dyn_location_set(loc);
         main_el.set_visible(true);
-        let _ = main_el.set_focused(true);
+        main_el.set_focused(true);
 
         // when adding the main element, nil is passed in as the parent
         // this is because the top of the tree is the TUI's main EO and so no parent
         // is necessary
-        let _ = self
-            .cup
+        self.cup
             .eo
             .add_element(main_el.clone(), Some(Box::new(self.cup.clone())));
         self.cup.eo.initialize(&ctx, Box::new(self.cup.clone()));
@@ -196,14 +195,7 @@ impl Tui {
         // NOTE the element ID is not used from GetDestinationElFromKB as it is
         // re-determined within the KeyEventsProcess (inefficient but convenient)
 
-        let Some((_, evs)) = self
-            .cup
-            .eo
-            .prioritizer
-            .borrow()
-            .get_destination_el_from_kb(&mut self.kb)
-        else {
-            //debug!("no dest");
+        let Some((_, evs)) = self.cup.eo.get_destination_el_from_kb(&mut self.kb) else {
             return Ok(false);
         };
         let ctx = self.context();
@@ -374,7 +366,7 @@ impl Parent for TuiParent {
     }
 
     fn get_parent_focused(&self) -> bool {
-        Priority::Focused
+        true
     }
 
     fn get_id(&self) -> ElementID {

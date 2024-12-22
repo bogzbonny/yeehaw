@@ -32,7 +32,7 @@ impl WindowPane {
     pub fn new(ctx: &Context, inner: Box<dyn Element>, title: &str) -> Self {
         let pane = ParentPane::new(ctx, Self::KIND)
             .with_transparent()
-            .with_focused(ctx, false);
+            .with_focused(false);
         let top_bar = Box::new(BasicWindowTopBar::new(ctx, title, true, true, true));
 
         // adjust the inner size to account for the top bar
@@ -41,8 +41,8 @@ impl WindowPane {
         loc.set_dyn_height(DynVal::FULL.minus(1.into()));
         inner.set_dyn_location_set(loc);
 
-        let _ = pane.add_element(top_bar.clone());
-        let _ = pane.add_element(inner.clone());
+        pane.add_element(top_bar.clone());
+        pane.add_element(inner.clone());
         pane.pane.set_z(Self::Z_INDEX);
 
         Self {
@@ -101,7 +101,7 @@ impl WindowPane {
             BorderPropertyCnr::DragResize,
         )
         .at(DynVal::FULL.minus(1.into()), DynVal::FULL.minus(1.into()));
-        let _ = self.pane.add_element(Box::new(ca));
+        self.pane.add_element(Box::new(ca));
 
         use crate::organizer::ElDetails;
         let mut eoz: Vec<(ElementID, ElDetails)> = Vec::new();
@@ -511,7 +511,7 @@ impl BasicWindowTopBar {
                 DynVal::FULL.minus(button_rhs_spaces.into()),
                 DynVal::new_fixed(0),
             );
-            let _ = pane.add_element(Box::new(close_button));
+            pane.add_element(Box::new(close_button));
             button_rhs_spaces += 2;
         }
 
@@ -543,7 +543,7 @@ impl BasicWindowTopBar {
                 DynVal::new_fixed(0),
             );
             let b = Box::new(maximize_button);
-            let _ = pane.add_element(b.clone());
+            pane.add_element(b.clone());
             maximizer_button = Some(b);
             button_rhs_spaces += 2;
         }
@@ -568,7 +568,7 @@ impl BasicWindowTopBar {
                 DynVal::FULL.minus(button_rhs_spaces.into()),
                 DynVal::new_fixed(0),
             );
-            let _ = pane.add_element(Box::new(minimize_button));
+            pane.add_element(Box::new(minimize_button));
         }
 
         let title_label = Box::new(
@@ -581,8 +581,8 @@ impl BasicWindowTopBar {
                 .with_style(Style::transparent())
                 .at(DynVal::FULL.minus(2.into()), DynVal::new_fixed(0)),
         );
-        let _ = pane.add_element(title_label.clone());
-        let _ = pane.add_element(decor_label.clone());
+        pane.add_element(title_label.clone());
+        pane.add_element(decor_label.clone());
         decor_label.set_visible(false);
 
         Self {

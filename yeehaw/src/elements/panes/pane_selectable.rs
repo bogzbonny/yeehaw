@@ -148,8 +148,6 @@ impl SelectablePane {
                 // NOTE needs to happen before the next line or else receivable will return the
                 // wrong value
                 self.set_attr_selectability(s);
-                let rec = ReceivableEventChanges::default().with_add_evs(self.receivable().0);
-                resps.push(EventResponse::ReceivableEventChanges(rec));
                 resps.push(EventResponse::BringToFront);
 
                 let bz = serde_json::to_vec(&SelectabilityResp {
@@ -170,11 +168,6 @@ impl SelectablePane {
             }
             Selectability::Ready | Selectability::Unselectable => {
                 if let Some(Selectability::Selected) = prev_sel {
-                    let rec = ReceivableEventChanges::default().with_remove_evs(
-                        self.receivable().iter().map(|(ev, _)| ev.clone()).collect(),
-                    );
-                    resps.push(EventResponse::ReceivableEventChanges(rec));
-
                     let bz = serde_json::to_vec(&SelectabilityResp {
                         sel: s,
                         id: self.id().clone(),
@@ -204,12 +197,21 @@ impl SelectablePane {
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for SelectablePane {
     /// default implementation of Receivable, only receive when widget is active
-    fn receivable(&self) -> SelfReceivableEvents {
+    fn receivable(&self) -> Vec<Rc<RefCell<SelfReceivableEvents>>> {
         let attr_sel = self.get_selectability();
         if let Selectability::Selected = attr_sel {
             self.pane.receivable()
         } else {
-            SelfReceivableEvents::default()
+            Vec::with_capacity(0)
+        }
+    }
+
+    fn can_receive(&self, ev: &Event) -> bool {
+        let attr_sel = self.get_selectability();
+        if let Selectability::Selected = attr_sel {
+            self.pane.can_receive(ev)
+        } else {
+            false
         }
     }
 
@@ -327,13 +329,12 @@ impl ParentPaneOfSelectable {
         }
     }
 
-    #[must_use]
-    pub fn add_element(&self, el: Box<dyn Element>) -> EventResponse {
+    pub fn add_element(&self, el: Box<dyn Element>) {
         // check if it is selectable
         if el.get_attribute(ATTR_SELECTABILITY).is_some() {
             self.selectables.borrow_mut().push(el.id());
         }
-        self.pane.add_element(el)
+        self.pane.add_element(el);
     }
 
     fn get_selectability_for_el(&self, el_id: &ElementID) -> Option<Selectability> {
@@ -367,18 +368,14 @@ impl ParentPaneOfSelectable {
         }
     }
 
-    #[must_use]
-    pub fn remove_element(&self, el_id: &ElementID) -> EventResponse {
-        let resp = self.pane.remove_element(el_id);
+    pub fn remove_element(&self, el_id: &ElementID) {
+        self.pane.remove_element(el_id);
         self.selectables.borrow_mut().retain(|id| id != el_id);
-        resp
     }
 
-    #[must_use]
-    pub fn clear_elements(&self) -> EventResponse {
-        let resp = self.pane.clear_elements();
+    pub fn clear_elements(&self) {
+        self.pane.clear_elements();
         self.selectables.borrow_mut().clear();
-        resp
     }
 
     #[must_use]

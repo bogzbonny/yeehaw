@@ -36,12 +36,12 @@ async fn main() -> Result<(), Error> {
             );
         }
     }
-    let _ = main.push(Box::new(mb));
+    main.push(Box::new(mb));
 
     let header_pane = ParentPaneOfSelectable::new(&ctx)
         .with_dyn_height(DynVal::new_fixed(7))
-        .with_focused(&ctx, false);
-    let _ = main.push(Box::new(header_pane.clone()));
+        .with_focused(false);
+    main.push(Box::new(header_pane.clone()));
 
     let gr = Gradient::x_grad_rainbow(5).with_angle(60.);
     let mtext = FigletText::new(
@@ -53,7 +53,7 @@ async fn main() -> Result<(), Error> {
     .with_min_height()
     .with_style(Style::default().with_fg(Color::Gradient(gr)))
     .at(0, DynVal::new_fixed(1));
-    let _ = header_pane.add_element(Box::new(mtext));
+    header_pane.add_element(Box::new(mtext));
 
     let button = Button::new(
         &ctx,
@@ -61,13 +61,13 @@ async fn main() -> Result<(), Error> {
         Box::new(|_, _| EventResponses::default()),
     )
     .at(DynVal::new_flex(0.9), DynVal::new_flex(0.3));
-    let _ = header_pane.add_element(Box::new(button));
+    header_pane.add_element(Box::new(button));
 
     let central_pane = HorizontalStackFocuser::new(&ctx);
-    let _ = main.push(Box::new(central_pane.clone()));
+    main.push(Box::new(central_pane.clone()));
     let left_pane = VerticalStackFocuser::new(&ctx).with_dyn_width(0.7);
-    let _ = central_pane.push(Box::new(left_pane.clone()));
-    let _ = left_pane.push(window_generation_zone(
+    central_pane.push(Box::new(left_pane.clone()));
+    left_pane.push(window_generation_zone(
         &ctx,
         Box::new(main.pane.pane.clone()),
     ));
@@ -75,13 +75,13 @@ async fn main() -> Result<(), Error> {
     //let train_pane = DebugSizePane::new(&ctx);
     let train_pane = TerminalPane::new(&ctx)?;
     train_pane.pane.set_dyn_height(0.7);
-    train_pane.pane.set_unfocused(&ctx);
+    train_pane.pane.set_focused(false);
     train_pane.disable_cursor();
     train_pane.execute_command("for i in {1..7}; do sl -l; done ; exit");
-    let _ = left_pane.push(Box::new(train_pane));
+    left_pane.push(Box::new(train_pane));
 
     let tabs = Tabs::new(&ctx);
-    tabs.pane.set_unfocused(&ctx);
+    tabs.pane.set_focused(false);
     let widgets_tab = widgets_demo(&ctx);
     //let widgets_tab = Box::new(
     //    DebugSizePane::new(&ctx)
@@ -100,7 +100,7 @@ async fn main() -> Result<(), Error> {
     let el5 = TerminalPane::new(&ctx)?;
 
     let showcase = TerminalPane::new(&ctx)?;
-    showcase.pane.set_unfocused(&ctx);
+    showcase.pane.set_focused(false);
 
     let showcase_ = showcase.clone();
     let on_showcase_open_fn = Some(Box::new(move || {
@@ -108,14 +108,14 @@ async fn main() -> Result<(), Error> {
         showcase_.execute_command(command);
     }) as Box<dyn FnOnce()>);
 
-    let _ = tabs.push(widgets_tab, "widgets");
-    let _ = tabs.push(Box::new(el2), "colors");
-    let _ = tabs.push(Box::new(el3), "images");
-    let _ = tabs.push(Box::new(el4), "file-nav");
-    let _ = tabs.push(Box::new(el5), "terminal");
-    let _ = tabs.push_with_on_open_fn(Box::new(showcase), "showcase", on_showcase_open_fn);
-    let _ = tabs.select(0);
-    let _ = central_pane.push(Box::new(tabs));
+    tabs.push(widgets_tab, "widgets");
+    tabs.push(Box::new(el2), "colors");
+    tabs.push(Box::new(el3), "images");
+    tabs.push(Box::new(el4), "file-nav");
+    tabs.push(Box::new(el5), "terminal");
+    tabs.push_with_on_open_fn(Box::new(showcase), "showcase", on_showcase_open_fn);
+    tabs.select(0);
+    central_pane.push(Box::new(tabs));
 
     tui.run(Box::new(main)).await
 }
@@ -125,7 +125,7 @@ pub fn window_generation_zone(
 ) -> Box<dyn Element> {
     let sc = PaneScrollable::new_expanding(ctx, 50, 10);
     let el = ParentPaneOfSelectable::new(ctx);
-    let _ = sc.add_element(Box::new(el.clone()));
+    sc.add_element(Box::new(el.clone()));
     let bordered = Bordered::new_resizer(
         ctx,
         Box::new(sc.clone()),
@@ -134,7 +134,7 @@ pub fn window_generation_zone(
     .with_dyn_height(1.5);
 
     let l = Label::new(ctx, "window generation zone");
-    let _ = el.add_element(Box::new(l));
+    el.add_element(Box::new(l));
 
     let dial_type = Dial::new_spacious(
         ctx,
@@ -147,8 +147,8 @@ pub fn window_generation_zone(
     )
     .at(0, 3);
     let label = dial_type.label(ctx, "content:").underlined();
-    let _ = el.add_element(Box::new(label));
-    let _ = el.add_element(Box::new(dial_type.clone()));
+    el.add_element(Box::new(label));
+    el.add_element(Box::new(dial_type.clone()));
 
     let dial_border = Dial::new_spacious(
         ctx,
@@ -167,21 +167,21 @@ pub fn window_generation_zone(
     )
     .at(DynVal::new_flex_with_min_fixed(0.35, 19), 3);
     let label = dial_border.label(ctx, "border options:").underlined();
-    let _ = el.add_element(Box::new(label));
-    let _ = el.add_element(Box::new(dial_border.clone()));
+    el.add_element(Box::new(label));
+    el.add_element(Box::new(dial_border.clone()));
 
     let shadow_cb = Checkbox::new(ctx).at(1, 8);
     let label = shadow_cb.label(ctx, "shadow");
-    let _ = el.add_element(Box::new(shadow_cb.clone()));
-    let _ = el.add_element(Box::new(label));
+    el.add_element(Box::new(shadow_cb.clone()));
+    el.add_element(Box::new(label));
 
     let alpha_slider = Slider::new_basic_block(ctx)
         .with_position(0.9)
         .with_width(DynVal::new_flex(0.4))
         .at(1, 11);
     let label = alpha_slider.label(ctx, "background alpha:").underlined();
-    let _ = el.add_element(Box::new(label));
-    let _ = el.add_element(Box::new(alpha_slider.clone()));
+    el.add_element(Box::new(label));
+    el.add_element(Box::new(alpha_slider.clone()));
 
     let counter = Rc::new(RefCell::new(0));
 
@@ -217,7 +217,7 @@ pub fn window_generation_zone(
                     .with_dyn_height(DynVal::FULL)
                     .with_default_ch(def_ch.clone());
                 let sc_pane = PaneScrollable::new(&ctx_, 50, 25);
-                let _ = sc_pane.add_element(Box::new(el));
+                sc_pane.add_element(Box::new(el));
                 Box::new(sc_pane)
             }
             "Min-Size" => {
@@ -228,7 +228,7 @@ pub fn window_generation_zone(
                     .with_dyn_height(DynVal::FULL)
                     .with_default_ch(def_ch.clone());
                 let sc_pane = PaneScrollable::new_expanding(&ctx_, 50, 25);
-                let _ = sc_pane.add_element(Box::new(el));
+                sc_pane.add_element(Box::new(el));
                 Box::new(sc_pane)
             }
             "Terminal" => Box::new(TerminalPane::new(&ctx_).unwrap()),
@@ -329,7 +329,7 @@ pub fn window_generation_zone(
     });
 
     let button = Button::new(ctx, "generate", generate_window_fn).at(1, 13);
-    let _ = el.add_element(Box::new(button));
+    el.add_element(Box::new(button));
 
     Box::new(bordered)
 }
@@ -339,7 +339,7 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
 
     let l1 = Label::new(ctx, "some label");
     let l = l1.clone().at(DynVal::new_flex(0.5), DynVal::new_flex(0.5));
-    let _ = el.add_element(Box::new(l));
+    el.add_element(Box::new(l));
 
     let button_click_fn = Box::new(move |_, _| {
         let t = l1.get_text();
@@ -352,8 +352,8 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
         .at(DynVal::new_flex(0.25), DynVal::new_flex(0.25));
     let button_label =
         Label::new_for_el(ctx, button.get_dyn_location_set().l.clone(), "button-label");
-    let _ = el.add_element(Box::new(button));
-    let _ = el.add_element(Box::new(button_label));
+    el.add_element(Box::new(button));
+    el.add_element(Box::new(button_label));
 
     let button = Button::new(
         ctx,
@@ -362,29 +362,29 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
     )
     .with_description("a button!".to_string())
     .at(DynVal::new_flex(0.25), DynVal::new_flex(0.15));
-    let _ = el.add_element(Box::new(button));
+    el.add_element(Box::new(button));
 
     let button2 = Button::new(ctx, "button2", Box::new(|_, _| EventResponses::default()))
         .with_description("a button!".to_string())
         .with_sides(ButtonSides::default())
         .at(DynVal::new_flex(0.25), DynVal::new_flex(0.29));
-    let _ = el.add_element(Box::new(button2));
+    el.add_element(Box::new(button2));
 
     let button3 = Button::new(ctx, "b", Box::new(|_, _| EventResponses::default()))
         .with_description("a button!".to_string())
         .with_micro_shadow(ButtonMicroShadow::default())
         .at(DynVal::new_flex(0.25), DynVal::new_flex(0.10));
-    let _ = el.add_element(Box::new(button3));
+    el.add_element(Box::new(button3));
 
     let cb = Checkbox::new(ctx).at(DynVal::new_flex(0.1), DynVal::new_flex(0.1));
     let cb_label = Label::new_for_el(ctx, cb.get_dyn_location_set().l.clone(), "check me");
-    let _ = el.add_element(Box::new(cb));
-    let _ = el.add_element(Box::new(cb_label));
+    el.add_element(Box::new(cb));
+    el.add_element(Box::new(cb_label));
 
     let cb2 = Checkbox::new(ctx).at(DynVal::new_flex(0.1), DynVal::new_flex(0.1).plus_fixed(1));
     let cb2_label = Label::new_for_el(ctx, cb2.get_dyn_location_set().l.clone(), "check me");
-    let _ = el.add_element(Box::new(cb2));
-    let _ = el.add_element(Box::new(cb2_label));
+    el.add_element(Box::new(cb2));
+    el.add_element(Box::new(cb2_label));
 
     let rbs = RadioButtons::new(
         ctx,
@@ -395,13 +395,13 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
         ],
     )
     .at(DynVal::new_flex(0.1), DynVal::new_flex(0.1).plus_fixed(10));
-    let _ = el.add_element(Box::new(rbs.label(ctx, "radio buttons:")));
-    let _ = el.add_element(Box::new(rbs));
+    el.add_element(Box::new(rbs.label(ctx, "radio buttons:")));
+    el.add_element(Box::new(rbs));
 
     let toggle = Toggle::new(ctx, " ★ ".to_string(), " ⏾ ".to_string())
         .at(DynVal::new_flex(0.1), DynVal::new_flex(0.4));
-    let _ = el.add_element(Box::new(toggle.label(ctx, "toggle:")));
-    let _ = el.add_element(Box::new(toggle));
+    el.add_element(Box::new(toggle.label(ctx, "toggle:")));
+    el.add_element(Box::new(toggle));
 
     // fill dd entries with 20 items
     let dd_entries = (1..=20)
@@ -416,8 +416,8 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
                 .plus_max_of(DynVal::new_fixed(12)),
         )
         .at(DynVal::new_flex(0.1), DynVal::new_flex(0.8));
-    let _ = el.add_element(Box::new(dropdown.label(ctx, "dropdown-list:")));
-    let _ = el.add_element(Box::new(dropdown));
+    el.add_element(Box::new(dropdown.label(ctx, "dropdown-list:")));
+    el.add_element(Box::new(dropdown));
 
     let ld_entries = (1..=10)
         .map(|i| format!("entry {}", i))
@@ -440,7 +440,7 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
         )
         .with_scrollbar(ctx)
         .at(DynVal::new_flex(0.5), DynVal::new_flex(0.1));
-    let _ = el.add_element(Box::new(listbox));
+    el.add_element(Box::new(listbox));
 
     let tb = TextBox::new(
         ctx,
@@ -460,7 +460,7 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
     .editable(ctx)
     .with_no_wordwrap(ctx)
     .at(DynVal::new_flex(0.35), DynVal::new_flex(0.1));
-    let _ = el.add_element(Box::new(tb));
+    el.add_element(Box::new(tb));
 
     let tb_with_grey = TextBox::new(ctx, "")
         .with_width(DynVal::new_fixed(18))
@@ -469,13 +469,13 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
         .with_text_when_empty("enter text here")
         .with_no_wordwrap(ctx)
         .at(DynVal::new_flex(0.25), DynVal::new_fixed(3));
-    let _ = el.add_element(Box::new(tb_with_grey));
+    el.add_element(Box::new(tb_with_grey));
 
     let ntb = NumbersTextBox::new(ctx, 0f64)
         .with_min(-10.0)
         .with_max(10.0)
         .at(DynVal::new_flex(0.75), DynVal::new_flex(0.5));
-    let _ = el.add_element(Box::new(ntb.clone()));
+    el.add_element(Box::new(ntb.clone()));
 
     let ntb_ = ntb.clone();
     let slider = Slider::new_basic_block(ctx)
@@ -487,7 +487,7 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
             ntb_.change_value(p);
             EventResponses::default()
         }));
-    let _ = el.add_element(Box::new(slider));
+    el.add_element(Box::new(slider));
 
     let dial1 = Dial::new_semi_compact(
         ctx,
@@ -507,6 +507,6 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
         ],
     )
     .at(DynVal::new_flex(0.6), DynVal::new_flex(0.7));
-    let _ = el.add_element(Box::new(dial1));
+    el.add_element(Box::new(dial1));
     Box::new(el)
 }

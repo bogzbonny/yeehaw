@@ -51,13 +51,13 @@ async fn main() -> Result<(), Error> {
     )
     .at(9, 0);
 
-    let _ = lower.add_element(Box::new(label));
-    let _ = lower.add_element(Box::new(btn_a));
-    let _ = lower.add_element(Box::new(btn_b));
-    let _ = lower.add_element(Box::new(btn_c));
+    lower.add_element(Box::new(label));
+    lower.add_element(Box::new(btn_a));
+    lower.add_element(Box::new(btn_b));
+    lower.add_element(Box::new(btn_c));
 
-    let _ = vstack.push(Box::new(mb.clone()));
-    let _ = vstack.push(Box::new(lower));
+    vstack.push(Box::new(mb.clone()));
+    vstack.push(Box::new(lower));
 
     mb.add_item(&ctx, "hello/asdg/2222/3".to_string(), None);
     mb.add_item(&ctx, "hello/asdg/444ll/3adsf3/sdlkjf".to_string(), None);

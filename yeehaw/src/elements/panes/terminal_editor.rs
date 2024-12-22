@@ -97,8 +97,7 @@ impl TermEditorPane {
         }
     }
 
-    #[must_use]
-    pub fn open_editor(&self, ctx: &Context) -> EventResponse {
+    pub fn open_editor(&self, ctx: &Context) {
         let text = self.text.borrow().clone();
         self.editor_is_open.replace(true);
         match self.editor {
@@ -109,13 +108,13 @@ impl TermEditorPane {
                 let Ok(tempfile) = tempfile::Builder::new().prefix(prefix.as_str()).tempfile()
                 else {
                     log_err!("Could not create tempfile");
-                    return EventResponse::None;
+                    return;
                 };
                 if let Some(text) = text {
                     // set the tempfile contents to the text
                     if let Err(e) = std::fs::write(tempfile.path(), text) {
                         log_err!("Could not write to tempfile: {}", e);
-                        return EventResponse::None;
+                        return;
                     }
                 }
 
@@ -134,11 +133,10 @@ impl TermEditorPane {
                 match TerminalPane::new_with_builder(ctx, cmd) {
                     Ok(term) => {
                         //term.reset_prev_draw(); // XXX remove
-                        self.pane.add_element(Box::new(term))
+                        self.pane.add_element(Box::new(term));
                     }
                     Err(e) => {
                         log_err!("Could not open terminal: {}", e);
-                        EventResponse::None
                     }
                 }
             }
@@ -146,10 +144,10 @@ impl TermEditorPane {
                 let el = ParentPaneOfSelectable::new(ctx)
                     .with_dyn_height(DynVal::FULL)
                     .with_dyn_width(DynVal::FULL)
-                    .with_focused(ctx);
+                    .with_focused(true);
 
                 let title_label = Label::new(ctx, &self.title.borrow());
-                let _ = el.add_element(Box::new(title_label));
+                el.add_element(Box::new(title_label));
 
                 let start_text = self.editor_not_found_text.borrow().clone();
                 let tb = TextBox::new(ctx, "")
@@ -173,10 +171,10 @@ impl TermEditorPane {
 
                 let btn_save =
                     Button::new(ctx, "save", save_fn).at(DynVal::FULL.minus(7.into()), 0);
-                let _ = el.add_element(Box::new(btn_save));
+                el.add_element(Box::new(btn_save));
 
-                let _ = el.add_element(Box::new(tb));
-                self.pane.add_element(Box::new(el))
+                el.add_element(Box::new(tb));
+                self.pane.add_element(Box::new(el));
             }
         }
     }
@@ -243,12 +241,9 @@ impl Element for TermEditorPane {
                         //return (true, EventResponses::default());
                     }
                     MouseEventKind::Up(MouseButton::Left) if clicked_down => {
-                        let mut resps = EventResponses::default();
-                        let resp = self.pane.clear_elements();
-                        resps.push(resp);
-                        let resp = self.open_editor(ctx);
-                        resps.push(resp);
-                        return (true, resps);
+                        self.pane.clear_elements();
+                        self.open_editor(ctx);
+                        return (true, EventResponses::default());
                     }
                     _ => {
                         *self.clicked_down.borrow_mut() = false;
@@ -259,19 +254,17 @@ impl Element for TermEditorPane {
             }
         }
 
-        let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
+        let (captured, resps) = self.pane.receive_event(ctx, ev.clone());
 
         if !self.pane.has_elements() {
             self.tempfile.borrow_mut().take();
             self.editor_is_open.replace(false);
             let text = self.text.borrow().clone().unwrap_or_default();
-            debug!("text: {}", text);
             self.non_editing_textbox.borrow().set_text(text);
             let non_editing_textbox = self.non_editing_textbox.borrow().clone();
             non_editing_textbox.set_dirty();
 
-            let resp = self.pane.add_element(Box::new(non_editing_textbox));
-            resps.push(resp);
+            self.pane.add_element(Box::new(non_editing_textbox));
         }
 
         (captured, resps)
@@ -294,12 +287,9 @@ impl Element for TermEditorPane {
             let new_text = file_contents.trim_end_matches('\n').to_string();
 
             if old_text.as_deref() != Some(&new_text) {
-                debug!("old_text: {:?}", old_text);
-                debug!("new_text: {}", new_text);
                 let is_empty = new_text.is_empty();
                 if !*self.just_created.borrow() {
                     self.text.replace(Some(new_text.clone()));
-                    debug!("text changed to: {}", new_text);
                     self.text_changed_hook.borrow_mut()(ctx.clone(), new_text);
                 }
                 if *self.just_created.borrow() && !is_empty {

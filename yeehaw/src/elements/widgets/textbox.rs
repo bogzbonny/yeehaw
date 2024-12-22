@@ -34,7 +34,7 @@ impl TextBox {
             .with_styles(TextBoxInner::STYLE);
         let inner = TextBoxInner::new(init_ctx, text);
 
-        let _ = pane.pane.add_element(Box::new(inner.clone()));
+        pane.pane.add_element(Box::new(inner.clone()));
         let tb = TextBox {
             pane,
             inner: Rc::new(RefCell::new(inner)),
@@ -137,7 +137,7 @@ impl TextBox {
         });
         *sb.position_changed_hook.borrow_mut() = Some(hook);
         *self.y_scrollbar.borrow_mut() = Some(sb.clone());
-        let _ = self.pane.pane.add_element(Box::new(sb.clone()));
+        self.pane.pane.add_element(Box::new(sb.clone()));
         self.inner.borrow().y_scrollbar.replace(Some(sb));
 
         if let VerticalSBPositions::ToTheLeft = pos {
@@ -211,7 +211,7 @@ impl TextBox {
         });
         *sb.position_changed_hook.borrow_mut() = Some(hook);
         *self.x_scrollbar.borrow_mut() = Some(sb.clone());
-        let _ = self.pane.pane.add_element(Box::new(sb.clone()));
+        self.pane.pane.add_element(Box::new(sb.clone()));
         self.inner.borrow().x_scrollbar.replace(Some(sb));
         self.set_corner_decor(init_ctx);
         self.reset_sb_sizes(init_ctx);
@@ -252,7 +252,7 @@ impl TextBox {
             .as_ref()
             .map(|ln_tb| ln_tb.pane.id());
         if let Some(ln_id) = ln_id {
-            let _ = self.pane.pane.remove_element(&ln_id);
+            self.pane.pane.remove_element(&ln_id);
             self.set_line_numbers(init_ctx);
         }
     }
@@ -279,7 +279,7 @@ impl TextBox {
         *ln_tb.current_sty.borrow_mut() = TextBoxInner::LINE_NUMBERS_STYLE;
 
         *ln_tb.selectedness.borrow_mut() = Selectability::Unselectable;
-        let _ = self.pane.pane.add_element(Box::new(ln_tb.clone()));
+        self.pane.pane.add_element(Box::new(ln_tb.clone()));
 
         let new_inner_start_x = start_x.plus_fixed(lnw as i32);
 
@@ -300,7 +300,7 @@ impl TextBox {
             let cd_y = x_sb.pane.get_dyn_start_y();
             let cd_x = y_sb.pane.get_dyn_start_x();
             let cd = cd.at(cd_x, cd_y);
-            let _ = self.pane.pane.add_element(Box::new(cd));
+            self.pane.pane.add_element(Box::new(cd));
         }
     }
 

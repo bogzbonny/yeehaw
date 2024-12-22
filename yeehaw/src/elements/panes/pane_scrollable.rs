@@ -69,18 +69,15 @@ impl PaneScrollable {
         }
     }
 
-    #[must_use]
-    pub fn add_element(&self, el: Box<dyn Element>) -> EventResponse {
+    pub fn add_element(&self, el: Box<dyn Element>) {
         self.pane.add_element(el.clone())
     }
 
-    #[must_use]
-    pub fn remove_element(&self, el_id: &ElementID) -> EventResponse {
+    pub fn remove_element(&self, el_id: &ElementID) {
         self.pane.eo.remove_element(el_id)
     }
 
-    #[must_use]
-    pub fn clear_elements(&self) -> EventResponse {
+    pub fn clear_elements(&self) {
         self.pane.eo.clear_elements()
     }
 

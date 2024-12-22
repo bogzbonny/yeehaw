@@ -78,7 +78,7 @@ impl ListBox {
             .with_styles(ListBoxInner::STYLE)
             .with_dyn_width(DynVal::new_fixed(max_entry_width as i32))
             .with_dyn_height(DynVal::new_fixed(line_count));
-        let _ = pane.pane.add_element(Box::new(inner.clone()));
+        pane.pane.add_element(Box::new(inner.clone()));
         let lb = ListBox {
             pane,
             inner: Rc::new(RefCell::new(inner)),
@@ -149,7 +149,7 @@ impl ListBox {
         let hook = Box::new(move |ctx, y| pane_.set_content_y_offset(&ctx, y));
         *sb.position_changed_hook.borrow_mut() = Some(hook);
         *self.scrollbar.borrow_mut() = Some(sb.clone());
-        let _ = self.pane.pane.add_element(Box::new(sb.clone())); // no resps for sb
+        self.pane.pane.add_element(Box::new(sb.clone())); // no resps for sb
         self.inner.borrow().scrollbar.replace(Some(sb));
         self
     }

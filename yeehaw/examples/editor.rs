@@ -30,7 +30,7 @@ async fn main() -> Result<(), Error> {
 
     editor.set_text_changed_hook(hook);
 
-    let _ = el.add_element(Box::new(editor));
-    let _ = el.add_element(Box::new(label));
+    el.add_element(Box::new(editor));
+    el.add_element(Box::new(label));
     tui.run(Box::new(el)).await
 }

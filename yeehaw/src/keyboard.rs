@@ -116,8 +116,6 @@ impl Keyboard {
     /// NOTE we return the key events that were matched as the event combo
     /// which is fed in may have wildcard KeyPossibilities such as Digits
     /// which are matched by the actual key event.
-    ///
-    /// TODO see ISSUE 2206-1001
     pub fn matches(
         &mut self, ec: &[KeyPossibility], consume_events: bool,
     ) -> Option<Vec<KeyEvent>> {

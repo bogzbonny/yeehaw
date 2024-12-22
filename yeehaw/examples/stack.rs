@@ -16,8 +16,8 @@ async fn main() -> Result<(), Error> {
     let vstack = VerticalStack::new(&ctx)
         .with_min_resize_height(2)
         .with_dyn_height(DynVal::FULL);
-    let _ = top.push(Box::new(sel_pane.clone()));
-    let _ = top.push(Box::new(vstack.clone()));
+    top.push(Box::new(sel_pane.clone()));
+    top.push(Box::new(vstack.clone()));
 
     let top_ = top.clone();
     let vstack_ = vstack.clone();
@@ -25,14 +25,13 @@ async fn main() -> Result<(), Error> {
     let toggle = Toggle::new(&ctx, " vertical ", " horizontal ")
         .at(28, 1)
         .with_fn(Box::new(move |_, tog| {
-            let mut resps: EventResponses = top_.pop().into();
-            let resps_ = if tog.selected() == " horizontal " {
-                top_.push(Box::new(hstack_.clone()))
+            top_.pop();
+            if tog.selected() == " horizontal " {
+                top_.push(Box::new(hstack_.clone()));
             } else {
-                top_.push(Box::new(vstack_.clone()))
+                top_.push(Box::new(vstack_.clone()));
             };
-            resps.push(resps_);
-            resps
+            EventResponses::default()
         }));
 
     let toggle_ = toggle.clone();
@@ -41,10 +40,10 @@ async fn main() -> Result<(), Error> {
     let remove_button_click_fn = Box::new(move |_, _| {
         if toggle_.selected() == " horizontal " {
             if !hstack_.is_empty() {
-                let _ = hstack_.remove(hstack_.len() - 1);
+                hstack_.remove(hstack_.len() - 1);
             }
         } else if !vstack_.is_empty() {
-            let _ = vstack_.remove(vstack_.len() - 1);
+            vstack_.remove(vstack_.len() - 1);
         }
         EventResponses::default()
     });
@@ -83,7 +82,7 @@ async fn main() -> Result<(), Error> {
                 .with_dyn_width(hstack_.avg_width(&ctx_)),
             );
 
-            let _ = hstack_.push(el);
+            hstack_.push(el);
         } else {
             //let el: Box<dyn Element> = if vstack_.is_empty() {
             //    Box::new(
@@ -110,16 +109,16 @@ async fn main() -> Result<(), Error> {
                 )
                 .with_dyn_height(vstack_.avg_height(&ctx_)),
             );
-            let _ = vstack_.push(el);
+            vstack_.push(el);
         }
 
         EventResponses::default()
     });
     let add_button = Button::new(&ctx, "add_pane", add_button_click_fn).at(1, 1);
 
-    let _ = sel_pane.add_element(Box::new(add_button));
-    let _ = sel_pane.add_element(Box::new(remove_button));
-    let _ = sel_pane.add_element(Box::new(toggle));
+    sel_pane.add_element(Box::new(add_button));
+    sel_pane.add_element(Box::new(remove_button));
+    sel_pane.add_element(Box::new(toggle));
 
     tui.run(Box::new(top)).await
 }

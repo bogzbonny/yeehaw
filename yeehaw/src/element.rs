@@ -1,6 +1,7 @@
 use {
     crate::{
         Context, DrawChPos, DynLocation, DynLocationSet, ElementID, Event, EventResponses, Label,
+        SelfReceivableEvents,
     },
     dyn_clone::DynClone,
     std::{
@@ -39,6 +40,10 @@ pub trait Element: DynClone {
 
     /// can the element receive the event provided
     fn can_receive(&self, ev: &Event) -> bool;
+
+    /// get the receivable events for the element
+    /// TODO it'd be nicer to return an iterator here, bit of a pain to make Element clonable then though.
+    fn receivable(&self) -> Vec<Rc<RefCell<SelfReceivableEvents>>>;
 
     /// Receive an event from a parent. The receiving element may consume the event and/or pass it
     /// to a child. The element is expected to return a response to the event, along with any

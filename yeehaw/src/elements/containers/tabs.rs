@@ -195,8 +195,8 @@ impl Tabs {
         let pane = VerticalStack::new(ctx);
         pane.pane.pane.set_kind(Self::KIND);
         let lower = ParentPane::new(ctx, Self::LOWER_KIND);
-        let _ = pane.push(Box::new(tabs_top.clone()));
-        let _ = pane.push(Box::new(lower.clone()));
+        pane.push(Box::new(tabs_top.clone()));
+        pane.push(Box::new(lower.clone()));
         Self {
             pane,
             tabs_top,
@@ -204,43 +204,33 @@ impl Tabs {
         }
     }
 
-    #[must_use]
     /// add an element to the end of the stack resizing the other elements
     /// in order to fit the new element
-    pub fn push<S: Into<String>>(&self, el: Box<dyn Element>, name: S) -> EventResponses {
+    pub fn push<S: Into<String>>(&self, el: Box<dyn Element>, name: S) {
         self.push_with_on_open_fn(el, name, None)
     }
 
-    #[must_use]
     /// add an element to the end of the stack resizing the other elements
     /// in order to fit the new element
     pub fn push_with_on_open_fn<S: Into<String>>(
         &self, el: Box<dyn Element>, name: S, on_open_fn: OnOpenFn,
-    ) -> EventResponses {
+    ) {
         Self::sanitize_el_location(&*el);
         self.tabs_top.push(el.id(), name.into(), on_open_fn);
-        let mut resps = EventResponses::default();
-        let resp = self.lower.add_element(el.clone());
-        resps.push(resp);
+        self.lower.add_element(el.clone());
         let idx = self.tabs_top.els.borrow().len() - 1;
         if self.tabs_top.selected.borrow().is_none() {
             self.tabs_top.selected.replace(Some(idx));
-            let resps_ = self.set_tab_view_pane(None, Some(idx));
-            resps.extend(resps_);
+            self.set_tab_view_pane(None, Some(idx));
         } else {
             el.set_visible(false);
-            let _ = el.set_focused(false);
+            el.set_focused(false);
         }
-        resps
     }
 
-    #[must_use]
-    pub fn insert<S: Into<String>>(
-        &self, idx: usize, el: Box<dyn Element>, name: S,
-    ) -> EventResponses {
+    pub fn insert<S: Into<String>>(&self, idx: usize, el: Box<dyn Element>, name: S) {
         Self::sanitize_el_location(&*el);
 
-        let mut resps = EventResponses::default();
         let mut unfocus_old = false;
         if let Some(old_idx) = *self.tabs_top.selected.borrow() {
             if idx == old_idx {
@@ -251,37 +241,32 @@ impl Tabs {
             if let Some(old_id) = self.tabs_top.get_selected_id() {
                 if let Some(old_el) = self.lower.get_element(&old_id) {
                     old_el.set_visible(false);
-                    let resp_ = old_el.set_focused(false);
-                    resps.push(resp_.into());
+                    old_el.set_focused(false);
                 }
             }
         }
 
         self.tabs_top.insert(idx, el.id(), name.into());
-        let resp = self.lower.add_element(el.clone());
-        resps.push(resp);
+        self.lower.add_element(el.clone());
         if self.tabs_top.selected.borrow().is_none() {
             self.tabs_top.selected.replace(Some(idx));
-            let resps_ = self.set_tab_view_pane(None, Some(idx));
-            resps.extend(resps_);
+            self.set_tab_view_pane(None, Some(idx));
         } else if *self.tabs_top.selected.borrow() == Some(idx) {
             el.set_visible(true);
         } else {
             el.set_visible(false);
-            let _ = el.set_focused(false);
+            el.set_focused(false);
         }
-        resps
     }
 
-    #[must_use]
-    pub fn remove(&self, idx: usize) -> EventResponse {
+    pub fn remove(&self, idx: usize) {
         let el_id = self.tabs_top.remove(idx);
-        self.lower.remove_element(&el_id)
+        self.lower.remove_element(&el_id);
     }
 
-    pub fn clear(&self) -> EventResponse {
+    pub fn clear(&self) {
         self.tabs_top.clear();
-        self.lower.clear_elements()
+        self.lower.clear_elements();
     }
 
     fn sanitize_el_location(el: &dyn Element) {
@@ -293,35 +278,27 @@ impl Tabs {
         el.set_dyn_location_set(loc); // set loc without triggering hooks
     }
 
-    #[must_use]
-    pub fn set_tab_view_pane(
-        &self, old_idx: Option<usize>, new_idx: Option<usize>,
-    ) -> EventResponses {
-        let mut resps = EventResponses::default();
+    pub fn set_tab_view_pane(&self, old_idx: Option<usize>, new_idx: Option<usize>) {
         if let Some(idx) = old_idx {
             if let Some((old_id, _, _)) = self.tabs_top.els.borrow().get(idx) {
-                let resp = self.lower.eo.hide_element(old_id);
-                resps.push(resp);
+                self.lower.eo.hide_element(old_id);
             }
         }
 
         if let Some(idx) = new_idx {
             if let Some((new_id, _, on_open_fn)) = self.tabs_top.els.borrow_mut().get_mut(idx) {
-                let resp = self.lower.eo.unhide_element(new_id);
-                resps.push(resp);
+                self.lower.eo.unhide_element(new_id);
                 if let Some(on_open_fn) = on_open_fn.take() {
                     on_open_fn();
                 }
             }
         }
-        resps
     }
 
-    #[must_use]
-    pub fn select(&self, idx: usize) -> EventResponses {
+    pub fn select(&self, idx: usize) {
         let start_selected = *self.tabs_top.selected.borrow();
         *self.tabs_top.selected.borrow_mut() = Some(idx);
-        self.set_tab_view_pane(start_selected, Some(idx))
+        self.set_tab_view_pane(start_selected, Some(idx));
     }
 }
 
@@ -329,11 +306,10 @@ impl Tabs {
 impl Element for Tabs {
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let start_selected = *self.tabs_top.selected.borrow();
-        let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
+        let (captured, resps) = self.pane.receive_event(ctx, ev.clone());
         let end_selected = *self.tabs_top.selected.borrow();
         if start_selected != end_selected {
-            let resps_ = self.set_tab_view_pane(start_selected, end_selected);
-            resps.extend(resps_);
+            self.set_tab_view_pane(start_selected, end_selected);
         }
         (captured, resps)
     }

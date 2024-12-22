@@ -195,7 +195,7 @@ REFACTORS
          - // NOTE we are adding this to el instead of in the header_pane as there the extra-locations
            // are not currently propogated upward. (so this becomes a problem is the menu bar extends
            // beyond the header_pane). In the future this should be fixed.
-           //let _ = el.pane.add_element(Box::new(mb));
+           //el.pane.add_element(Box::new(mb));
      - Simple solution: Make the menu-item a first class element which gets
        registered with the parent pane, then have that menu item, check with its
        host menu-bar before drawing 

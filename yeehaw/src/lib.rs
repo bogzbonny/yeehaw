@@ -29,8 +29,7 @@ pub use {
     errors::Error,
     event::{
         CommandEvent, Event, EventResponse, EventResponses, KeyPossibility, MoveResponse,
-        ReceivableEvent, ReceivableEventChanges, RelMouseEvent, ResizeResponse,
-        SelfReceivableEvents,
+        ReceivableEvent, RelMouseEvent, ResizeResponse, SelfReceivableEvents,
     },
     keyboard::Keyboard,
     organizer::ElementOrganizer,

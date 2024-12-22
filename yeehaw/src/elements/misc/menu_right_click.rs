@@ -2,8 +2,7 @@ use {
     crate::{
         elements::menu::{MenuItem, MenuStyle},
         Context, DrawUpdate, DynLocation, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponse, EventResponses, MenuBar, Parent, Point, ReceivableEventChanges,
-        SelfReceivableEvents, ZIndex,
+        EventResponse, EventResponses, MenuBar, Parent, Point, SelfReceivableEvents, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
     std::{cell::RefCell, rc::Rc},

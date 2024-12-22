@@ -2,7 +2,7 @@ use {
     crate::{
         Color, Context, DrawAction, DrawCh, DrawChPos, DrawUpdate, DynLocation, DynLocationSet,
         DynVal, Element, ElementID, Event, EventResponses, Pane, Parent, ParentPane, RelMouseEvent,
-        Style, ZIndex,
+        SelfReceivableEvents, Style, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     rayon::prelude::*,
@@ -270,7 +270,7 @@ impl MenuBar {
 
         // NOTE ignore the resps, as items should not have any resps
         // maybe fix one day
-        let _ = self.pane.add_element(Box::new(item.clone()));
+        self.pane.add_element(Box::new(item.clone()));
 
         self.menu_items.borrow_mut().insert(item.id(), item.clone());
         self.menu_items_order.borrow_mut().push(item);
