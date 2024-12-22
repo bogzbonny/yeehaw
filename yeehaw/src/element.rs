@@ -404,19 +404,21 @@ impl DrawingCache {
                     self.0.retain(|(ids, _, _)| ids != &update.sub_id);
                 }
                 DrawAction::Update(d) => {
-                    if let Some((_, _, draw)) =
+                    if let Some((_, old_z, draw)) =
                         self.0.iter_mut().find(|(ids, _, _)| ids == &update.sub_id)
                     {
                         *draw = d;
+                        *old_z = update.z_indicies.clone();
                     } else {
                         self.0.push((update.sub_id, update.z_indicies, d));
                     }
                 }
                 DrawAction::Extend(d) => {
-                    if let Some((_, _, draw)) =
+                    if let Some((_, old_z, draw)) =
                         self.0.iter_mut().find(|(ids, _, _)| ids == &update.sub_id)
                     {
                         draw.extend(d.clone());
+                        *old_z = update.z_indicies.clone();
                     } else {
                         self.0.push((update.sub_id, update.z_indicies, d));
                     }
@@ -429,10 +431,10 @@ impl DrawingCache {
     pub fn get_drawing(&mut self) -> impl Iterator<Item = &DrawChPos> {
         self.0.sort_by(|(_, a, _), (_, b, _)| a.cmp(b)); // sort by z-indicies ascending order
 
-        //debug!("----------");
-        //for (ids, zs, _) in self.0.iter() {
-        //    debug!("ids: {:?}, z: {:?}", ids, zs);
-        //}
+        debug!("----------");
+        for (ids, zs, _) in self.0.iter() {
+            debug!("ids: {:?}, z: {:?}", ids, zs);
+        }
         self.0.iter().flat_map(|(_, _, d)| d.iter())
     }
 }
