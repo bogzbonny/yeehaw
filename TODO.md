@@ -63,15 +63,15 @@
             - the highest level vertical stack is being set to unfocused.. and
               then the lower level receives the event but is already considered
               focused so it wont send a focus event upward
-     ^DONE
-   - Bugs
       - clicking on the window doesn't bring it forward
          - broke with original code refactor, TUI draw cache never reorders
            items, need z index in there. 
             - HOWEVER z-index is only supposed to be WITHIN 1 element organizer. 
               - "bring to front" only ever looks at local z
-
-      - terminal popup from window generator isn't receiving events
+      - terminal popup from window generator isn't receiving events.. or maybe
+        not processing them
+     ^DONE
+   - Bugs
       - showcase train completion doesn't reset the color of the pane (should be
         black and not say exit
 

@@ -40,6 +40,7 @@ impl WindowPane {
         loc.set_start_y(1);
         loc.set_dyn_height(DynVal::FULL.minus(1.into()));
         inner.set_dyn_location_set(loc);
+        inner.set_focused(true);
 
         pane.add_element(top_bar.clone());
         pane.add_element(inner.clone());
@@ -288,6 +289,18 @@ impl WindowPane {
         just_minimized
     }
 
+    pub fn focus_on_click(&self, ev: &Event) -> EventResponses {
+        let mut resps = EventResponses::default();
+        if let Event::Mouse(me) = ev {
+            if let MouseEventKind::Down(_) = me.kind {
+                resps.push(EventResponse::BringToFront);
+                resps.push(EventResponse::UnfocusOthers);
+                resps.push(EventResponse::Focus);
+            }
+        }
+        resps
+    }
+
     pub fn process_dragging(
         &self, ctx: &Context, ev: &Event, dragging: bool, just_minimized: bool,
         captured: &mut bool, resps: &mut EventResponses,
@@ -295,11 +308,11 @@ impl WindowPane {
         match ev {
             Event::Mouse(me) => {
                 *captured = true;
-                if let MouseEventKind::Down(_) = me.kind {
-                    resps.push(EventResponse::BringToFront);
-                    resps.push(EventResponse::UnfocusOthers);
-                    resps.push(EventResponse::Focus);
-                }
+                //if let MouseEventKind::Down(_) = me.kind {
+                //    resps.push(EventResponse::BringToFront);
+                //    resps.push(EventResponse::UnfocusOthers);
+                //    resps.push(EventResponse::Focus);
+                //}
 
                 let mr = (*self.minimized_restore.borrow()).clone();
                 match me.kind {
@@ -415,12 +428,14 @@ impl Element for WindowPane {
                 }
             }
         };
+        let mut resps = self.focus_on_click(&ev);
 
-        let (mut captured, mut resps) = if event_to_inner {
+        let (mut captured, resps_) = if event_to_inner {
             self.pane.receive_event(ctx, ev.clone())
         } else {
             (false, EventResponses::default())
         };
+        resps.extend(resps_);
 
         // check if the inner pane has been removed from the parent in which case close this window
         // NOTE this happens with terminal
