@@ -85,8 +85,8 @@ async fn main() -> Result<(), Error> {
     let train_pane = TerminalPane::new(&ctx)?;
     train_pane.pane.set_dyn_height(0.7);
     train_pane.pane.set_focused(false);
-    train_pane.disable_cursor();
     train_pane.execute_command("for i in {1..1}; do sl -l; done ; exit");
+    train_pane.disable_cursor();
     left_pane.push(Box::new(train_pane));
 
     let tabs = Tabs::new(&ctx);

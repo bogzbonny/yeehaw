@@ -70,14 +70,18 @@
               - "bring to front" only ever looks at local z
       - terminal popup from window generator isn't receiving events.. or maybe
         not processing them
+      - expanding pane scrollable is not refershing properly on scrolls
+         - looks like the leftmost chs are not being moved
+      - terminal inner-showcase is not removing cursor in sl
+         - the cursor is removed once an event is send into the "showcase" pane
+           but not before... confirmed that it IS the cursor which the yeehaw-terminal pane is
+           drawing. This event is removing the cursor because it will set
+           hide_cursor to true, which is otherwise not yet set.
      ^DONE
    - Bugs
       - showcase train completion doesn't reset the color of the pane (should be
         black and not say exit
       - terminal inner-showcase has funny bg color on widget dial
-      - terminal inner-showcase is not removing cursor in sl
-      - expanding pane scrollable is not refershing properly on scrolls
-         - looks like the leftmost chs are not being moved
 
 01. textbox paste shouldn't work when non-editable
 
@@ -372,8 +376,6 @@ BUGFIXES/PATCHES
 05. showcase window generator bugs
     - weirdness with underline color and alpha, sometimes makes it faded,
       sometimes not.  
-
-05. terminal doesn't receive scroll events
 
 05. label underline colors dont seem to work at all
 

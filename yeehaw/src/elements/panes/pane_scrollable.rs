@@ -207,16 +207,9 @@ impl Element for PaneScrollable {
         });
 
         let force_update = force_update || scope_changed;
-        //let force_update = true;
-        //let scope_changed = true;
 
         let inner_ctx = self.inner_ctx(ctx);
         let mut upds = self.pane.drawing(&inner_ctx, force_update);
-        if (x_off == 0 && y_off == 0) || !scope_changed {
-            return upds;
-        }
-
-        //upds.insert(0, DrawUpdate::clear_all());
 
         // NOTE computational bottleneck, use rayon
         upds.par_iter_mut().for_each(|upd| {

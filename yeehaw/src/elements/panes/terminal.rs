@@ -30,7 +30,6 @@ pub struct TerminalPane {
     pub parser: Arc<RwLock<vt100::Parser>>,
     pub master_pty: Rc<RefCell<Box<dyn MasterPty>>>,
     pub writer: Rc<RefCell<BufWriter<Box<dyn Write + std::marker::Send>>>>,
-    pub hide_cursor: Rc<RefCell<bool>>,
     pub disable_cursor: Rc<RefCell<bool>>,
     pub cursor: Rc<RefCell<DrawCh>>,
 
@@ -127,7 +126,6 @@ impl TerminalPane {
             parser,
             master_pty: Rc::new(RefCell::new(pty_pair.master)),
             writer: Rc::new(RefCell::new(writer)),
-            hide_cursor: Rc::new(RefCell::new(false)),
             disable_cursor: Rc::new(RefCell::new(false)),
             cursor: Rc::new(RefCell::new(cur)),
             prev_draw: Rc::new(RefCell::new(Vec::new())),
@@ -314,17 +312,6 @@ impl Element for TerminalPane {
             _ => (false, EventResponses::default()),
         };
 
-        // query for the mouse protocol being used by the terminal
-        // either sgr_mouse, normal_mouse, or rxvt_mouse
-        let parser = match self.parser.read() {
-            Ok(parser) => parser,
-            Err(e) => {
-                log_err!("TerminalPane: failed to read parser: {}", e);
-                return (captured, resps);
-            }
-        };
-        *self.hide_cursor.borrow_mut() = (*parser).screen().hide_cursor();
-
         (captured, resps)
     }
     fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
@@ -418,7 +405,8 @@ impl Element for TerminalPane {
             }
         }
 
-        if !*self.disable_cursor.borrow() && !*self.hide_cursor.borrow() {
+        let hide_cursor = screen.hide_cursor();
+        if !*self.disable_cursor.borrow() && !hide_cursor {
             let (y, x) = screen.cursor_position();
             out.push(DrawChPos {
                 ch: self.cursor.borrow().clone(),
