@@ -428,7 +428,7 @@ impl Element for TerminalPane {
         }
 
         if dirty {
-            DrawUpdate::update(out).into()
+            DrawUpdate::update(self.get_z(), out).into()
         } else {
             Vec::new()
         }

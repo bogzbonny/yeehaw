@@ -711,7 +711,7 @@ impl Element for MenuBar {
             for upd in &mut upds {
                 upd.prepend_id(el_details.el.id());
                 match upd.action {
-                    DrawAction::Update(ref mut dcps) | DrawAction::Extend(ref mut dcps) => {
+                    DrawAction::Update(_, ref mut dcps) | DrawAction::Extend(_, ref mut dcps) => {
                         let l = el_details.loc.borrow().l.clone();
                         let s = ctx.size;
                         let child_s = child_ctx.size;
@@ -825,7 +825,7 @@ impl Element for MenuItem {
 
         // add right padding
         let (_, out) = MenuItem::draw_padding(m_sty.right_padding, x, sty.clone(), out);
-        DrawUpdate::update(out).into()
+        DrawUpdate::update(self.get_z(), out).into()
     }
 }
 

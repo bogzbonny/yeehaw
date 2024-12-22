@@ -66,6 +66,9 @@
      ^DONE
    - Bugs
       - clicking on the window doesn't bring it forward
+         - broke with original code refactor, TUI draw cache never reorders
+           items, need z index in there. 
+
       - terminal popup from window generator isn't receiving events
       - showcase train completion doesn't reset the color of the pane (should be
         black and not say exit

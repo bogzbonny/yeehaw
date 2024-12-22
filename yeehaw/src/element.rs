@@ -1,7 +1,7 @@
 use {
     crate::{
         Context, DrawChPos, DynLocation, DynLocationSet, ElementID, Event, EventResponses, Label,
-        SelfReceivableEvents,
+        SelfReceivableEvents, ZIndex,
     },
     dyn_clone::DynClone,
     std::{
@@ -118,6 +118,10 @@ pub trait Element: DynClone {
     /// get/set the scalable location of the widget
     fn get_dyn_location_set(&self) -> Ref<DynLocationSet>;
     fn get_visible(&self) -> bool;
+
+    fn get_z(&self) -> ZIndex {
+        self.get_dyn_location_set().z
+    }
 
     fn set_dyn_location_set(&self, l: DynLocationSet) {
         self.call_hooks_of_kind(PRE_LOCATION_CHANGE_HOOK_NAME);
@@ -312,11 +316,11 @@ pub enum DrawAction {
     Remove,
 
     /// remove-all then add DrawChPos's
-    Update(Vec<DrawChPos>),
+    Update(ZIndex, Vec<DrawChPos>),
 
     /// extend to the DrawChPos's at the sub_id.
     /// no old draw items are removed.
-    Extend(Vec<DrawChPos>),
+    Extend(ZIndex, Vec<DrawChPos>),
 }
 
 impl DrawUpdate {
@@ -334,17 +338,17 @@ impl DrawUpdate {
         }
     }
 
-    pub fn update(updates: Vec<DrawChPos>) -> Self {
+    pub fn update(z: ZIndex, updates: Vec<DrawChPos>) -> Self {
         Self {
             sub_id: Vec::new(),
-            action: DrawAction::Update(updates),
+            action: DrawAction::Update(z, updates),
         }
     }
 
-    pub fn extend(updates: Vec<DrawChPos>) -> Self {
+    pub fn extend(z: ZIndex, updates: Vec<DrawChPos>) -> Self {
         Self {
             sub_id: Vec::new(),
-            action: DrawAction::Extend(updates),
+            action: DrawAction::Extend(z, updates),
         }
     }
 
@@ -366,17 +370,17 @@ impl DrawUpdate {
         }
     }
 
-    pub fn update_at_sub_id(sub_id: Vec<ElementID>, updates: Vec<DrawChPos>) -> Self {
+    pub fn update_at_sub_id(sub_id: Vec<ElementID>, z: ZIndex, updates: Vec<DrawChPos>) -> Self {
         Self {
             sub_id,
-            action: DrawAction::Update(updates),
+            action: DrawAction::Update(z, updates),
         }
     }
 
-    pub fn extend_at_sub_id(sub_id: Vec<ElementID>, updates: Vec<DrawChPos>) -> Self {
+    pub fn extend_at_sub_id(sub_id: Vec<ElementID>, z: ZIndex, updates: Vec<DrawChPos>) -> Self {
         Self {
             sub_id,
-            action: DrawAction::Extend(updates),
+            action: DrawAction::Extend(z, updates),
         }
     }
 
@@ -388,7 +392,7 @@ impl DrawUpdate {
 // ------------------------------------
 
 #[derive(Default, Clone)]
-pub struct DrawingCache(Vec<(Vec<ElementID>, Vec<DrawChPos>)>);
+pub struct DrawingCache(Vec<(Vec<ElementID>, ZIndex, Vec<DrawChPos>)>);
 
 impl DrawingCache {
     pub fn update_and_get(&mut self, updates: Vec<DrawUpdate>) -> impl Iterator<Item = &DrawChPos> {
@@ -401,27 +405,30 @@ impl DrawingCache {
         for update in updates.drain(..) {
             match update.action {
                 DrawAction::ClearAll => {
-                    self.0.retain(|(ids, _)| !ids.starts_with(&update.sub_id));
+                    self.0
+                        .retain(|(ids, _, _)| !ids.starts_with(&update.sub_id));
                 }
                 DrawAction::Remove => {
-                    self.0.retain(|(ids, _)| ids != &update.sub_id);
+                    self.0.retain(|(ids, _, _)| ids != &update.sub_id);
                 }
-                DrawAction::Update(d) => {
-                    if let Some((_, draw)) =
-                        self.0.iter_mut().find(|(ids, _)| ids == &update.sub_id)
+                DrawAction::Update(z, d) => {
+                    if let Some((_, old_z, draw)) =
+                        self.0.iter_mut().find(|(ids, _, _)| ids == &update.sub_id)
                     {
                         *draw = d;
+                        *old_z = z;
                     } else {
-                        self.0.push((update.sub_id, d));
+                        self.0.push((update.sub_id, z, d));
                     }
                 }
-                DrawAction::Extend(d) => {
-                    if let Some((_, draw)) =
-                        self.0.iter_mut().find(|(ids, _)| ids == &update.sub_id)
+                DrawAction::Extend(z, d) => {
+                    if let Some((_, old_z, draw)) =
+                        self.0.iter_mut().find(|(ids, _, _)| ids == &update.sub_id)
                     {
                         draw.extend(d.clone());
+                        *old_z = z;
                     } else {
-                        self.0.push((update.sub_id, d));
+                        self.0.push((update.sub_id, z, d));
                     }
                 }
             }
@@ -429,7 +436,8 @@ impl DrawingCache {
     }
 
     /// flatten the drawing cache into a single DrawChPos array
-    pub fn get_drawing(&self) -> impl Iterator<Item = &DrawChPos> {
-        self.0.iter().flat_map(|(_, d)| d.iter())
+    pub fn get_drawing(&mut self) -> impl Iterator<Item = &DrawChPos> {
+        self.0.sort_by(|(_, a, _), (_, b, _)| a.cmp(b)); // sort by z-index
+        self.0.iter().flat_map(|(_, _, d)| d.iter())
     }
 }

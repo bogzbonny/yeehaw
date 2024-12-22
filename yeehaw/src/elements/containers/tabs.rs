@@ -172,7 +172,7 @@ impl Element for TabsTop {
             chs.extend(name_chs);
         }
         self.is_dirty.replace(false);
-        let upd = DrawUpdate::update(chs);
+        let upd = DrawUpdate::update(self.get_z(), chs);
         upds.push(upd);
         upds
     }

@@ -284,6 +284,7 @@ impl ElementOrganizer {
                     || last_vis != &*details.vis.borrow()
                     || last_overflow != &*details.overflow.borrow()
                 {
+                    debug!("force update for el: {}", el_id_z.0);
                     force_update = true;
                 }
 
@@ -326,7 +327,7 @@ impl ElementOrganizer {
                 match el_upd.action {
                     DrawAction::ClearAll => {}
                     DrawAction::Remove => {}
-                    DrawAction::Update(ref mut dcps) | DrawAction::Extend(ref mut dcps) => {
+                    DrawAction::Update(_, ref mut dcps) | DrawAction::Extend(_, ref mut dcps) => {
                         //let mut dcps = details.el.drawing(&child_ctx);
                         let l = details.loc.borrow().l.clone();
                         let s = ctx.size;
@@ -410,7 +411,12 @@ impl ElementOrganizer {
                     *r = EventResponse::None;
                 }
                 EventResponse::BringToFront => {
+                    debug!(
+                        "about to set el to top: {el_id:?}, start_z: {}",
+                        details.loc.borrow().z
+                    );
                     self.set_el_to_top(el_id);
+                    debug!("end_z: {}", details.loc.borrow().z);
                     *r = EventResponse::None;
                 }
                 EventResponse::UnfocusOthers => {
