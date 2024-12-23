@@ -476,6 +476,10 @@ impl ElementOrganizer {
     pub fn event_process(
         &self, ctx: &Context, ev: Event, parent: Box<dyn Parent>,
     ) -> (bool, EventResponses) {
+        if let Event::Custom(ref n, _) = ev {
+            debug!("eo@parent {} custom event: {}", parent.get_id(), n);
+        }
+
         let (captured, resps) = match ev {
             Event::KeyCombo(_) | Event::Custom(_, _) => {
                 let (el_id, resps) = self.routed_event_process(ctx, ev, parent);

@@ -397,13 +397,16 @@ impl DrawingCache {
         for update in updates.drain(..) {
             match update.action {
                 DrawAction::ClearAll => {
+                    debug!("clearing all at sub_id: {:?}", update.sub_id);
                     self.0
                         .retain(|(ids, _, _)| !ids.starts_with(&update.sub_id));
                 }
                 DrawAction::Remove => {
+                    debug!("removing at sub_id: {:?}", update.sub_id);
                     self.0.retain(|(ids, _, _)| ids != &update.sub_id);
                 }
                 DrawAction::Update(d) => {
+                    debug!("updating at sub_id: {:?}", update.sub_id);
                     if let Some((_, z, draw)) =
                         self.0.iter_mut().find(|(ids, _, _)| ids == &update.sub_id)
                     {
@@ -414,6 +417,7 @@ impl DrawingCache {
                     }
                 }
                 DrawAction::Extend(d) => {
+                    debug!("extending at sub_id: {:?}", update.sub_id);
                     if let Some((_, z, draw)) =
                         self.0.iter_mut().find(|(ids, _, _)| ids == &update.sub_id)
                     {
@@ -429,6 +433,11 @@ impl DrawingCache {
 
     /// flatten the drawing cache into a single DrawChPos array
     pub fn get_drawing(&mut self) -> impl Iterator<Item = &DrawChPos> {
+        //debug!("------------");
+        //for (ids, z, _) in &self.0 {
+        //    debug!("ids: {:?}, z: {:?}", ids, z);
+        //}
+
         self.0.sort_by(|(_, a, _), (_, b, _)| a.cmp(b)); // sort by z-indicies ascending order
         self.0.iter().flat_map(|(_, _, d)| d.iter())
     }

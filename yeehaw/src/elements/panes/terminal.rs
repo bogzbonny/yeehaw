@@ -85,6 +85,7 @@ impl TerminalPane {
             // here blocking send will generate an error if the
             // TUI is closed by the time this send is called, which
             // is not a problem, so ignore this error.
+            debug!("terminal sending custom event: {}", n);
             let _ = ev_tx_.blocking_send(Event::Custom(n, Vec::with_capacity(0)));
         });
 
@@ -299,7 +300,11 @@ impl Element for TerminalPane {
                 (false, EventResponses::default())
             }
             Event::Custom(name, _) => {
-                debug!("terminal pane custom event: {}", name);
+                debug!(
+                    "terminal pane receiving ({}) custom event: {}",
+                    self.id(),
+                    name
+                );
                 if name == Self::custom_destruct_event_name(self.id()) {
                     debug!("1");
                     (true, EventResponse::Destruct.into())
@@ -390,16 +395,6 @@ impl Element for TerminalPane {
                         prev_draw_i += 1;
                     }
                     out.push(ch_out);
-                    //} else {
-                    //    //if the cell is empty, draw a space
-                    //    out.push(DrawChPos {
-                    //        ch: DrawCh::new(
-                    //            ChPlus::Char(' '),
-                    //            Style::default().with_fg(Color::BLACK).with_bg(Color::WHITE),
-                    //        ),
-                    //        x: col,
-                    //        y: row,
-                    //    });
                 }
             }
         }

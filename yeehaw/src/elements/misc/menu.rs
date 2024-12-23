@@ -706,6 +706,9 @@ impl Element for MenuBar {
             let child_ctx = ctx
                 .child_context(&el_details.loc.borrow().l)
                 .with_metadata(Self::MENU_STYLE_MD_KEY.to_string(), menu_style_bz.clone());
+
+            // a bit annoying as this generates ClearUpdates for every menu item every call draw
+            // cycle
             let mut upds = el_details.el.drawing(&child_ctx, force_update);
 
             for upd in &mut upds {

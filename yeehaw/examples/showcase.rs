@@ -11,9 +11,9 @@ async fn main() -> Result<(), Error> {
     std::env::set_var("RUST_BACKTRACE", "1");
 
     let (mut tui, ctx) = Tui::new()?;
-    let main_outer = PaneScrollable::new_expanding(&ctx, 100, 40);
-    let main = VerticalStackFocuser::new(&ctx);
-    main_outer.add_element(Box::new(main.clone()));
+    let main = PaneScrollable::new_expanding(&ctx, 100, 40);
+    let main_vs = VerticalStackFocuser::new(&ctx);
+    main.add_element(Box::new(main_vs.clone()));
 
     // adding the menu bar and menu items
 
@@ -38,12 +38,12 @@ async fn main() -> Result<(), Error> {
             );
         }
     }
-    main.push(Box::new(mb));
+    main_vs.push(Box::new(mb));
 
     let header_pane = ParentPaneOfSelectable::new(&ctx)
         .with_dyn_height(DynVal::new_fixed(7))
         .with_focused(false);
-    main.push(Box::new(header_pane.clone()));
+    main_vs.push(Box::new(header_pane.clone()));
 
     let gr = Gradient::x_grad_rainbow(5).with_angle(60.);
     let mtext = FigletText::new(
@@ -66,23 +66,24 @@ async fn main() -> Result<(), Error> {
     header_pane.add_element(Box::new(button));
 
     let central_pane = HorizontalStackFocuser::new(&ctx);
-    main.push(Box::new(central_pane.clone()));
+    main_vs.push(Box::new(central_pane.clone()));
     let left_pane = VerticalStackFocuser::new(&ctx)
         .with_dyn_width(0.7)
-        .with_bg(Color::GREEN);
+        .with_bg(Color::BLACK);
     central_pane.push(Box::new(left_pane.clone()));
 
-    // need to generate the context for the main pane
-    // for upward propogation of events from the main element
-    let main_ctx = ctx.child_context(&main.get_dyn_location());
+    // need to generate the context for the main_vs pane
+    // for upward propogation of events from the main_vs element
+    let main_vs_ctx = ctx.child_context(&main_vs.get_dyn_location());
 
     left_pane.push(window_generation_zone(
-        &main_ctx,
-        Box::new(main.pane.pane.clone()),
+        &main_vs_ctx,
+        Box::new(main_vs.pane.pane.clone()),
     ));
 
     //let train_pane = DebugSizePane::new(&ctx);
     let train_pane = TerminalPane::new(&ctx)?;
+    debug!("train pane id: {}", train_pane.pane.id());
     train_pane.pane.set_dyn_height(0.7);
     train_pane.pane.set_focused(false);
     train_pane.execute_command("for i in {1..1}; do sl -l; done ; exit");
@@ -126,8 +127,7 @@ async fn main() -> Result<(), Error> {
     tabs.select(0);
     central_pane.push(Box::new(tabs));
 
-    tui.run(Box::new(main_outer)).await
-    //tui.run(Box::new(main)).await
+    tui.run(Box::new(main)).await
 }
 
 pub fn window_generation_zone(
