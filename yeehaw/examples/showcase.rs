@@ -83,7 +83,6 @@ async fn main() -> Result<(), Error> {
 
     //let train_pane = DebugSizePane::new(&ctx);
     let train_pane = TerminalPane::new(&ctx)?;
-    debug!("train pane id: {}", train_pane.pane.id());
     train_pane.pane.set_dyn_height(0.7);
     train_pane.pane.set_focused(false);
     train_pane.execute_command("for i in {1..1}; do sl -l; done ; exit");

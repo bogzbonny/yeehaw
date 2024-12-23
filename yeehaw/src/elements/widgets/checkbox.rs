@@ -33,13 +33,13 @@ impl Checkbox {
             .with_attrs(Attributes::new().with_bold()),
     };
 
-    pub fn default_receivable_events() -> SelfReceivableEvents {
-        SelfReceivableEvents(vec![(KB::KEY_ENTER.into())]) // when "active" hitting enter will click the button
+    pub fn default_receivable_events() -> ReceivableEvents {
+        ReceivableEvents(vec![(KB::KEY_ENTER.into())]) // when "active" hitting enter will click the button
     }
 
     pub fn new(ctx: &Context) -> Self {
         let pane = SelectablePane::new(ctx, Self::KIND)
-            .with_self_receivable_events(Self::default_receivable_events())
+            .with_focused_receivable_events(Self::default_receivable_events())
             .with_styles(Self::STYLE)
             .with_dyn_width(DynVal::new_fixed(1))
             .with_dyn_height(DynVal::new_fixed(1));

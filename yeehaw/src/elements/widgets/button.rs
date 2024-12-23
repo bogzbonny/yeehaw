@@ -118,15 +118,15 @@ impl Button {
         unselectable_style: Style::new_const(Color::BLACK, Color::GREY15),
     };
 
-    pub fn default_receivable_events() -> SelfReceivableEvents {
-        SelfReceivableEvents(vec![(KB::KEY_ENTER.into())]) // when "active" hitting enter will click the button
+    pub fn default_receivable_events() -> ReceivableEvents {
+        ReceivableEvents(vec![(KB::KEY_ENTER.into())]) // when "active" hitting enter will click the button
     }
 
     pub fn new(
         ctx: &Context, text: &str, clicked_fn: Box<dyn FnMut(Button, Context) -> EventResponses>,
     ) -> Self {
         let pane = SelectablePane::new(ctx, Self::KIND)
-            .with_self_receivable_events(Self::default_receivable_events())
+            .with_focused_receivable_events(Self::default_receivable_events())
             .with_styles(Self::STYLE);
 
         let b = Button {

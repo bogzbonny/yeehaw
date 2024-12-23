@@ -205,8 +205,8 @@ impl ListBoxInner {
     const STYLE_CURSOR_OVER_UNSELECTED: Style = Style::new_const(Color::BLACK, Color::LIGHT_BLUE);
     const STYLE_CURSOR_OVER_SELECTED: Style = Style::new_const(Color::WHITE, Color::BLUE);
 
-    pub fn default_receivable_events() -> SelfReceivableEvents {
-        SelfReceivableEvents(vec![
+    pub fn default_receivable_events() -> ReceivableEvents {
+        ReceivableEvents(vec![
             (KB::KEY_ENTER.into()),
             (KB::KEY_DOWN.into()),
             (KB::KEY_UP.into()),
@@ -223,7 +223,7 @@ impl ListBoxInner {
         let max_lines_per_entry = entries.iter().map(|r| r.lines().count()).max().unwrap_or(0);
 
         let pane = Pane::new(init_ctx, Self::KIND)
-            .with_self_receivable_events(Self::default_receivable_events())
+            .with_focused_receivable_events(Self::default_receivable_events())
             .with_dyn_width(DynVal::FULL)
             .with_dyn_height(DynVal::FULL)
             .with_focused(true);

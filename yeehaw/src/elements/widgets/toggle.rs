@@ -32,8 +32,8 @@ impl Toggle {
     /// for the selected toggle
     const DEFAULT_SELECTED_STY: Style = Style::new_const(Color::BLACK, Color::LIGHT_BLUE);
 
-    pub fn default_receivable_events() -> SelfReceivableEvents {
-        SelfReceivableEvents(vec![
+    pub fn default_receivable_events() -> ReceivableEvents {
+        ReceivableEvents(vec![
             (KB::KEY_ENTER.into()),
             (KB::KEY_LEFT.into()),
             (KB::KEY_RIGHT.into()),
@@ -45,7 +45,7 @@ impl Toggle {
     pub fn new<S: Into<String>>(ctx: &Context, left: S, right: S) -> Self {
         let (left, right) = (left.into(), right.into());
         let pane = SelectablePane::new(ctx, Self::KIND)
-            .with_self_receivable_events(Self::default_receivable_events())
+            .with_focused_receivable_events(Self::default_receivable_events())
             .with_styles(Self::STYLE)
             .with_dyn_width(DynVal::new_fixed(
                 left.chars().count() as i32 + right.chars().count() as i32,

@@ -1,7 +1,7 @@
 use {
     crate::{
         Context, DrawChPos, DynLocation, DynLocationSet, ElementID, Event, EventResponses, Label,
-        SelfReceivableEvents, ZIndex,
+        ReceivableEvents, ZIndex,
     },
     dyn_clone::DynClone,
     std::{
@@ -43,7 +43,7 @@ pub trait Element: DynClone {
 
     /// get the receivable events for the element
     /// TODO it'd be nicer to return an iterator here, bit of a pain to make Element clonable then though.
-    fn receivable(&self) -> Vec<Rc<RefCell<SelfReceivableEvents>>>;
+    fn receivable(&self) -> Vec<Rc<RefCell<ReceivableEvents>>>;
 
     /// Receive an event from a parent. The receiving element may consume the event and/or pass it
     /// to a child. The element is expected to return a response to the event, along with any
@@ -397,16 +397,16 @@ impl DrawingCache {
         for update in updates.drain(..) {
             match update.action {
                 DrawAction::ClearAll => {
-                    debug!("clearing all at sub_id: {:?}", update.sub_id);
+                    //debug!("clearing all at sub_id: {:?}", update.sub_id);
                     self.0
                         .retain(|(ids, _, _)| !ids.starts_with(&update.sub_id));
                 }
                 DrawAction::Remove => {
-                    debug!("removing at sub_id: {:?}", update.sub_id);
+                    //debug!("removing at sub_id: {:?}", update.sub_id);
                     self.0.retain(|(ids, _, _)| ids != &update.sub_id);
                 }
                 DrawAction::Update(d) => {
-                    debug!("updating at sub_id: {:?}", update.sub_id);
+                    //debug!("updating at sub_id: {:?}", update.sub_id);
                     if let Some((_, z, draw)) =
                         self.0.iter_mut().find(|(ids, _, _)| ids == &update.sub_id)
                     {
@@ -417,7 +417,7 @@ impl DrawingCache {
                     }
                 }
                 DrawAction::Extend(d) => {
-                    debug!("extending at sub_id: {:?}", update.sub_id);
+                    //debug!("extending at sub_id: {:?}", update.sub_id);
                     if let Some((_, z, draw)) =
                         self.0.iter_mut().find(|(ids, _, _)| ids == &update.sub_id)
                     {

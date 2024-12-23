@@ -55,8 +55,8 @@ impl DropdownList {
     /// if widgets overlap
     const Z_INDEX: ZIndex = 101;
 
-    pub fn default_receivable_events() -> SelfReceivableEvents {
-        SelfReceivableEvents(vec![
+    pub fn default_receivable_events() -> ReceivableEvents {
+        ReceivableEvents(vec![
             (KB::KEY_ENTER.into()),
             (KB::KEY_DOWN.into()),
             (KB::KEY_UP.into()),
@@ -71,7 +71,7 @@ impl DropdownList {
         selection_made_fn: Box<dyn FnMut(Context, String) -> EventResponses>,
     ) -> Self {
         let pane = SelectablePane::new(ctx, Self::KIND)
-            .with_self_receivable_events(Self::default_receivable_events())
+            .with_focused_receivable_events(Self::default_receivable_events())
             .with_styles(Self::STYLE)
             .with_dyn_height(DynVal::new_fixed(1))
             .with_z(Self::Z_INDEX);

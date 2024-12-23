@@ -40,8 +40,8 @@ impl RadioButtons {
         unselectable_style: Style::new_const(Color::GREY13, Color::TRANSPARENT),
     };
 
-    pub fn default_receivable_events() -> SelfReceivableEvents {
-        SelfReceivableEvents(vec![
+    pub fn default_receivable_events() -> ReceivableEvents {
+        ReceivableEvents(vec![
             (KB::KEY_UP.into()),
             (KB::KEY_DOWN.into()),
             (KB::KEY_J.into()),
@@ -52,7 +52,7 @@ impl RadioButtons {
     pub fn new(ctx: &Context, radios: Vec<String>) -> Self {
         let max_width = radios.iter().map(|r| r.chars().count()).max().unwrap_or(0) as i32 + 1; // +1 for the radio button
         let pane = SelectablePane::new(ctx, Self::KIND)
-            .with_self_receivable_events(Self::default_receivable_events())
+            .with_focused_receivable_events(Self::default_receivable_events())
             .with_styles(Self::STYLE)
             .with_dyn_width(DynVal::new_fixed(max_width))
             .with_dyn_height(DynVal::new_fixed(radios.len() as i32));

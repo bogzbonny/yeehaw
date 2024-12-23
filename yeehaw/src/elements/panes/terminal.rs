@@ -85,7 +85,6 @@ impl TerminalPane {
             // here blocking send will generate an error if the
             // TUI is closed by the time this send is called, which
             // is not a problem, so ignore this error.
-            debug!("terminal sending custom event: {}", n);
             let _ = ev_tx_.blocking_send(Event::Custom(n, Vec::with_capacity(0)));
         });
 
@@ -132,16 +131,18 @@ impl TerminalPane {
             prev_draw: Rc::new(RefCell::new(Vec::new())),
             pty_killer: Rc::new(RefCell::new(killer)),
         };
-        out.pane.set_self_receivable_events(out.receivable_events());
+        out.pane
+            .set_focused_receivable_events(out.focused_rec_evs());
+        out.pane.set_always_receivable_events(out.always_rec_evs());
         Ok(out)
     }
 
-    pub fn receivable_events(&self) -> SelfReceivableEvents {
-        vec![
-            (KeyPossibility::Anything.into()),
-            (ReceivableEvent::Custom(Self::custom_destruct_event_name(self.id()))),
-        ]
-        .into()
+    pub fn focused_rec_evs(&self) -> ReceivableEvents {
+        vec![(KeyPossibility::Anything.into())].into()
+    }
+
+    pub fn always_rec_evs(&self) -> ReceivableEvents {
+        vec![(ReceivableEvent::Custom(Self::custom_destruct_event_name(self.id())))].into()
     }
 
     pub fn custom_destruct_event_name(id: ElementID) -> String {
@@ -300,16 +301,9 @@ impl Element for TerminalPane {
                 (false, EventResponses::default())
             }
             Event::Custom(name, _) => {
-                debug!(
-                    "terminal pane receiving ({}) custom event: {}",
-                    self.id(),
-                    name
-                );
                 if name == Self::custom_destruct_event_name(self.id()) {
-                    debug!("1");
                     (true, EventResponse::Destruct.into())
                 } else {
-                    debug!("2");
                     (false, EventResponses::default())
                 }
             }

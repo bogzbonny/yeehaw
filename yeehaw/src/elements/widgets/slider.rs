@@ -28,8 +28,8 @@ pub type AdjustFn = Box<dyn FnMut(Context, &Slider) -> EventResponses>;
 impl Slider {
     const KIND: &'static str = "slider";
 
-    pub fn default_receivable_events() -> SelfReceivableEvents {
-        SelfReceivableEvents(vec![
+    pub fn default_receivable_events() -> ReceivableEvents {
+        ReceivableEvents(vec![
             (KB::KEY_LEFT.into()),
             (KB::KEY_RIGHT.into()),
             (KB::KEY_H.into()),
@@ -74,7 +74,7 @@ impl Slider {
     /// ```
     pub fn new(ctx: &Context, filled: DrawCh, empty: DrawCh, head: DrawCh) -> Self {
         let pane = SelectablePane::new(ctx, Self::KIND)
-            .with_self_receivable_events(Self::default_receivable_events())
+            .with_focused_receivable_events(Self::default_receivable_events())
             .with_styles(SelStyles::opaque())
             .with_dyn_width(DynVal::FULL)
             .with_dyn_height(DynVal::new_fixed(1));

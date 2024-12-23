@@ -2,7 +2,7 @@ use {
     crate::{
         Color, Context, DrawCh, DrawChs2D, DrawUpdate, DynLocation, DynLocationSet, DynVal,
         Element, ElementID, ElementOrganizer, Event, EventResponses, Pane, Parent,
-        SelfReceivableEvents, Size, Style, ZIndex,
+        ReceivableEvents, Size, Style, ZIndex,
     },
     std::collections::HashMap,
     std::{
@@ -91,49 +91,6 @@ impl ParentPane {
         !self.eo.els.borrow().is_empty()
     }
 
-    //pub fn change_focused_for_el(
-    //    &self, ctx: &Context, el_id: ElementID, p: Priority,
-    //) -> ReceivableEventChanges {
-    //    let mut ic = self.eo.change_focused_for_el(ctx, el_id, p);
-    //    let mut to_add = vec![];
-    //    // Check if any of the ic.remove match pane.self_evs. If so, add those events to
-    //    // the ic.add.
-    //    //
-    //    // NOTE: this is necessary because:
-    //    // 1. An event passed in the ic.remove will remove ALL instances of an
-    //    // event registered to the ElementOrganizer (eo) of the parent of this
-    //    // element. This is true because all events in the parent of this element
-    //    // are registered with the ID of THIS element.
-    //    //    e.g. if EventX is being passed in the ic.remove and EventX occurs
-    //    //    twice in the prioritizer of the EO of the parent of this element, BOTH
-    //    //    instances of EventX will be removed when the EO processes the
-    //    //    ReceivableEventChanges.
-    //    // 2. If this element has registered EventX as a SelfEv and EventX is also
-    //    // passed up in the ic.remove, then EventX will be removed from the parent
-    //    // organizer and this element will no longer be able to recieve EventX even
-    //    // though it still wants to.
-    //    //
-    //    // NOTE: Leaving the remove event in the ic.remove removes artifacts further
-    //    // up the tree. i.e, if we simply remove the event from the ic.remove, then
-    //    // the parent of this element will have an artifact registration for an
-    //    // event that serves no purpose.
-    //    //
-    //    // NOTE: If there are duplicate events in the ic.remove, then the
-    //    // following code will add duplicate events to the ic.add. This will
-    //    // result in duplicate events registered with the same priority and ID in
-    //    // this element's parent. This seems harmless and is probably more efficient
-    //    // than checking for duplicates.
-    //    for rm in ic.remove.iter() {
-    //        for self_ev in self.pane.self_evs.borrow().0.iter() {
-    //            if *rm == self_ev.0 {
-    //                to_add.push((self_ev.0.clone(), self_ev.1));
-    //            }
-    //        }
-    //    }
-    //    ic.push_add_evs(to_add);
-    //    ic
-    //}
-
     // -------------------------------------
     // Element functions
 
@@ -177,7 +134,7 @@ impl Element for ParentPane {
         self.get_focused() && (self.pane.can_receive(ev) || self.eo.can_receive(ev))
     }
 
-    fn receivable(&self) -> Vec<Rc<RefCell<SelfReceivableEvents>>> {
+    fn receivable(&self) -> Vec<Rc<RefCell<ReceivableEvents>>> {
         if self.get_focused() {
             let mut rec = self.eo.receivable();
             rec.extend(self.pane.receivable());

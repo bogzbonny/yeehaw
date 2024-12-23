@@ -87,8 +87,8 @@ pub type SelectFn = Box<dyn FnMut(Context, &ArbSelector) -> EventResponses>;
 impl ArbSelector {
     const KIND: &'static str = "arb_selector";
 
-    pub fn default_receivable_events() -> SelfReceivableEvents {
-        SelfReceivableEvents(vec![
+    pub fn default_receivable_events() -> ReceivableEvents {
+        ReceivableEvents(vec![
             (KB::KEY_LEFT.into()),
             (KB::KEY_RIGHT.into()),
             (KB::KEY_H.into()),
@@ -186,7 +186,7 @@ impl ArbSelector {
         let min_pos = min_pos.unwrap_or(0);
 
         let pane = SelectablePane::new(ctx, Self::KIND)
-            .with_self_receivable_events(Self::default_receivable_events())
+            .with_focused_receivable_events(Self::default_receivable_events())
             .with_styles(SelStyles::opaque())
             .with_dyn_width(DynVal::new_fixed(base_width as i32))
             .with_dyn_height(DynVal::new_fixed(base_height as i32));

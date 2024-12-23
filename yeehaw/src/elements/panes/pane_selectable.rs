@@ -197,7 +197,7 @@ impl SelectablePane {
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for SelectablePane {
     /// default implementation of Receivable, only receive when widget is active
-    fn receivable(&self) -> Vec<Rc<RefCell<SelfReceivableEvents>>> {
+    fn receivable(&self) -> Vec<Rc<RefCell<ReceivableEvents>>> {
         let attr_sel = self.get_selectability();
         if let Selectability::Selected = attr_sel {
             self.pane.receivable()
@@ -311,8 +311,8 @@ impl ParentPaneOfSelectable {
     pub const KIND: &'static str = "parent_pane_of_selectable";
     pub const EV_SET_SELECTABILITY: &'static str = "set_selectability";
 
-    pub fn default_receivable_events() -> SelfReceivableEvents {
-        SelfReceivableEvents(vec![
+    pub fn default_receivable_events() -> ReceivableEvents {
+        ReceivableEvents(vec![
             (KB::KEY_ESC.into()),
             (KB::KEY_TAB.into()),
             (KB::KEY_BACKTAB.into()),
@@ -321,7 +321,7 @@ impl ParentPaneOfSelectable {
 
     pub fn new(ctx: &Context) -> ParentPaneOfSelectable {
         let pane = ParentPane::new(ctx, Self::KIND)
-            .with_self_receivable_events(Self::default_receivable_events());
+            .with_focused_receivable_events(Self::default_receivable_events());
         ParentPaneOfSelectable {
             pane,
             selected: Rc::new(RefCell::new(None)),

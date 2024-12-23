@@ -45,7 +45,7 @@ pub enum LabelPosition {
 }
 
 /// when "active" hitting enter will click the button
-pub static LABEL_EV_COMBOS: SelfReceivableEvents = SelfReceivableEvents(vec![]);
+pub static LABEL_EV_COMBOS: ReceivableEvents = ReceivableEvents(vec![]);
 
 impl Label {
     const KIND: &'static str = "label";
@@ -63,7 +63,7 @@ impl Label {
     pub fn new_with_style(ctx: &Context, text: &str, sty: Style) -> Self {
         let s = Size::get_text_size(text);
         let pane = Pane::new(ctx, Self::KIND)
-            .with_self_receivable_events(LABEL_EV_COMBOS.clone())
+            .with_focused_receivable_events(LABEL_EV_COMBOS.clone())
             .with_style(sty)
             .with_dyn_width(DynVal::new_fixed(s.width as i32))
             .with_dyn_height(DynVal::new_fixed(s.height as i32));

@@ -320,9 +320,6 @@ pub fn process_event_resps(
     resps: EventResponses, exit_tx: Option<WatchSender<bool>>, el_org: &ElementOrganizer,
     main_el_id: ElementID,
 ) -> Result<bool, Error> {
-    if !resps.is_empty() {
-        debug!("resps: {:?}", resps);
-    }
     // only check for response for quit
     for resp in resps.iter() {
         if matches!(resp, EventResponse::Quit | EventResponse::Destruct) {

@@ -1,8 +1,8 @@
 use {
     crate::{
         Context, DrawAction, DrawCh, DrawUpdate, DynLocation, DynLocationSet, Element, ElementID,
-        Event, EventResponse, EventResponses, Keyboard, Parent, ReceivableEvent, RelMouseEvent,
-        SelfReceivableEvents, ZIndex,
+        Event, EventResponse, EventResponses, Keyboard, Parent, ReceivableEvent, ReceivableEvents,
+        RelMouseEvent, ZIndex,
     },
     rayon::prelude::*,
     std::collections::HashMap,
@@ -284,7 +284,6 @@ impl ElementOrganizer {
                     || last_vis != &*details.vis.borrow()
                     || last_overflow != &*details.overflow.borrow()
                 {
-                    debug!("force update for el: {}", el_id_z.0);
                     force_update = true;
                 }
 
@@ -412,12 +411,7 @@ impl ElementOrganizer {
                     *r = EventResponse::None;
                 }
                 EventResponse::BringToFront => {
-                    debug!(
-                        "about to set el to top: {el_id:?}, start_z: {}",
-                        details.loc.borrow().z
-                    );
                     self.set_el_to_top(el_id);
-                    debug!("end_z: {}", details.loc.borrow().z);
                     *r = EventResponse::None;
                 }
                 EventResponse::UnfocusOthers => {
@@ -464,7 +458,7 @@ impl ElementOrganizer {
         false
     }
 
-    pub fn receivable(&self) -> Vec<Rc<RefCell<SelfReceivableEvents>>> {
+    pub fn receivable(&self) -> Vec<Rc<RefCell<ReceivableEvents>>> {
         let mut rec = Vec::new();
         for (_, details) in self.els.borrow().iter() {
             let rec_ = details.el.receivable();
@@ -476,10 +470,6 @@ impl ElementOrganizer {
     pub fn event_process(
         &self, ctx: &Context, ev: Event, parent: Box<dyn Parent>,
     ) -> (bool, EventResponses) {
-        if let Event::Custom(ref n, _) = ev {
-            debug!("eo@parent {} custom event: {}", parent.get_id(), n);
-        }
-
         let (captured, resps) = match ev {
             Event::KeyCombo(_) | Event::Custom(_, _) => {
                 let (el_id, resps) = self.routed_event_process(ctx, ev, parent);

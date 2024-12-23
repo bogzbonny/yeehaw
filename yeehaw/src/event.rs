@@ -381,7 +381,7 @@ impl EventResponses {
 // -------------------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-/// The SelfReceivableEvents are used to manage events and associated functions
+/// The ReceivableEvents are used to manage events and associated functions
 /// registered directly to an element (AND NOT to that elements children!). They
 /// are similar to the EvPrioritizer, but they are used to manage the events and
 /// commands that are registered locally to this specific element.
@@ -391,28 +391,28 @@ impl EventResponses {
 /// NOTE: these fulfill a similar function to the prioritizers
 /// in that they manage inclusion/removal more cleanly and can be sorted
 #[derive(Clone, Default, Debug)]
-pub struct SelfReceivableEvents(pub Vec<ReceivableEvent>);
+pub struct ReceivableEvents(pub Vec<ReceivableEvent>);
 
-impl Deref for SelfReceivableEvents {
+impl Deref for ReceivableEvents {
     type Target = Vec<ReceivableEvent>;
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl DerefMut for SelfReceivableEvents {
+impl DerefMut for ReceivableEvents {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
 }
 
-impl From<Vec<ReceivableEvent>> for SelfReceivableEvents {
-    fn from(v: Vec<ReceivableEvent>) -> SelfReceivableEvents {
-        SelfReceivableEvents(v)
+impl From<Vec<ReceivableEvent>> for ReceivableEvents {
+    fn from(v: Vec<ReceivableEvent>) -> ReceivableEvents {
+        ReceivableEvents(v)
     }
 }
 
-impl SelfReceivableEvents {
+impl ReceivableEvents {
     pub fn push(&mut self, ev: ReceivableEvent) {
         self.0.push(ev)
     }

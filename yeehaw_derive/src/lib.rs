@@ -12,7 +12,7 @@ pub fn impl_element_from(attr: TokenStream, item: TokenStream) -> TokenStream {
     fn kind(&self) -> &'static str;
     fn id(&self) -> ElementID;
     fn can_receive(&self, ev: &Event) -> bool;
-    fn receivable(&self) -> Vec<Rc<RefCell<SelfReceivableEvents>>>;
+    fn receivable(&self) -> Vec<Rc<RefCell<ReceivableEvents>>>;
     fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses);
     fn set_focused(&self, focused: bool);
     fn get_focused(&self) -> bool;
@@ -127,7 +127,8 @@ pub fn impl_pane_basics_from(attr: TokenStream, item: TokenStream) -> TokenStrea
         fn with_style(self, style: Style);
         fn with_bg(self, bg: Color);
         fn with_fg(self, fg: Color);
-        fn with_self_receivable_events(self, evs: SelfReceivableEvents);
+        fn with_focused_receivable_events(self, evs: ReceivableEvents);
+        fn with_always_receivable_events(self, evs: ReceivableEvents);
     }
     ";
 
@@ -176,7 +177,8 @@ pub fn impl_pane_basics_from(attr: TokenStream, item: TokenStream) -> TokenStrea
     fn set_fg(&self, fg: Color);
     fn set_default_ch(&self, ch: DrawCh);
     fn set_transparent(&self);
-    fn set_self_receivable_events(&self, evs: SelfReceivableEvents);
+    fn set_focused_receivable_events(&self, evs: ReceivableEvents);
+    fn set_always_receivable_events(&self, evs: ReceivableEvents);
     fn send_responses_upward(&self, ctx: &Context, resps: EventResponses);
     fn has_parent(&self) -> bool;
     fn set_focused(&self, focused: bool);

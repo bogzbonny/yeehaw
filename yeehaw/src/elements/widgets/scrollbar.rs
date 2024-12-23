@@ -59,8 +59,8 @@ pub enum HorizontalSBPositions {
 
 impl VerticalScrollbar {
     const KIND: &'static str = "vertical_scrollbar";
-    pub fn default_receivable_events() -> SelfReceivableEvents {
-        SelfReceivableEvents(vec![
+    pub fn default_receivable_events() -> ReceivableEvents {
+        ReceivableEvents(vec![
             (KB::KEY_UP.into()),
             (KB::KEY_DOWN.into()),
             (KB::KEY_SPACE.into()),
@@ -71,7 +71,7 @@ impl VerticalScrollbar {
         scrollable_height: usize,
     ) -> Self {
         let pane = Pane::new(ctx, Self::KIND)
-            .with_self_receivable_events(Self::default_receivable_events())
+            .with_focused_receivable_events(Self::default_receivable_events())
             .with_style(Scrollbar::STYLE)
             .with_dyn_width(DynVal::new_fixed(1))
             .with_dyn_height(scrollable_view_height.clone());
@@ -111,7 +111,7 @@ impl VerticalScrollbar {
 
     pub fn without_keyboard_events(self) -> Self {
         self.pane
-            .set_self_receivable_events(SelfReceivableEvents::default());
+            .set_focused_receivable_events(ReceivableEvents::default());
         self
     }
 
@@ -141,8 +141,8 @@ impl VerticalScrollbar {
 
 impl HorizontalScrollbar {
     const KIND: &'static str = "horizontal_scrollbar";
-    pub fn default_receivable_events() -> SelfReceivableEvents {
-        SelfReceivableEvents(vec![
+    pub fn default_receivable_events() -> ReceivableEvents {
+        ReceivableEvents(vec![
             (KB::KEY_LEFT.into()),
             (KB::KEY_RIGHT.into()),
         ])
@@ -152,7 +152,7 @@ impl HorizontalScrollbar {
         scrollable_width: usize,
     ) -> Self {
         let pane = Pane::new(ctx, Self::KIND)
-            .with_self_receivable_events(Self::default_receivable_events())
+            .with_focused_receivable_events(Self::default_receivable_events())
             .with_style(Scrollbar::STYLE)
             .with_dyn_height(DynVal::new_fixed(1))
             .with_dyn_width(scrollable_view_width.clone());
@@ -194,7 +194,7 @@ impl HorizontalScrollbar {
 
     pub fn without_keyboard_events(self) -> Self {
         self.pane
-            .set_self_receivable_events(SelfReceivableEvents::default());
+            .set_focused_receivable_events(ReceivableEvents::default());
         self
     }
 

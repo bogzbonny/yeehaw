@@ -49,8 +49,8 @@ impl Default for FileNavStyle {
 impl FileNavPane {
     const INDENT_SIZE: usize = 2;
 
-    pub fn default_receivable_events() -> SelfReceivableEvents {
-        SelfReceivableEvents(vec![
+    pub fn default_receivable_events() -> ReceivableEvents {
+        ReceivableEvents(vec![
             (KB::KEY_ENTER.into()),
             (KB::KEY_UP.into()),
             (KB::KEY_DOWN.into()),
@@ -75,7 +75,7 @@ impl FileNavPane {
         ]);
         nav_items.extend(sub_items);
 
-        pane.self_evs
+        pane.rec_evs_focused
             .borrow_mut()
             .extend(Self::default_receivable_events().0);
 

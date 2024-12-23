@@ -1,7 +1,7 @@
 use {
     crate::{
         Color, Context, DrawCh, DrawChPos, DrawChs2D, DrawUpdate, DynLocation, DynLocationSet,
-        DynVal, Element, ElementID, Event, EventResponses, Loc, Parent, SelfReceivableEvents, Size,
+        DynVal, Element, ElementID, Event, EventResponses, Loc, Parent, ReceivableEvents, Size,
         Style, ZIndex,
     },
     std::{
@@ -24,11 +24,11 @@ pub struct Pane {
 
     attributes: Rc<RefCell<HashMap<String, Vec<u8>>>>,
 
-    /// The SelfEvs are NOT handled by the standard pane. The element inheriting the
-    /// standard pane is expected to handle all SelfReceivableEvents in the
-    /// ReceiveEvent function. The standard pane is only responsible for
-    /// listing the receivable events when Receivable() is called
-    pub self_evs: Rc<RefCell<SelfReceivableEvents>>,
+    /// events which this element can receive while focused
+    pub rec_evs_focused: Rc<RefCell<ReceivableEvents>>,
+
+    /// events which this element can receive while focused or unfocused
+    pub rec_evs_always: Rc<RefCell<ReceivableEvents>>,
 
     /// Element focus
     pub focused: Rc<RefCell<bool>>,
@@ -67,7 +67,8 @@ impl Pane {
             kind: Rc::new(RefCell::new(kind)),
             id: Rc::new(RefCell::new(ctx.hat.create_element_id(kind))),
             attributes: Rc::new(RefCell::new(HashMap::new())),
-            self_evs: Rc::new(RefCell::new(SelfReceivableEvents::default())),
+            rec_evs_focused: Rc::new(RefCell::new(ReceivableEvents::default())),
+            rec_evs_always: Rc::new(RefCell::new(ReceivableEvents::default())),
             focused: Rc::new(RefCell::new(false)),
             parent: Rc::new(RefCell::new(None)),
             hooks: Rc::new(RefCell::new(HashMap::new())),
@@ -392,13 +393,22 @@ impl Pane {
         self.set_default_ch(ch);
     }
 
-    pub fn with_self_receivable_events(self, evs: SelfReceivableEvents) -> Pane {
-        *self.self_evs.borrow_mut() = evs;
+    pub fn with_focused_receivable_events(self, evs: ReceivableEvents) -> Pane {
+        *self.rec_evs_focused.borrow_mut() = evs;
         self
     }
 
-    pub fn set_self_receivable_events(&self, evs: SelfReceivableEvents) {
-        *self.self_evs.borrow_mut() = evs;
+    pub fn set_focused_receivable_events(&self, evs: ReceivableEvents) {
+        *self.rec_evs_focused.borrow_mut() = evs;
+    }
+
+    pub fn with_always_receivable_events(self, evs: ReceivableEvents) -> Pane {
+        *self.rec_evs_always.borrow_mut() = evs;
+        self
+    }
+
+    pub fn set_always_receivable_events(&self, evs: ReceivableEvents) {
+        *self.rec_evs_always.borrow_mut() = evs;
     }
 
     // -----------------------
@@ -461,14 +471,15 @@ impl Element for Pane {
     }
 
     fn can_receive(&self, ev: &Event) -> bool {
-        *self.focused.borrow() && self.self_evs.borrow().contains_match(ev)
+        (*self.focused.borrow() && self.rec_evs_focused.borrow().contains_match(ev))
+            || self.rec_evs_always.borrow().contains_match(ev)
     }
 
-    fn receivable(&self) -> Vec<Rc<RefCell<SelfReceivableEvents>>> {
+    fn receivable(&self) -> Vec<Rc<RefCell<ReceivableEvents>>> {
         if *self.focused.borrow() {
-            vec![self.self_evs.clone()]
+            vec![self.rec_evs_focused.clone(), self.rec_evs_always.clone()]
         } else {
-            Vec::with_capacity(0)
+            vec![self.rec_evs_always.clone()]
         }
     }
 

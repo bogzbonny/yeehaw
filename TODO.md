@@ -77,10 +77,13 @@
            but not before... confirmed that it IS the cursor which the yeehaw-terminal pane is
            drawing. This event is removing the cursor because it will set
            hide_cursor to true, which is otherwise not yet set.
-     ^DONE
-   - Bugs
       - showcase train completion doesn't reset the color of the pane (should be
         black and not say exit
+           - the issue is that the terminal pane doesn't have receivable events
+             now that the prioritizer was removed and the receivable events are 
+             all lumped together (for focused and non-focused)
+     ^DONE
+   - Bugs
       - terminal inner-showcase has funny bg color on widget dial
 
 01. textbox paste shouldn't work when non-editable

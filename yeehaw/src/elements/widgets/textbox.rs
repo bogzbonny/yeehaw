@@ -553,8 +553,8 @@ impl TextBoxInner {
     const DEFAULT_CURSOR_STYLE: Style = Style::new_const(Color::WHITE, Color::BLUE);
 
     /// for textboxes which are editable
-    pub fn editable_receivable_events() -> SelfReceivableEvents {
-        SelfReceivableEvents(vec![
+    pub fn editable_receivable_events() -> ReceivableEvents {
+        ReceivableEvents(vec![
             (KeyPossibility::Chars.into()),
             (KB::KEY_BACKSPACE.into()),
             (KB::KEY_ENTER.into()),
@@ -571,8 +571,8 @@ impl TextBoxInner {
     }
 
     /// non-editable textboxes can still scroll
-    pub fn non_editable_receivable_events() -> SelfReceivableEvents {
-        SelfReceivableEvents(vec![
+    pub fn non_editable_receivable_events() -> ReceivableEvents {
+        ReceivableEvents(vec![
             (KB::KEY_LEFT.into()),
             (KB::KEY_RIGHT.into()),
             (KB::KEY_UP.into()),
@@ -589,7 +589,7 @@ impl TextBoxInner {
         let pane = Pane::new(ctx, Self::KIND)
             .with_dyn_width(DynVal::FULL)
             .with_dyn_height(DynVal::FULL)
-            .with_self_receivable_events(Self::editable_receivable_events())
+            .with_focused_receivable_events(Self::editable_receivable_events())
             .with_focused(true);
 
         let tb = TextBoxInner {
@@ -678,13 +678,13 @@ impl TextBoxInner {
     pub fn set_editable(&self) {
         *self.editable.borrow_mut() = true;
         self.pane
-            .set_self_receivable_events(TextBoxInner::editable_receivable_events());
+            .set_focused_receivable_events(TextBoxInner::editable_receivable_events());
     }
 
     pub fn set_non_editable(&self) {
         *self.editable.borrow_mut() = false;
         self.pane
-            .set_self_receivable_events(TextBoxInner::non_editable_receivable_events());
+            .set_focused_receivable_events(TextBoxInner::non_editable_receivable_events());
     }
 
     pub fn editable(self) -> Self {
@@ -699,7 +699,7 @@ impl TextBoxInner {
 
     pub fn non_navigable(self) -> Self {
         self.pane
-            .set_self_receivable_events(SelfReceivableEvents(vec![]));
+            .set_focused_receivable_events(ReceivableEvents(vec![]));
         self
     }
 
