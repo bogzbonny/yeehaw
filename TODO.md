@@ -2,7 +2,6 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
 01. cleanup the widgets example 
     - showcase should just use the same widgets example pane
 

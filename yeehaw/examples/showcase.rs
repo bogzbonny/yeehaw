@@ -11,7 +11,8 @@ async fn main() -> Result<(), Error> {
     std::env::set_var("RUST_BACKTRACE", "1");
 
     let (mut tui, ctx) = Tui::new()?;
-    let main = PaneScrollable::new_expanding(&ctx, 100, 40);
+    let main = PaneScrollable::new_expanding(&ctx, 120, 35);
+    let limiter = PaneLimiter::new(Box::new(main.clone()), 120, 35);
     let main_vs = VerticalStackFocuser::new(&ctx);
     main.add_element(Box::new(main_vs.clone()));
 
@@ -126,7 +127,8 @@ async fn main() -> Result<(), Error> {
     tabs.select(0);
     central_pane.push(Box::new(tabs));
 
-    tui.run(Box::new(main)).await
+    //tui.run(Box::new(main)).await
+    tui.run(Box::new(limiter)).await
 }
 
 pub fn window_generation_zone(
