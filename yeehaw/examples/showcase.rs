@@ -344,7 +344,7 @@ pub fn window_generation_zone(
 }
 
 pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
-    let el = ParentPaneOfSelectable::new(ctx).with_bg(Color::DARK_BLUE);
+    let el = ParentPaneOfSelectable::new(ctx).with_bg(Color::MIDNIGHT_BLUE);
 
     let l1 = Label::new(ctx, "some label");
     let l = l1.clone().at(DynVal::new_flex(0.5), DynVal::new_flex(0.5));

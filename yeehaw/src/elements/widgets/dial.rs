@@ -75,7 +75,7 @@ impl Dial {
             Self::DEFAULT_DIAL_COLOR,
             Self::DEFAULT_DIAL_KNOB_COLOR,
             Self::DEFAULT_LABEL_COLOR,
-            Style::default().with_fg(Self::DEFAULT_LABEL_SEL_COLOR),
+            Style::transparent().with_fg(Self::DEFAULT_LABEL_SEL_COLOR),
             labels.clone(),
         );
         pane.pane.set_kind(Self::KIND);
@@ -85,7 +85,7 @@ impl Dial {
             dial_knob_color: Rc::new(RefCell::new(Self::DEFAULT_DIAL_KNOB_COLOR)),
             label_color: Rc::new(RefCell::new(Self::DEFAULT_LABEL_COLOR)),
             label_selected_color: Rc::new(RefCell::new(
-                Style::default().with_fg(Self::DEFAULT_LABEL_SEL_COLOR),
+                Style::transparent().with_fg(Self::DEFAULT_LABEL_SEL_COLOR),
             )),
 
             labels: Rc::new(RefCell::new(labels)),

@@ -4,6 +4,90 @@ will eventually be sifted through and included in actual docs - at which point
 this document will be deleted
 __________________________________________________
 
+01. README doc about performance and drawing
+     - slightly laggy in debug mode but should be good in release mode
+        - due to nested element containers, more deeply nested calls 
+01. hello world example in README.md
+01. passing mouse movements into terminal pane
+01. option to enforce that drawing which are outside of border are cropped?
+     - MAYBE?? do after window generator is complete
+01. execute a command on opening a tab (for the first time?) useful for showcase
+    tab
+01. scrollable pane which grows if above min dimension
+01. better labels for elements - build into element
+10. slider element, allow better dragging were you don't have to stay inside the
+    element
+01. terminal pane always has receivable events, even when it is unfocused (it
+    should never have them) 
+01. Drawing overhaul
+    - add an offset to the position gradient (so that the gradient can have an
+      offset baked in without actually drawing the gradient).
+    - move the time/position based gradient calculations from the organizer 
+      and to the high level TUI
+      - also need to set draw size (instead will always draw will big one)
+         - set only once the first time 
+    - now caching by element should work
+   - MAYBE don't explicitly cache (and not call drawing) but still call drawing 
+      each draw cycle, however each element can return special "Unchanged"
+      messages which then tells the parent to use its cached value. 
+          - nested containers:
+            - the parent-parent-container should be able to update a sub-section 
+              of the child-container, this will maybe introduce slight more
+              complexity as `fn drawing` should likely be able to return
+              multiple (ElementID, Vec<DrawPosCh>) chunks - that or a slightly 
+              new mechanism.
+   - will still need a new fn flattened_all_drawing which reads from the cache 
+     and provides all DrawChPos's for the tui
+   - Bugs
+      - tabs - tabs will show when selected for the first time, but then they
+        will never show when reselected
+      - image test - the final pane is not being removed visually
+      - stack test - borders are not refreshing properly 
+      - window - moving the window around leaves stuff in the dust
+          -  I think this is because the context fed into the window doesn't
+            change but the location of the sub-elements does. SO the element
+            organizer DOES need to keep a cache of the previous inputs so that
+            it can update the positions of the content, even if the content
+            doesn't change. - either that or force the drawing to give an update 
+            even when one isn't neccesary based on the context
+          -  window closing doesn't work
+          - scrollable pane doesn't change positions work
+      - file_nav shows nothing
+      - menu test - only the final 1 menu item is ever showing 
+      - nvim editor (example editor) doesn't refresh right when closed
+      - textbox doesn't have keyboard events
+      - listbox doesn't keyboard events
+      - showcase window generated is unfocusing other widgets beyond return 
+         - focuser isn't working properly it seems
+            - the window-generation-zone still seems to be considered focused,
+              because if I click the tabs then back again it will once again
+              focus
+            - the highest level vertical stack is being set to unfocused.. and
+              then the lower level receives the event but is already considered
+              focused so it wont send a focus event upward
+      - clicking on the window doesn't bring it forward
+         - broke with original code refactor, TUI draw cache never reorders
+           items, need z index in there. 
+            - HOWEVER z-index is only supposed to be WITHIN 1 element organizer. 
+              - "bring to front" only ever looks at local z
+      - terminal popup from window generator isn't receiving events.. or maybe
+        not processing them
+      - expanding pane scrollable is not refershing properly on scrolls
+         - looks like the leftmost chs are not being moved
+      - terminal inner-showcase is not removing cursor in sl
+         - the cursor is removed once an event is send into the "showcase" pane
+           but not before... confirmed that it IS the cursor which the yeehaw-terminal pane is
+           drawing. This event is removing the cursor because it will set
+           hide_cursor to true, which is otherwise not yet set.
+      - showcase train completion doesn't reset the color of the pane (should be
+        black and not say exit
+           - the issue is that the terminal pane doesn't have receivable events
+             now that the prioritizer was removed and the receivable events are 
+             all lumped together (for focused and non-focused)
+      - terminal inner-showcase has funny bg color on widget dial
+         - VT100 wierdness: It turns RGB colors into defaults for some insane
+           reason... just dont' just default colors
+
 10. Mouse routing.
     - integrate in better capture event logic, if the mouse event is NOT
       captured, send the event to the next priority down. [DONE]
