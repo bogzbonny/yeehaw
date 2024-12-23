@@ -143,10 +143,6 @@ impl TerminalPane {
         .into()
     }
 
-    //pub fn reset_prev_draw(&self) {
-    //    *self.prev_draw.borrow_mut() = Vec::new();
-    //}
-
     pub fn custom_destruct_event_name(id: ElementID) -> String {
         format!("destruct_{id}")
     }
@@ -303,9 +299,12 @@ impl Element for TerminalPane {
                 (false, EventResponses::default())
             }
             Event::Custom(name, _) => {
+                debug!("terminal pane custom event: {}", name);
                 if name == Self::custom_destruct_event_name(self.id()) {
+                    debug!("1");
                     (true, EventResponse::Destruct.into())
                 } else {
+                    debug!("2");
                     (false, EventResponses::default())
                 }
             }

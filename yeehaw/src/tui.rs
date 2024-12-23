@@ -104,6 +104,7 @@ impl Tui {
             .eo
             .add_element(main_el.clone(), Some(Box::new(self.cup.clone())));
         self.cup.eo.initialize(&ctx, Box::new(self.cup.clone()));
+        self.cup.main_el_id = main_el.id();
 
         sc_startup()?;
         self.launch().await?;
@@ -158,7 +159,7 @@ impl Tui {
 
                 Some(ev_res) = self.ev_recv.recv() => {
                     let (_, resps) = self.cup.eo.event_process(&self.context(), ev_res, Box::new(self.cup.clone()));
-                    if process_event_resps(resps, None)? {
+                    if process_event_resps(resps, None, &self.cup.eo, self.main_el_id.clone())? {
                         break Ok(());
                     }
                 }
@@ -214,7 +215,7 @@ impl Tui {
                 .eo
                 .routed_event_process(&ctx, evs.into(), Box::new(self.cup.clone()));
 
-        process_event_resps(resps, None)
+        process_event_resps(resps, None, &self.cup.eo, self.main_el_id.clone())
     }
 
     /// process_event_mouse handles mouse events
@@ -226,7 +227,7 @@ impl Tui {
                 .eo
                 .mouse_event_process(&ctx, &mouse_ev, Box::new(self.cup.clone()));
 
-        process_event_resps(resps, None)
+        process_event_resps(resps, None, &self.cup.eo, self.main_el_id.clone())
     }
 
     pub fn clear_screen(&mut self) -> Result<(), Error> {
@@ -252,6 +253,8 @@ impl Tui {
     /// lower down the tree.
     pub fn render(&mut self, from_event: bool) -> Result<(), Error> {
         // reduce the animation speed requirements if the tui is rendering from an event
+        // this is to prevent the tui from feeling laggy when a lot of complex-to-render
+        // events are being received
         let delay = if from_event { self.animation_speed * 2 } else { self.animation_speed };
 
         if self.last_render.elapsed() < delay || self.rendering {
@@ -314,8 +317,12 @@ impl Tui {
 }
 
 pub fn process_event_resps(
-    resps: EventResponses, exit_tx: Option<WatchSender<bool>>,
+    resps: EventResponses, exit_tx: Option<WatchSender<bool>>, el_org: &ElementOrganizer,
+    main_el_id: ElementID,
 ) -> Result<bool, Error> {
+    if !resps.is_empty() {
+        debug!("resps: {:?}", resps);
+    }
     // only check for response for quit
     for resp in resps.iter() {
         if matches!(resp, EventResponse::Quit | EventResponse::Destruct) {
@@ -325,6 +332,11 @@ pub fn process_event_resps(
             return Ok(true); // quit
         }
     }
+    // check to make sure the element organizer still has the main element
+    if el_org.get_element(&main_el_id).is_none() {
+        return Ok(true); // quit
+    }
+
     Ok(false)
 }
 
@@ -336,6 +348,7 @@ pub struct TuiParent {
     pub exit_tx: WatchSender<bool>,
     /// event senter for internally generated events
     pub ev_tx: MpscSender<Event>,
+    pub main_el_id: ElementID,
 }
 
 impl TuiParent {
@@ -348,6 +361,7 @@ impl TuiParent {
             el_store: Rc::new(RefCell::new(HashMap::new())),
             exit_tx,
             ev_tx,
+            main_el_id: "".to_string(),
         }
     }
 }
@@ -367,7 +381,12 @@ impl Parent for TuiParent {
         let b: Box<dyn Parent> = Box::new(self.clone());
         self.eo
             .partially_process_ev_resps(parent_ctx, child_el_id, &mut resps, &b);
-        if let Err(e) = process_event_resps(resps, Some(self.exit_tx.clone())) {
+        if let Err(e) = process_event_resps(
+            resps,
+            Some(self.exit_tx.clone()),
+            &self.eo,
+            self.main_el_id.clone(),
+        ) {
             log_err!(
                 "Error in propagate_responses_upward, process_event_resps: {:?}",
                 e
