@@ -270,7 +270,7 @@ impl TextBox {
             .at(start_x.clone(), start_y)
             .with_width(DynVal::new_fixed(lnw as i32))
             .with_no_wordwrap()
-            .non_editable()
+            .non_editable(init_ctx)
             .non_navigable();
 
         ln_tb.pane.set_end_y(end_y);
@@ -385,13 +385,13 @@ impl TextBox {
     }
 
     pub fn editable(self, init_ctx: &Context) -> Self {
-        self.inner.borrow().set_editable();
+        self.inner.borrow().set_editable(init_ctx);
         self.reset_sb_sizes(init_ctx);
         self
     }
 
     pub fn non_editable(self, init_ctx: &Context) -> Self {
-        self.inner.borrow().set_non_editable();
+        self.inner.borrow().set_non_editable(init_ctx);
         self.reset_sb_sizes(init_ctx);
         self
     }
@@ -619,8 +619,12 @@ impl TextBoxInner {
             corner_decor: Rc::new(RefCell::new(DrawCh::new('⁙', Style::default_const()))),
             right_click_menu: Rc::new(RefCell::new(None)),
         };
+        tb.set_editable_right_click_menu(ctx);
+        tb
+    }
 
-        let (tb1, tb2, tb3) = (tb.clone(), tb.clone(), tb.clone());
+    pub fn set_editable_right_click_menu(&self, ctx: &Context) {
+        let (tb1, tb2, tb3) = (self.clone(), self.clone(), self.clone());
         let rcm = RightClickMenu::new(ctx, MenuStyle::default()).with_menu_items(
             ctx,
             vec![
@@ -645,9 +649,24 @@ impl TextBoxInner {
                 ))),
             ],
         );
-        *tb.right_click_menu.borrow_mut() = Some(rcm);
+        *self.right_click_menu.borrow_mut() = Some(rcm);
+    }
 
-        tb
+    pub fn set_non_editable_right_click_menu(&self, ctx: &Context) {
+        let tb = self.clone();
+        let rcm = RightClickMenu::new(ctx, MenuStyle::default()).with_menu_items(
+            ctx,
+            vec![
+                MenuItem::new(ctx, MenuPath("Copy".to_string())).with_click_fn(Some(Box::new(
+                    move |_ctx| {
+                        tb.is_dirty.replace(true);
+                        tb.copy_to_clipboard();
+                        EventResponses::default()
+                    },
+                ))),
+            ],
+        );
+        *self.right_click_menu.borrow_mut() = Some(rcm);
     }
 
     pub fn at<D: Into<DynVal>, D2: Into<DynVal>>(self, loc_x: D, loc_y: D2) -> Self {
@@ -675,25 +694,27 @@ impl TextBoxInner {
         self
     }
 
-    pub fn set_editable(&self) {
+    pub fn set_editable(&self, ctx: &Context) {
         *self.editable.borrow_mut() = true;
         self.pane
             .set_focused_receivable_events(TextBoxInner::editable_receivable_events());
+        self.set_editable_right_click_menu(ctx);
     }
 
-    pub fn set_non_editable(&self) {
+    pub fn set_non_editable(&self, ctx: &Context) {
         *self.editable.borrow_mut() = false;
         self.pane
             .set_focused_receivable_events(TextBoxInner::non_editable_receivable_events());
+        self.set_non_editable_right_click_menu(ctx);
     }
 
-    pub fn editable(self) -> Self {
-        self.set_editable();
+    pub fn editable(self, ctx: &Context) -> Self {
+        self.set_editable(ctx);
         self
     }
 
-    pub fn non_editable(self) -> Self {
-        self.set_non_editable();
+    pub fn non_editable(self, ctx: &Context) -> Self {
+        self.set_non_editable(ctx);
         self
     }
 

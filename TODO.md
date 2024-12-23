@@ -1,7 +1,7 @@
+01. textbox cut/paste shouldn't work when non-editable
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-01. textbox paste shouldn't work when non-editable
 
 01. cleanup the widgets example 
     - showcase should just use the same widgets example pane
