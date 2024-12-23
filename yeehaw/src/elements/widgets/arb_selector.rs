@@ -82,7 +82,7 @@ impl DerefMut for SelChanges {
     }
 }
 
-pub type SelectFn = Box<dyn FnMut(Context, &ArbSelector) -> EventResponses>;
+pub type SelectFn = Box<dyn FnMut(Context, &ArbSelector, usize) -> EventResponses>;
 
 impl ArbSelector {
     const KIND: &'static str = "arb_selector";
@@ -201,7 +201,7 @@ impl ArbSelector {
             positions_map: Rc::new(RefCell::new(positions_map)),
             selection_changes: Rc::new(RefCell::new(selection_changes)),
             clicked_down: Rc::new(RefCell::new(false)),
-            select_fn: Rc::new(RefCell::new(Box::new(|_, _| EventResponses::default()))),
+            select_fn: Rc::new(RefCell::new(Box::new(|_, _, _| EventResponses::default()))),
         };
 
         let t_ = t.clone();
@@ -240,8 +240,12 @@ impl ArbSelector {
     }
 
     pub fn with_fn(self, select_fn: SelectFn) -> Self {
-        *self.select_fn.borrow_mut() = select_fn;
+        self.set_select_fn(select_fn);
         self
+    }
+
+    pub fn set_select_fn(&self, select_fn: SelectFn) {
+        *self.select_fn.borrow_mut() = select_fn;
     }
 
     pub fn with_width(self, width: DynVal) -> Self {
@@ -290,7 +294,7 @@ impl ArbSelector {
         }
         self.set_position(pos);
         let mut select_fn = self.select_fn.borrow_mut();
-        select_fn(ctx.clone(), self)
+        select_fn(ctx.clone(), self, pos)
     }
 
     pub fn increment_position(&self, ctx: &Context) -> EventResponses {

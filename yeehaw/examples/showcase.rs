@@ -11,8 +11,8 @@ async fn main() -> Result<(), Error> {
     std::env::set_var("RUST_BACKTRACE", "1");
 
     let (mut tui, ctx) = Tui::new()?;
-    let main = PaneScrollable::new_expanding(&ctx, 120, 35);
-    let limiter = PaneLimiter::new(Box::new(main.clone()), 120, 35);
+    let main = PaneScrollable::new_expanding(&ctx, 123, 35);
+    let limiter = PaneLimiter::new(Box::new(main.clone()), 123, 35);
     let main_vs = VerticalStackFocuser::new(&ctx);
     main.add_element(Box::new(main_vs.clone()));
 
@@ -187,9 +187,11 @@ pub fn window_generation_zone(
     el.add_element(Box::new(label));
 
     let alpha_slider = Slider::new_basic_block(ctx)
+        .with_gradient(Color::BLUE, Color::AQUA)
         .with_position(0.9)
         .with_width(DynVal::new_flex(0.4))
         .at(1, 11);
+
     let label = alpha_slider.label(ctx, "background alpha:").underlined();
     el.add_element(Box::new(label));
     el.add_element(Box::new(alpha_slider.clone()));
@@ -348,6 +350,56 @@ pub fn window_generation_zone(
 pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
     let el = ParentPaneOfSelectable::new(ctx).with_bg(Color::MIDNIGHT_BLUE);
 
+    // fill dd entries with 20 items
+    let dd_entries = (1..=20)
+        .map(|i| format!("entry {}", i))
+        .collect::<Vec<String>>();
+
+    let x_min = 1;
+    let mut y_min = 2;
+    let dropdown = DropdownList::new(ctx, dd_entries, Box::new(|_, _| EventResponses::default()))
+        .with_max_expanded_height(10)
+        .with_width(
+            DynVal::default()
+                .plus_max_of(DynVal::new_flex(0.2))
+                .plus_max_of(DynVal::new_fixed(12)),
+        )
+        .at(x_min, y_min);
+    el.add_element(Box::new(dropdown.label(ctx, "dropdown-list:")));
+    el.add_element(Box::new(dropdown));
+
+    y_min += 3;
+    let y = DynVal::new_flex_with_min_fixed(0.1, y_min);
+    let rbs = RadioButtons::new(
+        ctx,
+        vec![" wotz".to_string(), " op".to_string(), " dok".to_string()],
+    )
+    .at(x_min, y);
+    el.add_element(Box::new(rbs.label(ctx, "radio buttons:")));
+    el.add_element(Box::new(rbs));
+
+    y_min += 5;
+    let y = DynVal::new_flex_with_min_fixed(0.15, y_min);
+    let toggle = Toggle::new(ctx, " ★ ".to_string(), " ⏾ ".to_string()).at(x_min, y);
+    el.add_element(Box::new(toggle.label(ctx, "toggle:")));
+    el.add_element(Box::new(toggle));
+
+    y_min += 3;
+    let y = DynVal::new_flex_with_min_fixed(0.2, y_min);
+    let cb = Checkbox::new(ctx).at(x_min, y);
+    let cb_label = Label::new_for_el(ctx, cb.get_dyn_location_set().l.clone(), "check me");
+    el.add_element(Box::new(cb));
+    el.add_element(Box::new(cb_label));
+
+    y_min += 2;
+    let y = DynVal::new_flex_with_min_fixed(0.20, y_min);
+    let cb2 = Checkbox::new(ctx).at(x_min, y);
+    let cb2_label = Label::new_for_el(ctx, cb2.get_dyn_location_set().l.clone(), "check me");
+    el.add_element(Box::new(cb2));
+    el.add_element(Box::new(cb2_label));
+
+    //---------------------------
+
     let l1 = Label::new(ctx, "some label");
     let l = l1.clone().at(DynVal::new_flex(0.5), DynVal::new_flex(0.5));
     el.add_element(Box::new(l));
@@ -386,49 +438,6 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
         .with_micro_shadow(ButtonMicroShadow::default())
         .at(DynVal::new_flex(0.25), DynVal::new_flex(0.10));
     el.add_element(Box::new(button3));
-
-    let cb = Checkbox::new(ctx).at(DynVal::new_flex(0.1), DynVal::new_flex(0.1));
-    let cb_label = Label::new_for_el(ctx, cb.get_dyn_location_set().l.clone(), "check me");
-    el.add_element(Box::new(cb));
-    el.add_element(Box::new(cb_label));
-
-    let cb2 = Checkbox::new(ctx).at(DynVal::new_flex(0.1), DynVal::new_flex(0.1).plus_fixed(1));
-    let cb2_label = Label::new_for_el(ctx, cb2.get_dyn_location_set().l.clone(), "check me");
-    el.add_element(Box::new(cb2));
-    el.add_element(Box::new(cb2_label));
-
-    let rbs = RadioButtons::new(
-        ctx,
-        vec![
-            "radio1".to_string(),
-            "radio2".to_string(),
-            "radio3".to_string(),
-        ],
-    )
-    .at(DynVal::new_flex(0.1), DynVal::new_flex(0.1).plus_fixed(10));
-    el.add_element(Box::new(rbs.label(ctx, "radio buttons:")));
-    el.add_element(Box::new(rbs));
-
-    let toggle = Toggle::new(ctx, " ★ ".to_string(), " ⏾ ".to_string())
-        .at(DynVal::new_flex(0.1), DynVal::new_flex(0.4));
-    el.add_element(Box::new(toggle.label(ctx, "toggle:")));
-    el.add_element(Box::new(toggle));
-
-    // fill dd entries with 20 items
-    let dd_entries = (1..=20)
-        .map(|i| format!("entry {}", i))
-        .collect::<Vec<String>>();
-
-    let dropdown = DropdownList::new(ctx, dd_entries, Box::new(|_, _| EventResponses::default()))
-        .with_max_expanded_height(10)
-        .with_width(
-            DynVal::default()
-                .plus_max_of(DynVal::new_flex(0.2))
-                .plus_max_of(DynVal::new_fixed(12)),
-        )
-        .at(DynVal::new_flex(0.1), DynVal::new_flex(0.8));
-    el.add_element(Box::new(dropdown.label(ctx, "dropdown-list:")));
-    el.add_element(Box::new(dropdown));
 
     let ld_entries = (1..=10)
         .map(|i| format!("entry {}", i))

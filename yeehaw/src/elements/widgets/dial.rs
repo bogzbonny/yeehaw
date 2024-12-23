@@ -14,7 +14,11 @@ pub struct Dial {
     label_selected_color: Rc<RefCell<Style>>,
     labels: Rc<RefCell<Vec<(usize, String)>>>, // position and strings
     spacing: Rc<RefCell<Spacing>>,
+    select_fn: Rc<RefCell<DialSelectFn>>,
 }
+
+//                                                    pos,   label
+pub type DialSelectFn = Box<dyn FnMut(Context, &Dial, usize, String) -> EventResponses>;
 
 impl Dial {
     const KIND: &'static str = "dial";
@@ -87,9 +91,11 @@ impl Dial {
             label_selected_color: Rc::new(RefCell::new(
                 Style::transparent().with_fg(Self::DEFAULT_LABEL_SEL_COLOR),
             )),
-
             labels: Rc::new(RefCell::new(labels)),
             spacing: Rc::new(RefCell::new(spacing.clone())),
+            select_fn: Rc::new(RefCell::new(Box::new(|_, _, _, _| {
+                EventResponses::default()
+            }))),
         }
     }
 
@@ -114,6 +120,11 @@ impl Dial {
     pub fn with_label_selected_color(mut self, ctx: &Context, label_selected_color: Style) -> Self {
         *self.label_selected_color.borrow_mut() = label_selected_color;
         self.reset_arb_selector(ctx);
+        self
+    }
+
+    pub fn with_fn(mut self, f: DialSelectFn) -> Self {
+        self.select_fn = Rc::new(RefCell::new(f));
         self
     }
 
@@ -146,6 +157,31 @@ impl Dial {
             .find(|(i, _)| *i == pos)
             .map(|(_, s)| s.clone())
             .unwrap_or_default()
+    }
+
+    /// Get the current position on the dial
+    pub fn get_position(&self) -> usize {
+        *self.pane.position.borrow()
+    }
+
+    #[must_use]
+    pub fn set_position(&mut self, ctx: &Context, pos: usize) -> EventResponses {
+        let start_pos = self.get_position();
+        if start_pos != pos {
+            self.pane.set_position(pos);
+            let label = self
+                .labels
+                .borrow()
+                .iter()
+                .find(|(p, _)| *p == pos)
+                .map(|(_, label)| label.clone())
+                .unwrap_or_default();
+            let dial_ = self.clone();
+            let ctx_ = ctx.clone();
+            let resps = self.select_fn.borrow_mut()(ctx_, &dial_, pos, label);
+            return resps;
+        }
+        EventResponses::default()
     }
 }
 
@@ -1075,4 +1111,24 @@ impl Spacing {
 }
 
 #[yeehaw_derive::impl_element_from(pane)]
-impl Element for Dial {}
+impl Element for Dial {
+    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        let start_pos = *self.pane.position.borrow();
+        let (cap, mut resps) = self.pane.receive_event(ctx, ev);
+        let end_pos = *self.pane.position.borrow();
+        if start_pos != end_pos {
+            let label = self
+                .labels
+                .borrow()
+                .iter()
+                .find(|(pos, _)| *pos == end_pos)
+                .map(|(_, label)| label.clone())
+                .unwrap_or_default();
+            let dial_ = self.clone();
+            let ctx_ = ctx.clone();
+            let resps_ = self.select_fn.borrow_mut()(ctx_, &dial_, end_pos, label);
+            resps.extend(resps_);
+        }
+        (cap, resps)
+    }
+}
