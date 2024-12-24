@@ -41,7 +41,7 @@ impl DropdownList {
     const KIND: &'static str = "dropdownlist";
 
     const STYLE: SelStyles = SelStyles {
-        selected_style: Style::new_const(Color::BLACK, Color::YELLOW),
+        selected_style: Style::new_const(Color::BLACK, Color::LIGHT_YELLOW3),
         ready_style: Style::new_const(Color::BLACK, Color::WHITE),
         unselectable_style: Style::new_const(Color::BLACK, Color::GREY13),
     };

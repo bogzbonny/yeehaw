@@ -26,7 +26,7 @@ impl Dial {
     const DEFAULT_DIAL_COLOR: Color = Color::AQUA;
     const DEFAULT_DIAL_KNOB_COLOR: Color = Color::LIME;
     const DEFAULT_LABEL_COLOR: Color = Color::GREY13;
-    const DEFAULT_LABEL_SEL_COLOR: Color = Color::YELLOW;
+    const DEFAULT_LABEL_SEL_COLOR: Color = Color::LIGHT_YELLOW3;
 
     /// create a new Dial, the Dial spacing will be chosen based on the number of labels
     pub fn new<S: Into<String>>(ctx: &Context, mut labels: Vec<S>) -> Self {
@@ -143,6 +143,11 @@ impl Dial {
         );
         pane.pane.set_kind(Self::KIND);
         self.pane = pane;
+    }
+
+    pub fn with_position(self, pos: usize) -> Self {
+        self.pane.set_position(pos);
+        self
     }
 
     pub fn at<D: Into<DynVal>, D2: Into<DynVal>>(self, x: D, y: D2) -> Self {

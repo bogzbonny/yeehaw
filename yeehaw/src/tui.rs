@@ -223,6 +223,7 @@ impl Tui {
                                             std::cmp::Ordering::Greater => {
                                                 let diff = scr_height - last_scr_height;
                                                 execute!(stdout(), terminal::ScrollUp(diff))?;
+
                                                 inline.scr_height = scr_height;
                                                 inline.cursor_start_row += diff;
                                                 let cur_row = inline.cursor_start_row;

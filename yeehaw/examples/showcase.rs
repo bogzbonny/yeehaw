@@ -12,8 +12,8 @@ async fn main() -> Result<(), Error> {
 
     let (mut tui, ctx) = Tui::new()?;
     let main = PaneScrollable::new_expanding(&ctx, 123, 35);
-    //let limiter = PaneLimiter::new(Box::new(main.clone()), 123, 35);
-    let limiter = PaneLimiter::new(Box::new(main.clone()), 1000, 1000);
+    let limiter = PaneLimiter::new(Box::new(main.clone()), 140, 40);
+    //let limiter = PaneLimiter::new(Box::new(main.clone()), 1000, 1000);
     let main_vs = VerticalStackFocuser::new(&ctx);
     main.add_element(Box::new(main_vs.clone()));
 
@@ -94,9 +94,7 @@ async fn main() -> Result<(), Error> {
     let tabs = Tabs::new(&ctx);
     tabs.pane.set_focused(false);
     let widgets_tab = widgets_demo(&ctx);
-    let el2 = DebugSizePane::new(&ctx)
-        .with_bg(Color::BLUE)
-        .with_text("tab 2".to_string());
+    let colors_tab = colors_demo(&ctx);
     let el3 = DebugSizePane::new(&ctx)
         .with_bg(Color::GREEN)
         .with_text("tab 3".to_string());
@@ -118,7 +116,7 @@ async fn main() -> Result<(), Error> {
     }) as Box<dyn FnOnce()>);
 
     tabs.push(widgets_tab, "widgets");
-    tabs.push(Box::new(el2), "colors");
+    tabs.push(colors_tab, "colors");
     tabs.push(Box::new(el3), "$EDITOR");
     tabs.push(Box::new(el4), "images");
     tabs.push(Box::new(el5), "file-nav");
@@ -474,8 +472,8 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
     let x_smile = x.plus(3.into());
     let happy = r#"
 \________/"#;
-    let shock = r#"  ______
- [______]"#;
+    let excit = r#" ________
+ \______/"#;
     let sad = r#"
 /‾‾‾‾‾‾‾‾\"#;
     let smile_label = Label::new(ctx, happy).at(x_smile, y.clone());
@@ -485,7 +483,7 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
     dial1.set_fn(Box::new(move |ctx, _, pos, _| {
         let _ = dial2_.set_position(&ctx, pos);
         match pos {
-            2 => smile_label_.set_text(shock.to_string()),
+            2 => smile_label_.set_text(excit.to_string()),
             4 => smile_label_.set_text(sad.to_string()),
             _ => smile_label_.set_text(happy.to_string()),
         }
@@ -497,7 +495,7 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
     dial2.set_fn(Box::new(move |ctx, _, pos, _| {
         let _ = dial1_.set_position(&ctx, pos);
         match pos {
-            2 => smile_label_.set_text(shock.to_string()),
+            2 => smile_label_.set_text(excit.to_string()),
             4 => smile_label_.set_text(sad.to_string()),
             _ => smile_label_.set_text(happy.to_string()),
         }
@@ -553,6 +551,158 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
         .with_dyn_width(DynVal::new_fixed(32))
         .at(x, y.clone()),
     ));
+
+    Box::new(el)
+}
+
+pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
+    let el = ParentPaneOfSelectable::new(ctx).with_bg(Color::DARK_OLIVE_GREEN);
+
+    let x = DynVal::new_fixed(1);
+    let mut y = DynVal::new_fixed(1);
+    let desc_text = "Within yeehaw, a standard\n\
+                     color can be an RGBA or a\n\
+                     gradient changing by position\n\
+                     or time (or both!).";
+    let description = Label::new(ctx, desc_text);
+    el.add_element(Box::new(description.at(x.clone(), y.clone())));
+
+    let fg_spiral = r#"              __,aaPPPPPPPPaa,__
+          ,adP"""'          `""Yb,_
+       ,adP'                     `"Yb,
+     ,dP'     ,aadPP"""""YYba,_     `"Y,
+    ,P'    ,aP"'            `""Ya,     "Y,
+   ,P'    aP'     _________     `"Ya    `Yb,
+  ,P'    d"    ,adP""""""""Yba,    `Y,    "Y,
+ ,d'   ,d'   ,dP"            `Yb,   `Y,    `Y,
+ d'   ,d'   ,d'    ,dP""Yb,    `Y,   `Y,    `b
+ 8    d'    d'   ,d"      "b,   `Y,   `8,    Y,
+ 8    8     8    d'    _   `Y,   `8    `8    `b
+ 8    8     8    8     8    `8    8     8     8
+ 8    Y,    Y,   `b, ,aP     P    8    ,P     8
+ I,   `Y,   `Ya    """"     d'   ,P    d"    ,P
+ `Y,   `8,    `Ya         ,8"   ,P'   ,P'    d'
+  `Y,   `Ya,    `Ya,,__,,d"'   ,P'   ,P"    ,P
+   `Y,    `Ya,     `""""'     ,P'   ,d"    ,P'
+    `Yb,    `"Ya,_          ,d"    ,P'    ,P'
+      `Yb,      ""YbaaaaaadP"     ,P'    ,P'   
+        `Yba,                   ,d'    ,dP'    
+ Normand  `"Yba,__       __,adP"     dP"
+ Veilleux     `"""""""""""""'                  "#;
+
+    let fg_butterfly = r#"                                 , 
+                                 ;o\ 
+                                 ;Ob`. 
+                                ;OOOOb`. 
+                               ;OOOOOY" ) 
+                              ;OOOO' ,%%) 
+                          \  /OOO ,%%%%,%\ 
+                           |:  ,%%%%%%;%%/ 
+                           ||,%%%%%%%%%%/ 
+                           ;|%%%%%%%%%'/`-'"`. 
+                          /: %%%%%%%%'/ c$$$$.`. 
+             `.______     \ \%%%%%%%'/.$$YF"Y$: ) 
+           _________ "`.\`\o \`%%' ,',$F,.   $F ) 
+  ___,--""'dOOO;,:%%`-._ o_,O_   ,',"',d88)  '  ) 
+"'. YOOOOOOO';%%%%%%%%%;`-O   )_     ,X888F   _/ 
+   \ YOOOO',%%%%%%%%%%Y    \__;`),-.  `""F  ,' 
+    \ `" ,%%%%%%%%%%,' _,-   \-' \_ `------' 
+     \_ %%%%',%%%%%_,-' ,;    ( _,-\ 
+       `-.__`%%',-' .c$$'     |\-_,-\ 
+            `""; ,$$$',md8oY  : `\_,') 
+              ( ,$$$F `88888  ;   `--' 
+               \`$$(    `""' / 
+                \`"$$c'   _,' 
+ -hrr-           `.____,-' "#;
+
+    let mut y_art = DynVal::new_fixed(0);
+    let mut x_art = x.plus(30.into());
+    let fg_art = Label::new(ctx, fg_butterfly);
+    el.add_element(Box::new(
+        Bordered::new_basic(
+            ctx,
+            Box::new(fg_art),
+            Style::transparent().with_fg(Color::WHITE),
+        )
+        .with_dyn_height(DynVal::new_fixed(26))
+        .with_dyn_width(DynVal::new_fixed(51))
+        .at(x_art.clone(), y_art.clone()),
+    ));
+
+    y_art = y_art.plus(26.into());
+    x_art = x_art.plus(8.into());
+
+    let dial_fg_art = Dial::new_spacious(
+        ctx,
+        vec![
+            (1, "None"),
+            (2, "Butterfly"),
+            (3, "Spiral"),
+            (8, "Rust-Logo"),
+            (9, "Saturn"),
+            (10, "Chompy"),
+        ],
+    )
+    .with_position(2)
+    .at(x_art.clone(), y_art.clone());
+    el.add_element(Box::new(dial_fg_art.label_left_top(ctx, "fg text:")));
+    el.add_element(Box::new(dial_fg_art.clone()));
+
+    y = y.plus(5.into());
+    let x_tog = DynVal::new_fixed(18);
+    let toggle = Toggle::new(ctx, "  fg  ".to_string(), "  bg  ".to_string()).at(x_tog, y.clone());
+    el.add_element(Box::new(toggle));
+
+    y = y.plus(1.into());
+
+    let dial_color = Dial::new_spacious(
+        ctx,
+        vec![
+            (0, "Solid"),
+            (1, "Time-Gradient"),
+            (2, "Radial-Gradient"),
+            (3, "Linear-Gradient"),
+            (4, "Radial-Time"),
+            (5, "Linear-Time"),
+        ],
+    )
+    .at(x.clone(), y.clone());
+    el.add_element(Box::new(dial_color.label(ctx, "color kind:")));
+    el.add_element(Box::new(dial_color.clone()));
+
+    //let y = y.plus(lb_height).plus(3.into());
+    //let ntb_width = DynVal::default()
+    //    .plus_max_of(DynVal::new_flex(0.10))
+    //    .plus_max_of(DynVal::new_fixed(8));
+    //let ntb = NumbersTextBox::new(ctx, 0f64)
+    //    .with_min(0.0)
+    //    .with_max(1.0)
+    //    .with_decimal_places(2)
+    //    .with_width(ntb_width)
+    //    .at(x.clone(), y.clone());
+    //el.add_element(Box::new(ntb.clone()));
+    //el.add_element(Box::new(
+    //    ntb.label(ctx, "numbers-textbox:\n(linked to slider)"),
+    //));
+
+    //let y = y.plus(3.into());
+    //let ntb_ = ntb.clone();
+    //let slider = Slider::new_basic_block(ctx)
+    //    .with_gradient(Color::AQUA, Color::ORANGE)
+    //    .with_width(lb_width.clone())
+    //    .at(x.clone(), y.clone())
+    //    .with_fn(Box::new(move |_, sl| {
+    //        let p = sl.get_position();
+    //        ntb_.change_value(p);
+    //        EventResponses::default()
+    //    }));
+    //let slider_ = slider.clone();
+    //ntb.set_value_changed_hook(Box::new(move |v| {
+    //    slider_.set_position(v);
+    //    EventResponses::default()
+    //}));
+    //el.add_element(Box::new(slider.label(ctx, "slider:")));
+    //el.add_element(Box::new(slider));
 
     Box::new(el)
 }

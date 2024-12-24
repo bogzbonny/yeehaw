@@ -35,7 +35,7 @@ impl RadioButtons {
     const KIND: &'static str = "radio";
 
     const STYLE: SelStyles = SelStyles {
-        selected_style: Style::new_const(Color::YELLOW, Color::TRANSPARENT),
+        selected_style: Style::new_const(Color::LIGHT_YELLOW3, Color::TRANSPARENT),
         ready_style: Style::new_const(Color::WHITE, Color::TRANSPARENT),
         unselectable_style: Style::new_const(Color::GREY13, Color::TRANSPARENT),
     };

@@ -25,24 +25,113 @@
              position
      ^ DONE
 
+     - a big "DO NOT PRESS button" which instigates the blue screen of death
      - TABS Zone
        - neovim $EDITOR tab
        - image
        - file_nav
-       - gradient 
-          - could have some ascii art drawings to pick from for the FG
-             - a dial with a few choice ascii arts
-          - toggle for FG and BG gradients
-              - dial gradient kind: solid color, time-gradient, radial gradient, linear
-                gradient. radial-time, linear-time
-              - slider, gradient size between colors (enforce static) 
-              - slider, change speed, ms for time gradients
-              - slider with numbers-tb for gradient angle
-              - dial, number of colors (greyed out for solid-color kind)
-              - some sliders: 1 for each color (greyed out when colors
-                disabled) maybe with an RGB tb for css color input
-          - dial, fg ascii art (default as a butterfly)
-     - a big "DO NOT PRESS button" which instigates the blue screen of death
+       - gradient  𐅱  
+         - a dial with a few choice fg ascii arts 
+           - none, butterfly, spiral, saturn, rust logo, chompy
+         - toggle for FG and BG Color
+           - dial gradient kind: solid color, time-gradient, radial gradient,
+             linear gradient. radial-time, linear-time
+           - slider, gradient size between colors (enforce static) 
+           - slider, change speed, ms for time gradients
+           - slider with numbers-tb for gradient angle
+           - dial, number of colors (greyed out for solid-color kind)
+           - some sliders: 1 for each color (greyed out when colors disabled)
+             maybe with an RGB tb for css color input
+```
+      △ △ △ △ △     
+    ╭─────o─────╮
+  ◁ │ ███████   │ ▷  
+  ◁ o  ██   ██  o ▷  
+  ◁ │  ██████   │ ▷ 
+  ◁ │  ██   ██  │ ▷  
+  ◁ │ ████  ███ │ ▷  
+    ╰──o─────o──╯
+      ▽ ▽ ▽ ▽ ▽      
+                    
+
+            CHOMPPY ANGRYYY!
+            DO NOT TEST CHOMPPY!
+    _____  / 
+  _/o\ /o \ 
+ /        |
+ v v v v  |
+  ^ ^ ^ ^ |
+  \.......|        
+                           
+                                  , 
+                                  ;o\ 
+                                  ;Ob`. 
+                                 ;OOOOb`. 
+                                ;OOOOOY" ) 
+                               ;OOOO' ,%%) 
+                           \  /OOO ,%%%%,%\ 
+                            |:  ,%%%%%%;%%/ 
+                            ||,%%%%%%%%%%/ 
+                            ;|%%%%%%%%%'/`-'"`. 
+                           /: %%%%%%%%'/ c$$$$.`. 
+              `.______     \ \%%%%%%%'/.$$YF"Y$: ) 
+            _________ "`.\`\o \`%%' ,',$F,.   $F ) 
+   ___,--""'dOOO;,:%%`-._ o_,O_   ,',"',d88)  '  ) 
+-"'. YOOOOOOO';%%%%%%%%%;`-O   )_     ,X888F   _/ 
+    \ YOOOO',%%%%%%%%%%Y    \__;`),-.  `""F  ,' 
+     \ `" ,%%%%%%%%%%,' _,-   \-' \_ `------' 
+      \_ %%%%',%%%%%_,-' ,;    ( _,-\ 
+        `-.__`%%',-' .c$$'     |\-_,-\ 
+             `""; ,$$$',md8oY  : `\_,') 
+               ( ,$$$F `88888  ;   `--' 
+                \`$$(    `""' / 
+                 \`"$$c'   _,' 
+  -hrr-           `.____,-'
+
+
+              __,aaPPPPPPPPaa,__
+          ,adP"""'          `""Yb,_
+       ,adP'                     `"Yb,
+     ,dP'     ,aadPP"""""YYba,_     `"Y,
+    ,P'    ,aP"'            `""Ya,     "Y,
+   ,P'    aP'     _________     `"Ya    `Yb,
+  ,P'    d"    ,adP""""""""Yba,    `Y,    "Y,
+ ,d'   ,d'   ,dP"            `Yb,   `Y,    `Y,
+ d'   ,d'   ,d'    ,dP""Yb,    `Y,   `Y,    `b
+ 8    d'    d'   ,d"      "b,   `Y,   `8,    Y,
+ 8    8     8    d'    _   `Y,   `8    `8    `b
+ 8    8     8    8     8    `8    8     8     8
+ 8    Y,    Y,   `b, ,aP     P    8    ,P     8
+ I,   `Y,   `Ya    """"     d'   ,P    d"    ,P
+ `Y,   `8,    `Ya         ,8"   ,P'   ,P'    d'
+  `Y,   `Ya,    `Ya,,__,,d"'   ,P'   ,P"    ,P
+   `Y,    `Ya,     `""""'     ,P'   ,d"    ,P'
+    `Yb,    `"Ya,_          ,d"    ,P'    ,P'
+      `Yb,      ""YbaaaaaadP"     ,P'    ,P'          
+        `Yba,                   ,d'    ,dP'            
+ Normand  `"Yba,__       __,adP"     dP"
+ Veilleux     `"""""""""""""'                  
+                                         _.oo.
+                 _.u[[/;:,.         .odMMMMMM'
+              .o888UU[[[/;:-.  .o@P^    MMM^
+             oN88888UU[[[/;::-.        dP^
+            dNMMNN888UU[[[/;:--.   .o@P^
+           ,MMMMMMN888UU[[/;::-. o@^
+           NNMMMNN888UU[[[/~.o@P^
+           888888888UU[[[/o@^-..
+          oI8888UU[[[/o@P^:--..
+       .@^  YUU[[[/o@^;::---..
+     oMP     ^/o@P^;:::---..
+  .dMMM    .o@^ ^;::---...
+ dMMMMMMM@^`       `^^^^
+YMMMUP^
+ ^^
+
+unknown
+
+
+```
+
 
 01. gif of showcase example - will need to record with non-VHS/asciicinema-tool
     to get mouse movements

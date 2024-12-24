@@ -196,7 +196,7 @@ impl ListBoxInner {
     const KIND: &'static str = "listbox_inner";
 
     const STYLE: SelStyles = SelStyles {
-        selected_style: Style::new_const(Color::BLACK, Color::YELLOW),
+        selected_style: Style::new_const(Color::BLACK, Color::LIGHT_YELLOW3),
         ready_style: Style::new_const(Color::BLACK, Color::GREY20),
         unselectable_style: Style::new_const(Color::BLACK, Color::GREY13),
     };

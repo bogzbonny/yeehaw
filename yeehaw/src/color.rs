@@ -1048,6 +1048,7 @@ impl Color {
     pub const YELLOW2:          Color = Color::new(220, 220, 0);
     pub const PALLID_BLUE:      Color = Color::new(90, 110, 190);
     pub const LIGHT_YELLOW2:    Color = Color::new(255, 255, 200);
+    pub const LIGHT_YELLOW3:    Color = Color::new(255, 255, 100);
 
     /// css named colours
     pub const MAROON:                  Color = Color::new(128, 0, 0);
