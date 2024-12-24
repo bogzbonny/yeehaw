@@ -12,7 +12,8 @@ async fn main() -> Result<(), Error> {
 
     let (mut tui, ctx) = Tui::new()?;
     let main = PaneScrollable::new_expanding(&ctx, 123, 35);
-    let limiter = PaneLimiter::new(Box::new(main.clone()), 123, 35);
+    //let limiter = PaneLimiter::new(Box::new(main.clone()), 123, 35);
+    let limiter = PaneLimiter::new(Box::new(main.clone()), 1000, 1000);
     let main_vs = VerticalStackFocuser::new(&ctx);
     main.add_element(Box::new(main_vs.clone()));
 
@@ -380,7 +381,7 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
     el.add_element(Box::new(rbs));
 
     y_min += 5;
-    let y = DynVal::new_flex_with_min_fixed(0.5, y_min);
+    let y = DynVal::new_flex_with_min_fixed(0.4, y_min);
     let toggle = Toggle::new(ctx, " ★ ".to_string(), " ⏾ ".to_string()).at(x_min, y);
     el.add_element(Box::new(toggle.label(ctx, "toggle:")));
     el.add_element(Box::new(toggle));
@@ -471,9 +472,12 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
 
     let y = y.plus(4.into());
     let x_smile = x.plus(3.into());
-    let happy = r#"\________/"#;
-    let confu = r#"~~~~~~~~~~"#;
-    let sad = r#"/‾‾‾‾‾‾‾‾\"#;
+    let happy = r#"
+\________/"#;
+    let shock = r#"  ______
+ [______]"#;
+    let sad = r#"
+/‾‾‾‾‾‾‾‾\"#;
     let smile_label = Label::new(ctx, happy).at(x_smile, y.clone());
 
     let smile_label_ = smile_label.clone();
@@ -481,7 +485,7 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
     dial1.set_fn(Box::new(move |ctx, _, pos, _| {
         let _ = dial2_.set_position(&ctx, pos);
         match pos {
-            2 => smile_label_.set_text(confu.to_string()),
+            2 => smile_label_.set_text(shock.to_string()),
             4 => smile_label_.set_text(sad.to_string()),
             _ => smile_label_.set_text(happy.to_string()),
         }
@@ -493,7 +497,7 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
     dial2.set_fn(Box::new(move |ctx, _, pos, _| {
         let _ = dial1_.set_position(&ctx, pos);
         match pos {
-            2 => smile_label_.set_text(confu.to_string()),
+            2 => smile_label_.set_text(shock.to_string()),
             4 => smile_label_.set_text(sad.to_string()),
             _ => smile_label_.set_text(happy.to_string()),
         }
@@ -532,8 +536,8 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
 
     let y = y.plus(tb_height).plus(2.into());
     let desc_text = "This is selectable pane, try\n\
-                     clicking around with the\n\
-                     mouse! try using tabs to\n\
+                     clicking/scrolling around with\n\
+                     the mouse! try using tabs to\n\
                      switch between different\n\
                      widgets, other keys (arrow,\n\
                      enter, etc.) will also\n\
@@ -546,7 +550,7 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
             Style::transparent().with_fg(Color::WHITE),
         )
         .with_dyn_height(DynVal::new_fixed(9))
-        .with_dyn_width(DynVal::new_fixed(31))
+        .with_dyn_width(DynVal::new_fixed(32))
         .at(x, y.clone()),
     ));
 

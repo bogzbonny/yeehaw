@@ -87,6 +87,13 @@ impl DynVal {
         }
     }
 
+    pub fn max_of(d1: DynVal, d2: DynVal) -> Self {
+        DynVal {
+            plus_max_of: vec![d1, d2],
+            ..DynVal::default()
+        }
+    }
+
     /// Create a new DynVal with a flex but which bounds at a minimum fixed value
     pub fn new_flex_with_min_fixed(flex: f64, min: i32) -> Self {
         DynVal {

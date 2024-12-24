@@ -26,6 +26,7 @@
      ^ DONE
 
      - TABS Zone
+       - neovim $EDITOR tab
        - image
        - file_nav
        - gradient 
@@ -41,7 +42,6 @@
               - some sliders: 1 for each color (greyed out when colors
                 disabled) maybe with an RGB tb for css color input
           - dial, fg ascii art (default as a butterfly)
-       - neovim $EDITOR tab
      - a big "DO NOT PRESS button" which instigates the blue screen of death
 
 01. gif of showcase example - will need to record with non-VHS/asciicinema-tool

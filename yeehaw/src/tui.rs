@@ -40,10 +40,13 @@ pub struct Tui {
 
     pub animation_speed: Duration,
     pub rendering: bool, // true if currently rendering
-    // the last time the screen was rendered
+    /// the last time the screen was rendered
     pub last_render: std::time::Instant,
 
     pub kill_on_ctrl_c: bool,
+
+    /// if Some then the TUI is rendered inline in the terminal
+    pub inline: Option<InlineTui>,
 
     /// last flushed internal screen, used to determine what needs to be flushed next
     //                            x  , y
@@ -52,6 +55,13 @@ pub struct Tui {
     pub exit_recv: WatchReceiver<bool>,
     /// event receiver for internally generated events
     pub ev_recv: MpscReceiver<Event>,
+}
+
+pub struct InlineTui {
+    /// the cursor start row of the tui
+    pub cursor_start_row: usize,
+    /// the height of the tui to take up inline
+    pub height: usize,
 }
 
 impl Tui {
@@ -73,6 +83,7 @@ impl Tui {
             last_render: std::time::Instant::now(),
             animation_speed: DEFAULT_ANIMATION_SPEED,
             kill_on_ctrl_c: true,
+            inline: None,
             sc_last_flushed: HashMap::new(),
             exit_recv,
             ev_recv,
@@ -84,7 +95,15 @@ impl Tui {
     }
 
     pub fn context(&self) -> Context {
-        Context::new_context_for_screen(self.launch_instant, &self.cup.hat, self.cup.ev_tx.clone())
+        let mut ctx = Context::new_context_for_screen(
+            self.launch_instant,
+            &self.cup.hat,
+            self.cup.ev_tx.clone(),
+        );
+        if let Some(inline) = &self.inline {
+            ctx.size.height = inline.height as u16;
+        }
+        ctx
     }
 
     pub async fn run(&mut self, main_el: Box<dyn Element>) -> Result<(), Error> {
@@ -109,6 +128,62 @@ impl Tui {
         sc_startup()?;
         self.launch().await?;
         sc_closedown()?;
+        Ok(())
+    }
+
+    /// run the TUI in terminal line
+    pub async fn run_in_line(
+        &mut self, main_el: Box<dyn Element>, height: usize,
+    ) -> Result<(), Error> {
+        self.main_el_id = main_el.id();
+        // add the element here after the location has been created
+        let mut ctx = Context::new_context_for_screen_no_dur(&self.cup.hat, self.cup.ev_tx.clone());
+        ctx.size.height = height as u16;
+        let loc = DynLocation::new_fixed(0, ctx.size.width as i32, 0, ctx.size.height as i32);
+        let loc = DynLocationSet::new(loc, vec![], 0);
+        main_el.set_dyn_location_set(loc);
+        main_el.set_visible(true);
+        main_el.set_focused(true);
+
+        // when adding the main element, nil is passed in as the parent
+        // this is because the top of the tree is the TUI's main EO and so no parent
+        // is necessary
+        self.cup
+            .eo
+            .add_element(main_el.clone(), Some(Box::new(self.cup.clone())));
+        self.cup.eo.initialize(&ctx, Box::new(self.cup.clone()));
+        self.cup.main_el_id = main_el.id();
+
+        // get the cursor position
+        let (_, mut cur_row) = cursor::position()?;
+        let scr_height = terminal::size()?.1;
+        let offset = if cur_row + height as u16 > scr_height {
+            cur_row + height as u16 - scr_height
+        } else {
+            0
+        };
+
+        cur_row -= offset;
+        self.inline = Some(InlineTui {
+            cursor_start_row: cur_row as usize,
+            height,
+        });
+
+        // TODO need to scroll if there isn't enough room in the terminal
+        execute!(stdout(), terminal::ScrollUp(offset)).unwrap();
+
+        sc_line_startup()?;
+        self.launch().await?;
+        sc_line_closedown()?;
+
+        // set the cursor
+        if cur_row + height as u16 == scr_height {
+            execute!(stdout(), terminal::ScrollUp(1)).unwrap();
+            execute!(stdout(), cursor::MoveTo(0, cur_row + height as u16),)?;
+        } else {
+            execute!(stdout(), cursor::MoveTo(0, cur_row + height as u16),)?;
+        }
+
         Ok(())
     }
 
@@ -220,8 +295,18 @@ impl Tui {
 
     /// process_event_mouse handles mouse events
     ///                                                                       exit-tui
-    pub fn process_event_mouse(&mut self, mouse_ev: CTMouseEvent) -> Result<bool, Error> {
+    pub fn process_event_mouse(&mut self, mut mouse_ev: CTMouseEvent) -> Result<bool, Error> {
         let ctx = self.context();
+        if let Some(inline) = &self.inline {
+            if mouse_ev.row < inline.cursor_start_row as u16 {
+                return Ok(false);
+            }
+            mouse_ev.row -= inline.cursor_start_row as u16;
+            if mouse_ev.row >= inline.height as u16 {
+                return Ok(false);
+            }
+        }
+
         let (_, resps) =
             self.cup
                 .eo
@@ -285,8 +370,12 @@ impl Tui {
             dedup_chs.insert((c.x, c.y), content);
         }
 
+        let y_offset =
+            if let Some(inline) = &self.inline { inline.cursor_start_row as u16 } else { 0 };
+
         let mut do_flush = false;
         for ((x, y), sty) in dedup_chs {
+            let y = y + y_offset;
             if self.is_ch_style_at_position_dirty(x, y, &sty) {
                 queue!(
                     &mut sc,
@@ -434,12 +523,37 @@ pub fn sc_closedown() -> Result<(), Error> {
     Ok(())
 }
 
+pub fn sc_line_startup() -> Result<(), Error> {
+    set_line_panic_hook_with_closedown();
+    let mut sc = stdout();
+    execute!(sc, cursor::Hide, EnableMouseCapture)?;
+    terminal::enable_raw_mode()?;
+    Ok(())
+}
+
+pub fn sc_line_closedown() -> Result<(), Error> {
+    let mut sc = stdout();
+    execute!(sc, style::ResetColor, cursor::Show, DisableMouseCapture)?;
+    terminal::disable_raw_mode()?;
+    Ok(())
+}
+
 pub fn set_panic_hook_with_closedown() {
     use std::panic;
 
     let prev_hook = panic::take_hook();
     panic::set_hook(Box::new(move |info| {
         sc_closedown().expect("failed to close screen");
+        prev_hook(info);
+    }));
+}
+
+pub fn set_line_panic_hook_with_closedown() {
+    use std::panic;
+
+    let prev_hook = panic::take_hook();
+    panic::set_hook(Box::new(move |info| {
+        sc_line_closedown().expect("failed to close screen");
         prev_hook(info);
     }));
 }
