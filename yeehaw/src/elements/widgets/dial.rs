@@ -123,9 +123,13 @@ impl Dial {
         self
     }
 
-    pub fn with_fn(mut self, f: DialSelectFn) -> Self {
-        self.select_fn = Rc::new(RefCell::new(f));
+    pub fn with_fn(self, f: DialSelectFn) -> Self {
+        self.set_fn(f);
         self
+    }
+
+    pub fn set_fn(&self, f: DialSelectFn) {
+        *self.select_fn.borrow_mut() = f;
     }
 
     pub fn reset_arb_selector(&mut self, ctx: &Context) {
@@ -165,7 +169,7 @@ impl Dial {
     }
 
     #[must_use]
-    pub fn set_position(&mut self, ctx: &Context, pos: usize) -> EventResponses {
+    pub fn set_position(&self, ctx: &Context, pos: usize) -> EventResponses {
         let start_pos = self.get_position();
         if start_pos != pos {
             self.pane.set_position(pos);

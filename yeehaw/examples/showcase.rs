@@ -86,18 +86,13 @@ async fn main() -> Result<(), Error> {
     let train_pane = TerminalPane::new(&ctx)?;
     train_pane.pane.set_dyn_height(0.7);
     train_pane.pane.set_focused(false);
-    train_pane.execute_command("for i in {1..1}; do sl -l; done ; exit");
+    train_pane.execute_command("for i in {1..20}; do sl -l; done ; exit");
     train_pane.disable_cursor();
     left_pane.push(Box::new(train_pane));
 
     let tabs = Tabs::new(&ctx);
     tabs.pane.set_focused(false);
     let widgets_tab = widgets_demo(&ctx);
-    //let widgets_tab = Box::new(
-    //    DebugSizePane::new(&ctx)
-    //        .with_bg(Color::RED)
-    //        .with_text("widgets".to_string()),
-    //);
     let el2 = DebugSizePane::new(&ctx)
         .with_bg(Color::BLUE)
         .with_text("tab 2".to_string());
@@ -107,7 +102,10 @@ async fn main() -> Result<(), Error> {
     let el4 = DebugSizePane::new(&ctx)
         .with_bg(Color::PINK)
         .with_text("tab 4".to_string());
-    let el5 = TerminalPane::new(&ctx)?;
+    let el5 = DebugSizePane::new(&ctx)
+        .with_bg(Color::PINK)
+        .with_text("tab 4".to_string());
+    let el6 = TerminalPane::new(&ctx)?;
 
     let showcase = TerminalPane::new(&ctx)?;
     showcase.pane.set_focused(false);
@@ -120,9 +118,10 @@ async fn main() -> Result<(), Error> {
 
     tabs.push(widgets_tab, "widgets");
     tabs.push(Box::new(el2), "colors");
-    tabs.push(Box::new(el3), "images");
-    tabs.push(Box::new(el4), "file-nav");
-    tabs.push(Box::new(el5), "terminal");
+    tabs.push(Box::new(el3), "$EDITOR");
+    tabs.push(Box::new(el4), "images");
+    tabs.push(Box::new(el5), "file-nav");
+    tabs.push(Box::new(el6), "terminal");
     tabs.push_with_on_open_fn(Box::new(showcase), "showcase", on_showcase_open_fn);
     tabs.select(0);
     central_pane.push(Box::new(tabs));
@@ -157,7 +156,7 @@ pub fn window_generation_zone(
         ],
     )
     .at(0, 3);
-    let label = dial_type.label(ctx, "content:").underlined();
+    let label = dial_type.label(ctx, "content:");
     el.add_element(Box::new(label));
     el.add_element(Box::new(dial_type.clone()));
 
@@ -177,7 +176,7 @@ pub fn window_generation_zone(
         ],
     )
     .at(DynVal::new_flex_with_min_fixed(0.35, 19), 3);
-    let label = dial_border.label(ctx, "border options:").underlined();
+    let label = dial_border.label(ctx, "border options:");
     el.add_element(Box::new(label));
     el.add_element(Box::new(dial_border.clone()));
 
@@ -192,7 +191,7 @@ pub fn window_generation_zone(
         .with_width(DynVal::new_flex(0.4))
         .at(1, 11);
 
-    let label = alpha_slider.label(ctx, "background alpha:").underlined();
+    let label = alpha_slider.label(ctx, "background alpha:");
     el.add_element(Box::new(label));
     el.add_element(Box::new(alpha_slider.clone()));
 
@@ -357,176 +356,199 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
 
     let x_min = 1;
     let mut y_min = 2;
+    let dd_width = DynVal::default()
+        .plus_max_of(DynVal::new_flex(0.2))
+        .plus_max_of(DynVal::new_fixed(12));
     let dropdown = DropdownList::new(ctx, dd_entries, Box::new(|_, _| EventResponses::default()))
         .with_max_expanded_height(10)
-        .with_width(
-            DynVal::default()
-                .plus_max_of(DynVal::new_flex(0.2))
-                .plus_max_of(DynVal::new_fixed(12)),
-        )
+        .with_width(dd_width.clone())
         .at(x_min, y_min);
     el.add_element(Box::new(dropdown.label(ctx, "dropdown-list:")));
     el.add_element(Box::new(dropdown));
 
     y_min += 3;
-    let y = DynVal::new_flex_with_min_fixed(0.1, y_min);
+    let y = DynVal::new_flex_with_min_fixed(0.25, y_min);
     let rbs = RadioButtons::new(
         ctx,
         vec![" wotz".to_string(), " op".to_string(), " dok".to_string()],
     )
-    .at(x_min, y);
-    el.add_element(Box::new(rbs.label(ctx, "radio buttons:")));
+    .at(x_min + 1, y.clone());
+    el.add_element(Box::new(
+        rbs.label(ctx, "radio buttons:")
+            .at(x_min, y.minus(1.into())),
+    ));
     el.add_element(Box::new(rbs));
 
     y_min += 5;
-    let y = DynVal::new_flex_with_min_fixed(0.15, y_min);
+    let y = DynVal::new_flex_with_min_fixed(0.5, y_min);
     let toggle = Toggle::new(ctx, " ★ ".to_string(), " ⏾ ".to_string()).at(x_min, y);
     el.add_element(Box::new(toggle.label(ctx, "toggle:")));
     el.add_element(Box::new(toggle));
 
     y_min += 3;
-    let y = DynVal::new_flex_with_min_fixed(0.2, y_min);
+    let y = DynVal::new_flex_with_min_fixed(0.6, y_min);
     let cb = Checkbox::new(ctx).at(x_min, y);
-    let cb_label = Label::new_for_el(ctx, cb.get_dyn_location_set().l.clone(), "check me");
+    el.add_element(Box::new(cb.label(ctx, "checkbox-1")));
     el.add_element(Box::new(cb));
-    el.add_element(Box::new(cb_label));
 
     y_min += 2;
-    let y = DynVal::new_flex_with_min_fixed(0.20, y_min);
+    let y = DynVal::new_flex_with_min_fixed(0.6, y_min).plus(2.into());
     let cb2 = Checkbox::new(ctx).at(x_min, y);
-    let cb2_label = Label::new_for_el(ctx, cb2.get_dyn_location_set().l.clone(), "check me");
+    el.add_element(Box::new(cb2.label(ctx, "checkbox-2")));
     el.add_element(Box::new(cb2));
-    el.add_element(Box::new(cb2_label));
 
-    //---------------------------
-
-    let l1 = Label::new(ctx, "some label");
-    let l = l1.clone().at(DynVal::new_flex(0.5), DynVal::new_flex(0.5));
-    el.add_element(Box::new(l));
-
-    let button_click_fn = Box::new(move |_, _| {
-        let t = l1.get_text();
-        let t = t + "0";
-        l1.set_text(t);
-        EventResponses::default()
-    });
-    let button = Button::new(ctx, "click me", button_click_fn)
-        .with_description("a button!".to_string())
-        .at(DynVal::new_flex(0.25), DynVal::new_flex(0.25));
-    let button_label =
-        Label::new_for_el(ctx, button.get_dyn_location_set().l.clone(), "button-label");
-    el.add_element(Box::new(button));
-    el.add_element(Box::new(button_label));
-
-    let button = Button::new(
-        ctx,
-        "do not\nclick me",
-        Box::new(|_, _| EventResponses::default()),
-    )
-    .with_description("a button!".to_string())
-    .at(DynVal::new_flex(0.25), DynVal::new_flex(0.15));
+    y_min += 2;
+    let y = DynVal::new_flex_with_min_fixed(0.8, y_min);
+    let button_click_fn = Box::new(move |_, _| EventResponses::default());
+    let button = Button::new(ctx, "button", button_click_fn).at(x_min, y);
     el.add_element(Box::new(button));
 
-    let button2 = Button::new(ctx, "button2", Box::new(|_, _| EventResponses::default()))
-        .with_description("a button!".to_string())
-        .with_sides(ButtonSides::default())
-        .at(DynVal::new_flex(0.25), DynVal::new_flex(0.29));
-    el.add_element(Box::new(button2));
+    let y = DynVal::new_fixed(3);
+    let x = DynVal::default()
+        .plus_max_of(0.25.into())
+        .plus_max_of(dd_width.plus(3.into()));
+    let lb_width = DynVal::default()
+        .plus_max_of(DynVal::new_flex(0.15))
+        .plus_max_of(DynVal::new_fixed(16));
+    let lb_height = DynVal::default()
+        .plus_max_of(DynVal::new_flex(0.13))
+        .plus_max_of(DynVal::new_fixed(5));
 
-    let button3 = Button::new(ctx, "b", Box::new(|_, _| EventResponses::default()))
-        .with_description("a button!".to_string())
-        .with_micro_shadow(ButtonMicroShadow::default())
-        .at(DynVal::new_flex(0.25), DynVal::new_flex(0.10));
-    el.add_element(Box::new(button3));
-
-    let ld_entries = (1..=10)
+    let lb_entries = (1..=10)
         .map(|i| format!("entry {}", i))
         .collect::<Vec<String>>();
-
-    use yeehaw::elements::listbox::SelectionMode;
-    let listbox = ListBox::new(ctx, ld_entries, Box::new(|_, _| EventResponses::default()))
-        .with_selection_mode(ctx, SelectionMode::UpTo(3))
-        .with_width(
-            ctx,
-            DynVal::default()
-                .plus_max_of(DynVal::new_flex(0.15))
-                .plus_max_of(DynVal::new_fixed(12)),
-        )
-        .with_height(
-            ctx,
-            DynVal::default()
-                .plus_max_of(DynVal::new_flex(0.13))
-                .plus_max_of(DynVal::new_fixed(5)),
-        )
+    let listbox = ListBox::new(ctx, lb_entries, Box::new(|_, _| EventResponses::default()))
+        .with_selection_mode(ctx, listbox::SelectionMode::UpTo(3))
+        .with_width(ctx, lb_width.clone())
+        .with_height(ctx, lb_height.clone())
         .with_scrollbar(ctx)
-        .at(DynVal::new_flex(0.5), DynVal::new_flex(0.1));
+        .at(x.clone(), y.clone());
+    el.add_element(Box::new(
+        listbox.label(ctx, "listbox (ex. \nselect up to 3):"),
+    ));
     el.add_element(Box::new(listbox));
 
-    let tb = TextBox::new(
-        ctx,
-        "012345678901234567890123456789\
-        \n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9",
-        //\n1",
-    )
-    //.with_width(DynVal::new_fixed(20))
-    //.with_height(DynVal::new_fixed(10))
-    .with_width(DynVal::new_flex(0.1))
-    .with_height(DynVal::new_flex(0.2))
-    //.with_top_scrollbar(&ctx)
-    .with_bottom_scrollbar(ctx)
-    .with_left_scrollbar(ctx)
-    .with_line_numbers(ctx)
-    //.with_right_scrollbar(&ctx)
-    .editable(ctx)
-    .with_no_wordwrap(ctx)
-    .at(DynVal::new_flex(0.35), DynVal::new_flex(0.1));
-    el.add_element(Box::new(tb));
-
-    let tb_with_grey = TextBox::new(ctx, "")
-        .with_width(DynVal::new_fixed(18))
-        .with_height(DynVal::new_fixed(1))
-        .editable(ctx)
-        .with_text_when_empty("enter text here")
-        .with_no_wordwrap(ctx)
-        .at(DynVal::new_flex(0.25), DynVal::new_fixed(3));
-    el.add_element(Box::new(tb_with_grey));
-
+    let y = y.plus(lb_height).plus(3.into());
+    let ntb_width = DynVal::default()
+        .plus_max_of(DynVal::new_flex(0.10))
+        .plus_max_of(DynVal::new_fixed(8));
     let ntb = NumbersTextBox::new(ctx, 0f64)
-        .with_min(-10.0)
-        .with_max(10.0)
-        .at(DynVal::new_flex(0.75), DynVal::new_flex(0.5));
+        .with_min(0.0)
+        .with_max(1.0)
+        .with_decimal_places(2)
+        .with_width(ntb_width)
+        .at(x.clone(), y.clone());
     el.add_element(Box::new(ntb.clone()));
+    el.add_element(Box::new(
+        ntb.label(ctx, "numbers-textbox:\n(linked to slider)"),
+    ));
 
+    let y = y.plus(3.into());
     let ntb_ = ntb.clone();
     let slider = Slider::new_basic_block(ctx)
         .with_gradient(Color::AQUA, Color::ORANGE)
-        .with_width(DynVal::new_flex(0.1))
-        .at(DynVal::new_flex(0.8), DynVal::new_flex(0.5))
+        .with_width(lb_width.clone())
+        .at(x.clone(), y.clone())
         .with_fn(Box::new(move |_, sl| {
             let p = sl.get_position();
             ntb_.change_value(p);
             EventResponses::default()
         }));
+    let slider_ = slider.clone();
+    ntb.set_value_changed_hook(Box::new(move |v| {
+        slider_.set_position(v);
+        EventResponses::default()
+    }));
+    el.add_element(Box::new(slider.label(ctx, "slider:")));
     el.add_element(Box::new(slider));
 
-    let dial1 = Dial::new_semi_compact(
-        ctx,
-        vec![
-            (0, "OptionA"),
-            (1, "OptionB"),
-            (2, "OptionC"),
-            (3, "OptionD"),
-            (4, "OptionE"),
-            (5, "OptionF"),
-            (6, "OptionG"),
-            (7, "OptionH"),
-            (8, "OptionI"),
-            (9, "OptionJ"),
-            (10, "OptionK"),
-            (11, "OptionL"),
-        ],
-    )
-    .at(DynVal::new_flex(0.6), DynVal::new_flex(0.7));
+    let dial_entries = (0..8).map(|i| (i, " ")).collect::<Vec<(usize, &str)>>();
+
+    let y = y.plus(2.into());
+    let dial1 = Dial::new_ultra_compact(ctx, dial_entries.clone()).at(x.clone(), y.clone());
+    let x_dial2 = x.plus(8.into());
+    let dial2 = Dial::new_ultra_compact(ctx, dial_entries.clone()).at(x_dial2, y.clone());
+
+    let y = y.plus(4.into());
+    let x_smile = x.plus(3.into());
+    let happy = r#"\________/"#;
+    let confu = r#"~~~~~~~~~~"#;
+    let sad = r#"/‾‾‾‾‾‾‾‾\"#;
+    let smile_label = Label::new(ctx, happy).at(x_smile, y.clone());
+
+    let smile_label_ = smile_label.clone();
+    let dial2_ = dial2.clone();
+    dial1.set_fn(Box::new(move |ctx, _, pos, _| {
+        let _ = dial2_.set_position(&ctx, pos);
+        match pos {
+            2 => smile_label_.set_text(confu.to_string()),
+            4 => smile_label_.set_text(sad.to_string()),
+            _ => smile_label_.set_text(happy.to_string()),
+        }
+        EventResponses::default()
+    }));
+
+    let smile_label_ = smile_label.clone();
+    let dial1_ = dial1.clone();
+    dial2.set_fn(Box::new(move |ctx, _, pos, _| {
+        let _ = dial1_.set_position(&ctx, pos);
+        match pos {
+            2 => smile_label_.set_text(confu.to_string()),
+            4 => smile_label_.set_text(sad.to_string()),
+            _ => smile_label_.set_text(happy.to_string()),
+        }
+        EventResponses::default()
+    }));
+
     el.add_element(Box::new(dial1));
+    el.add_element(Box::new(dial2));
+    el.add_element(Box::new(smile_label));
+
+    //let smile_label = Label::new(ctx, happy).at(x_smile, y.clone());
+
+    let x = x.plus(lb_width).plus(4.into());
+    let y = DynVal::new_fixed(4);
+    let tb_width = DynVal::default()
+        .plus_max_of(DynVal::new_flex(0.25))
+        .plus_max_of(DynVal::new_fixed(12));
+    let tb_height = DynVal::default()
+        .plus_max_of(DynVal::new_flex(0.25))
+        .plus_max_of(DynVal::new_fixed(8));
+
+    let tb = TextBox::new(ctx, "")
+        .with_text_when_empty("enter text here")
+        .with_width(tb_width)
+        .with_height(tb_height.clone())
+        .with_bottom_scrollbar(ctx)
+        .with_left_scrollbar(ctx)
+        .with_line_numbers(ctx)
+        .editable(ctx)
+        .with_no_wordwrap(ctx)
+        .at(x.clone(), y.clone());
+    el.add_element(Box::new(
+        tb.label(ctx, "basic textbox:\n(try right-clicking \non some text)"),
+    ));
+    el.add_element(Box::new(tb));
+
+    let y = y.plus(tb_height).plus(2.into());
+    let desc_text = "This is selectable pane, try\n\
+                     clicking around with the\n\
+                     mouse! try using tabs to\n\
+                     switch between different\n\
+                     widgets, other keys (arrow,\n\
+                     enter, etc.) will also\n\
+                     interact with widgets.";
+    let description = Label::new(ctx, desc_text);
+    el.add_element(Box::new(
+        Bordered::new_basic(
+            ctx,
+            Box::new(description),
+            Style::transparent().with_fg(Color::WHITE),
+        )
+        .with_dyn_height(DynVal::new_fixed(9))
+        .with_dyn_width(DynVal::new_fixed(31))
+        .at(x, y.clone()),
+    ));
+
     Box::new(el)
 }

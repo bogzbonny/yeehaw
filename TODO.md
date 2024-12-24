@@ -7,7 +7,6 @@
 
 01. showcase example 
      - a menu
-       - some hidden funny stuff on some items
      - tabs
        - terminal
        - the showcase within the showcase?? spiral 
@@ -17,6 +16,13 @@
                       border-with-text, border-resizer, border-mover
        - shadow cb
        - generate button
+       - widgets
+         - buncha widgets which dont do much but log their results 
+           in a textbox
+         - TWO dials as eyes (draw a mouth label below, maybe a nose too)
+           - no labels for the eyes
+           - make them lock together, and change the mouth based on their 
+             position
      ^ DONE
 
      - TABS Zone
@@ -35,14 +41,7 @@
               - some sliders: 1 for each color (greyed out when colors
                 disabled) maybe with an RGB tb for css color input
           - dial, fg ascii art (default as a butterfly)
-       - widgets
-         - neovim editor
-         - buncha widgets which dont do much but log their results 
-           in a textbox
-         - TWO dials as eyes (draw a mouth label below, maybe a nose too)
-           - no labels for the eyes
-           - make them lock together, and change the mouth based on their 
-             position
+       - neovim $EDITOR tab
      - a big "DO NOT PRESS button" which instigates the blue screen of death
 
 01. gif of showcase example - will need to record with non-VHS/asciicinema-tool

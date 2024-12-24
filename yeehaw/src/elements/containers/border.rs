@@ -970,6 +970,11 @@ impl Bordered {
         }
     }
 
+    pub fn at(self, x: DynVal, y: DynVal) -> Self {
+        self.set_at(x, y);
+        self
+    }
+
     /// TODO I think the method described in this note is nolonger required after context system
     /// refactor. Refactor out if possible.
     ///

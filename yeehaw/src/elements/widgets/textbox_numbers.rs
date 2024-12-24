@@ -10,6 +10,9 @@ pub struct NumbersTextBox<N> {
     pub max_value: Rc<RefCell<Option<N>>>,
     /// if set, the minimum value the number can be
     pub min_value: Rc<RefCell<Option<N>>>,
+
+    /// number of decimal places, used for floats
+    pub decimal_places: Rc<RefCell<Option<usize>>>,
     pub value_changed_hook: Rc<RefCell<Option<ValueChangedHook<N>>>>,
 }
 
@@ -23,6 +26,7 @@ impl<N: Display + Clone + Copy + FromStr + PartialOrd + 'static> NumbersTextBox<
             value: Rc::new(RefCell::new(starting_value)),
             max_value: Rc::new(RefCell::new(None)),
             min_value: Rc::new(RefCell::new(None)),
+            decimal_places: Rc::new(RefCell::new(None)),
             value_changed_hook: Rc::new(RefCell::new(None)),
         };
 
@@ -44,6 +48,11 @@ impl<N: Display + Clone + Copy + FromStr + PartialOrd + 'static> NumbersTextBox<
 
     pub fn with_min(self, min: N) -> Self {
         *self.min_value.borrow_mut() = Some(min);
+        self
+    }
+
+    pub fn with_decimal_places(self, dp: usize) -> Self {
+        *self.decimal_places.borrow_mut() = Some(dp);
         self
     }
 
@@ -83,8 +92,12 @@ impl<N: Display + Clone + Copy + FromStr + PartialOrd + 'static> NumbersTextBox<
     }
 
     pub fn with_value_changed_hook(self, hook: ValueChangedHook<N>) -> Self {
-        *self.value_changed_hook.borrow_mut() = Some(hook);
+        self.set_value_changed_hook(hook);
         self
+    }
+
+    pub fn set_value_changed_hook(&self, hook: ValueChangedHook<N>) {
+        *self.value_changed_hook.borrow_mut() = Some(hook);
     }
 
     pub fn with_styles(mut self, styles: SelStyles) -> Self {
@@ -109,7 +122,14 @@ impl<N: Display + Clone + Copy + FromStr + PartialOrd + 'static> NumbersTextBox<
         }
 
         *self.value.borrow_mut() = new_value;
-        self.tb.set_text(format!("{}", new_value));
+        match *self.decimal_places.borrow() {
+            Some(dp) => {
+                self.tb.set_text(format!("{:.*}", dp, new_value));
+            }
+            None => {
+                self.tb.set_text(format!("{}", new_value));
+            }
+        }
 
         self.value_changed_hook
             .borrow_mut()
