@@ -46,7 +46,7 @@ pub struct Tui {
     pub kill_on_ctrl_c: bool,
 
     /// if Some then the TUI is rendered inline in the terminal
-    pub inline: Option<InlineTui>,
+    pub inline: Option<Rc<RefCell<InlineTui>>>,
 
     /// last flushed internal screen, used to determine what needs to be flushed next
     //                            x  , y
@@ -57,11 +57,15 @@ pub struct Tui {
     pub ev_recv: MpscReceiver<Event>,
 }
 
+#[derive(Clone, Copy)]
 pub struct InlineTui {
     /// the cursor start row of the tui
-    pub cursor_start_row: usize,
+    pub cursor_start_row: u16,
     /// the height of the tui to take up inline
-    pub height: usize,
+    pub tui_height: u16,
+
+    /// last height of the screen
+    pub scr_height: u16,
 }
 
 impl Tui {
@@ -101,7 +105,7 @@ impl Tui {
             self.cup.ev_tx.clone(),
         );
         if let Some(inline) = &self.inline {
-            ctx.size.height = inline.height as u16;
+            ctx.size.height = inline.borrow().tui_height;
         }
         ctx
     }
@@ -133,12 +137,12 @@ impl Tui {
 
     /// run the TUI in terminal line
     pub async fn run_in_line(
-        &mut self, main_el: Box<dyn Element>, height: usize,
+        &mut self, main_el: Box<dyn Element>, height: u16,
     ) -> Result<(), Error> {
         self.main_el_id = main_el.id();
         // add the element here after the location has been created
         let mut ctx = Context::new_context_for_screen_no_dur(&self.cup.hat, self.cup.ev_tx.clone());
-        ctx.size.height = height as u16;
+        ctx.size.height = height;
         let loc = DynLocation::new_fixed(0, ctx.size.width as i32, 0, ctx.size.height as i32);
         let loc = DynLocationSet::new(loc, vec![], 0);
         main_el.set_dyn_location_set(loc);
@@ -157,32 +161,22 @@ impl Tui {
         // get the cursor position
         let (_, mut cur_row) = cursor::position()?;
         let scr_height = terminal::size()?.1;
-        let offset = if cur_row + height as u16 > scr_height {
-            cur_row + height as u16 - scr_height
-        } else {
-            0
-        };
+        let offset = if cur_row + height > scr_height { cur_row + height - scr_height } else { 0 };
 
         cur_row -= offset;
-        self.inline = Some(InlineTui {
-            cursor_start_row: cur_row as usize,
-            height,
-        });
+        let inline = Rc::new(RefCell::new(InlineTui {
+            cursor_start_row: cur_row,
+            tui_height: height,
+            scr_height,
+        }));
+        self.inline = Some(inline.clone());
 
-        // TODO need to scroll if there isn't enough room in the terminal
-        execute!(stdout(), terminal::ScrollUp(offset)).unwrap();
+        // scroll if there isn't enough room in the terminal
+        execute!(stdout(), terminal::ScrollUp(offset))?;
 
-        sc_line_startup()?;
+        sc_line_startup(inline.clone())?;
         self.launch().await?;
-        sc_line_closedown()?;
-
-        // set the cursor
-        if cur_row + height as u16 == scr_height {
-            execute!(stdout(), terminal::ScrollUp(1)).unwrap();
-            execute!(stdout(), cursor::MoveTo(0, cur_row + height as u16),)?;
-        } else {
-            execute!(stdout(), cursor::MoveTo(0, cur_row + height as u16),)?;
-        }
+        sc_line_closedown(*inline.borrow())?;
 
         Ok(())
     }
@@ -213,6 +207,36 @@ impl Tui {
                                 }
 
                                 CTEvent::Resize(_, _) => {
+                                    if let Some(inline) = &mut self.inline {
+                                        let scr_height = terminal::size()?.1;
+                                        let mut inline = inline.borrow_mut();
+                                        let last_scr_height = inline.scr_height;
+
+                                        match scr_height.cmp(&last_scr_height) {
+                                            std::cmp::Ordering::Equal => {}
+                                            std::cmp::Ordering::Less => {
+                                                let diff = last_scr_height - scr_height;
+                                                execute!(stdout(), terminal::ScrollDown(diff))?;
+                                                inline.scr_height = scr_height;
+                                                inline.cursor_start_row = inline.cursor_start_row.saturating_sub(diff);
+                                            }
+                                            std::cmp::Ordering::Greater => {
+                                                let diff = scr_height - last_scr_height;
+                                                execute!(stdout(), terminal::ScrollUp(diff))?;
+                                                inline.scr_height = scr_height;
+                                                inline.cursor_start_row += diff;
+                                                let cur_row = inline.cursor_start_row;
+                                                let tui_height = inline.tui_height;
+
+                                                // if increasing the screen height, and the tui is not
+                                                // fully visible, then move the cursor start row up
+                                                let offset = if cur_row + tui_height > scr_height {
+                                                    cur_row + tui_height - scr_height } else { 0 };
+                                                inline.cursor_start_row = cur_row.saturating_sub(offset);
+                                            }
+                                        }
+                                    }
+
                                     let ctx = self.context();
                                     let loc = DynLocation::new_fixed(0, ctx.size.width as i32, 0, ctx.size.height as i32);
                                     // There should only be one element at index 0 in the upper level EO
@@ -298,11 +322,12 @@ impl Tui {
     pub fn process_event_mouse(&mut self, mut mouse_ev: CTMouseEvent) -> Result<bool, Error> {
         let ctx = self.context();
         if let Some(inline) = &self.inline {
-            if mouse_ev.row < inline.cursor_start_row as u16 {
+            let inline = inline.borrow();
+            if mouse_ev.row < inline.cursor_start_row {
                 return Ok(false);
             }
-            mouse_ev.row -= inline.cursor_start_row as u16;
-            if mouse_ev.row >= inline.height as u16 {
+            mouse_ev.row -= inline.cursor_start_row;
+            if mouse_ev.row >= inline.tui_height {
                 return Ok(false);
             }
         }
@@ -371,7 +396,7 @@ impl Tui {
         }
 
         let y_offset =
-            if let Some(inline) = &self.inline { inline.cursor_start_row as u16 } else { 0 };
+            if let Some(inline) = &self.inline { inline.borrow().cursor_start_row } else { 0 };
 
         let mut do_flush = false;
         for ((x, y), sty) in dedup_chs {
@@ -522,22 +547,6 @@ pub fn sc_closedown() -> Result<(), Error> {
     terminal::disable_raw_mode()?;
     Ok(())
 }
-
-pub fn sc_line_startup() -> Result<(), Error> {
-    set_line_panic_hook_with_closedown();
-    let mut sc = stdout();
-    execute!(sc, cursor::Hide, EnableMouseCapture)?;
-    terminal::enable_raw_mode()?;
-    Ok(())
-}
-
-pub fn sc_line_closedown() -> Result<(), Error> {
-    let mut sc = stdout();
-    execute!(sc, style::ResetColor, cursor::Show, DisableMouseCapture)?;
-    terminal::disable_raw_mode()?;
-    Ok(())
-}
-
 pub fn set_panic_hook_with_closedown() {
     use std::panic;
 
@@ -548,12 +557,42 @@ pub fn set_panic_hook_with_closedown() {
     }));
 }
 
-pub fn set_line_panic_hook_with_closedown() {
+// -------------
+
+pub fn sc_line_startup(inline: Rc<RefCell<InlineTui>>) -> Result<(), Error> {
+    set_line_panic_hook_with_closedown(inline);
+    let mut sc = stdout();
+    execute!(sc, cursor::Hide, EnableMouseCapture)?;
+    terminal::enable_raw_mode()?;
+    Ok(())
+}
+
+pub fn sc_line_closedown(inline: InlineTui) -> Result<(), Error> {
+    let mut sc = stdout();
+    let cur_row = inline.cursor_start_row;
+    let tui_height = inline.tui_height;
+    let scr_height = inline.scr_height;
+
+    // set the cursor back to the bottom of the screen
+    if cur_row + tui_height == scr_height {
+        execute!(sc, terminal::ScrollUp(1))?;
+        execute!(sc, cursor::MoveTo(0, cur_row + tui_height),)?;
+    } else {
+        execute!(sc, cursor::MoveTo(0, cur_row + tui_height),)?;
+    }
+
+    execute!(sc, style::ResetColor, cursor::Show, DisableMouseCapture)?;
+    terminal::disable_raw_mode()?;
+    Ok(())
+}
+
+pub fn set_line_panic_hook_with_closedown(inline: Rc<RefCell<InlineTui>>) {
     use std::panic;
 
     let prev_hook = panic::take_hook();
+    let inline_ = *inline.borrow();
     panic::set_hook(Box::new(move |info| {
-        sc_line_closedown().expect("failed to close screen");
+        sc_line_closedown(inline_).expect("failed to close screen");
         prev_hook(info);
     }));
 }
