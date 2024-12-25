@@ -2,8 +2,8 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-01. cleanup the widgets example 
-    - showcase should just use the same widgets example pane
+01. dropdown list extends into white space if picking beyond the end (clicking
+    that whitespace panics)
 
 01. showcase example 
      - a menu
@@ -36,12 +36,17 @@
          - toggle for FG and BG Color
            - dial gradient kind: solid color, time-gradient, radial gradient,
              linear gradient. radial-time, linear-time
-           - slider, gradient size between colors (enforce static) 
-           - slider, change speed, ms for time gradients
-           - slider with numbers-tb for gradient angle
-           - dial, number of colors (greyed out for solid-color kind)
            - some sliders: 1 for each color (greyed out when colors disabled)
              maybe with an RGB tb for css color input
+
+           - slider, gradient size between colors (enforce static) 
+           - slider with numbers-tb for gradient angle
+
+           - slider, change speed, ms for time gradients
+
+           - dropdown, number of colors (greyed out for solid-color kind)
+           - dropdown,
+
 ```
       △ △ △ △ △     
     ╭─────o─────╮
@@ -151,6 +156,9 @@ unknown
 01. make sure duf can run it
 
 01. update rust version, update deps
+
+01. cleanup the widgets example 
+    - showcase should just use the same widgets example pane
 
 01. go through and remove / or make dyn element fns named with_width with_height
 

@@ -201,6 +201,9 @@ pub trait Element: DynClone {
     fn label_above_right(&self, ctx: &Context, label: &str) -> Label {
         Label::new_above_right_for_el(ctx, self.get_dyn_location_set().l.clone(), label)
     }
+    fn label_above(&self, ctx: &Context, label: &str) -> Label {
+        Label::new_above_left_for_el(ctx, self.get_dyn_location_set().l.clone(), label)
+    }
     fn label_above_left(&self, ctx: &Context, label: &str) -> Label {
         Label::new_above_left_for_el(ctx, self.get_dyn_location_set().l.clone(), label)
     }
@@ -210,6 +213,12 @@ pub trait Element: DynClone {
     fn label_below_left(&self, ctx: &Context, label: &str) -> Label {
         Label::new_below_left_for_el(ctx, self.get_dyn_location_set().l.clone(), label)
     }
+    fn label_below(&self, ctx: &Context, label: &str) -> Label {
+        Label::new_below_left_for_el(ctx, self.get_dyn_location_set().l.clone(), label)
+    }
+    fn label_left(&self, ctx: &Context, label: &str) -> Label {
+        Label::new_left_top_for_el(ctx, self.get_dyn_location_set().l.clone(), label)
+    }
     fn label_left_top(&self, ctx: &Context, label: &str) -> Label {
         Label::new_left_top_for_el(ctx, self.get_dyn_location_set().l.clone(), label)
     }
@@ -217,6 +226,9 @@ pub trait Element: DynClone {
         Label::new_left_bottom_for_el(ctx, self.get_dyn_location_set().l.clone(), label)
     }
     fn label_right_top(&self, ctx: &Context, label: &str) -> Label {
+        Label::new_right_top_for_el(ctx, self.get_dyn_location_set().l.clone(), label)
+    }
+    fn label_right(&self, ctx: &Context, label: &str) -> Label {
         Label::new_right_top_for_el(ctx, self.get_dyn_location_set().l.clone(), label)
     }
     fn label_right_bottom(&self, ctx: &Context, label: &str) -> Label {

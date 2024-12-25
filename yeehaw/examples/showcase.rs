@@ -669,40 +669,156 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
     .at(x.clone(), y.clone());
     el.add_element(Box::new(dial_color.label(ctx, "color kind:")));
     el.add_element(Box::new(dial_color.clone()));
+    let y = y.plus(7.into());
 
-    //let y = y.plus(lb_height).plus(3.into());
-    //let ntb_width = DynVal::default()
-    //    .plus_max_of(DynVal::new_flex(0.10))
-    //    .plus_max_of(DynVal::new_fixed(8));
-    //let ntb = NumbersTextBox::new(ctx, 0f64)
-    //    .with_min(0.0)
-    //    .with_max(1.0)
-    //    .with_decimal_places(2)
-    //    .with_width(ntb_width)
-    //    .at(x.clone(), y.clone());
-    //el.add_element(Box::new(ntb.clone()));
-    //el.add_element(Box::new(
-    //    ntb.label(ctx, "numbers-textbox:\n(linked to slider)"),
-    //));
+    let dd_x = x.plus(7.into());
+    let color_dd = DropdownList::new(
+        ctx,
+        vec!["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+        Box::new(|_, _| EventResponses::default()),
+    )
+    .with_width(5.into())
+    .with_max_expanded_height(8)
+    .at(dd_x, y.clone());
+    el.add_element(Box::new(color_dd.label_left(ctx, "color (")));
+    el.add_element(Box::new(color_dd.label_right(ctx, "):")));
+    el.add_element(Box::new(color_dd));
 
-    //let y = y.plus(3.into());
-    //let ntb_ = ntb.clone();
-    //let slider = Slider::new_basic_block(ctx)
-    //    .with_gradient(Color::AQUA, Color::ORANGE)
-    //    .with_width(lb_width.clone())
-    //    .at(x.clone(), y.clone())
-    //    .with_fn(Box::new(move |_, sl| {
-    //        let p = sl.get_position();
-    //        ntb_.change_value(p);
-    //        EventResponses::default()
-    //    }));
-    //let slider_ = slider.clone();
-    //ntb.set_value_changed_hook(Box::new(move |v| {
-    //    slider_.set_position(v);
-    //    EventResponses::default()
-    //}));
-    //el.add_element(Box::new(slider.label(ctx, "slider:")));
-    //el.add_element(Box::new(slider));
+    let color_label = Label::new(ctx, "color:").at(x.clone(), y.clone());
+    el.add_element(Box::new(color_label.clone()));
+
+    let y = y.plus(1.into());
+    let x_nb = x.plus(3.into());
+    let ntb_width = DynVal::new_fixed(8);
+    let r_ntb = NumbersTextBox::new(ctx, 128u8)
+        .with_min(0)
+        .with_max(255)
+        .with_decimal_places(2)
+        .with_width(ntb_width)
+        .at(x_nb.clone(), y.clone());
+    el.add_element(Box::new(r_ntb.clone()));
+    el.add_element(Box::new(r_ntb.label_left_top(ctx, "R: ")));
+    let x_slider = x_nb.plus(9.into());
+    let slider_width = DynVal::new_fixed(17);
+    let ntb_ = r_ntb.clone();
+    let r_slider = Slider::new_basic_block(ctx)
+        .with_color(Color::RED)
+        .with_width(slider_width.clone())
+        .at(x_slider.clone(), y.clone())
+        .with_fn(Box::new(move |_, sl| {
+            let p = sl.get_position();
+            let p = (p * 255.) as u8;
+            ntb_.change_value(p);
+            EventResponses::default()
+        }));
+    let slider_ = r_slider.clone();
+    r_ntb.set_value_changed_hook(Box::new(move |v| {
+        let v = v as f64 / 255.;
+        slider_.set_position(v);
+        EventResponses::default()
+    }));
+    el.add_element(Box::new(r_slider.clone()));
+
+    let x_nb = x.plus(3.into());
+    let y = y.plus(1.into());
+    let ntb_width = DynVal::new_fixed(8);
+    let g_ntb = NumbersTextBox::new(ctx, 128u8)
+        .with_min(0)
+        .with_max(255)
+        .with_decimal_places(2)
+        .with_width(ntb_width)
+        .at(x_nb.clone(), y.clone());
+    el.add_element(Box::new(g_ntb.clone()));
+    el.add_element(Box::new(g_ntb.label_left_top(ctx, "G: ")));
+    let x_slider = x_nb.plus(9.into());
+    let slider_width = DynVal::new_fixed(17);
+    let ntb_ = g_ntb.clone();
+    let g_slider = Slider::new_basic_block(ctx)
+        .with_color(Color::GREEN)
+        .with_width(slider_width.clone())
+        .at(x_slider.clone(), y.clone())
+        .with_fn(Box::new(move |_, sl| {
+            let p = sl.get_position();
+            let p = (p * 255.) as u8;
+            ntb_.change_value(p);
+            EventResponses::default()
+        }));
+    let slider_ = g_slider.clone();
+    g_ntb.set_value_changed_hook(Box::new(move |v| {
+        let v = v as f64 / 255.;
+        slider_.set_position(v);
+        EventResponses::default()
+    }));
+    el.add_element(Box::new(g_slider.clone()));
+
+    let x_nb = x.plus(3.into());
+    let y = y.plus(1.into());
+    let ntb_width = DynVal::new_fixed(8);
+    let b_ntb = NumbersTextBox::new(ctx, 128u8)
+        .with_min(0)
+        .with_max(255)
+        .with_decimal_places(2)
+        .with_width(ntb_width)
+        .at(x_nb.clone(), y.clone());
+    el.add_element(Box::new(b_ntb.clone()));
+    el.add_element(Box::new(b_ntb.label_left_top(ctx, "B: ")));
+    let x_slider = x_nb.plus(9.into());
+    let slider_width = DynVal::new_fixed(17);
+    let ntb_ = b_ntb.clone();
+    let b_slider = Slider::new_basic_block(ctx)
+        .with_color(Color::BLUE)
+        .with_width(slider_width.clone())
+        .at(x_slider.clone(), y.clone())
+        .with_fn(Box::new(move |_, sl| {
+            let p = sl.get_position();
+            let p = (p * 255.) as u8;
+            ntb_.change_value(p);
+            EventResponses::default()
+        }));
+    let slider_ = b_slider.clone();
+    b_ntb.set_value_changed_hook(Box::new(move |v| {
+        let v = v as f64 / 255.;
+        slider_.set_position(v);
+        EventResponses::default()
+    }));
+    el.add_element(Box::new(b_slider.clone()));
+
+    let x_nb = x.plus(3.into());
+    let y = y.plus(1.into());
+    let nta_width = DynVal::new_fixed(8);
+    let a_ntb = NumbersTextBox::new(ctx, 128u8)
+        .with_min(0)
+        .with_max(255)
+        .with_decimal_places(2)
+        .with_width(nta_width)
+        .at(x_nb.clone(), y.clone());
+    el.add_element(Box::new(a_ntb.clone()));
+    el.add_element(Box::new(a_ntb.label_left_top(ctx, "A: ")));
+    let x_slider = x_nb.plus(9.into());
+    let slider_width = DynVal::new_fixed(17);
+    let ntb_ = a_ntb.clone();
+    let a_slider = Slider::new_basic_block(ctx)
+        .with_color(Color::AQUA)
+        .with_width(slider_width.clone())
+        .at(x_slider.clone(), y.clone())
+        .with_fn(Box::new(move |_, sl| {
+            let p = sl.get_position();
+            let p = (p * 255.) as u8;
+            ntb_.change_value(p);
+            EventResponses::default()
+        }));
+    let slider_ = a_slider.clone();
+    a_ntb.set_value_changed_hook(Box::new(move |v| {
+        let v = v as f64 / 255.;
+        slider_.set_position(v);
+        EventResponses::default()
+    }));
+    el.add_element(Box::new(a_slider.clone()));
+
+    r_slider.set_position(0.5);
+    g_slider.set_position(0.5);
+    b_slider.set_position(0.5);
+    a_slider.set_position(0.5);
 
     Box::new(el)
 }

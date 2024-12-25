@@ -109,6 +109,11 @@ impl Slider {
         self
     }
 
+    pub fn with_color(self, c: Color) -> Self {
+        self.filled.borrow_mut().style.set_fg(c);
+        self
+    }
+
     pub fn with_styles(self, styles: SelStyles) -> Self {
         self.pane.set_styles(styles);
         self

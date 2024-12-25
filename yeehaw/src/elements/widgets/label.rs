@@ -356,12 +356,12 @@ impl Label {
         match p {
             LabelPosition::AboveThenLeft => (l.start_x, l.start_y.minus_fixed(label_height as i32)),
             LabelPosition::AboveThenRight => (l.end_x, l.start_y.minus_fixed(label_height as i32)),
-            LabelPosition::BelowThenLeft => (l.start_x, l.end_y.plus_fixed(1)),
-            LabelPosition::BelowThenRight => (l.end_x, l.end_y.plus_fixed(1)),
+            LabelPosition::BelowThenLeft => (l.start_x, l.end_y),
+            LabelPosition::BelowThenRight => (l.end_x, l.end_y),
             LabelPosition::LeftThenTop => (l.start_x.minus_fixed(label_width as i32), l.start_y),
             LabelPosition::LeftThenBottom => (l.start_x.minus_fixed(label_width as i32), l.end_y),
-            LabelPosition::RightThenTop => (l.end_x.plus_fixed(1), l.start_y),
-            LabelPosition::RightThenBottom => (l.end_x.plus_fixed(1), l.end_y),
+            LabelPosition::RightThenTop => (l.end_x, l.start_y),
+            LabelPosition::RightThenBottom => (l.end_x, l.end_y),
         }
     }
 

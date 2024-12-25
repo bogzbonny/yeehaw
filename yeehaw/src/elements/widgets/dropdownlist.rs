@@ -66,8 +66,8 @@ impl DropdownList {
         ])
     }
 
-    pub fn new(
-        ctx: &Context, entries: Vec<String>,
+    pub fn new<S: Into<String>>(
+        ctx: &Context, entries: Vec<S>,
         selection_made_fn: Box<dyn FnMut(Context, String) -> EventResponses>,
     ) -> Self {
         let pane = SelectablePane::new(ctx, Self::KIND)
@@ -83,6 +83,8 @@ impl DropdownList {
         let pane_ = pane.clone();
         let hook = Box::new(move |ctx, y| pane_.set_content_y_offset(&ctx, y));
         *sb.position_changed_hook.borrow_mut() = Some(hook);
+
+        let entries = entries.into_iter().map(|s| s.into()).collect();
 
         let d = DropdownList {
             pane,
@@ -228,12 +230,14 @@ impl DropdownList {
         self.dirty.replace(true);
         *self.open.borrow_mut() = true;
         *self.cursor.borrow_mut() = *self.selected.borrow();
-        let h = self.expanded_height() as i32;
-        self.pane.set_dyn_height(DynVal::new_fixed(h));
+        let h = self.expanded_height();
+        self.pane.set_dyn_height(DynVal::new_fixed(h as i32));
 
         // must set the content for the offsets to be correct
         self.pane.set_content_from_string(self.text(ctx));
-        self.correct_offsets(ctx);
+        let mut ctx = ctx.clone();
+        ctx.size.height = h as u16;
+        self.correct_offsets(&ctx);
     }
 
     pub fn perform_close_escape(&self) {
