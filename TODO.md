@@ -1,10 +1,12 @@
 01. textbox cut/paste shouldn't work when non-editable
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 01. dropdown list extends into white space if picking beyond the end (clicking
     that whitespace panics)
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+01. funny coloring artifacts on the slider when moving out of frame in a
+    scrollable pane
+      - I think it has to do with what the actual gradient is being drawn as!
 
 01. showcase example 
      - a menu
@@ -73,6 +75,8 @@
 01. go through and remove / or make dyn element fns named with_width with_height
 
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+01. textbox shouldn't capture scrolls mouse events if it doesn't need to. 
 
 05. showcase window generator
      - the selectable pane keyboard stops working after the first window is generated.

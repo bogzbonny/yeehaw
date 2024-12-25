@@ -1208,6 +1208,22 @@ impl TextBoxInner {
         (true, resps)
     }
 
+    // used to determine if scroll mouse events should be captured
+    fn changes_made(
+        &self, start_cur_pos: usize, start_offset_x: usize, start_offset_y: usize,
+    ) -> bool {
+        let end_cur_pos = self.get_cursor_pos();
+        let end_offset_x = self.pane.get_content_x_offset();
+        let end_offset_y = self.pane.get_content_y_offset();
+        if start_cur_pos != end_cur_pos
+            || start_offset_x != end_offset_x
+            || start_offset_y != end_offset_y
+        {
+            return true;
+        }
+        false
+    }
+
     pub fn receive_mouse_event(&self, ctx: &Context, ev: MouseEvent) -> (bool, EventResponses) {
         // handle right click
         if let Some(rcm) = &*self.right_click_menu.borrow() {
@@ -1222,6 +1238,8 @@ impl TextBoxInner {
 
         let selectedness = *self.selectedness.borrow();
         let cursor_pos = self.get_cursor_pos();
+        let start_offset_x = self.pane.get_content_x_offset();
+        let start_offset_y = self.pane.get_content_y_offset();
         match ev.kind {
             MouseEventKind::ScrollDown
                 if ev.modifiers == KeyModifiers::NONE
@@ -1229,11 +1247,17 @@ impl TextBoxInner {
             {
                 let w = self.get_wrapped(ctx);
                 let Some(new_pos) = w.get_cursor_below_position(cursor_pos) else {
-                    return (true, EventResponses::default());
+                    return (
+                        self.changes_made(cursor_pos, start_offset_x, start_offset_y),
+                        EventResponses::default(),
+                    );
                 };
                 self.set_cursor_pos(new_pos);
                 let resp = self.correct_offsets(ctx, &w);
-                return (true, resp.into());
+                return (
+                    self.changes_made(cursor_pos, start_offset_x, start_offset_y),
+                    resp.into(),
+                );
             }
             MouseEventKind::ScrollUp
                 if ev.modifiers == KeyModifiers::NONE
@@ -1241,11 +1265,17 @@ impl TextBoxInner {
             {
                 let w = self.get_wrapped(ctx);
                 let Some(new_pos) = w.get_cursor_above_position(cursor_pos) else {
-                    return (true, EventResponses::default());
+                    return (
+                        self.changes_made(cursor_pos, start_offset_x, start_offset_y),
+                        EventResponses::default(),
+                    );
                 };
                 self.set_cursor_pos(new_pos);
                 let resp = self.correct_offsets(ctx, &w);
-                return (true, resp.into());
+                return (
+                    self.changes_made(cursor_pos, start_offset_x, start_offset_y),
+                    resp.into(),
+                );
             }
             MouseEventKind::ScrollLeft
                 if ev.modifiers == KeyModifiers::NONE
@@ -1253,11 +1283,17 @@ impl TextBoxInner {
             {
                 let w = self.get_wrapped(ctx);
                 let Some(new_pos) = w.get_cursor_left_position(cursor_pos) else {
-                    return (true, EventResponses::default());
+                    return (
+                        self.changes_made(cursor_pos, start_offset_x, start_offset_y),
+                        EventResponses::default(),
+                    );
                 };
                 self.set_cursor_pos(new_pos);
                 let resp = self.correct_offsets(ctx, &w);
-                return (true, resp.into());
+                return (
+                    self.changes_made(cursor_pos, start_offset_x, start_offset_y),
+                    resp.into(),
+                );
             }
             MouseEventKind::ScrollDown
                 if ev.modifiers == KeyModifiers::SHIFT
@@ -1265,11 +1301,17 @@ impl TextBoxInner {
             {
                 let w = self.get_wrapped(ctx);
                 let Some(new_pos) = w.get_cursor_left_position(cursor_pos) else {
-                    return (true, EventResponses::default());
+                    return (
+                        self.changes_made(cursor_pos, start_offset_x, start_offset_y),
+                        EventResponses::default(),
+                    );
                 };
                 self.set_cursor_pos(new_pos);
                 let resp = self.correct_offsets(ctx, &w);
-                return (true, resp.into());
+                return (
+                    self.changes_made(cursor_pos, start_offset_x, start_offset_y),
+                    resp.into(),
+                );
             }
             MouseEventKind::ScrollRight
                 if ev.modifiers == KeyModifiers::NONE
@@ -1277,11 +1319,17 @@ impl TextBoxInner {
             {
                 let w = self.get_wrapped(ctx);
                 let Some(new_pos) = w.get_cursor_right_position(cursor_pos) else {
-                    return (true, EventResponses::default());
+                    return (
+                        self.changes_made(cursor_pos, start_offset_x, start_offset_y),
+                        EventResponses::default(),
+                    );
                 };
                 self.set_cursor_pos(new_pos);
                 let resp = self.correct_offsets(ctx, &w);
-                return (true, resp.into());
+                return (
+                    self.changes_made(cursor_pos, start_offset_x, start_offset_y),
+                    resp.into(),
+                );
             }
             MouseEventKind::ScrollUp
                 if ev.modifiers == KeyModifiers::SHIFT
@@ -1289,47 +1337,71 @@ impl TextBoxInner {
             {
                 let w = self.get_wrapped(ctx);
                 let Some(new_pos) = w.get_cursor_right_position(cursor_pos) else {
-                    return (true, EventResponses::default());
+                    return (
+                        self.changes_made(cursor_pos, start_offset_x, start_offset_y),
+                        EventResponses::default(),
+                    );
                 };
                 self.set_cursor_pos(new_pos);
                 let resp = self.correct_offsets(ctx, &w);
-                return (true, resp.into());
+                return (
+                    self.changes_made(cursor_pos, start_offset_x, start_offset_y),
+                    resp.into(),
+                );
             }
             MouseEventKind::ScrollDown
                 if ev.modifiers == KeyModifiers::NONE && selectedness == Selectability::Ready =>
             {
                 self.pane.scroll_down(ctx);
-                return (true, self.correct_ln_and_sbs(ctx).into());
+                return (
+                    self.changes_made(cursor_pos, start_offset_x, start_offset_y),
+                    self.correct_ln_and_sbs(ctx).into(),
+                );
             }
             MouseEventKind::ScrollUp
                 if ev.modifiers == KeyModifiers::NONE && selectedness == Selectability::Ready =>
             {
                 self.pane.scroll_up(ctx);
-                return (true, self.correct_ln_and_sbs(ctx).into());
+                return (
+                    self.changes_made(cursor_pos, start_offset_x, start_offset_y),
+                    self.correct_ln_and_sbs(ctx).into(),
+                );
             }
             MouseEventKind::ScrollLeft
                 if ev.modifiers == KeyModifiers::NONE && selectedness == Selectability::Ready =>
             {
                 self.pane.scroll_left(ctx);
-                return (true, self.correct_ln_and_sbs(ctx).into());
+                return (
+                    self.changes_made(cursor_pos, start_offset_x, start_offset_y),
+                    self.correct_ln_and_sbs(ctx).into(),
+                );
             }
             MouseEventKind::ScrollDown
                 if ev.modifiers == KeyModifiers::SHIFT && selectedness == Selectability::Ready =>
             {
                 self.pane.scroll_left(ctx);
-                return (true, self.correct_ln_and_sbs(ctx).into());
+                return (
+                    self.changes_made(cursor_pos, start_offset_x, start_offset_y),
+                    self.correct_ln_and_sbs(ctx).into(),
+                );
             }
             MouseEventKind::ScrollRight
                 if ev.modifiers == KeyModifiers::NONE && selectedness == Selectability::Ready =>
             {
                 self.pane.scroll_right(ctx);
-                return (true, self.correct_ln_and_sbs(ctx).into());
+                return (
+                    self.changes_made(cursor_pos, start_offset_x, start_offset_y),
+                    self.correct_ln_and_sbs(ctx).into(),
+                );
             }
             MouseEventKind::ScrollUp
                 if ev.modifiers == KeyModifiers::SHIFT && selectedness == Selectability::Ready =>
             {
                 self.pane.scroll_right(ctx);
-                return (true, self.correct_ln_and_sbs(ctx).into());
+                return (
+                    self.changes_made(cursor_pos, start_offset_x, start_offset_y),
+                    self.correct_ln_and_sbs(ctx).into(),
+                );
             }
 
             MouseEventKind::Moved | MouseEventKind::Up(_) => {
