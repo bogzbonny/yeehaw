@@ -5,6 +5,7 @@
 01. dropdown list extends into white space if picking beyond the end (clicking
     that whitespace panics)
 
+
 01. showcase example 
      - a menu
      - tabs
@@ -45,98 +46,6 @@
            - slider with numbers-tb for gradient angle
 
            - slider, change speed, ms for time gradients
-
-
-```
-      △ △ △ △ △     
-    ╭─────o─────╮
-  ◁ │ ███████   │ ▷  
-  ◁ o  ██   ██  o ▷  
-  ◁ │  ██████   │ ▷ 
-  ◁ │  ██   ██  │ ▷  
-  ◁ │ ████  ███ │ ▷  
-    ╰──o─────o──╯
-      ▽ ▽ ▽ ▽ ▽      
-                    
-
-            CHOMPPY ANGRYYY!
-            DO NOT TEST CHOMPPY!
-    _____  /
-  _/o\ /o \
- /        |
- v v v v  |
-  ^ ^ ^ ^ |
-  \.......|
-                           
-                                  , 
-                                  ;o\ 
-                                  ;Ob`. 
-                                 ;OOOOb`. 
-                                ;OOOOOY" ) 
-                               ;OOOO' ,%%) 
-                           \  /OOO ,%%%%,%\ 
-                            |:  ,%%%%%%;%%/ 
-                            ||,%%%%%%%%%%/ 
-                            ;|%%%%%%%%%'/`-'"`. 
-                           /: %%%%%%%%'/ c$$$$.`. 
-              `.______     \ \%%%%%%%'/.$$YF"Y$: ) 
-            _________ "`.\`\o \`%%' ,',$F,.   $F ) 
-   ___,--""'dOOO;,:%%`-._ o_,O_   ,',"',d88)  '  ) 
--"'. YOOOOOOO';%%%%%%%%%;`-O   )_     ,X888F   _/ 
-    \ YOOOO',%%%%%%%%%%Y    \__;`),-.  `""F  ,' 
-     \ `" ,%%%%%%%%%%,' _,-   \-' \_ `------' 
-      \_ %%%%',%%%%%_,-' ,;    ( _,-\ 
-        `-.__`%%',-' .c$$'     |\-_,-\ 
-             `""; ,$$$',md8oY  : `\_,') 
-               ( ,$$$F `88888  ;   `--' 
-                \`$$(    `""' / 
-                 \`"$$c'   _,' 
-  -hrr-           `.____,-'
-
-
-              __,aaPPPPPPPPaa,__
-          ,adP"""'          `""Yb,_
-       ,adP'                     `"Yb,
-     ,dP'     ,aadPP"""""YYba,_     `"Y,
-    ,P'    ,aP"'            `""Ya,     "Y,
-   ,P'    aP'     _________     `"Ya    `Yb,
-  ,P'    d"    ,adP""""""""Yba,    `Y,    "Y,
- ,d'   ,d'   ,dP"            `Yb,   `Y,    `Y,
- d'   ,d'   ,d'    ,dP""Yb,    `Y,   `Y,    `b
- 8    d'    d'   ,d"      "b,   `Y,   `8,    Y,
- 8    8     8    d'    _   `Y,   `8    `8    `b
- 8    8     8    8     8    `8    8     8     8
- 8    Y,    Y,   `b, ,aP     P    8    ,P     8
- I,   `Y,   `Ya    """"     d'   ,P    d"    ,P
- `Y,   `8,    `Ya         ,8"   ,P'   ,P'    d'
-  `Y,   `Ya,    `Ya,,__,,d"'   ,P'   ,P"    ,P
-   `Y,    `Ya,     `""""'     ,P'   ,d"    ,P'
-    `Yb,    `"Ya,_          ,d"    ,P'    ,P'
-      `Yb,      ""YbaaaaaadP"     ,P'    ,P'          
-        `Yba,                   ,d'    ,dP'            
- Normand  `"Yba,__       __,adP"     dP"
- Veilleux     `"""""""""""""'                  
-                                         _.oo.
-                 _.u[[/;:,.         .odMMMMMM'
-              .o888UU[[[/;:-.  .o@P^    MMM^
-             oN88888UU[[[/;::-.        dP^
-            dNMMNN888UU[[[/;:--.   .o@P^
-           ,MMMMMMN888UU[[/;::-. o@^
-           NNMMMNN888UU[[[/~.o@P^
-           888888888UU[[[/o@^-..
-          oI8888UU[[[/o@P^:--..
-       .@^  YUU[[[/o@^;::---..
-     oMP     ^/o@P^;:::---..
-  .dMMM    .o@^ ^;::---...
- dMMMMMMM@^`       `^^^^
-YMMMUP^
- ^^
-
-unknown
-
-
-```
-
 
 01. gif of showcase example - will need to record with non-VHS/asciicinema-tool
     to get mouse movements
@@ -537,6 +446,9 @@ WIDGETS
       ╋   ╋ 6    1  2  3  4  5  6  7  8  9  1  1  1
       ┃   ┃                                 0  1  2
       ┻   ┻ 7 
+
+10. bat preview window integration.
+     - https://github.com/sharkdp/bat/blob/master/src/pretty_printer.rs
 
 20. double sided slider bar
      - start ch

@@ -131,7 +131,7 @@ impl Element for PaneScrollable {
             me.row += *self.content_offset_y.borrow() as i32;
         }
 
-        let (captured, resps) = self.pane.receive_event(&inner_ctx, ev.clone());
+        let (mut captured, resps) = self.pane.receive_event(&inner_ctx, ev.clone());
         if captured {
             return (captured, resps);
         }
@@ -159,14 +159,24 @@ impl Element for PaneScrollable {
                 _ => None,
             };
             if let Some((dx, dy)) = scroll {
-                if !(dx == 0 && dy == 0) {
+                if dx != 0 {
+                    let start_x = *self.content_offset_x.borrow();
+
                     let x = if dx < 0 {
-                        self.content_offset_x
-                            .borrow()
-                            .saturating_sub((-dx) as usize)
+                        start_x.saturating_sub((-dx) as usize)
                     } else {
-                        *self.content_offset_x.borrow() + dx as usize
+                        start_x + dx as usize
                     };
+                    self.set_content_x_offset(ctx, x);
+                    let end_x = *self.content_offset_x.borrow();
+                    if start_x != end_x {
+                        captured = true;
+                    }
+                    return (captured, resps);
+                }
+                if dy != 0 {
+                    let start_y = *self.content_offset_y.borrow();
+
                     let y = if dy < 0 {
                         self.content_offset_y
                             .borrow()
@@ -174,9 +184,13 @@ impl Element for PaneScrollable {
                     } else {
                         *self.content_offset_y.borrow() + dy as usize
                     };
-                    self.set_content_x_offset(ctx, x);
                     self.set_content_y_offset(ctx, y);
-                    return (true, resps);
+
+                    let end_y = *self.content_offset_y.borrow();
+                    if start_y != end_y {
+                        captured = true;
+                    }
+                    return (captured, resps);
                 }
             }
         }

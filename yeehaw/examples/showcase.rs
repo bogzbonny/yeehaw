@@ -101,10 +101,7 @@ async fn main() -> Result<(), Error> {
     let el4 = DebugSizePane::new(&ctx)
         .with_bg(Color::PINK)
         .with_text("tab 4".to_string());
-    let el5 = DebugSizePane::new(&ctx)
-        .with_bg(Color::PINK)
-        .with_text("tab 4".to_string());
-    let el6 = TerminalPane::new(&ctx)?;
+    let el_term = TerminalPane::new(&ctx)?;
 
     let showcase = TerminalPane::new(&ctx)?;
     showcase.pane.set_focused(false);
@@ -119,8 +116,7 @@ async fn main() -> Result<(), Error> {
     tabs.push(colors_tab, "colors");
     tabs.push(Box::new(el3), "$EDITOR");
     tabs.push(Box::new(el4), "images");
-    tabs.push(Box::new(el5), "file-nav");
-    tabs.push(Box::new(el6), "terminal");
+    tabs.push(Box::new(el_term), "terminal");
     tabs.push_with_on_open_fn(Box::new(showcase), "showcase", on_showcase_open_fn);
     tabs.select(0);
     central_pane.push(Box::new(tabs));
