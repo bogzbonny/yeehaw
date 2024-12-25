@@ -1,3 +1,5 @@
+use crate::Element;
+
 /// DynVal represents a dynamic x or y screen position value which scales based on the
 /// size of the parent element. The value is a fixed number of characters
 /// (fixed) plus the flexible fraction of the parent element size (flex).
@@ -117,6 +119,40 @@ impl DynVal {
             plus_min_of: vec![DynVal::new_fixed(max - min), DynVal::new_flex(flex)],
             ..DynVal::default()
         }
+    }
+
+    /// convienence function to get the x position after the element
+    pub fn x_after<D: Into<DynVal>>(el: &dyn Element, padding: D) -> Self {
+        el.get_dyn_location_set()
+            .get_dyn_end_x()
+            .plus(padding.into())
+    }
+
+    /// convienence function to get the y position after the element
+    pub fn y_after<D: Into<DynVal>>(el: &dyn Element, padding: D) -> Self {
+        el.get_dyn_location_set()
+            .get_dyn_end_y()
+            .plus(padding.into())
+    }
+
+    /// convienence function to get the x position after the largest element in the x-direction
+    pub fn x_after_all<D: Into<DynVal>>(els: Vec<&dyn Element>, padding: D) -> Self {
+        let mut out = DynVal::default();
+        for el in els.iter() {
+            let el_x = el.get_dyn_location_set().get_dyn_end_x();
+            out.plus_max_of.push(el_x);
+        }
+        out.plus(padding.into())
+    }
+
+    /// convienence function to get the y position after the largest element in the y-direction
+    pub fn y_after_all<D: Into<DynVal>>(els: Vec<&dyn Element>, padding: D) -> Self {
+        let mut out = DynVal::default();
+        for el in els.iter() {
+            let el_y = el.get_dyn_location_set().get_dyn_end_y();
+            out.plus_max_of.push(el_y);
+        }
+        out.plus(padding.into())
     }
 
     /// Get the value from the absolute and relative psvts

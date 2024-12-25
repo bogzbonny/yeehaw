@@ -39,13 +39,13 @@
            - some sliders: 1 for each color (greyed out when colors disabled)
              maybe with an RGB tb for css color input
 
+           - dropdown, number of colors (greyed out for solid-color kind)
+
            - slider, gradient size between colors (enforce static) 
            - slider with numbers-tb for gradient angle
 
            - slider, change speed, ms for time gradients
 
-           - dropdown, number of colors (greyed out for solid-color kind)
-           - dropdown,
 
 ```
       △ △ △ △ △     
@@ -61,12 +61,12 @@
 
             CHOMPPY ANGRYYY!
             DO NOT TEST CHOMPPY!
-    _____  / 
-  _/o\ /o \ 
+    _____  /
+  _/o\ /o \
  /        |
  v v v v  |
   ^ ^ ^ ^ |
-  \.......|        
+  \.......|
                            
                                   , 
                                   ;o\ 
@@ -157,8 +157,9 @@ unknown
 
 01. update rust version, update deps
 
-01. cleanup the widgets example 
-    - showcase should just use the same widgets example pane
+01. widgets example should be the same as showcase
+
+01. colors example should be the same as showcase
 
 01. go through and remove / or make dyn element fns named with_width with_height
 

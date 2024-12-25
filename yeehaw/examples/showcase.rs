@@ -559,101 +559,19 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
     let el = ParentPaneOfSelectable::new(ctx).with_bg(Color::DARK_OLIVE_GREEN);
 
     let x = DynVal::new_fixed(1);
-    let mut y = DynVal::new_fixed(1);
+    let y = DynVal::new_fixed(1);
     let desc_text = "Within yeehaw, a standard\n\
                      color can be an RGBA or a\n\
                      gradient changing by position\n\
                      or time (or both!).";
-    let description = Label::new(ctx, desc_text);
-    el.add_element(Box::new(description.at(x.clone(), y.clone())));
+    let description = Label::new(ctx, desc_text).at(x.clone(), y.clone());
+    let y = DynVal::y_after(&description, 1);
+    el.add_element(Box::new(description));
 
-    let fg_spiral = r#"              __,aaPPPPPPPPaa,__
-          ,adP"""'          `""Yb,_
-       ,adP'                     `"Yb,
-     ,dP'     ,aadPP"""""YYba,_     `"Y,
-    ,P'    ,aP"'            `""Ya,     "Y,
-   ,P'    aP'     _________     `"Ya    `Yb,
-  ,P'    d"    ,adP""""""""Yba,    `Y,    "Y,
- ,d'   ,d'   ,dP"            `Yb,   `Y,    `Y,
- d'   ,d'   ,d'    ,dP""Yb,    `Y,   `Y,    `b
- 8    d'    d'   ,d"      "b,   `Y,   `8,    Y,
- 8    8     8    d'    _   `Y,   `8    `8    `b
- 8    8     8    8     8    `8    8     8     8
- 8    Y,    Y,   `b, ,aP     P    8    ,P     8
- I,   `Y,   `Ya    """"     d'   ,P    d"    ,P
- `Y,   `8,    `Ya         ,8"   ,P'   ,P'    d'
-  `Y,   `Ya,    `Ya,,__,,d"'   ,P'   ,P"    ,P
-   `Y,    `Ya,     `""""'     ,P'   ,d"    ,P'
-    `Yb,    `"Ya,_          ,d"    ,P'    ,P'
-      `Yb,      ""YbaaaaaadP"     ,P'    ,P'   
-        `Yba,                   ,d'    ,dP'    
- Normand  `"Yba,__       __,adP"     dP"
- Veilleux     `"""""""""""""'                  "#;
-
-    let fg_butterfly = r#"                                 , 
-                                 ;o\ 
-                                 ;Ob`. 
-                                ;OOOOb`. 
-                               ;OOOOOY" ) 
-                              ;OOOO' ,%%) 
-                          \  /OOO ,%%%%,%\ 
-                           |:  ,%%%%%%;%%/ 
-                           ||,%%%%%%%%%%/ 
-                           ;|%%%%%%%%%'/`-'"`. 
-                          /: %%%%%%%%'/ c$$$$.`. 
-             `.______     \ \%%%%%%%'/.$$YF"Y$: ) 
-           _________ "`.\`\o \`%%' ,',$F,.   $F ) 
-  ___,--""'dOOO;,:%%`-._ o_,O_   ,',"',d88)  '  ) 
-"'. YOOOOOOO';%%%%%%%%%;`-O   )_     ,X888F   _/ 
-   \ YOOOO',%%%%%%%%%%Y    \__;`),-.  `""F  ,' 
-    \ `" ,%%%%%%%%%%,' _,-   \-' \_ `------' 
-     \_ %%%%',%%%%%_,-' ,;    ( _,-\ 
-       `-.__`%%',-' .c$$'     |\-_,-\ 
-            `""; ,$$$',md8oY  : `\_,') 
-              ( ,$$$F `88888  ;   `--' 
-               \`$$(    `""' / 
-                \`"$$c'   _,' 
- -hrr-           `.____,-' "#;
-
-    let mut y_art = DynVal::new_fixed(0);
-    let mut x_art = x.plus(30.into());
-    let fg_art = Label::new(ctx, fg_butterfly);
-    el.add_element(Box::new(
-        Bordered::new_basic(
-            ctx,
-            Box::new(fg_art),
-            Style::transparent().with_fg(Color::WHITE),
-        )
-        .with_dyn_height(DynVal::new_fixed(26))
-        .with_dyn_width(DynVal::new_fixed(51))
-        .at(x_art.clone(), y_art.clone()),
-    ));
-
-    y_art = y_art.plus(26.into());
-    x_art = x_art.plus(8.into());
-
-    let dial_fg_art = Dial::new_spacious(
-        ctx,
-        vec![
-            (1, "None"),
-            (2, "Butterfly"),
-            (3, "Spiral"),
-            (8, "Rust-Logo"),
-            (9, "Saturn"),
-            (10, "Chompy"),
-        ],
-    )
-    .with_position(2)
-    .at(x_art.clone(), y_art.clone());
-    el.add_element(Box::new(dial_fg_art.label_left_top(ctx, "fg text:")));
-    el.add_element(Box::new(dial_fg_art.clone()));
-
-    y = y.plus(5.into());
     let x_tog = DynVal::new_fixed(18);
     let toggle = Toggle::new(ctx, "  fg  ".to_string(), "  bg  ".to_string()).at(x_tog, y.clone());
-    el.add_element(Box::new(toggle));
-
-    y = y.plus(1.into());
+    let y = DynVal::y_after(&toggle, 0);
+    el.add_element(Box::new(toggle.clone()));
 
     let dial_color = Dial::new_spacious(
         ctx,
@@ -666,10 +584,11 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
             (5, "Linear-Time"),
         ],
     )
+    .with_label_color(ctx, Color::GREY22)
     .at(x.clone(), y.clone());
+    let y = DynVal::y_after(&dial_color, 1);
     el.add_element(Box::new(dial_color.label(ctx, "color kind:")));
     el.add_element(Box::new(dial_color.clone()));
-    let y = y.plus(7.into());
 
     let dd_x = x.plus(7.into());
     let color_dd = DropdownList::new(
@@ -680,14 +599,11 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
     .with_width(5.into())
     .with_max_expanded_height(8)
     .at(dd_x, y.clone());
+    let y = DynVal::y_after(&color_dd, 0);
     el.add_element(Box::new(color_dd.label_left(ctx, "color (")));
     el.add_element(Box::new(color_dd.label_right(ctx, "):")));
     el.add_element(Box::new(color_dd));
 
-    let color_label = Label::new(ctx, "color:").at(x.clone(), y.clone());
-    el.add_element(Box::new(color_label.clone()));
-
-    let y = y.plus(1.into());
     let x_nb = x.plus(3.into());
     let ntb_width = DynVal::new_fixed(8);
     let r_ntb = NumbersTextBox::new(ctx, 128u8)
@@ -717,10 +633,10 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
         slider_.set_position(v);
         EventResponses::default()
     }));
+    let y = DynVal::y_after(&r_slider, 0);
     el.add_element(Box::new(r_slider.clone()));
 
     let x_nb = x.plus(3.into());
-    let y = y.plus(1.into());
     let ntb_width = DynVal::new_fixed(8);
     let g_ntb = NumbersTextBox::new(ctx, 128u8)
         .with_min(0)
@@ -749,10 +665,10 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
         slider_.set_position(v);
         EventResponses::default()
     }));
+    let y = DynVal::y_after(&g_slider, 0);
     el.add_element(Box::new(g_slider.clone()));
 
     let x_nb = x.plus(3.into());
-    let y = y.plus(1.into());
     let ntb_width = DynVal::new_fixed(8);
     let b_ntb = NumbersTextBox::new(ctx, 128u8)
         .with_min(0)
@@ -781,16 +697,16 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
         slider_.set_position(v);
         EventResponses::default()
     }));
+    let y = DynVal::y_after(&b_slider, 0);
     el.add_element(Box::new(b_slider.clone()));
 
     let x_nb = x.plus(3.into());
-    let y = y.plus(1.into());
-    let nta_width = DynVal::new_fixed(8);
+    let ntb_width = DynVal::new_fixed(8);
     let a_ntb = NumbersTextBox::new(ctx, 128u8)
         .with_min(0)
         .with_max(255)
         .with_decimal_places(2)
-        .with_width(nta_width)
+        .with_width(ntb_width)
         .at(x_nb.clone(), y.clone());
     el.add_element(Box::new(a_ntb.clone()));
     el.add_element(Box::new(a_ntb.label_left_top(ctx, "A: ")));
@@ -813,6 +729,7 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
         slider_.set_position(v);
         EventResponses::default()
     }));
+    let y = DynVal::y_after(&a_slider, 1);
     el.add_element(Box::new(a_slider.clone()));
 
     r_slider.set_position(0.5);
@@ -820,5 +737,296 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
     b_slider.set_position(0.5);
     a_slider.set_position(0.5);
 
+    let dd_x = x.plus(22.into());
+    let max_gr_colors_dd = DropdownList::new(
+        ctx,
+        vec!["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+        Box::new(|_, _| EventResponses::default()),
+    )
+    .with_width(5.into())
+    .with_max_expanded_height(8)
+    .at(dd_x, y.clone());
+    let y = DynVal::y_after(&max_gr_colors_dd, 2);
+    el.add_element(Box::new(
+        max_gr_colors_dd.label_left(ctx, "# of gradient colors: "),
+    ));
+    el.add_element(Box::new(max_gr_colors_dd));
+
+    let ntb_width = DynVal::new_fixed(8);
+    let dist_ntb = NumbersTextBox::new(ctx, 128u8)
+        .with_min(0)
+        .with_max(255)
+        .with_decimal_places(2)
+        .with_width(ntb_width)
+        .at(x.clone(), y.clone());
+    el.add_element(Box::new(dist_ntb.clone()));
+    el.add_element(Box::new(dist_ntb.label(ctx, "gradient color distance:")));
+    let x_slider = x.plus(9.into());
+    let slider_width = DynVal::new_fixed(20);
+    let ntb_ = dist_ntb.clone();
+    let dist_slider = Slider::new_basic_block(ctx)
+        .with_color(Color::AQUA)
+        .with_width(slider_width.clone())
+        .at(x_slider.clone(), y.clone())
+        .with_fn(Box::new(move |_, sl| {
+            let p = sl.get_position();
+            let p = (p * 255.) as u8;
+            ntb_.change_value(p);
+            EventResponses::default()
+        }));
+    let slider_ = dist_slider.clone();
+    dist_ntb.set_value_changed_hook(Box::new(move |v| {
+        let v = v as f64 / 255.;
+        slider_.set_position(v);
+        EventResponses::default()
+    }));
+    let y = DynVal::y_after(&dist_slider, 2);
+    el.add_element(Box::new(dist_slider.clone()));
+
+    let ntb_width = DynVal::new_fixed(8);
+    let angle_ntb = NumbersTextBox::new(ctx, 128u8)
+        .with_min(0)
+        .with_max(255)
+        .with_decimal_places(2)
+        .with_width(ntb_width)
+        .at(x.clone(), y.clone());
+    el.add_element(Box::new(angle_ntb.clone()));
+    el.add_element(Box::new(angle_ntb.label(ctx, "linear_gradient angle:")));
+    let x_slider = x.plus(9.into());
+    let slider_width = DynVal::new_fixed(20);
+    let ntb_ = angle_ntb.clone();
+    let angle_slider = Slider::new_basic_block(ctx)
+        .with_color(Color::AQUA)
+        .with_width(slider_width.clone())
+        .at(x_slider.clone(), y.clone())
+        .with_fn(Box::new(move |_, sl| {
+            let p = sl.get_position();
+            let p = (p * 255.) as u8;
+            ntb_.change_value(p);
+            EventResponses::default()
+        }));
+    let slider_ = angle_slider.clone();
+    angle_ntb.set_value_changed_hook(Box::new(move |v| {
+        let v = v as f64 / 255.;
+        slider_.set_position(v);
+        EventResponses::default()
+    }));
+    let y = DynVal::y_after(&angle_slider, 2);
+    el.add_element(Box::new(angle_slider.clone()));
+
+    let ntb_width = DynVal::new_fixed(8);
+    let time_ntb = NumbersTextBox::new(ctx, 128u8)
+        .with_min(0)
+        .with_max(255)
+        .with_decimal_places(2)
+        .with_width(ntb_width)
+        .at(x.clone(), y.clone());
+    el.add_element(Box::new(time_ntb.clone()));
+    el.add_element(Box::new(time_ntb.label(ctx, "time gradient ms:")));
+    let x_slider = x.plus(9.into());
+    let slider_width = DynVal::new_fixed(20);
+    let ntb_ = time_ntb.clone();
+    let time_slider = Slider::new_basic_block(ctx)
+        .with_color(Color::AQUA)
+        .with_width(slider_width.clone())
+        .at(x_slider.clone(), y.clone())
+        .with_fn(Box::new(move |_, sl| {
+            let p = sl.get_position();
+            let p = (p * 255.) as u8;
+            ntb_.change_value(p);
+            EventResponses::default()
+        }));
+    let slider_ = time_slider.clone();
+    time_ntb.set_value_changed_hook(Box::new(move |v| {
+        let v = v as f64 / 255.;
+        slider_.set_position(v);
+        EventResponses::default()
+    }));
+    el.add_element(Box::new(time_slider.clone()));
+
+    // ------------------------------
+
+    let spiral = r#"              __,aaPPPPPPPPaa,__
+          ,adP"""'          `""Yb,_
+       ,adP'                     `"Yb,
+     ,dP'     ,aadPP"""""YYba,_     `"Y,
+    ,P'    ,aP"'            `""Ya,     "Y,
+   ,P'    aP'     _________     `"Ya    `Yb,
+  ,P'    d"    ,adP""""""""Yba,    `Y,    "Y,
+ ,d'   ,d'   ,dP"            `Yb,   `Y,    `Y,
+ d'   ,d'   ,d'    ,dP""Yb,    `Y,   `Y,    `b
+ 8    d'    d'   ,d"      "b,   `Y,   `8,    Y,
+ 8    8     8    d'    _   `Y,   `8    `8    `b
+ 8    8     8    8     8    `8    8     8     8
+ 8    Y,    Y,   `b, ,aP     P    8    ,P     8
+ I,   `Y,   `Ya    """"     d'   ,P    d"    ,P
+ `Y,   `8,    `Ya         ,8"   ,P'   ,P'    d'
+  `Y,   `Ya,    `Ya,,__,,d"'   ,P'   ,P"    ,P
+   `Y,    `Ya,     `""""'     ,P'   ,d"    ,P'
+    `Yb,    `"Ya,_          ,d"    ,P'    ,P'
+      `Yb,      ""YbaaaaaadP"     ,P'    ,P'   
+        `Yba,                   ,d'    ,dP'    
+ Normand  `"Yba,__       __,adP"     dP"
+ Veilleux     `"""""""""""""'                  "#;
+
+    let butterfly = r#"                                 , 
+                                 ;o\ 
+                                 ;Ob`. 
+                                ;OOOOb`. 
+                               ;OOOOOY" ) 
+                              ;OOOO' ,%%) 
+                          \  /OOO ,%%%%,%\ 
+                           |:  ,%%%%%%;%%/ 
+                           ||,%%%%%%%%%%/ 
+                           ;|%%%%%%%%%'/`-'"`. 
+                          /: %%%%%%%%'/ c$$$$.`. 
+             `.______     \ \%%%%%%%'/.$$YF"Y$: ) 
+           _________ "`.\`\o \`%%' ,',$F,.   $F ) 
+  ___,--""'dOOO;,:%%`-._ o_,O_   ,',"',d88)  '  ) 
+"'. YOOOOOOO';%%%%%%%%%;`-O   )_     ,X888F   _/ 
+   \ YOOOO',%%%%%%%%%%Y    \__;`),-.  `""F  ,' 
+    \ `" ,%%%%%%%%%%,' _,-   \-' \_ `------' 
+     \_ %%%%',%%%%%_,-' ,;    ( _,-\ 
+       `-.__`%%',-' .c$$'     |\-_,-\ 
+            `""; ,$$$',md8oY  : `\_,') 
+              ( ,$$$F `88888  ;   `--' 
+               \`$$(    `""' / 
+                \`"$$c'   _,' 
+ -hrr-           `.____,-' "#;
+
+    let saturn = r#"                                         _.oo.
+                 _.u[[/;:,.         .odMMMMMM'
+              .o888UU[[[/;:-.  .o@P^    MMM^
+             oN88888UU[[[/;::-.        dP^
+            dNMMNN888UU[[[/;:--.   .o@P^
+           ,MMMMMMN888UU[[/;::-. o@^
+           NNMMMNN888UU[[[/~.o@P^
+           888888888UU[[[/o@^-..
+          oI8888UU[[[/o@P^:--..
+       .@^  YUU[[[/o@^;::---..
+     oMP     ^/o@P^;:::---..
+  .dMMM    .o@^ ^;::---...
+ dMMMMMMM@^`       `^^^^
+YMMMUP^
+ ^^
+
+unknown"#;
+
+    let rust_logo = r#"
+      △ △ △ △ △
+    ╭─────o─────╮
+  ◁ │ ███████   │ ▷
+  ◁ o  ██   ██  o ▷
+  ◁ │  ██████   │ ▷
+  ◁ │  ██   ██  │ ▷
+  ◁ │ ████  ███ │ ▷
+    ╰──o─────o──╯
+      ▽ ▽ ▽ ▽ ▽    
+"#;
+    let chompy = r#"
+            CHOMPPY ANGRYYY!
+            DO NOT TEST CHOMPPY!
+    _____  /
+  _/o\ /o \
+ /        |
+ v v v v  |
+  ^ ^ ^ ^ |
+  \.......|
+"#;
+
+    let y_art = DynVal::new_fixed(0);
+    let x_art = DynVal::x_after(&toggle, 1);
+    let fg_art = Label::new(ctx, butterfly);
+    let art = Bordered::new_basic(
+        ctx,
+        Box::new(fg_art),
+        Style::transparent().with_fg(Color::WHITE),
+    )
+    .with_dyn_height(DynVal::new_fixed(26))
+    .with_dyn_width(DynVal::new_fixed(51))
+    .at(x_art.clone(), y_art.clone());
+    let y_dial_fg_art = DynVal::y_after(&art, 1);
+    let x_dial_fg_art = x_art.plus(12.into());
+    el.add_element(Box::new(art));
+
+    let dial_fg_art = Dial::new_spacious(
+        ctx,
+        vec![
+            (1, "None"),
+            (2, "Butterfly"),
+            (3, "Spiral"),
+            (8, "Rust-Logo"),
+            (9, "Saturn"),
+            (10, "Chompy"),
+        ],
+    )
+    .with_position(2)
+    .with_label_color(ctx, Color::GREY22)
+    .at(x_dial_fg_art, y_dial_fg_art);
+    el.add_element(Box::new(dial_fg_art.label_left_top(ctx, "fg text:")));
+    el.add_element(Box::new(dial_fg_art.clone()));
+
     Box::new(el)
+}
+
+pub struct ColorsDemoState {
+    pub art: String,
+    pub fg: ColorsDemoColor,
+    pub bg: ColorsDemoColor,
+
+    pub toggle: Toggle,
+    pub dial_fg_art: Dial,
+    pub dial_color_kind: Dial,
+    pub color_dd: DropdownList,
+    pub max_gr_colors_dd: DropdownList,
+    pub dist_ntb: NumbersTextBox<f64>,
+    pub angle_ntb: NumbersTextBox<f64>,
+    pub time_ntb: NumbersTextBox<usize>,
+    pub r_ntb: NumbersTextBox<u8>,
+    pub g_ntb: NumbersTextBox<u8>,
+    pub b_ntb: NumbersTextBox<u8>,
+    pub a_ntb: NumbersTextBox<u8>,
+    pub r_slider: Slider,
+    pub g_slider: Slider,
+    pub b_slider: Slider,
+    pub a_slider: Slider,
+    pub dist_slider: Slider,
+    pub angle_slider: Slider,
+    pub time_slider: Slider,
+}
+
+pub struct ColorsDemoColor {
+    pub kind: ColorsDemoColorKind,
+    // all inner states are kept so they may be returned too
+    pub solid_state: Color,
+    pub time_gradient_state: TimeGradient,
+    pub radial_gradient_state: RadialGradient,
+    pub linear_gradient_state: Gradient,
+    pub radial_time_state: (TimeGradient, RadialGradient),
+    pub linear_time_state: (TimeGradient, Gradient),
+}
+
+pub enum ColorsDemoColorKind {
+    Solid,
+    TimeGradient,
+    RadialGradient,
+    LinearGradient,
+    RadialTime,
+    LinearTime,
+}
+
+impl ColorsDemoState {
+    /// updates all the sliders/tbs for a dial change
+    pub fn update_for_toggle_change() {}
+
+    /// updates all the sliders/tbs for a dial change
+    pub fn update_for_color_dial_change() {}
+
+    /// updates for any smaller-changes (sliders/tbs)
+    pub fn update_for_minor_changes() {}
+
+    /// updates the drawing of the art
+    pub fn update_drawing() {
+        todo!()
+    }
 }
