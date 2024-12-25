@@ -256,7 +256,7 @@ impl Style {
         }
     }
 
-    pub fn set_draw_size_offset_colors(&mut self, s: Size, x: u16, y: u16) {
+    pub fn set_draw_size_offset_colors(&mut self, s: Size, x: i32, y: i32) {
         if let Some(fg) = self.fg.as_mut() {
             fg.0.add_to_offset(x, y);
             fg.0.set_draw_size_if_unset(s);
@@ -271,16 +271,16 @@ impl Style {
         }
     }
 
-    /// reduce the offset, used for scrollable areas
-    pub fn sub_from_offset_colors(&mut self, x: u16, y: u16) {
+    /// increase the offset, used for scrollable areas
+    pub fn add_to_offset_colors(&mut self, x: i32, y: i32) {
         if let Some(fg) = self.fg.as_mut() {
-            fg.0.sub_from_offset(x, y);
+            fg.0.add_to_offset(x, y);
         }
         if let Some(bg) = self.bg.as_mut() {
-            bg.0.sub_from_offset(x, y);
+            bg.0.add_to_offset(x, y);
         }
         if let Some(ul) = self.underline_color.as_mut() {
-            ul.0.sub_from_offset(x, y);
+            ul.0.add_to_offset(x, y);
         }
     }
 

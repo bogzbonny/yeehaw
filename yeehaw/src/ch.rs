@@ -171,15 +171,15 @@ impl DrawChPos {
     }
 
     /// apply offsets to all position based colors, also set the draw size if unset
-    pub fn set_draw_size_offset_colors(&mut self, s: Size, offset_x: u16, offset_y: u16) {
+    pub fn set_draw_size_offset_colors(&mut self, s: Size, offset_x: i32, offset_y: i32) {
         self.ch
             .style
             .set_draw_size_offset_colors(s, offset_x, offset_y);
     }
 
-    /// reduce the offsets for any gradient colors in the style, used for scrollable areas
-    pub fn sub_from_offset_colors(&mut self, offset_x: u16, offset_y: u16) {
-        self.ch.style.sub_from_offset_colors(offset_x, offset_y);
+    /// add to the offsets for any gradient colors in the style, used for scrollable areas
+    pub fn add_to_offset_colors(&mut self, offset_x: i32, offset_y: i32) {
+        self.ch.style.add_to_offset_colors(offset_x, offset_y);
     }
 
     pub fn new_from_string(s: String, start_x: u16, start_y: u16, sty: Style) -> Vec<DrawChPos> {

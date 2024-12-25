@@ -326,19 +326,10 @@ impl Color {
     }
 
     /// set the offset of position dependent colors
-    pub fn add_to_offset(&mut self, x: u16, y: u16) {
+    pub fn add_to_offset(&mut self, x: i32, y: i32) {
         match self {
             Color::Gradient(ref mut gr) => gr.add_to_offset(x, y),
             Color::RadialGradient(ref mut rg) => rg.add_to_offset(x, y),
-            _ => {}
-        }
-    }
-
-    /// reduce the offset of position dependent colors
-    pub fn sub_from_offset(&mut self, x: u16, y: u16) {
-        match self {
-            Color::Gradient(ref mut gr) => gr.sub_from_offset(x, y),
-            Color::RadialGradient(ref mut rg) => rg.sub_from_offset(x, y),
             _ => {}
         }
     }
@@ -421,7 +412,7 @@ pub struct RadialGradient {
 
     /// used to offset the gradient so that the gradient can be moved
     /// useful so that the gradient can be evaluated passively
-    pub offset: (u16, u16),
+    pub offset: (i32, i32),
 
     pub center: (DynVal, DynVal),
     /// x, y
@@ -447,14 +438,9 @@ impl RadialGradient {
         }
     }
 
-    pub fn add_to_offset(&mut self, x: u16, y: u16) {
+    pub fn add_to_offset(&mut self, x: i32, y: i32) {
         self.offset.0 += x;
         self.offset.1 += y;
-    }
-
-    pub fn sub_from_offset(&mut self, x: u16, y: u16) {
-        self.offset.0 = self.offset.0.saturating_sub(x);
-        self.offset.1 = self.offset.1.saturating_sub(y);
     }
 
     pub fn to_color(&self, s: Size, dur_since_launch: Duration, x: u16, y: u16) -> Color {
@@ -554,7 +540,7 @@ pub struct Gradient {
 
     /// used to offset the gradient so that the gradient can be moved
     /// useful so that the gradient can be evaluated passively
-    pub offset: (u16, u16),
+    pub offset: (i32, i32),
 
     /// pos, color
     pub grad: Vec<(DynVal, Color)>,
@@ -702,14 +688,9 @@ impl Gradient {
         }
     }
 
-    pub fn add_to_offset(&mut self, x: u16, y: u16) {
+    pub fn add_to_offset(&mut self, x: i32, y: i32) {
         self.offset.0 += x;
         self.offset.1 += y;
-    }
-
-    pub fn sub_from_offset(&mut self, x: u16, y: u16) {
-        self.offset.0 = self.offset.0.saturating_sub(x);
-        self.offset.1 = self.offset.1.saturating_sub(y);
     }
 
     pub fn to_crossterm_color(
@@ -748,19 +729,19 @@ impl Gradient {
 
         // determine the position on the gradient of the given x, y
         let mut pos = if self.angle_deg == 0. {
-            let mut x_off = x as i32 - self.offset.0 as i32;
+            let mut x_off = x as i32 - self.offset.0;
             x_off %= s.width as i32;
             x_off
         } else if self.angle_deg == 90. {
-            let mut y_off = y as i32 - self.offset.1 as i32;
+            let mut y_off = y as i32 - self.offset.1;
             y_off %= s.height as i32;
             y_off
         } else if self.angle_deg == 180. {
-            let mut x_off = x as i32 - self.offset.0 as i32;
+            let mut x_off = x as i32 - self.offset.0;
             x_off %= s.width as i32;
             -x_off
         } else if self.angle_deg == 270. {
-            let mut y_off = y as i32 - self.offset.1 as i32;
+            let mut y_off = y as i32 - self.offset.1;
             y_off %= s.height as i32;
             -y_off
         } else {
@@ -781,8 +762,8 @@ impl Gradient {
             //   │         ╲╱
             //
 
-            let x_off = x as i32 - self.offset.0 as i32;
-            let y_off = y as i32 - self.offset.1 as i32;
+            let x_off = x as i32 - self.offset.0;
+            let y_off = y as i32 - self.offset.1;
             let x = x_off as f64;
             let y = y_off as f64;
             #[allow(non_snake_case)]
