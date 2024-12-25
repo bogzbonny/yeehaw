@@ -1,6 +1,7 @@
 01. textbox cut/paste shouldn't work when non-editable
 01. dropdown list extends into white space if picking beyond the end (clicking
     that whitespace panics)
+01. textbox shouldn't capture scrolls mouse events if it doesn't need to. 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -76,7 +77,10 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-01. textbox shouldn't capture scrolls mouse events if it doesn't need to. 
+01. textbox is for some reason getting j and h instead of enter INSIDE of a
+    showcase-inner... truly bizarre
+      - enter/backspace still works in other elements within the showcase-inner
+         for some reason its JUST the textbox
 
 05. showcase window generator
      - the selectable pane keyboard stops working after the first window is generated.
