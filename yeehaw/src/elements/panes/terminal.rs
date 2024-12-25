@@ -244,11 +244,15 @@ impl TerminalPane {
             }
 
             #[cfg(unix)]
-            KeyCode::Enter => vec![b'\n'],
+            KeyCode::Enter => vec![b'\r'],
             #[cfg(windows)]
             KeyCode::Enter => vec![b'\r', b'\n'],
 
-            KeyCode::Backspace => vec![8],
+            //KeyCode::Backspace => vec![8],
+            // 0x7F is the ASCII code for delete, but seems to work as backspace for crossterm
+            // TODO possibly use 8 for windows?
+            KeyCode::Backspace => vec![0x7F],
+
             KeyCode::Left => vec![27, 91, 68],
             KeyCode::Right => vec![27, 91, 67],
             KeyCode::Up => vec![27, 91, 65],

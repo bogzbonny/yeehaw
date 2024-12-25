@@ -1144,7 +1144,42 @@ impl TextBoxInner {
                 }
             }
 
+            _ if *self.editable.borrow() && (ev[0] == KB::KEY_BACKSPACE) => {
+                debug!("backspace hit");
+                if visual_mode {
+                    resps = self.delete_visual_selection(ctx);
+                } else if cursor_pos > 0 {
+                    let mut rs = self.text.borrow().clone();
+                    rs.remove(cursor_pos - 1);
+                    self.incr_cursor_pos(-1);
+                    *self.text.borrow_mut() = rs;
+                    let w = self.get_wrapped(ctx);
+                    self.pane.set_content_from_string(w.wrapped_string()); // See NOTE-1
+                    let resp = self.correct_offsets(ctx, &w);
+                    if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
+                        resps = hook(ctx.clone(), self.get_text());
+                    }
+                    resps.push(resp);
+                }
+            }
+
+            _ if *self.editable.borrow() && ev[0] == KB::KEY_ENTER => {
+                debug!("enter hit");
+                let mut rs = self.text.borrow().clone();
+                rs.splice(cursor_pos..cursor_pos, std::iter::once('\n'));
+                *self.text.borrow_mut() = rs;
+                self.incr_cursor_pos(1);
+                let w = self.get_wrapped(ctx);
+                self.pane.set_content_from_string(w.wrapped_string()); // See NOTE-1
+                let resp = self.correct_offsets(ctx, &w);
+                if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
+                    resps = hook(ctx.clone(), self.get_text());
+                }
+                resps.push(resp);
+            }
+
             _ if *self.editable.borrow() && KeyPossibility::Chars.matches_key(&ev[0]) => {
+                debug!("got char: {:?}", ev[0]);
                 if let crossterm::event::KeyCode::Char(r) = ev[0].code {
                     let mut rs = self.text.borrow().clone();
                     rs.insert(cursor_pos, r);
@@ -1164,38 +1199,6 @@ impl TextBoxInner {
                     }
                     resps.push(resp);
                 }
-            }
-
-            _ if *self.editable.borrow() && (ev[0] == KB::KEY_BACKSPACE) => {
-                if visual_mode {
-                    resps = self.delete_visual_selection(ctx);
-                } else if cursor_pos > 0 {
-                    let mut rs = self.text.borrow().clone();
-                    rs.remove(cursor_pos - 1);
-                    self.incr_cursor_pos(-1);
-                    *self.text.borrow_mut() = rs;
-                    let w = self.get_wrapped(ctx);
-                    self.pane.set_content_from_string(w.wrapped_string()); // See NOTE-1
-                    let resp = self.correct_offsets(ctx, &w);
-                    if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
-                        resps = hook(ctx.clone(), self.get_text());
-                    }
-                    resps.push(resp);
-                }
-            }
-
-            _ if *self.editable.borrow() && ev[0] == KB::KEY_ENTER => {
-                let mut rs = self.text.borrow().clone();
-                rs.splice(cursor_pos..cursor_pos, std::iter::once('\n'));
-                *self.text.borrow_mut() = rs;
-                self.incr_cursor_pos(1);
-                let w = self.get_wrapped(ctx);
-                self.pane.set_content_from_string(w.wrapped_string()); // See NOTE-1
-                let resp = self.correct_offsets(ctx, &w);
-                if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
-                    resps = hook(ctx.clone(), self.get_text());
-                }
-                resps.push(resp);
             }
 
             _ => {}
