@@ -177,6 +177,11 @@ impl DrawChPos {
             .set_draw_size_offset_colors(s, offset_x, offset_y);
     }
 
+    /// reduce the offsets for any gradient colors in the style, used for scrollable areas
+    pub fn sub_from_offset_colors(&mut self, offset_x: u16, offset_y: u16) {
+        self.ch.style.sub_from_offset_colors(offset_x, offset_y);
+    }
+
     pub fn new_from_string(s: String, start_x: u16, start_y: u16, sty: Style) -> Vec<DrawChPos> {
         DrawChs2D::from_string(s.to_string(), sty).to_draw_ch_pos(start_x, start_y)
     }

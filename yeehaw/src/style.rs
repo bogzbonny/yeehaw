@@ -271,6 +271,19 @@ impl Style {
         }
     }
 
+    /// reduce the offset, used for scrollable areas
+    pub fn sub_from_offset_colors(&mut self, x: u16, y: u16) {
+        if let Some(fg) = self.fg.as_mut() {
+            fg.0.sub_from_offset(x, y);
+        }
+        if let Some(bg) = self.bg.as_mut() {
+            bg.0.sub_from_offset(x, y);
+        }
+        if let Some(ul) = self.underline_color.as_mut() {
+            ul.0.sub_from_offset(x, y);
+        }
+    }
+
     // overlays the overlay style on top of self colors
     pub fn overlay_style(&mut self, overlay: &Self) {
         let (under_fg, under_bg, under_ul) = (

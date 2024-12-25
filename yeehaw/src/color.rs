@@ -334,6 +334,15 @@ impl Color {
         }
     }
 
+    /// reduce the offset of position dependent colors
+    pub fn sub_from_offset(&mut self, x: u16, y: u16) {
+        match self {
+            Color::Gradient(ref mut gr) => gr.sub_from_offset(x, y),
+            Color::RadialGradient(ref mut rg) => rg.sub_from_offset(x, y),
+            _ => {}
+        }
+    }
+
     pub fn set_alpha(&mut self, alpha: u8) {
         match self {
             Color::Rgba(c) => c.a = alpha,
@@ -441,6 +450,11 @@ impl RadialGradient {
     pub fn add_to_offset(&mut self, x: u16, y: u16) {
         self.offset.0 += x;
         self.offset.1 += y;
+    }
+
+    pub fn sub_from_offset(&mut self, x: u16, y: u16) {
+        self.offset.0 = self.offset.0.saturating_sub(x);
+        self.offset.1 = self.offset.1.saturating_sub(y);
     }
 
     pub fn to_color(&self, s: Size, dur_since_launch: Duration, x: u16, y: u16) -> Color {
@@ -691,6 +705,11 @@ impl Gradient {
     pub fn add_to_offset(&mut self, x: u16, y: u16) {
         self.offset.0 += x;
         self.offset.1 += y;
+    }
+
+    pub fn sub_from_offset(&mut self, x: u16, y: u16) {
+        self.offset.0 = self.offset.0.saturating_sub(x);
+        self.offset.1 = self.offset.1.saturating_sub(y);
     }
 
     pub fn to_crossterm_color(

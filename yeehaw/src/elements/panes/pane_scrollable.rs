@@ -242,6 +242,7 @@ impl Element for PaneScrollable {
                         } else {
                             dcp.x = (dcp.x as usize - x_off) as u16;
                             dcp.y = (dcp.y as usize - y_off) as u16;
+                            dcp.sub_from_offset_colors(x_off as u16, y_off as u16);
                         }
                     })
                 }
