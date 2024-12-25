@@ -1421,16 +1421,17 @@ impl Element for Corner {
             return (true, EventResponses::default()); // still capture just don't do anything
         }
         let cur_dragging = *self.dragging.borrow();
-        let mut captured = false;
         match ev {
-            Event::Mouse(me) => {
-                captured = true;
-                match me.kind {
-                    MouseEventKind::Down(MouseButton::Left) => *self.dragging.borrow_mut() = true,
-                    MouseEventKind::Drag(MouseButton::Left) => {}
-                    _ => *self.dragging.borrow_mut() = false,
+            Event::Mouse(me) => match me.kind {
+                MouseEventKind::Down(MouseButton::Left) => {
+                    *self.dragging.borrow_mut() = true;
+                    return (true, EventResponses::default());
                 }
-            }
+                MouseEventKind::Drag(MouseButton::Left) => {
+                    return (true, EventResponses::default());
+                }
+                _ => *self.dragging.borrow_mut() = false,
+            },
             Event::ExternalMouse(me) => match me.kind {
                 MouseEventKind::Drag(MouseButton::Left) if cur_dragging => {
                     let dx = me.column;
@@ -1468,7 +1469,7 @@ impl Element for Corner {
             },
             _ => {}
         }
-        (captured, EventResponses::default())
+        (false, EventResponses::default())
     }
 }
 
@@ -1622,31 +1623,27 @@ impl Element for VerticalSide {
         }
 
         let dragging_start_pos = *self.dragging_start_pos.borrow();
-        let mut captured = false;
         match ev {
-            Event::Mouse(me) => {
-                captured = true;
-                match me.kind {
-                    MouseEventKind::Down(MouseButton::Left) => {
-                        *self.dragging_start_pos.borrow_mut() =
-                            Some((me.column.into(), me.row.into()))
-                    }
-                    MouseEventKind::Drag(MouseButton::Left) if dragging_start_pos.is_some() => {
-                        let (_, start_y) = dragging_start_pos.expect("impossible");
-                        let dy = me.row as i32 - start_y;
-
-                        if matches!(*property, PropertyVrt::DragMove) {
-                            let resp = MoveResponse {
-                                el_id: self.id(),
-                                dx: 0,
-                                dy,
-                            };
-                            return (true, EventResponse::Move(resp).into());
-                        }
-                    }
-                    _ => *self.dragging_start_pos.borrow_mut() = None,
+            Event::Mouse(me) => match me.kind {
+                MouseEventKind::Down(MouseButton::Left) => {
+                    *self.dragging_start_pos.borrow_mut() = Some((me.column.into(), me.row.into()));
+                    return (true, EventResponses::default());
                 }
-            }
+                MouseEventKind::Drag(MouseButton::Left) if dragging_start_pos.is_some() => {
+                    let (_, start_y) = dragging_start_pos.expect("impossible");
+                    let dy = me.row as i32 - start_y;
+
+                    if matches!(*property, PropertyVrt::DragMove) {
+                        let resp = MoveResponse {
+                            el_id: self.id(),
+                            dx: 0,
+                            dy,
+                        };
+                        return (true, EventResponse::Move(resp).into());
+                    }
+                }
+                _ => *self.dragging_start_pos.borrow_mut() = None,
+            },
             Event::ExternalMouse(me) => match me.kind {
                 MouseEventKind::Drag(MouseButton::Left) if dragging_start_pos.is_some() => {
                     let dx = me.column;
@@ -1686,7 +1683,7 @@ impl Element for VerticalSide {
             },
             _ => {}
         }
-        (captured, EventResponses::default())
+        (false, EventResponses::default())
     }
 }
 
@@ -1833,31 +1830,27 @@ impl Element for HorizontalSide {
         }
 
         let dragging_start_pos = *self.dragging_start_pos.borrow();
-        let mut captured = false;
         match ev {
-            Event::Mouse(me) => {
-                captured = true;
-                match me.kind {
-                    MouseEventKind::Down(MouseButton::Left) => {
-                        *self.dragging_start_pos.borrow_mut() =
-                            Some((me.column.into(), me.row.into()))
-                    }
-                    MouseEventKind::Drag(MouseButton::Left) if dragging_start_pos.is_some() => {
-                        let (start_x, _) = dragging_start_pos.expect("impossible");
-                        let dx = me.column as i32 - start_x;
-
-                        if matches!(*property, PropertyHzt::DragMove) {
-                            let resp = MoveResponse {
-                                el_id: self.id(),
-                                dx,
-                                dy: 0,
-                            };
-                            return (true, EventResponse::Move(resp).into());
-                        }
-                    }
-                    _ => *self.dragging_start_pos.borrow_mut() = None,
+            Event::Mouse(me) => match me.kind {
+                MouseEventKind::Down(MouseButton::Left) => {
+                    *self.dragging_start_pos.borrow_mut() = Some((me.column.into(), me.row.into()));
+                    return (true, EventResponses::default());
                 }
-            }
+                MouseEventKind::Drag(MouseButton::Left) if dragging_start_pos.is_some() => {
+                    let (start_x, _) = dragging_start_pos.expect("impossible");
+                    let dx = me.column as i32 - start_x;
+
+                    if matches!(*property, PropertyHzt::DragMove) {
+                        let resp = MoveResponse {
+                            el_id: self.id(),
+                            dx,
+                            dy: 0,
+                        };
+                        return (true, EventResponse::Move(resp).into());
+                    }
+                }
+                _ => *self.dragging_start_pos.borrow_mut() = None,
+            },
             Event::ExternalMouse(me) => match me.kind {
                 MouseEventKind::Drag(MouseButton::Left) if dragging_start_pos.is_some() => {
                     let dx = me.column;
@@ -1897,6 +1890,6 @@ impl Element for HorizontalSide {
             },
             _ => {}
         }
-        (captured, EventResponses::default())
+        (false, EventResponses::default())
     }
 }

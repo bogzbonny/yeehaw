@@ -534,7 +534,7 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
                      the mouse! try using tabs to\n\
                      switch between different\n\
                      widgets, other keys (arrow,\n\
-                     enter, etc.) will also\n\
+                     enter, esc, etc.) will also\n\
                      interact with widgets.";
     let description = Label::new(ctx, desc_text);
     el.add_element(Box::new(
