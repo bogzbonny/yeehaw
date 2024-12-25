@@ -376,7 +376,9 @@ impl ListBoxInner {
         }
     }
 
-    pub fn cursor_up(&self, ctx: &Context) {
+    /// returns if the cursor was moved
+    pub fn cursor_up(&self, ctx: &Context) -> bool {
+        let mut out = true;
         let cursor = *self.cursor.borrow();
         match cursor {
             Some(cursor) if cursor > 0 => {
@@ -385,17 +387,22 @@ impl ListBoxInner {
             None => {
                 if let Some(lcp) = *self.last_clicked_position.borrow() {
                     *self.cursor.borrow_mut() = Some(lcp);
-                    self.cursor_up(ctx);
+                    out = self.cursor_up(ctx);
                 } else {
                     *self.cursor.borrow_mut() = Some(self.entries.borrow().len() - 1);
                 }
             }
-            _ => {}
+            _ => {
+                return false;
+            }
         }
         self.correct_offsets(ctx);
+        out
     }
 
-    pub fn cursor_down(&self, ctx: &Context) {
+    /// returns if the cursor was moved
+    pub fn cursor_down(&self, ctx: &Context) -> bool {
+        let mut out = true;
         let cursor = *self.cursor.borrow();
         match cursor {
             Some(cursor) if cursor < self.entries.borrow().len() - 1 => {
@@ -404,14 +411,17 @@ impl ListBoxInner {
             None => {
                 if let Some(lcp) = *self.last_clicked_position.borrow() {
                     *self.cursor.borrow_mut() = Some(lcp);
-                    self.cursor_down(ctx);
+                    out = self.cursor_down(ctx);
                 } else {
                     *self.cursor.borrow_mut() = Some(0);
                 }
             }
-            _ => {}
+            _ => {
+                return false;
+            }
         }
         self.correct_offsets(ctx);
+        out
     }
 
     pub fn toggle_entry_selected_at_i(&self, ctx: &Context, i: usize) -> EventResponses {
@@ -489,11 +499,11 @@ impl Element for ListBoxInner {
                         }
                     }
                     _ if ke[0] == KB::KEY_DOWN || ke[0] == KB::KEY_J => {
-                        self.cursor_down(ctx);
+                        let _ = self.cursor_down(ctx);
                         return (true, resps);
                     }
                     _ if ke[0] == KB::KEY_UP || ke[0] == KB::KEY_K => {
-                        self.cursor_up(ctx);
+                        let _ = self.cursor_up(ctx);
                         return (true, resps);
                     }
                     _ if ke[0] == KB::KEY_ENTER => {
@@ -536,12 +546,12 @@ impl Element for ListBoxInner {
 
                 match true {
                     _ if scroll_up => {
-                        self.cursor_up(ctx);
-                        return (true, resps);
+                        let captured = self.cursor_up(ctx);
+                        return (captured, resps);
                     }
                     _ if scroll_down => {
-                        self.cursor_down(ctx);
-                        return (true, resps);
+                        let captured = self.cursor_down(ctx);
+                        return (captured, resps);
                     }
                     _ if clicked => {
                         let (x, y) = (me.column as usize, me.row as usize);
