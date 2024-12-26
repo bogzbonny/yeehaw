@@ -20,7 +20,9 @@ pub mod tui;
 
 pub use {
     ch::{ChPlus, DrawCh, DrawChPos, DrawChPosVec, DrawChs2D},
-    color::{Color, Gradient, Pattern, RadialGradient, Rgba, TimeGradient},
+    color::{
+        Color, ColorContext, ColorStore, Gradient, Pattern, RadialGradient, Rgba, TimeGradient,
+    },
     context::Context,
     dyn_location::{DynLocation, DynLocationSet, Loc, Point, Size, ZIndex},
     dyn_value::DynVal,

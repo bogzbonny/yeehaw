@@ -1,8 +1,8 @@
 use {
     crate::{
         Color, Context, DrawAction, DrawCh, DrawChPos, DrawUpdate, DynLocation, DynLocationSet,
-        DynVal, Element, ElementID, Event, EventResponses, Pane, Parent, ParentPane, RelMouseEvent,
-        ReceivableEvents, Style, ZIndex,
+        DynVal, Element, ElementID, Event, EventResponses, Pane, Parent, ParentPane,
+        ReceivableEvents, RelMouseEvent, Style, ZIndex,
     },
     crossterm::event::{MouseButton, MouseEventKind},
     rayon::prelude::*,
@@ -717,8 +717,8 @@ impl Element for MenuBar {
                     DrawAction::Update(ref mut dcps) | DrawAction::Extend(ref mut dcps) => {
                         let l = el_details.loc.borrow().l.clone();
                         let s = ctx.size;
-                        let child_s = child_ctx.size;
-                        let d = child_ctx.dur_since_launch;
+                        //let child_s = child_ctx.size;
+                        //let d = child_ctx.dur_since_launch;
 
                         // NOTE this is a computational bottleneck
                         // currently using rayon for parallelization
@@ -732,7 +732,7 @@ impl Element for MenuBar {
                             start_y = 0;
                         }
                         dcps.par_iter_mut().for_each(|dcp| {
-                            dcp.update_colors_for_time_and_pos(child_s, d);
+                            //dcp.update_colors_for_time_and_pos(child_s, d);
                             dcp.x += start_x as u16;
                             dcp.y += start_y as u16;
                         });

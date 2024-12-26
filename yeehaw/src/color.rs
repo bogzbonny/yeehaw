@@ -2,8 +2,30 @@ use {
     crate::{Context, DynVal, Size},
     crossterm::style::Color as CrosstermColor,
     rand::Rng,
+    std::collections::HashMap,
     std::time::Duration,
+    std::{cell::RefCell, rc::Rc},
 };
+
+/// The color store is a simple store for complex data within each color. This allows for
+/// significantly less data to be cloned each time a color is cloned.
+#[derive(Clone, Default, Debug)]
+#[allow(clippy::type_complexity)]
+pub struct ColorStore {
+    //                                    id
+    pub pos_gradients: Rc<RefCell<HashMap<u16, Vec<(DynVal, Color)>>>>,
+    //                                    id
+    pub dur_gradients: Rc<RefCell<HashMap<u16, Vec<(Duration, Color)>>>>,
+    //                               id
+    pub patterns: Rc<RefCell<HashMap<u16, Vec<Vec<Color>>>>>,
+}
+
+#[derive(Clone)]
+pub struct ColorContext {
+    pub store: ColorStore,
+    pub size: Size,
+    pub dur_since_launch: Duration,
+}
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug)]
 pub enum Color {
@@ -135,8 +157,8 @@ impl Color {
     #[allow(clippy::too_many_arguments)]
     /// blends two colors together with the given percentage of the other color
     pub fn blend(
-        &self, s: Size, dur_since_launch: Duration, x: u16, y: u16, other: Color,
-        percent_other: f64, blend_kind: BlendKind,
+        &self, cctx: &ColorContext, x: u16, y: u16, other: Color, percent_other: f64,
+        blend_kind: BlendKind,
     ) -> Color {
         match self {
             Color::ANSI(_) => {
@@ -156,41 +178,40 @@ impl Color {
                 }
                 Color::Rgba(oc) => Color::Rgba(blend_kind.blend(*c, oc, percent_other)),
                 Color::Gradient(gr) => {
-                    let gr = gr.to_color(s, dur_since_launch, x, y);
+                    let gr = gr.to_color(cctx, x, y);
                     self.clone()
-                        .blend(s, dur_since_launch, x, y, gr, percent_other, blend_kind)
+                        .blend(cctx, x, y, gr, percent_other, blend_kind)
                 }
                 Color::TimeGradient(tg) => {
-                    let tg = tg.to_color(s, dur_since_launch, x, y);
+                    let tg = tg.to_color(cctx, x, y);
                     self.clone()
-                        .blend(s, dur_since_launch, x, y, tg, percent_other, blend_kind)
+                        .blend(cctx, x, y, tg, percent_other, blend_kind)
                 }
                 Color::RadialGradient(rg) => {
-                    let rg = rg.to_color(s, dur_since_launch, x, y);
+                    let rg = rg.to_color(cctx, x, y);
                     self.clone()
-                        .blend(s, dur_since_launch, x, y, rg, percent_other, blend_kind)
+                        .blend(cctx, x, y, rg, percent_other, blend_kind)
                 }
                 Color::Pattern(p) => {
-                    let p = p.to_color(s, dur_since_launch, x, y);
-                    self.clone()
-                        .blend(s, dur_since_launch, x, y, p, percent_other, blend_kind)
+                    let p = p.to_color(cctx, x, y);
+                    self.clone().blend(cctx, x, y, p, percent_other, blend_kind)
                 }
             },
             Color::Gradient(gr) => {
-                let gr = gr.to_color(s, dur_since_launch, x, y);
-                gr.blend(s, dur_since_launch, x, y, other, percent_other, blend_kind)
+                let gr = gr.to_color(cctx, x, y);
+                gr.blend(cctx, x, y, other, percent_other, blend_kind)
             }
             Color::TimeGradient(gr) => {
-                let gr = gr.to_color(s, dur_since_launch, x, y);
-                gr.blend(s, dur_since_launch, x, y, other, percent_other, blend_kind)
+                let gr = gr.to_color(cctx, x, y);
+                gr.blend(cctx, x, y, other, percent_other, blend_kind)
             }
             Color::RadialGradient(gr) => {
-                let gr = gr.to_color(s, dur_since_launch, x, y);
-                gr.blend(s, dur_since_launch, x, y, other, percent_other, blend_kind)
+                let gr = gr.to_color(cctx, x, y);
+                gr.blend(cctx, x, y, other, percent_other, blend_kind)
             }
             Color::Pattern(p) => {
-                let p = p.to_color(s, dur_since_launch, x, y);
-                p.blend(s, dur_since_launch, x, y, other, percent_other, blend_kind)
+                let p = p.to_color(cctx, x, y);
+                p.blend(cctx, x, y, other, percent_other, blend_kind)
             }
         }
     }
@@ -339,45 +360,42 @@ impl Color {
     pub fn to_crossterm_color(
         &self, ctx: &Context, prev: Option<CrosstermColor>, x: u16, y: u16,
     ) -> CrosstermColor {
+        let cctx = ctx.get_color_context();
         match self {
             Color::ANSI(c) => *c,
             Color::Rgba(c) => c.to_crossterm_color(prev),
-            Color::Gradient(gr) => gr
-                .to_color(ctx.size, ctx.dur_since_launch, x, y)
-                .to_crossterm_color(ctx, prev, x, y),
-            Color::TimeGradient(tg) => tg
-                .to_color(ctx.size, ctx.dur_since_launch, x, y)
-                .to_crossterm_color(ctx, prev, x, y),
-            Color::RadialGradient(rg) => rg
-                .to_color(ctx.size, ctx.dur_since_launch, x, y)
-                .to_crossterm_color(ctx, prev, x, y),
-            Color::Pattern(p) => p
-                .to_color(ctx.size, ctx.dur_since_launch, x, y)
-                .to_crossterm_color(ctx, prev, x, y),
+            Color::Gradient(gr) => gr.to_color(&cctx, x, y).to_crossterm_color(ctx, prev, x, y),
+            Color::TimeGradient(tg) => tg.to_color(&cctx, x, y).to_crossterm_color(ctx, prev, x, y),
+            Color::RadialGradient(rg) => {
+                rg.to_color(&cctx, x, y).to_crossterm_color(ctx, prev, x, y)
+            }
+            Color::Pattern(p) => p.to_color(&cctx, x, y).to_crossterm_color(ctx, prev, x, y),
         }
     }
 
     /// to color with the given context and position
     pub fn to_color(self, ctx: &Context, x: u16, y: u16) -> Color {
+        let cctx = ctx.get_color_context();
         match self {
             Color::ANSI(_) | Color::Rgba(_) => self,
-            Color::Gradient(gr) => gr.to_color(ctx.size, ctx.dur_since_launch, x, y),
-            Color::TimeGradient(tg) => tg.to_color(ctx.size, ctx.dur_since_launch, x, y),
-            Color::RadialGradient(rg) => rg.to_color(ctx.size, ctx.dur_since_launch, x, y),
-            Color::Pattern(p) => p.to_color(ctx.size, ctx.dur_since_launch, x, y),
+            Color::Gradient(gr) => gr.to_color(&cctx, x, y),
+            Color::TimeGradient(tg) => tg.to_color(&cctx, x, y),
+            Color::RadialGradient(rg) => rg.to_color(&cctx, x, y),
+            Color::Pattern(p) => p.to_color(&cctx, x, y),
         }
     }
 
     /// to color with the given context and position
-    pub fn update_color(&mut self, s: Size, dur_since_launch: Duration, x: u16, y: u16) {
-        match &self {
-            Color::Gradient(gr) => *self = gr.clone().to_color(s, dur_since_launch, x, y),
-            Color::TimeGradient(tg) => *self = tg.clone().to_color(s, dur_since_launch, x, y),
-            Color::RadialGradient(rg) => *self = rg.clone().to_color(s, dur_since_launch, x, y),
-            Color::Pattern(p) => *self = p.clone().to_color(s, dur_since_launch, x, y),
-            Color::ANSI(_) | Color::Rgba(_) => {}
-        }
-    }
+    //pub fn update_color(&mut self, s: Size, dur_since_launch: Duration, x: u16, y: u16) {
+    //    let cctx = ctx.get_color_context();
+    //    match &self {
+    //        Color::Gradient(gr) => *self = gr.clone().to_color(s, dur_since_launch, x, y),
+    //        Color::TimeGradient(tg) => *self = tg.clone().to_color(s, dur_since_launch, x, y),
+    //        Color::RadialGradient(rg) => *self = rg.clone().to_color(s, dur_since_launch, x, y),
+    //        Color::Pattern(p) => *self = p.clone().to_color(s, dur_since_launch, x, y),
+    //        Color::ANSI(_) | Color::Rgba(_) => {}
+    //    }
+    //}
 
     /// set the offset of position dependent colors
     pub fn set_draw_size_if_unset(&mut self, s: Size) {
@@ -739,16 +757,23 @@ impl Gradient {
     pub fn to_crossterm_color(
         &self, ctx: &Context, prev: Option<CrosstermColor>, x: u16, y: u16,
     ) -> CrosstermColor {
-        self.to_color(ctx.size, ctx.dur_since_launch, x, y)
+        let cctx = ctx.get_color_context();
+        self.to_color(&cctx, x, y)
             .to_crossterm_color(ctx, prev, x, y)
     }
 
-    pub fn to_color(&self, s: Size, dur_since_launch: Duration, x: u16, y: u16) -> Color {
+    pub fn to_color(&self, cctx: &ColorContext, x: u16, y: u16) -> Color {
         if self.grad.is_empty() {
             return Color::TRANSPARENT;
         }
 
-        let s = self.draw_size.unwrap_or(s);
+        let mut cctx = cctx.clone();
+        let s = if let Some(s) = self.draw_size {
+            cctx.size = s;
+            s
+        } else {
+            cctx.size
+        };
 
         // determine the maximum value of the context (used for computing the DynVal)
         let angle_rad = self.angle_deg * std::f64::consts::PI / 180.0;
@@ -857,15 +882,7 @@ impl Gradient {
         let end_pos =
             end_pos.unwrap_or_else(|| self.grad[self.grad.len() - 1].0.get_val(max_ctx_val));
         let percent = (pos - start_pos) as f64 / (end_pos - start_pos) as f64;
-        start_clr.blend(
-            s,
-            dur_since_launch,
-            x,
-            y,
-            end_clr,
-            percent,
-            BlendKind::Blend1,
-        )
+        start_clr.blend(&cctx, x, y, end_clr, percent, BlendKind::Blend1)
     }
 }
 
@@ -955,12 +972,18 @@ impl RadialGradient {
         self.offset.1 += y;
     }
 
-    pub fn to_color(&self, s: Size, dur_since_launch: Duration, x: u16, y: u16) -> Color {
+    pub fn to_color(&self, cctx: &ColorContext, x: u16, y: u16) -> Color {
         if self.grad.is_empty() {
             return Color::TRANSPARENT;
         }
 
-        let s = self.draw_size.unwrap_or(s);
+        let mut cctx = cctx.clone();
+        let s = if let Some(s) = self.draw_size {
+            cctx.size = s;
+            s
+        } else {
+            cctx.size
+        };
         let x_off = x as f64 - self.offset.0 as f64;
         let y_off = y as f64 - self.offset.1 as f64;
         let (center_x, center_y) = (
@@ -1026,15 +1049,7 @@ impl RadialGradient {
                 .get_val(s.width.max(s.height)) as f64
         });
         let percent = (dist - start_pos) / (end_pos - start_pos);
-        start_clr.blend(
-            s,
-            dur_since_launch,
-            x,
-            y,
-            end_clr,
-            percent,
-            BlendKind::Blend1,
-        )
+        start_clr.blend(&cctx, x, y, end_clr, percent, BlendKind::Blend1)
     }
 }
 
@@ -1071,12 +1086,12 @@ impl TimeGradient {
         TimeGradient { total_dur, points }
     }
 
-    pub fn to_color(&self, s: Size, dur_since_launch: Duration, x: u16, y: u16) -> Color {
+    pub fn to_color(&self, cctx: &ColorContext, x: u16, y: u16) -> Color {
         if self.points.is_empty() {
             return Color::TRANSPARENT;
         }
 
-        let mut d = dur_since_launch;
+        let mut d = cctx.dur_since_launch;
         // calculate d so that it is within the range
         while d >= self.total_dur {
             d -= self.total_dur;
@@ -1099,15 +1114,7 @@ impl TimeGradient {
         let start_time = start_time.unwrap_or_else(|| self.points[0].0);
         let end_time = end_time.unwrap_or_else(|| self.points[self.points.len() - 1].0);
         let percent = (d - start_time).as_secs_f64() / (end_time - start_time).as_secs_f64();
-        start_clr.blend(
-            s,
-            dur_since_launch,
-            x,
-            y,
-            end_clr,
-            percent,
-            BlendKind::Blend1,
-        )
+        start_clr.blend(cctx, x, y, end_clr, percent, BlendKind::Blend1)
     }
 }
 
@@ -1161,7 +1168,7 @@ impl Pattern {
     }
 
     // get the color at the given x, y on the pattern, looping once the end is reached
-    pub fn to_color(&self, _: Size, _: Duration, x: u16, y: u16) -> Color {
+    pub fn to_color(&self, _cctx: &ColorContext, x: u16, y: u16) -> Color {
         if self.pattern.is_empty() {
             return Color::TRANSPARENT;
         }

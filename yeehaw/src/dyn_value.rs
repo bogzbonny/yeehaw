@@ -1,5 +1,8 @@
 use crate::Element;
 
+// TODO might make sense to use TinyVec here
+//
+
 /// DynVal represents a dynamic x or y screen position value which scales based on the
 /// size of the parent element. The value is a fixed number of characters
 /// (fixed) plus the flexible fraction of the parent element size (flex).

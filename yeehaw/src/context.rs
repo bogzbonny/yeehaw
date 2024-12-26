@@ -1,5 +1,5 @@
 use {
-    crate::{DynLocation, Event, Loc, Size, SortingHat},
+    crate::{ColorContext, ColorStore, DynLocation, Event, Loc, Size, SortingHat},
     std::collections::HashMap,
     tokio::sync::mpsc::Sender,
 };
@@ -26,6 +26,7 @@ pub struct Context {
     pub parent_ctx: Option<Box<Context>>,
     pub hat: SortingHat,
     pub ev_tx: Sender<Event>,
+    pub color_store: ColorStore,
 }
 
 /// Default implementation for Context, use only as a dummy value
@@ -40,6 +41,7 @@ impl Default for Context {
             parent_ctx: None,
             hat: SortingHat::default(),
             ev_tx,
+            color_store: ColorStore::default(),
         }
     }
 }
@@ -55,6 +57,7 @@ impl Context {
             parent_ctx: None,
             hat: hat.clone(),
             ev_tx,
+            color_store: ColorStore::default(),
         }
     }
 
@@ -70,6 +73,7 @@ impl Context {
             parent_ctx: None,
             hat: hat.clone(),
             ev_tx,
+            color_store: ColorStore::default(),
         }
     }
 
@@ -99,6 +103,7 @@ impl Context {
             parent_ctx: Some(Box::new(self.clone())),
             hat: self.hat.clone(),
             ev_tx: self.ev_tx.clone(),
+            color_store: self.color_store.clone(),
         }
     }
 
@@ -113,6 +118,7 @@ impl Context {
             parent_ctx: Some(Box::new(self.clone())),
             hat: self.hat.clone(),
             ev_tx: self.ev_tx.clone(),
+            color_store: self.color_store.clone(),
         }
     }
 
@@ -161,5 +167,13 @@ impl Context {
 
     pub fn get_height(&self) -> u16 {
         self.size.height
+    }
+
+    pub fn get_color_context(&self) -> ColorContext {
+        ColorContext {
+            store: self.color_store.clone(),
+            size: self.size,
+            dur_since_launch: self.dur_since_launch,
+        }
     }
 }

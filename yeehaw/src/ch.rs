@@ -4,7 +4,6 @@ use {
     compact_str::CompactString,
     crossterm::style::{ContentStyle, StyledContent},
     std::ops::{Deref, DerefMut},
-    std::time::Duration,
 };
 
 /// DrawCh is a character with a style and transparency
@@ -164,11 +163,11 @@ impl DrawChPos {
         self.y += start_y as u16;
     }
 
-    pub fn update_colors_for_time_and_pos(&mut self, s: Size, dur_since_launch: Duration) {
-        self.ch
-            .style
-            .update_colors_for_time_and_pos(s, dur_since_launch, self.x, self.y);
-    }
+    //pub fn update_colors_for_time_and_pos(&mut self, ctx: &Context) {
+    //    self.ch
+    //        .style
+    //        .update_colors_for_time_and_pos(ctx, self.x, self.y);
+    //}
 
     /// apply offsets to all position based colors, also set the draw size if unset
     pub fn set_draw_size_offset_colors(&mut self, s: Size, offset_x: i32, offset_y: i32) {
