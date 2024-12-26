@@ -47,7 +47,7 @@ async fn main() -> Result<(), Error> {
         .with_focused(false);
     main_vs.push(Box::new(header_pane.clone()));
 
-    let gr = Gradient::x_grad_rainbow(5).with_angle(60.);
+    let gr = Gradient::x_grad_rainbow(&ctx, 5).with_angle(60.);
     let mtext = FigletText::new(
         &ctx,
         "YEEEHAW!!",
@@ -181,7 +181,7 @@ pub fn window_generation_zone(
     el.add_element(Box::new(label));
 
     let alpha_slider = Slider::new_basic_block(ctx)
-        .with_gradient(Color::BLUE, Color::AQUA)
+        .with_gradient(ctx, Color::BLUE, Color::AQUA)
         .with_position(0.9)
         .with_width(DynVal::new_flex(0.4))
         .at(1, 11);
@@ -441,7 +441,7 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
     let y = y.plus(3.into());
     let ntb_ = ntb.clone();
     let slider = Slider::new_basic_block(ctx)
-        .with_gradient(Color::AQUA, Color::ORANGE)
+        .with_gradient(ctx, Color::AQUA, Color::ORANGE)
         .with_width(lb_width.clone())
         .at(x.clone(), y.clone())
         .with_fn(Box::new(move |_, sl| {
@@ -1221,10 +1221,11 @@ impl ColorsDemoState {
 impl ColorsDemoColor {
     pub fn default_fg(ctx: &Context) -> ColorsDemoColor {
         let time_gr_colors = vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK];
-        let time_gr = TimeGradient::new_loop(Duration::from_secs(1), time_gr_colors.clone());
+        let time_gr = TimeGradient::new_loop(ctx, Duration::from_secs(1), time_gr_colors.clone());
 
         let radial_gr_colors = vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK];
         let radial_gr = RadialGradient::new_basic_circle(
+            ctx,
             (0.5.into(), 0.5.into()),
             5.into(),
             radial_gr_colors.clone(),
@@ -1238,9 +1239,10 @@ impl ColorsDemoColor {
             Color::ORANGE,
             Color::RED,
         ];
-        let linear_gr = Gradient::x_grad_rainbow(5);
+        let linear_gr = Gradient::x_grad_rainbow(ctx, 5);
         let radial_time_colors = vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK];
         let radial_time_gr = RadialGradient::new_basic_circle_time_loop(
+            ctx,
             (0.5.into(), 0.5.into()),
             Duration::from_secs(1),
             5.into(),
@@ -1255,9 +1257,9 @@ impl ColorsDemoColor {
             Color::ORANGE,
             Color::RED,
         ];
-        let linear_time_gr = Gradient::x_grad_rainbow_time_loop(5, Duration::from_secs(1));
+        let linear_time_gr = Gradient::x_grad_rainbow_time_loop(ctx, 5, Duration::from_secs(1));
         let tiles_colors = (Color::WHITE, Color::BLUE);
-        let tiles = Pattern::new_sqr_tiles(&ctx, 5, tiles_colors.0.clone(), tiles_colors.1.clone());
+        let tiles = Pattern::new_sqr_tiles(ctx, 5, tiles_colors.0.clone(), tiles_colors.1.clone());
         ColorsDemoColor {
             kind: ColorsDemoColorKind::Solid,
             solid_state: Color::WHITE,
@@ -1272,10 +1274,11 @@ impl ColorsDemoColor {
 
     pub fn default_bg(ctx: &Context) -> ColorsDemoColor {
         let time_gr_colors = vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK];
-        let time_gr = TimeGradient::new_loop(Duration::from_secs(1), time_gr_colors.clone());
+        let time_gr = TimeGradient::new_loop(ctx, Duration::from_secs(1), time_gr_colors.clone());
 
         let radial_gr_colors = vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK];
         let radial_gr = RadialGradient::new_basic_circle(
+            ctx,
             (0.5.into(), 0.5.into()),
             5.into(),
             radial_gr_colors.clone(),
@@ -1289,9 +1292,10 @@ impl ColorsDemoColor {
             Color::ORANGE,
             Color::RED,
         ];
-        let linear_gr = Gradient::x_grad_rainbow(5);
+        let linear_gr = Gradient::x_grad_rainbow(ctx, 5);
         let radial_time_colors = vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK];
         let radial_time_gr = RadialGradient::new_basic_circle_time_loop(
+            ctx,
             (0.5.into(), 0.5.into()),
             Duration::from_secs(1),
             5.into(),
@@ -1306,7 +1310,7 @@ impl ColorsDemoColor {
             Color::ORANGE,
             Color::RED,
         ];
-        let linear_time_gr = Gradient::x_grad_rainbow_time_loop(5, Duration::from_secs(1));
+        let linear_time_gr = Gradient::x_grad_rainbow_time_loop(ctx, 5, Duration::from_secs(1));
         let tiles_colors = (Color::WHITE, Color::BLUE);
         let tiles = Pattern::new_sqr_tiles(ctx, 5, tiles_colors.0.clone(), tiles_colors.1.clone());
         ColorsDemoColor {

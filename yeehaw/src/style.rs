@@ -64,7 +64,7 @@ impl Style {
 
     /// create a style which is semi-transparent
     pub fn opaque(ctx: &Context, c: Color, alpha: u8) -> Self {
-        let c = c.with_alpha(alpha, &ctx.get_color_context());
+        let c = c.with_alpha(&ctx.get_color_context(), alpha);
         Self {
             fg: Some((c.clone(), FgTranspSrc::LowerFg)),
             bg: Some((c, BgTranspSrc::LowerBg)),

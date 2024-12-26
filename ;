@@ -41,13 +41,13 @@ impl ColorStore {
     }
     pub fn add_time_gradient(&self, gr: Vec<(Duration, Color)>) -> usize {
         // attempt to find the gradient in the store before adding it
-        for (i, g) in self.time_gradients.borrow().iter().enumerate() {
+        for (i, g) in self.dur_gradients.borrow().iter().enumerate() {
             if g == &gr {
                 return i;
             }
         }
-        self.time_gradients.borrow_mut().push(gr);
-        self.time_gradients.borrow().len() - 1
+        self.dur_gradients.borrow_mut().push(gr);
+        self.dur_gradients.borrow().len() - 1
     }
 }
 
@@ -213,9 +213,10 @@ impl Color {
                     self.clone()
                         .blend(cctx, x, y, gr, percent_other, blend_kind)
                 }
-                Color::TimeGradient(g) => {
-                    let g = g.to_color(cctx, x, y);
-                    self.clone().blend(cctx, x, y, g, percent_other, blend_kind)
+                Color::TimeGradient(tg) => {
+                    let tg = tg.to_color(cctx, x, y);
+                    self.clone()
+                        .blend(cctx, x, y, tg, percent_other, blend_kind)
                 }
                 Color::RadialGradient(rg) => {
                     let rg = rg.to_color(cctx, x, y);
@@ -264,15 +265,38 @@ impl Color {
         match self {
             Color::ANSI(c) => Color::darken_ansi(c, cctx),
             Color::Rgba(c) => Color::Rgba(c.mul(0.5)),
-            Color::Gradient(g) => {
-                Color::Gradient(g.apply_fn_to_colors(cctx, Box::new(move |cctx, c| c.darken(cctx))))
+            Color::Gradient(gr) => {
+                let mut grad = vec![];
+                for (x, c) in &gr.grad {
+                    grad.push((x.clone(), c.darken(cctx)));
+                }
+                Color::Gradient(Gradient {
+                    draw_size: gr.draw_size,
+                    offset: gr.offset,
+                    grad,
+                    angle_deg: gr.angle_deg,
+                })
             }
-            Color::TimeGradient(g) => Color::TimeGradient(
-                g.apply_fn_to_colors(cctx, Box::new(move |cctx, c| c.darken(cctx))),
-            ),
-            Color::RadialGradient(g) => Color::RadialGradient(
-                g.apply_fn_to_colors(cctx, Box::new(move |cctx, c| c.darken(cctx))),
-            ),
+            Color::TimeGradient(tg) => {
+                let mut points = vec![];
+                for (dur, c) in &tg.points {
+                    points.push((*dur, c.darken(cctx)));
+                }
+                Color::TimeGradient(TimeGradient::new(tg.total_dur, points))
+            }
+            Color::RadialGradient(rg) => {
+                let mut grad = vec![];
+                for (x, c) in &rg.grad {
+                    grad.push((x.clone(), c.darken(cctx)));
+                }
+                Color::RadialGradient(RadialGradient {
+                    draw_size: rg.draw_size,
+                    offset: rg.offset,
+                    center: rg.center.clone(),
+                    skew: rg.skew,
+                    grad,
+                })
+            }
             Color::Pattern(p) => {
                 Color::Pattern(p.apply_fn_to_colors(cctx, Box::new(move |cctx, c| c.darken(cctx))))
             }
@@ -283,15 +307,38 @@ impl Color {
         match self {
             Color::ANSI(c) => Color::lighten_ansi(c, cctx),
             Color::Rgba(c) => Color::Rgba(c.mul(1.5)),
-            Color::Gradient(g) => Color::Gradient(
-                g.apply_fn_to_colors(cctx, Box::new(move |cctx, c| c.lighten(cctx))),
-            ),
-            Color::TimeGradient(g) => Color::TimeGradient(
-                g.apply_fn_to_colors(cctx, Box::new(move |cctx, c| c.lighten(cctx))),
-            ),
-            Color::RadialGradient(g) => Color::RadialGradient(
-                g.apply_fn_to_colors(cctx, Box::new(move |cctx, c| c.lighten(cctx))),
-            ),
+            Color::Gradient(gr) => {
+                let mut grad = vec![];
+                for (x, c) in &gr.grad {
+                    grad.push((x.clone(), c.lighten(cctx)));
+                }
+                Color::Gradient(Gradient {
+                    draw_size: gr.draw_size,
+                    offset: gr.offset,
+                    grad,
+                    angle_deg: gr.angle_deg,
+                })
+            }
+            Color::TimeGradient(tg) => {
+                let mut points = vec![];
+                for (dur, c) in &tg.points {
+                    points.push((*dur, c.lighten(cctx)));
+                }
+                Color::TimeGradient(TimeGradient::new(tg.total_dur, points))
+            }
+            Color::RadialGradient(rg) => {
+                let mut grad = vec![];
+                for (x, c) in &rg.grad {
+                    grad.push((x.clone(), c.lighten(cctx)));
+                }
+                Color::RadialGradient(RadialGradient {
+                    draw_size: rg.draw_size,
+                    offset: rg.offset,
+                    center: rg.center.clone(),
+                    skew: rg.skew,
+                    grad,
+                })
+            }
             Color::Pattern(p) => {
                 Color::Pattern(p.apply_fn_to_colors(cctx, Box::new(move |cctx, c| c.lighten(cctx))))
             }
@@ -337,7 +384,7 @@ impl Color {
             Color::ANSI(c) => *c,
             Color::Rgba(c) => c.to_crossterm_color(prev),
             Color::Gradient(gr) => gr.to_color(&cctx, x, y).to_crossterm_color(ctx, prev, x, y),
-            Color::TimeGradient(g) => g.to_color(&cctx, x, y).to_crossterm_color(ctx, prev, x, y),
+            Color::TimeGradient(tg) => tg.to_color(&cctx, x, y).to_crossterm_color(ctx, prev, x, y),
             Color::RadialGradient(rg) => {
                 rg.to_color(&cctx, x, y).to_crossterm_color(ctx, prev, x, y)
             }
@@ -351,7 +398,7 @@ impl Color {
         match self {
             Color::ANSI(_) | Color::Rgba(_) => self,
             Color::Gradient(gr) => gr.to_color(&cctx, x, y),
-            Color::TimeGradient(g) => g.to_color(&cctx, x, y),
+            Color::TimeGradient(tg) => tg.to_color(&cctx, x, y),
             Color::RadialGradient(rg) => rg.to_color(&cctx, x, y),
             Color::Pattern(p) => p.to_color(&cctx, x, y),
         }
@@ -362,7 +409,7 @@ impl Color {
     //    let cctx = ctx.get_color_context();
     //    match &self {
     //        Color::Gradient(gr) => *self = gr.clone().to_color(s, dur_since_launch, x, y),
-    //        Color::TimeGradient(g) => *self = tg.clone().to_color(s, dur_since_launch, x, y),
+    //        Color::TimeGradient(tg) => *self = tg.clone().to_color(s, dur_since_launch, x, y),
     //        Color::RadialGradient(rg) => *self = rg.clone().to_color(s, dur_since_launch, x, y),
     //        Color::Pattern(p) => *self = p.clone().to_color(s, dur_since_launch, x, y),
     //        Color::ANSI(_) | Color::Rgba(_) => {}
@@ -393,46 +440,76 @@ impl Color {
         }
     }
 
-    pub fn with_alpha(&self, cctx: &ColorContext, alpha: u8) -> Color {
+    pub fn with_alpha(&self, alpha: u8, cctx: &ColorContext) -> Color {
         match self {
-            Color::Rgba(c) => {
-                let mut c = c.clone();
-                c.a = alpha;
-                Color::Rgba(c)
-            }
-            Color::Gradient(g) => Color::Gradient(
-                g.apply_fn_to_colors(cctx, Box::new(move |cctx, c| c.with_alpha(cctx, alpha))),
-            ),
-            Color::TimeGradient(g) => Color::TimeGradient(
-                g.apply_fn_to_colors(cctx, Box::new(move |cctx, c| c.with_alpha(cctx, alpha))),
-            ),
-            Color::RadialGradient(g) => Color::RadialGradient(
-                g.apply_fn_to_colors(cctx, Box::new(move |cctx, c| c.with_alpha(cctx, alpha))),
-            ),
+            // XXX
+            //Color::Rgba(c) => c.a = alpha,
+            //Color::Gradient(gr) => {
+            //    for (_, c) in &mut gr.grad {
+            //        c.set_alpha(alpha, cctx);
+            //    }
+            //}
+            //Color::TimeGradient(tg) => {
+            //    for (_, c) in &mut tg.points {
+            //        c.set_alpha(alpha, cctx);
+            //    }
+            //}
+            //Color::RadialGradient(rg) => {
+            //    for (_, c) in &mut rg.grad {
+            //        c.set_alpha(alpha, cctx);
+            //    }
+            //}
             Color::Pattern(p) => Color::Pattern(
-                p.apply_fn_to_colors(cctx, Box::new(move |cctx, c| c.with_alpha(cctx, alpha))),
+                p.apply_fn_to_colors(cctx, Box::new(move |cctx, c| c.with_alpha(alpha, cctx))),
             ),
             Color::ANSI(_) => self.clone(),
+            // XXX
+            _ => self.clone(),
         }
     }
+
+    //pub fn with_alpha(mut self, alpha: u8, cctx: &ColorContext) -> Self {
+    //    self.set_alpha(alpha, cctx);
+    //    self
+    //}
 
     pub fn overlay_color(&self, cctx: &ColorContext, overlay: Self) -> Self {
         match overlay {
             Color::Rgba(oc) => match self {
                 Color::ANSI(_) => overlay,
                 Color::Rgba(c) => Color::Rgba(c.overlay_color(oc)),
-                Color::Gradient(g) => Color::Gradient(g.apply_fn_to_colors(
-                    cctx,
-                    Box::new(move |cctx, c| c.overlay_color(cctx, overlay.clone())),
-                )),
-                Color::TimeGradient(g) => Color::TimeGradient(g.apply_fn_to_colors(
-                    cctx,
-                    Box::new(move |cctx, c| c.overlay_color(cctx, overlay.clone())),
-                )),
-                Color::RadialGradient(g) => Color::RadialGradient(g.apply_fn_to_colors(
-                    cctx,
-                    Box::new(move |cctx, c| c.overlay_color(cctx, overlay.clone())),
-                )),
+                Color::Gradient(gr) => {
+                    let mut grad = vec![];
+                    for (x, c) in &gr.grad {
+                        grad.push((x.clone(), c.overlay_color(cctx, overlay.clone())));
+                    }
+                    Color::Gradient(Gradient {
+                        draw_size: gr.draw_size,
+                        offset: gr.offset,
+                        grad,
+                        angle_deg: gr.angle_deg,
+                    })
+                }
+                Color::TimeGradient(tg) => {
+                    let mut points = vec![];
+                    for (dur, c) in &tg.points {
+                        points.push((*dur, c.overlay_color(cctx, overlay.clone())));
+                    }
+                    Color::TimeGradient(TimeGradient::new(tg.total_dur, points))
+                }
+                Color::RadialGradient(rg) => {
+                    let mut grad = vec![];
+                    for (x, c) in &rg.grad {
+                        grad.push((x.clone(), c.overlay_color(cctx, overlay.clone())));
+                    }
+                    Color::RadialGradient(RadialGradient {
+                        draw_size: rg.draw_size,
+                        offset: rg.offset,
+                        center: rg.center.clone(),
+                        skew: rg.skew,
+                        grad,
+                    })
+                }
                 Color::Pattern(p) => Color::Pattern(p.apply_fn_to_colors(
                     cctx,
                     Box::new(move |cctx, c| c.overlay_color(cctx, overlay.clone())),
@@ -459,16 +536,14 @@ pub struct Gradient {
     /// useful so that the gradient can be evaluated passively
     pub offset: (i32, i32),
 
+    /// pos, color
+    pub grad: Vec<(DynVal, Color)>,
     /// angle in degrees, starting from the positive-x-axis, moving clockwise
     pub angle_deg: f64,
-
-    /// pos, color
-    //pub grad: Vec<(DynVal, Color)>,
-    pub gradient_id: usize,
 }
 
 impl Gradient {
-    pub fn new(ctx: &Context, grad: Vec<(DynVal, Color)>, mut angle_deg: f64) -> Self {
+    pub fn new(grad: Vec<(DynVal, Color)>, mut angle_deg: f64) -> Self {
         if angle_deg < 0.0 {
             angle_deg += 360.0;
         } else if angle_deg >= 360.0 {
@@ -477,42 +552,62 @@ impl Gradient {
         Gradient {
             draw_size: None,
             offset: (0, 0),
+            grad,
             angle_deg,
-            gradient_id: ctx.color_store.add_pos_gradient(grad),
         }
     }
 
-    pub fn new_x_grad_2_color(ctx: &Context, c1: Color, c2: Color) -> Self {
+    pub fn new_x_grad_2_color(c1: Color, c2: Color) -> Self {
         let grad = vec![(DynVal::new_flex(0.), c1), (DynVal::FULL, c2)];
-        Self::new(ctx, grad, 0.)
+        Gradient {
+            draw_size: None,
+            offset: (0, 0),
+            grad,
+            angle_deg: 0.,
+        }
     }
 
-    pub fn new_y_grad_2_color(ctx: &Context, c1: Color, c2: Color) -> Self {
+    pub fn new_y_grad_2_color(c1: Color, c2: Color) -> Self {
         let grad = vec![(DynVal::new_flex(0.), c1), (DynVal::FULL, c2)];
-        Self::new(ctx, grad, 90.)
+        Gradient {
+            draw_size: None,
+            offset: (0, 0),
+            grad,
+            angle_deg: 90.,
+        }
     }
 
     /// length is the number of characters per color gradient
-    pub fn new_x_grad_2_color_repeater(ctx: &Context, c1: Color, c2: Color, length: usize) -> Self {
+    pub fn new_x_grad_2_color_repeater(c1: Color, c2: Color, length: usize) -> Self {
         let grad = vec![
             (DynVal::new_fixed(0), c1.clone()),
             (DynVal::new_fixed(length as i32), c2),
             (DynVal::new_fixed(2 * length as i32), c1),
         ];
-        Self::new(ctx, grad, 0.)
+        Gradient {
+            draw_size: None,
+            offset: (0, 0),
+            grad,
+            angle_deg: 0.,
+        }
     }
 
-    pub fn new_y_grad_2_color_repeater(ctx: &Context, c1: Color, c2: Color, length: usize) -> Self {
+    pub fn new_y_grad_2_color_repeater(c1: Color, c2: Color, length: usize) -> Self {
         let grad = vec![
             (DynVal::new_fixed(0), c1.clone()),
             (DynVal::new_fixed(length as i32), c2),
             (DynVal::new_fixed(2 * length as i32), c1),
         ];
-        Self::new(ctx, grad, 90.)
+        Gradient {
+            draw_size: None,
+            offset: (0, 0),
+            grad,
+            angle_deg: 90.,
+        }
     }
 
     /// length is the number of characters per color gradient
-    pub fn new_x_grad_repeater(ctx: &Context, mut colors: Vec<Color>, length: usize) -> Self {
+    pub fn new_x_grad_repeater(mut colors: Vec<Color>, length: usize) -> Self {
         if colors.is_empty() {
             return Gradient::default();
         }
@@ -521,10 +616,15 @@ impl Gradient {
             v.push((DynVal::new_fixed((i * length) as i32), c));
         }
         v.push((DynVal::new_fixed((v.len() * length) as i32), v[0].1.clone()));
-        Self::new(ctx, v, 0.)
+        Gradient {
+            draw_size: None,
+            offset: (0, 0),
+            grad: v,
+            angle_deg: 0.,
+        }
     }
 
-    pub fn new_y_grad_repeater(ctx: &Context, mut colors: Vec<Color>, length: usize) -> Self {
+    pub fn new_y_grad_repeater(mut colors: Vec<Color>, length: usize) -> Self {
         if colors.is_empty() {
             return Gradient::default();
         }
@@ -533,11 +633,16 @@ impl Gradient {
             v.push((DynVal::new_fixed((i * length) as i32), c));
         }
         v.push((DynVal::new_fixed((v.len() * length) as i32), v[0].1.clone()));
-        Self::new(ctx, v, 90.)
+        Gradient {
+            draw_size: None,
+            offset: (0, 0),
+            grad: v,
+            angle_deg: 90.,
+        }
     }
 
     pub fn new_x_grad_repeater_time_loop(
-        ctx: &Context, colors: Vec<Color>, length: usize, each_dur: Duration,
+        colors: Vec<Color>, length: usize, each_dur: Duration,
     ) -> (Self, Vec<TimeGradient>) {
         let mut out_tgs = Vec::with_capacity(colors.len());
         let mut time_colors = Vec::with_capacity(colors.len());
@@ -550,16 +655,16 @@ impl Gradient {
                 .take(colors.len())
                 .cloned()
                 .collect();
-            let tc = TimeGradient::new_loop(ctx, each_dur, rotated_c);
+            let tc = TimeGradient::new_loop(each_dur, rotated_c);
             out_tgs.push(tc.clone());
             time_colors.push(tc.into())
         }
 
-        (Self::new_x_grad_repeater(ctx, time_colors, length), out_tgs)
+        (Self::new_x_grad_repeater(time_colors, length), out_tgs)
     }
 
     pub fn new_y_grad_repeater_time_loop(
-        ctx: &Context, colors: Vec<Color>, length: usize, each_dur: Duration,
+        colors: Vec<Color>, length: usize, each_dur: Duration,
     ) -> (Self, Vec<TimeGradient>) {
         let mut out_tgs = Vec::with_capacity(colors.len());
         let mut time_colors = Vec::with_capacity(colors.len());
@@ -572,17 +677,16 @@ impl Gradient {
                 .take(colors.len())
                 .cloned()
                 .collect();
-            let tc = TimeGradient::new_loop(ctx, each_dur, rotated_c);
+            let tc = TimeGradient::new_loop(each_dur, rotated_c);
             out_tgs.push(tc.clone());
             time_colors.push(tc.into())
         }
 
-        (Self::new_y_grad_repeater(ctx, time_colors, length), out_tgs)
+        (Self::new_y_grad_repeater(time_colors, length), out_tgs)
     }
 
-    pub fn x_grad_rainbow(ctx: &Context, length: usize) -> Self {
+    pub fn x_grad_rainbow(length: usize) -> Self {
         Gradient::new_x_grad_repeater(
-            ctx,
             vec![
                 Color::VIOLET,
                 Color::INDIGO,
@@ -596,9 +700,8 @@ impl Gradient {
         )
     }
 
-    pub fn y_grad_rainbow(ctx: &Context, length: usize) -> Self {
+    pub fn y_grad_rainbow(length: usize) -> Self {
         Gradient::new_y_grad_repeater(
-            ctx,
             vec![
                 Color::VIOLET,
                 Color::INDIGO,
@@ -613,10 +716,9 @@ impl Gradient {
     }
 
     pub fn x_grad_rainbow_time_loop(
-        ctx: &Context, length: usize, each_dur: Duration,
+        length: usize, each_dur: Duration,
     ) -> (Self, Vec<TimeGradient>) {
         Gradient::new_x_grad_repeater_time_loop(
-            ctx,
             vec![
                 Color::VIOLET,
                 Color::INDIGO,
@@ -632,10 +734,9 @@ impl Gradient {
     }
 
     pub fn y_grad_rainbow_time_loop(
-        ctx: &Context, length: usize, each_dur: Duration,
+        length: usize, each_dur: Duration,
     ) -> (Self, Vec<TimeGradient>) {
         Gradient::new_y_grad_repeater_time_loop(
-            ctx,
             vec![
                 Color::VIOLET,
                 Color::INDIGO,
@@ -675,13 +776,7 @@ impl Gradient {
     }
 
     pub fn to_color(&self, cctx: &ColorContext, x: u16, y: u16) -> Color {
-        let grs = cctx.store.pos_gradients.borrow();
-        let grad = grs.get(self.gradient_id);
-        let Some(grad) = grad else {
-            return Color::TRANSPARENT;
-        };
-
-        if grad.is_empty() {
+        if self.grad.is_empty() {
             return Color::TRANSPARENT;
         }
 
@@ -767,7 +862,8 @@ impl Gradient {
         };
 
         // loop the pos if it is outside the maximum value
-        let max_pos = grad
+        let max_pos = self
+            .grad
             .last()
             .expect("should not be empty")
             .0
@@ -784,7 +880,7 @@ impl Gradient {
         let mut end_clr: Option<Color> = None;
         let mut start_pos: Option<i32> = None;
         let mut end_pos: Option<i32> = None;
-        for ((p1, c1), (p2, c2)) in grad.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
+        for ((p1, c1), (p2, c2)) in self.grad.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
             if (p1.get_val(max_ctx_val) <= pos) && (pos < p2.get_val(max_ctx_val)) {
                 start_clr = Some(c1.clone());
                 end_clr = Some(c2.clone());
@@ -793,31 +889,13 @@ impl Gradient {
                 break;
             }
         }
-        let start_clr = start_clr.unwrap_or_else(|| grad[0].1.clone());
-        let end_clr = end_clr.unwrap_or_else(|| grad[grad.len() - 1].1.clone());
-        let start_pos = start_pos.unwrap_or_else(|| grad[0].0.get_val(max_ctx_val));
-        let end_pos = end_pos.unwrap_or_else(|| grad[grad.len() - 1].0.get_val(max_ctx_val));
+        let start_clr = start_clr.unwrap_or_else(|| self.grad[0].1.clone());
+        let end_clr = end_clr.unwrap_or_else(|| self.grad[self.grad.len() - 1].1.clone());
+        let start_pos = start_pos.unwrap_or_else(|| self.grad[0].0.get_val(max_ctx_val));
+        let end_pos =
+            end_pos.unwrap_or_else(|| self.grad[self.grad.len() - 1].0.get_val(max_ctx_val));
         let percent = (pos - start_pos) as f64 / (end_pos - start_pos) as f64;
         start_clr.blend(&cctx, x, y, end_clr, percent, BlendKind::Blend1)
-    }
-
-    #[allow(clippy::type_complexity)]
-    pub fn apply_fn_to_colors(
-        &self, cctx: &ColorContext, f: Box<dyn Fn(&ColorContext, &Color) -> Color>,
-    ) -> Self {
-        let grs = cctx.store.pos_gradients.borrow();
-        let gr = grs.get(self.gradient_id);
-        let Some(gr) = gr else {
-            return self.clone();
-        };
-        let mut mod_gr = gr.clone();
-        for (_, c) in mod_gr.iter_mut() {
-            *c = f(cctx, c);
-        }
-        let mut p = self.clone();
-        let pattern_id = cctx.store.add_pos_gradient(mod_gr);
-        p.gradient_id = pattern_id;
-        p
     }
 }
 
@@ -835,27 +913,14 @@ pub struct RadialGradient {
     /// x, y
     pub skew: (f64, f64),
     /// horizontal, vertical skew (as skew of (1., 1./0.55) seems to make a circle)
-    //pub grad: Vec<(DynVal, Color)>,
-    pub gradient_id: usize,
+    pub grad: Vec<(DynVal, Color)>,
 }
 
 impl RadialGradient {
-    pub fn new(
-        ctx: &Context, grad: Vec<(DynVal, Color)>, center: (DynVal, DynVal), skew: (f64, f64),
-    ) -> Self {
-        RadialGradient {
-            draw_size: None,
-            offset: (0, 0),
-            center,
-            skew,
-            gradient_id: ctx.color_store.add_pos_gradient(grad),
-        }
-    }
-
     /// creates a basic circle gradient with the given center, all colors are spaced evenly
     /// by the given distance 'each_dist'
     pub fn new_basic_circle(
-        ctx: &Context, center: (DynVal, DynVal), each_dist: DynVal, colors: Vec<Color>,
+        center: (DynVal, DynVal), each_dist: DynVal, colors: Vec<Color>,
     ) -> Self {
         let rgrad = colors
             .into_iter()
@@ -863,22 +928,19 @@ impl RadialGradient {
             .map(|(i, c)| (each_dist.clone().mul(i as f64), c))
             .collect();
 
-        let id = ctx.color_store.add_pos_gradient(rgrad);
-
         RadialGradient {
             draw_size: None,
             offset: (0, 0),
             center,
             skew: (1., 1. / 0.55),
-            gradient_id: id,
+            grad: rgrad,
         }
     }
 
     /// creates a basic circle gradient with the given center, all colors are spaced evenly
     /// by the given distance 'each_dist'
     pub fn new_basic_circle_time_loop(
-        ctx: &Context, center: (DynVal, DynVal), each_dur: Duration, each_dist: DynVal,
-        colors: Vec<Color>,
+        center: (DynVal, DynVal), each_dur: Duration, each_dist: DynVal, colors: Vec<Color>,
     ) -> (Self, Vec<TimeGradient>) {
         let mut out_tgs = Vec::with_capacity(colors.len());
         let mut time_colors = Vec::with_capacity(colors.len());
@@ -891,13 +953,13 @@ impl RadialGradient {
                 .take(colors.len())
                 .cloned()
                 .collect();
-            let tc = TimeGradient::new_loop(ctx, each_dur, rotated_c);
+            let tc = TimeGradient::new_loop(each_dur, rotated_c);
             out_tgs.push(tc.clone());
             time_colors.push(tc.into())
         }
 
         (
-            Self::new_basic_circle(ctx, center, each_dist, time_colors),
+            Self::new_basic_circle(center, each_dist, time_colors),
             out_tgs,
         )
     }
@@ -924,12 +986,7 @@ impl RadialGradient {
     }
 
     pub fn to_color(&self, cctx: &ColorContext, x: u16, y: u16) -> Color {
-        let grs = cctx.store.pos_gradients.borrow();
-        let grad = grs.get(self.gradient_id);
-        let Some(grad) = grad else {
-            return Color::TRANSPARENT;
-        };
-        if grad.is_empty() {
+        if self.grad.is_empty() {
             return Color::TRANSPARENT;
         }
 
@@ -983,7 +1040,7 @@ impl RadialGradient {
         let mut end_clr: Option<Color> = None;
         let mut start_pos: Option<f64> = None;
         let mut end_pos: Option<f64> = None;
-        for ((p1, c1), (p2, c2)) in grad.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
+        for ((p1, c1), (p2, c2)) in self.grad.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
             if (p1.get_val(s.width.max(s.height)) as f64 <= dist)
                 && (dist < p2.get_val(s.width.max(s.height)) as f64)
             {
@@ -995,33 +1052,17 @@ impl RadialGradient {
             }
         }
 
-        let start_clr = start_clr.unwrap_or_else(|| grad[0].1.clone());
-        let end_clr = end_clr.unwrap_or_else(|| grad[grad.len() - 1].1.clone());
+        let start_clr = start_clr.unwrap_or_else(|| self.grad[0].1.clone());
+        let end_clr = end_clr.unwrap_or_else(|| self.grad[self.grad.len() - 1].1.clone());
         let start_pos =
-            start_pos.unwrap_or_else(|| grad[0].0.get_val(s.width.max(s.height)) as f64);
-        let end_pos =
-            end_pos.unwrap_or_else(|| grad[grad.len() - 1].0.get_val(s.width.max(s.height)) as f64);
+            start_pos.unwrap_or_else(|| self.grad[0].0.get_val(s.width.max(s.height)) as f64);
+        let end_pos = end_pos.unwrap_or_else(|| {
+            self.grad[self.grad.len() - 1]
+                .0
+                .get_val(s.width.max(s.height)) as f64
+        });
         let percent = (dist - start_pos) / (end_pos - start_pos);
         start_clr.blend(&cctx, x, y, end_clr, percent, BlendKind::Blend1)
-    }
-
-    #[allow(clippy::type_complexity)]
-    pub fn apply_fn_to_colors(
-        &self, cctx: &ColorContext, f: Box<dyn Fn(&ColorContext, &Color) -> Color>,
-    ) -> Self {
-        let grs = cctx.store.pos_gradients.borrow();
-        let gr = grs.get(self.gradient_id);
-        let Some(gr) = gr else {
-            return self.clone();
-        };
-        let mut mod_gr = gr.clone();
-        for (_, c) in mod_gr.iter_mut() {
-            *c = f(cctx, c);
-        }
-        let mut p = self.clone();
-        let pattern_id = cctx.store.add_pos_gradient(mod_gr);
-        p.gradient_id = pattern_id;
-        p
     }
 }
 
@@ -1034,8 +1075,7 @@ pub struct TimeGradient {
 }
 
 impl TimeGradient {
-    pub fn new(ctx: &Context, total_dur: Duration, points: Vec<(Duration, Color)>) -> Self {
-        let cctx = ctx.get_color_context();
+    pub fn new(cctx: &ColorContext, total_dur: Duration, points: Vec<(Duration, Color)>) -> Self {
         let id = cctx.store.add_time_gradient(points.clone());
         TimeGradient {
             total_dur,
@@ -1045,12 +1085,12 @@ impl TimeGradient {
 
     /// creates a basic time gradient with multiple colors where each color lasts for the same
     /// duration
-    pub fn new_loop(ctx: &Context, each_dur: Duration, colors: Vec<Color>) -> Self {
+    pub fn new_loop(cctx: &ColorContext, each_dur: Duration, colors: Vec<Color>) -> Self {
         if colors.is_empty() {
             return TimeGradient::default();
         }
         if colors.len() == 1 {
-            return Self::new(ctx, each_dur, vec![(each_dur, colors[0].clone())]);
+            return Self::new(cctx, each_dur, vec![(each_dur, colors[0].clone())]);
         }
         let total_dur = each_dur * colors.len() as u32;
         let mut points = vec![];
@@ -1058,7 +1098,7 @@ impl TimeGradient {
             points.push((each_dur * i as u32, c.clone()));
         }
         points.push((total_dur, colors[0].clone()));
-        Self::new(ctx, total_dur, points)
+        Self::new(cctx, total_dur, points)
     }
 
     pub fn to_color(&self, cctx: &ColorContext, x: u16, y: u16) -> Color {
@@ -1080,7 +1120,7 @@ impl TimeGradient {
         let mut end_clr: Option<Color> = None;
         let mut start_time: Option<Duration> = None;
         let mut end_time: Option<Duration> = None;
-        for ((t1, c1), (t2, c2)) in points.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
+        for ((t1, c1), (t2, c2)) in self.points.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
             if (t1 <= d) && (d < t2) {
                 start_clr = Some(c1.clone());
                 end_clr = Some(c2.clone());
@@ -1089,31 +1129,12 @@ impl TimeGradient {
                 break;
             }
         }
-        let start_clr = start_clr.unwrap_or_else(|| points[0].1.clone());
-        let end_clr = end_clr.unwrap_or_else(|| points[points.len() - 1].1.clone());
-        let start_time = start_time.unwrap_or_else(|| points[0].0);
-        let end_time = end_time.unwrap_or_else(|| points[points.len() - 1].0);
+        let start_clr = start_clr.unwrap_or_else(|| self.points[0].1.clone());
+        let end_clr = end_clr.unwrap_or_else(|| self.points[self.points.len() - 1].1.clone());
+        let start_time = start_time.unwrap_or_else(|| self.points[0].0);
+        let end_time = end_time.unwrap_or_else(|| self.points[self.points.len() - 1].0);
         let percent = (d - start_time).as_secs_f64() / (end_time - start_time).as_secs_f64();
         start_clr.blend(cctx, x, y, end_clr, percent, BlendKind::Blend1)
-    }
-
-    #[allow(clippy::type_complexity)]
-    pub fn apply_fn_to_colors(
-        &self, cctx: &ColorContext, f: Box<dyn Fn(&ColorContext, &Color) -> Color>,
-    ) -> Self {
-        let time_grs = cctx.store.time_gradients.borrow();
-        let time_gr = time_grs.get(self.gradient_id);
-        let Some(time_gr) = time_gr else {
-            return self.clone();
-        };
-        let mut mod_time_gr = time_gr.clone();
-        for (_, c) in mod_time_gr.iter_mut() {
-            *c = f(cctx, c);
-        }
-        let mut p = self.clone();
-        let time_gr_id = cctx.store.add_time_gradient(mod_time_gr);
-        p.gradient_id = time_gr_id;
-        p
     }
 }
 
@@ -1216,6 +1237,7 @@ impl Pattern {
         let mut mod_pattern = pattern.clone();
         for cs in mod_pattern.iter_mut() {
             for c in cs.iter_mut() {
+                //*c = c.overlay_color(cctx, overlay.clone());
                 *c = f(cctx, c);
             }
         }

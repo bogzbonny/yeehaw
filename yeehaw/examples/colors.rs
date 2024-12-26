@@ -14,6 +14,7 @@ async fn main() -> Result<(), Error> {
         (std::time::Duration::from_secs(3), Color::RED),
     ];
     let t1 = Color::TimeGradient(TimeGradient::new(
+        &ctx,
         std::time::Duration::from_secs(3),
         time_gr,
     ));
@@ -25,6 +26,7 @@ async fn main() -> Result<(), Error> {
         (std::time::Duration::from_secs(3), Color::GREEN),
     ];
     let t2 = Color::TimeGradient(TimeGradient::new(
+        &ctx,
         std::time::Duration::from_secs(3),
         time_gr,
     ));
@@ -36,6 +38,7 @@ async fn main() -> Result<(), Error> {
         (std::time::Duration::from_secs(3), Color::BLUE),
     ];
     let t3 = Color::TimeGradient(TimeGradient::new(
+        &ctx,
         std::time::Duration::from_secs(3),
         time_gr,
     ));
@@ -70,17 +73,16 @@ async fn main() -> Result<(), Error> {
         (DynVal::new_flex(0.5), t1),
     ];
 
-    let el_bg = Color::RadialGradient(RadialGradient {
-        draw_size: None,
-        offset: (0, 0),
-        center: (0.25.into(), 0.5.into()),
-        skew: (1., 1. / 0.55),
-        grad: rgrad,
-    });
+    let el_bg = Color::RadialGradient(RadialGradient::new(
+        &ctx,
+        rgrad,
+        (0.25.into(), 0.5.into()),
+        (1., 1. / 0.55),
+    ));
 
-    _ = el_bg;
+    //_ = el_bg;
 
-    let el_bg = Pattern::new_sqr_tiles(&ctx, 30, t3, Color::WHITE).into();
+    //let el_bg = Pattern::new_sqr_tiles(&ctx, 30, t3, Color::WHITE).into();
 
     let el = ParentPane::new(&ctx, "color-test").with_bg_color(el_bg);
 

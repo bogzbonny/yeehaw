@@ -101,8 +101,8 @@ impl Slider {
     // ----------------------------------------------
     // decorators
 
-    pub fn with_gradient(self, start_color: Color, end_color: Color) -> Self {
-        let gr = Gradient::new_x_grad_2_color(start_color, end_color);
+    pub fn with_gradient(self, ctx: &Context, start_color: Color, end_color: Color) -> Self {
+        let gr = Gradient::new_x_grad_2_color(ctx, start_color, end_color);
         if let Some((fg, _)) = &mut self.filled.borrow_mut().style.fg {
             *fg = Color::Gradient(gr);
         }
