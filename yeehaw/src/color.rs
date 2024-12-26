@@ -374,7 +374,8 @@ impl Color {
             Color::Gradient(gr) => *self = gr.clone().to_color(s, dur_since_launch, x, y),
             Color::TimeGradient(tg) => *self = tg.clone().to_color(s, dur_since_launch, x, y),
             Color::RadialGradient(rg) => *self = rg.clone().to_color(s, dur_since_launch, x, y),
-            _ => {}
+            Color::Pattern(p) => *self = p.clone().to_color(s, dur_since_launch, x, y),
+            Color::ANSI(_) | Color::Rgba(_) => {}
         }
     }
 
@@ -383,7 +384,10 @@ impl Color {
         match self {
             Color::Gradient(ref mut gr) => gr.set_draw_size_if_unset(s),
             Color::RadialGradient(ref mut rg) => rg.set_draw_size_if_unset(s),
-            _ => {}
+            Color::Pattern(_) => {}
+            Color::TimeGradient(_) => {}
+            Color::Rgba(_) => {}
+            Color::ANSI(_) => {}
         }
     }
 
@@ -392,7 +396,10 @@ impl Color {
         match self {
             Color::Gradient(ref mut gr) => gr.add_to_offset(x, y),
             Color::RadialGradient(ref mut rg) => rg.add_to_offset(x, y),
-            _ => {}
+            Color::Pattern(ref mut p) => p.add_to_offset(x, y),
+            Color::TimeGradient(_) => {}
+            Color::Rgba(_) => {}
+            Color::ANSI(_) => {}
         }
     }
 
@@ -414,7 +421,14 @@ impl Color {
                     c.set_alpha(alpha);
                 }
             }
-            _ => {}
+            Color::Pattern(p) => {
+                for cs in p.pattern.iter_mut() {
+                    for c in cs.iter_mut() {
+                        c.set_alpha(alpha);
+                    }
+                }
+            }
+            Color::ANSI(_) => {}
         }
     }
 
