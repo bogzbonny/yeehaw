@@ -1151,11 +1151,11 @@ impl Pattern {
         if self.pattern.is_empty() {
             return Color::TRANSPARENT;
         }
-        let x = (x as i32 - self.offset.0) as u16;
-        let y = (y as i32 - self.offset.1) as u16;
-        let x = x % self.pattern[0].len() as u16;
-        let y = y % self.pattern.len() as u16;
-        self.pattern[y as usize][x as usize].clone()
+        let x = (x as i32 - self.offset.0) as usize;
+        let y = (y as i32 - self.offset.1) as usize;
+        let x = x % self.pattern[0].len();
+        let y = y % self.pattern.len();
+        self.pattern[y][x].clone()
     }
 }
 

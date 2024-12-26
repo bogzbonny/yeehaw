@@ -378,6 +378,8 @@ impl Tui {
         let updates = self.cup.eo.all_drawing_updates(&ctx, false);
         let chs = self.drawing_cache.update_and_get(updates);
 
+        // TODO could be optimized with rayon if we could draw everything that doesn't
+        // depend on anything else in seperate passes.
         let mut dedup_chs: HashMap<(u16, u16), StyledContent<ChPlus>> = HashMap::new();
         for c in chs {
             // remove out of bounds
