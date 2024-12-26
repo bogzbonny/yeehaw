@@ -2,7 +2,6 @@ use {
     crate::{Context, DynVal, Size},
     crossterm::style::Color as CrosstermColor,
     rand::Rng,
-    std::collections::HashMap,
     std::time::Duration,
     std::{cell::RefCell, rc::Rc},
 };
@@ -12,12 +11,19 @@ use {
 #[derive(Clone, Default, Debug)]
 #[allow(clippy::type_complexity)]
 pub struct ColorStore {
-    //                                    id
-    pub pos_gradients: Rc<RefCell<HashMap<u16, Vec<(DynVal, Color)>>>>,
-    //                                    id
-    pub dur_gradients: Rc<RefCell<HashMap<u16, Vec<(Duration, Color)>>>>,
-    //                               id
-    pub patterns: Rc<RefCell<HashMap<u16, Vec<Vec<Color>>>>>,
+    pub pos_gradients: Rc<RefCell<Vec<Vec<(DynVal, Color)>>>>,
+    pub dur_gradients: Rc<RefCell<Vec<Vec<(Duration, Color)>>>>,
+    pub patterns: Rc<RefCell<Vec<Vec<Vec<Color>>>>>,
+}
+
+impl ColorStore {
+    pub fn add_pattern(&self, pattern: Vec<Vec<Color>>) -> usize {
+        self.patterns.borrow_mut().push(pattern);
+        self.patterns.borrow().len() - 1
+    }
+    //pub fn get_pattern(&self, id: u16) -> Option<&Vec<Vec<Color>>> {
+    //    self.patterns.borrow().get(&id)
+    //}
 }
 
 #[derive(Clone)]
@@ -230,14 +236,14 @@ impl Color {
         Self::new(r, g, b)
     }
 
-    pub fn darken(&self) -> Self {
+    pub fn darken(&self, cctx: &ColorContext) -> Self {
         match self {
-            Color::ANSI(c) => Color::darken_ansi(c),
+            Color::ANSI(c) => Color::darken_ansi(c, cctx),
             Color::Rgba(c) => Color::Rgba(c.mul(0.5)),
             Color::Gradient(gr) => {
                 let mut grad = vec![];
                 for (x, c) in &gr.grad {
-                    grad.push((x.clone(), c.darken()));
+                    grad.push((x.clone(), c.darken(cctx)));
                 }
                 Color::Gradient(Gradient {
                     draw_size: gr.draw_size,
@@ -249,14 +255,14 @@ impl Color {
             Color::TimeGradient(tg) => {
                 let mut points = vec![];
                 for (dur, c) in &tg.points {
-                    points.push((*dur, c.darken()));
+                    points.push((*dur, c.darken(cctx)));
                 }
                 Color::TimeGradient(TimeGradient::new(tg.total_dur, points))
             }
             Color::RadialGradient(rg) => {
                 let mut grad = vec![];
                 for (x, c) in &rg.grad {
-                    grad.push((x.clone(), c.darken()));
+                    grad.push((x.clone(), c.darken(cctx)));
                 }
                 Color::RadialGradient(RadialGradient {
                     draw_size: rg.draw_size,
@@ -267,25 +273,34 @@ impl Color {
                 })
             }
             Color::Pattern(p) => {
-                let mut p = p.clone();
-                for cs in p.pattern.iter_mut() {
-                    for c in cs.iter_mut() {
-                        *c = c.darken();
-                    }
-                }
-                Color::Pattern(p)
+                //let mut p = p.clone();
+
+                //let patterns = cctx.store.patterns.borrow();
+                //let pattern = patterns.get(self.pattern_id);
+                //let Some(pattern) = pattern else {
+                //    return Color::TRANSPARENT;
+                //};
+                //for cs in p.pattern.iter_mut() {
+                //    for c in cs.iter_mut() {
+                //        *c = c.darken(cctx);
+                //    }
+                //}
+                //Color::Pattern(p)
+
+                // XXX
+                Color::Pattern(p.clone())
             }
         }
     }
 
-    pub fn lighten(&self) -> Self {
+    pub fn lighten(&self, cctx: &ColorContext) -> Self {
         match self {
-            Color::ANSI(c) => Color::lighten_ansi(c),
+            Color::ANSI(c) => Color::lighten_ansi(c, cctx),
             Color::Rgba(c) => Color::Rgba(c.mul(1.5)),
             Color::Gradient(gr) => {
                 let mut grad = vec![];
                 for (x, c) in &gr.grad {
-                    grad.push((x.clone(), c.lighten()));
+                    grad.push((x.clone(), c.lighten(cctx)));
                 }
                 Color::Gradient(Gradient {
                     draw_size: gr.draw_size,
@@ -297,14 +312,14 @@ impl Color {
             Color::TimeGradient(tg) => {
                 let mut points = vec![];
                 for (dur, c) in &tg.points {
-                    points.push((*dur, c.lighten()));
+                    points.push((*dur, c.lighten(cctx)));
                 }
                 Color::TimeGradient(TimeGradient::new(tg.total_dur, points))
             }
             Color::RadialGradient(rg) => {
                 let mut grad = vec![];
                 for (x, c) in &rg.grad {
-                    grad.push((x.clone(), c.lighten()));
+                    grad.push((x.clone(), c.lighten(cctx)));
                 }
                 Color::RadialGradient(RadialGradient {
                     draw_size: rg.draw_size,
@@ -315,18 +330,21 @@ impl Color {
                 })
             }
             Color::Pattern(p) => {
-                let mut p = p.clone();
-                for cs in p.pattern.iter_mut() {
-                    for c in cs.iter_mut() {
-                        *c = c.lighten();
-                    }
-                }
-                Color::Pattern(p)
+                //let mut p = p.clone();
+                //for cs in p.pattern.iter_mut() {
+                //    for c in cs.iter_mut() {
+                //        *c = c.lighten();
+                //    }
+                //}
+                //Color::Pattern(p)
+
+                // XXX
+                Color::Pattern(p.clone())
             }
         }
     }
 
-    pub fn darken_ansi(c: &CrosstermColor) -> Color {
+    pub fn darken_ansi(c: &CrosstermColor, cctx: &ColorContext) -> Color {
         match c {
             CrosstermColor::Red => Color::ANSI(CrosstermColor::DarkRed),
             CrosstermColor::Green => Color::ANSI(CrosstermColor::DarkGreen),
@@ -336,12 +354,12 @@ impl Color {
             CrosstermColor::Cyan => Color::ANSI(CrosstermColor::DarkCyan),
             CrosstermColor::Grey => Color::ANSI(CrosstermColor::DarkGrey),
             CrosstermColor::White => Color::ANSI(CrosstermColor::Grey),
-            CrosstermColor::Rgb { r, g, b } => Color::new(*r, *g, *b).darken(),
+            CrosstermColor::Rgb { r, g, b } => Color::new(*r, *g, *b).darken(cctx),
             _ => Color::ANSI(*c),
         }
     }
 
-    pub fn lighten_ansi(c: &CrosstermColor) -> Color {
+    pub fn lighten_ansi(c: &CrosstermColor, cctx: &ColorContext) -> Color {
         match c {
             CrosstermColor::DarkRed => Color::ANSI(CrosstermColor::Red),
             CrosstermColor::DarkGreen => Color::ANSI(CrosstermColor::Green),
@@ -351,7 +369,7 @@ impl Color {
             CrosstermColor::DarkCyan => Color::ANSI(CrosstermColor::Cyan),
             CrosstermColor::DarkGrey => Color::ANSI(CrosstermColor::Grey),
             CrosstermColor::Grey => Color::ANSI(CrosstermColor::White),
-            CrosstermColor::Rgb { r, g, b } => Color::new(*r, *g, *b).lighten(),
+            CrosstermColor::Rgb { r, g, b } => Color::new(*r, *g, *b).lighten(cctx),
             _ => Color::ANSI(*c),
         }
     }
@@ -421,37 +439,38 @@ impl Color {
         }
     }
 
-    pub fn set_alpha(&mut self, alpha: u8) {
+    pub fn set_alpha(&mut self, alpha: u8, cctx: &ColorContext) {
         match self {
             Color::Rgba(c) => c.a = alpha,
             Color::Gradient(gr) => {
                 for (_, c) in &mut gr.grad {
-                    c.set_alpha(alpha);
+                    c.set_alpha(alpha, cctx);
                 }
             }
             Color::TimeGradient(tg) => {
                 for (_, c) in &mut tg.points {
-                    c.set_alpha(alpha);
+                    c.set_alpha(alpha, cctx);
                 }
             }
             Color::RadialGradient(rg) => {
                 for (_, c) in &mut rg.grad {
-                    c.set_alpha(alpha);
+                    c.set_alpha(alpha, cctx);
                 }
             }
-            Color::Pattern(p) => {
-                for cs in p.pattern.iter_mut() {
-                    for c in cs.iter_mut() {
-                        c.set_alpha(alpha);
-                    }
-                }
+            Color::Pattern(_p) => {
+                // XXX
+                //for cs in p.pattern.iter_mut() {
+                //    for c in cs.iter_mut() {
+                //        c.set_alpha(alpha, cctx);
+                //    }
+                //}
             }
             Color::ANSI(_) => {}
         }
     }
 
-    pub fn with_alpha(mut self, alpha: u8) -> Self {
-        self.set_alpha(alpha);
+    pub fn with_alpha(mut self, alpha: u8, cctx: &ColorContext) -> Self {
+        self.set_alpha(alpha, cctx);
         self
     }
 
@@ -493,13 +512,15 @@ impl Color {
                     })
                 }
                 Color::Pattern(p) => {
-                    let mut p = p.clone();
-                    for cs in p.pattern.iter_mut() {
-                        for c in cs.iter_mut() {
-                            *c = c.overlay_color(overlay.clone());
-                        }
-                    }
-                    Color::Pattern(p)
+                    //let mut p = p.clone();
+                    //for cs in p.pattern.iter_mut() {
+                    //    for c in cs.iter_mut() {
+                    //        *c = c.overlay_color(overlay.clone());
+                    //    }
+                    //}
+                    //Color::Pattern(p)
+                    // XXX
+                    Color::Pattern(p.clone())
                 }
             },
             _ => overlay,
@@ -1121,20 +1142,23 @@ impl TimeGradient {
 /// WARNING larger patterns render considerably more slowly
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Default)]
 pub struct Pattern {
-    pub pattern: Vec<Vec<Color>>, // outer: y, inner: x
+    //pub pattern: Vec<Vec<Color>>, // outer: y, inner: x
+    pub pattern_id: usize, // outer: y, inner: x
     pub offset: (i32, i32),
 }
 
 impl Pattern {
-    pub fn new(pattern: Vec<Vec<Color>>) -> Self {
-        Pattern {
-            pattern,
-            offset: (0, 0),
-        }
-    }
+    //pub fn new(pattern: Vec<Vec<Color>>) -> Self {
+    //    Pattern {
+    //        pattern,
+    //        offset: (0, 0),
+    //    }
+    //}
 
     // tile pattern with the given tile width and height
-    pub fn new_tiles(tile_width: usize, tile_height: usize, tile1: Color, tile2: Color) -> Self {
+    pub fn new_tiles(
+        cctx: &ColorContext, tile_width: usize, tile_height: usize, tile1: Color, tile2: Color,
+    ) -> Self {
         let mut pattern = Vec::with_capacity(tile_height * 2);
         for y in 0..tile_height * 2 {
             let mut row = Vec::with_capacity(tile_width * 2);
@@ -1149,17 +1173,29 @@ impl Pattern {
             }
             pattern.push(row);
         }
+
+        {
+            let patterns = cctx.store.patterns.borrow();
+            debug!("adding pattern, patterns len {}", patterns.len());
+        }
+        let pattern_id = cctx.store.add_pattern(pattern.clone());
+        {
+            let patterns = cctx.store.patterns.borrow();
+            debug!("end adding pattern, patterns len {}", patterns.len());
+        }
+
         Pattern {
-            pattern,
+            pattern_id,
             offset: (0, 0),
         }
     }
 
     // attempts to make a square tile pattern provided the width
-    pub fn new_sqr_tiles(tile_width: usize, tile1: Color, tile2: Color) -> Self {
+    pub fn new_sqr_tiles(ctx: &Context, tile_width: usize, tile1: Color, tile2: Color) -> Self {
+        let cctx = ctx.get_color_context();
         // TODO use actual aspect ratio of the terminal if provided
         let tile_height = (tile_width as f64 * 0.55).round() as usize;
-        Pattern::new_tiles(tile_width, tile_height, tile1, tile2)
+        Pattern::new_tiles(&cctx, tile_width, tile_height, tile1, tile2)
     }
 
     pub fn add_to_offset(&mut self, x: i32, y: i32) {
@@ -1168,15 +1204,26 @@ impl Pattern {
     }
 
     // get the color at the given x, y on the pattern, looping once the end is reached
-    pub fn to_color(&self, _cctx: &ColorContext, x: u16, y: u16) -> Color {
-        if self.pattern.is_empty() {
+    pub fn to_color(&self, cctx: &ColorContext, x: u16, y: u16) -> Color {
+        let patterns = cctx.store.patterns.borrow();
+        let pattern = patterns.get(self.pattern_id);
+        let Some(pattern) = pattern else {
+            debug!(
+                "pattern not found: {}, patterns len {}",
+                self.pattern_id,
+                patterns.len()
+            );
+            return Color::TRANSPARENT;
+        };
+        if pattern.is_empty() {
+            debug!("pattern is empty: {}", self.pattern_id);
             return Color::TRANSPARENT;
         }
         let x = (x as i32 - self.offset.0) as usize;
         let y = (y as i32 - self.offset.1) as usize;
-        let x = x % self.pattern[0].len();
-        let y = y % self.pattern.len();
-        self.pattern[y][x].clone()
+        let x = x % pattern[0].len();
+        let y = y % pattern.len();
+        pattern[y][x].clone()
     }
 }
 

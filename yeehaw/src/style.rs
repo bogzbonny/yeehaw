@@ -1,5 +1,5 @@
 use {
-    crate::{Color, Size},
+    crate::{Color, Context, Size},
     crossterm::style::{Attribute as CrAttribute, Attributes as CrAttributes},
     ratatui::style::Modifier as RAttributes,
 };
@@ -63,8 +63,8 @@ impl Style {
     }
 
     /// create a style which is semi-transparent
-    pub fn opaque(mut c: Color, alpha: u8) -> Self {
-        c.set_alpha(alpha);
+    pub fn opaque(ctx: &Context, mut c: Color, alpha: u8) -> Self {
+        c.set_alpha(alpha, &ctx.get_color_context());
         Self {
             fg: Some((c.clone(), FgTranspSrc::LowerFg)),
             bg: Some((c, BgTranspSrc::LowerBg)),

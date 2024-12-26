@@ -137,21 +137,22 @@ impl Button {
             clicked_fn: Rc::new(RefCell::new(clicked_fn)),
         };
 
-        let d = b.button_drawing();
+        let d = b.button_drawing(ctx);
 
         b.pane.set_dyn_width(DynVal::new_fixed(d.width() as i32));
         b.pane.set_dyn_height(DynVal::new_fixed(d.height() as i32));
         b.pane.set_content(d);
 
         let b_ = b.clone();
+        let ctx_ = ctx.clone();
         b.pane
             .set_post_hook_for_set_selectability(Box::new(move |_, _| {
-                b_.pane.set_content(b_.button_drawing());
+                b_.pane.set_content(b_.button_drawing(&ctx_));
             }));
         b
     }
 
-    pub fn button_drawing(&self) -> DrawChs2D {
+    pub fn button_drawing(&self, ctx: &Context) -> DrawChs2D {
         match self.button_style.borrow().clone() {
             ButtonStyle::Basic(depressed_sty) => {
                 let sty = if let Some(dsty) = depressed_sty {
@@ -199,7 +200,12 @@ impl Button {
                             .with_bg(Color::TRANSPARENT)
                             .with_fg(c),
                         None => {
-                            let fg = text_sty.bg.clone().unwrap_or_default().0.darken();
+                            let fg = text_sty
+                                .bg
+                                .clone()
+                                .unwrap_or_default()
+                                .0
+                                .darken(&ctx.get_color_context());
                             Style::default_const()
                                 .with_bg(Color::TRANSPARENT)
                                 .with_fg(fg)
@@ -246,7 +252,12 @@ impl Button {
                             .with_bg(Color::TRANSPARENT)
                             .with_fg(c),
                         None => {
-                            let fg = text_sty.bg.clone().unwrap_or_default().0.darken();
+                            let fg = text_sty
+                                .bg
+                                .clone()
+                                .unwrap_or_default()
+                                .0
+                                .darken(&ctx.get_color_context());
                             Style::default_const()
                                 .with_bg(Color::TRANSPARENT)
                                 .with_fg(fg)
@@ -265,15 +276,15 @@ impl Button {
     // ----------------------------------------------
     // decorators
 
-    pub fn with_styles(self, styles: SelStyles) -> Self {
+    pub fn with_styles(self, ctx: &Context, styles: SelStyles) -> Self {
         self.pane.set_styles(styles);
-        self.pane.set_content(self.button_drawing());
+        self.pane.set_content(self.button_drawing(ctx));
         self
     }
 
-    pub fn basic_button(self, sty: Option<Style>) -> Self {
+    pub fn basic_button(self, ctx: &Context, sty: Option<Style>) -> Self {
         *self.button_style.borrow_mut() = ButtonStyle::Basic(sty);
-        let d = self.button_drawing();
+        let d = self.button_drawing(ctx);
         self.pane
             .pane
             .set_dyn_width(DynVal::new_fixed(d.width() as i32));
@@ -283,9 +294,9 @@ impl Button {
         self.pane.set_content(d);
         self
     }
-    pub fn with_sides(self, sides: ButtonSides) -> Self {
+    pub fn with_sides(self, ctx: &Context, sides: ButtonSides) -> Self {
         *self.button_style.borrow_mut() = ButtonStyle::Sides(sides);
-        let d = self.button_drawing();
+        let d = self.button_drawing(ctx);
         self.pane
             .pane
             .set_dyn_width(DynVal::new_fixed(d.width() as i32));
@@ -296,9 +307,9 @@ impl Button {
         self
     }
 
-    pub fn with_shadow(self, shadow: ButtonShadow) -> Self {
+    pub fn with_shadow(self, ctx: &Context, shadow: ButtonShadow) -> Self {
         *self.button_style.borrow_mut() = ButtonStyle::Shadow(shadow);
-        let d = self.button_drawing();
+        let d = self.button_drawing(ctx);
         self.pane
             .pane
             .set_dyn_width(DynVal::new_fixed(d.width() as i32));
@@ -309,9 +320,9 @@ impl Button {
         self
     }
 
-    pub fn with_micro_shadow(self, shadow: ButtonMicroShadow) -> Self {
+    pub fn with_micro_shadow(self, ctx: &Context, shadow: ButtonMicroShadow) -> Self {
         *self.button_style.borrow_mut() = ButtonStyle::MicroShadow(shadow);
-        let d = self.button_drawing();
+        let d = self.button_drawing(ctx);
         self.pane
             .pane
             .set_dyn_width(DynVal::new_fixed(d.width() as i32));
@@ -348,7 +359,7 @@ impl Element for Button {
                 if ke[0] == KB::KEY_ENTER {
                     let resps_ = self.click(ctx);
                     resps.extend(resps_);
-                    self.pane.set_content(self.button_drawing());
+                    self.pane.set_content(self.button_drawing(ctx));
                     return (true, resps);
                 }
             }
@@ -357,7 +368,7 @@ impl Element for Button {
                 match me.kind {
                     MouseEventKind::Down(MouseButton::Left) => {
                         *self.clicked_down.borrow_mut() = true;
-                        self.pane.set_content(self.button_drawing());
+                        self.pane.set_content(self.button_drawing(ctx));
                         return (true, resps);
                     }
                     MouseEventKind::Drag(MouseButton::Left) if clicked_down => {}
@@ -365,12 +376,12 @@ impl Element for Button {
                         *self.clicked_down.borrow_mut() = false;
                         let resps_ = self.click(ctx);
                         resps.extend(resps_);
-                        self.pane.set_content(self.button_drawing());
+                        self.pane.set_content(self.button_drawing(ctx));
                         return (true, resps);
                     }
                     _ => {
                         *self.clicked_down.borrow_mut() = false;
-                        self.pane.set_content(self.button_drawing());
+                        self.pane.set_content(self.button_drawing(ctx));
                     }
                 }
             }
@@ -378,7 +389,7 @@ impl Element for Button {
                 let clicked_down = *self.clicked_down.borrow();
                 if clicked_down {
                     *self.clicked_down.borrow_mut() = false;
-                    self.pane.set_content(self.button_drawing());
+                    self.pane.set_content(self.button_drawing(ctx));
                 }
             }
             _ => {}

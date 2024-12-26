@@ -105,10 +105,11 @@ impl DropdownList {
         d.pane.set_dyn_width(d.calculate_dyn_width());
 
         let d_ = d.clone();
+        let ctx_ = ctx.clone();
         d.pane
             .set_post_hook_for_set_selectability(Box::new(move |_, _| {
                 if d_.pane.get_selectability() != Selectability::Selected && *d_.open.borrow() {
-                    d_.perform_close_escape();
+                    d_.perform_close_escape(&ctx_);
                 }
                 d_.dirty.replace(true);
             }));
@@ -255,12 +256,12 @@ impl DropdownList {
         self.correct_offsets(&ctx);
     }
 
-    pub fn perform_close_escape(&self) {
+    pub fn perform_close_escape(&self, ctx: &Context) {
         self.dirty.replace(true);
         *self.open.borrow_mut() = false;
         // NOTE we are using the default context here, as we know
         // that a content_y_offset of 0 is safe. a lil' hacky
-        self.pane.set_content_y_offset(&Context::default(), 0);
+        self.pane.set_content_y_offset(ctx, 0);
         self.scrollbar
             .external_change(0, self.pane.content_height(), self.pane.content_size());
         self.pane.set_dyn_height(DynVal::new_fixed(1));

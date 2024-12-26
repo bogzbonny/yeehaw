@@ -75,7 +75,7 @@ impl Slider {
     pub fn new(ctx: &Context, filled: DrawCh, empty: DrawCh, head: DrawCh) -> Self {
         let pane = SelectablePane::new(ctx, Self::KIND)
             .with_focused_receivable_events(Self::default_receivable_events())
-            .with_styles(SelStyles::opaque())
+            .with_styles(SelStyles::opaque(ctx))
             .with_dyn_width(DynVal::FULL)
             .with_dyn_height(DynVal::new_fixed(1));
 

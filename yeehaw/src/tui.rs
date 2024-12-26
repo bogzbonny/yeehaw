@@ -1,7 +1,7 @@
 use {
     crate::{
-        keyboard::Keyboard, ChPlus, Context, DrawingCache, DynLocation, DynLocationSet, Element,
-        ElementID, ElementOrganizer, Error, Event, EventResponse, EventResponses, Parent,
+        keyboard::Keyboard, ChPlus, ColorStore, Context, DrawingCache, DynLocation, DynLocationSet,
+        Element, ElementID, ElementOrganizer, Error, Event, EventResponse, EventResponses, Parent,
         SortingHat,
     },
     crossterm::{
@@ -74,9 +74,7 @@ impl Tui {
         let (exit_tx, exit_recv) = tokio::sync::watch::channel(false);
         let (ev_tx, ev_recv) = tokio::sync::mpsc::channel::<Event>(10); // no idea if this buffer size is right or wrong
 
-        let eo = ElementOrganizer::default();
-        let hat = SortingHat::default();
-        let cup = TuiParent::new(hat, eo, exit_tx, ev_tx);
+        let cup = TuiParent::new(exit_tx, ev_tx);
         let tui = Tui {
             cup,
             main_el_id: "".to_string(),
@@ -93,7 +91,11 @@ impl Tui {
             ev_recv,
         };
 
-        let ctx = Context::new_context_for_screen_no_dur(&tui.cup.hat, tui.cup.ev_tx.clone());
+        let ctx = Context::new_context_for_screen_no_dur(
+            &tui.cup.hat,
+            tui.cup.ev_tx.clone(),
+            &tui.cup.color_store,
+        );
         let child_ctx = ctx.child_init_context();
         Ok((tui, child_ctx))
     }
@@ -103,6 +105,7 @@ impl Tui {
             self.launch_instant,
             &self.cup.hat,
             self.cup.ev_tx.clone(),
+            &self.cup.color_store,
         );
         if let Some(inline) = &self.inline {
             ctx.size.height = inline.borrow().tui_height;
@@ -113,7 +116,11 @@ impl Tui {
     pub async fn run(&mut self, main_el: Box<dyn Element>) -> Result<(), Error> {
         self.main_el_id = main_el.id();
         // add the element here after the location has been created
-        let ctx = Context::new_context_for_screen_no_dur(&self.cup.hat, self.cup.ev_tx.clone());
+        let ctx = Context::new_context_for_screen_no_dur(
+            &self.cup.hat,
+            self.cup.ev_tx.clone(),
+            &self.cup.color_store,
+        );
         let loc = DynLocation::new_fixed(0, ctx.size.width as i32, 0, ctx.size.height as i32);
         let loc = DynLocationSet::new(loc, vec![], 0);
         main_el.set_dyn_location_set(loc);
@@ -141,7 +148,11 @@ impl Tui {
     ) -> Result<(), Error> {
         self.main_el_id = main_el.id();
         // add the element here after the location has been created
-        let mut ctx = Context::new_context_for_screen_no_dur(&self.cup.hat, self.cup.ev_tx.clone());
+        let mut ctx = Context::new_context_for_screen_no_dur(
+            &self.cup.hat,
+            self.cup.ev_tx.clone(),
+            &self.cup.color_store,
+        );
         ctx.size.height = height;
         let loc = DynLocation::new_fixed(0, ctx.size.width as i32, 0, ctx.size.height as i32);
         let loc = DynLocationSet::new(loc, vec![], 0);
@@ -457,6 +468,7 @@ pub fn process_event_resps(
 #[derive(Clone)]
 pub struct TuiParent {
     pub hat: SortingHat,
+    pub color_store: ColorStore,
     pub eo: ElementOrganizer,
     pub el_store: Rc<RefCell<HashMap<String, Vec<u8>>>>,
     pub exit_tx: WatchSender<bool>,
@@ -466,12 +478,11 @@ pub struct TuiParent {
 }
 
 impl TuiParent {
-    pub fn new(
-        hat: SortingHat, eo: ElementOrganizer, exit_tx: WatchSender<bool>, ev_tx: MpscSender<Event>,
-    ) -> TuiParent {
+    pub fn new(exit_tx: WatchSender<bool>, ev_tx: MpscSender<Event>) -> TuiParent {
         TuiParent {
-            hat,
-            eo,
+            hat: SortingHat::default(),
+            color_store: ColorStore::default(),
+            eo: ElementOrganizer::default(),
             el_store: Rc::new(RefCell::new(HashMap::new())),
             exit_tx,
             ev_tx,

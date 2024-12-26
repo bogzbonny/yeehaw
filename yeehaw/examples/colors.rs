@@ -2,8 +2,8 @@ use yeehaw::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    //yeehaw::log::reset_log_file("./debug_test.log".to_string());
-    //std::env::set_var("RUST_BACKTRACE", "1");
+    yeehaw::log::reset_log_file("./debug_test.log".to_string());
+    std::env::set_var("RUST_BACKTRACE", "1");
 
     let (mut tui, ctx) = Tui::new()?;
 
@@ -80,7 +80,7 @@ async fn main() -> Result<(), Error> {
 
     _ = el_bg;
 
-    let el_bg = Pattern::new_sqr_tiles(8, t3, Color::WHITE).into();
+    let el_bg = Pattern::new_sqr_tiles(&ctx, 30, t3, Color::WHITE).into();
 
     let el = ParentPane::new(&ctx, "color-test").with_bg_color(el_bg);
 

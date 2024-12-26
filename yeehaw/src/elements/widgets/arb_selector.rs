@@ -187,7 +187,7 @@ impl ArbSelector {
 
         let pane = SelectablePane::new(ctx, Self::KIND)
             .with_focused_receivable_events(Self::default_receivable_events())
-            .with_styles(SelStyles::opaque())
+            .with_styles(SelStyles::opaque(ctx))
             .with_dyn_width(DynVal::new_fixed(base_width as i32))
             .with_dyn_height(DynVal::new_fixed(base_height as i32));
 

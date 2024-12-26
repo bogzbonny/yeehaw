@@ -519,8 +519,8 @@ impl BasicWindowTopBar {
                     resps
                 }),
             )
-            .with_micro_shadow(shadow_sty.clone())
-            .with_styles(btn_styles.clone())
+            .with_micro_shadow(ctx, shadow_sty.clone())
+            .with_styles(ctx, btn_styles.clone())
             .at(
                 DynVal::FULL.minus(button_rhs_spaces.into()),
                 DynVal::new_fixed(0),
@@ -550,8 +550,8 @@ impl BasicWindowTopBar {
                     resps
                 }),
             )
-            .with_micro_shadow(shadow_sty.clone())
-            .with_styles(btn_styles.clone())
+            .with_micro_shadow(ctx, shadow_sty.clone())
+            .with_styles(ctx, btn_styles.clone())
             .at(
                 DynVal::FULL.minus(button_rhs_spaces.into()),
                 DynVal::new_fixed(0),
@@ -576,8 +576,8 @@ impl BasicWindowTopBar {
                     resps
                 }),
             )
-            .with_micro_shadow(shadow_sty)
-            .with_styles(btn_styles)
+            .with_micro_shadow(ctx, shadow_sty)
+            .with_styles(ctx, btn_styles)
             .at(
                 DynVal::FULL.minus(button_rhs_spaces.into()),
                 DynVal::new_fixed(0),

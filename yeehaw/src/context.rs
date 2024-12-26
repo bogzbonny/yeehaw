@@ -29,25 +29,27 @@ pub struct Context {
     pub color_store: ColorStore,
 }
 
-/// Default implementation for Context, use only as a dummy value
-impl Default for Context {
-    fn default() -> Self {
-        let (ev_tx, _) = tokio::sync::mpsc::channel::<Event>(1);
-        Context {
-            size: Size::default(),
-            dur_since_launch: std::time::Duration::default(),
-            visible_region: None,
-            metadata: HashMap::new(),
-            parent_ctx: None,
-            hat: SortingHat::default(),
-            ev_tx,
-            color_store: ColorStore::default(),
-        }
-    }
-}
+///// Default implementation for Context, use only as a dummy value
+//impl Default for Context {
+//    fn default() -> Self {
+//        let (ev_tx, _) = tokio::sync::mpsc::channel::<Event>(1);
+//        Context {
+//            size: Size::default(),
+//            dur_since_launch: std::time::Duration::default(),
+//            visible_region: None,
+//            metadata: HashMap::new(),
+//            parent_ctx: None,
+//            hat: SortingHat::default(),
+//            ev_tx,
+//            color_store: ColorStore::default(),
+//        }
+//    }
+//}
 
 impl Context {
-    pub fn new_context_for_screen_no_dur(hat: &SortingHat, ev_tx: Sender<Event>) -> Context {
+    pub fn new_context_for_screen_no_dur(
+        hat: &SortingHat, ev_tx: Sender<Event>, color_store: &ColorStore,
+    ) -> Context {
         let (xmax, ymax) = crossterm::terminal::size().expect("no terminal size");
         Context {
             size: Size::new(xmax, ymax),
@@ -57,12 +59,13 @@ impl Context {
             parent_ctx: None,
             hat: hat.clone(),
             ev_tx,
-            color_store: ColorStore::default(),
+            color_store: color_store.clone(),
         }
     }
 
     pub fn new_context_for_screen(
         launch_instant: std::time::Instant, hat: &SortingHat, ev_tx: Sender<Event>,
+        color_store: &ColorStore,
     ) -> Context {
         let (xmax, ymax) = crossterm::terminal::size().expect("no terminal size");
         Context {
@@ -73,7 +76,7 @@ impl Context {
             parent_ctx: None,
             hat: hat.clone(),
             ev_tx,
-            color_store: ColorStore::default(),
+            color_store: color_store.clone(),
         }
     }
 

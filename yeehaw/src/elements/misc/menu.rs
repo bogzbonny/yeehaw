@@ -51,15 +51,14 @@ pub struct MenuStyle {
 
 impl Default for MenuStyle {
     fn default() -> Self {
-        let a = 255;
         let selected_style = Style::default_const()
-            .with_bg(Color::BLUE.with_alpha(a))
+            .with_bg(Color::BLUE)
             .with_fg(Color::WHITE);
         let unselected_style = Style::default_const()
-            .with_bg(Color::GREY10.with_alpha(a))
+            .with_bg(Color::GREY10)
             .with_fg(Color::WHITE);
         let disabled_style = Style::default_const()
-            .with_bg(Color::GREY20.with_alpha(a))
+            .with_bg(Color::GREY20)
             .with_fg(Color::WHITE);
         MenuStyle {
             folder_arrow: " ❯".to_string(),

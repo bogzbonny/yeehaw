@@ -292,11 +292,11 @@ impl SelStyles {
         }
     }
 
-    pub fn opaque() -> SelStyles {
+    pub fn opaque(ctx: &Context) -> SelStyles {
         SelStyles {
-            selected_style: Style::opaque(Color::YELLOW, 40),
+            selected_style: Style::opaque(ctx, Color::YELLOW, 40),
             ready_style: Style::transparent(),
-            unselectable_style: Style::opaque(Color::GREY15, 40),
+            unselectable_style: Style::opaque(ctx, Color::GREY15, 40),
         }
     }
 }
