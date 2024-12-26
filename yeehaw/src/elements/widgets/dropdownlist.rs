@@ -167,6 +167,10 @@ impl DropdownList {
         self
     }
 
+    pub fn set_selected(&self, idx: usize) {
+        *self.selected.borrow_mut() = idx;
+    }
+
     // ----------------------------------------------
 
     pub fn correct_offsets(&self, ctx: &Context) {
@@ -342,6 +346,9 @@ impl Element for DropdownList {
         let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
         if captured {
             return (true, resps);
+        }
+        if self.pane.get_selectability() == Selectability::Unselectable {
+            return (false, resps);
         }
         match ev {
             Event::KeyCombo(ke) => {

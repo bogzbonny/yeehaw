@@ -1,4 +1,4 @@
-use yeehaw::*;
+use {std::time::Duration, yeehaw::*};
 
 /// NOTE this example requires steam locomotive (`sl`) to be installed if you want
 /// to see the train. Additionally it should be run from this showcase directory
@@ -383,13 +383,13 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
     y_min += 3;
     let y = DynVal::new_flex_with_min_fixed(0.6, y_min);
     let cb = Checkbox::new(ctx).at(x_min, y);
-    el.add_element(Box::new(cb.label(ctx, "checkbox-1")));
+    el.add_element(Box::new(cb.label(ctx, " checkbox-1")));
     el.add_element(Box::new(cb));
 
     y_min += 2;
     let y = DynVal::new_flex_with_min_fixed(0.6, y_min).plus(2.into());
     let cb2 = Checkbox::new(ctx).at(x_min, y);
-    el.add_element(Box::new(cb2.label(ctx, "checkbox-2")));
+    el.add_element(Box::new(cb2.label(ctx, " checkbox-2")));
     el.add_element(Box::new(cb2));
 
     y_min += 2;
@@ -976,14 +976,16 @@ pub struct ColorsDemoState {
 #[derive(Default)]
 pub struct ColorsDemoColor {
     pub kind: ColorsDemoColorKind,
-    // all inner states are kept so they may be returned too
+    // all inner states are kept so they may be returned too.
+    // Vec<Color> is kept so that gradients can have memory of colors
+    // beyond the max gradient colors.
     pub solid_state: Color,
-    pub time_gradient_state: TimeGradient,
-    pub radial_gradient_state: RadialGradient,
-    pub linear_gradient_state: Gradient,
-    pub radial_time_state: (RadialGradient, Vec<TimeGradient>),
-    pub linear_time_state: (Gradient, Vec<TimeGradient>),
-    pub tiles_state: Pattern,
+    pub time_gradient_state: (TimeGradient, Vec<Color>),
+    pub radial_gradient_state: (RadialGradient, Vec<Color>),
+    pub linear_gradient_state: (Gradient, Vec<Color>),
+    pub radial_time_state: (RadialGradient, Vec<TimeGradient>, Vec<Color>),
+    pub linear_time_state: (Gradient, Vec<TimeGradient>, Vec<Color>),
+    pub tiles_state: (Pattern, Color, Color),
 }
 
 #[derive(Clone, Copy, Default)]
@@ -1025,9 +1027,12 @@ impl ColorsDemoState {
                 if self.toggle.is_left() { self.fg.borrow_mut() } else { self.bg.borrow_mut() };
             match self.dial_color_kind.get_value().as_str() {
                 "Solid" => {
+                    debug!("Solid hit");
                     demo_color.kind = ColorsDemoColorKind::Solid;
+                    self.color_dd.set_selected(0);
                     self.color_dd.pane.disable();
                     self.max_gr_colors_dd.pane.disable();
+                    self.max_gr_colors_dd.set_selected(0);
                     let Color::Rgba(rgba) = demo_color.solid_state else {
                         return;
                     };
@@ -1036,12 +1041,36 @@ impl ColorsDemoState {
                     self.b_ntb.change_value(rgba.b as usize);
                     self.a_ntb.change_value(rgba.a as usize);
                 }
-                "Time-Gradient" => demo_color.kind = ColorsDemoColorKind::TimeGradient,
-                "Radial-Gradient" => demo_color.kind = ColorsDemoColorKind::RadialGradient,
-                "Linear-Gradient" => demo_color.kind = ColorsDemoColorKind::LinearGradient,
-                "Radial-Time" => demo_color.kind = ColorsDemoColorKind::RadialTime,
-                "Linear-Time" => demo_color.kind = ColorsDemoColorKind::LinearTime,
-                "Tiles" => demo_color.kind = ColorsDemoColorKind::Tiles,
+                "Time-Gradient" => {
+                    demo_color.kind = ColorsDemoColorKind::TimeGradient;
+                    self.color_dd.pane.enable();
+                    self.max_gr_colors_dd.pane.enable();
+                }
+                "Radial-Gradient" => {
+                    demo_color.kind = ColorsDemoColorKind::RadialGradient;
+                    self.color_dd.pane.enable();
+                    self.max_gr_colors_dd.pane.enable();
+                }
+                "Linear-Gradient" => {
+                    demo_color.kind = ColorsDemoColorKind::LinearGradient;
+                    self.color_dd.pane.enable();
+                    self.max_gr_colors_dd.pane.enable();
+                }
+                "Radial-Time" => {
+                    demo_color.kind = ColorsDemoColorKind::RadialTime;
+                    self.color_dd.pane.enable();
+                    self.max_gr_colors_dd.pane.enable();
+                }
+                "Linear-Time" => {
+                    demo_color.kind = ColorsDemoColorKind::LinearTime;
+                    self.color_dd.pane.enable();
+                    self.max_gr_colors_dd.pane.enable();
+                }
+                "Tiles" => {
+                    demo_color.kind = ColorsDemoColorKind::Tiles;
+                    self.color_dd.pane.disable();
+                    self.max_gr_colors_dd.pane.disable();
+                }
                 _ => unreachable!(),
             }
             self.updating.replace(false);
@@ -1105,6 +1134,7 @@ impl ColorsDemoState {
  -hrr-           `.____,-' "#;
 
     const SATURN: &'static str = r#"
+
 
 
 
@@ -1190,70 +1220,116 @@ impl ColorsDemoState {
 
 impl ColorsDemoColor {
     pub fn default_fg() -> ColorsDemoColor {
+        let time_gr_colors = vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK];
+        let time_gr = TimeGradient::new_loop(Duration::from_secs(1), time_gr_colors.clone());
+
+        let radial_gr_colors = vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK];
+        let radial_gr = RadialGradient::new_basic_circle(
+            (0.5.into(), 0.5.into()),
+            5.into(),
+            radial_gr_colors.clone(),
+        );
+        let linear_gr_colors = vec![
+            Color::VIOLET,
+            Color::INDIGO,
+            Color::BLUE,
+            Color::GREEN,
+            Color::YELLOW,
+            Color::ORANGE,
+            Color::RED,
+        ];
+        let linear_gr = Gradient::x_grad_rainbow(5);
+        let radial_time_colors = vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK];
+        let radial_time_gr = RadialGradient::new_basic_circle_time_loop(
+            (0.5.into(), 0.5.into()),
+            Duration::from_secs(1),
+            5.into(),
+            radial_time_colors.clone(),
+        );
+        let linear_time_colors = vec![
+            Color::VIOLET,
+            Color::INDIGO,
+            Color::BLUE,
+            Color::GREEN,
+            Color::YELLOW,
+            Color::ORANGE,
+            Color::RED,
+        ];
+        let linear_time_gr = Gradient::x_grad_rainbow_time_loop(5, Duration::from_secs(1));
+        let tiles_colors = (Color::WHITE, Color::BLUE);
+        let tiles = Pattern::new_sqr_tiles(5, tiles_colors.0.clone(), tiles_colors.1.clone());
         ColorsDemoColor {
             kind: ColorsDemoColorKind::Solid,
             solid_state: Color::WHITE,
-            time_gradient_state: TimeGradient::new_loop(
-                std::time::Duration::from_secs(1),
-                vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK],
-            ),
-            radial_gradient_state: RadialGradient::new_basic_circle(
-                (0.5.into(), 0.5.into()),
-                5.into(),
-                vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK],
-            ),
-            linear_gradient_state: Gradient::x_grad_rainbow(5),
-            radial_time_state: RadialGradient::new_basic_circle_time_loop(
-                (0.5.into(), 0.5.into()),
-                std::time::Duration::from_secs(1),
-                5.into(),
-                vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK],
-            ),
-            linear_time_state: Gradient::x_grad_rainbow_time_loop(
-                5,
-                std::time::Duration::from_secs(1),
-            ),
-            tiles_state: Pattern::new_sqr_tiles(5, Color::WHITE, Color::BLUE),
+            time_gradient_state: (time_gr, time_gr_colors),
+            radial_gradient_state: (radial_gr, radial_gr_colors),
+            linear_gradient_state: (linear_gr, linear_gr_colors),
+            radial_time_state: (radial_time_gr.0, radial_time_gr.1, radial_time_colors),
+            linear_time_state: (linear_time_gr.0, linear_time_gr.1, linear_time_colors),
+            tiles_state: (tiles, tiles_colors.0, tiles_colors.1),
         }
     }
 
     pub fn default_bg() -> ColorsDemoColor {
+        let time_gr_colors = vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK];
+        let time_gr = TimeGradient::new_loop(Duration::from_secs(1), time_gr_colors.clone());
+
+        let radial_gr_colors = vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK];
+        let radial_gr = RadialGradient::new_basic_circle(
+            (0.5.into(), 0.5.into()),
+            5.into(),
+            radial_gr_colors.clone(),
+        );
+        let linear_gr_colors = vec![
+            Color::VIOLET,
+            Color::INDIGO,
+            Color::BLUE,
+            Color::GREEN,
+            Color::YELLOW,
+            Color::ORANGE,
+            Color::RED,
+        ];
+        let linear_gr = Gradient::x_grad_rainbow(5);
+        let radial_time_colors = vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK];
+        let radial_time_gr = RadialGradient::new_basic_circle_time_loop(
+            (0.5.into(), 0.5.into()),
+            Duration::from_secs(1),
+            5.into(),
+            radial_time_colors.clone(),
+        );
+        let linear_time_colors = vec![
+            Color::VIOLET,
+            Color::INDIGO,
+            Color::BLUE,
+            Color::GREEN,
+            Color::YELLOW,
+            Color::ORANGE,
+            Color::RED,
+        ];
+        let linear_time_gr = Gradient::x_grad_rainbow_time_loop(5, Duration::from_secs(1));
+        let tiles_colors = (Color::WHITE, Color::BLUE);
+        let tiles = Pattern::new_sqr_tiles(5, tiles_colors.0.clone(), tiles_colors.1.clone());
         ColorsDemoColor {
             kind: ColorsDemoColorKind::Solid,
             solid_state: Color::CRIMSON,
-            time_gradient_state: TimeGradient::new_loop(
-                std::time::Duration::from_secs(1),
-                vec![Color::CRIMSON, Color::ORANGE, Color::YELLOW],
-            ),
-            radial_gradient_state: RadialGradient::new_basic_circle(
-                (0.5.into(), 0.5.into()),
-                5.into(),
-                vec![Color::CRIMSON, Color::ORANGE, Color::YELLOW],
-            ),
-            linear_gradient_state: Gradient::y_grad_rainbow(5),
-            radial_time_state: RadialGradient::new_basic_circle_time_loop(
-                (0.5.into(), 0.5.into()),
-                std::time::Duration::from_secs(1),
-                5.into(),
-                vec![Color::CRIMSON, Color::ORANGE, Color::YELLOW],
-            ),
-            linear_time_state: Gradient::y_grad_rainbow_time_loop(
-                5,
-                std::time::Duration::from_secs(1),
-            ),
-            tiles_state: Pattern::new_sqr_tiles(5, Color::WHITE, Color::BLUE),
+            time_gradient_state: (time_gr, time_gr_colors),
+            radial_gradient_state: (radial_gr, radial_gr_colors),
+            linear_gradient_state: (linear_gr, linear_gr_colors),
+            radial_time_state: (radial_time_gr.0, radial_time_gr.1, radial_time_colors),
+            linear_time_state: (linear_time_gr.0, linear_time_gr.1, linear_time_colors),
+            tiles_state: (tiles, tiles_colors.0, tiles_colors.1),
         }
     }
 
     pub fn get_color(&self) -> Color {
         match self.kind {
             ColorsDemoColorKind::Solid => self.solid_state.clone(),
-            ColorsDemoColorKind::TimeGradient => self.time_gradient_state.clone().into(),
-            ColorsDemoColorKind::RadialGradient => self.radial_gradient_state.clone().into(),
-            ColorsDemoColorKind::LinearGradient => self.linear_gradient_state.clone().into(),
+            ColorsDemoColorKind::TimeGradient => self.time_gradient_state.0.clone().into(),
+            ColorsDemoColorKind::RadialGradient => self.radial_gradient_state.0.clone().into(),
+            ColorsDemoColorKind::LinearGradient => self.linear_gradient_state.0.clone().into(),
             ColorsDemoColorKind::RadialTime => self.radial_time_state.0.clone().into(),
             ColorsDemoColorKind::LinearTime => self.linear_time_state.0.clone().into(),
-            ColorsDemoColorKind::Tiles => self.tiles_state.clone().into(),
+            ColorsDemoColorKind::Tiles => self.tiles_state.0.clone().into(),
         }
     }
 }

@@ -82,19 +82,19 @@ impl SelectablePane {
     }
 
     pub fn disable(&self) -> EventResponses {
-        self.set_selectability(Selectability::Unselectable)
+        self.set_selectability(Selectability::Unselectable, true)
     }
 
     pub fn enable(&self) -> EventResponses {
-        self.set_selectability(Selectability::Ready)
+        self.set_selectability(Selectability::Ready, true)
     }
 
     pub fn deselect(&self) -> EventResponses {
-        self.set_selectability(Selectability::Ready)
+        self.set_selectability(Selectability::Ready, false)
     }
 
     pub fn select(&self) -> EventResponses {
-        self.set_selectability(Selectability::Selected)
+        self.set_selectability(Selectability::Selected, false)
     }
 
     pub fn get_current_style(&self) -> Style {
@@ -129,7 +129,9 @@ impl SelectablePane {
         self.set_attribute(ATTR_SELECTABILITY, bz)
     }
 
-    pub fn set_selectability(&self, s: Selectability) -> EventResponses {
+    /// sets the selectability of the widget, if the widget is unselectable then the selectability
+    /// will not be set unless force_set is true.
+    pub fn set_selectability(&self, s: Selectability, force_set: bool) -> EventResponses {
         let mut prev_sel: Option<Selectability> = None;
         if let Some(bz) = self.get_attribute(ATTR_SELECTABILITY) {
             if let Ok(v) = serde_json::from_slice(&bz) {
@@ -140,6 +142,10 @@ impl SelectablePane {
             if s == prev_sel {
                 return EventResponses::default();
             }
+        }
+
+        if !force_set && prev_sel == Some(Selectability::Unselectable) {
+            return EventResponses::default();
         }
 
         let mut resps = EventResponses::default();
@@ -240,7 +246,7 @@ impl Element for SelectablePane {
             Event::Custom(ref ev_name, ref bz) => {
                 if ev_name == ParentPaneOfSelectable::EV_SET_SELECTABILITY {
                     match serde_json::from_slice(bz) {
-                        Ok(v) => (true, self.set_selectability(v)),
+                        Ok(v) => (true, self.set_selectability(v, false)),
                         Err(e) => {
                             log_err!("error deserializing selectability: {}", e);
                             (true, EventResponses::default())

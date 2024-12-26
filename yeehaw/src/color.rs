@@ -615,7 +615,7 @@ impl Gradient {
             time_colors.push(tc.into())
         }
 
-        (Self::new_y_grad_repeater(time_colors, length), out_tgs)
+        (Self::new_x_grad_repeater(time_colors, length), out_tgs)
     }
 
     pub fn new_y_grad_repeater_time_loop(
