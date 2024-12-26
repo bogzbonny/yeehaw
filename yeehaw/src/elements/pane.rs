@@ -354,6 +354,7 @@ impl Pane {
     }
 
     pub fn set_style(&self, style: Style) {
+        self.is_content_dirty.replace(true);
         self.default_ch.borrow_mut().style = style;
     }
 
@@ -362,24 +363,29 @@ impl Pane {
     }
 
     pub fn with_bg(self, bg: Color) -> Pane {
+        self.is_content_dirty.replace(true);
         self.default_ch.borrow_mut().style.set_bg(bg);
         self
     }
 
     pub fn set_bg(&self, bg: Color) {
+        self.is_content_dirty.replace(true);
         self.default_ch.borrow_mut().style.set_bg(bg);
     }
 
     pub fn with_fg(self, fg: Color) -> Pane {
+        self.is_content_dirty.replace(true);
         self.default_ch.borrow_mut().style.set_fg(fg);
         self
     }
 
     pub fn set_fg(&self, fg: Color) {
+        self.is_content_dirty.replace(true);
         self.default_ch.borrow_mut().style.set_fg(fg);
     }
 
     pub fn set_default_ch(&self, ch: DrawCh) {
+        self.is_content_dirty.replace(true);
         *self.default_ch.borrow_mut() = ch;
     }
 

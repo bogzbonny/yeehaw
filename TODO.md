@@ -9,6 +9,8 @@
 01. funny coloring artifacts on the slider when moving out of frame in a
     scrollable pane
       - I think it has to do with what the actual gradient is being drawn as!
+10. tile color
+     - create a pattern-repeatable Color, kind of like a texture gradient
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -242,9 +244,6 @@ FEATURES
                - each sub-item would be a leaf of the menu-bar however a final
                  location would be flattened down such that it was not a sub-item
                  of the menu-bar but of the same parent the menu-bar has 
-
-10. tile color
-     - create a pattern-repeatable Color, kind of like a texture gradient
 
 10. allow for the time gradient to execute once instead of on repeat. 
 

@@ -797,7 +797,7 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
 
     let y_art = DynVal::new_fixed(0);
     let x_art = DynVal::x_after(&toggle, 1);
-    let bg_art = ParentPane::new(ctx, "art").with_bg(Color::RED);
+    let bg_art = ParentPane::new(ctx, "art");
     let fg_art = Label::new(ctx, "");
     bg_art.add_element(Box::new(fg_art.clone()));
 
@@ -831,9 +831,10 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
     el.add_element(Box::new(dial_fg_art.label_left_top(ctx, "fg text:")));
     el.add_element(Box::new(dial_fg_art.clone()));
 
-    let state = Rc::new(RefCell::new(ColorsDemoState {
-        fg: ColorsDemoColor::default_fg(),
-        bg: ColorsDemoColor::default_bg(),
+    let state = ColorsDemoState {
+        fg: Rc::new(RefCell::new(ColorsDemoColor::default_fg())),
+        bg: Rc::new(RefCell::new(ColorsDemoColor::default_bg())),
+        updating: Rc::new(RefCell::new(false)),
         drawing_fg: fg_art,
         drawing_bg: bg_art,
         toggle: toggle.clone(),
@@ -848,35 +849,35 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
         g_ntb: g_ntb.clone(),
         b_ntb: b_ntb.clone(),
         a_ntb: a_ntb.clone(),
-    }));
+    };
 
     let state_ = state.clone();
     dial_fg_art.set_fn(Box::new(move |_, _, _, _| {
-        state_.borrow().update_drawing();
+        state_.update_drawing();
         EventResponses::default()
     }));
 
     let state_ = state.clone();
     toggle.set_fn(Box::new(move |ctx, _| {
-        state_.borrow().update_for_toggle_change(&ctx);
+        state_.update_for_toggle_change(&ctx);
         EventResponses::default()
     }));
 
     let state_ = state.clone();
     dial_color.set_fn(Box::new(move |_, _, _, _| {
-        state_.borrow().update_for_color_dial_change();
+        state_.update_for_color_dial_change();
         EventResponses::default()
     }));
 
     let state_ = state.clone();
     color_dd.set_fn(Box::new(move |_, _| {
-        state_.borrow().update_for_minor_changes();
+        state_.update_for_minor_changes();
         EventResponses::default()
     }));
 
     let state_ = state.clone();
     max_gr_colors_dd.set_fn(Box::new(move |_, _| {
-        state_.borrow().update_for_minor_changes();
+        state_.update_for_minor_changes();
         EventResponses::default()
     }));
 
@@ -885,7 +886,7 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
     dist_ntb.set_value_changed_hook(Box::new(move |v| {
         let v = v as f64 / 100.;
         dist_slider_.set_position(v);
-        state_.borrow().update_for_minor_changes();
+        state_.update_for_minor_changes();
         EventResponses::default()
     }));
 
@@ -894,7 +895,7 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
     angle_ntb.set_value_changed_hook(Box::new(move |v| {
         let v = v / 360.;
         angle_slider_.set_position(v);
-        state_.borrow().update_for_minor_changes();
+        state_.update_for_minor_changes();
         EventResponses::default()
     }));
 
@@ -903,7 +904,7 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
     time_ntb.set_value_changed_hook(Box::new(move |v| {
         let v = v as f64 / 5000.;
         time_slider_.set_position(v);
-        state_.borrow().update_for_minor_changes();
+        state_.update_for_minor_changes();
         EventResponses::default()
     }));
 
@@ -912,7 +913,7 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
     r_ntb.set_value_changed_hook(Box::new(move |v| {
         let v = v as f64 / 255.;
         r_slider_.set_position(v);
-        state_.borrow().update_for_minor_changes();
+        state_.update_for_minor_changes();
         EventResponses::default()
     }));
 
@@ -921,7 +922,7 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
     g_ntb.set_value_changed_hook(Box::new(move |v| {
         let v = v as f64 / 255.;
         g_slider_.set_position(v);
-        state_.borrow().update_for_minor_changes();
+        state_.update_for_minor_changes();
         EventResponses::default()
     }));
 
@@ -930,7 +931,7 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
     b_ntb.set_value_changed_hook(Box::new(move |v| {
         let v = v as f64 / 255.;
         b_slider_.set_position(v);
-        state_.borrow().update_for_minor_changes();
+        state_.update_for_minor_changes();
         EventResponses::default()
     }));
 
@@ -939,18 +940,21 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
     a_ntb.set_value_changed_hook(Box::new(move |v| {
         let v = v as f64 / 255.;
         a_slider_.set_position(v);
-        state_.borrow().update_for_minor_changes();
+        state_.update_for_minor_changes();
         EventResponses::default()
     }));
 
-    state.borrow().update_for_toggle_change(ctx);
-    state.borrow().update_drawing();
+    state.update_for_toggle_change(ctx);
     Box::new(el)
 }
 
+#[derive(Clone)]
 pub struct ColorsDemoState {
-    pub fg: ColorsDemoColor,
-    pub bg: ColorsDemoColor,
+    pub fg: Rc<RefCell<ColorsDemoColor>>,
+    pub bg: Rc<RefCell<ColorsDemoColor>>,
+
+    // whether or not the state is currently be updated (do not draw)
+    pub updating: Rc<RefCell<bool>>,
 
     pub drawing_fg: Label,
     pub drawing_bg: ParentPane,
@@ -979,6 +983,7 @@ pub struct ColorsDemoColor {
     pub linear_gradient_state: Gradient,
     pub radial_time_state: (RadialGradient, Vec<TimeGradient>),
     pub linear_time_state: (Gradient, Vec<TimeGradient>),
+    pub tiles_state: Pattern,
 }
 
 #[derive(Clone, Copy, Default)]
@@ -990,12 +995,14 @@ pub enum ColorsDemoColorKind {
     LinearGradient,
     RadialTime,
     LinearTime,
+    Tiles,
 }
 
 impl ColorsDemoState {
     /// updates all the sliders/tbs for a dial change
     pub fn update_for_toggle_change(&self, ctx: &Context) {
-        let kind = if self.toggle.is_left() { self.fg.kind } else { self.bg.kind };
+        let kind =
+            if self.toggle.is_left() { self.fg.borrow().kind } else { self.bg.borrow().kind };
 
         let v = match kind {
             ColorsDemoColorKind::Solid => "Solid",
@@ -1004,17 +1011,41 @@ impl ColorsDemoState {
             ColorsDemoColorKind::LinearGradient => "Linear-Gradient",
             ColorsDemoColorKind::RadialTime => "Radial-Time",
             ColorsDemoColorKind::LinearTime => "Linear-Time",
+            ColorsDemoColorKind::Tiles => "Tiles",
         };
+        // setting the dial with trigger update_for_color_dial_change
         let _ = self.dial_color_kind.set_value(ctx, v);
-
-        self.update_for_color_dial_change();
     }
 
     /// updates all the sliders/tbs for a dial change
     pub fn update_for_color_dial_change(&self) {
-        //match dial.get_value() {
-        //    /
-        //}
+        {
+            self.updating.replace(true);
+            let mut demo_color =
+                if self.toggle.is_left() { self.fg.borrow_mut() } else { self.bg.borrow_mut() };
+            match self.dial_color_kind.get_value().as_str() {
+                "Solid" => {
+                    demo_color.kind = ColorsDemoColorKind::Solid;
+                    self.color_dd.pane.disable();
+                    self.max_gr_colors_dd.pane.disable();
+                    let Color::Rgba(rgba) = demo_color.solid_state else {
+                        return;
+                    };
+                    self.r_ntb.change_value(rgba.r as usize);
+                    self.g_ntb.change_value(rgba.g as usize);
+                    self.b_ntb.change_value(rgba.b as usize);
+                    self.a_ntb.change_value(rgba.a as usize);
+                }
+                "Time-Gradient" => demo_color.kind = ColorsDemoColorKind::TimeGradient,
+                "Radial-Gradient" => demo_color.kind = ColorsDemoColorKind::RadialGradient,
+                "Linear-Gradient" => demo_color.kind = ColorsDemoColorKind::LinearGradient,
+                "Radial-Time" => demo_color.kind = ColorsDemoColorKind::RadialTime,
+                "Linear-Time" => demo_color.kind = ColorsDemoColorKind::LinearTime,
+                "Tiles" => demo_color.kind = ColorsDemoColorKind::Tiles,
+                _ => unreachable!(),
+            }
+            self.updating.replace(false);
+        }
 
         self.update_drawing();
     }
@@ -1136,8 +1167,12 @@ impl ColorsDemoState {
 
     /// updates the drawing of the art
     pub fn update_drawing(&self) {
-        let fg = self.fg.get_color();
-        let bg = self.bg.get_color();
+        if *self.updating.borrow() {
+            return;
+        }
+
+        let fg = self.fg.borrow().get_color();
+        let bg = self.bg.borrow().get_color();
 
         let text = match self.dial_fg_art.get_value().as_str() {
             "Butterfly" => ColorsDemoState::BUTTERFLY,
@@ -1149,7 +1184,7 @@ impl ColorsDemoState {
         };
         self.drawing_fg.set_text(text);
         self.drawing_fg.set_style(Style::transparent().with_fg(fg));
-        self.drawing_bg.set_style(Style::default().with_bg(bg));
+        self.drawing_bg.set_bg(bg);
     }
 }
 
@@ -1178,6 +1213,7 @@ impl ColorsDemoColor {
                 5,
                 std::time::Duration::from_secs(1),
             ),
+            tiles_state: Pattern::new_sqr_tiles(5, Color::WHITE, Color::BLUE),
         }
     }
 
@@ -1205,6 +1241,7 @@ impl ColorsDemoColor {
                 5,
                 std::time::Duration::from_secs(1),
             ),
+            tiles_state: Pattern::new_sqr_tiles(5, Color::WHITE, Color::BLUE),
         }
     }
 
@@ -1216,6 +1253,7 @@ impl ColorsDemoColor {
             ColorsDemoColorKind::LinearGradient => self.linear_gradient_state.clone().into(),
             ColorsDemoColorKind::RadialTime => self.radial_time_state.0.clone().into(),
             ColorsDemoColorKind::LinearTime => self.linear_time_state.0.clone().into(),
+            ColorsDemoColorKind::Tiles => self.tiles_state.clone().into(),
         }
     }
 }
