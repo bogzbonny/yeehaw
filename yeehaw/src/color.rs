@@ -12,6 +12,7 @@ pub enum Color {
     Gradient(Gradient),
     RadialGradient(RadialGradient),
     TimeGradient(TimeGradient),
+    Pattern(Pattern),
 }
 
 impl Default for Color {
@@ -40,6 +41,36 @@ impl From<vt100::Color> for Color {
             vt100::Color::Idx(i) => Self::ANSI(CrosstermColor::AnsiValue(i)),
             vt100::Color::Rgb(r, g, b) => Self::Rgba(Rgba::new(r, g, b)),
         }
+    }
+}
+
+impl From<Rgba> for Color {
+    fn from(c: Rgba) -> Self {
+        Self::Rgba(c)
+    }
+}
+
+impl From<Gradient> for Color {
+    fn from(c: Gradient) -> Self {
+        Self::Gradient(c)
+    }
+}
+
+impl From<RadialGradient> for Color {
+    fn from(c: RadialGradient) -> Self {
+        Self::RadialGradient(c)
+    }
+}
+
+impl From<TimeGradient> for Color {
+    fn from(c: TimeGradient) -> Self {
+        Self::TimeGradient(c)
+    }
+}
+
+impl From<Pattern> for Color {
+    fn from(c: Pattern) -> Self {
+        Self::Pattern(c)
     }
 }
 
@@ -139,6 +170,11 @@ impl Color {
                     self.clone()
                         .blend(s, dur_since_launch, x, y, rg, percent_other, blend_kind)
                 }
+                Color::Pattern(p) => {
+                    let p = p.to_color(s, dur_since_launch, x, y);
+                    self.clone()
+                        .blend(s, dur_since_launch, x, y, p, percent_other, blend_kind)
+                }
             },
             Color::Gradient(gr) => {
                 let gr = gr.to_color(s, dur_since_launch, x, y);
@@ -151,6 +187,10 @@ impl Color {
             Color::RadialGradient(gr) => {
                 let gr = gr.to_color(s, dur_since_launch, x, y);
                 gr.blend(s, dur_since_launch, x, y, other, percent_other, blend_kind)
+            }
+            Color::Pattern(p) => {
+                let p = p.to_color(s, dur_since_launch, x, y);
+                p.blend(s, dur_since_launch, x, y, other, percent_other, blend_kind)
             }
         }
     }
@@ -205,6 +245,15 @@ impl Color {
                     grad,
                 })
             }
+            Color::Pattern(p) => {
+                let mut p = p.clone();
+                for cs in p.pattern.iter_mut() {
+                    for c in cs.iter_mut() {
+                        *c = c.darken();
+                    }
+                }
+                Color::Pattern(p)
+            }
         }
     }
 
@@ -243,6 +292,15 @@ impl Color {
                     skew: rg.skew,
                     grad,
                 })
+            }
+            Color::Pattern(p) => {
+                let mut p = p.clone();
+                for cs in p.pattern.iter_mut() {
+                    for c in cs.iter_mut() {
+                        *c = c.lighten();
+                    }
+                }
+                Color::Pattern(p)
             }
         }
     }
@@ -293,6 +351,9 @@ impl Color {
             Color::RadialGradient(rg) => rg
                 .to_color(ctx.size, ctx.dur_since_launch, x, y)
                 .to_crossterm_color(ctx, prev, x, y),
+            Color::Pattern(p) => p
+                .to_color(ctx.size, ctx.dur_since_launch, x, y)
+                .to_crossterm_color(ctx, prev, x, y),
         }
     }
 
@@ -303,6 +364,7 @@ impl Color {
             Color::Gradient(gr) => gr.to_color(ctx.size, ctx.dur_since_launch, x, y),
             Color::TimeGradient(tg) => tg.to_color(ctx.size, ctx.dur_since_launch, x, y),
             Color::RadialGradient(rg) => rg.to_color(ctx.size, ctx.dur_since_launch, x, y),
+            Color::Pattern(p) => p.to_color(ctx.size, ctx.dur_since_launch, x, y),
         }
     }
 
@@ -398,131 +460,18 @@ impl Color {
                         grad,
                     })
                 }
+                Color::Pattern(p) => {
+                    let mut p = p.clone();
+                    for cs in p.pattern.iter_mut() {
+                        for c in cs.iter_mut() {
+                            *c = c.overlay_color(overlay.clone());
+                        }
+                    }
+                    Color::Pattern(p)
+                }
             },
             _ => overlay,
         }
-    }
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
-pub struct RadialGradient {
-    /// the draw size is the size to consider when drawing the gradient
-    /// useful so that the gradient can be evaluated passively
-    pub draw_size: Option<Size>,
-
-    /// used to offset the gradient so that the gradient can be moved
-    /// useful so that the gradient can be evaluated passively
-    pub offset: (i32, i32),
-
-    pub center: (DynVal, DynVal),
-    /// x, y
-    pub skew: (f64, f64),
-    /// horizontal, vertical skew (as skew of (1., 1./0.55) seems to make a circle)
-    pub grad: Vec<(DynVal, Color)>,
-}
-
-impl RadialGradient {
-    fn dist_from_center(
-        x: f64, y: f64, center_x: f64, center_y: f64, skew_x: f64, skew_y: f64,
-    ) -> f64 {
-        let dx = x - center_x;
-        let dy = y - center_y;
-        let dx = skew_x * dx;
-        let dy = skew_y * dy;
-        (dx * dx + dy * dy).sqrt()
-    }
-
-    pub fn set_draw_size_if_unset(&mut self, s: Size) {
-        if self.draw_size.is_none() {
-            self.draw_size = Some(s);
-        }
-    }
-
-    pub fn add_to_offset(&mut self, x: i32, y: i32) {
-        self.offset.0 += x;
-        self.offset.1 += y;
-    }
-
-    pub fn to_color(&self, s: Size, dur_since_launch: Duration, x: u16, y: u16) -> Color {
-        if self.grad.is_empty() {
-            return Color::TRANSPARENT;
-        }
-
-        let s = self.draw_size.unwrap_or(s);
-        let x_off = x as f64 - self.offset.0 as f64;
-        let y_off = y as f64 - self.offset.1 as f64;
-        let (center_x, center_y) = (
-            self.center.0.get_val(s.width) as f64,
-            self.center.1.get_val(s.height) as f64,
-        );
-        let (skew_x, skew_y) = self.skew;
-        let mut dist = Self::dist_from_center(x_off, y_off, center_x, center_y, skew_x, skew_y);
-
-        // choose the furthest corner as the max distance
-        let max_dist1 = Self::dist_from_center(0., 0., center_x, center_y, skew_x, skew_y);
-        let max_dist2 = Self::dist_from_center(
-            (s.width - 1) as f64,
-            (s.height - 1) as f64,
-            center_x,
-            center_y,
-            skew_x,
-            skew_y,
-        );
-        let max_dist3 = Self::dist_from_center(
-            0.,
-            (s.height - 1) as f64,
-            center_x,
-            center_y,
-            skew_x,
-            skew_y,
-        );
-        let max_dist4 =
-            Self::dist_from_center((s.width - 1) as f64, 0., center_x, center_y, skew_x, skew_y);
-        let max_dist = max_dist1.max(max_dist2).max(max_dist3).max(max_dist4);
-
-        // loop the pos if it is outside the maximum value
-        while dist < 0. {
-            dist += max_dist;
-        }
-        while dist > max_dist {
-            dist -= max_dist;
-        }
-
-        let mut start_clr: Option<Color> = None;
-        let mut end_clr: Option<Color> = None;
-        let mut start_pos: Option<f64> = None;
-        let mut end_pos: Option<f64> = None;
-        for ((p1, c1), (p2, c2)) in self.grad.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
-            if (p1.get_val(s.width.max(s.height)) as f64 <= dist)
-                && (dist < p2.get_val(s.width.max(s.height)) as f64)
-            {
-                start_clr = Some(c1.clone());
-                end_clr = Some(c2.clone());
-                start_pos = Some(p1.get_val(s.width.max(s.height)) as f64);
-                end_pos = Some(p2.get_val(s.width.max(s.height)) as f64);
-                break;
-            }
-        }
-
-        let start_clr = start_clr.unwrap_or_else(|| self.grad[0].1.clone());
-        let end_clr = end_clr.unwrap_or_else(|| self.grad[self.grad.len() - 1].1.clone());
-        let start_pos =
-            start_pos.unwrap_or_else(|| self.grad[0].0.get_val(s.width.max(s.height)) as f64);
-        let end_pos = end_pos.unwrap_or_else(|| {
-            self.grad[self.grad.len() - 1]
-                .0
-                .get_val(s.width.max(s.height)) as f64
-        });
-        let percent = (dist - start_pos) / (end_pos - start_pos);
-        start_clr.blend(
-            s,
-            dur_since_launch,
-            x,
-            y,
-            end_clr,
-            percent,
-            BlendKind::Blend1,
-        )
     }
 }
 
@@ -647,6 +596,50 @@ impl Gradient {
         }
     }
 
+    pub fn new_x_grad_repeater_time_loop(
+        colors: Vec<Color>, length: usize, each_dur: Duration,
+    ) -> (Self, Vec<TimeGradient>) {
+        let mut out_tgs = Vec::with_capacity(colors.len());
+        let mut time_colors = Vec::with_capacity(colors.len());
+        for i in 0..colors.len() {
+            let rotated_c = colors
+                .clone()
+                .iter()
+                .cycle()
+                .skip(i)
+                .take(colors.len())
+                .cloned()
+                .collect();
+            let tc = TimeGradient::new_loop(each_dur, rotated_c);
+            out_tgs.push(tc.clone());
+            time_colors.push(tc.into())
+        }
+
+        (Self::new_y_grad_repeater(time_colors, length), out_tgs)
+    }
+
+    pub fn new_y_grad_repeater_time_loop(
+        colors: Vec<Color>, length: usize, each_dur: Duration,
+    ) -> (Self, Vec<TimeGradient>) {
+        let mut out_tgs = Vec::with_capacity(colors.len());
+        let mut time_colors = Vec::with_capacity(colors.len());
+        for i in 0..colors.len() {
+            let rotated_c = colors
+                .clone()
+                .iter()
+                .cycle()
+                .skip(i)
+                .take(colors.len())
+                .cloned()
+                .collect();
+            let tc = TimeGradient::new_loop(each_dur, rotated_c);
+            out_tgs.push(tc.clone());
+            time_colors.push(tc.into())
+        }
+
+        (Self::new_y_grad_repeater(time_colors, length), out_tgs)
+    }
+
     pub fn x_grad_rainbow(length: usize) -> Self {
         Gradient::new_x_grad_repeater(
             vec![
@@ -674,6 +667,42 @@ impl Gradient {
                 Color::RED,
             ],
             length,
+        )
+    }
+
+    pub fn x_grad_rainbow_time_loop(
+        length: usize, each_dur: Duration,
+    ) -> (Self, Vec<TimeGradient>) {
+        Gradient::new_x_grad_repeater_time_loop(
+            vec![
+                Color::VIOLET,
+                Color::INDIGO,
+                Color::BLUE,
+                Color::GREEN,
+                Color::YELLOW,
+                Color::ORANGE,
+                Color::RED,
+            ],
+            length,
+            each_dur,
+        )
+    }
+
+    pub fn y_grad_rainbow_time_loop(
+        length: usize, each_dur: Duration,
+    ) -> (Self, Vec<TimeGradient>) {
+        Gradient::new_y_grad_repeater_time_loop(
+            vec![
+                Color::VIOLET,
+                Color::INDIGO,
+                Color::BLUE,
+                Color::GREEN,
+                Color::YELLOW,
+                Color::ORANGE,
+                Color::RED,
+            ],
+            length,
+            each_dur,
         )
     }
 
@@ -826,7 +855,176 @@ impl Gradient {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Default)]
+pub struct RadialGradient {
+    /// the draw size is the size to consider when drawing the gradient
+    /// useful so that the gradient can be evaluated passively
+    pub draw_size: Option<Size>,
+
+    /// used to offset the gradient so that the gradient can be moved
+    /// useful so that the gradient can be evaluated passively
+    pub offset: (i32, i32),
+
+    pub center: (DynVal, DynVal),
+    /// x, y
+    pub skew: (f64, f64),
+    /// horizontal, vertical skew (as skew of (1., 1./0.55) seems to make a circle)
+    pub grad: Vec<(DynVal, Color)>,
+}
+
+impl RadialGradient {
+    /// creates a basic circle gradient with the given center, all colors are spaced evenly
+    /// by the given distance 'each_dist'
+    pub fn new_basic_circle(
+        center: (DynVal, DynVal), each_dist: DynVal, colors: Vec<Color>,
+    ) -> Self {
+        let rgrad = colors
+            .into_iter()
+            .enumerate()
+            .map(|(i, c)| (each_dist.clone().mul(i as f64), c))
+            .collect();
+
+        RadialGradient {
+            draw_size: None,
+            offset: (0, 0),
+            center,
+            skew: (1., 1. / 0.55),
+            grad: rgrad,
+        }
+    }
+
+    /// creates a basic circle gradient with the given center, all colors are spaced evenly
+    /// by the given distance 'each_dist'
+    pub fn new_basic_circle_time_loop(
+        center: (DynVal, DynVal), each_dur: Duration, each_dist: DynVal, colors: Vec<Color>,
+    ) -> (Self, Vec<TimeGradient>) {
+        let mut out_tgs = Vec::with_capacity(colors.len());
+        let mut time_colors = Vec::with_capacity(colors.len());
+        for i in 0..colors.len() {
+            let rotated_c = colors
+                .clone()
+                .iter()
+                .cycle()
+                .skip(i)
+                .take(colors.len())
+                .cloned()
+                .collect();
+            let tc = TimeGradient::new_loop(each_dur, rotated_c);
+            out_tgs.push(tc.clone());
+            time_colors.push(tc.into())
+        }
+
+        (
+            Self::new_basic_circle(center, each_dist, time_colors),
+            out_tgs,
+        )
+    }
+
+    fn dist_from_center(
+        x: f64, y: f64, center_x: f64, center_y: f64, skew_x: f64, skew_y: f64,
+    ) -> f64 {
+        let dx = x - center_x;
+        let dy = y - center_y;
+        let dx = skew_x * dx;
+        let dy = skew_y * dy;
+        (dx * dx + dy * dy).sqrt()
+    }
+
+    pub fn set_draw_size_if_unset(&mut self, s: Size) {
+        if self.draw_size.is_none() {
+            self.draw_size = Some(s);
+        }
+    }
+
+    pub fn add_to_offset(&mut self, x: i32, y: i32) {
+        self.offset.0 += x;
+        self.offset.1 += y;
+    }
+
+    pub fn to_color(&self, s: Size, dur_since_launch: Duration, x: u16, y: u16) -> Color {
+        if self.grad.is_empty() {
+            return Color::TRANSPARENT;
+        }
+
+        let s = self.draw_size.unwrap_or(s);
+        let x_off = x as f64 - self.offset.0 as f64;
+        let y_off = y as f64 - self.offset.1 as f64;
+        let (center_x, center_y) = (
+            self.center.0.get_val(s.width) as f64,
+            self.center.1.get_val(s.height) as f64,
+        );
+        let (skew_x, skew_y) = self.skew;
+        let mut dist = Self::dist_from_center(x_off, y_off, center_x, center_y, skew_x, skew_y);
+
+        // choose the furthest corner as the max distance
+        let max_dist1 = Self::dist_from_center(0., 0., center_x, center_y, skew_x, skew_y);
+        let max_dist2 = Self::dist_from_center(
+            (s.width - 1) as f64,
+            (s.height - 1) as f64,
+            center_x,
+            center_y,
+            skew_x,
+            skew_y,
+        );
+        let max_dist3 = Self::dist_from_center(
+            0.,
+            (s.height - 1) as f64,
+            center_x,
+            center_y,
+            skew_x,
+            skew_y,
+        );
+        let max_dist4 =
+            Self::dist_from_center((s.width - 1) as f64, 0., center_x, center_y, skew_x, skew_y);
+        let max_dist = max_dist1.max(max_dist2).max(max_dist3).max(max_dist4);
+
+        // loop the pos if it is outside the maximum value
+        while dist < 0. {
+            dist += max_dist;
+        }
+        while dist > max_dist {
+            dist -= max_dist;
+        }
+
+        let mut start_clr: Option<Color> = None;
+        let mut end_clr: Option<Color> = None;
+        let mut start_pos: Option<f64> = None;
+        let mut end_pos: Option<f64> = None;
+        for ((p1, c1), (p2, c2)) in self.grad.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
+            if (p1.get_val(s.width.max(s.height)) as f64 <= dist)
+                && (dist < p2.get_val(s.width.max(s.height)) as f64)
+            {
+                start_clr = Some(c1.clone());
+                end_clr = Some(c2.clone());
+                start_pos = Some(p1.get_val(s.width.max(s.height)) as f64);
+                end_pos = Some(p2.get_val(s.width.max(s.height)) as f64);
+                break;
+            }
+        }
+
+        let start_clr = start_clr.unwrap_or_else(|| self.grad[0].1.clone());
+        let end_clr = end_clr.unwrap_or_else(|| self.grad[self.grad.len() - 1].1.clone());
+        let start_pos =
+            start_pos.unwrap_or_else(|| self.grad[0].0.get_val(s.width.max(s.height)) as f64);
+        let end_pos = end_pos.unwrap_or_else(|| {
+            self.grad[self.grad.len() - 1]
+                .0
+                .get_val(s.width.max(s.height)) as f64
+        });
+        let percent = (dist - start_pos) / (end_pos - start_pos);
+        start_clr.blend(
+            s,
+            dur_since_launch,
+            x,
+            y,
+            end_clr,
+            percent,
+            BlendKind::Blend1,
+        )
+    }
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Default)]
 pub struct TimeGradient {
     /// The total time duration of the gradient
     pub total_dur: Duration,
@@ -835,6 +1033,27 @@ pub struct TimeGradient {
 
 impl TimeGradient {
     pub fn new(total_dur: Duration, points: Vec<(Duration, Color)>) -> Self {
+        TimeGradient { total_dur, points }
+    }
+
+    /// creates a basic time gradient with multiple colors where each color lasts for the same
+    /// duration
+    pub fn new_loop(each_dur: Duration, colors: Vec<Color>) -> Self {
+        if colors.is_empty() {
+            return TimeGradient::default();
+        }
+        if colors.len() == 1 {
+            return TimeGradient {
+                total_dur: each_dur,
+                points: vec![(each_dur, colors[0].clone())],
+            };
+        }
+        let total_dur = each_dur * colors.len() as u32;
+        let mut points = vec![];
+        for (i, c) in colors.iter().enumerate() {
+            points.push((each_dur * i as u32, c.clone()));
+        }
+        points.push((total_dur, colors[0].clone()));
         TimeGradient { total_dur, points }
     }
 
@@ -875,6 +1094,68 @@ impl TimeGradient {
             percent,
             BlendKind::Blend1,
         )
+    }
+}
+
+/// WARNING larger patterns render considerably more slowly
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Default)]
+pub struct Pattern {
+    pub pattern: Vec<Vec<Color>>, // outer: y, inner: x
+    pub offset: (i32, i32),
+}
+
+impl Pattern {
+    pub fn new(pattern: Vec<Vec<Color>>) -> Self {
+        Pattern {
+            pattern,
+            offset: (0, 0),
+        }
+    }
+
+    // tile pattern with the given tile width and height
+    pub fn new_tiles(tile_width: usize, tile_height: usize, tile1: Color, tile2: Color) -> Self {
+        let mut pattern = Vec::with_capacity(tile_height * 2);
+        for y in 0..tile_height * 2 {
+            let mut row = Vec::with_capacity(tile_width * 2);
+            for x in 0..tile_width * 2 {
+                let left = x < tile_width;
+                let top = y < tile_height;
+                let c = match (left, top) {
+                    (true, true) | (false, false) => tile1.clone(),
+                    (true, false) | (false, true) => tile2.clone(),
+                };
+                row.push(c);
+            }
+            pattern.push(row);
+        }
+        Pattern {
+            pattern,
+            offset: (0, 0),
+        }
+    }
+
+    // attempts to make a square tile pattern provided the width
+    pub fn new_sqr_tiles(tile_width: usize, tile1: Color, tile2: Color) -> Self {
+        // TODO use actual aspect ratio of the terminal if provided
+        let tile_height = (tile_width as f64 * 0.55).round() as usize;
+        Pattern::new_tiles(tile_width, tile_height, tile1, tile2)
+    }
+
+    pub fn add_to_offset(&mut self, x: i32, y: i32) {
+        self.offset.0 += x;
+        self.offset.1 += y;
+    }
+
+    // get the color at the given x, y on the pattern, looping once the end is reached
+    pub fn to_color(&self, _: Size, _: Duration, x: u16, y: u16) -> Color {
+        if self.pattern.is_empty() {
+            return Color::TRANSPARENT;
+        }
+        let x = (x as i32 - self.offset.0) as u16;
+        let y = (y as i32 - self.offset.1) as u16;
+        let x = x % self.pattern[0].len() as u16;
+        let y = y % self.pattern.len() as u16;
+        self.pattern[y as usize][x as usize].clone()
     }
 }
 

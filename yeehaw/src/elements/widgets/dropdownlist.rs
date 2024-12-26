@@ -151,6 +151,17 @@ impl DropdownList {
         self
     }
 
+    pub fn with_fn(
+        self, selection_made_fn: Box<dyn FnMut(Context, String) -> EventResponses>,
+    ) -> Self {
+        self.set_fn(selection_made_fn);
+        self
+    }
+
+    pub fn set_fn(&self, selection_made_fn: Box<dyn FnMut(Context, String) -> EventResponses>) {
+        *self.selection_made_fn.borrow_mut() = selection_made_fn;
+    }
+
     pub fn at<D: Into<DynVal>, D2: Into<DynVal>>(self, loc_x: D, loc_y: D2) -> Self {
         self.pane.set_at(loc_x.into(), loc_y.into());
         self

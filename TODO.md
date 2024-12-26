@@ -6,12 +6,11 @@
     showcase-inner... truly bizarre
       - enter/backspace still works in other elements within the showcase-inner
          for some reason its JUST the textbox
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 01. funny coloring artifacts on the slider when moving out of frame in a
     scrollable pane
       - I think it has to do with what the actual gradient is being drawn as!
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 01. showcase example 
      - a menu
@@ -38,7 +37,7 @@
        - neovim $EDITOR tab
        - image
        - file_nav
-       - gradient  𐅱  
+       - gradient
          - a dial with a few choice fg ascii arts 
            - none, butterfly, spiral, saturn, rust logo, chompy
          - toggle for FG and BG Color
@@ -78,6 +77,11 @@
 01. colors example should be the same as showcase
 
 01. go through and remove / or make dyn element fns named with_width with_height
+
+01. remove ctx from click functions thoughout elements... what a pain they are
+     - either that or make them a super basic context, with just the ev_sender
+       and hat... or not even if you need the context, you should just clone it
+       in.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -238,6 +242,9 @@ FEATURES
                - each sub-item would be a leaf of the menu-bar however a final
                  location would be flattened down such that it was not a sub-item
                  of the menu-bar but of the same parent the menu-bar has 
+
+10. tile color
+     - create a pattern-repeatable Color, kind of like a texture gradient
 
 10. allow for the time gradient to execute once instead of on repeat. 
 

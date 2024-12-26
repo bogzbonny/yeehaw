@@ -192,6 +192,18 @@ impl Dial {
         }
         EventResponses::default()
     }
+
+    #[must_use]
+    pub fn set_value(&self, ctx: &Context, value: &str) -> EventResponses {
+        let pos = self
+            .labels
+            .borrow()
+            .iter()
+            .find(|(_, label)| label == value)
+            .map(|(pos, _)| *pos)
+            .unwrap_or(0);
+        self.set_position(ctx, pos)
+    }
 }
 
 /// dial spacing determines how the labels are drawn around the dial

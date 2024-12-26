@@ -66,7 +66,7 @@ async fn main() -> Result<(), Error> {
     let rgrad = vec![
         (DynVal::new_flex(0.), t1.clone()),
         (DynVal::new_flex(0.2), t2),
-        (DynVal::new_flex(0.4), t3),
+        (DynVal::new_flex(0.4), t3.clone()),
         (DynVal::new_flex(0.5), t1),
     ];
 
@@ -77,6 +77,10 @@ async fn main() -> Result<(), Error> {
         skew: (1., 1. / 0.55),
         grad: rgrad,
     });
+
+    _ = el_bg;
+
+    let el_bg = Pattern::new_sqr_tiles(5, t3, Color::WHITE).into();
 
     let el = ParentPane::new(&ctx, "color-test").with_bg_color(el_bg);
 

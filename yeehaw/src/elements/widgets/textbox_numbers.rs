@@ -51,6 +51,10 @@ impl<N: Display + Clone + Copy + FromStr + PartialOrd + 'static> NumbersTextBox<
         self
     }
 
+    pub fn get_min(&self) -> Option<N> {
+        *self.min_value.borrow()
+    }
+
     pub fn with_decimal_places(self, dp: usize) -> Self {
         *self.decimal_places.borrow_mut() = Some(dp);
         self
@@ -64,6 +68,10 @@ impl<N: Display + Clone + Copy + FromStr + PartialOrd + 'static> NumbersTextBox<
     pub fn with_max(self, max: N) -> Self {
         *self.max_value.borrow_mut() = Some(max);
         self
+    }
+
+    pub fn get_max(&self) -> Option<N> {
+        *self.max_value.borrow()
     }
 
     pub fn without_max(self) -> Self {
@@ -118,7 +126,9 @@ impl<N: Display + Clone + Copy + FromStr + PartialOrd + 'static> NumbersTextBox<
             new_value = num_traits::clamp_min(new_value, min);
         }
         if let Some(max) = *self.max_value.borrow() {
+            debug!("max: {}, start new_value: {}", max, new_value);
             new_value = num_traits::clamp_max(new_value, max);
+            debug!("max: {}, end new_value: {}", max, new_value);
         }
 
         *self.value.borrow_mut() = new_value;

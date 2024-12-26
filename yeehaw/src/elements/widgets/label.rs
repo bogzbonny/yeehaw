@@ -312,6 +312,11 @@ impl Label {
     }
 
     pub fn with_style(self, sty: Style) -> Self {
+        self.set_style(sty);
+        self
+    }
+
+    pub fn set_style(&self, sty: Style) {
         self.pane.set_style(sty);
 
         // this is necessary to actually update the content of the label w/
@@ -320,7 +325,6 @@ impl Label {
         // many places
         self.pane
             .set_content_from_string(self.text.borrow().clone());
-        self
     }
 
     pub fn get_text(&self) -> String {
@@ -328,7 +332,8 @@ impl Label {
     }
 
     /// Updates the content and size of the label
-    pub fn set_text(&self, text: String) {
+    pub fn set_text<S: Into<String>>(&self, text: S) {
+        let text = text.into();
         self.pane.set_content_from_string(&text);
         let s = Size::get_text_size(&text);
         self.pane.set_dyn_width(DynVal::new_fixed(s.width as i32));

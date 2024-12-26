@@ -20,7 +20,7 @@ pub mod tui;
 
 pub use {
     ch::{ChPlus, DrawCh, DrawChPos, DrawChPosVec, DrawChs2D},
-    color::{Color, Gradient, RadialGradient, Rgba, TimeGradient},
+    color::{Color, Gradient, Pattern, RadialGradient, Rgba, TimeGradient},
     context::Context,
     dyn_location::{DynLocation, DynLocationSet, Loc, Point, Size, ZIndex},
     dyn_value::DynVal,
@@ -29,7 +29,7 @@ pub use {
     errors::Error,
     event::{
         CommandEvent, Event, EventResponse, EventResponses, KeyPossibility, MoveResponse,
-        ReceivableEvent, RelMouseEvent, ResizeResponse, ReceivableEvents,
+        ReceivableEvent, ReceivableEvents, RelMouseEvent, ResizeResponse,
     },
     keyboard::Keyboard,
     organizer::ElementOrganizer,

@@ -93,8 +93,8 @@ async fn main() -> Result<(), Error> {
 
     let tabs = Tabs::new(&ctx);
     tabs.pane.set_focused(false);
-    let widgets_tab = widgets_demo(&ctx);
     let colors_tab = colors_demo(&ctx);
+    let widgets_tab = widgets_demo(&ctx);
     let el3 = DebugSizePane::new(&ctx)
         .with_bg(Color::GREEN)
         .with_text("tab 3".to_string());
@@ -112,8 +112,8 @@ async fn main() -> Result<(), Error> {
         showcase_.execute_command(command);
     }) as Box<dyn FnOnce()>);
 
-    tabs.push(widgets_tab, "widgets");
     tabs.push(colors_tab, "colors");
+    tabs.push(widgets_tab, "widgets");
     tabs.push(Box::new(el3), "$EDITOR");
     tabs.push(Box::new(el4), "images");
     tabs.push(Box::new(el_term), "terminal");
@@ -176,7 +176,7 @@ pub fn window_generation_zone(
     el.add_element(Box::new(dial_border.clone()));
 
     let shadow_cb = Checkbox::new(ctx).at(1, 8);
-    let label = shadow_cb.label(ctx, "shadow");
+    let label = shadow_cb.label(ctx, " shadow");
     el.add_element(Box::new(shadow_cb.clone()));
     el.add_element(Box::new(label));
 
@@ -578,6 +578,7 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
             (3, "Linear-Gradient"),
             (4, "Radial-Time"),
             (5, "Linear-Time"),
+            (6, "Tiles"),
         ],
     )
     .with_label_color(ctx, Color::GREY22)
@@ -598,14 +599,13 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
     let y = DynVal::y_after(&color_dd, 0);
     el.add_element(Box::new(color_dd.label_left(ctx, "color (")));
     el.add_element(Box::new(color_dd.label_right(ctx, "):")));
-    el.add_element(Box::new(color_dd));
+    el.add_element(Box::new(color_dd.clone()));
 
     let x_nb = x.plus(3.into());
     let ntb_width = DynVal::new_fixed(8);
-    let r_ntb = NumbersTextBox::new(ctx, 128u8)
+    let r_ntb = NumbersTextBox::new(ctx, 128usize)
         .with_min(0)
         .with_max(255)
-        .with_decimal_places(2)
         .with_width(ntb_width)
         .at(x_nb.clone(), y.clone());
     el.add_element(Box::new(r_ntb.clone()));
@@ -619,25 +619,18 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
         .at(x_slider.clone(), y.clone())
         .with_fn(Box::new(move |_, sl| {
             let p = sl.get_position();
-            let p = (p * 255.) as u8;
+            let p = (p * 255.) as usize;
             ntb_.change_value(p);
             EventResponses::default()
         }));
-    let slider_ = r_slider.clone();
-    r_ntb.set_value_changed_hook(Box::new(move |v| {
-        let v = v as f64 / 255.;
-        slider_.set_position(v);
-        EventResponses::default()
-    }));
     let y = DynVal::y_after(&r_slider, 0);
     el.add_element(Box::new(r_slider.clone()));
 
     let x_nb = x.plus(3.into());
     let ntb_width = DynVal::new_fixed(8);
-    let g_ntb = NumbersTextBox::new(ctx, 128u8)
+    let g_ntb = NumbersTextBox::new(ctx, 128usize)
         .with_min(0)
         .with_max(255)
-        .with_decimal_places(2)
         .with_width(ntb_width)
         .at(x_nb.clone(), y.clone());
     el.add_element(Box::new(g_ntb.clone()));
@@ -651,25 +644,18 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
         .at(x_slider.clone(), y.clone())
         .with_fn(Box::new(move |_, sl| {
             let p = sl.get_position();
-            let p = (p * 255.) as u8;
+            let p = (p * 255.) as usize;
             ntb_.change_value(p);
             EventResponses::default()
         }));
-    let slider_ = g_slider.clone();
-    g_ntb.set_value_changed_hook(Box::new(move |v| {
-        let v = v as f64 / 255.;
-        slider_.set_position(v);
-        EventResponses::default()
-    }));
     let y = DynVal::y_after(&g_slider, 0);
     el.add_element(Box::new(g_slider.clone()));
 
     let x_nb = x.plus(3.into());
     let ntb_width = DynVal::new_fixed(8);
-    let b_ntb = NumbersTextBox::new(ctx, 128u8)
+    let b_ntb = NumbersTextBox::new(ctx, 128usize)
         .with_min(0)
         .with_max(255)
-        .with_decimal_places(2)
         .with_width(ntb_width)
         .at(x_nb.clone(), y.clone());
     el.add_element(Box::new(b_ntb.clone()));
@@ -683,25 +669,18 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
         .at(x_slider.clone(), y.clone())
         .with_fn(Box::new(move |_, sl| {
             let p = sl.get_position();
-            let p = (p * 255.) as u8;
+            let p = (p * 255.) as usize;
             ntb_.change_value(p);
             EventResponses::default()
         }));
-    let slider_ = b_slider.clone();
-    b_ntb.set_value_changed_hook(Box::new(move |v| {
-        let v = v as f64 / 255.;
-        slider_.set_position(v);
-        EventResponses::default()
-    }));
     let y = DynVal::y_after(&b_slider, 0);
     el.add_element(Box::new(b_slider.clone()));
 
     let x_nb = x.plus(3.into());
     let ntb_width = DynVal::new_fixed(8);
-    let a_ntb = NumbersTextBox::new(ctx, 128u8)
+    let a_ntb = NumbersTextBox::new(ctx, 128usize)
         .with_min(0)
         .with_max(255)
-        .with_decimal_places(2)
         .with_width(ntb_width)
         .at(x_nb.clone(), y.clone());
     el.add_element(Box::new(a_ntb.clone()));
@@ -715,16 +694,10 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
         .at(x_slider.clone(), y.clone())
         .with_fn(Box::new(move |_, sl| {
             let p = sl.get_position();
-            let p = (p * 255.) as u8;
+            let p = (p * 255.) as usize;
             ntb_.change_value(p);
             EventResponses::default()
         }));
-    let slider_ = a_slider.clone();
-    a_ntb.set_value_changed_hook(Box::new(move |v| {
-        let v = v as f64 / 255.;
-        slider_.set_position(v);
-        EventResponses::default()
-    }));
     let y = DynVal::y_after(&a_slider, 1);
     el.add_element(Box::new(a_slider.clone()));
 
@@ -746,13 +719,12 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
     el.add_element(Box::new(
         max_gr_colors_dd.label_left(ctx, "# of gradient colors: "),
     ));
-    el.add_element(Box::new(max_gr_colors_dd));
+    el.add_element(Box::new(max_gr_colors_dd.clone()));
 
     let ntb_width = DynVal::new_fixed(8);
-    let dist_ntb = NumbersTextBox::new(ctx, 128u8)
+    let dist_ntb = NumbersTextBox::new(ctx, 50usize)
         .with_min(0)
-        .with_max(255)
-        .with_decimal_places(2)
+        .with_max(100)
         .with_width(ntb_width)
         .at(x.clone(), y.clone());
     el.add_element(Box::new(dist_ntb.clone()));
@@ -766,23 +738,17 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
         .at(x_slider.clone(), y.clone())
         .with_fn(Box::new(move |_, sl| {
             let p = sl.get_position();
-            let p = (p * 255.) as u8;
+            let p = (p * 100.) as usize;
             ntb_.change_value(p);
             EventResponses::default()
         }));
-    let slider_ = dist_slider.clone();
-    dist_ntb.set_value_changed_hook(Box::new(move |v| {
-        let v = v as f64 / 255.;
-        slider_.set_position(v);
-        EventResponses::default()
-    }));
     let y = DynVal::y_after(&dist_slider, 2);
     el.add_element(Box::new(dist_slider.clone()));
 
     let ntb_width = DynVal::new_fixed(8);
-    let angle_ntb = NumbersTextBox::new(ctx, 128u8)
-        .with_min(0)
-        .with_max(255)
+    let angle_ntb = NumbersTextBox::new(ctx, 0f64)
+        .with_min(0.)
+        .with_max(360.)
         .with_decimal_places(2)
         .with_width(ntb_width)
         .at(x.clone(), y.clone());
@@ -797,24 +763,17 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
         .at(x_slider.clone(), y.clone())
         .with_fn(Box::new(move |_, sl| {
             let p = sl.get_position();
-            let p = (p * 255.) as u8;
+            let p = p * 360.;
             ntb_.change_value(p);
             EventResponses::default()
         }));
-    let slider_ = angle_slider.clone();
-    angle_ntb.set_value_changed_hook(Box::new(move |v| {
-        let v = v as f64 / 255.;
-        slider_.set_position(v);
-        EventResponses::default()
-    }));
     let y = DynVal::y_after(&angle_slider, 2);
     el.add_element(Box::new(angle_slider.clone()));
 
     let ntb_width = DynVal::new_fixed(8);
-    let time_ntb = NumbersTextBox::new(ctx, 128u8)
+    let time_ntb = NumbersTextBox::new(ctx, 1000usize)
         .with_min(0)
-        .with_max(255)
-        .with_decimal_places(2)
+        .with_max(5000)
         .with_width(ntb_width)
         .at(x.clone(), y.clone());
     el.add_element(Box::new(time_ntb.clone()));
@@ -828,21 +787,245 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
         .at(x_slider.clone(), y.clone())
         .with_fn(Box::new(move |_, sl| {
             let p = sl.get_position();
-            let p = (p * 255.) as u8;
+            let p = (p * 5000.) as usize;
             ntb_.change_value(p);
             EventResponses::default()
         }));
-    let slider_ = time_slider.clone();
-    time_ntb.set_value_changed_hook(Box::new(move |v| {
-        let v = v as f64 / 255.;
-        slider_.set_position(v);
-        EventResponses::default()
-    }));
     el.add_element(Box::new(time_slider.clone()));
 
     // ------------------------------
 
-    let spiral = r#"              __,aaPPPPPPPPaa,__
+    let y_art = DynVal::new_fixed(0);
+    let x_art = DynVal::x_after(&toggle, 1);
+    let bg_art = ParentPane::new(ctx, "art").with_bg(Color::RED);
+    let fg_art = Label::new(ctx, "");
+    bg_art.add_element(Box::new(fg_art.clone()));
+
+    let art = Bordered::new_tight(
+        ctx,
+        Box::new(bg_art.clone()),
+        Style::transparent().with_fg(Color::WHITE),
+    )
+    .with_dyn_height(DynVal::new_fixed(26))
+    .with_dyn_width(DynVal::new_fixed(51))
+    .at(x_art.clone(), y_art.clone());
+    let y_dial_fg_art = DynVal::y_after(&art, 1);
+    let x_dial_fg_art = x_art.plus(12.into());
+
+    el.add_element(Box::new(art));
+
+    let dial_fg_art = Dial::new_spacious(
+        ctx,
+        vec![
+            (1, "None"),
+            (2, "Butterfly"),
+            (3, "Spiral"),
+            (8, "Rust-Logo"),
+            (9, "Saturn"),
+            (10, "Chompy"),
+        ],
+    )
+    .with_position(2)
+    .with_label_color(ctx, Color::GREY22)
+    .at(x_dial_fg_art, y_dial_fg_art);
+    el.add_element(Box::new(dial_fg_art.label_left_top(ctx, "fg text:")));
+    el.add_element(Box::new(dial_fg_art.clone()));
+
+    let state = Rc::new(RefCell::new(ColorsDemoState {
+        fg: ColorsDemoColor::default_fg(),
+        bg: ColorsDemoColor::default_bg(),
+        drawing_fg: fg_art,
+        drawing_bg: bg_art,
+        toggle: toggle.clone(),
+        dial_fg_art: dial_fg_art.clone(),
+        dial_color_kind: dial_color.clone(),
+        color_dd: color_dd.clone(),
+        max_gr_colors_dd: max_gr_colors_dd.clone(),
+        dist_ntb: dist_ntb.clone(),
+        angle_ntb: angle_ntb.clone(),
+        time_ntb: time_ntb.clone(),
+        r_ntb: r_ntb.clone(),
+        g_ntb: g_ntb.clone(),
+        b_ntb: b_ntb.clone(),
+        a_ntb: a_ntb.clone(),
+    }));
+
+    let state_ = state.clone();
+    dial_fg_art.set_fn(Box::new(move |_, _, _, _| {
+        state_.borrow().update_drawing();
+        EventResponses::default()
+    }));
+
+    let state_ = state.clone();
+    toggle.set_fn(Box::new(move |ctx, _| {
+        state_.borrow().update_for_toggle_change(&ctx);
+        EventResponses::default()
+    }));
+
+    let state_ = state.clone();
+    dial_color.set_fn(Box::new(move |_, _, _, _| {
+        state_.borrow().update_for_color_dial_change();
+        EventResponses::default()
+    }));
+
+    let state_ = state.clone();
+    color_dd.set_fn(Box::new(move |_, _| {
+        state_.borrow().update_for_minor_changes();
+        EventResponses::default()
+    }));
+
+    let state_ = state.clone();
+    max_gr_colors_dd.set_fn(Box::new(move |_, _| {
+        state_.borrow().update_for_minor_changes();
+        EventResponses::default()
+    }));
+
+    let state_ = state.clone();
+    let dist_slider_ = dist_slider.clone();
+    dist_ntb.set_value_changed_hook(Box::new(move |v| {
+        let v = v as f64 / 100.;
+        dist_slider_.set_position(v);
+        state_.borrow().update_for_minor_changes();
+        EventResponses::default()
+    }));
+
+    let state_ = state.clone();
+    let angle_slider_ = angle_slider.clone();
+    angle_ntb.set_value_changed_hook(Box::new(move |v| {
+        let v = v / 360.;
+        angle_slider_.set_position(v);
+        state_.borrow().update_for_minor_changes();
+        EventResponses::default()
+    }));
+
+    let state_ = state.clone();
+    let time_slider_ = time_slider.clone();
+    time_ntb.set_value_changed_hook(Box::new(move |v| {
+        let v = v as f64 / 5000.;
+        time_slider_.set_position(v);
+        state_.borrow().update_for_minor_changes();
+        EventResponses::default()
+    }));
+
+    let state_ = state.clone();
+    let r_slider_ = r_slider.clone();
+    r_ntb.set_value_changed_hook(Box::new(move |v| {
+        let v = v as f64 / 255.;
+        r_slider_.set_position(v);
+        state_.borrow().update_for_minor_changes();
+        EventResponses::default()
+    }));
+
+    let state_ = state.clone();
+    let g_slider_ = g_slider.clone();
+    g_ntb.set_value_changed_hook(Box::new(move |v| {
+        let v = v as f64 / 255.;
+        g_slider_.set_position(v);
+        state_.borrow().update_for_minor_changes();
+        EventResponses::default()
+    }));
+
+    let state_ = state.clone();
+    let b_slider_ = b_slider.clone();
+    b_ntb.set_value_changed_hook(Box::new(move |v| {
+        let v = v as f64 / 255.;
+        b_slider_.set_position(v);
+        state_.borrow().update_for_minor_changes();
+        EventResponses::default()
+    }));
+
+    let state_ = state.clone();
+    let a_slider_ = a_slider.clone();
+    a_ntb.set_value_changed_hook(Box::new(move |v| {
+        let v = v as f64 / 255.;
+        a_slider_.set_position(v);
+        state_.borrow().update_for_minor_changes();
+        EventResponses::default()
+    }));
+
+    state.borrow().update_for_toggle_change(ctx);
+    state.borrow().update_drawing();
+    Box::new(el)
+}
+
+pub struct ColorsDemoState {
+    pub fg: ColorsDemoColor,
+    pub bg: ColorsDemoColor,
+
+    pub drawing_fg: Label,
+    pub drawing_bg: ParentPane,
+
+    pub toggle: Toggle,
+    pub dial_fg_art: Dial,
+    pub dial_color_kind: Dial,
+    pub color_dd: DropdownList,
+    pub max_gr_colors_dd: DropdownList,
+    pub dist_ntb: NumbersTextBox<usize>,
+    pub angle_ntb: NumbersTextBox<f64>,
+    pub time_ntb: NumbersTextBox<usize>,
+    pub r_ntb: NumbersTextBox<usize>,
+    pub g_ntb: NumbersTextBox<usize>,
+    pub b_ntb: NumbersTextBox<usize>,
+    pub a_ntb: NumbersTextBox<usize>,
+}
+
+#[derive(Default)]
+pub struct ColorsDemoColor {
+    pub kind: ColorsDemoColorKind,
+    // all inner states are kept so they may be returned too
+    pub solid_state: Color,
+    pub time_gradient_state: TimeGradient,
+    pub radial_gradient_state: RadialGradient,
+    pub linear_gradient_state: Gradient,
+    pub radial_time_state: (RadialGradient, Vec<TimeGradient>),
+    pub linear_time_state: (Gradient, Vec<TimeGradient>),
+}
+
+#[derive(Clone, Copy, Default)]
+pub enum ColorsDemoColorKind {
+    #[default]
+    Solid,
+    TimeGradient,
+    RadialGradient,
+    LinearGradient,
+    RadialTime,
+    LinearTime,
+}
+
+impl ColorsDemoState {
+    /// updates all the sliders/tbs for a dial change
+    pub fn update_for_toggle_change(&self, ctx: &Context) {
+        let kind = if self.toggle.is_left() { self.fg.kind } else { self.bg.kind };
+
+        let v = match kind {
+            ColorsDemoColorKind::Solid => "Solid",
+            ColorsDemoColorKind::TimeGradient => "Time-Gradient",
+            ColorsDemoColorKind::RadialGradient => "Radial-Gradient",
+            ColorsDemoColorKind::LinearGradient => "Linear-Gradient",
+            ColorsDemoColorKind::RadialTime => "Radial-Time",
+            ColorsDemoColorKind::LinearTime => "Linear-Time",
+        };
+        let _ = self.dial_color_kind.set_value(ctx, v);
+
+        self.update_for_color_dial_change();
+    }
+
+    /// updates all the sliders/tbs for a dial change
+    pub fn update_for_color_dial_change(&self) {
+        //match dial.get_value() {
+        //    /
+        //}
+
+        self.update_drawing();
+    }
+
+    /// updates for any smaller-changes (sliders/tbs)
+    pub fn update_for_minor_changes(&self) {
+        self.update_drawing();
+    }
+
+    const SPIRAL: &'static str = r#"
+             __,aaPPPPPPPPaa,__
           ,adP"""'          `""Yb,_
        ,adP'                     `"Yb,
      ,dP'     ,aadPP"""""YYba,_     `"Y,
@@ -865,7 +1048,7 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
  Normand  `"Yba,__       __,adP"     dP"
  Veilleux     `"""""""""""""'                  "#;
 
-    let butterfly = r#"                                 , 
+    const BUTTERFLY: &'static str = r#"                                 , 
                                  ;o\ 
                                  ;Ob`. 
                                 ;OOOOb`. 
@@ -890,139 +1073,149 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
                 \`"$$c'   _,' 
  -hrr-           `.____,-' "#;
 
-    let saturn = r#"                                         _.oo.
-                 _.u[[/;:,.         .odMMMMMM'
-              .o888UU[[[/;:-.  .o@P^    MMM^
-             oN88888UU[[[/;::-.        dP^
-            dNMMNN888UU[[[/;:--.   .o@P^
-           ,MMMMMMN888UU[[/;::-. o@^
-           NNMMMNN888UU[[[/~.o@P^
-           888888888UU[[[/o@^-..
-          oI8888UU[[[/o@P^:--..
-       .@^  YUU[[[/o@^;::---..
-     oMP     ^/o@P^;:::---..
-  .dMMM    .o@^ ^;::---...
- dMMMMMMM@^`       `^^^^
-YMMMUP^
- ^^
+    const SATURN: &'static str = r#"
 
-unknown"#;
 
-    let rust_logo = r#"
-      △ △ △ △ △
-    ╭─────o─────╮
-  ◁ │ ███████   │ ▷
-  ◁ o  ██   ██  o ▷
-  ◁ │  ██████   │ ▷
-  ◁ │  ██   ██  │ ▷
-  ◁ │ ████  ███ │ ▷
-    ╰──o─────o──╯
-      ▽ ▽ ▽ ▽ ▽    
+
+                                          _.oo.
+                  _.u[[/;:,.         .odMMMMMM'
+               .o888UU[[[/;:-.  .o@P^    MMM^
+              oN88888UU[[[/;::-.        dP^
+             dNMMNN888UU[[[/;:--.   .o@P^
+            ,MMMMMMN888UU[[/;::-. o@^
+            NNMMMNN888UU[[[/~.o@P^
+            888888888UU[[[/o@^-..
+           oI8888UU[[[/o@P^:--..
+        .@^  YUU[[[/o@^;::---..
+      oMP     ^/o@P^;:::---..
+   .dMMM    .o@^ ^;::---...
+  dMMMMMMM@^`       `^^^^
+ YMMMUP^
+  ^^
+ 
+ unknown"#;
+
+    // TODO there are nicer ways to center... being lazy
+    const RUST_LOGO: &'static str = r#"
+
+
+
+
+
+
+
+                    △ △ △ △ △
+                  ╭─────o─────╮
+                ◁ │ ███████   │ ▷
+                ◁ o  ██   ██  o ▷
+                ◁ │  ██████   │ ▷
+                ◁ │  ██   ██  │ ▷
+                ◁ │ ████  ███ │ ▷
+                  ╰──o─────o──╯
+                    ▽ ▽ ▽ ▽ ▽    
 "#;
-    let chompy = r#"
-            CHOMPPY ANGRYYY!
-            DO NOT TEST CHOMPPY!
-    _____  /
-  _/o\ /o \
- /        |
- v v v v  |
-  ^ ^ ^ ^ |
-  \.......|
+
+    // TODO there are nicer ways to center... being lazy
+    const CHOMPY: &'static str = r#"
+    
+    
+    
+    
+    
+    
+    
+                        CHOMPPY ANGRYYY!
+                        DO NOT TEST CHOMPPY!
+                _____  /
+              _/o\ /o \
+             /        |
+             v v v v  |
+              ^ ^ ^ ^ |
+              \.......|
 "#;
-
-    let y_art = DynVal::new_fixed(0);
-    let x_art = DynVal::x_after(&toggle, 1);
-    let fg_art = Label::new(ctx, butterfly);
-    let art = Bordered::new_basic(
-        ctx,
-        Box::new(fg_art),
-        Style::transparent().with_fg(Color::WHITE),
-    )
-    .with_dyn_height(DynVal::new_fixed(26))
-    .with_dyn_width(DynVal::new_fixed(51))
-    .at(x_art.clone(), y_art.clone());
-    let y_dial_fg_art = DynVal::y_after(&art, 1);
-    let x_dial_fg_art = x_art.plus(12.into());
-    el.add_element(Box::new(art));
-
-    let dial_fg_art = Dial::new_spacious(
-        ctx,
-        vec![
-            (1, "None"),
-            (2, "Butterfly"),
-            (3, "Spiral"),
-            (8, "Rust-Logo"),
-            (9, "Saturn"),
-            (10, "Chompy"),
-        ],
-    )
-    .with_position(2)
-    .with_label_color(ctx, Color::GREY22)
-    .at(x_dial_fg_art, y_dial_fg_art);
-    el.add_element(Box::new(dial_fg_art.label_left_top(ctx, "fg text:")));
-    el.add_element(Box::new(dial_fg_art.clone()));
-
-    Box::new(el)
-}
-
-pub struct ColorsDemoState {
-    pub art: String,
-    pub fg: ColorsDemoColor,
-    pub bg: ColorsDemoColor,
-
-    pub toggle: Toggle,
-    pub dial_fg_art: Dial,
-    pub dial_color_kind: Dial,
-    pub color_dd: DropdownList,
-    pub max_gr_colors_dd: DropdownList,
-    pub dist_ntb: NumbersTextBox<f64>,
-    pub angle_ntb: NumbersTextBox<f64>,
-    pub time_ntb: NumbersTextBox<usize>,
-    pub r_ntb: NumbersTextBox<u8>,
-    pub g_ntb: NumbersTextBox<u8>,
-    pub b_ntb: NumbersTextBox<u8>,
-    pub a_ntb: NumbersTextBox<u8>,
-    pub r_slider: Slider,
-    pub g_slider: Slider,
-    pub b_slider: Slider,
-    pub a_slider: Slider,
-    pub dist_slider: Slider,
-    pub angle_slider: Slider,
-    pub time_slider: Slider,
-}
-
-pub struct ColorsDemoColor {
-    pub kind: ColorsDemoColorKind,
-    // all inner states are kept so they may be returned too
-    pub solid_state: Color,
-    pub time_gradient_state: TimeGradient,
-    pub radial_gradient_state: RadialGradient,
-    pub linear_gradient_state: Gradient,
-    pub radial_time_state: (TimeGradient, RadialGradient),
-    pub linear_time_state: (TimeGradient, Gradient),
-}
-
-pub enum ColorsDemoColorKind {
-    Solid,
-    TimeGradient,
-    RadialGradient,
-    LinearGradient,
-    RadialTime,
-    LinearTime,
-}
-
-impl ColorsDemoState {
-    /// updates all the sliders/tbs for a dial change
-    pub fn update_for_toggle_change() {}
-
-    /// updates all the sliders/tbs for a dial change
-    pub fn update_for_color_dial_change() {}
-
-    /// updates for any smaller-changes (sliders/tbs)
-    pub fn update_for_minor_changes() {}
 
     /// updates the drawing of the art
-    pub fn update_drawing() {
-        todo!()
+    pub fn update_drawing(&self) {
+        let fg = self.fg.get_color();
+        let bg = self.bg.get_color();
+
+        let text = match self.dial_fg_art.get_value().as_str() {
+            "Butterfly" => ColorsDemoState::BUTTERFLY,
+            "Spiral" => ColorsDemoState::SPIRAL,
+            "Rust-Logo" => ColorsDemoState::RUST_LOGO,
+            "Saturn" => ColorsDemoState::SATURN,
+            "Chompy" => ColorsDemoState::CHOMPY,
+            _ => "",
+        };
+        self.drawing_fg.set_text(text);
+        self.drawing_fg.set_style(Style::transparent().with_fg(fg));
+        self.drawing_bg.set_style(Style::default().with_bg(bg));
+    }
+}
+
+impl ColorsDemoColor {
+    pub fn default_fg() -> ColorsDemoColor {
+        ColorsDemoColor {
+            kind: ColorsDemoColorKind::Solid,
+            solid_state: Color::WHITE,
+            time_gradient_state: TimeGradient::new_loop(
+                std::time::Duration::from_secs(1),
+                vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK],
+            ),
+            radial_gradient_state: RadialGradient::new_basic_circle(
+                (0.5.into(), 0.5.into()),
+                5.into(),
+                vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK],
+            ),
+            linear_gradient_state: Gradient::x_grad_rainbow(5),
+            radial_time_state: RadialGradient::new_basic_circle_time_loop(
+                (0.5.into(), 0.5.into()),
+                std::time::Duration::from_secs(1),
+                5.into(),
+                vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK],
+            ),
+            linear_time_state: Gradient::x_grad_rainbow_time_loop(
+                5,
+                std::time::Duration::from_secs(1),
+            ),
+        }
+    }
+
+    pub fn default_bg() -> ColorsDemoColor {
+        ColorsDemoColor {
+            kind: ColorsDemoColorKind::Solid,
+            solid_state: Color::CRIMSON,
+            time_gradient_state: TimeGradient::new_loop(
+                std::time::Duration::from_secs(1),
+                vec![Color::CRIMSON, Color::ORANGE, Color::YELLOW],
+            ),
+            radial_gradient_state: RadialGradient::new_basic_circle(
+                (0.5.into(), 0.5.into()),
+                5.into(),
+                vec![Color::CRIMSON, Color::ORANGE, Color::YELLOW],
+            ),
+            linear_gradient_state: Gradient::y_grad_rainbow(5),
+            radial_time_state: RadialGradient::new_basic_circle_time_loop(
+                (0.5.into(), 0.5.into()),
+                std::time::Duration::from_secs(1),
+                5.into(),
+                vec![Color::CRIMSON, Color::ORANGE, Color::YELLOW],
+            ),
+            linear_time_state: Gradient::y_grad_rainbow_time_loop(
+                5,
+                std::time::Duration::from_secs(1),
+            ),
+        }
+    }
+
+    pub fn get_color(&self) -> Color {
+        match self.kind {
+            ColorsDemoColorKind::Solid => self.solid_state.clone(),
+            ColorsDemoColorKind::TimeGradient => self.time_gradient_state.clone().into(),
+            ColorsDemoColorKind::RadialGradient => self.radial_gradient_state.clone().into(),
+            ColorsDemoColorKind::LinearGradient => self.linear_gradient_state.clone().into(),
+            ColorsDemoColorKind::RadialTime => self.radial_time_state.0.clone().into(),
+            ColorsDemoColorKind::LinearTime => self.linear_time_state.0.clone().into(),
+        }
     }
 }
