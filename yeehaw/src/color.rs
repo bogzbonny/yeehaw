@@ -396,7 +396,7 @@ impl Color {
     pub fn with_alpha(&self, cctx: &ColorContext, alpha: u8) -> Color {
         match self {
             Color::Rgba(c) => {
-                let mut c = c.clone();
+                let mut c = *c;
                 c.a = alpha;
                 Color::Rgba(c)
             }
