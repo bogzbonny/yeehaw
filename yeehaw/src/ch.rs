@@ -107,12 +107,12 @@ impl DrawCh {
         s.chars().map(|c| DrawCh::new(c, sty.clone())).collect()
     }
 
-    pub fn overlay_style(&mut self, sty: &Style) {
-        self.style.overlay_style(sty);
+    pub fn overlay_style(&mut self, ctx: &Context, sty: &Style) {
+        self.style.overlay_style(ctx, sty);
     }
 
-    pub fn with_overlay_style(mut self, sty: &Style) -> Self {
-        self.style.overlay_style(sty);
+    pub fn with_overlay_style(mut self, ctx: &Context, sty: &Style) -> Self {
+        self.style.overlay_style(ctx, sty);
         self
     }
 }
@@ -685,10 +685,10 @@ impl DrawChs2D {
         }
     }
 
-    pub fn overlay_all_styles(&mut self, sty: &Style) {
+    pub fn overlay_all_styles(&mut self, ctx: &Context, sty: &Style) {
         for y in 0..self.0.len() {
             for x in 0..self.0[y].len() {
-                self.0[y][x].overlay_style(sty);
+                self.0[y][x].overlay_style(ctx, sty);
             }
         }
     }

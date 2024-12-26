@@ -190,9 +190,9 @@ impl Slider {
         let pos = *self.position.borrow();
 
         let sty = self.pane.get_current_style();
-        let filled = self.filled.borrow().clone().with_overlay_style(&sty);
-        let empty = self.empty.borrow().clone().with_overlay_style(&sty);
-        let head = self.head.borrow().clone().with_overlay_style(&sty);
+        let filled = self.filled.borrow().clone().with_overlay_style(ctx, &sty);
+        let empty = self.empty.borrow().clone().with_overlay_style(ctx, &sty);
+        let head = self.head.borrow().clone().with_overlay_style(ctx, &sty);
 
         let mut out = vec![];
         let chs_filled = (width as f64 * pos).round() as usize;

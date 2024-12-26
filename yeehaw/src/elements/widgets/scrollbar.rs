@@ -142,10 +142,7 @@ impl VerticalScrollbar {
 impl HorizontalScrollbar {
     const KIND: &'static str = "horizontal_scrollbar";
     pub fn default_receivable_events() -> ReceivableEvents {
-        ReceivableEvents(vec![
-            (KB::KEY_LEFT.into()),
-            (KB::KEY_RIGHT.into()),
-        ])
+        ReceivableEvents(vec![(KB::KEY_LEFT.into()), (KB::KEY_RIGHT.into())])
     }
     pub fn new(
         ctx: &Context, scrollable_view_width: DynVal, scrollable_view_size: Size,
@@ -1047,8 +1044,10 @@ mod tests {
         let w = 10;
         let sub = 2;
         let hat = crate::SortingHat::default();
+        let color_store = crate::ColorStore::default();
+
         let (ev_tx, _) = tokio::sync::mpsc::channel(1);
-        let ctx = Context::new_context_for_screen_no_dur(&hat, ev_tx)
+        let ctx = Context::new_context_for_screen_no_dur(&hat, ev_tx, &color_store)
             .with_height(1)
             .with_width(w);
 

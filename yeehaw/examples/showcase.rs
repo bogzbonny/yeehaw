@@ -832,8 +832,8 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
     el.add_element(Box::new(dial_fg_art.clone()));
 
     let state = ColorsDemoState {
-        fg: Rc::new(RefCell::new(ColorsDemoColor::default_fg())),
-        bg: Rc::new(RefCell::new(ColorsDemoColor::default_bg())),
+        fg: Rc::new(RefCell::new(ColorsDemoColor::default_fg(ctx))),
+        bg: Rc::new(RefCell::new(ColorsDemoColor::default_bg(ctx))),
         updating: Rc::new(RefCell::new(false)),
         drawing_fg: fg_art,
         drawing_bg: bg_art,
@@ -1219,7 +1219,7 @@ impl ColorsDemoState {
 }
 
 impl ColorsDemoColor {
-    pub fn default_fg() -> ColorsDemoColor {
+    pub fn default_fg(ctx: &Context) -> ColorsDemoColor {
         let time_gr_colors = vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK];
         let time_gr = TimeGradient::new_loop(Duration::from_secs(1), time_gr_colors.clone());
 
@@ -1257,7 +1257,7 @@ impl ColorsDemoColor {
         ];
         let linear_time_gr = Gradient::x_grad_rainbow_time_loop(5, Duration::from_secs(1));
         let tiles_colors = (Color::WHITE, Color::BLUE);
-        let tiles = Pattern::new_sqr_tiles(5, tiles_colors.0.clone(), tiles_colors.1.clone());
+        let tiles = Pattern::new_sqr_tiles(&ctx, 5, tiles_colors.0.clone(), tiles_colors.1.clone());
         ColorsDemoColor {
             kind: ColorsDemoColorKind::Solid,
             solid_state: Color::WHITE,
@@ -1270,7 +1270,7 @@ impl ColorsDemoColor {
         }
     }
 
-    pub fn default_bg() -> ColorsDemoColor {
+    pub fn default_bg(ctx: &Context) -> ColorsDemoColor {
         let time_gr_colors = vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK];
         let time_gr = TimeGradient::new_loop(Duration::from_secs(1), time_gr_colors.clone());
 
@@ -1308,7 +1308,7 @@ impl ColorsDemoColor {
         ];
         let linear_time_gr = Gradient::x_grad_rainbow_time_loop(5, Duration::from_secs(1));
         let tiles_colors = (Color::WHITE, Color::BLUE);
-        let tiles = Pattern::new_sqr_tiles(5, tiles_colors.0.clone(), tiles_colors.1.clone());
+        let tiles = Pattern::new_sqr_tiles(ctx, 5, tiles_colors.0.clone(), tiles_colors.1.clone());
         ColorsDemoColor {
             kind: ColorsDemoColorKind::Solid,
             solid_state: Color::CRIMSON,

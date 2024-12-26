@@ -7,7 +7,9 @@ use {
 };
 
 /// The color store is a simple store for complex data within each color. This allows for
-/// significantly less data to be cloned each time a color is cloned.
+/// significantly less data to be cloned each time a color is cloned. This is a bit annoying to
+/// work with as we have to pass the store around constantly - but the performance boost is
+/// massive, especially visible with patterns.
 #[derive(Clone, Default, Debug)]
 #[allow(clippy::type_complexity)]
 pub struct ColorStore {
@@ -18,12 +20,35 @@ pub struct ColorStore {
 
 impl ColorStore {
     pub fn add_pattern(&self, pattern: Vec<Vec<Color>>) -> usize {
+        // attempt to find the pattern in the store before adding it
+        for (i, p) in self.patterns.borrow().iter().enumerate() {
+            if p == &pattern {
+                return i;
+            }
+        }
         self.patterns.borrow_mut().push(pattern);
         self.patterns.borrow().len() - 1
     }
-    //pub fn get_pattern(&self, id: u16) -> Option<&Vec<Vec<Color>>> {
-    //    self.patterns.borrow().get(&id)
-    //}
+    pub fn add_pos_gradient(&self, gr: Vec<(DynVal, Color)>) -> usize {
+        // attempt to find the gradient in the store before adding it
+        for (i, g) in self.pos_gradients.borrow().iter().enumerate() {
+            if g == &gr {
+                return i;
+            }
+        }
+        self.pos_gradients.borrow_mut().push(gr);
+        self.pos_gradients.borrow().len() - 1
+    }
+    pub fn add_dur_gradient(&self, gr: Vec<(Duration, Color)>) -> usize {
+        // attempt to find the gradient in the store before adding it
+        for (i, g) in self.dur_gradients.borrow().iter().enumerate() {
+            if g == &gr {
+                return i;
+            }
+        }
+        self.dur_gradients.borrow_mut().push(gr);
+        self.dur_gradients.borrow().len() - 1
+    }
 }
 
 #[derive(Clone)]
@@ -273,22 +298,7 @@ impl Color {
                 })
             }
             Color::Pattern(p) => {
-                //let mut p = p.clone();
-
-                //let patterns = cctx.store.patterns.borrow();
-                //let pattern = patterns.get(self.pattern_id);
-                //let Some(pattern) = pattern else {
-                //    return Color::TRANSPARENT;
-                //};
-                //for cs in p.pattern.iter_mut() {
-                //    for c in cs.iter_mut() {
-                //        *c = c.darken(cctx);
-                //    }
-                //}
-                //Color::Pattern(p)
-
-                // XXX
-                Color::Pattern(p.clone())
+                Color::Pattern(p.apply_fn_to_colors(cctx, Box::new(move |cctx, c| c.darken(cctx))))
             }
         }
     }
@@ -330,16 +340,7 @@ impl Color {
                 })
             }
             Color::Pattern(p) => {
-                //let mut p = p.clone();
-                //for cs in p.pattern.iter_mut() {
-                //    for c in cs.iter_mut() {
-                //        *c = c.lighten();
-                //    }
-                //}
-                //Color::Pattern(p)
-
-                // XXX
-                Color::Pattern(p.clone())
+                Color::Pattern(p.apply_fn_to_colors(cctx, Box::new(move |cctx, c| c.lighten(cctx))))
             }
         }
     }
@@ -439,42 +440,40 @@ impl Color {
         }
     }
 
-    pub fn set_alpha(&mut self, alpha: u8, cctx: &ColorContext) {
+    pub fn with_alpha(&self, alpha: u8, cctx: &ColorContext) -> Color {
         match self {
-            Color::Rgba(c) => c.a = alpha,
-            Color::Gradient(gr) => {
-                for (_, c) in &mut gr.grad {
-                    c.set_alpha(alpha, cctx);
-                }
-            }
-            Color::TimeGradient(tg) => {
-                for (_, c) in &mut tg.points {
-                    c.set_alpha(alpha, cctx);
-                }
-            }
-            Color::RadialGradient(rg) => {
-                for (_, c) in &mut rg.grad {
-                    c.set_alpha(alpha, cctx);
-                }
-            }
-            Color::Pattern(_p) => {
-                // XXX
-                //for cs in p.pattern.iter_mut() {
-                //    for c in cs.iter_mut() {
-                //        c.set_alpha(alpha, cctx);
-                //    }
-                //}
-            }
-            Color::ANSI(_) => {}
+            // XXX
+            //Color::Rgba(c) => c.a = alpha,
+            //Color::Gradient(gr) => {
+            //    for (_, c) in &mut gr.grad {
+            //        c.set_alpha(alpha, cctx);
+            //    }
+            //}
+            //Color::TimeGradient(tg) => {
+            //    for (_, c) in &mut tg.points {
+            //        c.set_alpha(alpha, cctx);
+            //    }
+            //}
+            //Color::RadialGradient(rg) => {
+            //    for (_, c) in &mut rg.grad {
+            //        c.set_alpha(alpha, cctx);
+            //    }
+            //}
+            Color::Pattern(p) => Color::Pattern(
+                p.apply_fn_to_colors(cctx, Box::new(move |cctx, c| c.with_alpha(alpha, cctx))),
+            ),
+            Color::ANSI(_) => self.clone(),
+            // XXX
+            _ => self.clone(),
         }
     }
 
-    pub fn with_alpha(mut self, alpha: u8, cctx: &ColorContext) -> Self {
-        self.set_alpha(alpha, cctx);
-        self
-    }
+    //pub fn with_alpha(mut self, alpha: u8, cctx: &ColorContext) -> Self {
+    //    self.set_alpha(alpha, cctx);
+    //    self
+    //}
 
-    pub fn overlay_color(&self, overlay: Self) -> Self {
+    pub fn overlay_color(&self, cctx: &ColorContext, overlay: Self) -> Self {
         match overlay {
             Color::Rgba(oc) => match self {
                 Color::ANSI(_) => overlay,
@@ -482,7 +481,7 @@ impl Color {
                 Color::Gradient(gr) => {
                     let mut grad = vec![];
                     for (x, c) in &gr.grad {
-                        grad.push((x.clone(), c.overlay_color(overlay.clone())));
+                        grad.push((x.clone(), c.overlay_color(cctx, overlay.clone())));
                     }
                     Color::Gradient(Gradient {
                         draw_size: gr.draw_size,
@@ -494,14 +493,14 @@ impl Color {
                 Color::TimeGradient(tg) => {
                     let mut points = vec![];
                     for (dur, c) in &tg.points {
-                        points.push((*dur, c.overlay_color(overlay.clone())));
+                        points.push((*dur, c.overlay_color(cctx, overlay.clone())));
                     }
                     Color::TimeGradient(TimeGradient::new(tg.total_dur, points))
                 }
                 Color::RadialGradient(rg) => {
                     let mut grad = vec![];
                     for (x, c) in &rg.grad {
-                        grad.push((x.clone(), c.overlay_color(overlay.clone())));
+                        grad.push((x.clone(), c.overlay_color(cctx, overlay.clone())));
                     }
                     Color::RadialGradient(RadialGradient {
                         draw_size: rg.draw_size,
@@ -511,17 +510,10 @@ impl Color {
                         grad,
                     })
                 }
-                Color::Pattern(p) => {
-                    //let mut p = p.clone();
-                    //for cs in p.pattern.iter_mut() {
-                    //    for c in cs.iter_mut() {
-                    //        *c = c.overlay_color(overlay.clone());
-                    //    }
-                    //}
-                    //Color::Pattern(p)
-                    // XXX
-                    Color::Pattern(p.clone())
-                }
+                Color::Pattern(p) => Color::Pattern(p.apply_fn_to_colors(
+                    cctx,
+                    Box::new(move |cctx, c| c.overlay_color(cctx, overlay.clone())),
+                )),
             },
             _ => overlay,
         }
@@ -1224,6 +1216,28 @@ impl Pattern {
         let x = x % pattern[0].len();
         let y = y % pattern.len();
         pattern[y][x].clone()
+    }
+
+    #[allow(clippy::type_complexity)]
+    pub fn apply_fn_to_colors(
+        &self, cctx: &ColorContext, f: Box<dyn Fn(&ColorContext, &Color) -> Color>,
+    ) -> Self {
+        let patterns = cctx.store.patterns.borrow();
+        let pattern = patterns.get(self.pattern_id);
+        let Some(pattern) = pattern else {
+            return self.clone();
+        };
+        let mut mod_pattern = pattern.clone();
+        for cs in mod_pattern.iter_mut() {
+            for c in cs.iter_mut() {
+                //*c = c.overlay_color(cctx, overlay.clone());
+                *c = f(cctx, c);
+            }
+        }
+        let mut p = self.clone();
+        let pattern_id = cctx.store.add_pattern(mod_pattern);
+        p.pattern_id = pattern_id;
+        p
     }
 }
 

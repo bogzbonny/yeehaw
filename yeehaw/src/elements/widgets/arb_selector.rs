@@ -328,7 +328,7 @@ impl ArbSelector {
         self.perform_selection(ctx, pos)
     }
 
-    pub fn update_content(&self) {
+    pub fn update_content(&self, ctx: &Context) {
         let pos = *self.position.borrow();
 
         let mut content = self.drawing_base.borrow().clone();
@@ -351,7 +351,7 @@ impl ArbSelector {
 
         //update overlay styles everywhere
         let sty = self.pane.get_current_style();
-        content.overlay_all_styles(&sty);
+        content.overlay_all_styles(ctx, &sty);
 
         self.pane.set_content(content);
     }
@@ -433,7 +433,7 @@ impl Element for ArbSelector {
     }
     fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
         if self.is_dirty.replace(false) || force_update {
-            self.update_content();
+            self.update_content(ctx);
         }
         self.pane.drawing(ctx, force_update)
     }
