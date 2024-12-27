@@ -34,3 +34,10 @@ assert_eq!(
     &b"\x1b[1;14H\x1b[32mGREEN"[..],
 );
 ```
+
+## Acknowledgements
+
+This repo was forked from https://github.com/ChrisTitusTech/vt100-rust
+at commit b660c85faaa32323892c3154835c2bc901d7bf57 
+which was forked from https://github.com/doy/vt100-rust
+
