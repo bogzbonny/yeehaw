@@ -552,8 +552,13 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
 }
 
 pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
-    //let el = ParentPaneOfSelectable::new(ctx).with_bg(Color::DARK_OLIVE_GREEN);
-    let el = ParentPaneOfSelectable::new(ctx).with_bg(Color::SIENNA);
+    let el = ParentPaneOfSelectable::new(ctx).with_bg(Color::DARK_OLIVE_GREEN);
+    //pub const DARK_OLIVE_GREEN:        Color = Color::new(85, 107, 47);
+    //let el = ParentPaneOfSelectable::new(ctx).with_bg(Color::new(50, 50, 50));
+    //let el = ParentPaneOfSelectable::new(ctx).with_bg(Color::MEDIUM_SEA_GREEN);
+    //let el = ParentPaneOfSelectable::new(ctx).with_bg(Color::PALE_VIOLET_RED);
+    //let el = ParentPaneOfSelectable::new(ctx).with_bg(Color::STEEL_BLUE);
+    //let el = ParentPaneOfSelectable::new(ctx).with_bg(Color::NAVY);
 
     let x = DynVal::new_fixed(1);
     let y = DynVal::new_fixed(1);

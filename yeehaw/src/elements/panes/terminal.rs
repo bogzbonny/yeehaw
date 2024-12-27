@@ -27,7 +27,7 @@ use {
 #[derive(Clone)]
 pub struct TerminalPane {
     pub pane: Pane,
-    pub parser: Arc<RwLock<vt100_ctt::Parser>>,
+    pub parser: Arc<RwLock<vt100_yh::Parser>>,
     pub master_pty: Rc<RefCell<Box<dyn MasterPty>>>,
     pub writer: Rc<RefCell<BufWriter<Box<dyn Write + std::marker::Send>>>>,
     pub disable_cursor: Rc<RefCell<bool>>,
@@ -70,7 +70,7 @@ impl TerminalPane {
             pixel_height: 0,
         })?;
 
-        let parser = Arc::new(RwLock::new(vt100_ctt::Parser::new(
+        let parser = Arc::new(RwLock::new(vt100_yh::Parser::new(
             size.height,
             size.width,
             0,
@@ -106,7 +106,7 @@ impl TerminalPane {
                 }
                 processed_buf.extend_from_slice(&buf[..size]);
                 let Ok(mut parser) = parser_.write() else {
-                    log_err!("error getting vt100_ctt parser");
+                    log_err!("error getting vt100_yh parser");
                     break;
                 };
                 parser.process(&processed_buf);
@@ -209,7 +209,7 @@ impl TerminalPane {
                 return false;
             }
         };
-        if (*parser).screen().mouse_protocol_encoding() == vt100_ctt::MouseProtocolEncoding::Sgr {
+        if (*parser).screen().mouse_protocol_encoding() == vt100_yh::MouseProtocolEncoding::Sgr {
             let input_bz = create_csi_sgr_mouse(*mouse);
             if self.writer.borrow_mut().write_all(&input_bz).is_err() {
                 return false;
@@ -341,65 +341,57 @@ impl Element for TerminalPane {
         };
         let screen = sc.screen();
 
-        let cols = ctx.size.width;
-        let rows = ctx.size.height;
-
-        // TODO this iteration could be made better by actually iterating through the Rows
-        // functionality is not actually exposed right now in the vt100_ctt crate
-        // update once it is and or move to a fork and or make a fork
-
-        // TODO subdivide into sections which are updated seperately
-
         let mut dirty = force_update;
         let mut prev_draw_i = 0;
-
-        // The screen is made out of rows of cells
-        for row in 0..rows {
-            for col in 0..cols {
-                if row > ctx.size.height || col > ctx.size.width {
-                    continue;
+        let grid = screen.grid();
+        for (y, row) in grid.visible_rows().enumerate() {
+            if y > ctx.size.height as usize {
+                break;
+            }
+            for (x, screen_cell) in row.cells().enumerate() {
+                if x > ctx.size.width as usize {
+                    break;
                 }
 
-                if let Some(screen_cell) = screen.cell(row, col) {
-                    let fg = screen_cell.fgcolor();
-                    let bg = screen_cell.bgcolor();
-                    let ch = if screen_cell.has_contents() {
-                        ChPlus::Str(CompactString::new(screen_cell.contents()))
-                    } else {
-                        ChPlus::Char(' ')
-                    };
-                    let fg: Color = fg.into();
-                    let bg: Color = bg.into();
-                    let mut sty = Style::default().with_fg(fg).with_bg(bg);
-                    if screen_cell.bold() {
-                        sty.attr.bold = true;
-                    }
-                    if screen_cell.italic() {
-                        sty.attr.italic = true;
-                    }
-                    if screen_cell.underline() {
-                        sty.attr.underlined = true;
-                    }
-                    if screen_cell.inverse() {
-                        sty.attr.reverse = true;
-                    }
-                    let ch_out = DrawChPos {
-                        ch: DrawCh::new(ch, sty),
-                        x: col,
-                        y: row,
-                    };
-                    if !dirty {
-                        if let Some(prev_draw) = self.prev_draw.borrow().get(prev_draw_i) {
-                            if prev_draw != &ch_out {
-                                dirty = true;
-                            }
-                        } else {
+                let fg = screen_cell.fgcolor();
+                let bg = screen_cell.bgcolor();
+                let ch = if screen_cell.has_contents() {
+                    ChPlus::Str(CompactString::new(screen_cell.contents()))
+                } else {
+                    ChPlus::Char(' ')
+                };
+                let fg: Color = fg.into();
+                let bg: Color = bg.into();
+                let mut sty = Style::default().with_fg(fg).with_bg(bg);
+                if screen_cell.bold() {
+                    sty.attr.bold = true;
+                }
+                if screen_cell.italic() {
+                    sty.attr.italic = true;
+                }
+                if screen_cell.underline() {
+                    sty.attr.underlined = true;
+                }
+                if screen_cell.inverse() {
+                    sty.attr.reverse = true;
+                }
+                let ch_out = DrawChPos {
+                    ch: DrawCh::new(ch, sty),
+                    x: x as u16,
+                    y: y as u16,
+                };
+                if !dirty {
+                    if let Some(prev_draw) = self.prev_draw.borrow().get(prev_draw_i) {
+                        if prev_draw != &ch_out {
                             dirty = true;
                         }
-                        prev_draw_i += 1;
+                    } else {
+                        dirty = true;
                     }
-                    out.push(ch_out);
+                    prev_draw_i += 1;
                 }
+                out.push(ch_out);
+                //}
             }
         }
 

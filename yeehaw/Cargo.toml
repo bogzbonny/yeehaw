@@ -33,7 +33,6 @@ yeehaw_derive = { path = "../yeehaw_derive" }
 num-traits = "^0.2.0"
 rayon = "^1.10.0"
 
-vt100-ctt = { version = "0.16.0" }
 portable-pty = { version = "0.8.1" }
 bytes = "^1.8.0"
 
@@ -43,3 +42,4 @@ image = { version = ">=0.24", default-features = false, features = ["jpeg"] }
 
 compact_str = "^0.8.0"
 
+vt100_yh = { version = "0.17.0", path = "../vt100_yh" }

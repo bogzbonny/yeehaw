@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "yeehaw",
     "yeehaw_derive",
+    "vt100_yh",
 ]
 
 [workspace.package]

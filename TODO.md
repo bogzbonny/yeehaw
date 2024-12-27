@@ -168,7 +168,7 @@ REFACTORS
     matches or to ignore the wait and to proceed attempting to match the
     character in other ways.  
 
-10. switch to vt100_ctt or fork https://docs.rs/vt100-ctt/latest/vt100_ctt/struct.Screen.html
+10. switch to vt100_yh or fork https://docs.rs/vt100-ctt/latest/vt100_yh/struct.Screen.html
      - make a PR to expose the grid so that one can actually iterate the cells
      - integrate in SGR-Pixel mode into vt100
 
