@@ -355,6 +355,7 @@ impl Element for TerminalPane {
 
                 let fg = screen_cell.fgcolor();
                 let bg = screen_cell.bgcolor();
+                let ul = screen_cell.ulcolor();
                 let ch = if screen_cell.has_contents() {
                     ChPlus::Str(CompactString::new(screen_cell.contents()))
                 } else {
@@ -362,7 +363,11 @@ impl Element for TerminalPane {
                 };
                 let fg: Color = fg.into();
                 let bg: Color = bg.into();
-                let mut sty = Style::default().with_fg(fg).with_bg(bg);
+                let ul: Color = ul.into();
+                let mut sty = Style::default()
+                    .with_fg(fg)
+                    .with_bg(bg)
+                    .with_underline_color(ul);
                 if screen_cell.bold() {
                     sty.attr.bold = true;
                 }

@@ -93,7 +93,7 @@ impl From<vt100_yh::Color> for Color {
     fn from(value: vt100_yh::Color) -> Self {
         match value {
             vt100_yh::Color::Default => Self::ANSI(CrosstermColor::Reset),
-            vt100_yh::Color::Idx(i) => ansi_to_rgb_color(i),
+            vt100_yh::Color::Idx(i) => Self::ANSI(CrosstermColor::AnsiValue(i)),
             vt100_yh::Color::Rgb(r, g, b) => Self::Rgba(Rgba::new(r, g, b)),
         }
     }

@@ -136,6 +136,12 @@ impl Cell {
         self.attrs.bgcolor
     }
 
+    /// Returns the underline color of the cell.
+    #[must_use]
+    pub fn ulcolor(&self) -> crate::Color {
+        self.attrs.ulcolor
+    }
+
     /// Returns whether the cell should be rendered with the bold text
     /// attribute.
     #[must_use]

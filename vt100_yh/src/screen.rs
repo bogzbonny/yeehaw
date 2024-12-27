@@ -1284,9 +1284,9 @@ impl Screen {
                 &[24] => self.attrs.set_underline(false),
                 &[27] => self.attrs.set_inverse(false),
                 // NOTE causes conflicts with rgb colors, refactor in if needed
-                //&[n] if (30..=37).contains(&n) => {
-                //    self.attrs.fgcolor = crate::Color::Idx(to_u8!(n) - 30);
-                //}
+                &[n] if (30..=37).contains(&n) => {
+                    self.attrs.fgcolor = crate::Color::Idx(to_u8!(n) - 30);
+                }
                 &[38, 2, r, g, b] => {
                     self.attrs.fgcolor = crate::Color::Rgb(to_u8!(r), to_u8!(g), to_u8!(b));
                 }
@@ -1323,10 +1323,9 @@ impl Screen {
                 &[39] => {
                     self.attrs.fgcolor = crate::Color::Default;
                 }
-                // NOTE causes conflicts with rgb colors, refactor in if needed
-                //&[n] if (40..=47).contains(&n) => {
-                //    self.attrs.bgcolor = crate::Color::Idx(to_u8!(n) - 40);
-                //}
+                &[n] if (40..=47).contains(&n) => {
+                    self.attrs.bgcolor = crate::Color::Idx(to_u8!(n) - 40);
+                }
                 &[48, 2, r, g, b] => {
                     self.attrs.bgcolor = crate::Color::Rgb(to_u8!(r), to_u8!(g), to_u8!(b));
                 }
@@ -1360,16 +1359,42 @@ impl Screen {
                         return;
                     }
                 },
+                &[58] => match next_param!() {
+                    &[2] => {
+                        let r = next_param_u8!();
+                        let g = next_param_u8!();
+                        let b = next_param_u8!();
+                        self.attrs.ulcolor = crate::Color::Rgb(r, g, b);
+                    }
+                    &[5] => {
+                        self.attrs.ulcolor = crate::Color::Idx(next_param_u8!());
+                    }
+                    ns => {
+                        if log::log_enabled!(log::Level::Debug) {
+                            let n = if ns.len() == 1 {
+                                format!(
+                                    "{}",
+                                    // we just checked that ns.len() == 1, so
+                                    // 0 must be valid
+                                    ns[0]
+                                )
+                            } else {
+                                format!("{ns:?}")
+                            };
+                            log::debug!("unhandled SGR mode: 48 {n}");
+                        }
+                        return;
+                    }
+                },
                 &[49] => {
                     self.attrs.bgcolor = crate::Color::Default;
                 }
-                // NOTE causes conflicts with rgb colors, refactor in if needed
-                //&[n] if (90..=97).contains(&n) => {
-                //    self.attrs.fgcolor = crate::Color::Idx(to_u8!(n) - 82);
-                //}
-                //&[n] if (100..=107).contains(&n) => {
-                //    self.attrs.bgcolor = crate::Color::Idx(to_u8!(n) - 92);
-                //}
+                &[n] if (90..=97).contains(&n) => {
+                    self.attrs.fgcolor = crate::Color::Idx(to_u8!(n) - 82);
+                }
+                &[n] if (100..=107).contains(&n) => {
+                    self.attrs.bgcolor = crate::Color::Idx(to_u8!(n) - 92);
+                }
                 ns => {
                     if log::log_enabled!(log::Level::Debug) {
                         let n = if ns.len() == 1 {

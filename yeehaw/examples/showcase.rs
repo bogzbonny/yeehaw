@@ -553,12 +553,6 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
 
 pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
     let el = ParentPaneOfSelectable::new(ctx).with_bg(Color::DARK_OLIVE_GREEN);
-    //pub const DARK_OLIVE_GREEN:        Color = Color::new(85, 107, 47);
-    //let el = ParentPaneOfSelectable::new(ctx).with_bg(Color::new(50, 50, 50));
-    //let el = ParentPaneOfSelectable::new(ctx).with_bg(Color::MEDIUM_SEA_GREEN);
-    //let el = ParentPaneOfSelectable::new(ctx).with_bg(Color::PALE_VIOLET_RED);
-    //let el = ParentPaneOfSelectable::new(ctx).with_bg(Color::STEEL_BLUE);
-    //let el = ParentPaneOfSelectable::new(ctx).with_bg(Color::NAVY);
 
     let x = DynVal::new_fixed(1);
     let y = DynVal::new_fixed(1);
@@ -1312,7 +1306,7 @@ impl ColorsDemoColor {
             Color::ORANGE,
             Color::RED,
         ];
-        let linear_gr = Gradient::x_grad_rainbow(ctx, 5);
+        let linear_gr = Gradient::y_grad_rainbow(ctx, 5);
         let radial_time_colors = vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK];
         let radial_time_gr = RadialGradient::new_basic_circle_time_loop(
             ctx,
@@ -1330,7 +1324,7 @@ impl ColorsDemoColor {
             Color::ORANGE,
             Color::RED,
         ];
-        let linear_time_gr = Gradient::x_grad_rainbow_time_loop(ctx, 5, Duration::from_secs(1));
+        let linear_time_gr = Gradient::y_grad_rainbow_time_loop(ctx, 5, Duration::from_secs(1));
         let tiles_colors = (Color::WHITE, Color::BLUE);
         let tiles = Pattern::new_sqr_tiles(ctx, 5, tiles_colors.0.clone(), tiles_colors.1.clone());
         ColorsDemoColor {
