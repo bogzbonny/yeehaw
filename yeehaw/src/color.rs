@@ -805,15 +805,18 @@ impl Gradient {
     pub fn apply_fn_to_colors(
         &self, cctx: &ColorContext, f: Box<dyn Fn(&ColorContext, &Color) -> Color>,
     ) -> Self {
-        let grs = cctx.store.pos_gradients.borrow();
-        let gr = grs.get(self.gradient_id);
-        let Some(gr) = gr else {
-            return self.clone();
+        let mod_gr = {
+            let grs = cctx.store.pos_gradients.borrow();
+            let gr = grs.get(self.gradient_id);
+            let Some(gr) = gr else {
+                return self.clone();
+            };
+            let mut mod_gr = gr.clone();
+            for (_, c) in mod_gr.iter_mut() {
+                *c = f(cctx, c);
+            }
+            mod_gr
         };
-        let mut mod_gr = gr.clone();
-        for (_, c) in mod_gr.iter_mut() {
-            *c = f(cctx, c);
-        }
         let mut p = self.clone();
         let pattern_id = cctx.store.add_pos_gradient(mod_gr);
         p.gradient_id = pattern_id;
@@ -1009,15 +1012,18 @@ impl RadialGradient {
     pub fn apply_fn_to_colors(
         &self, cctx: &ColorContext, f: Box<dyn Fn(&ColorContext, &Color) -> Color>,
     ) -> Self {
-        let grs = cctx.store.pos_gradients.borrow();
-        let gr = grs.get(self.gradient_id);
-        let Some(gr) = gr else {
-            return self.clone();
+        let mod_gr = {
+            let grs = cctx.store.pos_gradients.borrow();
+            let gr = grs.get(self.gradient_id);
+            let Some(gr) = gr else {
+                return self.clone();
+            };
+            let mut mod_gr = gr.clone();
+            for (_, c) in mod_gr.iter_mut() {
+                *c = f(cctx, c);
+            }
+            mod_gr
         };
-        let mut mod_gr = gr.clone();
-        for (_, c) in mod_gr.iter_mut() {
-            *c = f(cctx, c);
-        }
         let mut p = self.clone();
         let pattern_id = cctx.store.add_pos_gradient(mod_gr);
         p.gradient_id = pattern_id;
@@ -1061,6 +1067,15 @@ impl TimeGradient {
         Self::new(ctx, total_dur, points)
     }
 
+    pub fn len(&self, ctx: &Context) -> usize {
+        let tgs = ctx.color_store.time_gradients.borrow();
+        let points = tgs.get(self.gradient_id);
+        let Some(points) = points else {
+            return 0;
+        };
+        points.len()
+    }
+
     pub fn to_color(&self, cctx: &ColorContext, x: u16, y: u16) -> Color {
         let tgs = cctx.store.time_gradients.borrow();
         let points = tgs.get(self.gradient_id);
@@ -1101,17 +1116,20 @@ impl TimeGradient {
     pub fn apply_fn_to_colors(
         &self, cctx: &ColorContext, f: Box<dyn Fn(&ColorContext, &Color) -> Color>,
     ) -> Self {
-        let time_grs = cctx.store.time_gradients.borrow();
-        let time_gr = time_grs.get(self.gradient_id);
-        let Some(time_gr) = time_gr else {
-            return self.clone();
+        let mod_gr = {
+            let time_grs = cctx.store.time_gradients.borrow();
+            let time_gr = time_grs.get(self.gradient_id);
+            let Some(time_gr) = time_gr else {
+                return self.clone();
+            };
+            let mut mod_gr = time_gr.clone();
+            for (_, c) in mod_gr.iter_mut() {
+                *c = f(cctx, c);
+            }
+            mod_gr
         };
-        let mut mod_time_gr = time_gr.clone();
-        for (_, c) in mod_time_gr.iter_mut() {
-            *c = f(cctx, c);
-        }
         let mut p = self.clone();
-        let time_gr_id = cctx.store.add_time_gradient(mod_time_gr);
+        let time_gr_id = cctx.store.add_time_gradient(mod_gr);
         p.gradient_id = time_gr_id;
         p
     }
@@ -1208,17 +1226,20 @@ impl Pattern {
     pub fn apply_fn_to_colors(
         &self, cctx: &ColorContext, f: Box<dyn Fn(&ColorContext, &Color) -> Color>,
     ) -> Self {
-        let patterns = cctx.store.patterns.borrow();
-        let pattern = patterns.get(self.pattern_id);
-        let Some(pattern) = pattern else {
-            return self.clone();
-        };
-        let mut mod_pattern = pattern.clone();
-        for cs in mod_pattern.iter_mut() {
-            for c in cs.iter_mut() {
-                *c = f(cctx, c);
+        let mod_pattern = {
+            let patterns = cctx.store.patterns.borrow();
+            let pattern = patterns.get(self.pattern_id);
+            let Some(pattern) = pattern else {
+                return self.clone();
+            };
+            let mut mod_pattern = pattern.clone();
+            for cs in mod_pattern.iter_mut() {
+                for c in cs.iter_mut() {
+                    *c = f(cctx, c);
+                }
             }
-        }
+            mod_pattern
+        };
         let mut p = self.clone();
         let pattern_id = cctx.store.add_pattern(mod_pattern);
         p.pattern_id = pattern_id;

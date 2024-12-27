@@ -864,8 +864,8 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
     }));
 
     let state_ = state.clone();
-    dial_color.set_fn(Box::new(move |_, _, _, _| {
-        state_.update_for_color_dial_change();
+    dial_color.set_fn(Box::new(move |ctx, _, _, _| {
+        state_.update_for_color_dial_change(&ctx);
         EventResponses::default()
     }));
 
@@ -1020,7 +1020,7 @@ impl ColorsDemoState {
     }
 
     /// updates all the sliders/tbs for a dial change
-    pub fn update_for_color_dial_change(&self) {
+    pub fn update_for_color_dial_change(&self, ctx: &Context) {
         {
             self.updating.replace(true);
             let mut demo_color =
@@ -1043,8 +1043,15 @@ impl ColorsDemoState {
                 }
                 "Time-Gradient" => {
                     demo_color.kind = ColorsDemoColorKind::TimeGradient;
-                    self.color_dd.pane.enable();
                     self.max_gr_colors_dd.pane.enable();
+                    let max = demo_color.time_gradient_state.0.len(ctx) - 1;
+                    self.color_dd.pane.enable();
+                    let entries = (1..=max).map(|i| i.to_string()).collect::<Vec<String>>();
+                    self.color_dd.set_entries(entries);
+                    self.color_dd.set_selected(0);
+                    self.max_gr_colors_dd.set_selected(max - 1);
+                    self.angle_ntb.tb.pane.disable();
+                    self.dist_ntb.tb.pane.disable();
                 }
                 "Radial-Gradient" => {
                     demo_color.kind = ColorsDemoColorKind::RadialGradient;
