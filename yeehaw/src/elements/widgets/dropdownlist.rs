@@ -172,6 +172,10 @@ impl DropdownList {
         *self.selected.borrow_mut() = idx;
     }
 
+    pub fn get_selected(&self) -> usize {
+        *self.selected.borrow()
+    }
+
     pub fn set_entries<S: Into<String>>(&self, entries: Vec<S>) {
         *self.entries.borrow_mut() = entries.into_iter().map(|s| s.into()).collect();
         self.dirty.replace(true);

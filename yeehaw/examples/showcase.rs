@@ -871,6 +871,7 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
 
     let state_ = state.clone();
     color_dd.set_fn(Box::new(move |_, _| {
+        state_.update_for_color_dd_change();
         state_.update_for_minor_changes();
         EventResponses::default()
     }));
@@ -1033,13 +1034,7 @@ impl ColorsDemoState {
                     self.color_dd.pane.disable();
                     self.max_gr_colors_dd.pane.disable();
                     self.max_gr_colors_dd.set_selected(0);
-                    let Color::Rgba(rgba) = demo_color.solid_state else {
-                        return;
-                    };
-                    self.r_ntb.change_value(rgba.r as usize);
-                    self.g_ntb.change_value(rgba.g as usize);
-                    self.b_ntb.change_value(rgba.b as usize);
-                    self.a_ntb.change_value(rgba.a as usize);
+                    self.update_for_color_dd_change_from_demo_color("Solid", &demo_color);
                 }
                 "Time-Gradient" => {
                     demo_color.kind = ColorsDemoColorKind::TimeGradient;
@@ -1052,6 +1047,7 @@ impl ColorsDemoState {
                     self.max_gr_colors_dd.set_selected(max - 1);
                     self.angle_ntb.tb.pane.disable();
                     self.dist_ntb.tb.pane.disable();
+                    self.update_for_color_dd_change_from_demo_color("Time-Gradient", &demo_color);
                 }
                 "Radial-Gradient" => {
                     demo_color.kind = ColorsDemoColorKind::RadialGradient;
@@ -1084,6 +1080,70 @@ impl ColorsDemoState {
         }
 
         self.update_drawing();
+    }
+
+    pub fn update_for_color_dd_change(&self) {
+        let demo_color = if self.toggle.is_left() { self.fg.borrow() } else { self.bg.borrow() };
+        self.update_for_color_dd_change_from_demo_color(
+            self.dial_color_kind.get_value().as_str(),
+            &demo_color,
+        );
+    }
+
+    pub fn update_for_color_dd_change_from_demo_color(
+        &self, dial_color_kind: &str, demo_color: &ColorsDemoColor,
+    ) {
+        let dd_i = self.color_dd.get_selected();
+
+        let c = match dial_color_kind {
+            "Solid" => demo_color.solid_state.clone(),
+            "Time-Gradient" => demo_color
+                .time_gradient_state
+                .1
+                .get(dd_i)
+                .cloned()
+                .unwrap_or_default(),
+            "Radial-Gradient" => demo_color
+                .radial_gradient_state
+                .1
+                .get(dd_i)
+                .cloned()
+                .unwrap_or_default(),
+            "Linear-Gradient" => demo_color
+                .linear_gradient_state
+                .1
+                .get(dd_i)
+                .cloned()
+                .unwrap_or_default(),
+            "Radial-Time" => demo_color
+                .radial_time_state
+                .2
+                .get(dd_i)
+                .cloned()
+                .unwrap_or_default(),
+            "Linear-Time" => demo_color
+                .linear_time_state
+                .2
+                .get(dd_i)
+                .cloned()
+                .unwrap_or_default(),
+            "Tiles" => {
+                if dd_i == 0 {
+                    demo_color.tiles_state.1.clone()
+                } else {
+                    demo_color.tiles_state.2.clone()
+                }
+            }
+            _ => unreachable!(),
+        };
+
+        let Color::Rgba(rgba) = c else {
+            return;
+        };
+        self.r_ntb.change_value(rgba.r as usize);
+        self.g_ntb.change_value(rgba.g as usize);
+        self.b_ntb.change_value(rgba.b as usize);
+        self.a_ntb.change_value(rgba.a as usize);
     }
 
     /// updates for any smaller-changes (sliders/tbs)
