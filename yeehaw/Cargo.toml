@@ -33,7 +33,7 @@ yeehaw_derive = { path = "../yeehaw_derive" }
 num-traits = "^0.2.0"
 rayon = "^1.10.0"
 
-vt100 = { version = "0.15.2" }
+vt100-ctt = { version = "0.16.0" }
 portable-pty = { version = "0.8.1" }
 bytes = "^1.8.0"
 

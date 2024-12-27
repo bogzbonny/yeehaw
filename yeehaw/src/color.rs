@@ -58,6 +58,8 @@ pub struct ColorContext {
     pub dur_since_launch: Duration,
 }
 
+// TODO color radial pinwheel (each angle has a different color)
+
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug)]
 pub enum Color {
     ANSI(CrosstermColor),
@@ -86,13 +88,14 @@ impl From<CrosstermColor> for Color {
     }
 }
 
-impl From<vt100::Color> for Color {
+impl From<vt100_ctt::Color> for Color {
     #[inline]
-    fn from(value: vt100::Color) -> Self {
+    fn from(value: vt100_ctt::Color) -> Self {
         match value {
-            vt100::Color::Default => Self::ANSI(CrosstermColor::Reset),
-            vt100::Color::Idx(i) => Self::ANSI(CrosstermColor::AnsiValue(i)),
-            vt100::Color::Rgb(r, g, b) => Self::Rgba(Rgba::new(r, g, b)),
+            vt100_ctt::Color::Default => Self::ANSI(CrosstermColor::Reset),
+            //vt100_ctt::Color::Idx(i) => Self::ANSI(CrosstermColor::AnsiValue(i)),
+            vt100_ctt::Color::Idx(i) => ansi_to_rgb_color(i),
+            vt100_ctt::Color::Rgb(r, g, b) => Self::Rgba(Rgba::new(r, g, b)),
         }
     }
 }
@@ -192,20 +195,20 @@ impl Color {
         blend_kind: BlendKind,
     ) -> Color {
         match self {
-            Color::ANSI(_) => {
-                if percent_other < 0.5 {
-                    self.clone()
-                } else {
-                    other
+            Color::ANSI(a) => {
+                if a == &CrosstermColor::Reset {
+                    return other.clone();
                 }
+                let c = crossterm_to_rgb(*a);
+                c.blend(cctx, x, y, other, percent_other, blend_kind)
             }
             Color::Rgba(c) => match other {
-                Color::ANSI(_) => {
-                    if percent_other < 0.5 {
-                        self.clone()
-                    } else {
-                        other
+                Color::ANSI(a) => {
+                    if a == CrosstermColor::Reset {
+                        return self.clone();
                     }
+                    let oc = crossterm_to_rgb(a);
+                    self.blend(cctx, x, y, oc, percent_other, blend_kind)
                 }
                 Color::Rgba(oc) => Color::Rgba(blend_kind.blend(*c, oc, percent_other)),
                 Color::Gradient(gr) => {
@@ -395,6 +398,7 @@ impl Color {
 
     pub fn with_alpha(&self, cctx: &ColorContext, alpha: u8) -> Color {
         match self {
+            Color::ANSI(a) => crossterm_to_rgb(*a).with_alpha(cctx, alpha),
             Color::Rgba(c) => {
                 let mut c = *c;
                 c.a = alpha;
@@ -412,14 +416,13 @@ impl Color {
             Color::Pattern(p) => Color::Pattern(
                 p.apply_fn_to_colors(cctx, Box::new(move |cctx, c| c.with_alpha(cctx, alpha))),
             ),
-            Color::ANSI(_) => self.clone(),
         }
     }
 
     pub fn overlay_color(&self, cctx: &ColorContext, overlay: Self) -> Self {
         match overlay {
             Color::Rgba(oc) => match self {
-                Color::ANSI(_) => overlay,
+                Color::ANSI(a) => crossterm_to_rgb(*a).overlay_color(cctx, overlay),
                 Color::Rgba(c) => Color::Rgba(c.overlay_color(oc)),
                 Color::Gradient(g) => Color::Gradient(g.apply_fn_to_colors(
                     cctx,
@@ -1720,4 +1723,290 @@ impl Color {
 
     }
 
+}
+
+pub fn crossterm_to_rgb(ct: CrosstermColor) -> Color {
+    match ct {
+        CrosstermColor::Reset => Color::ANSI(ct),
+        CrosstermColor::Black => Color::BLACK,
+        CrosstermColor::DarkGrey => Color::DARK_GREY,
+        CrosstermColor::Red => Color::RED,
+        CrosstermColor::DarkRed => Color::DARK_RED,
+        CrosstermColor::Green => Color::GREEN,
+        CrosstermColor::DarkGreen => Color::DARK_GREEN,
+        CrosstermColor::Yellow => Color::YELLOW,
+        CrosstermColor::DarkYellow => Color::OLIVE,
+        CrosstermColor::Blue => Color::BLUE,
+        CrosstermColor::DarkBlue => Color::DARK_BLUE,
+        CrosstermColor::Magenta => Color::MAGENTA,
+        CrosstermColor::DarkMagenta => Color::DARK_MAGENTA,
+        CrosstermColor::Cyan => Color::CYAN,
+        CrosstermColor::DarkCyan => Color::DARK_CYAN,
+        CrosstermColor::White => Color::WHITE,
+        CrosstermColor::Grey => Color::GREY,
+        CrosstermColor::Rgb { r, g, b } => Color::new(r, g, b),
+        CrosstermColor::AnsiValue(ansi) => ansi_to_rgb_color(ansi),
+    }
+}
+
+// converts ansi color to rgb color
+pub fn ansi_to_rgb_color(ansi: u8) -> Color {
+    match ansi {
+        0 => Color::new(0, 0, 0),
+        1 => Color::new(128, 0, 0),
+        2 => Color::new(0, 128, 0),
+        3 => Color::new(128, 128, 0),
+        4 => Color::new(0, 0, 128),
+        5 => Color::new(128, 0, 128),
+        6 => Color::new(0, 128, 128),
+        7 => Color::new(192, 192, 192),
+        8 => Color::new(128, 128, 128),
+        9 => Color::new(255, 0, 0),
+        10 => Color::new(0, 255, 0),
+        11 => Color::new(255, 255, 0),
+        12 => Color::new(0, 0, 255),
+        13 => Color::new(255, 0, 255),
+        14 => Color::new(0, 255, 255),
+        15 => Color::new(255, 255, 255),
+        16 => Color::new(0, 0, 0),
+        17 => Color::new(0, 0, 95),
+        18 => Color::new(0, 0, 135),
+        19 => Color::new(0, 0, 175),
+        20 => Color::new(0, 0, 215),
+        21 => Color::new(0, 0, 255),
+        22 => Color::new(0, 95, 0),
+        23 => Color::new(0, 95, 95),
+        24 => Color::new(0, 95, 135),
+        25 => Color::new(0, 95, 175),
+        26 => Color::new(0, 95, 215),
+        27 => Color::new(0, 95, 255),
+        28 => Color::new(0, 135, 0),
+        29 => Color::new(0, 135, 95),
+        30 => Color::new(0, 135, 135),
+        31 => Color::new(0, 135, 175),
+        32 => Color::new(0, 135, 215),
+        33 => Color::new(0, 135, 255),
+        34 => Color::new(0, 175, 0),
+        35 => Color::new(0, 175, 95),
+        36 => Color::new(0, 175, 135),
+        37 => Color::new(0, 175, 175),
+        38 => Color::new(0, 175, 215),
+        39 => Color::new(0, 175, 255),
+        40 => Color::new(0, 215, 0),
+        41 => Color::new(0, 215, 95),
+        42 => Color::new(0, 215, 135),
+        43 => Color::new(0, 215, 175),
+        44 => Color::new(0, 215, 215),
+        45 => Color::new(0, 215, 255),
+        46 => Color::new(0, 255, 0),
+        47 => Color::new(0, 255, 95),
+        48 => Color::new(0, 255, 135),
+        49 => Color::new(0, 255, 175),
+        50 => Color::new(0, 255, 215),
+        51 => Color::new(0, 255, 255),
+        52 => Color::new(95, 0, 0),
+        53 => Color::new(95, 0, 95),
+        54 => Color::new(95, 0, 135),
+        55 => Color::new(95, 0, 175),
+        56 => Color::new(95, 0, 215),
+        57 => Color::new(95, 0, 255),
+        58 => Color::new(95, 95, 0),
+        59 => Color::new(95, 95, 95),
+        60 => Color::new(95, 95, 135),
+        61 => Color::new(95, 95, 175),
+        62 => Color::new(95, 95, 215),
+        63 => Color::new(95, 95, 255),
+        64 => Color::new(95, 135, 0),
+        65 => Color::new(95, 135, 95),
+        66 => Color::new(95, 135, 135),
+        67 => Color::new(95, 135, 175),
+        68 => Color::new(95, 135, 215),
+        69 => Color::new(95, 135, 255),
+        70 => Color::new(95, 175, 0),
+        71 => Color::new(95, 175, 95),
+        72 => Color::new(95, 175, 135),
+        73 => Color::new(95, 175, 175),
+        74 => Color::new(95, 175, 215),
+        75 => Color::new(95, 175, 255),
+        76 => Color::new(95, 215, 0),
+        77 => Color::new(95, 215, 95),
+        78 => Color::new(95, 215, 135),
+        79 => Color::new(95, 215, 175),
+        80 => Color::new(95, 215, 215),
+        81 => Color::new(95, 215, 255),
+        82 => Color::new(95, 255, 0),
+        83 => Color::new(95, 255, 95),
+        84 => Color::new(95, 255, 135),
+        85 => Color::new(95, 255, 175),
+        86 => Color::new(95, 255, 215),
+        87 => Color::new(95, 255, 255),
+        88 => Color::new(135, 0, 0),
+        89 => Color::new(135, 0, 95),
+        90 => Color::new(135, 0, 135),
+        91 => Color::new(135, 0, 175),
+        92 => Color::new(135, 0, 215),
+        93 => Color::new(135, 0, 255),
+        94 => Color::new(135, 95, 0),
+        95 => Color::new(135, 95, 95),
+        96 => Color::new(135, 95, 135),
+        97 => Color::new(135, 95, 175),
+        98 => Color::new(135, 95, 215),
+        99 => Color::new(135, 95, 255),
+        100 => Color::new(135, 135, 0),
+        101 => Color::new(135, 135, 95),
+        102 => Color::new(135, 135, 135),
+        103 => Color::new(135, 135, 175),
+        104 => Color::new(135, 135, 215),
+        105 => Color::new(135, 135, 255),
+        106 => Color::new(135, 175, 0),
+        107 => Color::new(135, 175, 95),
+        108 => Color::new(135, 175, 135),
+        109 => Color::new(135, 175, 175),
+        110 => Color::new(135, 175, 215),
+        111 => Color::new(135, 175, 255),
+        112 => Color::new(135, 215, 0),
+        113 => Color::new(135, 215, 95),
+        114 => Color::new(135, 215, 135),
+        115 => Color::new(135, 215, 175),
+        116 => Color::new(135, 215, 215),
+        117 => Color::new(135, 215, 255),
+        118 => Color::new(135, 255, 0),
+        119 => Color::new(135, 255, 95),
+        120 => Color::new(135, 255, 135),
+        121 => Color::new(135, 255, 175),
+        122 => Color::new(135, 255, 215),
+        123 => Color::new(135, 255, 255),
+        124 => Color::new(175, 0, 0),
+        125 => Color::new(175, 0, 95),
+        126 => Color::new(175, 0, 135),
+        127 => Color::new(175, 0, 175),
+        128 => Color::new(175, 0, 215),
+        129 => Color::new(175, 0, 255),
+        130 => Color::new(175, 95, 0),
+        131 => Color::new(175, 95, 95),
+        132 => Color::new(175, 95, 135),
+        133 => Color::new(175, 95, 175),
+        134 => Color::new(175, 95, 215),
+        135 => Color::new(175, 95, 255),
+        136 => Color::new(175, 135, 0),
+        137 => Color::new(175, 135, 95),
+        138 => Color::new(175, 135, 135),
+        139 => Color::new(175, 135, 175),
+        140 => Color::new(175, 135, 215),
+        141 => Color::new(175, 135, 255),
+        142 => Color::new(175, 175, 0),
+        143 => Color::new(175, 175, 95),
+        144 => Color::new(175, 175, 135),
+        145 => Color::new(175, 175, 175),
+        146 => Color::new(175, 175, 215),
+        147 => Color::new(175, 175, 255),
+        148 => Color::new(175, 215, 0),
+        149 => Color::new(175, 215, 95),
+        150 => Color::new(175, 215, 135),
+        151 => Color::new(175, 215, 175),
+        152 => Color::new(175, 215, 215),
+        153 => Color::new(175, 215, 255),
+        154 => Color::new(175, 255, 0),
+        155 => Color::new(175, 255, 95),
+        156 => Color::new(175, 255, 135),
+        157 => Color::new(175, 255, 175),
+        158 => Color::new(175, 255, 215),
+        159 => Color::new(175, 255, 255),
+        160 => Color::new(215, 0, 0),
+        161 => Color::new(215, 0, 95),
+        162 => Color::new(215, 0, 135),
+        163 => Color::new(215, 0, 175),
+        164 => Color::new(215, 0, 215),
+        165 => Color::new(215, 0, 255),
+        166 => Color::new(215, 95, 0),
+        167 => Color::new(215, 95, 95),
+        168 => Color::new(215, 95, 135),
+        169 => Color::new(215, 95, 175),
+        170 => Color::new(215, 95, 215),
+        171 => Color::new(215, 95, 255),
+        172 => Color::new(215, 135, 0),
+        173 => Color::new(215, 135, 95),
+        174 => Color::new(215, 135, 135),
+        175 => Color::new(215, 135, 175),
+        176 => Color::new(215, 135, 215),
+        177 => Color::new(215, 135, 255),
+        178 => Color::new(215, 175, 0),
+        179 => Color::new(215, 175, 95),
+        180 => Color::new(215, 175, 135),
+        181 => Color::new(215, 175, 175),
+        182 => Color::new(215, 175, 215),
+        183 => Color::new(215, 175, 255),
+        184 => Color::new(215, 215, 0),
+        185 => Color::new(215, 215, 95),
+        186 => Color::new(215, 215, 135),
+        187 => Color::new(215, 215, 175),
+        188 => Color::new(215, 215, 215),
+        189 => Color::new(215, 215, 255),
+        190 => Color::new(215, 255, 0),
+        191 => Color::new(215, 255, 95),
+        192 => Color::new(215, 255, 135),
+        193 => Color::new(215, 255, 175),
+        194 => Color::new(215, 255, 215),
+        195 => Color::new(215, 255, 255),
+        196 => Color::new(255, 0, 0),
+        197 => Color::new(255, 0, 95),
+        198 => Color::new(255, 0, 135),
+        199 => Color::new(255, 0, 175),
+        200 => Color::new(255, 0, 215),
+        201 => Color::new(255, 0, 255),
+        202 => Color::new(255, 95, 0),
+        203 => Color::new(255, 95, 95),
+        204 => Color::new(255, 95, 135),
+        205 => Color::new(255, 95, 175),
+        206 => Color::new(255, 95, 215),
+        207 => Color::new(255, 95, 255),
+        208 => Color::new(255, 135, 0),
+        209 => Color::new(255, 135, 95),
+        210 => Color::new(255, 135, 135),
+        211 => Color::new(255, 135, 175),
+        212 => Color::new(255, 135, 215),
+        213 => Color::new(255, 135, 255),
+        214 => Color::new(255, 175, 0),
+        215 => Color::new(255, 175, 95),
+        216 => Color::new(255, 175, 135),
+        217 => Color::new(255, 175, 175),
+        218 => Color::new(255, 175, 215),
+        219 => Color::new(255, 175, 255),
+        220 => Color::new(255, 215, 0),
+        221 => Color::new(255, 215, 95),
+        222 => Color::new(255, 215, 135),
+        223 => Color::new(255, 215, 175),
+        224 => Color::new(255, 215, 215),
+        225 => Color::new(255, 215, 255),
+        226 => Color::new(255, 255, 0),
+        227 => Color::new(255, 255, 95),
+        228 => Color::new(255, 255, 135),
+        229 => Color::new(255, 255, 175),
+        230 => Color::new(255, 255, 215),
+        231 => Color::new(255, 255, 255),
+        232 => Color::new(8, 8, 8),
+        233 => Color::new(18, 18, 18),
+        234 => Color::new(28, 28, 28),
+        235 => Color::new(38, 38, 38),
+        236 => Color::new(48, 48, 48),
+        237 => Color::new(58, 58, 58),
+        238 => Color::new(68, 68, 68),
+        239 => Color::new(78, 78, 78),
+        240 => Color::new(88, 88, 88),
+        241 => Color::new(98, 98, 98),
+        242 => Color::new(108, 108, 108),
+        243 => Color::new(118, 118, 118),
+        244 => Color::new(128, 128, 128),
+        245 => Color::new(138, 138, 138),
+        246 => Color::new(148, 148, 148),
+        247 => Color::new(158, 158, 158),
+        248 => Color::new(168, 168, 168),
+        249 => Color::new(178, 178, 178),
+        250 => Color::new(188, 188, 188),
+        251 => Color::new(198, 198, 198),
+        252 => Color::new(208, 208, 208),
+        253 => Color::new(218, 218, 218),
+        254 => Color::new(228, 228, 228),
+        255 => Color::new(238, 238, 238),
+    }
 }

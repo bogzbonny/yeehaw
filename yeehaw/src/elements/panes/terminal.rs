@@ -27,7 +27,7 @@ use {
 #[derive(Clone)]
 pub struct TerminalPane {
     pub pane: Pane,
-    pub parser: Arc<RwLock<vt100::Parser>>,
+    pub parser: Arc<RwLock<vt100_ctt::Parser>>,
     pub master_pty: Rc<RefCell<Box<dyn MasterPty>>>,
     pub writer: Rc<RefCell<BufWriter<Box<dyn Write + std::marker::Send>>>>,
     pub disable_cursor: Rc<RefCell<bool>>,
@@ -70,7 +70,11 @@ impl TerminalPane {
             pixel_height: 0,
         })?;
 
-        let parser = Arc::new(RwLock::new(vt100::Parser::new(size.height, size.width, 0)));
+        let parser = Arc::new(RwLock::new(vt100_ctt::Parser::new(
+            size.height,
+            size.width,
+            0,
+        )));
 
         let mut child = pty_pair.slave.spawn_command(cmd)?;
         let killer = child.clone_killer();
@@ -102,7 +106,7 @@ impl TerminalPane {
                 }
                 processed_buf.extend_from_slice(&buf[..size]);
                 let Ok(mut parser) = parser_.write() else {
-                    log_err!("error getting vt100 parser");
+                    log_err!("error getting vt100_ctt parser");
                     break;
                 };
                 parser.process(&processed_buf);
@@ -182,7 +186,9 @@ impl TerminalPane {
             log_err!("TerminalPane: failed to write to parser");
             return;
         };
-        parser.set_size(ctx.size.height, ctx.size.width);
+        parser
+            .screen_mut()
+            .set_size(ctx.size.height, ctx.size.width);
         if let Err(e) = self.master_pty.borrow().resize(PtySize {
             rows: ctx.size.height,
             cols: ctx.size.width,
@@ -203,7 +209,7 @@ impl TerminalPane {
                 return false;
             }
         };
-        if (*parser).screen().mouse_protocol_encoding() == vt100::MouseProtocolEncoding::Sgr {
+        if (*parser).screen().mouse_protocol_encoding() == vt100_ctt::MouseProtocolEncoding::Sgr {
             let input_bz = create_csi_sgr_mouse(*mouse);
             if self.writer.borrow_mut().write_all(&input_bz).is_err() {
                 return false;
@@ -339,7 +345,7 @@ impl Element for TerminalPane {
         let rows = ctx.size.height;
 
         // TODO this iteration could be made better by actually iterating through the Rows
-        // functionality is not actually exposed right now in the vt100 crate
+        // functionality is not actually exposed right now in the vt100_ctt crate
         // update once it is and or move to a fork and or make a fork
 
         // TODO subdivide into sections which are updated seperately
