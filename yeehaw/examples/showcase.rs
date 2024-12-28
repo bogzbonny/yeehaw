@@ -873,21 +873,24 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
     }));
 
     let state_ = state.clone();
+    let ctx_ = ctx.clone();
     color_dd.set_fn(Box::new(move |_, _| {
         if *state_.updating.borrow() {
             return EventResponses::default();
         }
         state_.update_for_color_dd_change();
+        state_.update_for_minor_changes(&ctx_);
         EventResponses::default()
     }));
 
+    let state_ = state.clone();
     let color_dd_ = color_dd.clone();
-    //let state_ = state.clone();
     max_gr_colors_dd.set_fn(Box::new(move |ctx, value| {
         let max = value.parse::<usize>().ok().unwrap_or(1);
         let entries = (1..=max).map(|i| i.to_string()).collect::<Vec<String>>();
         color_dd_.set_entries(entries);
         let _ = color_dd_.set_selected(&ctx, 0);
+        state_.update_for_minor_changes(&ctx);
         EventResponses::default()
     }));
 
@@ -961,7 +964,11 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
         EventResponses::default()
     }));
 
-    state.update_for_toggle_change(ctx);
+    //state.update_for_toggle_change(ctx);
+    toggle.toggle_right(ctx);
+    let _ = dial_fg_art.set_value(ctx, "Butterfly", true);
+    let _ = dial_color.set_value(ctx, "Linear-Time", true);
+
     Box::new(el)
 }
 
@@ -1048,7 +1055,6 @@ impl ColorsDemoState {
                 if self.toggle.is_left() { self.fg.borrow_mut() } else { self.bg.borrow_mut() };
             match self.dial_color_kind.get_value().as_str() {
                 "Solid" => {
-                    debug!("Solid hit");
                     demo_color.kind = ColorsDemoColorKind::Solid;
 
                     self.angle_ntb.tb.pane.disable();
@@ -1124,7 +1130,7 @@ impl ColorsDemoState {
                     self.color_dd.pane.enable();
                     self.max_gr_colors_dd.pane.enable();
 
-                    let max = demo_color.linear_gradient_state.0.len(ctx);
+                    let max = demo_color.linear_gradient_state.0.len(ctx) - 1;
                     let _ = self
                         .max_gr_colors_dd
                         .set_selected_str(ctx, &max.to_string());
@@ -1180,7 +1186,7 @@ impl ColorsDemoState {
                     self.color_dd.pane.enable();
                     self.max_gr_colors_dd.pane.enable();
 
-                    let max = demo_color.linear_time_state.0.len(ctx);
+                    let max = demo_color.linear_time_state.0.len(ctx) - 1;
                     let _ = self
                         .max_gr_colors_dd
                         .set_selected_str(ctx, &max.to_string());
@@ -1309,46 +1315,42 @@ impl ColorsDemoState {
             let g = self.g_ntb.get_value();
             let b = self.b_ntb.get_value();
             let a = self.a_ntb.get_value();
+            let dd_i = self.color_dd.get_selected();
+            let max_i = self
+                .max_gr_colors_dd
+                .get_selected_str()
+                .parse::<usize>()
+                .unwrap();
+            debug!("max_i: {}", max_i);
             match self.dial_color_kind.get_value().as_str() {
                 "Solid" => {
                     demo_color.solid_state =
                         Color::new_with_alpha(r as u8, g as u8, b as u8, a as u8);
                 }
                 "Time-Gradient" => {
-                    let dd_i = self.color_dd.get_selected();
                     let colors = &mut demo_color.time_gradient_state.1;
-                    if dd_i >= colors.len() {
-                        colors.resize(dd_i + 1, Color::new(0, 0, 0));
+                    if max_i >= colors.len() {
+                        colors.resize(max_i, Color::new(0, 0, 0));
                     }
                     colors[dd_i] = Color::new_with_alpha(r as u8, g as u8, b as u8, a as u8);
 
                     let time = self.time_ntb.get_value();
                     let time = Duration::from_millis(time as u64);
 
-                    let max_i = self.max_gr_colors_dd.get_selected();
-                    let trunc_colors = colors
-                        .iter()
-                        .take(max_i + 1)
-                        .cloned()
-                        .collect::<Vec<Color>>();
+                    let trunc_colors = colors.iter().take(max_i).cloned().collect::<Vec<Color>>();
 
                     let gr = TimeGradient::new_loop(ctx, time, trunc_colors);
                     demo_color.time_gradient_state.0 = gr;
                 }
                 "Radial-Gradient" => {
-                    let dd_i = self.color_dd.get_selected();
                     let colors = &mut demo_color.radial_gradient_state.1;
-                    if dd_i >= colors.len() {
-                        colors.resize(dd_i + 1, Color::new(0, 0, 0));
+                    if max_i >= colors.len() {
+                        colors.resize(max_i, Color::new(0, 0, 0));
                     }
                     colors[dd_i] = Color::new_with_alpha(r as u8, g as u8, b as u8, a as u8);
 
-                    let max_i = self.max_gr_colors_dd.get_selected();
-                    let trunc_colors = colors
-                        .iter()
-                        .take(max_i + 1)
-                        .cloned()
-                        .collect::<Vec<Color>>();
+                    let trunc_colors = colors.iter().take(max_i).cloned().collect::<Vec<Color>>();
+                    debug!("trunc_colors len: {}", trunc_colors.len());
 
                     let dist = self.dist_ntb.get_value();
                     let gr = RadialGradient::new_basic_circle(
@@ -1360,19 +1362,13 @@ impl ColorsDemoState {
                     demo_color.radial_gradient_state.0 = gr;
                 }
                 "Linear-Gradient" => {
-                    let dd_i = self.color_dd.get_selected();
                     let colors = &mut demo_color.linear_gradient_state.1;
-                    if dd_i >= colors.len() {
-                        colors.resize(dd_i + 1, Color::new(0, 0, 0));
+                    if max_i >= colors.len() {
+                        colors.resize(max_i, Color::new(0, 0, 0));
                     }
                     colors[dd_i] = Color::new_with_alpha(r as u8, g as u8, b as u8, a as u8);
 
-                    let max_i = self.max_gr_colors_dd.get_selected();
-                    let trunc_colors = colors
-                        .iter()
-                        .take(max_i + 1)
-                        .cloned()
-                        .collect::<Vec<Color>>();
+                    let trunc_colors = colors.iter().take(max_i).cloned().collect::<Vec<Color>>();
 
                     let dist = self.dist_ntb.get_value();
                     let angle = self.angle_ntb.get_value();
@@ -1380,19 +1376,13 @@ impl ColorsDemoState {
                     demo_color.linear_gradient_state.0 = gr;
                 }
                 "Radial-Time" => {
-                    let dd_i = self.color_dd.get_selected();
                     let colors = &mut demo_color.radial_time_state.2;
-                    if dd_i >= colors.len() {
-                        colors.resize(dd_i + 1, Color::new(0, 0, 0));
+                    if max_i >= colors.len() {
+                        colors.resize(max_i, Color::new(0, 0, 0));
                     }
                     colors[dd_i] = Color::new_with_alpha(r as u8, g as u8, b as u8, a as u8);
 
-                    let max_i = self.max_gr_colors_dd.get_selected();
-                    let trunc_colors = colors
-                        .iter()
-                        .take(max_i + 1)
-                        .cloned()
-                        .collect::<Vec<Color>>();
+                    let trunc_colors = colors.iter().take(max_i).cloned().collect::<Vec<Color>>();
 
                     let dist = self.dist_ntb.get_value();
 
@@ -1410,19 +1400,13 @@ impl ColorsDemoState {
                     demo_color.radial_time_state.1 = radial_time_gr.1;
                 }
                 "Linear-Time" => {
-                    let dd_i = self.color_dd.get_selected();
                     let colors = &mut demo_color.linear_time_state.2;
-                    if dd_i >= colors.len() {
-                        colors.resize(dd_i + 1, Color::new(0, 0, 0));
+                    if max_i >= colors.len() {
+                        colors.resize(max_i, Color::new(0, 0, 0));
                     }
                     colors[dd_i] = Color::new_with_alpha(r as u8, g as u8, b as u8, a as u8);
 
-                    let max_i = self.max_gr_colors_dd.get_selected();
-                    let trunc_colors = colors
-                        .iter()
-                        .take(max_i + 1)
-                        .cloned()
-                        .collect::<Vec<Color>>();
+                    let trunc_colors = colors.iter().take(max_i).cloned().collect::<Vec<Color>>();
 
                     let dist = self.dist_ntb.get_value();
 
@@ -1437,7 +1421,6 @@ impl ColorsDemoState {
                     demo_color.linear_time_state.1 = linear_time_gr.1;
                 }
                 "Tiles" => {
-                    let dd_i = self.color_dd.get_selected();
                     let color = Color::new_with_alpha(r as u8, g as u8, b as u8, a as u8);
                     if dd_i == 0 {
                         demo_color.tiles_state.1 = color;
@@ -1533,7 +1516,6 @@ impl ColorsDemoState {
   ^^
  
  unknown"#;
-
     // TODO there are nicer ways to center... being lazy
     const RUST_LOGO: &'static str = r#"
 
@@ -1608,7 +1590,7 @@ impl ColorsDemoColor {
         let radial_gr = RadialGradient::new_basic_circle(
             ctx,
             (0.5.into(), 0.5.into()),
-            5.into(),
+            15.into(),
             radial_gr_colors.clone(),
         );
         let linear_gr_colors = vec![
@@ -1622,13 +1604,12 @@ impl ColorsDemoColor {
         ];
         let linear_gr = Gradient::new_y_grad_repeater(ctx, linear_gr_colors.clone(), 5);
 
-        let radial_time_colors = vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK];
         let radial_time_gr = RadialGradient::new_basic_circle_time_loop(
             ctx,
             (0.5.into(), 0.5.into()),
             Duration::from_secs(1),
-            5.into(),
-            radial_time_colors.clone(),
+            15.into(),
+            radial_gr_colors.clone(),
         );
         let linear_time_colors = vec![
             Color::VIOLET,
@@ -1641,7 +1622,7 @@ impl ColorsDemoColor {
         ];
         let linear_time_gr = Gradient::new_y_grad_repeater_time_loop(
             ctx,
-            linear_gr_colors.clone(),
+            linear_time_colors.clone(),
             5,
             Duration::from_secs(1),
         );
@@ -1651,23 +1632,23 @@ impl ColorsDemoColor {
             kind: ColorsDemoColorKind::Solid,
             solid_state: Color::WHITE,
             time_gradient_state: (time_gr, time_gr_colors),
-            radial_gradient_state: (radial_gr, radial_gr_colors),
+            radial_gradient_state: (radial_gr, radial_gr_colors.clone()),
             linear_gradient_state: (linear_gr, linear_gr_colors),
-            radial_time_state: (radial_time_gr.0, radial_time_gr.1, radial_time_colors),
+            radial_time_state: (radial_time_gr.0, radial_time_gr.1, radial_gr_colors),
             linear_time_state: (linear_time_gr.0, linear_time_gr.1, linear_time_colors),
             tiles_state: (tiles, tiles_colors.0, tiles_colors.1),
         }
     }
 
     pub fn default_bg(ctx: &Context) -> ColorsDemoColor {
-        let time_gr_colors = vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK];
+        let time_gr_colors = vec![Color::RED, Color::GREEN, Color::BLUE];
         let time_gr = TimeGradient::new_loop(ctx, Duration::from_secs(1), time_gr_colors.clone());
 
-        let radial_gr_colors = vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK];
+        let radial_gr_colors = vec![Color::RED, Color::GREEN, Color::BLUE];
         let radial_gr = RadialGradient::new_basic_circle(
             ctx,
             (0.5.into(), 0.5.into()),
-            5.into(),
+            15.into(),
             radial_gr_colors.clone(),
         );
         let linear_gr_colors = vec![
@@ -1680,28 +1661,26 @@ impl ColorsDemoColor {
             Color::RED,
         ];
         let linear_gr = Gradient::new_x_grad_repeater(ctx, linear_gr_colors.clone(), 5);
-        let radial_time_colors = vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK];
         let radial_time_gr = RadialGradient::new_basic_circle_time_loop(
             ctx,
             (0.5.into(), 0.5.into()),
             Duration::from_secs(1),
-            5.into(),
-            radial_time_colors.clone(),
+            15.into(),
+            radial_gr_colors.clone(),
         );
+        let cctx = ctx.get_color_context();
         let linear_time_colors = vec![
-            Color::VIOLET,
-            Color::INDIGO,
-            Color::BLUE,
-            Color::GREEN,
-            Color::YELLOW,
-            Color::ORANGE,
-            Color::RED,
+            Color::VIOLET.darken(&cctx),
+            Color::INDIGO.darken(&cctx),
+            Color::AQUA.darken(&cctx),
+            Color::GREEN.darken(&cctx),
         ];
-        let linear_time_gr = Gradient::new_x_grad_repeater_time_loop(
+        let linear_time_gr = Gradient::new_grad_repeater_time_loop(
             ctx,
-            linear_gr_colors.clone(),
-            5,
-            Duration::from_secs(1),
+            linear_time_colors.clone(),
+            12,
+            Duration::from_millis(1500),
+            0.,
         );
         let tiles_colors = (Color::WHITE, Color::BLUE);
         let tiles = Pattern::new_sqr_tiles(ctx, 5, tiles_colors.0.clone(), tiles_colors.1.clone());
@@ -1709,9 +1688,9 @@ impl ColorsDemoColor {
             kind: ColorsDemoColorKind::Solid,
             solid_state: Color::CRIMSON,
             time_gradient_state: (time_gr, time_gr_colors),
-            radial_gradient_state: (radial_gr, radial_gr_colors),
+            radial_gradient_state: (radial_gr, radial_gr_colors.clone()),
             linear_gradient_state: (linear_gr, linear_gr_colors),
-            radial_time_state: (radial_time_gr.0, radial_time_gr.1, radial_time_colors),
+            radial_time_state: (radial_time_gr.0, radial_time_gr.1, radial_gr_colors),
             linear_time_state: (linear_time_gr.0, linear_time_gr.1, linear_time_colors),
             tiles_state: (tiles, tiles_colors.0, tiles_colors.1),
         }

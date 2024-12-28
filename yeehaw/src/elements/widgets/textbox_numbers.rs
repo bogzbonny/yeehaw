@@ -126,9 +126,7 @@ impl<N: Display + Clone + Copy + FromStr + PartialOrd + 'static> NumbersTextBox<
             new_value = num_traits::clamp_min(new_value, min);
         }
         if let Some(max) = *self.max_value.borrow() {
-            debug!("max: {}, start new_value: {}", max, new_value);
             new_value = num_traits::clamp_max(new_value, max);
-            debug!("max: {}, end new_value: {}", max, new_value);
         }
 
         *self.value.borrow_mut() = new_value;

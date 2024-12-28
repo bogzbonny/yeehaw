@@ -95,6 +95,20 @@ impl Toggle {
         *self.toggled_fn.borrow_mut() = toggle_fn;
     }
 
+    pub fn toggle_left(&self, ctx: &Context) -> EventResponses {
+        *self.left_selected.borrow_mut() = true;
+        let resps = self.toggled_fn.borrow_mut()(ctx.clone(), self.clone());
+        self.update_content();
+        resps
+    }
+
+    pub fn toggle_right(&self, ctx: &Context) -> EventResponses {
+        *self.left_selected.borrow_mut() = false;
+        let resps = self.toggled_fn.borrow_mut()(ctx.clone(), self.clone());
+        self.update_content();
+        resps
+    }
+
     // ----------------------------------------------
 
     pub fn is_left(&self) -> bool {

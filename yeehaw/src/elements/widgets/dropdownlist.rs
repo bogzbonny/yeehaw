@@ -170,6 +170,7 @@ impl DropdownList {
 
     #[must_use]
     pub fn set_selected(&self, ctx: &Context, idx: usize) -> EventResponses {
+        self.dirty.replace(true);
         *self.selected.borrow_mut() = idx;
         (self.selection_made_fn.borrow_mut())(
             ctx.clone(),
@@ -179,6 +180,7 @@ impl DropdownList {
 
     #[must_use]
     pub fn set_selected_str(&self, ctx: &Context, s: &str) -> EventResponses {
+        self.dirty.replace(true);
         let idx = self.entries.borrow().iter().position(|r| r == s);
         if let Some(idx) = idx {
             *self.selected.borrow_mut() = idx;
@@ -193,6 +195,10 @@ impl DropdownList {
 
     pub fn get_selected(&self) -> usize {
         *self.selected.borrow()
+    }
+
+    pub fn get_selected_str(&self) -> String {
+        self.entries.borrow()[*self.selected.borrow()].clone()
     }
 
     pub fn set_entries<S: Into<String>>(&self, entries: Vec<S>) {
