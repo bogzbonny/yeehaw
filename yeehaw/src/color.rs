@@ -356,17 +356,6 @@ impl Color {
         }
     }
 
-    //pub fn update_color(&mut self, s: Size, dur_since_launch: Duration, x: u16, y: u16) {
-    //    let cctx = ctx.get_color_context();
-    //    match &self {
-    //        Color::Gradient(gr) => *self = gr.clone().to_color(s, dur_since_launch, x, y),
-    //        Color::TimeGradient(g) => *self = tg.clone().to_color(s, dur_since_launch, x, y),
-    //        Color::RadialGradient(rg) => *self = rg.clone().to_color(s, dur_since_launch, x, y),
-    //        Color::Pattern(p) => *self = p.clone().to_color(s, dur_since_launch, x, y),
-    //        Color::ANSI(_) | Color::Rgba(_) => {}
-    //    }
-    //}
-
     /// set the offset of position dependent colors
     pub fn set_draw_size_if_unset(&mut self, s: Size) {
         match self {
