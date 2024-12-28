@@ -18,9 +18,11 @@ pub struct NumbersTextBox<N> {
 
 type ValueChangedHook<N> = Box<dyn FnMut(N) -> EventResponses>;
 
+#[yeehaw_derive::impl_pane_basics_from(tb)]
 impl<N: Display + Clone + Copy + FromStr + PartialOrd + 'static> NumbersTextBox<N> {
     pub fn new(ctx: &Context, starting_value: N) -> Self {
-        let tb = TextBox::new(ctx, format!("{}", starting_value)).with_width(DynVal::new_fixed(5));
+        let tb =
+            TextBox::new(ctx, format!("{}", starting_value)).with_dyn_width(DynVal::new_fixed(5));
         let ntb = Self {
             tb,
             value: Rc::new(RefCell::new(starting_value)),
@@ -76,21 +78,6 @@ impl<N: Display + Clone + Copy + FromStr + PartialOrd + 'static> NumbersTextBox<
 
     pub fn without_max(self) -> Self {
         *self.max_value.borrow_mut() = None;
-        self
-    }
-
-    pub fn with_width(mut self, width: DynVal) -> Self {
-        self.tb = self.tb.with_width(width);
-        self
-    }
-
-    pub fn with_height(mut self, height: DynVal) -> Self {
-        self.tb = self.tb.with_height(height);
-        self
-    }
-
-    pub fn with_size(mut self, width: DynVal, height: DynVal) -> Self {
-        self.tb = self.tb.with_size(width, height);
         self
     }
 

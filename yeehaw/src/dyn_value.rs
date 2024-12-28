@@ -73,6 +73,22 @@ impl DynVal {
         plus_min_of: Vec::new(),
         plus_max_of: Vec::new(),
     };
+    pub const HALF: DynVal = DynVal {
+        mul: 1.0,
+        fixed: 0,
+        flex: 0.5,
+        plus: Vec::new(),
+        plus_min_of: Vec::new(),
+        plus_max_of: Vec::new(),
+    };
+    pub const QUARTER: DynVal = DynVal {
+        mul: 1.0,
+        fixed: 0,
+        flex: 0.25,
+        plus: Vec::new(),
+        plus_min_of: Vec::new(),
+        plus_max_of: Vec::new(),
+    };
 
     pub fn new<T: Into<DynVal>>(val: T) -> Self {
         val.into()
@@ -95,6 +111,13 @@ impl DynVal {
     pub fn max_of(d1: DynVal, d2: DynVal) -> Self {
         DynVal {
             plus_max_of: vec![d1, d2],
+            ..DynVal::default()
+        }
+    }
+
+    pub fn min_of(d1: DynVal, d2: DynVal) -> Self {
+        DynVal {
+            plus_min_of: vec![d1, d2],
             ..DynVal::default()
         }
     }

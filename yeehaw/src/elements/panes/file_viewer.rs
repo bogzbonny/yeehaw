@@ -23,8 +23,8 @@ impl FileViewerPane {
 
         let pane = ParentPane::new(ctx, Self::KIND);
         let tb = TextBox::new(ctx, content)
-            .with_width(DynVal::FULL)
-            .with_height(DynVal::FULL)
+            .with_dyn_width(DynVal::FULL)
+            .with_dyn_height(DynVal::FULL)
             .with_right_scrollbar(ctx)
             .with_bottom_scrollbar(ctx)
             .non_editable(ctx)

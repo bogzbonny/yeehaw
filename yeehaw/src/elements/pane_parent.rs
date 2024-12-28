@@ -55,11 +55,6 @@ impl ParentPane {
         self
     }
 
-    pub fn with_bg_color(self, c: Color) -> Self {
-        self.pane.default_ch.borrow_mut().style.set_bg(c);
-        self
-    }
-
     pub fn focused(self) -> Self {
         *self.pane.focused.borrow_mut() = true;
         self

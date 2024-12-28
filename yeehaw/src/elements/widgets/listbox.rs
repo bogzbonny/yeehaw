@@ -58,6 +58,7 @@ pub enum SelectionMode {
     UpTo(usize),
 }
 
+#[yeehaw_derive::impl_pane_basics_from(pane)]
 impl ListBox {
     const KIND: &'static str = "listbox";
 
@@ -169,12 +170,12 @@ impl ListBox {
         self
     }
 
-    pub fn with_width(self, init_ctx: &Context, width: DynVal) -> Self {
+    pub fn with_dyn_width(self, init_ctx: &Context, width: DynVal) -> Self {
         self.pane.set_dyn_width(width);
         self.inner.borrow().update_content(init_ctx);
         self
     }
-    pub fn with_height(self, init_ctx: &Context, height: DynVal) -> Self {
+    pub fn with_dyn_height(self, init_ctx: &Context, height: DynVal) -> Self {
         self.pane.set_dyn_height(height);
         self.inner.borrow().update_content(init_ctx);
         self

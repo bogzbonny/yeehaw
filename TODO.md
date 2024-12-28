@@ -44,16 +44,34 @@
            - slider, gradient size between colors (enforce static) 
            - slider with numbers-tb for gradient angle
            - slider, change speed, ms for time gradients
+     - colors, certain gradients with alpha do not blend properly probably
+       because the transparancy source is incorrect.
+
      ^ DONE
 
      - a big "DO NOT PRESS button" which instigates the blue screen of death
      - TABS Zone
        - neovim $EDITOR tab
        - image
-       - file_nav
-     - colors, certain gradients with alpha do not blend properly probably
-       because the transparancy source is incorrect.
      - make sure this looks good at different scales 
+
+01. unify all the action function names and with fns to just be "with_fn"
+    "set_fn"
+
+01. remove ctx from click functions thoughout elements... what a pain they are
+     - either that or make them a super basic context, with just the ev_sender
+       and hat... or not even if you need the context, you should just clone it
+       in.
+
+01. go through and remove / or make dyn element fns named with_width with_height
+
+01. replace receive_event_inner with just receive_event throughout
+
+------
+
+01. widgets example should be the same as showcase
+
+01. update rust version, update deps
 
 01. gif of showcase example - will need to record with non-VHS/asciicinema-tool
     to get mouse movements
@@ -72,20 +90,6 @@
 
 01. make sure duf can run it
 
-01. update rust version, update deps
-
-01. widgets example should be the same as showcase
-
-01. colors example should be the same as showcase
-
-01. go through and remove / or make dyn element fns named with_width with_height
-
-01. remove ctx from click functions thoughout elements... what a pain they are
-     - either that or make them a super basic context, with just the ev_sender
-       and hat... or not even if you need the context, you should just clone it
-       in.
-
-01. replace receive_event_inner with just receive_event throughout
 
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

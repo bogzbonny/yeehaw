@@ -37,6 +37,7 @@ pub struct DropdownList {
     pub dirty: Rc<RefCell<bool>>,
 }
 
+#[yeehaw_derive::impl_pane_basics_from(pane)]
 impl DropdownList {
     const KIND: &'static str = "dropdownlist";
 
@@ -130,7 +131,7 @@ impl DropdownList {
         self
     }
 
-    pub fn with_width(self, width: DynVal) -> Self {
+    pub fn with_dyn_width(self, width: DynVal) -> Self {
         *self.specified_width.borrow_mut() = Some(width);
         self.pane.set_dyn_width(self.calculate_dyn_width());
         self

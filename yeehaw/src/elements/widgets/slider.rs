@@ -25,6 +25,7 @@ pub struct Slider {
 
 pub type AdjustFn = Box<dyn FnMut(Context, &Slider) -> EventResponses>;
 
+#[yeehaw_derive::impl_pane_basics_from(pane)]
 impl Slider {
     const KIND: &'static str = "slider";
 
@@ -121,11 +122,6 @@ impl Slider {
 
     pub fn with_fn(self, adjust_fn: AdjustFn) -> Self {
         *self.adjust_fn.borrow_mut() = adjust_fn;
-        self
-    }
-
-    pub fn with_width(self, width: DynVal) -> Self {
-        self.pane.set_dyn_width(width);
         self
     }
 

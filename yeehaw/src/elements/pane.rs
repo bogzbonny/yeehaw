@@ -132,6 +132,16 @@ impl Pane {
         self
     }
 
+    pub fn with_end_x(self, x: DynVal) -> Pane {
+        self.loc.borrow_mut().l.set_end_x(x);
+        self
+    }
+
+    pub fn with_end_y(self, y: DynVal) -> Pane {
+        self.loc.borrow_mut().l.set_end_y(y);
+        self
+    }
+
     pub fn set_start_x<D: Into<DynVal>>(&self, x: D) {
         self.loc.borrow_mut().l.set_start_x(x.into());
     }

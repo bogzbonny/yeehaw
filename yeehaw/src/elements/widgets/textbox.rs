@@ -23,6 +23,7 @@ pub struct TextBox {
     pub line_number_tb: Rc<RefCell<Option<TextBoxInner>>>,
 }
 
+#[yeehaw_derive::impl_pane_basics_from(pane)]
 impl TextBox {
     const KIND: &'static str = "textbox";
     pub fn new<S: Into<String>>(init_ctx: &Context, text: S) -> Self {
@@ -344,18 +345,13 @@ impl TextBox {
         self
     }
 
-    pub fn with_width(self, width: DynVal) -> Self {
+    pub fn with_dyn_width(self, width: DynVal) -> Self {
         self.pane.set_dyn_width(width);
         self.set_dirty();
         self
     }
-    pub fn with_height(self, height: DynVal) -> Self {
-        self.pane.set_dyn_height(height);
-        self.set_dirty();
-        self
-    }
-    pub fn with_size(self, width: DynVal, height: DynVal) -> Self {
-        self.pane.set_dyn_width(width);
+
+    pub fn with_dyn_height(self, height: DynVal) -> Self {
         self.pane.set_dyn_height(height);
         self.set_dirty();
         self
