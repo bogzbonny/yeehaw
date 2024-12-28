@@ -1337,8 +1337,10 @@ impl BlendKind {
             / a_blend_perc) as u8;
         let b = ((c1.b as f64 * perc_c1 * c1_a_perc + c2.b as f64 * perc_c2 * c2_a_perc)
             / a_blend_perc) as u8;
+        let a = ((c1.a as f64 * perc_c1 * c1_a_perc + c2.a as f64 * perc_c2 * c2_a_perc)
+            / a_blend_perc) as u8;
 
-        let a = (a_blend_perc * 255.0) as u8;
+        //let a = (a_blend_perc * 255.0) as u8;
         Rgba::new_with_alpha(r, g, b, a)
     }
 
@@ -1348,6 +1350,7 @@ impl BlendKind {
         let c1_a_perc = c1.a as f64 / 255.0;
         let c2_a_perc = c2.a as f64 / 255.0;
         let a_blend_perc = c1_a_perc + c2_a_perc - (c1_a_perc * c2_a_perc);
+        //let a_blend_perc = (c1_a_perc + c2_a_perc) / 2.;
 
         let perc_c1 = 1. - perc_c2;
 

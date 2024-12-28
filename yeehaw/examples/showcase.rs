@@ -1577,7 +1577,8 @@ impl ColorsDemoState {
             .with_fg(fg)
             .with_fg_transp_src(FgTranspSrc::LowerBg);
         self.drawing_fg.set_style(fg_sty);
-        self.drawing_bg.set_bg(bg);
+        self.drawing_bg.set_bg(bg.clone());
+        self.drawing_bg.set_fg(bg);
     }
 }
 
