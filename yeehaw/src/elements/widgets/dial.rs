@@ -173,10 +173,12 @@ impl Dial {
         *self.pane.position.borrow()
     }
 
+    /// sets the position of the dial, force will force the dial to update even if the position is the same
+    /// which will trigger the select_fn
     #[must_use]
-    pub fn set_position(&self, ctx: &Context, pos: usize) -> EventResponses {
+    pub fn set_position(&self, ctx: &Context, pos: usize, force: bool) -> EventResponses {
         let start_pos = self.get_position();
-        if start_pos != pos {
+        if start_pos != pos || force {
             self.pane.set_position(pos);
             let label = self
                 .labels
@@ -193,8 +195,10 @@ impl Dial {
         EventResponses::default()
     }
 
+    /// sets the value of the dial, force will force the dial to update even if the position is the same
+    /// which will trigger the select_fn
     #[must_use]
-    pub fn set_value(&self, ctx: &Context, value: &str) -> EventResponses {
+    pub fn set_value(&self, ctx: &Context, value: &str, force: bool) -> EventResponses {
         let pos = self
             .labels
             .borrow()
@@ -202,7 +206,7 @@ impl Dial {
             .find(|(_, label)| label == value)
             .map(|(pos, _)| *pos)
             .unwrap_or(0);
-        self.set_position(ctx, pos)
+        self.set_position(ctx, pos, force)
     }
 }
 

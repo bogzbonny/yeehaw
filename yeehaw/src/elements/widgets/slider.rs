@@ -215,6 +215,9 @@ impl Element for Slider {
         if captured {
             return (true, resps);
         }
+        if self.pane.get_selectability() == Selectability::Unselectable {
+            return (false, resps);
+        }
         let sel = self.pane.get_selectability();
         match ev {
             Event::KeyCombo(ke) => {

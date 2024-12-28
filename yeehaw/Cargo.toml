@@ -15,6 +15,9 @@ license = "Apache-2.0"
 
 [dependencies]
 
+yeehaw_derive = { path = "../yeehaw_derive" }
+vt100_yh = { path = "../vt100_yh" }
+
 crossterm = {version = "^0.28.0", features = ["event-stream", "serde"]}
 futures = "^0.3.0"
 anyhow = "^1.0.0"
@@ -29,10 +32,8 @@ arboard = "^3.2.0"
 figlet-rs = "^0.1.5"
 dyn-clone = "^1.0.17"
 tempfile = "3"
-yeehaw_derive = { path = "../yeehaw_derive" }
 num-traits = "^0.2.0"
 rayon = "^1.10.0"
-
 portable-pty = { version = "0.8.1" }
 bytes = "^1.8.0"
 
@@ -42,4 +43,3 @@ image = { version = ">=0.24", default-features = false, features = ["jpeg"] }
 
 compact_str = "^0.8.0"
 
-vt100_yh = { version = "0.17.0", path = "../vt100_yh" }

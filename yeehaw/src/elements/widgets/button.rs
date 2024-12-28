@@ -351,6 +351,9 @@ impl Element for Button {
         if captured {
             return (true, resps);
         }
+        if self.pane.get_selectability() == Selectability::Unselectable {
+            return (false, resps);
+        }
         match ev {
             Event::KeyCombo(ke) => {
                 if self.pane.get_selectability() != Selectability::Selected || ke.is_empty() {

@@ -120,7 +120,7 @@ impl<N: Display + Clone + Copy + FromStr + PartialOrd + 'static> NumbersTextBox<
 
     // ---------------------------------------------------------
 
-    pub fn change_value(&self, mut new_value: N) {
+    pub fn set_value(&self, mut new_value: N) {
         // correct bounds on value
         if let Some(min) = *self.min_value.borrow() {
             new_value = num_traits::clamp_min(new_value, min);
@@ -149,20 +149,24 @@ impl<N: Display + Clone + Copy + FromStr + PartialOrd + 'static> NumbersTextBox<
         self.tb.set_cursor_pos(self.tb.get_text().chars().count());
     }
 
+    pub fn get_value(&self) -> N {
+        *self.value.borrow()
+    }
+
     pub fn update_value_from_tb(&self) {
         let value_str = self.tb.get_text();
         let value = value_str.parse::<N>();
         if let Ok(value) = value {
-            self.change_value(value);
+            self.set_value(value);
         } else {
             let old_value = *self.value.borrow();
-            self.change_value(old_value);
+            self.set_value(old_value);
         }
     }
 
     pub fn restore_value(&self) {
         let old_value = *self.value.borrow();
-        self.change_value(old_value);
+        self.set_value(old_value);
     }
 }
 
@@ -178,12 +182,12 @@ impl<N: Display + Clone + Copy + FromStr + PartialOrd + 'static> Element for Num
                 match true {
                     //_ if ke[0] == KB::KEY_UP => {
                     //    let old_value = *self.value.borrow();
-                    //    self.change_value(ctx, old_value + *self.button_increment.borrow());
+                    //    self.set_value(ctx, old_value + *self.button_increment.borrow());
                     //    (true, EventResponses::default())
                     //}
                     //_ if ke[0] == KB::KEY_DOWN => {
                     //    let old_value = *self.value.borrow();
-                    //    self.change_value(ctx, old_value - *self.button_increment.borrow());
+                    //    self.set_value(ctx, old_value - *self.button_increment.borrow());
                     //    (true, EventResponses::default())
                     //}
                     _ if ke[0] == KB::KEY_ENTER => {

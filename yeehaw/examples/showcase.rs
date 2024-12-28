@@ -446,7 +446,7 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
         .at(x.clone(), y.clone())
         .with_fn(Box::new(move |_, sl| {
             let p = sl.get_position();
-            ntb_.change_value(p);
+            ntb_.set_value(p);
             EventResponses::default()
         }));
     let slider_ = slider.clone();
@@ -477,7 +477,7 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
     let smile_label_ = smile_label.clone();
     let dial2_ = dial2.clone();
     dial1.set_fn(Box::new(move |ctx, _, pos, _| {
-        let _ = dial2_.set_position(&ctx, pos);
+        let _ = dial2_.set_position(&ctx, pos, false);
         match pos {
             2 => smile_label_.set_text(excit.to_string()),
             4 => smile_label_.set_text(sad.to_string()),
@@ -489,7 +489,7 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
     let smile_label_ = smile_label.clone();
     let dial1_ = dial1.clone();
     dial2.set_fn(Box::new(move |ctx, _, pos, _| {
-        let _ = dial1_.set_position(&ctx, pos);
+        let _ = dial1_.set_position(&ctx, pos, false);
         match pos {
             2 => smile_label_.set_text(excit.to_string()),
             4 => smile_label_.set_text(sad.to_string()),
@@ -620,7 +620,7 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
         .with_fn(Box::new(move |_, sl| {
             let p = sl.get_position();
             let p = (p * 255.) as usize;
-            ntb_.change_value(p);
+            ntb_.set_value(p);
             EventResponses::default()
         }));
     let y = DynVal::y_after(&r_slider, 0);
@@ -645,7 +645,7 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
         .with_fn(Box::new(move |_, sl| {
             let p = sl.get_position();
             let p = (p * 255.) as usize;
-            ntb_.change_value(p);
+            ntb_.set_value(p);
             EventResponses::default()
         }));
     let y = DynVal::y_after(&g_slider, 0);
@@ -670,7 +670,7 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
         .with_fn(Box::new(move |_, sl| {
             let p = sl.get_position();
             let p = (p * 255.) as usize;
-            ntb_.change_value(p);
+            ntb_.set_value(p);
             EventResponses::default()
         }));
     let y = DynVal::y_after(&b_slider, 0);
@@ -695,7 +695,7 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
         .with_fn(Box::new(move |_, sl| {
             let p = sl.get_position();
             let p = (p * 255.) as usize;
-            ntb_.change_value(p);
+            ntb_.set_value(p);
             EventResponses::default()
         }));
     let y = DynVal::y_after(&a_slider, 1);
@@ -709,7 +709,7 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
     let dd_x = x.plus(22.into());
     let max_gr_colors_dd = DropdownList::new(
         ctx,
-        vec!["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+        vec!["2", "3", "4", "5", "6", "7", "8", "9", "10"],
         Box::new(|_, _| EventResponses::default()),
     )
     .with_width(5.into())
@@ -723,8 +723,8 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
 
     let ntb_width = DynVal::new_fixed(8);
     let dist_ntb = NumbersTextBox::new(ctx, 50usize)
-        .with_min(0)
-        .with_max(100)
+        .with_min(1)
+        .with_max(20)
         .with_width(ntb_width)
         .at(x.clone(), y.clone());
     el.add_element(Box::new(dist_ntb.clone()));
@@ -738,8 +738,8 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
         .at(x_slider.clone(), y.clone())
         .with_fn(Box::new(move |_, sl| {
             let p = sl.get_position();
-            let p = (p * 100.) as usize;
-            ntb_.change_value(p);
+            let p = (p * 20.) as usize;
+            ntb_.set_value(p);
             EventResponses::default()
         }));
     let y = DynVal::y_after(&dist_slider, 2);
@@ -764,7 +764,7 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
         .with_fn(Box::new(move |_, sl| {
             let p = sl.get_position();
             let p = p * 360.;
-            ntb_.change_value(p);
+            ntb_.set_value(p);
             EventResponses::default()
         }));
     let y = DynVal::y_after(&angle_slider, 2);
@@ -772,8 +772,8 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
 
     let ntb_width = DynVal::new_fixed(8);
     let time_ntb = NumbersTextBox::new(ctx, 1000usize)
-        .with_min(0)
-        .with_max(5000)
+        .with_min(100)
+        .with_max(2000)
         .with_width(ntb_width)
         .at(x.clone(), y.clone());
     el.add_element(Box::new(time_ntb.clone()));
@@ -787,8 +787,8 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
         .at(x_slider.clone(), y.clone())
         .with_fn(Box::new(move |_, sl| {
             let p = sl.get_position();
-            let p = (p * 5000.) as usize;
-            ntb_.change_value(p);
+            let p = (p * 2000.) as usize;
+            ntb_.set_value(p);
             EventResponses::default()
         }));
     el.add_element(Box::new(time_slider.clone()));
@@ -849,6 +849,9 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
         g_ntb: g_ntb.clone(),
         b_ntb: b_ntb.clone(),
         a_ntb: a_ntb.clone(),
+        dist_slider: dist_slider.clone(),
+        angle_slider: angle_slider.clone(),
+        time_slider: time_slider.clone(),
     };
 
     let state_ = state.clone();
@@ -871,77 +874,90 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
 
     let state_ = state.clone();
     color_dd.set_fn(Box::new(move |_, _| {
+        if *state_.updating.borrow() {
+            return EventResponses::default();
+        }
         state_.update_for_color_dd_change();
-        state_.update_for_minor_changes();
         EventResponses::default()
     }));
 
-    let state_ = state.clone();
-    max_gr_colors_dd.set_fn(Box::new(move |_, _| {
-        state_.update_for_minor_changes();
+    let color_dd_ = color_dd.clone();
+    //let state_ = state.clone();
+    max_gr_colors_dd.set_fn(Box::new(move |ctx, value| {
+        let max = value.parse::<usize>().ok().unwrap_or(1);
+        let entries = (1..=max).map(|i| i.to_string()).collect::<Vec<String>>();
+        color_dd_.set_entries(entries);
+        let _ = color_dd_.set_selected(&ctx, 0);
         EventResponses::default()
     }));
 
     let state_ = state.clone();
     let dist_slider_ = dist_slider.clone();
+    let ctx_ = ctx.clone();
     dist_ntb.set_value_changed_hook(Box::new(move |v| {
-        let v = v as f64 / 100.;
+        let v = v as f64 / 20.;
         dist_slider_.set_position(v);
-        state_.update_for_minor_changes();
+        state_.update_for_minor_changes(&ctx_);
         EventResponses::default()
     }));
 
     let state_ = state.clone();
     let angle_slider_ = angle_slider.clone();
+    let ctx_ = ctx.clone();
     angle_ntb.set_value_changed_hook(Box::new(move |v| {
         let v = v / 360.;
         angle_slider_.set_position(v);
-        state_.update_for_minor_changes();
+        state_.update_for_minor_changes(&ctx_);
         EventResponses::default()
     }));
 
     let state_ = state.clone();
     let time_slider_ = time_slider.clone();
+    let ctx_ = ctx.clone();
     time_ntb.set_value_changed_hook(Box::new(move |v| {
-        let v = v as f64 / 5000.;
+        let v = v as f64 / 2000.;
         time_slider_.set_position(v);
-        state_.update_for_minor_changes();
+        state_.update_for_minor_changes(&ctx_);
         EventResponses::default()
     }));
 
     let state_ = state.clone();
     let r_slider_ = r_slider.clone();
+    let ctx_ = ctx.clone();
     r_ntb.set_value_changed_hook(Box::new(move |v| {
         let v = v as f64 / 255.;
         r_slider_.set_position(v);
-        state_.update_for_minor_changes();
+        state_.update_for_minor_changes(&ctx_);
         EventResponses::default()
     }));
 
     let state_ = state.clone();
     let g_slider_ = g_slider.clone();
+    let ctx_ = ctx.clone();
     g_ntb.set_value_changed_hook(Box::new(move |v| {
         let v = v as f64 / 255.;
         g_slider_.set_position(v);
-        state_.update_for_minor_changes();
+        state_.update_for_minor_changes(&ctx_);
         EventResponses::default()
     }));
 
     let state_ = state.clone();
     let b_slider_ = b_slider.clone();
+    let ctx_ = ctx.clone();
     b_ntb.set_value_changed_hook(Box::new(move |v| {
         let v = v as f64 / 255.;
         b_slider_.set_position(v);
-        state_.update_for_minor_changes();
+        state_.update_for_minor_changes(&ctx_);
         EventResponses::default()
     }));
 
     let state_ = state.clone();
     let a_slider_ = a_slider.clone();
+    let ctx_ = ctx.clone();
     a_ntb.set_value_changed_hook(Box::new(move |v| {
         let v = v as f64 / 255.;
         a_slider_.set_position(v);
-        state_.update_for_minor_changes();
+        state_.update_for_minor_changes(&ctx_);
         EventResponses::default()
     }));
 
@@ -972,6 +988,10 @@ pub struct ColorsDemoState {
     pub g_ntb: NumbersTextBox<usize>,
     pub b_ntb: NumbersTextBox<usize>,
     pub a_ntb: NumbersTextBox<usize>,
+
+    pub dist_slider: Slider,
+    pub angle_slider: Slider,
+    pub time_slider: Slider,
 }
 
 #[derive(Default)]
@@ -1017,7 +1037,7 @@ impl ColorsDemoState {
             ColorsDemoColorKind::Tiles => "Tiles",
         };
         // setting the dial with trigger update_for_color_dial_change
-        let _ = self.dial_color_kind.set_value(ctx, v);
+        let _ = self.dial_color_kind.set_value(ctx, v, true);
     }
 
     /// updates all the sliders/tbs for a dial change
@@ -1030,49 +1050,177 @@ impl ColorsDemoState {
                 "Solid" => {
                     debug!("Solid hit");
                     demo_color.kind = ColorsDemoColorKind::Solid;
-                    self.color_dd.set_selected(0);
+
+                    self.angle_ntb.tb.pane.disable();
+                    self.angle_slider.pane.disable();
+                    self.dist_ntb.tb.pane.disable();
+                    self.dist_slider.pane.disable();
+                    self.time_ntb.tb.pane.disable();
+                    self.time_slider.pane.disable();
                     self.color_dd.pane.disable();
                     self.max_gr_colors_dd.pane.disable();
-                    self.max_gr_colors_dd.set_selected(0);
+
+                    let _ = self.color_dd.set_selected(ctx, 0);
+                    let _ = self.max_gr_colors_dd.set_selected(ctx, 0);
                     self.update_for_color_dd_change_from_demo_color("Solid", &demo_color);
                 }
                 "Time-Gradient" => {
                     demo_color.kind = ColorsDemoColorKind::TimeGradient;
-                    self.max_gr_colors_dd.pane.enable();
-                    let max = demo_color.time_gradient_state.0.len(ctx) - 1;
-                    self.color_dd.pane.enable();
-                    let entries = (1..=max).map(|i| i.to_string()).collect::<Vec<String>>();
-                    self.color_dd.set_entries(entries);
-                    self.color_dd.set_selected(0);
-                    self.max_gr_colors_dd.set_selected(max - 1);
+
                     self.angle_ntb.tb.pane.disable();
+                    self.angle_slider.pane.disable();
                     self.dist_ntb.tb.pane.disable();
+                    self.dist_slider.pane.disable();
+
+                    self.max_gr_colors_dd.pane.enable();
+                    self.color_dd.pane.enable();
+                    self.time_ntb.tb.pane.enable();
+                    self.time_slider.pane.enable();
+
+                    let max = demo_color.time_gradient_state.0.len(ctx) - 1;
+                    let _ = self
+                        .max_gr_colors_dd
+                        .set_selected_str(ctx, &max.to_string());
                     self.update_for_color_dd_change_from_demo_color("Time-Gradient", &demo_color);
+
+                    // update the time
+                    let time = demo_color.time_gradient_state.0.get_grad(ctx)[1]
+                        .0
+                        .as_millis() as usize;
+                    self.time_ntb.set_value(time);
                 }
                 "Radial-Gradient" => {
                     demo_color.kind = ColorsDemoColorKind::RadialGradient;
+                    self.angle_ntb.tb.pane.disable();
+                    self.angle_slider.pane.disable();
+                    self.time_ntb.tb.pane.disable();
+                    self.time_slider.pane.disable();
+
+                    self.dist_ntb.tb.pane.enable();
+                    self.dist_slider.pane.enable();
                     self.color_dd.pane.enable();
                     self.max_gr_colors_dd.pane.enable();
+
+                    let max = demo_color.radial_gradient_state.0.len(ctx);
+                    let _ = self
+                        .max_gr_colors_dd
+                        .set_selected_str(ctx, &max.to_string());
+                    self.update_for_color_dd_change_from_demo_color("Radial-Gradient", &demo_color);
+
+                    // update the dist
+                    let dist = demo_color.radial_gradient_state.0.get_grad(ctx)[1].0.fixed;
+                    self.dist_ntb.set_value(dist as usize);
                 }
                 "Linear-Gradient" => {
                     demo_color.kind = ColorsDemoColorKind::LinearGradient;
+
+                    self.time_ntb.tb.pane.disable();
+                    self.time_slider.pane.disable();
+
+                    self.angle_ntb.tb.pane.enable();
+                    self.angle_slider.pane.enable();
+                    self.dist_ntb.tb.pane.enable();
+                    self.dist_slider.pane.enable();
                     self.color_dd.pane.enable();
                     self.max_gr_colors_dd.pane.enable();
+
+                    let max = demo_color.linear_gradient_state.0.len(ctx);
+                    let _ = self
+                        .max_gr_colors_dd
+                        .set_selected_str(ctx, &max.to_string());
+                    self.update_for_color_dd_change_from_demo_color("Linear-Gradient", &demo_color);
+
+                    // update the dist
+                    let dist = demo_color.linear_gradient_state.0.get_grad(ctx)[1].0.fixed;
+                    self.dist_ntb.set_value(dist as usize);
+
+                    // update the angle
+                    let angle = demo_color.linear_gradient_state.0.angle_deg;
+                    self.angle_ntb.set_value(angle);
                 }
                 "Radial-Time" => {
                     demo_color.kind = ColorsDemoColorKind::RadialTime;
+
+                    self.angle_ntb.tb.pane.disable();
+                    self.angle_slider.pane.disable();
+
+                    self.time_ntb.tb.pane.enable();
+                    self.time_slider.pane.enable();
+                    self.dist_ntb.tb.pane.enable();
+                    self.dist_slider.pane.enable();
                     self.color_dd.pane.enable();
                     self.max_gr_colors_dd.pane.enable();
+
+                    let max = demo_color.radial_time_state.0.len(ctx);
+                    let _ = self
+                        .max_gr_colors_dd
+                        .set_selected_str(ctx, &max.to_string());
+                    self.update_for_color_dd_change_from_demo_color("Radial-Time", &demo_color);
+
+                    // update the time
+                    let grad = demo_color.radial_time_state.0.get_grad(ctx);
+                    let Color::TimeGradient(ref tg) = grad[1].1 else {
+                        return;
+                    };
+                    let time = tg.get_grad(ctx)[1].0.as_millis() as usize;
+                    self.time_ntb.set_value(time);
+
+                    // update the dist
+                    let dist = grad[1].0.fixed;
+                    self.dist_ntb.set_value(dist as usize);
                 }
                 "Linear-Time" => {
                     demo_color.kind = ColorsDemoColorKind::LinearTime;
+                    self.angle_ntb.tb.pane.enable();
+                    self.angle_slider.pane.enable();
+                    self.time_ntb.tb.pane.enable();
+                    self.time_slider.pane.enable();
+                    self.dist_ntb.tb.pane.enable();
+                    self.dist_slider.pane.enable();
                     self.color_dd.pane.enable();
                     self.max_gr_colors_dd.pane.enable();
+
+                    let max = demo_color.linear_time_state.0.len(ctx);
+                    let _ = self
+                        .max_gr_colors_dd
+                        .set_selected_str(ctx, &max.to_string());
+                    self.update_for_color_dd_change_from_demo_color("Linear-Time", &demo_color);
+
+                    // update the time
+                    let grad = demo_color.linear_time_state.0.get_grad(ctx);
+                    let Color::TimeGradient(ref tg) = grad[1].1 else {
+                        return;
+                    };
+                    let time = tg.get_grad(ctx)[1].0.as_millis() as usize;
+                    self.time_ntb.set_value(time);
+
+                    // update the dist
+                    let dist = grad[1].0.fixed;
+                    self.dist_ntb.set_value(dist as usize);
+
+                    // update the angle
+                    let angle = demo_color.linear_gradient_state.0.angle_deg;
+                    self.angle_ntb.set_value(angle);
                 }
                 "Tiles" => {
                     demo_color.kind = ColorsDemoColorKind::Tiles;
-                    self.color_dd.pane.disable();
+                    self.color_dd.pane.enable();
+                    self.dist_ntb.tb.pane.enable();
+                    self.dist_slider.pane.enable();
+
                     self.max_gr_colors_dd.pane.disable();
+                    self.angle_ntb.tb.pane.disable();
+                    self.angle_slider.pane.disable();
+                    self.time_ntb.tb.pane.disable();
+                    self.time_slider.pane.disable();
+
+                    // update the dist
+                    let pat = demo_color.tiles_state.0.get_pattern(ctx);
+                    let dist = pat[1].len() / 2;
+                    self.dist_ntb.set_value(dist);
+
+                    let _ = self.max_gr_colors_dd.set_selected_str(ctx, "2");
+                    self.update_for_color_dd_change_from_demo_color("Tiles", &demo_color);
                 }
                 _ => unreachable!(),
             }
@@ -1140,14 +1288,177 @@ impl ColorsDemoState {
         let Color::Rgba(rgba) = c else {
             return;
         };
-        self.r_ntb.change_value(rgba.r as usize);
-        self.g_ntb.change_value(rgba.g as usize);
-        self.b_ntb.change_value(rgba.b as usize);
-        self.a_ntb.change_value(rgba.a as usize);
+        let og_updating = self.updating.replace(true);
+        self.r_ntb.set_value(rgba.r as usize);
+        self.g_ntb.set_value(rgba.g as usize);
+        self.b_ntb.set_value(rgba.b as usize);
+        self.a_ntb.set_value(rgba.a as usize);
+        self.updating.replace(og_updating);
     }
 
     /// updates for any smaller-changes (sliders/tbs)
-    pub fn update_for_minor_changes(&self) {
+    pub fn update_for_minor_changes(&self, ctx: &Context) {
+        if *self.updating.borrow() {
+            return;
+        }
+
+        {
+            let mut demo_color =
+                if self.toggle.is_left() { self.fg.borrow_mut() } else { self.bg.borrow_mut() };
+            let r = self.r_ntb.get_value();
+            let g = self.g_ntb.get_value();
+            let b = self.b_ntb.get_value();
+            let a = self.a_ntb.get_value();
+            match self.dial_color_kind.get_value().as_str() {
+                "Solid" => {
+                    demo_color.solid_state =
+                        Color::new_with_alpha(r as u8, g as u8, b as u8, a as u8);
+                }
+                "Time-Gradient" => {
+                    let dd_i = self.color_dd.get_selected();
+                    let colors = &mut demo_color.time_gradient_state.1;
+                    if dd_i >= colors.len() {
+                        colors.resize(dd_i + 1, Color::new(0, 0, 0));
+                    }
+                    colors[dd_i] = Color::new_with_alpha(r as u8, g as u8, b as u8, a as u8);
+
+                    let time = self.time_ntb.get_value();
+                    let time = Duration::from_millis(time as u64);
+
+                    let max_i = self.max_gr_colors_dd.get_selected();
+                    let trunc_colors = colors
+                        .iter()
+                        .take(max_i + 1)
+                        .cloned()
+                        .collect::<Vec<Color>>();
+
+                    let gr = TimeGradient::new_loop(ctx, time, trunc_colors);
+                    demo_color.time_gradient_state.0 = gr;
+                }
+                "Radial-Gradient" => {
+                    let dd_i = self.color_dd.get_selected();
+                    let colors = &mut demo_color.radial_gradient_state.1;
+                    if dd_i >= colors.len() {
+                        colors.resize(dd_i + 1, Color::new(0, 0, 0));
+                    }
+                    colors[dd_i] = Color::new_with_alpha(r as u8, g as u8, b as u8, a as u8);
+
+                    let max_i = self.max_gr_colors_dd.get_selected();
+                    let trunc_colors = colors
+                        .iter()
+                        .take(max_i + 1)
+                        .cloned()
+                        .collect::<Vec<Color>>();
+
+                    let dist = self.dist_ntb.get_value();
+                    let gr = RadialGradient::new_basic_circle(
+                        ctx,
+                        (0.5.into(), 0.5.into()),
+                        dist.into(),
+                        trunc_colors,
+                    );
+                    demo_color.radial_gradient_state.0 = gr;
+                }
+                "Linear-Gradient" => {
+                    let dd_i = self.color_dd.get_selected();
+                    let colors = &mut demo_color.linear_gradient_state.1;
+                    if dd_i >= colors.len() {
+                        colors.resize(dd_i + 1, Color::new(0, 0, 0));
+                    }
+                    colors[dd_i] = Color::new_with_alpha(r as u8, g as u8, b as u8, a as u8);
+
+                    let max_i = self.max_gr_colors_dd.get_selected();
+                    let trunc_colors = colors
+                        .iter()
+                        .take(max_i + 1)
+                        .cloned()
+                        .collect::<Vec<Color>>();
+
+                    let dist = self.dist_ntb.get_value();
+                    let angle = self.angle_ntb.get_value();
+                    let gr = Gradient::new_grad_repeater(ctx, trunc_colors, dist, angle);
+                    demo_color.linear_gradient_state.0 = gr;
+                }
+                "Radial-Time" => {
+                    let dd_i = self.color_dd.get_selected();
+                    let colors = &mut demo_color.radial_time_state.2;
+                    if dd_i >= colors.len() {
+                        colors.resize(dd_i + 1, Color::new(0, 0, 0));
+                    }
+                    colors[dd_i] = Color::new_with_alpha(r as u8, g as u8, b as u8, a as u8);
+
+                    let max_i = self.max_gr_colors_dd.get_selected();
+                    let trunc_colors = colors
+                        .iter()
+                        .take(max_i + 1)
+                        .cloned()
+                        .collect::<Vec<Color>>();
+
+                    let dist = self.dist_ntb.get_value();
+
+                    let time = self.time_ntb.get_value();
+                    let time = Duration::from_millis(time as u64);
+
+                    let radial_time_gr = RadialGradient::new_basic_circle_time_loop(
+                        ctx,
+                        (0.5.into(), 0.5.into()),
+                        time,
+                        dist.into(),
+                        trunc_colors,
+                    );
+                    demo_color.radial_time_state.0 = radial_time_gr.0;
+                    demo_color.radial_time_state.1 = radial_time_gr.1;
+                }
+                "Linear-Time" => {
+                    let dd_i = self.color_dd.get_selected();
+                    let colors = &mut demo_color.linear_time_state.2;
+                    if dd_i >= colors.len() {
+                        colors.resize(dd_i + 1, Color::new(0, 0, 0));
+                    }
+                    colors[dd_i] = Color::new_with_alpha(r as u8, g as u8, b as u8, a as u8);
+
+                    let max_i = self.max_gr_colors_dd.get_selected();
+                    let trunc_colors = colors
+                        .iter()
+                        .take(max_i + 1)
+                        .cloned()
+                        .collect::<Vec<Color>>();
+
+                    let dist = self.dist_ntb.get_value();
+
+                    let time = self.time_ntb.get_value();
+                    let time = Duration::from_millis(time as u64);
+
+                    let angle = self.angle_ntb.get_value();
+
+                    let linear_time_gr =
+                        Gradient::new_grad_repeater_time_loop(ctx, trunc_colors, dist, time, angle);
+                    demo_color.linear_time_state.0 = linear_time_gr.0;
+                    demo_color.linear_time_state.1 = linear_time_gr.1;
+                }
+                "Tiles" => {
+                    let dd_i = self.color_dd.get_selected();
+                    let color = Color::new_with_alpha(r as u8, g as u8, b as u8, a as u8);
+                    if dd_i == 0 {
+                        demo_color.tiles_state.1 = color;
+                    } else {
+                        demo_color.tiles_state.2 = color;
+                    }
+
+                    let dist = self.dist_ntb.get_value();
+
+                    let tiles = Pattern::new_sqr_tiles(
+                        ctx,
+                        dist,
+                        demo_color.tiles_state.1.clone(),
+                        demo_color.tiles_state.2.clone(),
+                    );
+                    demo_color.tiles_state.0 = tiles;
+                }
+
+                _ => (),
+            };
+        }
         self.update_drawing();
     }
 
@@ -1280,7 +1591,10 @@ impl ColorsDemoState {
             _ => "",
         };
         self.drawing_fg.set_text(text);
-        self.drawing_fg.set_style(Style::transparent().with_fg(fg));
+        let fg_sty = Style::transparent()
+            .with_fg(fg)
+            .with_fg_transp_src(FgTranspSrc::LowerBg);
+        self.drawing_fg.set_style(fg_sty);
         self.drawing_bg.set_bg(bg);
     }
 }
@@ -1306,7 +1620,8 @@ impl ColorsDemoColor {
             Color::ORANGE,
             Color::RED,
         ];
-        let linear_gr = Gradient::y_grad_rainbow(ctx, 5);
+        let linear_gr = Gradient::new_y_grad_repeater(ctx, linear_gr_colors.clone(), 5);
+
         let radial_time_colors = vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK];
         let radial_time_gr = RadialGradient::new_basic_circle_time_loop(
             ctx,
@@ -1324,7 +1639,12 @@ impl ColorsDemoColor {
             Color::ORANGE,
             Color::RED,
         ];
-        let linear_time_gr = Gradient::y_grad_rainbow_time_loop(ctx, 5, Duration::from_secs(1));
+        let linear_time_gr = Gradient::new_y_grad_repeater_time_loop(
+            ctx,
+            linear_gr_colors.clone(),
+            5,
+            Duration::from_secs(1),
+        );
         let tiles_colors = (Color::WHITE, Color::BLUE);
         let tiles = Pattern::new_sqr_tiles(ctx, 5, tiles_colors.0.clone(), tiles_colors.1.clone());
         ColorsDemoColor {
@@ -1359,7 +1679,7 @@ impl ColorsDemoColor {
             Color::ORANGE,
             Color::RED,
         ];
-        let linear_gr = Gradient::x_grad_rainbow(ctx, 5);
+        let linear_gr = Gradient::new_x_grad_repeater(ctx, linear_gr_colors.clone(), 5);
         let radial_time_colors = vec![Color::MIDNIGHT_BLUE, Color::WHITE, Color::PINK];
         let radial_time_gr = RadialGradient::new_basic_circle_time_loop(
             ctx,
@@ -1377,7 +1697,12 @@ impl ColorsDemoColor {
             Color::ORANGE,
             Color::RED,
         ];
-        let linear_time_gr = Gradient::x_grad_rainbow_time_loop(ctx, 5, Duration::from_secs(1));
+        let linear_time_gr = Gradient::new_x_grad_repeater_time_loop(
+            ctx,
+            linear_gr_colors.clone(),
+            5,
+            Duration::from_secs(1),
+        );
         let tiles_colors = (Color::WHITE, Color::BLUE);
         let tiles = Pattern::new_sqr_tiles(ctx, 5, tiles_colors.0.clone(), tiles_colors.1.clone());
         ColorsDemoColor {

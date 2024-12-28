@@ -168,8 +168,27 @@ impl DropdownList {
         self
     }
 
-    pub fn set_selected(&self, idx: usize) {
+    #[must_use]
+    pub fn set_selected(&self, ctx: &Context, idx: usize) -> EventResponses {
         *self.selected.borrow_mut() = idx;
+        (self.selection_made_fn.borrow_mut())(
+            ctx.clone(),
+            self.entries.borrow()[*self.selected.borrow()].clone(),
+        )
+    }
+
+    #[must_use]
+    pub fn set_selected_str(&self, ctx: &Context, s: &str) -> EventResponses {
+        let idx = self.entries.borrow().iter().position(|r| r == s);
+        if let Some(idx) = idx {
+            *self.selected.borrow_mut() = idx;
+            (self.selection_made_fn.borrow_mut())(
+                ctx.clone(),
+                self.entries.borrow()[*self.selected.borrow()].clone(),
+            )
+        } else {
+            EventResponses::default()
+        }
     }
 
     pub fn get_selected(&self) -> usize {

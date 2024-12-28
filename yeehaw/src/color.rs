@@ -514,19 +514,18 @@ impl Gradient {
     }
 
     /// length is the number of characters per color gradient
-    pub fn new_x_grad_repeater(ctx: &Context, mut colors: Vec<Color>, length: usize) -> Self {
-        if colors.is_empty() {
-            return Gradient::default();
-        }
-        let mut v = Vec::with_capacity(colors.len() + 1);
-        for (i, c) in colors.drain(..).enumerate() {
-            v.push((DynVal::new_fixed((i * length) as i32), c));
-        }
-        v.push((DynVal::new_fixed((v.len() * length) as i32), v[0].1.clone()));
-        Self::new(ctx, v, 0.)
+    pub fn new_x_grad_repeater(ctx: &Context, colors: Vec<Color>, length: usize) -> Self {
+        Self::new_grad_repeater(ctx, colors, length, 0.)
     }
 
-    pub fn new_y_grad_repeater(ctx: &Context, mut colors: Vec<Color>, length: usize) -> Self {
+    pub fn new_y_grad_repeater(ctx: &Context, colors: Vec<Color>, length: usize) -> Self {
+        Self::new_grad_repeater(ctx, colors, length, 90.)
+    }
+
+    /// length is the number of characters per color gradient
+    pub fn new_grad_repeater(
+        ctx: &Context, mut colors: Vec<Color>, length: usize, angle: f64,
+    ) -> Self {
         if colors.is_empty() {
             return Gradient::default();
         }
@@ -535,33 +534,23 @@ impl Gradient {
             v.push((DynVal::new_fixed((i * length) as i32), c));
         }
         v.push((DynVal::new_fixed((v.len() * length) as i32), v[0].1.clone()));
-        Self::new(ctx, v, 90.)
+        Self::new(ctx, v, angle)
     }
 
     pub fn new_x_grad_repeater_time_loop(
         ctx: &Context, colors: Vec<Color>, length: usize, each_dur: Duration,
     ) -> (Self, Vec<TimeGradient>) {
-        let mut out_tgs = Vec::with_capacity(colors.len());
-        let mut time_colors = Vec::with_capacity(colors.len());
-        for i in 0..colors.len() {
-            let rotated_c = colors
-                .clone()
-                .iter()
-                .cycle()
-                .skip(i)
-                .take(colors.len())
-                .cloned()
-                .collect();
-            let tc = TimeGradient::new_loop(ctx, each_dur, rotated_c);
-            out_tgs.push(tc.clone());
-            time_colors.push(tc.into())
-        }
-
-        (Self::new_x_grad_repeater(ctx, time_colors, length), out_tgs)
+        Self::new_grad_repeater_time_loop(ctx, colors, length, each_dur, 0.)
     }
 
     pub fn new_y_grad_repeater_time_loop(
         ctx: &Context, colors: Vec<Color>, length: usize, each_dur: Duration,
+    ) -> (Self, Vec<TimeGradient>) {
+        Self::new_grad_repeater_time_loop(ctx, colors, length, each_dur, 90.)
+    }
+
+    pub fn new_grad_repeater_time_loop(
+        ctx: &Context, colors: Vec<Color>, length: usize, each_dur: Duration, angle: f64,
     ) -> (Self, Vec<TimeGradient>) {
         let mut out_tgs = Vec::with_capacity(colors.len());
         let mut time_colors = Vec::with_capacity(colors.len());
@@ -579,7 +568,10 @@ impl Gradient {
             time_colors.push(tc.into())
         }
 
-        (Self::new_y_grad_repeater(ctx, time_colors, length), out_tgs)
+        (
+            Self::new_grad_repeater(ctx, time_colors, length, angle),
+            out_tgs,
+        )
     }
 
     pub fn x_grad_rainbow(ctx: &Context, length: usize) -> Self {
@@ -674,6 +666,24 @@ impl Gradient {
         let cctx = ctx.get_color_context();
         self.to_color(&cctx, x, y)
             .to_crossterm_color(ctx, prev, x, y)
+    }
+
+    pub fn len(&self, ctx: &Context) -> usize {
+        let grs = ctx.color_store.pos_gradients.borrow();
+        let grad = grs.get(self.gradient_id);
+        let Some(grad) = grad else {
+            return 0;
+        };
+        grad.len()
+    }
+
+    pub fn get_grad(&self, ctx: &Context) -> Vec<(DynVal, Color)> {
+        let grs = ctx.color_store.pos_gradients.borrow();
+        let grad = grs.get(self.gradient_id);
+        let Some(grad) = grad else {
+            return vec![];
+        };
+        grad.clone()
     }
 
     pub fn to_color(&self, cctx: &ColorContext, x: u16, y: u16) -> Color {
@@ -907,6 +917,24 @@ impl RadialGradient {
         )
     }
 
+    pub fn len(&self, ctx: &Context) -> usize {
+        let grs = ctx.color_store.pos_gradients.borrow();
+        let grad = grs.get(self.gradient_id);
+        let Some(grad) = grad else {
+            return 0;
+        };
+        grad.len()
+    }
+
+    pub fn get_grad(&self, ctx: &Context) -> Vec<(DynVal, Color)> {
+        let grs = ctx.color_store.pos_gradients.borrow();
+        let grad = grs.get(self.gradient_id);
+        let Some(grad) = grad else {
+            return vec![];
+        };
+        grad.clone()
+    }
+
     fn dist_from_center(
         x: f64, y: f64, center_x: f64, center_y: f64, skew_x: f64, skew_y: f64,
     ) -> f64 {
@@ -1037,14 +1065,14 @@ impl RadialGradient {
 pub struct TimeGradient {
     /// The total time duration of the gradient
     pub total_dur: Duration,
-    //pub points: Vec<(Duration, Color)>,
+    //pub grad: Vec<(Duration, Color)>,
     pub gradient_id: usize,
 }
 
 impl TimeGradient {
-    pub fn new(ctx: &Context, total_dur: Duration, points: Vec<(Duration, Color)>) -> Self {
+    pub fn new(ctx: &Context, total_dur: Duration, grad: Vec<(Duration, Color)>) -> Self {
         let cctx = ctx.get_color_context();
-        let id = cctx.store.add_time_gradient(points.clone());
+        let id = cctx.store.add_time_gradient(grad.clone());
         TimeGradient {
             total_dur,
             gradient_id: id,
@@ -1061,30 +1089,39 @@ impl TimeGradient {
             return Self::new(ctx, each_dur, vec![(each_dur, colors[0].clone())]);
         }
         let total_dur = each_dur * colors.len() as u32;
-        let mut points = vec![];
+        let mut grad = vec![];
         for (i, c) in colors.iter().enumerate() {
-            points.push((each_dur * i as u32, c.clone()));
+            grad.push((each_dur * i as u32, c.clone()));
         }
-        points.push((total_dur, colors[0].clone()));
-        Self::new(ctx, total_dur, points)
+        grad.push((total_dur, colors[0].clone()));
+        Self::new(ctx, total_dur, grad)
     }
 
     pub fn len(&self, ctx: &Context) -> usize {
         let tgs = ctx.color_store.time_gradients.borrow();
-        let points = tgs.get(self.gradient_id);
-        let Some(points) = points else {
+        let grad = tgs.get(self.gradient_id);
+        let Some(grad) = grad else {
             return 0;
         };
-        points.len()
+        grad.len()
+    }
+
+    pub fn get_grad(&self, ctx: &Context) -> Vec<(Duration, Color)> {
+        let tgs = ctx.color_store.time_gradients.borrow();
+        let grad = tgs.get(self.gradient_id);
+        let Some(grad) = grad else {
+            return vec![];
+        };
+        grad.clone()
     }
 
     pub fn to_color(&self, cctx: &ColorContext, x: u16, y: u16) -> Color {
         let tgs = cctx.store.time_gradients.borrow();
-        let points = tgs.get(self.gradient_id);
-        let Some(points) = points else {
+        let grad = tgs.get(self.gradient_id);
+        let Some(grad) = grad else {
             return Color::TRANSPARENT;
         };
-        if points.is_empty() {
+        if grad.is_empty() {
             return Color::TRANSPARENT;
         }
 
@@ -1097,7 +1134,7 @@ impl TimeGradient {
         let mut end_clr: Option<Color> = None;
         let mut start_time: Option<Duration> = None;
         let mut end_time: Option<Duration> = None;
-        for ((t1, c1), (t2, c2)) in points.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
+        for ((t1, c1), (t2, c2)) in grad.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
             if (t1 <= d) && (d < t2) {
                 start_clr = Some(c1.clone());
                 end_clr = Some(c2.clone());
@@ -1106,10 +1143,10 @@ impl TimeGradient {
                 break;
             }
         }
-        let start_clr = start_clr.unwrap_or_else(|| points[0].1.clone());
-        let end_clr = end_clr.unwrap_or_else(|| points[points.len() - 1].1.clone());
-        let start_time = start_time.unwrap_or_else(|| points[0].0);
-        let end_time = end_time.unwrap_or_else(|| points[points.len() - 1].0);
+        let start_clr = start_clr.unwrap_or_else(|| grad[0].1.clone());
+        let end_clr = end_clr.unwrap_or_else(|| grad[grad.len() - 1].1.clone());
+        let start_time = start_time.unwrap_or_else(|| grad[0].0);
+        let end_time = end_time.unwrap_or_else(|| grad[grad.len() - 1].0);
         let percent = (d - start_time).as_secs_f64() / (end_time - start_time).as_secs_f64();
         start_clr.blend(cctx, x, y, end_clr, percent, BlendKind::Blend1)
     }
@@ -1199,6 +1236,15 @@ impl Pattern {
     pub fn add_to_offset(&mut self, x: i32, y: i32) {
         self.offset.0 += x;
         self.offset.1 += y;
+    }
+
+    pub fn get_pattern(&self, ctx: &Context) -> Vec<Vec<Color>> {
+        let patterns = ctx.color_store.patterns.borrow();
+        let pattern = patterns.get(self.pattern_id);
+        let Some(pattern) = pattern else {
+            return vec![];
+        };
+        pattern.clone()
     }
 
     // get the color at the given x, y on the pattern, looping once the end is reached
