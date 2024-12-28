@@ -32,13 +32,6 @@
            - no labels for the eyes
            - make them lock together, and change the mouth based on their 
              position
-     ^ DONE
-
-     - a big "DO NOT PRESS button" which instigates the blue screen of death
-     - TABS Zone
-       - neovim $EDITOR tab
-       - image
-       - file_nav
        - gradient
          - a dial with a few choice fg ascii arts 
            - none, butterfly, spiral, saturn, rust logo, chompy
@@ -47,13 +40,20 @@
              linear gradient. radial-time, linear-time
            - some sliders: 1 for each color (greyed out when colors disabled)
              maybe with an RGB tb for css color input
-
            - dropdown, number of colors (greyed out for solid-color kind)
-
            - slider, gradient size between colors (enforce static) 
            - slider with numbers-tb for gradient angle
-
            - slider, change speed, ms for time gradients
+     ^ DONE
+
+     - a big "DO NOT PRESS button" which instigates the blue screen of death
+     - TABS Zone
+       - neovim $EDITOR tab
+       - image
+       - file_nav
+     - colors, certain gradients with alpha do not blend properly probably
+       because the transparancy source is incorrect.
+     - make sure this looks good at different scales 
 
 01. gif of showcase example - will need to record with non-VHS/asciicinema-tool
     to get mouse movements
