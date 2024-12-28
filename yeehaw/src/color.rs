@@ -191,7 +191,6 @@ impl Color {
     /// blends two colors together with the given percentage of the other color
     pub fn blend(
         &self, cctx: &ColorContext, x: u16, y: u16, other: Color, percent_other: f64,
-        blend_kind: BlendKind,
     ) -> Color {
         match self {
             Color::ANSI(a) => {
@@ -199,7 +198,7 @@ impl Color {
                     return other.clone();
                 }
                 let c = crossterm_to_rgb(*a);
-                c.blend(cctx, x, y, other, percent_other, blend_kind)
+                c.blend(cctx, x, y, other, percent_other)
             }
             Color::Rgba(c) => match other {
                 Color::ANSI(a) => {
@@ -207,43 +206,41 @@ impl Color {
                         return self.clone();
                     }
                     let oc = crossterm_to_rgb(a);
-                    self.blend(cctx, x, y, oc, percent_other, blend_kind)
+                    self.blend(cctx, x, y, oc, percent_other)
                 }
-                Color::Rgba(oc) => Color::Rgba(blend_kind.blend(*c, oc, percent_other)),
+                Color::Rgba(oc) => Color::Rgba(blend(*c, oc, percent_other)),
                 Color::Gradient(gr) => {
                     let gr = gr.to_color(cctx, x, y);
-                    self.clone()
-                        .blend(cctx, x, y, gr, percent_other, blend_kind)
+                    self.clone().blend(cctx, x, y, gr, percent_other)
                 }
                 Color::TimeGradient(g) => {
                     let g = g.to_color(cctx, x, y);
-                    self.clone().blend(cctx, x, y, g, percent_other, blend_kind)
+                    self.clone().blend(cctx, x, y, g, percent_other)
                 }
                 Color::RadialGradient(rg) => {
                     let rg = rg.to_color(cctx, x, y);
-                    self.clone()
-                        .blend(cctx, x, y, rg, percent_other, blend_kind)
+                    self.clone().blend(cctx, x, y, rg, percent_other)
                 }
                 Color::Pattern(p) => {
                     let p = p.to_color(cctx, x, y);
-                    self.clone().blend(cctx, x, y, p, percent_other, blend_kind)
+                    self.clone().blend(cctx, x, y, p, percent_other)
                 }
             },
             Color::Gradient(gr) => {
                 let gr = gr.to_color(cctx, x, y);
-                gr.blend(cctx, x, y, other, percent_other, blend_kind)
+                gr.blend(cctx, x, y, other, percent_other)
             }
             Color::TimeGradient(gr) => {
                 let gr = gr.to_color(cctx, x, y);
-                gr.blend(cctx, x, y, other, percent_other, blend_kind)
+                gr.blend(cctx, x, y, other, percent_other)
             }
             Color::RadialGradient(gr) => {
                 let gr = gr.to_color(cctx, x, y);
-                gr.blend(cctx, x, y, other, percent_other, blend_kind)
+                gr.blend(cctx, x, y, other, percent_other)
             }
             Color::Pattern(p) => {
                 let p = p.to_color(cctx, x, y);
-                p.blend(cctx, x, y, other, percent_other, blend_kind)
+                p.blend(cctx, x, y, other, percent_other)
             }
         }
     }
@@ -359,7 +356,6 @@ impl Color {
         }
     }
 
-    /// to color with the given context and position
     //pub fn update_color(&mut self, s: Size, dur_since_launch: Duration, x: u16, y: u16) {
     //    let cctx = ctx.get_color_context();
     //    match &self {
@@ -810,7 +806,7 @@ impl Gradient {
         let start_pos = start_pos.unwrap_or_else(|| grad[0].0.get_val(max_ctx_val));
         let end_pos = end_pos.unwrap_or_else(|| grad[grad.len() - 1].0.get_val(max_ctx_val));
         let percent = (pos - start_pos) as f64 / (end_pos - start_pos) as f64;
-        start_clr.blend(&cctx, x, y, end_clr, percent, BlendKind::Blend1)
+        start_clr.blend(&cctx, x, y, end_clr, percent)
     }
 
     #[allow(clippy::type_complexity)]
@@ -1035,7 +1031,7 @@ impl RadialGradient {
         let end_pos =
             end_pos.unwrap_or_else(|| grad[grad.len() - 1].0.get_val(s.width.max(s.height)) as f64);
         let percent = (dist - start_pos) / (end_pos - start_pos);
-        start_clr.blend(&cctx, x, y, end_clr, percent, BlendKind::Blend1)
+        start_clr.blend(&cctx, x, y, end_clr, percent)
     }
 
     #[allow(clippy::type_complexity)]
@@ -1148,7 +1144,7 @@ impl TimeGradient {
         let start_time = start_time.unwrap_or_else(|| grad[0].0);
         let end_time = end_time.unwrap_or_else(|| grad[grad.len() - 1].0);
         let percent = (d - start_time).as_secs_f64() / (end_time - start_time).as_secs_f64();
-        start_clr.blend(cctx, x, y, end_clr, percent, BlendKind::Blend1)
+        start_clr.blend(cctx, x, y, end_clr, percent)
     }
 
     #[allow(clippy::type_complexity)]
@@ -1310,70 +1306,55 @@ impl Default for Rgba {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Copy, Clone, Debug, PartialEq, Eq)]
-pub enum BlendKind {
-    Blend1,
-    Blend2,
+pub fn blend(c1: Rgba, c2: Rgba, perc_c2: f64) -> Rgba {
+    let c1_a_perc = c1.a as f64 / 255.0;
+    let c2_a_perc = c2.a as f64 / 255.0;
+    let a_blend_perc = c1_a_perc + c2_a_perc - (c1_a_perc * c2_a_perc);
+
+    let perc_c1 = 1. - perc_c2;
+
+    let r = ((c1.r as f64 * perc_c1 * c1_a_perc + c2.r as f64 * perc_c2 * c2_a_perc) / a_blend_perc)
+        as u8;
+    let g = ((c1.g as f64 * perc_c1 * c1_a_perc + c2.g as f64 * perc_c2 * c2_a_perc) / a_blend_perc)
+        as u8;
+    let b = ((c1.b as f64 * perc_c1 * c1_a_perc + c2.b as f64 * perc_c2 * c2_a_perc) / a_blend_perc)
+        as u8;
+    let a = ((c1.a as f64 * perc_c1 * c1_a_perc + c2.a as f64 * perc_c2 * c2_a_perc) / a_blend_perc)
+        as u8;
+    //let a = (a_blend_perc * 255.0) as u8;
+
+    Rgba::new_with_alpha(r, g, b, a)
 }
 
-impl BlendKind {
-    pub fn blend(&self, c1: Rgba, c2: Rgba, perc_other: f64) -> Rgba {
-        match self {
-            BlendKind::Blend1 => Self::blend1(c1, c2, perc_other),
-            BlendKind::Blend2 => Self::blend2(c1, c2, perc_other),
-        }
-    }
+///// This is a different blend function that takes into account the alpha of the colors
+///// and mixes in the opposite color for each alpha.
+//pub fn blend2(c1: Rgba, c2: Rgba, perc_c2: f64) -> Rgba {
+//    let c1_a_perc = c1.a as f64 / 255.0;
+//    let c2_a_perc = c2.a as f64 / 255.0;
+//    let a_blend_perc = c1_a_perc + c2_a_perc - (c1_a_perc * c2_a_perc);
+//    //let a_blend_perc = (c1_a_perc + c2_a_perc) / 2.;
 
-    pub fn blend1(c1: Rgba, c2: Rgba, perc_c2: f64) -> Rgba {
-        let c1_a_perc = c1.a as f64 / 255.0;
-        let c2_a_perc = c2.a as f64 / 255.0;
-        let a_blend_perc = c1_a_perc + c2_a_perc - (c1_a_perc * c2_a_perc);
+//    let perc_c1 = 1. - perc_c2;
 
-        let perc_c1 = 1. - perc_c2;
+//    let r = ((c1.r as f64 * perc_c1 * c1_a_perc
+//        + c1.r as f64 * perc_c2 * (1. - c2_a_perc)
+//        + c2.r as f64 * perc_c2 * c2_a_perc
+//        + c2.r as f64 * perc_c1 * (1. - c1_a_perc))
+//        / a_blend_perc) as u8;
+//    let g = ((c1.g as f64 * perc_c1 * c1_a_perc
+//        + c1.g as f64 * perc_c2 * (1. - c2_a_perc)
+//        + c2.g as f64 * perc_c2 * c2_a_perc
+//        + c2.g as f64 * perc_c1 * (1. - c1_a_perc))
+//        / a_blend_perc) as u8;
+//    let b = ((c1.b as f64 * perc_c1 * c1_a_perc
+//        + c1.b as f64 * perc_c2 * (1. - c2_a_perc)
+//        + c2.b as f64 * perc_c2 * c2_a_perc
+//        + c2.b as f64 * perc_c1 * (1. - c1_a_perc))
+//        / a_blend_perc) as u8;
 
-        let r = ((c1.r as f64 * perc_c1 * c1_a_perc + c2.r as f64 * perc_c2 * c2_a_perc)
-            / a_blend_perc) as u8;
-        let g = ((c1.g as f64 * perc_c1 * c1_a_perc + c2.g as f64 * perc_c2 * c2_a_perc)
-            / a_blend_perc) as u8;
-        let b = ((c1.b as f64 * perc_c1 * c1_a_perc + c2.b as f64 * perc_c2 * c2_a_perc)
-            / a_blend_perc) as u8;
-        let a = ((c1.a as f64 * perc_c1 * c1_a_perc + c2.a as f64 * perc_c2 * c2_a_perc)
-            / a_blend_perc) as u8;
-
-        //let a = (a_blend_perc * 255.0) as u8;
-        Rgba::new_with_alpha(r, g, b, a)
-    }
-
-    /// This is a different blend function that takes into account the alpha of the colors
-    /// and mixes in the opposite color for each alpha.
-    pub fn blend2(c1: Rgba, c2: Rgba, perc_c2: f64) -> Rgba {
-        let c1_a_perc = c1.a as f64 / 255.0;
-        let c2_a_perc = c2.a as f64 / 255.0;
-        let a_blend_perc = c1_a_perc + c2_a_perc - (c1_a_perc * c2_a_perc);
-        //let a_blend_perc = (c1_a_perc + c2_a_perc) / 2.;
-
-        let perc_c1 = 1. - perc_c2;
-
-        let r = ((c1.r as f64 * perc_c1 * c1_a_perc
-            + c1.r as f64 * perc_c2 * (1. - c2_a_perc)
-            + c2.r as f64 * perc_c2 * c2_a_perc
-            + c2.r as f64 * perc_c1 * (1. - c1_a_perc))
-            / a_blend_perc) as u8;
-        let g = ((c1.g as f64 * perc_c1 * c1_a_perc
-            + c1.g as f64 * perc_c2 * (1. - c2_a_perc)
-            + c2.g as f64 * perc_c2 * c2_a_perc
-            + c2.g as f64 * perc_c1 * (1. - c1_a_perc))
-            / a_blend_perc) as u8;
-        let b = ((c1.b as f64 * perc_c1 * c1_a_perc
-            + c1.b as f64 * perc_c2 * (1. - c2_a_perc)
-            + c2.b as f64 * perc_c2 * c2_a_perc
-            + c2.b as f64 * perc_c1 * (1. - c1_a_perc))
-            / a_blend_perc) as u8;
-
-        let a = (a_blend_perc * 255.0) as u8;
-        Rgba::new_with_alpha(r, g, b, a)
-    }
-}
+//    let a = (a_blend_perc * 255.0) as u8;
+//    Rgba::new_with_alpha(r, g, b, a)
+//}
 
 impl Rgba {
     pub const fn new(r: u8, g: u8, b: u8) -> Self {
