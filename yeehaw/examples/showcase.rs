@@ -91,7 +91,7 @@ async fn main() -> Result<(), Error> {
     let train_pane = TerminalPane::new(&ctx)?;
     train_pane.pane.set_dyn_height(0.7);
     train_pane.pane.set_focused(false);
-    //train_pane.execute_command("for i in {1..20}; do sl -l; done ; exit");
+    train_pane.execute_command("for i in {1..20}; do sl -l; done ; exit");
     train_pane.disable_cursor();
     left_pane.push(Box::new(train_pane));
 
@@ -106,6 +106,7 @@ async fn main() -> Result<(), Error> {
     let el_term = TerminalPane::new(&ctx)?;
 
     let showcase = TerminalPane::new(&ctx)?;
+    showcase.set_env("YH_IMG_PROTOCOL", "1"); // TODO set to json
     showcase.pane.set_focused(false);
 
     let showcase_ = showcase.clone();

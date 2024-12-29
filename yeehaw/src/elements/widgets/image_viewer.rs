@@ -20,20 +20,19 @@ pub struct ImageViewer {
 #[yeehaw_derive::impl_pane_basics_from(pane)]
 impl ImageViewer {
     pub fn new(ctx: &Context, dyn_img: DynamicImage, bg: Color) -> Result<Self, Error> {
-        let picker = Picker::from_query_stdio();
-        let mut picker = match picker {
-            Ok(p) => p,
-            Err(_) => {
-                // NOTE this is used currently if the query stdio fails
-                // which is does when using an inner terminal
-                //
-                // TODO put in actual font size. / query the terminal picker
-                // from environment variables which are provided to this terminal.
-                //
-                // OR somehow actually fix this issue in the terminal pane (if possible)
-                Picker::from_fontsize((10, 20))
-            }
+        // TODO actually get json
+        // query the terminal for the env var YH_DISABLE_IMG
+        let picker_proto = std::env::var("YH_IMG_PROTOCOL").is_ok();
+        let mut picker = if picker_proto {
+            // NOTE the reason we do this is because from_query_stdio
+            // is blocking which is a problem if you want to open a yeahaw
+            // application within a yeehaw terminal
+            Picker::from_fontsize((10, 20))
+        } else {
+            Picker::from_query_stdio()?
         };
+
+        //let mut picker = Picker::from_fontsize((10, 20));
         let rgba = bg.to_rgba();
         picker.set_background_color([rgba.r, rgba.g, rgba.b, rgba.a]);
 

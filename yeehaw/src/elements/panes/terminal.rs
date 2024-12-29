@@ -181,6 +181,13 @@ impl TerminalPane {
         let _ = self.handle_pane_key_event(&key_ev);
     }
 
+    pub fn set_env<S: Into<String>, S2: Into<String>>(&self, key: S, val: S2) {
+        let key = key.into();
+        let val = val.into();
+        let cmd = format!("export {}={}", key, val);
+        self.execute_command(cmd);
+    }
+
     pub fn resize_pty(&self, ctx: &Context) {
         let Ok(mut parser) = self.parser.write() else {
             log_err!("TerminalPane: failed to write to parser");
