@@ -39,6 +39,7 @@ pub struct TermEditorPane {
 
 pub type TextChangedHook = Box<dyn FnMut(Context, String) -> EventResponses>;
 
+#[yeehaw_derive::impl_pane_basics_from(pane)]
 impl TermEditorPane {
     pub const KIND: &'static str = "term_editor_pane";
 
@@ -200,21 +201,6 @@ impl TermEditorPane {
 
     pub fn set_non_editing_textbox(&self, tb: TextBox) {
         self.non_editing_textbox.replace(tb);
-    }
-
-    pub fn with_height(self, h: DynVal) -> Self {
-        self.pane.set_dyn_height(h);
-        self
-    }
-
-    pub fn with_default_ch(self, ch: DrawCh) -> Self {
-        self.pane.pane.set_default_ch(ch);
-        self
-    }
-
-    pub fn with_width(self, w: DynVal) -> Self {
-        self.pane.set_dyn_width(w);
-        self
     }
 
     pub fn at<D: Into<DynVal>, D2: Into<DynVal>>(self, loc_x: D, loc_y: D2) -> Self {

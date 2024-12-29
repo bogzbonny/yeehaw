@@ -40,11 +40,6 @@ impl ParentPane {
         }
     }
 
-    pub fn with_z(self, z: ZIndex) -> Self {
-        self.pane.set_z(z);
-        self
-    }
-
     pub fn at<D: Into<DynVal>, D2: Into<DynVal>>(self, x: D, y: D2) -> Self {
         self.set_at(x.into(), y.into());
         self

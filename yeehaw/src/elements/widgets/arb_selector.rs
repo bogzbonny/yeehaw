@@ -84,6 +84,7 @@ impl DerefMut for SelChanges {
 
 pub type SelectFn = Box<dyn FnMut(Context, &ArbSelector, usize) -> EventResponses>;
 
+#[yeehaw_derive::impl_pane_basics_from(pane)]
 impl ArbSelector {
     const KIND: &'static str = "arb_selector";
 
@@ -246,11 +247,6 @@ impl ArbSelector {
 
     pub fn set_select_fn(&self, select_fn: SelectFn) {
         *self.select_fn.borrow_mut() = select_fn;
-    }
-
-    pub fn with_width(self, width: DynVal) -> Self {
-        self.pane.set_dyn_width(width);
-        self
     }
 
     pub fn at<D: Into<DynVal>, D2: Into<DynVal>>(self, loc_x: D, loc_y: D2) -> Self {

@@ -20,6 +20,7 @@ pub struct WindowPane {
     pub minimized_width: Rc<RefCell<u16>>,
 }
 
+#[yeehaw_derive::impl_pane_basics_from(pane)]
 impl WindowPane {
     const KIND: &'static str = "window_pane";
     const CLOSE_WINDOW_MD_KEY: &'static str = "close_window";
@@ -70,16 +71,6 @@ impl WindowPane {
 
     pub fn with_minimum_width(self, w: u16) -> Self {
         *self.minimized_width.borrow_mut() = w;
-        self
-    }
-
-    pub fn with_width(self, w: DynVal) -> Self {
-        self.pane.pane.set_dyn_width(w);
-        self
-    }
-
-    pub fn with_height(self, h: DynVal) -> Self {
-        self.pane.pane.set_dyn_height(h);
         self
     }
 

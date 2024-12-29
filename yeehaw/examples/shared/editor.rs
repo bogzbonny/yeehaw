@@ -15,8 +15,8 @@ pub fn editor_demo(ctx: &Context) -> Box<dyn Element> {
     //)
 
     let editor = TermEditorPane::new(ctx, "custom")
-        .with_height(ed_height)
-        .with_width(ed_width)
+        .with_dyn_height(ed_height)
+        .with_dyn_width(ed_width)
         .at(1, 3);
 
     let x = DynVal::x_after(&editor, 2);

@@ -1,5 +1,8 @@
 mod fixtures;
+
+#[allow(unused_imports)]
 pub use fixtures::fixture;
+#[allow(unused_imports)]
 pub use fixtures::FixtureScreen;
 
 pub static mut QUIET: bool = false;
@@ -8,11 +11,7 @@ macro_rules! is {
     ($got:expr, $expected:expr) => {
         if ($got) != ($expected) {
             if !unsafe { QUIET } {
-                eprintln!(
-                    "{} != {}:",
-                    stringify!($got),
-                    stringify!($expected)
-                );
+                eprintln!("{} != {}:", stringify!($got), stringify!($expected));
                 eprintln!("     got: {:?}", $got);
                 eprintln!("expected: {:?}", $expected);
             }
@@ -35,10 +34,7 @@ macro_rules! ok {
 struct Bytes<'a>(&'a [u8]);
 
 impl<'a> std::fmt::Debug for Bytes<'a> {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> Result<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         f.write_str("b\"")?;
         for c in self.0 {
             match c {
@@ -54,10 +50,7 @@ impl<'a> std::fmt::Debug for Bytes<'a> {
     }
 }
 
-pub fn compare_screens(
-    got: &vt100_yh::Screen,
-    expected: &vt100_yh::Screen,
-) -> bool {
+pub fn compare_screens(got: &vt100_yh::Screen, expected: &vt100_yh::Screen) -> bool {
     let (rows, cols) = got.size();
 
     is!(got.contents(), expected.contents());
@@ -65,9 +58,7 @@ pub fn compare_screens(
         Bytes(&got.contents_formatted()),
         Bytes(&expected.contents_formatted())
     );
-    for (got_row, expected_row) in
-        got.rows(0, cols).zip(expected.rows(0, cols))
-    {
+    for (got_row, expected_row) in got.rows(0, cols).zip(expected.rows(0, cols)) {
         is!(got_row, expected_row);
     }
     for (got_row, expected_row) in got
@@ -176,10 +167,7 @@ pub fn contents_diff_reproduces_state(input: &[u8]) -> bool {
     contents_diff_reproduces_state_from(input, &[])
 }
 
-pub fn contents_diff_reproduces_state_from(
-    input: &[u8],
-    prev_input: &[u8],
-) -> bool {
+pub fn contents_diff_reproduces_state_from(input: &[u8], prev_input: &[u8]) -> bool {
     let mut parser = vt100_yh::Parser::default();
     parser.process(prev_input);
     let prev_screen = parser.screen().clone();
@@ -189,8 +177,7 @@ pub fn contents_diff_reproduces_state_from(
 }
 
 pub fn contents_diff_reproduces_state_from_screens(
-    prev_screen: &vt100_yh::Screen,
-    screen: &vt100_yh::Screen,
+    prev_screen: &vt100_yh::Screen, screen: &vt100_yh::Screen,
 ) -> bool {
     let mut diff_input = screen.contents_diff(prev_screen);
     diff_input.extend(screen.input_mode_diff(prev_screen));
@@ -211,8 +198,7 @@ pub fn contents_diff_reproduces_state_from_screens(
 
 #[allow(dead_code)]
 pub fn assert_contents_diff_reproduces_state_from_screens(
-    prev_screen: &vt100_yh::Screen,
-    screen: &vt100_yh::Screen,
+    prev_screen: &vt100_yh::Screen, screen: &vt100_yh::Screen,
 ) {
     assert!(contents_diff_reproduces_state_from_screens(
         prev_screen,
@@ -220,10 +206,7 @@ pub fn assert_contents_diff_reproduces_state_from_screens(
     ));
 }
 
-fn assert_contents_diff_reproduces_state_from(
-    input: &[u8],
-    prev_input: &[u8],
-) {
+fn assert_contents_diff_reproduces_state_from(input: &[u8], prev_input: &[u8]) {
     assert!(contents_diff_reproduces_state_from(input, prev_input));
 }
 
@@ -233,8 +216,7 @@ pub fn assert_reproduces_state(input: &[u8]) {
 }
 
 pub fn assert_reproduces_state_from(input: &[u8], prev_input: &[u8]) {
-    let full_input: Vec<_> =
-        prev_input.iter().chain(input.iter()).copied().collect();
+    let full_input: Vec<_> = prev_input.iter().chain(input.iter()).copied().collect();
     assert_contents_formatted_reproduces_state(&full_input);
     assert_rows_formatted_reproduces_state(&full_input);
     assert_contents_diff_reproduces_state_from(input, prev_input);
@@ -248,9 +230,7 @@ pub fn format_bytes(bytes: &[u8]) -> String {
             10 => v.extend(b"\\n"),
             13 => v.extend(b"\\r"),
             27 => v.extend(b"\\e"),
-            c if c < 32 || c == 127 => {
-                v.extend(format!("\\x{c:02x}").as_bytes())
-            }
+            c if c < 32 || c == 127 => v.extend(format!("\\x{c:02x}").as_bytes()),
             b => v.push(b),
         }
     }
@@ -314,11 +294,8 @@ pub fn unhex(s: &[u8]) -> Vec<u8> {
                         digits.push(s[j]);
                         j += 1;
                     }
-                    let digits: Vec<_> = digits
-                        .iter()
-                        .copied()
-                        .skip_while(|x| x == &b'0')
-                        .collect();
+                    let digits: Vec<_> =
+                        digits.iter().copied().skip_while(|x| x == &b'0').collect();
                     let digits = String::from_utf8(digits).unwrap();
                     let codepoint = u32::from_str_radix(&digits, 16).unwrap();
                     let c = char::try_from(codepoint).unwrap();

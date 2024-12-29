@@ -9,8 +9,8 @@ async fn main() -> Result<(), Error> {
 
     let vstack = VerticalStack::new(&ctx);
     let mb = MenuBar::top_menu_bar(&ctx)
-        .with_height(1.into())
-        .with_width(1.0.into());
+        .with_dyn_height(1)
+        .with_dyn_width(DynVal::FULL);
     let lower = ParentPane::new(&ctx, "lower")
         .with_dyn_height(1.0)
         .with_dyn_width(1.0)

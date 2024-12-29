@@ -38,8 +38,8 @@ async fn main() -> Result<(), Error> {
         let window = WindowPane::new(&ctx_, Box::new(el), &title)
             .with_corner_resizer(&ctx_)
             .at(DynVal::new_fixed(10), DynVal::new_fixed(10))
-            .with_height(DynVal::new_fixed(20))
-            .with_width(DynVal::new_fixed(30));
+            .with_dyn_height(DynVal::new_fixed(20))
+            .with_dyn_width(DynVal::new_fixed(30));
 
         let inner_resps = vec![
             EventResponse::BringToFront,
@@ -84,8 +84,8 @@ async fn main() -> Result<(), Error> {
         *counter_.borrow_mut() += 1;
         let window = WindowPane::new(&ctx_, Box::new(sc_pane), &title)
             .with_corner_resizer(&ctx_)
-            .with_height(DynVal::new_fixed(20))
-            .with_width(DynVal::new_fixed(30))
+            .with_dyn_height(DynVal::new_fixed(20))
+            .with_dyn_width(DynVal::new_fixed(30))
             .at(DynVal::new_fixed(10), DynVal::new_fixed(10));
 
         let shadow_color = Color::new_with_alpha(0, 0, 0, 150);
@@ -112,15 +112,15 @@ async fn main() -> Result<(), Error> {
         let title = format!("Pane {}", *counter_.borrow());
         let el = TerminalPane::new(&ctx_)
             .expect("terminal pane can't be created")
-            .with_width(DynVal::FULL)
-            .with_height(DynVal::FULL);
+            .with_dyn_width(DynVal::FULL)
+            .with_dyn_height(DynVal::FULL);
 
         *counter_.borrow_mut() += 1;
         let window = WindowPane::new(&ctx_, Box::new(el), &title)
             .with_corner_resizer(&ctx_)
             .at(DynVal::new_fixed(10), DynVal::new_fixed(10))
-            .with_height(DynVal::new_fixed(20))
-            .with_width(DynVal::new_fixed(30));
+            .with_dyn_height(DynVal::new_fixed(20))
+            .with_dyn_width(DynVal::new_fixed(30));
 
         let inner_resps = vec![
             EventResponse::BringToFront,
@@ -155,8 +155,8 @@ async fn main() -> Result<(), Error> {
         *counter_.borrow_mut() += 1;
         let window = WindowPane::new(&ctx_, Box::new(bordered), &title)
             .at(DynVal::new_fixed(10), DynVal::new_fixed(10))
-            .with_height(DynVal::new_fixed(20))
-            .with_width(DynVal::new_fixed(30));
+            .with_dyn_height(DynVal::new_fixed(20))
+            .with_dyn_width(DynVal::new_fixed(30));
 
         let inner_resps = vec![
             EventResponse::BringToFront,
@@ -190,8 +190,8 @@ async fn main() -> Result<(), Error> {
         *counter_.borrow_mut() += 1;
         let window = WindowPane::new(&ctx_, Box::new(bordered), &title)
             .at(DynVal::new_fixed(10), DynVal::new_fixed(10))
-            .with_height(DynVal::new_fixed(20))
-            .with_width(DynVal::new_fixed(30));
+            .with_dyn_height(DynVal::new_fixed(20))
+            .with_dyn_width(DynVal::new_fixed(30));
 
         let inner_resps = vec![
             EventResponse::BringToFront,
@@ -231,8 +231,8 @@ async fn main() -> Result<(), Error> {
 
         *counter_.borrow_mut() += 1;
         let window = WindowPane::new(&ctx_, Box::new(bordered), &title)
-            .with_height(DynVal::new_fixed(20))
-            .with_width(DynVal::new_fixed(30))
+            .with_dyn_height(DynVal::new_fixed(20))
+            .with_dyn_width(DynVal::new_fixed(30))
             .at(DynVal::new_fixed(10), DynVal::new_fixed(10));
 
         let inner_resps = vec![

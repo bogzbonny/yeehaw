@@ -1,13 +1,8 @@
 use {
-    crate::{
-        Color, Context, DrawAction, DrawCh, DrawChPos, DrawUpdate, DynLocation, DynLocationSet,
-        DynVal, Element, ElementID, Event, EventResponses, Pane, Parent, ParentPane,
-        ReceivableEvents, RelMouseEvent, Style, ZIndex,
-    },
+    crate::*,
     crossterm::event::{MouseButton, MouseEventKind},
     rayon::prelude::*,
     std::collections::HashMap,
-    std::{cell::RefCell, rc::Rc},
 };
 
 // TODO add :command hints on the right hand side for command menu items
@@ -83,6 +78,7 @@ pub enum OpenDirection {
     RightThenUp,
 }
 
+#[yeehaw_derive::impl_pane_basics_from(pane)]
 impl MenuBar {
     const KIND: &'static str = "menu_bar";
     const Z_INDEX: ZIndex = 100;
@@ -109,8 +105,8 @@ impl MenuBar {
             make_invisible_on_closedown: Rc::new(RefCell::new(false)),
             close_on_primary_click: Rc::new(RefCell::new(true)),
         }
-        .with_height(1.into())
-        .with_width(1.0.into())
+        .with_dyn_height(1)
+        .with_dyn_width(DynVal::FULL)
     }
 
     pub fn right_click_menu(ctx: &Context) -> Self {
@@ -134,16 +130,6 @@ impl MenuBar {
 
     pub fn with_menu_style(self, style: MenuStyle) -> Self {
         *self.menu_style.borrow_mut() = style;
-        self
-    }
-
-    pub fn with_height(self, height: DynVal) -> Self {
-        self.pane.pane.set_dyn_height(height);
-        self
-    }
-
-    pub fn with_width(self, width: DynVal) -> Self {
-        self.pane.pane.set_dyn_width(width);
         self
     }
 

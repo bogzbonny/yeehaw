@@ -352,8 +352,8 @@ pub fn window_generation_zone(
 
         *counter_.borrow_mut() += 1;
         let mut window = WindowPane::new(&ctx_, el, &title)
-            .with_height(DynVal::new_fixed(20))
-            .with_width(DynVal::new_fixed(30))
+            .with_dyn_height(DynVal::new_fixed(20))
+            .with_dyn_width(DynVal::new_fixed(30))
             .at(DynVal::new_fixed(10), DynVal::new_fixed(10));
 
         if corner_resizer {

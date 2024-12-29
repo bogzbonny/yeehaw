@@ -269,7 +269,7 @@ impl TextBox {
         // create the line numbers textbox
         let ln_tb = TextBoxInner::new(init_ctx, lns)
             .at(start_x.clone(), start_y)
-            .with_width(DynVal::new_fixed(lnw as i32))
+            .with_dyn_width(DynVal::new_fixed(lnw as i32))
             .with_no_wordwrap()
             .non_editable(init_ctx)
             .non_navigable();
@@ -535,6 +535,7 @@ pub struct TextBoxInner {
 /// The hook is called when the cursor position changes, the hook is passed the absolute position of the cursor.
 pub type CursorChangedHook = Box<dyn FnMut(usize) -> EventResponses>;
 
+#[yeehaw_derive::impl_pane_basics_from(pane)]
 impl TextBoxInner {
     const KIND: &'static str = "textbox_inner";
 
@@ -667,16 +668,6 @@ impl TextBoxInner {
 
     pub fn at<D: Into<DynVal>, D2: Into<DynVal>>(self, loc_x: D, loc_y: D2) -> Self {
         self.pane.set_at(loc_x.into(), loc_y.into());
-        self
-    }
-
-    pub fn with_width(self, width: DynVal) -> Self {
-        self.pane.set_dyn_width(width);
-        self
-    }
-
-    pub fn with_height(self, height: DynVal) -> Self {
-        self.pane.set_dyn_height(height);
         self
     }
 

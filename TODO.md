@@ -1,3 +1,4 @@
+01. go through and remove / or make dyn element fns named with_width with_height
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -8,8 +9,6 @@
      - either that or make them a super basic context, with just the ev_sender
        and hat... or not even if you need the context, you should just clone it
        in.
-
-01. go through and remove / or make dyn element fns named with_width with_height
 
 01. replace receive_event_inner with just receive_event throughout
 

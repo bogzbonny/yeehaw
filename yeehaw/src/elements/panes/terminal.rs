@@ -39,6 +39,7 @@ pub struct TerminalPane {
     pub pty_killer: Rc<RefCell<Box<dyn ChildKiller>>>,
 }
 
+#[yeehaw_derive::impl_pane_basics_from(pane)]
 impl TerminalPane {
     pub const KIND: &'static str = "terminal_pane";
 
@@ -151,21 +152,6 @@ impl TerminalPane {
 
     pub fn custom_destruct_event_name(id: ElementID) -> String {
         format!("destruct_{id}")
-    }
-
-    pub fn with_height(self, h: DynVal) -> Self {
-        self.pane.set_dyn_height(h);
-        self
-    }
-
-    pub fn with_width(self, w: DynVal) -> Self {
-        self.pane.set_dyn_width(w);
-        self
-    }
-
-    pub fn with_z(self, z: ZIndex) -> Self {
-        self.pane.set_z(z);
-        self
     }
 
     pub fn disable_cursor(&self) {
