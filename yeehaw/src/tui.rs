@@ -567,6 +567,7 @@ pub fn set_panic_hook_with_closedown() {
     let prev_hook = panic::take_hook();
     panic::set_hook(Box::new(move |info| {
         sc_closedown().expect("failed to close screen");
+        debug!("Panic: {:?}", info);
         prev_hook(info);
     }));
 }
@@ -607,6 +608,7 @@ pub fn set_line_panic_hook_with_closedown(inline: Rc<RefCell<InlineTui>>) {
     let inline_ = *inline.borrow();
     panic::set_hook(Box::new(move |info| {
         sc_line_closedown(inline_).expect("failed to close screen");
+        debug!("Panic: {:?}", info);
         prev_hook(info);
     }));
 }

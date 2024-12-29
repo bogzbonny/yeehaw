@@ -1,6 +1,6 @@
 mod shared;
 use {
-    shared::{colors::*, widgets::*},
+    shared::{colors::*, image::*, widgets::*},
     yeehaw::*,
 };
 
@@ -16,7 +16,7 @@ async fn main() -> Result<(), Error> {
 
     let (mut tui, ctx) = Tui::new()?;
     let main = PaneScrollable::new_expanding(&ctx, 135, 40);
-    let limiter = PaneLimiter::new(Box::new(main.clone()), 135, 40);
+    //let limiter = PaneLimiter::new(Box::new(main.clone()), 135, 40);
     //let limiter = PaneLimiter::new(Box::new(main.clone()), 1000, 1000);
     let main_vs = VerticalStackFocuser::new(&ctx);
     main.add_element(Box::new(main_vs.clone()));
@@ -91,7 +91,7 @@ async fn main() -> Result<(), Error> {
     let train_pane = TerminalPane::new(&ctx)?;
     train_pane.pane.set_dyn_height(0.7);
     train_pane.pane.set_focused(false);
-    train_pane.execute_command("for i in {1..20}; do sl -l; done ; exit");
+    //train_pane.execute_command("for i in {1..20}; do sl -l; done ; exit");
     train_pane.disable_cursor();
     left_pane.push(Box::new(train_pane));
 
@@ -102,9 +102,7 @@ async fn main() -> Result<(), Error> {
     let el3 = DebugSizePane::new(&ctx)
         .with_bg(Color::GREEN)
         .with_text("tab 3".to_string());
-    let el4 = DebugSizePane::new(&ctx)
-        .with_bg(Color::PINK)
-        .with_text("tab 4".to_string());
+    let image_tab = image_demo(&ctx);
     let el_term = TerminalPane::new(&ctx)?;
 
     let showcase = TerminalPane::new(&ctx)?;
@@ -119,14 +117,14 @@ async fn main() -> Result<(), Error> {
     tabs.push(colors_tab, "colors");
     tabs.push(widgets_tab, "widgets");
     tabs.push(Box::new(el3), "$EDITOR");
-    tabs.push(Box::new(el4), "images");
+    tabs.push(image_tab, "images");
     tabs.push(Box::new(el_term), "terminal");
     tabs.push_with_on_open_fn(Box::new(showcase), "showcase", on_showcase_open_fn);
     tabs.select(0);
     central_pane.push(Box::new(tabs));
 
-    //tui.run(Box::new(main)).await
-    tui.run(Box::new(limiter)).await
+    tui.run(Box::new(main)).await
+    //tui.run(Box::new(limiter)).await
 }
 
 pub fn window_generation_zone(

@@ -1360,9 +1360,9 @@ dependencies = [
 
 [[package]]
 name = "ratatui-image"
-version = "3.0.0"
+version = "4.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3a07161c498ddd5066a444a869f27fd97cfc164dbee8c0bdb5ff803b8bb54ce"
+checksum = "a9b3fddb4a7287b7a2dd3833c709d2dbb2d57b96034759f6900b95b3c6ffa46f"
 dependencies = [
  "base64",
  "icy_sixel",

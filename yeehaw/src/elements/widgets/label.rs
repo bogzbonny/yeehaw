@@ -47,6 +47,7 @@ pub enum LabelPosition {
 /// when "active" hitting enter will click the button
 pub static LABEL_EV_COMBOS: ReceivableEvents = ReceivableEvents(vec![]);
 
+#[yeehaw_derive::impl_pane_basics_from(pane)]
 impl Label {
     const KIND: &'static str = "label";
 
@@ -312,7 +313,22 @@ impl Label {
     }
 
     pub fn with_style(self, sty: Style) -> Self {
-        self.set_style(sty);
+        self.pane.set_content_style(sty.clone());
+        self.pane.set_style(sty);
+        self
+    }
+
+    pub fn with_bg(self, bg: Color) -> Self {
+        let sty = self.pane.get_style().with_bg(bg);
+        self.pane.set_content_style(sty.clone());
+        self.pane.set_style(sty);
+        self
+    }
+
+    pub fn with_fg(self, fg: Color) -> Self {
+        let sty = self.pane.get_style().with_fg(fg);
+        self.pane.set_content_style(sty.clone());
+        self.pane.set_style(sty);
         self
     }
 

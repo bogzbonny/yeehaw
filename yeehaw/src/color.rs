@@ -147,6 +147,14 @@ impl Color {
         Color::Rgba(Rgba::new(r, g, b))
     }
 
+    pub fn to_rgba(&self) -> Rgba {
+        match self {
+            Color::ANSI(c) => crossterm_to_rgb(*c).to_rgba(),
+            Color::Rgba(c) => *c,
+            _ => Rgba::new(0, 0, 0),
+        }
+    }
+
     pub fn hsv_to_rgb(h: f64, s: f64, v: f64) -> (u8, u8, u8) {
         let c = v * s;
         let x = c * (1. - ((h / 60.).rem_euclid(2.) - 1.).abs());

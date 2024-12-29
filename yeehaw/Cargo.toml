@@ -38,7 +38,7 @@ portable-pty = { version = "0.8.1" }
 bytes = "^1.8.0"
 
 ratatui = "^0.29.0"
-ratatui-image = "3.0.0"
+ratatui-image = "4.1.0"
 image = { version = ">=0.24", default-features = false, features = ["jpeg"] }
 
 compact_str = "^0.8.0"

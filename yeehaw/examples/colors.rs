@@ -3,8 +3,6 @@ mod shared;
 
 use {shared::colors::*, yeehaw::*};
 
-// this is a basic testing grounds for new color gradients
-
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     //yeehaw::log::reset_log_file("./debug_test.log".to_string());

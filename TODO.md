@@ -46,6 +46,7 @@
            - slider, change speed, ms for time gradients
      - colors, certain gradients with alpha do not blend properly probably
        because the transparancy source is incorrect.
+     - make sure this looks good at different scales 
 
      ^ DONE
 
@@ -53,7 +54,6 @@
      - TABS Zone
        - neovim $EDITOR tab
        - image
-     - make sure this looks good at different scales 
 
 01. unify all the action function names and with fns to just be "with_fn"
     "set_fn"

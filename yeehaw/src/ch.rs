@@ -1,5 +1,5 @@
 use {
-    crate::{BgTranspSrc, Context, DynLocation, FgTranspSrc, Size, Style, UlTranspSrc},
+    crate::{BgTranspSrc, Color, Context, DynLocation, FgTranspSrc, Size, Style, UlTranspSrc},
     anyhow::{anyhow, Error},
     compact_str::CompactString,
     crossterm::style::{ContentStyle, StyledContent},
@@ -271,24 +271,6 @@ impl From<Vec<DrawChPos>> for DrawChPosVec {
         DrawChPosVec(chs)
     }
 }
-
-//impl From<ratatui::buffer::Buffer> for DrawChPosVec {
-//    fn from(buf: ratatui::buffer::Buffer) -> Self {
-//        let mut out = Vec::new();
-
-//        buf.content.iter().enumerate().for_each(|(i, cell)| {
-//            let (x, y) = buf.pos_of(i);
-//            let mut ch: ChPlus = cell.symbol().into();
-
-//            if cell.skip {
-//                ch = ChPlus::Skip;
-//            }
-//            let sty = Style::from(cell.clone());
-//            out.push(DrawChPos::new(DrawCh::new(ch, sty), x, y));
-//        });
-//        DrawChPosVec(out)
-//    }
-//}
 
 impl From<ratatui::buffer::Buffer> for DrawChs2D {
     fn from(buf: ratatui::buffer::Buffer) -> Self {
@@ -675,6 +657,30 @@ impl DrawChs2D {
         for y in 0..self.0.len() {
             for x in 0..self.0[y].len() {
                 self.0[y][x].style = sty.clone();
+            }
+        }
+    }
+
+    pub fn change_all_bg(&mut self, bg: &Color) {
+        for y in 0..self.0.len() {
+            for x in 0..self.0[y].len() {
+                self.0[y][x].style.set_bg(bg.clone());
+            }
+        }
+    }
+
+    pub fn change_all_fg(&mut self, fg: Color) {
+        for y in 0..self.0.len() {
+            for x in 0..self.0[y].len() {
+                self.0[y][x].style.set_fg(fg.clone());
+            }
+        }
+    }
+
+    pub fn change_all_underline_color(&mut self, ul: Color) {
+        for y in 0..self.0.len() {
+            for x in 0..self.0[y].len() {
+                self.0[y][x].style.set_underline_color(ul.clone());
             }
         }
     }
