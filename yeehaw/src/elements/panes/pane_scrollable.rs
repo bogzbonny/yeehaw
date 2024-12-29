@@ -116,7 +116,7 @@ impl PaneScrollable {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for PaneScrollable {
-    fn receive_event_inner(&self, ctx: &Context, mut ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, mut ev: Event) -> (bool, EventResponses) {
         let inner_ctx = self.inner_ctx(ctx);
 
         if let Event::Mouse(me) = &mut ev {

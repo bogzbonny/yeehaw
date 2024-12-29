@@ -221,7 +221,7 @@ impl Element for SelectablePane {
         }
     }
 
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let (captured, mut resps) = match ev {
             Event::Mouse(me) => {
                 if matches!(me.kind, MouseEventKind::Up(MouseButton::Left)) {
@@ -572,7 +572,7 @@ impl ParentPaneOfSelectable {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for ParentPaneOfSelectable {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let (captured, mut resps) = match &ev {
             Event::KeyCombo(ref ke) => {
                 let ke = ke.clone();

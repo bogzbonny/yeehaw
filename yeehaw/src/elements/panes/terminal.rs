@@ -283,7 +283,7 @@ impl TerminalPane {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for TerminalPane {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let (captured, resps) = match ev {
             Event::KeyCombo(ref keys) => {
                 let captured = self.handle_pane_key_event(&keys[0]);

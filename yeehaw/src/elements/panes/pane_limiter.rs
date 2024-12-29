@@ -26,9 +26,9 @@ impl PaneLimiter {
 
 #[yeehaw_derive::impl_element_from(inner)]
 impl Element for PaneLimiter {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let inner_ctx = self.inner_ctx(ctx);
-        self.inner.receive_event_inner(&inner_ctx, ev)
+        self.inner.receive_event(&inner_ctx, ev)
     }
     fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
         let inner_ctx = self.inner_ctx(ctx);

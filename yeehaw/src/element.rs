@@ -51,15 +51,7 @@ pub trait Element: DynClone {
     /// captured=true.
     //                                                     (captured, response      )
     #[must_use]
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses);
-
-    #[must_use]
-    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        self.call_hooks_of_kind(PRE_EVENT_HOOK_NAME);
-        let (captured, resp) = self.receive_event_inner(ctx, ev);
-        self.call_hooks_of_kind(POST_EVENT_HOOK_NAME);
-        (captured, resp)
-    }
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses);
 
     fn set_focused(&self, focused: bool);
     fn get_focused(&self) -> bool;

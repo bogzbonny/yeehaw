@@ -346,7 +346,7 @@ impl Button {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for Button {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
         if captured {
             return (true, resps);

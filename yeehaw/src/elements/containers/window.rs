@@ -407,7 +407,7 @@ impl WindowPane {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for WindowPane {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         // Skip sending the event into the pane if the event is a drag event and we're currently
         // dragging
         let mut event_to_inner = true;
@@ -621,7 +621,7 @@ impl BasicWindowTopBar {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for BasicWindowTopBar {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
             Event::Custom(ref key, _) if key == WindowPane::WINDOW_MINIMIZE_EV_KEY => {
                 self.minimize();

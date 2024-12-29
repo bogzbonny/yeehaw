@@ -1002,7 +1002,7 @@ impl HorizontalScrollbar {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for VerticalScrollbar {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
             Event::KeyCombo(ke) => self.receive_key_event(ke, ctx),
             Event::Mouse(me) => self.receive_mouse_event(ctx, me),
@@ -1019,7 +1019,7 @@ impl Element for VerticalScrollbar {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for HorizontalScrollbar {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
             Event::KeyCombo(ke) => self.receive_key_event(ke, ctx),
             Event::Mouse(me) => self.receive_mouse_event(ctx, me),

@@ -661,7 +661,7 @@ impl MenuItem {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for MenuBar {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
             Event::Mouse(me) => self.receive_mouse_event(ctx, me),
             Event::ExternalMouse(me) => self.receive_external_mouse_event(ctx, me),
@@ -734,7 +734,7 @@ impl Element for MenuBar {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for MenuItem {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let _ = self.pane.receive_event(ctx, ev.clone());
         match ev {
             Event::Mouse(me) => {

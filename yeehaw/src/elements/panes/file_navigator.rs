@@ -126,7 +126,7 @@ impl FileNavPane {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for FileNavPane {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
             Event::KeyCombo(ke) => {
                 self.is_dirty.replace(true);

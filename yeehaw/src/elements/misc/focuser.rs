@@ -19,7 +19,7 @@ impl Focuser {
 
 #[yeehaw_derive::impl_element_from(inner)]
 impl Element for Focuser {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let mut resps = focus_on_click(&ev, self.get_focused());
         let (captured, resps_) = self.inner.receive_event(ctx, ev.clone());
         resps.extend(resps_);

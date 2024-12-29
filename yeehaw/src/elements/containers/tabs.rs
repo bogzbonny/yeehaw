@@ -112,7 +112,7 @@ impl TabsTop {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for TabsTop {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         #[allow(clippy::single_match)]
         match ev {
             Event::Mouse(me) => {
@@ -304,7 +304,7 @@ impl Tabs {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for Tabs {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let start_selected = *self.tabs_top.selected.borrow();
         let (captured, resps) = self.pane.receive_event(ctx, ev.clone());
         let end_selected = *self.tabs_top.selected.borrow();

@@ -384,7 +384,8 @@ impl ElementOrganizer {
         parent: &Box<dyn Parent>,
     ) {
         let Some(details) = self.get_element_details(el_id) else {
-            log_err!("no element for id in partially_process_ev_resps");
+            // NOTE this can happen due to timing issues if an event is sent to an element
+            // that is then removed before the event is processed
             return;
         };
 

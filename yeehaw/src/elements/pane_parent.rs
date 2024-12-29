@@ -131,7 +131,7 @@ impl Element for ParentPane {
     }
 
     //                                                     (captured, resp         )
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         //if let Event::Mouse(_) = ev {
         //    debug!("id: {}, focused: {}", self.id(), self.get_focused());
         //}

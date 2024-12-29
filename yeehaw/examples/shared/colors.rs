@@ -11,12 +11,9 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
     let excess_height = DynVal::FULL.minus(total_height).div(2.);
     let excess_width = DynVal::FULL.minus(art_width.clone()).minus(1.into());
 
-    let first_col_end = DynVal::min_of(
-        DynVal::max_of(excess_width, min_first_col.clone()),
-        max_first_col,
-    );
+    let first_col_end = excess_width.with_max(max_first_col).with_min(min_first_col);
 
-    let y = DynVal::max_of(excess_height.clone(), 1.into());
+    let y = excess_height.clone().with_min(1);
     let x = DynVal::new_fixed(1);
 
     let desc_text = "Within yeehaw, a standard\n\
@@ -254,7 +251,7 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
 
     // ------------------------------
 
-    let y_art = DynVal::max_of(excess_height, 1.into()).minus(1.into());
+    let y_art = excess_height.with_min(1).minus(1.into());
     let x_art = DynVal::x_after(&toggle, 1);
     let bg_art = ParentPane::new(ctx, "art");
     let fg_art = Label::new(ctx, "");

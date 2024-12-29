@@ -468,7 +468,7 @@ impl ListBoxInner {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for ListBox {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         if self.pane.get_selectability() == Selectability::Unselectable {
             return (false, EventResponses::default());
         }
@@ -478,7 +478,7 @@ impl Element for ListBox {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for ListBoxInner {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
         if captured {
             return (true, resps);

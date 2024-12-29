@@ -469,7 +469,7 @@ impl TextBox {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for TextBox {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         if self.pane.get_selectability() == Selectability::Unselectable {
             return (false, EventResponses::default());
         }
@@ -1512,7 +1512,7 @@ impl TextBoxInner {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for TextBoxInner {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
             Event::KeyCombo(ke) => self.receive_key_event(ctx, ke),
             Event::Mouse(me) => self.receive_mouse_event(ctx, me),

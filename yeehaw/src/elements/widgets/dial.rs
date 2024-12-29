@@ -1137,7 +1137,7 @@ impl Spacing {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for Dial {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let start_pos = *self.pane.position.borrow();
         let (cap, mut resps) = self.pane.receive_event(ctx, ev);
         let end_pos = *self.pane.position.borrow();

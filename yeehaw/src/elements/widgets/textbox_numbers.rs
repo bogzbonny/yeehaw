@@ -157,7 +157,7 @@ impl<N: Display + Clone + Copy + FromStr + PartialOrd + 'static> NumbersTextBox<
 
 #[yeehaw_derive::impl_element_from(tb)]
 impl<N: Display + Clone + Copy + FromStr + PartialOrd + 'static> Element for NumbersTextBox<N> {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
             Event::KeyCombo(ref ke) => {
                 if self.tb.pane.get_selectability() != Selectability::Selected || ke.is_empty() {

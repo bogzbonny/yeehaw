@@ -3,9 +3,9 @@ use yeehaw::*;
 pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
     let el = ParentPaneOfSelectable::new(ctx).with_bg(Color::MIDNIGHT_BLUE);
 
-    let col1_width = DynVal::max_of(17.into(), DynVal::QUARTER.minus(1.into()));
-    let col2_width = DynVal::max_of(19.into(), DynVal::QUARTER.minus(1.into()));
-    let col3_width = DynVal::max_of(32.into(), DynVal::HALF.minus(1.into()));
+    let col1_width = DynVal::QUARTER.minus(1.into()).with_min(17);
+    let col2_width = DynVal::QUARTER.minus(1.into()).with_min(19);
+    let col3_width = DynVal::HALF.minus(1.into()).with_min(32);
 
     // fill dd entries with 20 items
     let dd_entries = (1..=20)
@@ -14,7 +14,8 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
 
     let x_min = 1;
     let y = DynVal::new_fixed(2);
-    let y_padding = DynVal::max_of(2.into(), 0.1.into());
+    let y_padding = DynVal::new_flex(0.1).with_min(2);
+
     let dropdown = DropdownList::new(ctx, dd_entries, Box::new(|_, _| EventResponses::default()))
         .with_max_expanded_height(10)
         .with_end_x(col1_width.clone().minus(1.into()))
@@ -52,9 +53,7 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
     let y = DynVal::new_fixed(3);
     let x = col1_width.plus(2.into());
     let end_x = x.plus(col2_width.clone()).minus(1.into());
-    let lb_height = DynVal::default()
-        .plus_max_of(DynVal::new_flex(0.13))
-        .plus_max_of(DynVal::new_fixed(5));
+    let lb_height = DynVal::new_flex(0.13).with_min(5);
 
     let lb_entries = (1..=10)
         .map(|i| format!("entry {}", i))
@@ -98,7 +97,7 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
         slider_.set_position(v);
         EventResponses::default()
     }));
-    let y = DynVal::y_after(&slider, DynVal::max_of(0.into(), 0.09.into())).minus(1.into());
+    let y = DynVal::y_after(&slider, 0.09).minus(1.into());
     el.add_element(Box::new(slider.label(ctx, "slider:")));
     el.add_element(Box::new(slider));
 
@@ -149,9 +148,7 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
     let x = x.plus(col2_width).plus(1.into());
     let y = DynVal::new_fixed(4);
     let tb_width = col3_width.clone().minus(3.into());
-    let tb_height = DynVal::default()
-        .plus_max_of(DynVal::new_flex(0.25))
-        .plus_max_of(DynVal::new_fixed(8));
+    let tb_height = DynVal::new_flex(0.25).with_min(8);
 
     let tb = TextBox::new(ctx, "")
         .with_text_when_empty("enter text here")
@@ -166,7 +163,7 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
     el.add_element(Box::new(
         tb.label(ctx, "basic textbox:\n(try right-clicking \non some text)"),
     ));
-    let y = DynVal::y_after(&tb, DynVal::max_of(1.into(), 0.09.into())).minus(1.into());
+    let y = DynVal::y_after(&tb, DynVal::new_flex(0.09).with_min(1)).minus(1.into());
     el.add_element(Box::new(tb));
 
     let desc_text = "This is selectable pane, try\n\

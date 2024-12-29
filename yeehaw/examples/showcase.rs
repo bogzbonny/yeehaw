@@ -168,7 +168,7 @@ Contact your system administrator or technical support group for further assista
     // we need to send an exit command down to close the terminals...
     // TODO this should be handled automatically within clear_elements
     // just requires refactoring the context in.
-    let _ = main_pane.receive_event_inner(ctx, Event::Exit);
+    let _ = main_pane.receive_event(ctx, Event::Exit);
     bsod.add_element(Box::new(text.clone()));
     main_pane.clear_elements();
     main_pane.add_element(Box::new(bsod));

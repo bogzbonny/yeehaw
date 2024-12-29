@@ -1,6 +1,10 @@
 01. go through and remove / or make dyn element fns named with_width with_height
+01. widgets example should be the same as showcase
+01. upgrade max_of to .with_max (and min)
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+01. replace receive_event_inner with just receive_event throughout
 
 01. unify all the action function names and with fns to just be "with_fn"
     "set_fn"
@@ -10,11 +14,7 @@
        and hat... or not even if you need the context, you should just clone it
        in.
 
-01. replace receive_event_inner with just receive_event throughout
-
 ------
-
-01. widgets example should be the same as showcase
 
 01. update rust version, update deps
 

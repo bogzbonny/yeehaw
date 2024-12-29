@@ -83,7 +83,7 @@ impl RightClickMenu {
 
 #[yeehaw_derive::impl_element_from(menu)]
 impl Element for RightClickMenu {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
             Event::Mouse(_) => {
                 // addend the mouse position to the context metadata

@@ -1319,7 +1319,7 @@ impl Bordered {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for Bordered {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         self.ensure_scrollbar_size(ctx);
 
         let (captured, mut resps) = self.pane.receive_event(ctx, ev);
@@ -1415,7 +1415,7 @@ impl Corner {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for Corner {
-    fn receive_event_inner(&self, _ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, _ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let property = *self.property.borrow();
         if matches!(property, PropertyCnr::None) {
             return (true, EventResponses::default()); // still capture just don't do anything
@@ -1612,7 +1612,7 @@ impl Element for VerticalSide {
         Vec::with_capacity(0)
     }
 
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let property = self.property.borrow();
         if matches!(*property, PropertyVrt::None) {
             return (true, EventResponses::default()); // still capture just don't do anything
@@ -1819,7 +1819,7 @@ impl Element for HorizontalSide {
         Vec::with_capacity(0)
     }
 
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let property = self.property.borrow();
         if matches!(*property, PropertyHzt::None) {
             return (true, EventResponses::default()); // still capture just don't do anything

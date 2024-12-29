@@ -13,7 +13,7 @@ pub fn impl_element_from(attr: TokenStream, item: TokenStream) -> TokenStream {
     fn id(&self) -> ElementID;
     fn can_receive(&self, ev: &Event) -> bool;
     fn receivable(&self) -> Vec<Rc<RefCell<ReceivableEvents>>>;
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses);
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses);
     fn set_focused(&self, focused: bool);
     fn get_focused(&self) -> bool;
     fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate>;

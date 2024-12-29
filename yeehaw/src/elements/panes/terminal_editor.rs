@@ -216,7 +216,7 @@ impl TermEditorPane {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for TermEditorPane {
-    fn receive_event_inner(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         if !*self.editor_is_open.borrow() {
             // activate the editor on click
             let clicked_down = *self.clicked_down.borrow();
