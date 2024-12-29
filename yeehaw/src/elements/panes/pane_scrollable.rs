@@ -9,7 +9,7 @@ use {
 /// Additionally mouse scroll functionality is provided.
 #[derive(Clone)]
 pub struct PaneScrollable {
-    pane: ParentPane,
+    pub pane: ParentPane,
     content_width: Rc<RefCell<usize>>,
     content_height: Rc<RefCell<usize>>,
     content_offset_x: Rc<RefCell<usize>>,

@@ -4,6 +4,8 @@ use {
     yeehaw::*,
 };
 
+/// It is recommended to run this example with the `--release` flag (there is a lot going on)
+
 /// NOTE this example requires steam locomotive (`sl`) to be installed if you want
 /// to see the train. Additionally it should be run from this showcase directory
 /// for the showcase-tab to work (which runs `cargo run --release --example showcase`).
@@ -63,10 +65,15 @@ async fn main() -> Result<(), Error> {
     .at(0, DynVal::new_fixed(1));
     header_pane.add_element(Box::new(mtext));
 
+    let main_ = main.clone();
+    let ctx_ = ctx.clone();
     let button = Button::new(
         &ctx,
         "do not\nclick me",
-        Box::new(|_, _| EventResponses::default()),
+        Box::new(move |_, _| {
+            bsod(&ctx_, main_.pane.clone());
+            EventResponses::default()
+        }),
     )
     .at(DynVal::new_flex(0.9), DynVal::new_flex(0.3));
     header_pane.add_element(Box::new(button));
@@ -124,6 +131,47 @@ async fn main() -> Result<(), Error> {
 
     tui.run(Box::new(main)).await
     //tui.run(Box::new(limiter)).await
+}
+
+pub fn bsod(ctx: &Context, main_pane: ParentPane) {
+    let text = "
+
+A problem has been detected and Windows has been shut down to prevent damage to your computer.
+
+IRQL_NOT_LESS_OR_EQUAL
+
+If this is the first time you've seen this Stop error screen, restart your computer. If this screen
+appears again, follow these steps:
+
+Check to make sure any new hardware or software is properly installed. If this is a new
+installation, ask your hardware or software manufacturer for any Windows updates you might need.
+
+If problems continue, disable or remove any newly installed hardware or software. Disable BIOS
+memory options such as caching or shadowing. Maybe Janeway shouldn't have killed Tuvix. If you need
+to use Safe Mode to remove or disable components, restart your computer, press F8 to select
+Advanced Startup Options, and then select Safe Mode. 
+
+Technical information:
+
+*** STOP: 0x0000000A (0x00000004, 0x00000002, 0x00000000, 0x804F8677)
+
+*** tuvix_memorial.exe - Address 804F8677 base at 804D7000, DateStamp 31a01870
+
+Beginning dump of physical memory
+Physical memory dump complete.
+Contact your system administrator or technical support group for further assistance.
+";
+
+    let bsod = ParentPane::new(ctx, "bsod").with_bg(Color::BLUE);
+    let text = Label::new(ctx, text).at(1, 1);
+
+    // we need to send an exit command down to close the terminals...
+    // TODO this should be handled automatically within clear_elements
+    // just requires refactoring the context in.
+    let _ = main_pane.receive_event_inner(ctx, Event::Exit);
+    bsod.add_element(Box::new(text.clone()));
+    main_pane.clear_elements();
+    main_pane.add_element(Box::new(bsod));
 }
 
 pub fn window_generation_zone(

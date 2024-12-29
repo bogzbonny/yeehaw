@@ -10,7 +10,7 @@ async fn main() -> Result<(), Error> {
     let pp = ParentPane::new(&ctx, "parent_pane")
         .with_dyn_height(1.0)
         .with_dyn_width(1.0)
-        .with_bg_color(Color::DARK_BLUE);
+        .with_bg(Color::DARK_BLUE);
 
     let counter = Rc::new(RefCell::new(0));
 

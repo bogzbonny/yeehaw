@@ -1,58 +1,5 @@
-01. textbox cut/paste shouldn't work when non-editable
-01. dropdown list extends into white space if picking beyond the end (clicking
-    that whitespace panics)
-01. textbox shouldn't capture scrolls mouse events if it doesn't need to. 
-01. textbox is for some reason getting j and h instead of enter INSIDE of a
-    showcase-inner... truly bizarre
-      - enter/backspace still works in other elements within the showcase-inner
-         for some reason its JUST the textbox
-01. funny coloring artifacts on the slider when moving out of frame in a
-    scrollable pane
-      - I think it has to do with what the actual gradient is being drawn as!
-10. tile color
-     - create a pattern-repeatable Color, kind of like a texture gradient
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-01. showcase example 
-     - a menu
-     - tabs
-       - terminal
-       - the showcase within the showcase?? spiral 
-     - window generator zone
-       - dial with window pane types: basic, scrollable, scrollable-expanding, terminal, 
-       - border-kind: none, basic, normal scrollbars, resizer with border-scrollbars, double width, large, tight, 
-                      border-with-text, border-resizer, border-mover
-       - shadow cb
-       - generate button
-       - widgets
-         - buncha widgets which dont do much but log their results 
-           in a textbox
-         - TWO dials as eyes (draw a mouth label below, maybe a nose too)
-           - no labels for the eyes
-           - make them lock together, and change the mouth based on their 
-             position
-       - gradient
-         - a dial with a few choice fg ascii arts 
-           - none, butterfly, spiral, saturn, rust logo, chompy
-         - toggle for FG and BG Color
-           - dial gradient kind: solid color, time-gradient, radial gradient,
-             linear gradient. radial-time, linear-time
-           - some sliders: 1 for each color (greyed out when colors disabled)
-             maybe with an RGB tb for css color input
-           - dropdown, number of colors (greyed out for solid-color kind)
-           - slider, gradient size between colors (enforce static) 
-           - slider with numbers-tb for gradient angle
-           - slider, change speed, ms for time gradients
-     - colors, certain gradients with alpha do not blend properly probably
-       because the transparancy source is incorrect.
-     - make sure this looks good at different scales 
-
-     ^ DONE
-
-     - a big "DO NOT PRESS button" which instigates the blue screen of death
-     - TABS Zone
-       - neovim $EDITOR tab
 
 01. unify all the action function names and with fns to just be "with_fn"
     "set_fn"
@@ -122,6 +69,14 @@
 __________________________________________________________________________
 REFACTORS
 
+01. refactor organizer clear_elements and remove_element to take in a context
+    and send an exit event down. From the showcase:
+          // we need to send an exit command down to close the terminals...
+          // TODO this should be handled automatically within clear_elements
+          // just requires refactoring the context in.
+          let _ = main_pane.receive_event_inner(ctx, Event::Exit);
+          bsod.add_element(Box::new(text.clone()));
+          main_pane.clear_elements();
 
 01. Improving speed for Terminal Element
     - The terminal can't really be optimized in quite the same way as the
@@ -173,9 +128,6 @@ REFACTORS
     matches or to ignore the wait and to proceed attempting to match the
     character in other ways.  
 
-10. switch to vt100_yh or fork https://docs.rs/vt100-ctt/latest/vt100_yh/struct.Screen.html
-     - make a PR to expose the grid so that one can actually iterate the cells
-     - integrate in SGR-Pixel mode into vt100
 
 __________________________________________________________________________
 FEATURES
