@@ -53,7 +53,6 @@
      - a big "DO NOT PRESS button" which instigates the blue screen of death
      - TABS Zone
        - neovim $EDITOR tab
-       - image
 
 01. unify all the action function names and with fns to just be "with_fn"
     "set_fn"

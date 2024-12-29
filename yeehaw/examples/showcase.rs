@@ -1,6 +1,6 @@
 mod shared;
 use {
-    shared::{colors::*, image::*, widgets::*},
+    shared::{colors::*, editor::*, image::*, widgets::*},
     yeehaw::*,
 };
 
@@ -99,9 +99,7 @@ async fn main() -> Result<(), Error> {
     tabs.pane.set_focused(false);
     let colors_tab = colors_demo(&ctx);
     let widgets_tab = widgets_demo(&ctx);
-    let el3 = DebugSizePane::new(&ctx)
-        .with_bg(Color::GREEN)
-        .with_text("tab 3".to_string());
+    let editor_tab = editor_demo(&ctx);
     let image_tab = image_demo(&ctx);
     let el_term = TerminalPane::new(&ctx)?;
 
@@ -117,7 +115,7 @@ async fn main() -> Result<(), Error> {
 
     tabs.push(colors_tab, "colors");
     tabs.push(widgets_tab, "widgets");
-    tabs.push(Box::new(el3), "$EDITOR");
+    tabs.push(editor_tab, "$EDITOR");
     tabs.push(image_tab, "images");
     tabs.push(Box::new(el_term), "terminal");
     tabs.push_with_on_open_fn(Box::new(showcase), "showcase", on_showcase_open_fn);
