@@ -46,7 +46,9 @@ async fn main() -> Result<(), Error> {
         }
         EventResponses::default()
     });
-    let remove_button = Button::new(&ctx, "remove_pane", remove_button_click_fn).at(13, 1);
+    let remove_button = Button::new(&ctx, "remove_pane")
+        .with_fn(remove_button_click_fn)
+        .at(13, 1);
 
     let toggle_ = toggle.clone();
     let hstack_ = hstack.clone();
@@ -113,7 +115,9 @@ async fn main() -> Result<(), Error> {
 
         EventResponses::default()
     });
-    let add_button = Button::new(&ctx, "add_pane", add_button_click_fn).at(1, 1);
+    let add_button = Button::new(&ctx, "add_pane")
+        .with_fn(add_button_click_fn)
+        .at(1, 1);
 
     sel_pane.add_element(Box::new(add_button));
     sel_pane.add_element(Box::new(remove_button));

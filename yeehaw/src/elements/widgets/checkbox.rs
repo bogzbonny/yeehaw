@@ -17,8 +17,10 @@ pub struct Checkbox {
 
     /// function which executes when checkbox is checked or unchecked,
     /// bool is the new state of the checkbox (true = checked)
-    pub clicked_fn: Rc<RefCell<dyn FnMut(Context, bool) -> EventResponses>>,
+    pub clicked_fn: Rc<RefCell<CheckboxFn>>,
 }
+
+pub type CheckboxFn = Box<dyn FnMut(Context, bool) -> EventResponses>;
 
 impl Checkbox {
     const KIND: &'static str = "checkbox";
@@ -48,7 +50,7 @@ impl Checkbox {
             checked: Rc::new(RefCell::new(false)),
             clicked_down: Rc::new(RefCell::new(false)),
             checkmark: Rc::new(RefCell::new('√')),
-            clicked_fn: Rc::new(RefCell::new(|_, _| EventResponses::default())),
+            clicked_fn: Rc::new(RefCell::new(Box::new(|_, _| EventResponses::default()))),
         };
         cb.pane.set_content_from_string(' ');
         cb.pane.set_content_style(cb.pane.get_current_style());
@@ -70,11 +72,13 @@ impl Checkbox {
         self
     }
 
-    pub fn with_clicked_fn(
-        mut self, clicked_fn: Box<dyn FnMut(Context, bool) -> EventResponses>,
-    ) -> Self {
-        self.clicked_fn = Rc::new(RefCell::new(clicked_fn));
+    pub fn with_fn(self, clicked_fn: CheckboxFn) -> Self {
+        self.set_fn(clicked_fn);
         self
+    }
+
+    pub fn set_fn(&self, clicked_fn: CheckboxFn) {
+        *self.clicked_fn.borrow_mut() = clicked_fn;
     }
 
     pub fn at<D: Into<DynVal>, D2: Into<DynVal>>(self, loc_x: D, loc_y: D2) -> Self {

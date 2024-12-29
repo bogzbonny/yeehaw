@@ -121,8 +121,12 @@ impl Slider {
     }
 
     pub fn with_fn(self, adjust_fn: AdjustFn) -> Self {
-        *self.adjust_fn.borrow_mut() = adjust_fn;
+        self.set_fn(adjust_fn);
         self
+    }
+
+    pub fn set_fn(&self, adjust_fn: AdjustFn) {
+        *self.adjust_fn.borrow_mut() = adjust_fn;
     }
 
     pub fn with_position(self, pos: f64) -> Self {

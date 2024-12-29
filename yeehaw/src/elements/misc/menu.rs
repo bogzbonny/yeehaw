@@ -152,7 +152,7 @@ impl MenuBar {
     ) {
         let mp = MenuPath(menu_path);
         self.ensure_folders(ctx, mp.clone());
-        let item = MenuItem::new(ctx, mp).with_click_fn(click_fn);
+        let item = MenuItem::new(ctx, mp).with_fn(click_fn);
         self.add_item_inner(ctx, item);
     }
 
@@ -575,8 +575,10 @@ pub struct MenuItem {
     show_folder_arrow: Rc<RefCell<bool>>,
     /// show the folder arrow, false for primary horizontal bar
     #[allow(clippy::type_complexity)]
-    click_fn: Rc<RefCell<Option<Box<dyn FnMut(Context) -> EventResponses>>>>,
+    click_fn: Rc<RefCell<Option<MenuItemFn>>>,
 }
+
+pub type MenuItemFn = Box<dyn FnMut(Context) -> EventResponses>;
 
 impl MenuItem {
     pub const KIND: &'static str = "menu_item";
@@ -600,10 +602,12 @@ impl MenuItem {
         item
     }
 
-    pub fn with_click_fn(
-        self, click_fn: Option<Box<dyn FnMut(Context) -> EventResponses>>,
-    ) -> Self {
-        *self.click_fn.borrow_mut() = click_fn;
+    pub fn set_fn(&self, f: Option<MenuItemFn>) {
+        *self.click_fn.borrow_mut() = f;
+    }
+
+    pub fn with_fn(self, f: Option<MenuItemFn>) -> Self {
+        self.set_fn(f);
         self
     }
 

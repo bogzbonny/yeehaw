@@ -29,13 +29,15 @@ pub struct DropdownList {
     pub clicked_down: Rc<RefCell<bool>>,
     #[allow(clippy::type_complexity)]
     /// function which executes when button moves from pressed -> unpressed
-    pub selection_made_fn: Rc<RefCell<Box<dyn FnMut(Context, String) -> EventResponses>>>,
+    pub selection_made_fn: Rc<RefCell<DropdownListFn>>,
     /// embedded scrollbar in dropdown list
     pub scrollbar: VerticalScrollbar,
 
     /// if true, then the content should be updated on next drawing
     pub dirty: Rc<RefCell<bool>>,
 }
+
+pub type DropdownListFn = Box<dyn FnMut(Context, String) -> EventResponses>;
 
 #[yeehaw_derive::impl_pane_basics_from(pane)]
 impl DropdownList {
@@ -153,14 +155,12 @@ impl DropdownList {
         self
     }
 
-    pub fn with_fn(
-        self, selection_made_fn: Box<dyn FnMut(Context, String) -> EventResponses>,
-    ) -> Self {
+    pub fn with_fn(self, selection_made_fn: DropdownListFn) -> Self {
         self.set_fn(selection_made_fn);
         self
     }
 
-    pub fn set_fn(&self, selection_made_fn: Box<dyn FnMut(Context, String) -> EventResponses>) {
+    pub fn set_fn(&self, selection_made_fn: DropdownListFn) {
         *self.selection_made_fn.borrow_mut() = selection_made_fn;
     }
 

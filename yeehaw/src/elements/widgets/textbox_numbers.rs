@@ -3,6 +3,9 @@ use {
     std::{cmp::PartialOrd, fmt::Display, str::FromStr},
 };
 
+// TODO increment functionality with up/down keys. Would need a way to set a default increment
+// for each number type as it would be annoying to have to input this.
+
 #[derive(Clone)]
 pub struct NumbersTextBox<N> {
     pub tb: TextBox,
@@ -13,7 +16,7 @@ pub struct NumbersTextBox<N> {
 
     /// number of decimal places, used for floats
     pub decimal_places: Rc<RefCell<Option<usize>>>,
-    pub value_changed_hook: Rc<RefCell<Option<ValueChangedHook<N>>>>,
+    pub value_changed_fn: Rc<RefCell<Option<ValueChangedHook<N>>>>,
 }
 
 type ValueChangedHook<N> = Box<dyn FnMut(N) -> EventResponses>;
@@ -29,7 +32,7 @@ impl<N: Display + Clone + Copy + FromStr + PartialOrd + 'static> NumbersTextBox<
             max_value: Rc::new(RefCell::new(None)),
             min_value: Rc::new(RefCell::new(None)),
             decimal_places: Rc::new(RefCell::new(None)),
-            value_changed_hook: Rc::new(RefCell::new(None)),
+            value_changed_fn: Rc::new(RefCell::new(None)),
         };
 
         let ntb_ = ntb.clone();
@@ -47,6 +50,15 @@ impl<N: Display + Clone + Copy + FromStr + PartialOrd + 'static> NumbersTextBox<
 
     // ---------------------------------------------------------
     /// Decorators
+
+    pub fn with_fn(self, f: Option<ValueChangedHook<N>>) -> Self {
+        self.set_fn(f);
+        self
+    }
+
+    pub fn set_fn(&self, f: Option<ValueChangedHook<N>>) {
+        *self.value_changed_fn.borrow_mut() = f
+    }
 
     pub fn with_min(self, min: N) -> Self {
         *self.min_value.borrow_mut() = Some(min);
@@ -92,7 +104,7 @@ impl<N: Display + Clone + Copy + FromStr + PartialOrd + 'static> NumbersTextBox<
     }
 
     pub fn set_value_changed_hook(&self, hook: ValueChangedHook<N>) {
-        *self.value_changed_hook.borrow_mut() = Some(hook);
+        *self.value_changed_fn.borrow_mut() = Some(hook);
     }
 
     pub fn with_styles(mut self, styles: SelStyles) -> Self {
@@ -126,7 +138,7 @@ impl<N: Display + Clone + Copy + FromStr + PartialOrd + 'static> NumbersTextBox<
             }
         }
 
-        self.value_changed_hook
+        self.value_changed_fn
             .borrow_mut()
             .as_mut()
             .map(|hook| hook(new_value));

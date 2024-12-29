@@ -46,8 +46,7 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
     el.add_element(Box::new(cb.label(ctx, " checkbox")));
     el.add_element(Box::new(cb));
 
-    let button_click_fn = Box::new(move |_, _| EventResponses::default());
-    let button = Button::new(ctx, "button", button_click_fn).at(x_min, y);
+    let button = Button::new(ctx, "button").at(x_min, y);
     el.add_element(Box::new(button));
 
     let y = DynVal::new_fixed(3);
@@ -58,7 +57,7 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
     let lb_entries = (1..=10)
         .map(|i| format!("entry {}", i))
         .collect::<Vec<String>>();
-    let listbox = ListBox::new(ctx, lb_entries, Box::new(|_, _| EventResponses::default()))
+    let listbox = ListBox::new(ctx, lb_entries)
         .with_selection_mode(ctx, listbox::SelectionMode::UpTo(3))
         .with_dyn_height(ctx, lb_height.clone())
         .with_scrollbar(ctx)

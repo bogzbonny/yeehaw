@@ -506,12 +506,14 @@ pub struct TextBoxInner {
     pub cursor_pos: Rc<RefCell<usize>>,
     /// cursor absolute position in the text
     pub cursor_style: Rc<RefCell<Style>>,
-    pub visual_mode: Rc<RefCell<bool>>,
     /// whether or not the cursor is visual selecting
-    pub mouse_dragging: Rc<RefCell<bool>>,
+    pub visual_mode: Rc<RefCell<bool>>,
     /// if the mouse is currently dragging
-    pub visual_mode_start_pos: Rc<RefCell<usize>>,
+    pub mouse_dragging: Rc<RefCell<bool>>,
     /// the start position of the visual select
+    pub visual_mode_start_pos: Rc<RefCell<usize>>,
+
+    /// this hook is called each time the text changes (for each letter)
     pub text_changed_hook: Rc<RefCell<Option<Box<dyn FnMut(Context, String) -> EventResponses>>>>,
 
     /// When this hook is non-nil each characters style will be determineda via this hook.
@@ -625,20 +627,20 @@ impl TextBoxInner {
         let rcm = RightClickMenu::new(ctx, MenuStyle::default()).with_menu_items(
             ctx,
             vec![
-                MenuItem::new(ctx, MenuPath("Cut".to_string())).with_click_fn(Some(Box::new(
+                MenuItem::new(ctx, MenuPath("Cut".to_string())).with_fn(Some(Box::new(
                     move |ctx| {
                         tb1.is_dirty.replace(true);
                         tb1.cut_to_clipboard(&ctx)
                     },
                 ))),
-                MenuItem::new(ctx, MenuPath("Copy".to_string())).with_click_fn(Some(Box::new(
+                MenuItem::new(ctx, MenuPath("Copy".to_string())).with_fn(Some(Box::new(
                     move |_ctx| {
                         tb2.is_dirty.replace(true);
                         tb2.copy_to_clipboard();
                         EventResponses::default()
                     },
                 ))),
-                MenuItem::new(ctx, MenuPath("Paste".to_string())).with_click_fn(Some(Box::new(
+                MenuItem::new(ctx, MenuPath("Paste".to_string())).with_fn(Some(Box::new(
                     move |ctx| {
                         tb3.is_dirty.replace(true);
                         tb3.paste_from_clipboard(&ctx)
@@ -654,7 +656,7 @@ impl TextBoxInner {
         let rcm = RightClickMenu::new(ctx, MenuStyle::default()).with_menu_items(
             ctx,
             vec![
-                MenuItem::new(ctx, MenuPath("Copy".to_string())).with_click_fn(Some(Box::new(
+                MenuItem::new(ctx, MenuPath("Copy".to_string())).with_fn(Some(Box::new(
                     move |_ctx| {
                         tb.is_dirty.replace(true);
                         tb.copy_to_clipboard();
@@ -1132,7 +1134,6 @@ impl TextBoxInner {
             }
 
             _ if *self.editable.borrow() && (ev[0] == KB::KEY_BACKSPACE) => {
-                debug!("backspace hit");
                 if visual_mode {
                     resps = self.delete_visual_selection(ctx);
                 } else if cursor_pos > 0 {
@@ -1151,7 +1152,6 @@ impl TextBoxInner {
             }
 
             _ if *self.editable.borrow() && ev[0] == KB::KEY_ENTER => {
-                debug!("enter hit");
                 let mut rs = self.text.borrow().clone();
                 rs.splice(cursor_pos..cursor_pos, std::iter::once('\n'));
                 *self.text.borrow_mut() = rs;

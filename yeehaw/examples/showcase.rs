@@ -67,15 +67,12 @@ async fn main() -> Result<(), Error> {
 
     let main_ = main.clone();
     let ctx_ = ctx.clone();
-    let button = Button::new(
-        &ctx,
-        "do not\nclick me",
-        Box::new(move |_, _| {
+    let button = Button::new(&ctx, "do not\nclick me")
+        .with_fn(Box::new(move |_, _| {
             bsod(&ctx_, main_.pane.clone());
             EventResponses::default()
-        }),
-    )
-    .at(DynVal::new_flex(0.9), DynVal::new_flex(0.3));
+        }))
+        .at(DynVal::new_flex(0.9), DynVal::new_flex(0.3));
     header_pane.add_element(Box::new(button));
 
     let central_pane = HorizontalStackFocuser::new(&ctx);
@@ -384,7 +381,9 @@ pub fn window_generation_zone(
         EventResponses::default()
     });
 
-    let button = Button::new(ctx, "generate", generate_window_fn).at(1, 13);
+    let button = Button::new(ctx, "generate")
+        .with_fn(generate_window_fn)
+        .at(1, 13);
     el.add_element(Box::new(button));
 
     Box::new(bordered)

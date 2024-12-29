@@ -14,8 +14,10 @@ pub struct Button {
     /// activated when mouse is clicked down while over button
     /// function which executes when button moves from pressed -> unpressed
     #[allow(clippy::type_complexity)]
-    pub clicked_fn: Rc<RefCell<dyn FnMut(Button, Context) -> EventResponses>>,
+    pub clicked_fn: Rc<RefCell<ButtonFn>>,
 }
+
+pub type ButtonFn = Box<dyn FnMut(Button, Context) -> EventResponses>;
 
 #[derive(Clone)]
 pub enum ButtonStyle {
@@ -122,9 +124,7 @@ impl Button {
         ReceivableEvents(vec![(KB::KEY_ENTER.into())]) // when "active" hitting enter will click the button
     }
 
-    pub fn new(
-        ctx: &Context, text: &str, clicked_fn: Box<dyn FnMut(Button, Context) -> EventResponses>,
-    ) -> Self {
+    pub fn new(ctx: &Context, text: &str) -> Self {
         let pane = SelectablePane::new(ctx, Self::KIND)
             .with_focused_receivable_events(Self::default_receivable_events())
             .with_styles(Self::STYLE);
@@ -134,7 +134,7 @@ impl Button {
             text: Rc::new(RefCell::new(text.to_string())),
             button_style: Rc::new(RefCell::new(ButtonStyle::Shadow(ButtonShadow::default()))),
             clicked_down: Rc::new(RefCell::new(false)),
-            clicked_fn: Rc::new(RefCell::new(clicked_fn)),
+            clicked_fn: Rc::new(RefCell::new(Box::new(|_, _| EventResponses::default()))),
         };
 
         let d = b.button_drawing(ctx);
@@ -275,6 +275,15 @@ impl Button {
 
     // ----------------------------------------------
     // decorators
+
+    pub fn with_fn(self, f: ButtonFn) -> Self {
+        self.set_fn(f);
+        self
+    }
+
+    pub fn set_fn(&self, f: ButtonFn) {
+        *self.clicked_fn.borrow_mut() = f;
+    }
 
     pub fn with_styles(self, ctx: &Context, styles: SelStyles) -> Self {
         self.pane.set_styles(styles);

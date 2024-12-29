@@ -27,7 +27,7 @@ async fn main() -> Result<(), Error> {
         // unfocus the non-nav pane
         EventResponse::UnfocusOthers.into()
     });
-    nav.set_open_fn(open_fn);
+    nav.set_fn(open_fn);
 
     hstack.push(Box::new(nav));
     tui.run(Box::new(hstack)).await

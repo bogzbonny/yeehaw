@@ -23,8 +23,10 @@ pub struct RadioButtons {
     /// function which executes when the radio selection is changed
     ///                                           (index, selected)
     #[allow(clippy::type_complexity)]
-    pub radio_selected_fn: Rc<RefCell<dyn FnMut(Context, usize, String) -> EventResponses>>,
+    pub radio_selected_fn: Rc<RefCell<RadioButtonsFn>>,
 }
+
+pub type RadioButtonsFn = Box<dyn FnMut(Context, usize, String) -> EventResponses>;
 
 /// inspiration for some radios:
 /// ◯ ◉ ◯ ○
@@ -64,7 +66,7 @@ impl RadioButtons {
             clicked_down: Rc::new(RefCell::new(false)),
             radios: Rc::new(RefCell::new(radios)),
             selected: Rc::new(RefCell::new(0)),
-            radio_selected_fn: Rc::new(RefCell::new(|_, _, _| EventResponses::default())),
+            radio_selected_fn: Rc::new(RefCell::new(Box::new(|_, _, _| EventResponses::default()))),
         };
         rb.update_content();
 
@@ -79,11 +81,13 @@ impl RadioButtons {
     // ----------------------------------------------
     // decorators
 
-    pub fn with_radio_selected_fn(
-        mut self, clicked_fn: Box<dyn FnMut(Context, usize, String) -> EventResponses>,
-    ) -> Self {
-        self.radio_selected_fn = Rc::new(RefCell::new(clicked_fn));
+    pub fn set_fn(self, radio_selected_fn: RadioButtonsFn) -> Self {
+        *self.radio_selected_fn.borrow_mut() = radio_selected_fn;
         self
+    }
+
+    pub fn with_fn(self, radio_selected_fn: RadioButtonsFn) -> Self {
+        self.set_fn(radio_selected_fn)
     }
 
     pub fn with_styles(self, styles: SelStyles) -> Self {

@@ -37,7 +37,7 @@ pub struct ListBoxInner {
     /// function which executes when the selection changes. NOTE multiple items may be selected
     /// simultaniously if the ListBox is configured to allow it. If multiple items are selected,
     /// all the selected items will be passed to the function at every selection change.
-    pub selection_made_fn: Rc<RefCell<Box<dyn FnMut(Context, Vec<String>) -> EventResponses>>>,
+    pub selection_made_fn: Rc<RefCell<ListBoxFn>>,
 
     pub item_selected_style: Rc<RefCell<Style>>,
     pub cursor_over_unselected_style: Rc<RefCell<Style>>,
@@ -45,6 +45,8 @@ pub struct ListBoxInner {
     pub scrollbar: Rc<RefCell<Option<VerticalScrollbar>>>,
     pub is_dirty: Rc<RefCell<bool>>,
 }
+
+pub type ListBoxFn = Box<dyn FnMut(Context, Vec<String>) -> EventResponses>;
 
 #[derive(Clone)]
 pub enum SelectionMode {
@@ -62,10 +64,7 @@ pub enum SelectionMode {
 impl ListBox {
     const KIND: &'static str = "listbox";
 
-    pub fn new(
-        ctx: &Context, entries: Vec<String>,
-        selection_made_fn: Box<dyn FnMut(Context, Vec<String>) -> EventResponses>,
-    ) -> Self {
+    pub fn new(ctx: &Context, entries: Vec<String>) -> Self {
         let max_entry_width = entries
             .iter()
             .map(|r| r.lines().map(|l| l.chars().count()).max().unwrap_or(0))
@@ -73,7 +72,7 @@ impl ListBox {
             .unwrap_or(0);
         let line_count = entries.iter().map(|r| r.lines().count()).sum::<usize>() as i32;
         let init_ctx = ctx.child_init_context();
-        let inner = ListBoxInner::new(&init_ctx, entries, selection_made_fn);
+        let inner = ListBoxInner::new(&init_ctx, entries);
 
         let pane = SelectablePane::new(&init_ctx, Self::KIND)
             .with_styles(ListBoxInner::STYLE)
@@ -100,14 +99,23 @@ impl ListBox {
         lb
     }
 
+    // ----------------------------------------------
+    // decorators
+
+    pub fn with_fn(self, lb_fn: ListBoxFn) -> Self {
+        self.set_fn(lb_fn);
+        self
+    }
+
+    pub fn set_fn(&self, lb_fn: ListBoxFn) {
+        *self.inner.borrow().selection_made_fn.borrow_mut() = lb_fn;
+    }
+
     pub fn with_styles(self, init_ctx: &Context, styles: SelStyles) -> Self {
         self.pane.set_styles(styles);
         self.inner.borrow().update_content(init_ctx);
         self
     }
-
-    // ----------------------------------------------
-    // decorators
 
     pub fn with_left_scrollbar(self, init_ctx: &Context) -> Self {
         self.with_scrollbar_inner(init_ctx, VerticalSBPositions::ToTheLeft)
@@ -217,10 +225,7 @@ impl ListBoxInner {
         ])
     }
 
-    pub fn new(
-        init_ctx: &Context, entries: Vec<String>,
-        selection_made_fn: Box<dyn FnMut(Context, Vec<String>) -> EventResponses>,
-    ) -> Self {
+    pub fn new(init_ctx: &Context, entries: Vec<String>) -> Self {
         let max_lines_per_entry = entries.iter().map(|r| r.lines().count()).max().unwrap_or(0);
 
         let pane = Pane::new(init_ctx, Self::KIND)
@@ -243,7 +248,7 @@ impl ListBoxInner {
             item_selected_style: Rc::new(RefCell::new(Self::STYLE_ITEM_SELECTED)),
             cursor_over_unselected_style: Rc::new(RefCell::new(Self::STYLE_CURSOR_OVER_UNSELECTED)),
             cursor_over_selected_style: Rc::new(RefCell::new(Self::STYLE_CURSOR_OVER_SELECTED)),
-            selection_made_fn: Rc::new(RefCell::new(selection_made_fn)),
+            selection_made_fn: Rc::new(RefCell::new(Box::new(|_, _| EventResponses::default()))),
             scrollbar: Rc::new(RefCell::new(None)),
             is_dirty: Rc::new(RefCell::new(true)),
         };

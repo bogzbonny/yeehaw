@@ -170,8 +170,9 @@ impl TermEditorPane {
                     EventResponses::default()
                 });
 
-                let btn_save =
-                    Button::new(ctx, "save", save_fn).at(DynVal::FULL.minus(7.into()), 0);
+                let btn_save = Button::new(ctx, "save")
+                    .with_fn(save_fn)
+                    .at(DynVal::FULL.minus(7.into()), 0);
                 el.add_element(Box::new(btn_save));
 
                 el.add_element(Box::new(tb));

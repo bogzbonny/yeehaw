@@ -19,37 +19,28 @@ async fn main() -> Result<(), Error> {
     let label = Label::new(&ctx, "label").at(0, 10);
 
     let label_ = label.clone();
-    let btn_a = Button::new(
-        &ctx,
-        "A",
-        Box::new(move |_, _| {
+    let btn_a = Button::new(&ctx, "A")
+        .with_fn(Box::new(move |_, _| {
             label_.set_text("Button A clicked".to_string());
             EventResponses::default()
-        }),
-    )
-    .at(1, 0);
+        }))
+        .at(1, 0);
 
     let label_ = label.clone();
-    let btn_b = Button::new(
-        &ctx,
-        "B",
-        Box::new(move |_, _| {
+    let btn_b = Button::new(&ctx, "B")
+        .with_fn(Box::new(move |_, _| {
             label_.set_text("Button B clicked".to_string());
             EventResponses::default()
-        }),
-    )
-    .at(5, 0);
+        }))
+        .at(5, 0);
 
     let label_ = label.clone();
-    let btn_c = Button::new(
-        &ctx,
-        "C",
-        Box::new(move |_, _| {
+    let btn_c = Button::new(&ctx, "C")
+        .with_fn(Box::new(move |_, _| {
             label_.set_text("Button C clicked".to_string());
             EventResponses::default()
-        }),
-    )
-    .at(9, 0);
+        }))
+        .at(9, 0);
 
     lower.add_element(Box::new(label));
     lower.add_element(Box::new(btn_a));

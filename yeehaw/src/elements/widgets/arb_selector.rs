@@ -241,11 +241,11 @@ impl ArbSelector {
     }
 
     pub fn with_fn(self, select_fn: SelectFn) -> Self {
-        self.set_select_fn(select_fn);
+        self.set_fn(select_fn);
         self
     }
 
-    pub fn set_select_fn(&self, select_fn: SelectFn) {
+    pub fn set_fn(&self, select_fn: SelectFn) {
         *self.select_fn.borrow_mut() = select_fn;
     }
 

@@ -497,10 +497,8 @@ impl BasicWindowTopBar {
         let mut button_rhs_spaces = 2;
 
         if close_button {
-            let close_button = Button::new(
-                ctx,
-                "x",
-                Box::new(|btn, _ctx| {
+            let close_button = Button::new(ctx, "x")
+                .with_fn(Box::new(|btn, _ctx| {
                     let mut resps = btn.pane.deselect();
                     let resp = EventResponse::Custom(
                         WindowPane::CLOSE_WINDOW_MD_KEY.to_string(),
@@ -508,24 +506,21 @@ impl BasicWindowTopBar {
                     );
                     resps.push(resp);
                     resps
-                }),
-            )
-            .with_micro_shadow(ctx, shadow_sty.clone())
-            .with_styles(ctx, btn_styles.clone())
-            .at(
-                DynVal::FULL.minus(button_rhs_spaces.into()),
-                DynVal::new_fixed(0),
-            );
+                }))
+                .with_micro_shadow(ctx, shadow_sty.clone())
+                .with_styles(ctx, btn_styles.clone())
+                .at(
+                    DynVal::FULL.minus(button_rhs_spaces.into()),
+                    DynVal::new_fixed(0),
+                );
             pane.add_element(Box::new(close_button));
             button_rhs_spaces += 2;
         }
 
         let mut maximizer_button = None;
         if maximize_button {
-            let maximize_button = Button::new(
-                ctx,
-                "□",
-                Box::new(|btn, _ctx| {
+            let maximize_button = Button::new(ctx, "□")
+                .with_fn(Box::new(|btn, _ctx| {
                     let mut resps = btn.pane.deselect();
                     // change the text to the restore icon or back
                     let existing_icon = btn.text.borrow().clone();
@@ -539,14 +534,13 @@ impl BasicWindowTopBar {
                     );
                     resps.push(resp);
                     resps
-                }),
-            )
-            .with_micro_shadow(ctx, shadow_sty.clone())
-            .with_styles(ctx, btn_styles.clone())
-            .at(
-                DynVal::FULL.minus(button_rhs_spaces.into()),
-                DynVal::new_fixed(0),
-            );
+                }))
+                .with_micro_shadow(ctx, shadow_sty.clone())
+                .with_styles(ctx, btn_styles.clone())
+                .at(
+                    DynVal::FULL.minus(button_rhs_spaces.into()),
+                    DynVal::new_fixed(0),
+                );
             let b = Box::new(maximize_button);
             pane.add_element(b.clone());
             maximizer_button = Some(b);
@@ -554,10 +548,8 @@ impl BasicWindowTopBar {
         }
 
         if minimize_button {
-            let minimize_button = Button::new(
-                ctx,
-                "ˍ",
-                Box::new(|btn, _ctx| {
+            let minimize_button = Button::new(ctx, "ˍ")
+                .with_fn(Box::new(|btn, _ctx| {
                     let mut resps = btn.pane.deselect();
                     let resp = EventResponse::Custom(
                         WindowPane::MINIMIZE_WINDOW_MD_KEY.to_string(),
@@ -565,14 +557,13 @@ impl BasicWindowTopBar {
                     );
                     resps.push(resp);
                     resps
-                }),
-            )
-            .with_micro_shadow(ctx, shadow_sty)
-            .with_styles(ctx, btn_styles)
-            .at(
-                DynVal::FULL.minus(button_rhs_spaces.into()),
-                DynVal::new_fixed(0),
-            );
+                }))
+                .with_micro_shadow(ctx, shadow_sty)
+                .with_styles(ctx, btn_styles)
+                .at(
+                    DynVal::FULL.minus(button_rhs_spaces.into()),
+                    DynVal::new_fixed(0),
+                );
             pane.add_element(Box::new(minimize_button));
         }
 
