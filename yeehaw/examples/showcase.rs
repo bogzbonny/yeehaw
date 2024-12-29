@@ -171,7 +171,7 @@ pub fn window_generation_zone(
             (9, "Mover"),
         ],
     )
-    .at(DynVal::new_flex_with_min_fixed(0.35, 19), 3);
+    .at(DynVal::new_flex(0.35).with_min(19), 3);
     let label = dial_border.label(ctx, "border options:");
     el.add_element(Box::new(label));
     el.add_element(Box::new(dial_border.clone()));

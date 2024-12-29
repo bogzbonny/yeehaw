@@ -8,7 +8,6 @@ async fn main() -> Result<(), Error> {
     let (mut tui, ctx) = Tui::new()?;
 
     let top = VerticalStack::new(&ctx);
-    //let mut sel_pane = WidgetPane::new(&ctx).with_height(DynVal::new_flex_with_max_fixed(0., 3));
     let sel_pane = ParentPaneOfSelectable::new(&ctx).with_dyn_height(3);
     let hstack = HorizontalStack::new(&ctx)
         .with_min_resize_width(2)

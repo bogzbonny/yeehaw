@@ -130,13 +130,9 @@ impl Element for ParentPane {
     }
 
     fn receivable(&self) -> Vec<Rc<RefCell<ReceivableEvents>>> {
-        if self.get_focused() {
-            let mut rec = self.eo.receivable();
-            rec.extend(self.pane.receivable());
-            rec
-        } else {
-            Vec::with_capacity(0)
-        }
+        let mut rec = self.eo.receivable();
+        rec.extend(self.pane.receivable());
+        rec
     }
 
     //                                                     (captured, resp         )

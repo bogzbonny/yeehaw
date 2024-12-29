@@ -3,6 +3,9 @@ use yeehaw::*;
 pub fn editor_demo(ctx: &Context) -> Box<dyn Element> {
     let el = ParentPane::new(ctx, "main").with_style(Style::default().with_bg(Color::GREY5));
 
+    let ed_height = DynVal::FULL.minus(2.into()).with_min(10).with_max(30);
+    let ed_width = DynVal::HALF.minus(2.into()).with_min(20).with_max(70);
+
     //// for testing for when no editor is found
     //let editor = TermEditorPane::new_with_custom_editor(
     //    &ctx,
@@ -12,11 +15,12 @@ pub fn editor_demo(ctx: &Context) -> Box<dyn Element> {
     //)
 
     let editor = TermEditorPane::new(ctx, "custom")
-        .with_height(0.7.into())
-        .with_width(30.into())
+        .with_height(ed_height)
+        .with_width(ed_width)
         .at(1, 1);
 
-    let label = Label::new(ctx, "nothing yet set in $EDITOR textbox").at(50, 1);
+    let x = DynVal::x_after(&editor, 2);
+    let label = Label::new(ctx, "nothing yet set in $EDITOR textbox").at(x, 1);
 
     let label_ = label.clone();
     let hook = Box::new(move |_, text: String| {

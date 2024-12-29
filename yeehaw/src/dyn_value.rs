@@ -130,19 +130,18 @@ impl DynVal {
         }
     }
 
-    /// Create a new DynVal with a flex but which bounds at a maximum fixed value
-    pub fn new_flex_with_max_fixed(flex: f64, max: i32) -> Self {
+    /// returns the DynVal which will be no larger than the provided max value
+    pub fn with_max<D: Into<DynVal>>(self, max: D) -> Self {
         DynVal {
-            plus_min_of: vec![DynVal::new_fixed(max), DynVal::new_flex(flex)],
+            plus_min_of: vec![self, max.into()],
             ..DynVal::default()
         }
     }
 
-    /// Create a new DynVal with a flex but which bounds at minimum and maximum fixed values
-    pub fn new_flex_with_min_and_max_fixed(flex: f64, min: i32, max: i32) -> Self {
+    /// returns the DynVal which will be no smaller than the provided min value
+    pub fn with_min<D: Into<DynVal>>(self, min: D) -> Self {
         DynVal {
-            fixed: min,
-            plus_min_of: vec![DynVal::new_fixed(max - min), DynVal::new_flex(flex)],
+            plus_max_of: vec![self, min.into()],
             ..DynVal::default()
         }
     }
