@@ -1097,7 +1097,7 @@ impl ColorsDemoColor {
     }
 
     pub fn default_bg(ctx: &Context) -> ColorsDemoColor {
-        let c_store = ctx.color_store;
+        let c_store = ctx.color_store.clone();
         let three_colors = vec![
             Color::RED.darken(&c_store),
             Color::GREEN.darken(&c_store),

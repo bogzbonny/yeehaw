@@ -61,7 +61,7 @@ async fn main() -> Result<(), Error> {
             //    Box::new(
             //        DebugSizePane::new(&ctx_)
             //            .with_style(sty)
-            //            .with_dyn_width(hstack_.avg_width(&ctx_)),
+            //            .with_dyn_width(hstack_.avg_width()),
             //    )
             //} else {
             //    Box::new(
@@ -70,7 +70,7 @@ async fn main() -> Result<(), Error> {
             //            Box::new(DebugSizePane::new(&ctx_).with_style(sty)),
             //            Style::default(),
             //        )
-            //        .with_dyn_width(hstack_.avg_width(&ctx_)),
+            //        .with_dyn_width(hstack_.avg_width()),
             //    )
             //};
 
@@ -80,7 +80,7 @@ async fn main() -> Result<(), Error> {
                     Box::new(DebugSizePane::new(&ctx_).with_style(sty)),
                     Style::default(),
                 )
-                .with_dyn_width(hstack_.avg_width(&ctx_)),
+                .with_dyn_width(hstack_.avg_width()),
             );
 
             hstack_.push(el);
@@ -89,7 +89,7 @@ async fn main() -> Result<(), Error> {
             //    Box::new(
             //        DebugSizePane::new(&ctx_)
             //            .with_style(sty)
-            //            .with_dyn_height(vstack_.avg_height(&ctx_)),
+            //            .with_dyn_height(vstack_.avg_height()),
             //    )
             //} else {
             //    Box::new(
@@ -98,7 +98,7 @@ async fn main() -> Result<(), Error> {
             //            Box::new(DebugSizePane::new(&ctx_).with_style(sty)),
             //            Style::default(),
             //        )
-            //        .with_dyn_height(vstack_.avg_height(&ctx_)),
+            //        .with_dyn_height(vstack_.avg_height()),
             //    )
             //};
 
@@ -108,7 +108,7 @@ async fn main() -> Result<(), Error> {
                     Box::new(DebugSizePane::new(&ctx_).with_style(sty)),
                     Style::default(),
                 )
-                .with_dyn_height(vstack_.avg_height(&ctx_)),
+                .with_dyn_height(vstack_.avg_height()),
             );
             vstack_.push(el);
         }

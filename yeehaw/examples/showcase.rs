@@ -84,10 +84,11 @@ async fn main() -> Result<(), Error> {
 
     // need to generate the context for the main_vs pane
     // for upward propogation of events from the main_vs element
-    let main_vs_ctx = ctx.child_context(&main_vs.get_dyn_location());
+    //let main_vs_ctx = ctx.child_context(&main_vs.get_dyn_location());
 
     left_pane.push(window_generation_zone(
-        &main_vs_ctx,
+        //&main_vs_ctx,
+        &ctx,
         Box::new(main_vs.pane.pane.clone()),
     ));
 
@@ -238,12 +239,12 @@ pub fn window_generation_zone(
 
     let counter = Rc::new(RefCell::new(0));
 
-    let mut ctx_ = ctx.clone();
+    let ctx_ = ctx.clone();
     let counter_ = counter.clone();
 
     let generate_window_fn = Box::new(move |_, _| {
-        ctx_.size.width = 30;
-        ctx_.size.height = 20;
+        //ctx_.size.width = 30;
+        //ctx_.size.height = 20;
         let title = format!("Pane {}", *counter_.borrow());
 
         let alpha = (alpha_slider.get_position() * 255.0) as u8;
@@ -360,7 +361,6 @@ pub fn window_generation_zone(
         let window: Box<dyn Element> = if shadow_cb.is_checked() {
             let shadow_color = Color::new_with_alpha(100, 100, 100, 150);
             Box::new(Shadowed::thick_with_color(
-                &ctx_,
                 Box::new(window.clone()),
                 shadow_color,
             ))

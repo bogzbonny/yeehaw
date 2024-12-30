@@ -58,8 +58,8 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
         .map(|i| format!("entry {}", i))
         .collect::<Vec<String>>();
     let listbox = ListBox::new(ctx, lb_entries)
-        .with_selection_mode(ctx, listbox::SelectionMode::UpTo(3))
-        .with_dyn_height(ctx, lb_height.clone())
+        .with_selection_mode(listbox::SelectionMode::UpTo(3))
+        .with_dyn_height(lb_height.clone())
         .with_scrollbar(ctx)
         .at(x.clone(), y.clone())
         .with_end_x(end_x.clone());

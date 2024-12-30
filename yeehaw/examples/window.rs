@@ -14,11 +14,11 @@ async fn main() -> Result<(), Error> {
 
     let counter = Rc::new(RefCell::new(0));
 
-    let mut ctx_ = ctx.clone();
+    let ctx_ = ctx.clone();
     let counter_ = counter.clone();
     let add_button_click_fn = Box::new(move |_btn: Button, _| {
-        ctx_.size.width = 30;
-        ctx_.size.height = 20;
+        //ctx_.size.width = 30;
+        //ctx_.size.height = 20;
         let title = format!("Pane {}", *counter_.borrow());
         let bg = Color::new_with_alpha(150, 150, 155, 150);
         let fg = Color::new_with_alpha(150, 150, 155, 150);
@@ -53,11 +53,11 @@ async fn main() -> Result<(), Error> {
         EventResponse::NewElement(Box::new(window.clone()), Some(inner_resps.into())).into()
     });
 
-    let mut ctx_ = ctx.clone();
+    let ctx_ = ctx.clone();
     let counter_ = counter.clone();
     let add_button_scr_click_fn = Box::new(move |_, _| {
-        ctx_.size.width = 30;
-        ctx_.size.height = 20;
+        //ctx_.size.width = 30;
+        //ctx_.size.height = 20;
         let title = format!("Pane {}", *counter_.borrow());
         let bg = Color::new_with_alpha(150, 150, 155, 150);
         let fg = Color::new_with_alpha(150, 150, 155, 150);
@@ -89,8 +89,7 @@ async fn main() -> Result<(), Error> {
             .at(DynVal::new_fixed(10), DynVal::new_fixed(10));
 
         let shadow_color = Color::new_with_alpha(0, 0, 0, 150);
-        let window_with_shadow =
-            Shadowed::thick_with_color(&ctx_, Box::new(window.clone()), shadow_color);
+        let window_with_shadow = Shadowed::thick_with_color(Box::new(window.clone()), shadow_color);
 
         let inner_resps = vec![
             EventResponse::BringToFront,
@@ -104,11 +103,11 @@ async fn main() -> Result<(), Error> {
         .into()
     });
 
-    let mut ctx_ = ctx.clone();
+    let ctx_ = ctx.clone();
     let counter_ = counter.clone();
     let add_term_click_fn = Box::new(move |_, _| {
-        ctx_.size.width = 30;
-        ctx_.size.height = 20;
+        //ctx_.size.width = 30;
+        //ctx_.size.height = 20;
         let title = format!("Pane {}", *counter_.borrow());
         let el = TerminalPane::new(&ctx_)
             .expect("terminal pane can't be created")
@@ -130,11 +129,11 @@ async fn main() -> Result<(), Error> {
         EventResponse::NewElement(Box::new(window.clone()), Some(inner_resps.into())).into()
     });
 
-    let mut ctx_ = ctx.clone();
+    let ctx_ = ctx.clone();
     let counter_ = counter.clone();
     let add_button_bordered_resizer_fn = Box::new(move |_, _| {
-        ctx_.size.width = 30;
-        ctx_.size.height = 20;
+        //ctx_.size.width = 30;
+        //ctx_.size.height = 20;
         let title = format!("Bordered Pane {}", *counter_.borrow());
         let bg = Color::new_with_alpha(150, 150, 155, 150);
         let fg = Color::new_with_alpha(150, 150, 155, 150);
@@ -166,11 +165,11 @@ async fn main() -> Result<(), Error> {
         EventResponse::NewElement(Box::new(window.clone()), Some(inner_resps.into())).into()
     });
 
-    let mut ctx_ = ctx.clone();
+    let ctx_ = ctx.clone();
     let counter_ = counter.clone();
     let add_button_bordered_mover_fn = Box::new(move |_, _| {
-        ctx_.size.width = 30;
-        ctx_.size.height = 20;
+        //ctx_.size.width = 30;
+        //ctx_.size.height = 20;
         let title = format!("Bordered Pane {}", *counter_.borrow());
         let bg = Color::new_with_alpha(150, 150, 155, 150);
         let fg = Color::new_with_alpha(150, 150, 155, 150);
@@ -201,11 +200,11 @@ async fn main() -> Result<(), Error> {
         EventResponse::NewElement(Box::new(window.clone()), Some(inner_resps.into())).into()
     });
 
-    let mut ctx_ = ctx.clone();
+    let ctx_ = ctx.clone();
     let counter_ = counter.clone();
     let add_button_bordered_scr_click_fn = Box::new(move |_, _| {
-        ctx_.size.width = 30;
-        ctx_.size.height = 20;
+        //ctx_.size.width = 30;
+        //ctx_.size.height = 20;
         let title = format!("Pane {}", *counter_.borrow());
         let bg = Color::new_with_alpha(150, 150, 155, 150);
         let fg = Color::new_with_alpha(150, 150, 155, 150);
