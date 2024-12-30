@@ -53,44 +53,36 @@ impl Shadowed {
 
     pub fn thin(inner: Box<dyn Element>) -> Shadowed {
         let shadow_color = Color::new_with_alpha(100, 100, 100, 100);
-        let out = Shadowed {
+        Shadowed {
             inner,
             sh_sty: Rc::new(RefCell::new(ShadowSty::new_thin(shadow_color))),
             overflow: Rc::new(RefCell::new(true)),
-        };
-        //out.set_shadow_content(ctx);
-        out
+        }
     }
 
     pub fn thin_with_color(inner: Box<dyn Element>, shadow_color: Color) -> Shadowed {
-        let out = Shadowed {
+        Shadowed {
             inner,
             sh_sty: Rc::new(RefCell::new(ShadowSty::new_thin(shadow_color))),
             overflow: Rc::new(RefCell::new(true)),
-        };
-        //out.set_shadow_content(ctx);
-        out
+        }
     }
 
     pub fn thick(inner: Box<dyn Element>) -> Shadowed {
         let shadow_color = Color::new_with_alpha(100, 100, 100, 100);
-        let out = Shadowed {
+        Shadowed {
             inner,
             sh_sty: Rc::new(RefCell::new(ShadowSty::new_thick(shadow_color))),
             overflow: Rc::new(RefCell::new(true)),
-        };
-        //out.set_shadow_content(ctx);
-        out
+        }
     }
 
     pub fn thick_with_color(inner: Box<dyn Element>, shadow_color: Color) -> Shadowed {
-        let out = Shadowed {
+        Shadowed {
             inner,
             sh_sty: Rc::new(RefCell::new(ShadowSty::new_thick(shadow_color))),
             overflow: Rc::new(RefCell::new(true)),
-        };
-        //out.set_shadow_content(ctx);
-        out
+        }
     }
 
     /// TODO could cache this

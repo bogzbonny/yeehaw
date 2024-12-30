@@ -84,7 +84,7 @@ impl FileNavPane {
         pane.set_dyn_height(DynVal::FULL);
         pane.set_dyn_width(DynVal::new_fixed(32));
 
-        let out = Self {
+        Self {
             pane,
             styles: Rc::new(RefCell::new(styles)),
             nav_items: Rc::new(RefCell::new(nav_items)),
@@ -94,9 +94,7 @@ impl FileNavPane {
                 EventResponses::default()
             }))),
             is_dirty: Rc::new(RefCell::new(true)),
-        };
-        //out.update_content(ctx, true);
-        out
+        }
     }
 
     pub fn set_fn(&self, file_enter_fn: FileNavPaneFn) {

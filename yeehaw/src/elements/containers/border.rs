@@ -150,7 +150,7 @@ pub enum PropertyVrt {
     DragResize,
     /// drag to move
     DragMove,
-    Scrollbar(VerticalScrollbar),
+    Scrollbar(Box<VerticalScrollbar>),
 }
 
 /// property for the border
@@ -163,7 +163,7 @@ pub enum PropertyHzt {
     DragResize,
     /// drag to move
     DragMove,
-    Scrollbar(HorizontalScrollbar),
+    Scrollbar(Box<HorizontalScrollbar>),
 }
 
 #[derive(Clone)]
@@ -199,15 +199,15 @@ impl BorderProperies {
     pub fn new_basic_with_scrollbars(ctx: &Context, sty: Style) -> Self {
         Self {
             left: Some(PropertyVrt::None),
-            right: Some(PropertyVrt::Scrollbar(
+            right: Some(PropertyVrt::Scrollbar(Box::new(
                 VerticalScrollbar::new(ctx, 0.into(), Size::default(), 0)
                     .with_scrollbar_sty(ScrollbarSty::vertical_for_thin_box(sty.clone())),
-            )),
+            ))),
             top: Some(PropertyHzt::None),
-            bottom: Some(PropertyHzt::Scrollbar(
+            bottom: Some(PropertyHzt::Scrollbar(Box::new(
                 HorizontalScrollbar::new(ctx, 0.into(), Size::default(), 0)
                     .with_scrollbar_sty(ScrollbarSty::horizontal_for_thin_box(sty)),
-            )),
+            ))),
             top_corner: PropertyCnr::None,
             bottom_corner: PropertyCnr::None,
             left_corner: PropertyCnr::None,
@@ -218,19 +218,19 @@ impl BorderProperies {
     pub fn new_borderless_with_scrollbars(ctx: &Context) -> Self {
         Self {
             left: None,
-            right: Some(PropertyVrt::Scrollbar(VerticalScrollbar::new(
+            right: Some(PropertyVrt::Scrollbar(Box::new(VerticalScrollbar::new(
                 ctx,
                 0.into(),
                 Size::default(),
                 0,
-            ))),
+            )))),
             top: None,
-            bottom: Some(PropertyHzt::Scrollbar(HorizontalScrollbar::new(
+            bottom: Some(PropertyHzt::Scrollbar(Box::new(HorizontalScrollbar::new(
                 ctx,
                 0.into(),
                 Size::default(),
                 0,
-            ))),
+            )))),
             top_corner: PropertyCnr::None,
             bottom_corner: PropertyCnr::None,
             left_corner: PropertyCnr::None,
@@ -306,15 +306,15 @@ impl BorderProperies {
     pub fn new_resizer_with_scrollbars(ctx: &Context, sty: Style) -> Self {
         Self {
             left: Some(PropertyVrt::DragResize),
-            right: Some(PropertyVrt::Scrollbar(
+            right: Some(PropertyVrt::Scrollbar(Box::new(
                 VerticalScrollbar::new(ctx, 0.into(), Size::default(), 0)
                     .with_scrollbar_sty(ScrollbarSty::vertical_for_thin_box(sty.clone())),
-            )),
+            ))),
             top: Some(PropertyHzt::DragResize),
-            bottom: Some(PropertyHzt::Scrollbar(
+            bottom: Some(PropertyHzt::Scrollbar(Box::new(
                 HorizontalScrollbar::new(ctx, 0.into(), Size::default(), 0)
                     .with_scrollbar_sty(ScrollbarSty::horizontal_for_thin_box(sty)),
-            )),
+            ))),
             top_corner: PropertyCnr::DragResize,
             bottom_corner: PropertyCnr::DragResize,
             left_corner: PropertyCnr::DragResize,
@@ -1121,8 +1121,8 @@ impl Bordered {
                     Some(inner.get_content_height(None)),
                 );
 
-                bordered.y_scrollbar.borrow_mut().replace(sb.clone());
-                bordered.pane.add_element(Box::new(sb));
+                bordered.y_scrollbar.borrow_mut().replace(*sb.clone());
+                bordered.pane.add_element(sb);
             } else {
                 let side =
                     VerticalSide::new(ctx, chs_left.clone(), VerticalPos::Left, left_property);
@@ -1173,8 +1173,8 @@ impl Bordered {
                     Some(inner.get_content_height(None)),
                 );
 
-                bordered.y_scrollbar.borrow_mut().replace(sb.clone());
-                bordered.pane.add_element(Box::new(sb));
+                bordered.y_scrollbar.borrow_mut().replace(*sb.clone());
+                bordered.pane.add_element(sb);
             } else {
                 let side =
                     VerticalSide::new(ctx, chs_right.clone(), VerticalPos::Right, right_property);
@@ -1219,8 +1219,8 @@ impl Bordered {
                     Some(inner.get_content_width(None)),
                 );
 
-                bordered.x_scrollbar.borrow_mut().replace(sb.clone());
-                bordered.pane.add_element(Box::new(sb));
+                bordered.x_scrollbar.borrow_mut().replace(*sb.clone());
+                bordered.pane.add_element(sb);
             } else {
                 let side =
                     HorizontalSide::new(ctx, chs_top.clone(), HorizontalPos::Top, top_property);
@@ -1268,8 +1268,8 @@ impl Bordered {
                     Some(inner.get_content_width(None)),
                 );
 
-                bordered.x_scrollbar.borrow_mut().replace(sb.clone());
-                bordered.pane.add_element(Box::new(sb));
+                bordered.x_scrollbar.borrow_mut().replace(*sb.clone());
+                bordered.pane.add_element(sb);
             } else {
                 let side = HorizontalSide::new(
                     ctx,
@@ -1629,12 +1629,12 @@ impl Element for VerticalSide {
         match ev {
             Event::Mouse(me) => match me.kind {
                 MouseEventKind::Down(MouseButton::Left) => {
-                    *self.dragging_start_pos.borrow_mut() = Some((me.column.into(), me.row.into()));
+                    *self.dragging_start_pos.borrow_mut() = Some((me.column, me.row));
                     return (true, EventResponses::default());
                 }
                 MouseEventKind::Drag(MouseButton::Left) if dragging_start_pos.is_some() => {
                     let (_, start_y) = dragging_start_pos.expect("impossible");
-                    let dy = me.row as i32 - start_y;
+                    let dy = me.row - start_y;
 
                     if matches!(*property, PropertyVrt::DragMove) {
                         let resp = MoveResponse {
@@ -1836,12 +1836,12 @@ impl Element for HorizontalSide {
         match ev {
             Event::Mouse(me) => match me.kind {
                 MouseEventKind::Down(MouseButton::Left) => {
-                    *self.dragging_start_pos.borrow_mut() = Some((me.column.into(), me.row.into()));
+                    *self.dragging_start_pos.borrow_mut() = Some((me.column, me.row));
                     return (true, EventResponses::default());
                 }
                 MouseEventKind::Drag(MouseButton::Left) if dragging_start_pos.is_some() => {
                     let (start_x, _) = dragging_start_pos.expect("impossible");
-                    let dx = me.column as i32 - start_x;
+                    let dx = me.column - start_x;
 
                     if matches!(*property, PropertyHzt::DragMove) {
                         let resp = MoveResponse {

@@ -36,10 +36,10 @@ impl Element for PaneLimiter {
             }
             _ => {}
         }
-        self.inner.receive_event(&ctx, ev)
+        self.inner.receive_event(ctx, ev)
     }
     fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         let inner_dr = self.inner_dr(dr);
-        self.inner.drawing(&ctx, &inner_dr, force_update)
+        self.inner.drawing(ctx, &inner_dr, force_update)
     }
 }

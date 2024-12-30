@@ -343,17 +343,17 @@ impl Color {
             Color::ANSI(c) => *c,
             Color::Rgba(c) => c.to_crossterm_color(prev),
             Color::Gradient(gr) => gr
-                .to_color(&ctx, draw_size, x, y)
+                .to_color(ctx, draw_size, x, y)
                 .to_crossterm_color(ctx, draw_size, prev, x, y),
             Color::TimeGradient(g) => g
-                .to_color(&ctx, draw_size, x, y)
+                .to_color(ctx, draw_size, x, y)
                 .to_crossterm_color(ctx, draw_size, prev, x, y),
             Color::RadialGradient(rg) => rg
-                .to_color(&ctx, draw_size, x, y)
-                .to_crossterm_color(&ctx, draw_size, prev, x, y),
+                .to_color(ctx, draw_size, x, y)
+                .to_crossterm_color(ctx, draw_size, prev, x, y),
             Color::Pattern(p) => p
-                .to_color(&ctx, x, y)
-                .to_crossterm_color(&ctx, draw_size, prev, x, y),
+                .to_color(ctx, x, y)
+                .to_crossterm_color(ctx, draw_size, prev, x, y),
         }
     }
 
@@ -361,10 +361,10 @@ impl Color {
     pub fn to_color(self, ctx: &Context, draw_size: &Size, x: u16, y: u16) -> Color {
         match self {
             Color::ANSI(_) | Color::Rgba(_) => self,
-            Color::Gradient(gr) => gr.to_color(&ctx, draw_size, x, y),
-            Color::TimeGradient(g) => g.to_color(&ctx, draw_size, x, y),
-            Color::RadialGradient(rg) => rg.to_color(&ctx, draw_size, x, y),
-            Color::Pattern(p) => p.to_color(&ctx, x, y),
+            Color::Gradient(gr) => gr.to_color(ctx, draw_size, x, y),
+            Color::TimeGradient(g) => g.to_color(ctx, draw_size, x, y),
+            Color::RadialGradient(rg) => rg.to_color(ctx, draw_size, x, y),
+            Color::Pattern(p) => p.to_color(ctx, x, y),
         }
     }
 
@@ -693,7 +693,7 @@ impl Gradient {
             return Color::TRANSPARENT;
         }
 
-        let mut draw_size = draw_size.clone();
+        let mut draw_size = *draw_size;
         let s = if let Some(s) = self.draw_size {
             draw_size = s;
             s
@@ -962,7 +962,7 @@ impl RadialGradient {
             return Color::TRANSPARENT;
         }
 
-        let mut draw_size = draw_size.clone();
+        let mut draw_size = *draw_size;
         let s = if let Some(s) = self.draw_size {
             draw_size = s;
             s

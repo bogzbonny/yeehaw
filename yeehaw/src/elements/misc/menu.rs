@@ -190,7 +190,7 @@ impl MenuBar {
         for item in self.menu_items_order.borrow().iter() {
             if item.is_primary() {
                 let loc = self.pane.eo.get_location(&item.id()).expect("missing el").l;
-                let end_x = loc.get_end_x(&dr);
+                let end_x = loc.get_end_x(dr);
                 if let Some(mx) = max_x {
                     if end_x > mx {
                         max_x = Some(end_x);
@@ -207,7 +207,7 @@ impl MenuBar {
         for item in self.menu_items_order.borrow().iter() {
             if item.is_primary() {
                 let loc = self.pane.eo.get_location(&item.id()).expect("missing el").l;
-                let end_y = loc.get_end_y(&dr);
+                let end_y = loc.get_end_y(dr);
                 if let Some(my) = max_y {
                     if end_y > my {
                         max_y = Some(end_y);

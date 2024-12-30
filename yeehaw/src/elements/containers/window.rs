@@ -147,14 +147,14 @@ impl WindowPane {
                 self.pane.pane.set_end_x(end_x_adj);
                 self.pane.pane.set_end_y(end_y_adj);
 
-                let (_, r) = self.inner.receive_event(&ctx, Event::Resize);
+                let (_, r) = self.inner.receive_event(ctx, Event::Resize);
                 resps_.extend(r);
 
                 // reset the maximizer button
                 if self.maximized_restore.borrow().is_some() {
                     self.maximized_restore.replace(None);
                     let (_, r) = self.top_bar.receive_event(
-                        &ctx,
+                        ctx,
                         Event::Custom(
                             Self::WINDOW_RESET_MAXIMIZER_EV_KEY.to_string(),
                             Vec::with_capacity(0),
@@ -191,9 +191,9 @@ impl WindowPane {
                     Some(restore_loc) => {
                         self.pane.pane.set_dyn_location(restore_loc);
 
-                        let (_, r) = self.top_bar.receive_event(&ctx, Event::Resize);
+                        let (_, r) = self.top_bar.receive_event(ctx, Event::Resize);
                         resps_.extend(r);
-                        let (_, r) = self.inner.receive_event(&ctx, Event::Resize);
+                        let (_, r) = self.inner.receive_event(ctx, Event::Resize);
                         resps_.extend(r);
 
                         self.maximized_restore.replace(None);
@@ -203,9 +203,9 @@ impl WindowPane {
                         let l = DynLocation::full();
                         self.pane.pane.set_dyn_location(l);
 
-                        let (_, r) = self.top_bar.receive_event(&ctx, Event::Resize);
+                        let (_, r) = self.top_bar.receive_event(ctx, Event::Resize);
                         resps_.extend(r);
-                        let (_, r) = self.inner.receive_event(&ctx, Event::Resize);
+                        let (_, r) = self.inner.receive_event(ctx, Event::Resize);
                         resps_.extend(r);
 
                         self.maximized_restore.replace(Some(restore_loc));
@@ -235,7 +235,7 @@ impl WindowPane {
 
                 // send an event telling the top bar to hide its buttons
                 let (_, r) = self.top_bar.receive_event(
-                    &ctx,
+                    ctx,
                     Event::Custom(
                         Self::WINDOW_MINIMIZE_EV_KEY.to_string(),
                         Vec::with_capacity(0),
@@ -244,7 +244,7 @@ impl WindowPane {
                 resps_.extend(r);
 
                 // resize events
-                let (_, r) = self.top_bar.receive_event(&ctx, Event::Resize);
+                let (_, r) = self.top_bar.receive_event(ctx, Event::Resize);
                 resps_.extend(r);
                 self.inner.set_visible(false);
                 *resp = EventResponse::None;
@@ -292,7 +292,7 @@ impl WindowPane {
 
                         // send an event telling the top bar to hide its buttons
                         let (_, r) = self.top_bar.receive_event(
-                            &ctx,
+                            ctx,
                             Event::Custom(
                                 Self::WINDOW_MINIMIZE_RESTORE_EV_KEY.to_string(),
                                 Vec::with_capacity(0),
@@ -300,7 +300,7 @@ impl WindowPane {
                         );
                         resps.extend(r);
 
-                        let (_, r) = self.top_bar.receive_event(&ctx, Event::Resize);
+                        let (_, r) = self.top_bar.receive_event(ctx, Event::Resize);
                         resps.extend(r);
                         self.inner.set_visible(true);
 
@@ -315,8 +315,8 @@ impl WindowPane {
                     }
                     MouseEventKind::Drag(MouseButton::Left) if dragging && mr.is_none() => {
                         let (start_x, start_y) = self.dragging.borrow().expect("impossible");
-                        let mut dx = me.column as i32 - start_x as i32;
-                        let mut dy = me.row as i32 - start_y as i32;
+                        let mut dx = me.column - start_x;
+                        let mut dy = me.row - start_y;
                         let loc = self.pane.pane.get_dyn_location();
                         if loc.get_start_x(&me.dr) + dx < 0 {
                             dx = loc.get_start_x(&me.dr);
@@ -344,7 +344,6 @@ impl WindowPane {
                     match me.kind {
                         MouseEventKind::Drag(MouseButton::Left) => {
                             let (start_x, start_y) = self.dragging.borrow().expect("impossible");
-                            let (start_x, start_y) = (start_x as i32, start_y as i32);
                             let mut dx = me.column - start_x;
                             let mut dy = me.row - start_y;
                             let loc = self.pane.pane.get_dyn_location();

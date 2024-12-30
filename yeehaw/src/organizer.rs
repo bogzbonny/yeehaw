@@ -538,7 +538,7 @@ impl ElementOrganizer {
 
             //let child_ctx = ctx.child_context(&el_details.loc.borrow().l);
             //let (captured, mut resps_) = el_details.el.receive_event(&child_ctx, ev.clone());
-            let (captured, mut resps_) = el_details.el.receive_event(&ctx, ev.clone());
+            let (captured, mut resps_) = el_details.el.receive_event(ctx, ev.clone());
             self.partially_process_ev_resps(ctx, &el_id, &mut resps_, &parent);
             resps.0.extend(resps_.drain(..));
 
@@ -588,7 +588,7 @@ impl ElementOrganizer {
         for (el_id, details) in self.els.borrow().iter() {
             //let el_ctx = ctx.child_context(&details.loc.borrow().l);
             //let (_, mut resps_) = details.el.receive_event(&el_ctx, ev.clone());
-            let (_, mut resps_) = details.el.receive_event(&ctx, ev.clone());
+            let (_, mut resps_) = details.el.receive_event(ctx, ev.clone());
             self.partially_process_ev_resps(ctx, el_id, &mut resps_, &parent);
             resps.0.extend(resps_.drain(..));
         }
@@ -605,7 +605,7 @@ impl ElementOrganizer {
 
         //let child_ctx = ctx.child_context(&details.loc.borrow().l);
         //let (_, mut resps) = details.el.receive_event(&child_ctx, ev);
-        let (_, mut resps) = details.el.receive_event(&ctx, ev);
+        let (_, mut resps) = details.el.receive_event(ctx, ev);
         self.partially_process_ev_resps(ctx, el_id, &mut resps, &parent);
         resps
     }
@@ -621,7 +621,7 @@ impl ElementOrganizer {
         for (_, details) in self.els.borrow().iter() {
             //let el_ctx = ctx.child_context(&details.loc.borrow().l);
             //let (_, mut resp_) = details.el.receive_event(&el_ctx, Event::Initialize);
-            let (_, mut resp_) = details.el.receive_event(&ctx, Event::Initialize);
+            let (_, mut resp_) = details.el.receive_event(ctx, Event::Initialize);
             self.partially_process_ev_resps(ctx, &details.el.id(), &mut resp_, &parent);
             resps.0.extend(resp_.drain(..));
         }
@@ -648,11 +648,7 @@ impl ElementOrganizer {
             if !*details.vis.borrow() {
                 continue;
             }
-            if details
-                .loc
-                .borrow()
-                .contains(&ev.dr, ev.column.into(), ev.row.into())
-            {
+            if details.loc.borrow().contains(&ev.dr, ev.column, ev.row) {
                 ezo.push((el_id.clone(), details.loc.borrow().z));
             }
         }
@@ -689,7 +685,7 @@ impl ElementOrganizer {
 
             // send mouse event to the element
             //let (captured, mut resps_) = details.el.receive_event(&child_ctx, Event::Mouse(ev_adj));
-            let (captured, mut resps_) = details.el.receive_event(&ctx, Event::Mouse(ev_adj));
+            let (captured, mut resps_) = details.el.receive_event(ctx, Event::Mouse(ev_adj));
             self.partially_process_ev_resps(ctx, el_id, &mut resps_, &parent);
             resps.0.extend(resps_.drain(..));
 
@@ -713,9 +709,7 @@ impl ElementOrganizer {
             }
             //let child_ctx = ctx.child_context(&details2.loc.borrow().l);
             let ev_adj = details2.loc.borrow().l.adjusted_mouse_event(ev);
-            let (_, mut resps_) = details2
-                .el
-                .receive_event(&ctx, Event::ExternalMouse(ev_adj));
+            let (_, mut resps_) = details2.el.receive_event(ctx, Event::ExternalMouse(ev_adj));
             //.receive_event(&child_ctx, Event::ExternalMouse(ev_adj));
             //debug!("about to process external mouse resp: id:{el_id2:?} resps: {resps_:?}");
             self.partially_process_ev_resps(ctx, el_id2, &mut resps_, &parent);
@@ -732,11 +726,11 @@ impl ElementOrganizer {
         let mut resps = EventResponses::default();
         for (el_id, details) in self.els.borrow().iter() {
             //let child_ctx = ctx.child_context(&details.loc.borrow().l);
-            let ev_adj = details.loc.borrow().l.adjusted_mouse_event(&ev);
+            let ev_adj = details.loc.borrow().l.adjusted_mouse_event(ev);
             let (_, mut resps_) = details
                 .el
                 //.receive_event(&child_ctx, Event::ExternalMouse(ev_adj));
-                .receive_event(&ctx, Event::ExternalMouse(ev_adj));
+                .receive_event(ctx, Event::ExternalMouse(ev_adj));
             self.partially_process_ev_resps(ctx, el_id, &mut resps_, &parent);
             resps.extend(resps_);
         }

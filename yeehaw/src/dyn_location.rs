@@ -180,7 +180,7 @@ impl DynLocation {
         let x_adj = x_adj - start_x;
         let y_adj = y_adj - start_y;
         let mut ev = ev.clone();
-        ev.dr = ev.dr.child_region(&self);
+        ev.dr = ev.dr.child_region(self);
         // for bugs when dragging off screen
         ev.column = x_adj.clamp(-1000, 1000);
         ev.row = y_adj.clamp(-1000, 1000);

@@ -57,9 +57,9 @@ impl RightClickMenu {
 
         // adjust locations
         let (ev_x, ev_y) = (me.column, me.row);
-        *self.pos.borrow_mut() = Point::new(ev_x.into(), ev_y.into());
+        *self.pos.borrow_mut() = Point::new(ev_x, ev_y);
 
-        let (x, y): (i32, i32) = (ev_x.into(), (ev_y + 1).into()); // offset the menu 1 below the cursor
+        let (x, y): (i32, i32) = (ev_x, (ev_y + 1)); // offset the menu 1 below the cursor
         let (x, y) = (DynVal::new_fixed(x), DynVal::new_fixed(y));
 
         // the location size doesn't matter as the top level element will be

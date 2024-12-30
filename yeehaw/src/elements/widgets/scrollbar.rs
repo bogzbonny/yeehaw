@@ -877,7 +877,7 @@ impl VerticalScrollbar {
             return (false, EventResponses::default());
         }
         match ev.kind {
-            MouseEventKind::Drag(MouseButton::Left) => self.drag_while_dragging(ctx, ev.into()),
+            MouseEventKind::Drag(MouseButton::Left) => self.drag_while_dragging(ctx, ev),
             _ => {
                 *self.currently_dragging.borrow_mut() = false;
                 (false, EventResponses::default())
@@ -991,7 +991,7 @@ impl HorizontalScrollbar {
             return (false, EventResponses::default());
         }
         match ev.kind {
-            MouseEventKind::Drag(MouseButton::Left) => self.drag_while_dragging(ctx, ev.into()),
+            MouseEventKind::Drag(MouseButton::Left) => self.drag_while_dragging(ctx, ev),
             _ => {
                 *self.currently_dragging.borrow_mut() = false;
                 (false, EventResponses::default())
