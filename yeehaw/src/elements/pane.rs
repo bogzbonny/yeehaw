@@ -242,7 +242,7 @@ impl Pane {
     }
 
     pub fn get_last_size(&self) -> Ref<Size> {
-        *self.last_size.borrow()
+        self.last_size.borrow()
     }
 
     pub fn with_content(self, content: DrawChs2D) -> Pane {
@@ -337,22 +337,22 @@ impl Pane {
         Size::new(self.content_width() as u16, self.content_height() as u16)
     }
 
-    pub fn scroll_up(&self, dr: &DrawRegion) {
+    pub fn scroll_up(&self, dr: Option<&DrawRegion>) {
         let view_offset_y = *self.content_view_offset_y.borrow();
         self.set_content_y_offset(dr, view_offset_y.saturating_sub(1));
     }
 
-    pub fn scroll_down(&self, dr: &DrawRegion) {
+    pub fn scroll_down(&self, dr: Option<&DrawRegion>) {
         let view_offset_y = *self.content_view_offset_y.borrow();
         self.set_content_y_offset(dr, view_offset_y + 1);
     }
 
-    pub fn scroll_left(&self, dr: &DrawRegion) {
+    pub fn scroll_left(&self, dr: Option<&DrawRegion>) {
         let view_offset_x = *self.content_view_offset_x.borrow();
         self.set_content_x_offset(dr, view_offset_x.saturating_sub(1));
     }
 
-    pub fn scroll_right(&self, dr: &DrawRegion) {
+    pub fn scroll_right(&self, dr: Option<&DrawRegion>) {
         let view_offset_x = *self.content_view_offset_x.borrow();
         self.set_content_x_offset(dr, view_offset_x + 1);
     }
@@ -456,28 +456,28 @@ impl Pane {
 
         // set y offset if cursor out of bounds
         if y >= view_offset_y + height {
-            self.set_content_y_offset(dr, y - height + 1);
+            self.set_content_y_offset(Some(dr), y - height + 1);
         } else if y < view_offset_y {
-            self.set_content_y_offset(dr, y);
+            self.set_content_y_offset(Some(dr), y);
         }
 
         // correct the offset if the offset is now showing lines that don't exist in
         // the content
         if view_offset_y + height > self.content_height() {
-            self.set_content_y_offset(dr, height);
+            self.set_content_y_offset(Some(dr), height);
         }
 
         // set x offset if cursor out of bounds
         if x >= view_offset_x + width {
-            self.set_content_x_offset(dr, x - width + 1);
+            self.set_content_x_offset(Some(dr), x - width + 1);
         } else if x < view_offset_x {
-            self.set_content_x_offset(dr, x);
+            self.set_content_x_offset(Some(dr), x);
         }
 
         // correct the offset if the offset is now showing characters to the right
         // which don't exist in the content.
         if view_offset_x + width > self.content_width() {
-            self.set_content_x_offset(dr, self.content_width());
+            self.set_content_x_offset(Some(dr), self.content_width());
         }
     }
 }
@@ -647,9 +647,10 @@ impl Element for Pane {
         self.overflow.clone()
     }
 
-    fn set_content_x_offset(&self, dr: &DrawRegion, x: usize) {
+    fn set_content_x_offset(&self, dr: Option<&DrawRegion>, x: usize) {
+        let size = if let Some(dr) = dr { dr.size } else { *self.get_last_size() };
         let content_width = self.content.borrow().width();
-        let view_width = dr.size.width as usize;
+        let view_width = size.width as usize;
         let x = if x > content_width.saturating_sub(view_width) {
             content_width.saturating_sub(view_width)
         } else {
@@ -658,9 +659,10 @@ impl Element for Pane {
         *self.content_view_offset_x.borrow_mut() = x;
     }
 
-    fn set_content_y_offset(&self, dr: &DrawRegion, y: usize) {
+    fn set_content_y_offset(&self, dr: Option<&DrawRegion>, y: usize) {
+        let size = if let Some(dr) = dr { dr.size } else { *self.get_last_size() };
         let content_height = self.content.borrow().height();
-        let view_height = dr.size.height as usize;
+        let view_height = size.height as usize;
         let y = if y > content_height.saturating_sub(view_height) {
             content_height.saturating_sub(view_height)
         } else {
@@ -675,10 +677,10 @@ impl Element for Pane {
     fn get_content_y_offset(&self) -> usize {
         *self.content_view_offset_y.borrow()
     }
-    fn get_content_width(&self, _: &DrawRegion) -> usize {
+    fn get_content_width(&self, _: Option<&DrawRegion>) -> usize {
         self.content.borrow().width()
     }
-    fn get_content_height(&self, _: &DrawRegion) -> usize {
+    fn get_content_height(&self, _: Option<&DrawRegion>) -> usize {
         self.content.borrow().height()
     }
 }

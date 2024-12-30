@@ -95,7 +95,7 @@ impl FileNavPane {
             }))),
             is_dirty: Rc::new(RefCell::new(true)),
         };
-        out.update_content(ctx, true);
+        //out.update_content(ctx, true);
         out
     }
 
@@ -108,7 +108,7 @@ impl FileNavPane {
         self
     }
 
-    pub fn update_content(&self, ctx: &Context, force_update: bool) {
+    pub fn update_content(&self, dr: &DrawRegion, force_update: bool) {
         if !force_update && !*self.is_dirty.borrow() {
             return;
         }
@@ -117,7 +117,7 @@ impl FileNavPane {
             if i < *self.offset.borrow() {
                 continue;
             }
-            let mut chs = item.draw(self.pane.default_ch.borrow().clone(), ctx.size.width.into());
+            let mut chs = item.draw(self.pane.default_ch.borrow().clone(), dr.size.width.into());
 
             // cursor logic
             if i == *self.highlight_position.borrow() {
@@ -127,7 +127,16 @@ impl FileNavPane {
             }
             content.push(chs);
         }
-        self.pane.set_content(content.into())
+        self.pane.set_content(content.into());
+
+        // correct offsets
+        if *self.highlight_position.borrow() >= *self.offset.borrow() + dr.size.height as usize - 1
+        {
+            *self.offset.borrow_mut() += 1;
+        }
+        if *self.highlight_position.borrow() < *self.offset.borrow() {
+            *self.offset.borrow_mut() -= 1;
+        }
     }
 }
 
@@ -143,22 +152,10 @@ impl Element for FileNavPane {
                         {
                             *self.highlight_position.borrow_mut() += 1;
                         }
-
-                        // correct offsets
-                        if *self.highlight_position.borrow()
-                            >= *self.offset.borrow() + ctx.size.height as usize - 1
-                        {
-                            *self.offset.borrow_mut() += 1;
-                        }
                     }
                     _ if ke[0] == KB::KEY_K || ke[0] == KB::KEY_UP => {
                         if *self.highlight_position.borrow() > 0 {
                             *self.highlight_position.borrow_mut() -= 1;
-                        }
-
-                        // correct offsets
-                        if *self.highlight_position.borrow() < *self.offset.borrow() {
-                            *self.offset.borrow_mut() -= 1;
                         }
                     }
                     _ if ke[0] == KB::KEY_ENTER => {
@@ -187,7 +184,7 @@ impl Element for FileNavPane {
         (true, EventResponses::default())
     }
     fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
-        self.update_content(ctx, force_update);
+        self.update_content(dr, force_update);
         self.pane.drawing(ctx, dr, force_update)
     }
 }

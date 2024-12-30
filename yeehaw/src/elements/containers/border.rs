@@ -767,7 +767,7 @@ impl Bordered {
 
         // shrink the view portal as understood by the x scrollbar
         *bordered.x_scrollbar_view_sub_from_full.borrow_mut() += 1;
-        bordered.ensure_scrollbar_size(ctx);
+        //bordered.ensure_scrollbar_size(ctx);
 
         bordered
     }
@@ -1017,7 +1017,7 @@ impl Bordered {
             top: Rc::new(RefCell::new(None)),
             bottom: Rc::new(RefCell::new(None)),
 
-            last_size: Rc::new(RefCell::new(ctx.size)),
+            last_size: Rc::new(RefCell::new(Size::default())),
             x_scrollbar: Rc::new(RefCell::new(None)),
             y_scrollbar: Rc::new(RefCell::new(None)),
             x_scrollbar_sub_from_full: Rc::new(RefCell::new(0)),
@@ -1106,19 +1106,19 @@ impl Bordered {
 
             if let PropertyVrt::Scrollbar(sb) = left_property {
                 let inner_ = inner.clone();
-                let hook = Box::new(move |ctx, y| inner_.set_content_y_offset(&ctx, y));
+                let last_dr = DrawRegion::default().with_size(*bordered.get_last_size());
+                let hook = Box::new(move |_, y| inner_.set_content_y_offset(None, y));
                 *sb.position_changed_hook.borrow_mut() = Some(hook);
 
                 // set the scrollbar dimensions/location (as it wasn't done earlier)
                 // see NOTE SB-1 as to why we don't use the dynamic width/height
-                let sb_height: DynVal = left_loc.height(ctx).into();
+                let sb_height: DynVal = left_loc.height(&last_dr).into();
                 sb.set_dyn_location(left_loc);
 
-                let inner_ctx = ctx.child_context(&inner.get_dyn_location_set().l);
                 sb.set_dyn_height(
                     sb_height.clone(),
                     sb_height,
-                    Some(inner.get_content_height(&inner_ctx)),
+                    Some(inner.get_content_height(None)),
                 );
 
                 bordered.y_scrollbar.borrow_mut().replace(sb.clone());
@@ -1158,19 +1158,19 @@ impl Bordered {
 
             if let PropertyVrt::Scrollbar(sb) = right_property {
                 let inner_ = inner.clone();
-                let hook = Box::new(move |ctx, y| inner_.set_content_y_offset(&ctx, y));
+                let last_dr = DrawRegion::default().with_size(*bordered.get_last_size());
+                let hook = Box::new(move |_, y| inner_.set_content_y_offset(None, y));
                 *sb.position_changed_hook.borrow_mut() = Some(hook);
 
                 // set the scrollbar dimensions/location (as it wasn't done earlier)
                 // see NOTE SB-1 as to why we don't use the dynamic width/height
-                let sb_height: DynVal = right_loc.height(ctx).into();
+                let sb_height: DynVal = right_loc.height(&last_dr).into();
                 sb.set_dyn_location(right_loc);
 
-                let inner_ctx = ctx.child_context(&inner.get_dyn_location_set().l);
                 sb.set_dyn_height(
                     sb_height.clone(),
                     sb_height,
-                    Some(inner.get_content_height(&inner_ctx)),
+                    Some(inner.get_content_height(None)),
                 );
 
                 bordered.y_scrollbar.borrow_mut().replace(sb.clone());
@@ -1204,19 +1204,19 @@ impl Bordered {
             let top_loc = DynLocation::new(start_x, end_x, 0.into(), 1.into());
             if let PropertyHzt::Scrollbar(sb) = top_property {
                 let inner_ = inner.clone();
-                let hook = Box::new(move |ctx, x| inner_.set_content_x_offset(&ctx, x));
+                let last_dr = DrawRegion::default().with_size(*bordered.get_last_size());
+                let hook = Box::new(move |_, x| inner_.set_content_x_offset(None, x));
                 *sb.position_changed_hook.borrow_mut() = Some(hook);
 
                 // set the scrollbar dimensions/location (as it wasn't done earlier)
                 // see NOTE SB-1 as to why we don't use the dynamic width/height
-                let sb_width: DynVal = top_loc.width(ctx).into();
+                let sb_width: DynVal = top_loc.width(&last_dr).into();
                 sb.set_dyn_location(top_loc);
 
-                let inner_ctx = ctx.child_context(&inner.get_dyn_location_set().l);
                 sb.set_dyn_width(
                     sb_width.clone(),
                     sb_width,
-                    Some(inner.get_content_width(&inner_ctx)),
+                    Some(inner.get_content_width(None)),
                 );
 
                 bordered.x_scrollbar.borrow_mut().replace(sb.clone());
@@ -1251,20 +1251,21 @@ impl Bordered {
                 DynLocation::new(start_x, end_x, DynVal::FULL.minus(1.into()), DynVal::FULL);
             if let PropertyHzt::Scrollbar(sb) = bottom_property {
                 let inner_ = inner.clone();
-                let hook = Box::new(move |ctx, x| {
-                    inner_.set_content_x_offset(&ctx, x);
+                let last_dr = DrawRegion::default().with_size(*bordered.get_last_size());
+                let hook = Box::new(move |_, x| {
+                    inner_.set_content_x_offset(None, x);
                 });
                 *sb.position_changed_hook.borrow_mut() = Some(hook);
 
                 // set the scrollbar dimensions/location (as it wasn't done earlier)
                 // see NOTE SB-1 as to why we don't use the dynamic width/height
-                let sb_width: DynVal = bottom_loc.width(ctx).into();
+                let sb_width: DynVal = bottom_loc.width(&last_dr).into();
                 sb.set_dyn_location(bottom_loc);
-                let inner_ctx = ctx.child_context(&inner.get_dyn_location_set().l);
+
                 sb.set_dyn_width(
                     sb_width.clone(),
                     sb_width,
-                    Some(inner.get_content_width(&inner_ctx)),
+                    Some(inner.get_content_width(None)),
                 );
 
                 bordered.x_scrollbar.borrow_mut().replace(sb.clone());
@@ -1286,17 +1287,17 @@ impl Bordered {
         bordered
     }
 
-    pub fn ensure_scrollbar_size(&self, ctx: &Context) {
-        if *self.last_size.borrow() != ctx.size {
+    pub fn ensure_scrollbar_size(&self, dr: &DrawRegion) {
+        if *self.last_size.borrow() != dr.size {
             let x_sb = self.x_scrollbar.borrow();
             if let Some(x_sb) = x_sb.as_ref() {
                 let view_w: DynVal = DynVal::FULL
                     .minus((*self.x_scrollbar_view_sub_from_full.borrow()).into())
-                    .get_val(ctx.size.width)
+                    .get_val(dr.size.width)
                     .into();
                 let w: DynVal = DynVal::FULL
                     .minus((*self.x_scrollbar_sub_from_full.borrow()).into())
-                    .get_val(ctx.size.width)
+                    .get_val(dr.size.width)
                     .into();
                 x_sb.set_dyn_width(view_w, w, None);
             }
@@ -1304,15 +1305,15 @@ impl Bordered {
             if let Some(y_sb) = y_sb.as_ref() {
                 let view_h: DynVal = DynVal::FULL
                     .minus((*self.y_scrollbar_view_sub_from_full.borrow()).into())
-                    .get_val(ctx.size.height)
+                    .get_val(dr.size.height)
                     .into();
                 let h: DynVal = DynVal::FULL
                     .minus((*self.y_scrollbar_sub_from_full.borrow()).into())
-                    .get_val(ctx.size.height)
+                    .get_val(dr.size.height)
                     .into();
                 y_sb.set_dyn_height(view_h, h, None);
             }
-            *self.last_size.borrow_mut() = ctx.size;
+            *self.last_size.borrow_mut() = dr.size;
         }
     }
 }
@@ -1320,22 +1321,24 @@ impl Bordered {
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for Bordered {
     fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        self.ensure_scrollbar_size(ctx);
+        //self.ensure_scrollbar_size(ctx);
 
         let (captured, mut resps) = self.pane.receive_event(ctx, ev);
-        let inner_size = self.inner.borrow().get_dyn_location_set().l.get_size(ctx);
-        let inner_ctx = ctx.child_context(&self.inner.borrow().get_dyn_location_set().l);
+        let last_size = *self.last_size.borrow();
+        let dr = DrawRegion::default().with_size(last_size);
+        let inner_size = self.inner.borrow().get_dyn_location_set().l.get_size(&dr);
+        let inner_dr = dr.child_region(&self.inner.borrow().get_dyn_location_set().l);
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
             sb.external_change(
                 self.inner.borrow().get_content_x_offset(),
-                self.inner.borrow().get_content_width(&inner_ctx),
+                self.inner.borrow().get_content_width(Some(&inner_dr)),
                 inner_size,
             );
         }
         if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
             sb.external_change(
                 self.inner.borrow().get_content_y_offset(),
-                self.inner.borrow().get_content_height(&inner_ctx),
+                self.inner.borrow().get_content_height(Some(&inner_dr)),
                 inner_size,
             );
         }
@@ -1356,7 +1359,7 @@ impl Element for Bordered {
         (captured, resps)
     }
     fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
-        self.ensure_scrollbar_size(ctx);
+        self.ensure_scrollbar_size(dr);
         self.pane.drawing(ctx, dr, force_update)
     }
 }
@@ -1577,20 +1580,20 @@ impl VerticalSide {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for VerticalSide {
-    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
+    fn drawing(&self, _: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         let out = if let Some((ref text, ref j)) = *self.text.borrow() {
             let text_height = text.len() as u16;
             let (start_y, end_y) = match j {
                 Justification::Start => (0u16, text_height),
                 Justification::Center => {
-                    let start_y = (ctx.size.height - text_height) / 2;
+                    let start_y = (dr.size.height - text_height) / 2;
                     (start_y, start_y + text_height)
                 }
-                Justification::End => (ctx.size.height - text_height, ctx.size.height),
+                Justification::End => (dr.size.height - text_height, dr.size.height),
             };
-            let mut out = Vec::with_capacity(ctx.size.height as usize);
+            let mut out = Vec::with_capacity(dr.size.height as usize);
             let mut text_i = 0;
-            for y in 0..ctx.size.height {
+            for y in 0..dr.size.height {
                 if y >= start_y && y < end_y {
                     if let Some(ch) = text.get(text_i) {
                         out.push(DrawChPos::new(ch.clone(), 0, y));
@@ -1602,7 +1605,7 @@ impl Element for VerticalSide {
             }
             out
         } else {
-            DrawChPos::new_repeated_vertical(self.ch.borrow().clone(), 0, 0, ctx.size.height)
+            DrawChPos::new_repeated_vertical(self.ch.borrow().clone(), 0, 0, dr.size.height)
         };
 
         if out != *self.last_draw.borrow() || force_update {
@@ -1784,20 +1787,20 @@ impl HorizontalSide {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for HorizontalSide {
-    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
+    fn drawing(&self, _: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         let out = if let Some((ref text, ref j)) = *self.text.borrow() {
             let text_width = text.len() as u16;
             let (start_x, end_x) = match j {
                 Justification::Start => (0u16, text_width),
                 Justification::Center => {
-                    let start_x = (ctx.size.width - text_width) / 2;
+                    let start_x = (dr.size.width - text_width) / 2;
                     (start_x, start_x + text_width)
                 }
-                Justification::End => (ctx.size.width - text_width, ctx.size.width),
+                Justification::End => (dr.size.width - text_width, dr.size.width),
             };
-            let mut out = Vec::with_capacity(ctx.size.width as usize);
+            let mut out = Vec::with_capacity(dr.size.width as usize);
             let mut text_i = 0;
-            for x in 0..ctx.size.width {
+            for x in 0..dr.size.width {
                 if x >= start_x && x < end_x {
                     if let Some(ch) = text.get(text_i) {
                         out.push(DrawChPos::new(ch.clone(), x, 0));
@@ -1809,7 +1812,7 @@ impl Element for HorizontalSide {
             }
             out
         } else {
-            DrawChPos::new_repeated_horizontal(self.ch.borrow().clone(), 0, 0, ctx.size.width)
+            DrawChPos::new_repeated_horizontal(self.ch.borrow().clone(), 0, 0, dr.size.width)
         };
 
         if out != *self.last_draw.borrow() || force_update {

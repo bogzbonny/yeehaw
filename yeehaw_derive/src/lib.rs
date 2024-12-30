@@ -29,12 +29,12 @@ pub fn impl_element_from(attr: TokenStream, item: TokenStream) -> TokenStream {
     fn get_ref_cell_dyn_location_set(&self) -> std::rc::Rc<std::cell::RefCell<DynLocationSet>>;
     fn get_ref_cell_visible(&self) -> std::rc::Rc<std::cell::RefCell<bool>>;
     fn get_ref_cell_overflow(&self) -> std::rc::Rc<std::cell::RefCell<bool>>;
-    fn set_content_x_offset(&self, dr: &DrawRegion, x: usize);
-    fn set_content_y_offset(&self, dr: &DrawRegion, y: usize);
+    fn set_content_x_offset(&self, dr: Option<&DrawRegion>, x: usize);
+    fn set_content_y_offset(&self, dr: Option<&DrawRegion>, y: usize);
     fn get_content_x_offset(&self) -> usize;
     fn get_content_y_offset(&self) -> usize;
-    fn get_content_width(&self, dr: &DrawRegion) -> usize;
-    fn get_content_height(&self, dr: &DrawRegion) -> usize;
+    fn get_content_width(&self, dr: Option<&DrawRegion>) -> usize;
+    fn get_content_height(&self, dr: Option<&DrawRegion>) -> usize;
 }";
     let tr_parsed = syn::parse_str::<ItemTrait>(tr_code).expect("Failed to parse trait");
 
@@ -168,10 +168,10 @@ pub fn impl_pane_basics_from(attr: TokenStream, item: TokenStream) -> TokenStrea
     fn content_width(&self) -> usize;
     fn content_height(&self) -> usize;
     fn content_size(&self) -> Size;
-    fn scroll_up(&self, dr: &DrawRegion);
-    fn scroll_down(&self, dr: &DrawRegion);
-    fn scroll_left(&self, dr: &DrawRegion);
-    fn scroll_right(&self, dr: &DrawRegion);
+    fn scroll_up(&self, dr: Option<&DrawRegion>);
+    fn scroll_down(&self, dr: Option<&DrawRegion>);
+    fn scroll_left(&self, dr: Option<&DrawRegion>);
+    fn scroll_right(&self, dr: Option<&DrawRegion>);
     fn set_style(&self, style: Style);
     fn get_style(&self) -> Style;
     fn set_bg(&self, bg: Color);

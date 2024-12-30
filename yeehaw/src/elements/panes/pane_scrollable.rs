@@ -36,6 +36,7 @@ struct PSDrawDetails {
     max_y: usize,
 }
 
+#[yeehaw_derive::impl_pane_basics_from(pane)]
 impl PaneScrollable {
     pub const KIND: &'static str = "pane_scrollable";
 
@@ -86,8 +87,8 @@ impl PaneScrollable {
     pub fn inner_draw_region(&self, dr: &DrawRegion) -> DrawRegion {
         let mut inner_dr = dr.clone();
 
-        inner_dr.size.width = self.get_content_width(dr) as u16;
-        inner_dr.size.height = self.get_content_height(dr) as u16;
+        inner_dr.size.width = self.get_content_width(Some(dr)) as u16;
+        inner_dr.size.height = self.get_content_height(Some(dr)) as u16;
         //debug!(
         //    "dr: \twidth: {}, \theight: {}, inner_dr: \twidth: {}, \theight: {}",
         //    dr.size.width, dr.size.height, inner_dr.size.width, inner_dr.size.height
@@ -169,7 +170,7 @@ impl Element for PaneScrollable {
                     } else {
                         start_x + dx as usize
                     };
-                    self.set_content_x_offset(&me.dr, x);
+                    self.set_content_x_offset(Some(&me.dr), x);
                     let end_x = *self.content_offset_x.borrow();
                     if start_x != end_x {
                         captured = true;
@@ -186,7 +187,7 @@ impl Element for PaneScrollable {
                     } else {
                         *self.content_offset_y.borrow() + dy as usize
                     };
-                    self.set_content_y_offset(&me.dr, y);
+                    self.set_content_y_offset(Some(&me.dr), y);
 
                     let end_y = *self.content_offset_y.borrow();
                     if start_y != end_y {
@@ -202,8 +203,8 @@ impl Element for PaneScrollable {
     fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         let x_off = *self.content_offset_x.borrow();
         let y_off = *self.content_offset_y.borrow();
-        let max_x = x_off + self.get_content_width(dr);
-        let max_y = y_off + self.get_content_height(dr);
+        let max_x = x_off + self.get_content_width(Some(dr));
+        let max_y = y_off + self.get_content_height(Some(dr));
 
         let scope_changed =
             if let Some(last_draw_details) = self.last_draw_details.borrow().as_ref() {
@@ -256,18 +257,18 @@ impl Element for PaneScrollable {
         upds
     }
 
-    fn set_content_x_offset(&self, dr: &DrawRegion, x: usize) {
-        let offset = self
-            .get_content_width(dr)
-            .saturating_sub(dr.size.width.into());
+    fn set_content_x_offset(&self, dr: Option<&DrawRegion>, x: usize) {
+        let size = if let Some(dr) = dr { dr.size } else { *self.get_last_size() };
+        let offset = self.get_content_width(dr).saturating_sub(size.width.into());
         let offset = if x > offset { offset } else { x };
         *self.content_offset_x.borrow_mut() = offset
     }
 
-    fn set_content_y_offset(&self, dr: &DrawRegion, y: usize) {
+    fn set_content_y_offset(&self, dr: Option<&DrawRegion>, y: usize) {
+        let size = if let Some(dr) = dr { dr.size } else { *self.get_last_size() };
         let offset = self
             .get_content_height(dr)
-            .saturating_sub(dr.size.height.into());
+            .saturating_sub(size.height.into());
         let offset = if y > offset { offset } else { y };
         *self.content_offset_y.borrow_mut() = offset
     }
@@ -278,20 +279,21 @@ impl Element for PaneScrollable {
     fn get_content_y_offset(&self) -> usize {
         *self.content_offset_y.borrow()
     }
-    fn get_content_width(&self, dr: &DrawRegion) -> usize {
-        if *self.expand_to_fill_width.borrow()
-            && dr.size.width as usize > *self.content_width.borrow()
+    fn get_content_width(&self, dr: Option<&DrawRegion>) -> usize {
+        let size = if let Some(dr) = dr { dr.size } else { *self.get_last_size() };
+        if *self.expand_to_fill_width.borrow() && size.width as usize > *self.content_width.borrow()
         {
-            dr.size.width as usize
+            size.width as usize
         } else {
             *self.content_width.borrow()
         }
     }
-    fn get_content_height(&self, dr: &DrawRegion) -> usize {
+    fn get_content_height(&self, dr: Option<&DrawRegion>) -> usize {
+        let size = if let Some(dr) = dr { dr.size } else { *self.get_last_size() };
         if *self.expand_to_fill_height.borrow()
-            && dr.size.height as usize > *self.content_height.borrow()
+            && size.height as usize > *self.content_height.borrow()
         {
-            dr.size.height as usize
+            size.height as usize
         } else {
             *self.content_height.borrow()
         }

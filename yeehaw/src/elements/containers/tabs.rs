@@ -115,7 +115,7 @@ impl Element for TabsTop {
     fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         #[allow(clippy::single_match)]
         match ev {
-            Event::Mouse(me) => {
+            Event::Mouse(ref me) => {
                 if let MouseEventKind::Up(MouseButton::Left) = me.kind {
                     let x = me.column as usize;
                     let y = me.row as usize;

@@ -1,10 +1,11 @@
 use {
     crate::{
         elements::menu::{MenuItem, MenuStyle},
-        Context, DrawUpdate, DynLocation, DynLocationSet, DynVal, Element, ElementID, Event,
-        EventResponse, EventResponses, MenuBar, Parent, Point, ReceivableEvents, ZIndex,
+        Context, DrawRegion, DrawUpdate, DynLocation, DynLocationSet, DynVal, Element, ElementID,
+        Event, EventResponse, EventResponses, MenuBar, MouseEvent, Parent, Point, ReceivableEvents,
+        ZIndex,
     },
-    crossterm::event::{MouseButton, MouseEvent, MouseEventKind},
+    crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
 };
 
@@ -49,7 +50,7 @@ impl RightClickMenu {
     }
 
     /// Output Some if a right click menu should be created
-    pub fn create_menu_if_right_click(&self, me: MouseEvent) -> Option<EventResponses> {
+    pub fn create_menu_if_right_click(&self, me: &MouseEvent) -> Option<EventResponses> {
         if me.kind != MouseEventKind::Up(MouseButton::Right) {
             return None;
         }

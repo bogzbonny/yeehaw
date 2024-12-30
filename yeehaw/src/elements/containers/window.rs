@@ -13,7 +13,7 @@ pub struct WindowPane {
     pub pane: ParentPane,
     pub top_bar: Box<dyn Element>,
     pub inner: Box<dyn Element>,
-    pub dragging: Rc<RefCell<Option<(u16, u16)>>>,
+    pub dragging: Rc<RefCell<Option<(i32, i32)>>>,
     /// start location of the drag
     pub maximized_restore: Rc<RefCell<Option<DynLocation>>>,
     pub minimized_restore: Rc<RefCell<Option<DynLocation>>>,
@@ -119,10 +119,13 @@ impl WindowPane {
 
                 // NOTE must set to a a fixed value (aka need to get the size for the pane DynVal
                 // using ctx here. if we do not then the next pane position drag will be off
-                let start_x = self.pane.pane.get_start_x(ctx);
-                let start_y = self.pane.pane.get_start_y(ctx);
-                let end_x = self.pane.pane.get_end_x(ctx);
-                let end_y = self.pane.pane.get_end_y(ctx);
+                let last_size = self.pane.get_last_size();
+                let dr = DrawRegion::default().with_size(*last_size);
+
+                let start_x = self.pane.pane.get_start_x(&dr);
+                let start_y = self.pane.pane.get_start_y(&dr);
+                let end_x = self.pane.pane.get_end_x(&dr);
+                let end_y = self.pane.pane.get_end_y(&dr);
                 let mut start_x_adj = start_x + left_dx;
                 let mut start_y_adj = start_y + top_dy;
                 let mut end_x_adj = end_x + right_dx;
@@ -144,22 +147,14 @@ impl WindowPane {
                 self.pane.pane.set_end_x(end_x_adj);
                 self.pane.pane.set_end_y(end_y_adj);
 
-                let inner_ctx = ctx.clone().with_size(Size::new(
-                    self.pane.pane.get_width(ctx) as u16,
-                    (self.pane.pane.get_height(ctx) as u16).saturating_sub(1),
-                ));
-
-                let mut top_bar_ctx = ctx.clone();
-                top_bar_ctx.size.height = 1;
-
-                let (_, r) = self.inner.receive_event(&inner_ctx, Event::Resize);
+                let (_, r) = self.inner.receive_event(&ctx, Event::Resize);
                 resps_.extend(r);
 
                 // reset the maximizer button
                 if self.maximized_restore.borrow().is_some() {
                     self.maximized_restore.replace(None);
                     let (_, r) = self.top_bar.receive_event(
-                        &top_bar_ctx,
+                        &ctx,
                         Event::Custom(
                             Self::WINDOW_RESET_MAXIMIZER_EV_KEY.to_string(),
                             Vec::with_capacity(0),
@@ -194,21 +189,11 @@ impl WindowPane {
                 let mr = (*self.maximized_restore.borrow()).clone();
                 match mr {
                     Some(restore_loc) => {
-                        let mut pane_ctx = ctx.clone();
-                        pane_ctx.size.height = restore_loc.height(ctx) as u16;
-                        pane_ctx.size.width = restore_loc.width(ctx) as u16;
-
-                        let mut top_bar_ctx = pane_ctx.clone();
-                        top_bar_ctx.size.height = 1;
-
-                        let mut inner_ctx = pane_ctx.clone();
-                        inner_ctx.size.height -= 1;
-
                         self.pane.pane.set_dyn_location(restore_loc);
 
-                        let (_, r) = self.top_bar.receive_event(&top_bar_ctx, Event::Resize);
+                        let (_, r) = self.top_bar.receive_event(&ctx, Event::Resize);
                         resps_.extend(r);
-                        let (_, r) = self.inner.receive_event(&inner_ctx, Event::Resize);
+                        let (_, r) = self.inner.receive_event(&ctx, Event::Resize);
                         resps_.extend(r);
 
                         self.maximized_restore.replace(None);
@@ -218,15 +203,9 @@ impl WindowPane {
                         let l = DynLocation::full();
                         self.pane.pane.set_dyn_location(l);
 
-                        let mut top_bar_ctx = ctx.clone();
-                        top_bar_ctx.size.height = 1;
-
-                        let mut inner_ctx = ctx.clone();
-                        inner_ctx.size.height -= 1;
-
-                        let (_, r) = self.top_bar.receive_event(&top_bar_ctx, Event::Resize);
+                        let (_, r) = self.top_bar.receive_event(&ctx, Event::Resize);
                         resps_.extend(r);
-                        let (_, r) = self.inner.receive_event(&inner_ctx, Event::Resize);
+                        let (_, r) = self.inner.receive_event(&ctx, Event::Resize);
                         resps_.extend(r);
 
                         self.maximized_restore.replace(Some(restore_loc));
@@ -253,13 +232,10 @@ impl WindowPane {
                     .set_end_x(DynVal::new_fixed(minimize_width.into()));
                 self.pane.pane.set_start_y(DynVal::FULL.minus(1.into()));
                 self.pane.pane.set_end_y(DynVal::FULL);
-                let mut pane_ctx = ctx.clone();
-                pane_ctx.size.height = 1;
-                pane_ctx.size.width = minimize_width;
 
                 // send an event telling the top bar to hide its buttons
                 let (_, r) = self.top_bar.receive_event(
-                    &pane_ctx,
+                    &ctx,
                     Event::Custom(
                         Self::WINDOW_MINIMIZE_EV_KEY.to_string(),
                         Vec::with_capacity(0),
@@ -268,7 +244,7 @@ impl WindowPane {
                 resps_.extend(r);
 
                 // resize events
-                let (_, r) = self.top_bar.receive_event(&pane_ctx, Event::Resize);
+                let (_, r) = self.top_bar.receive_event(&ctx, Event::Resize);
                 resps_.extend(r);
                 self.inner.set_visible(false);
                 *resp = EventResponse::None;
@@ -312,18 +288,11 @@ impl WindowPane {
 
                         // maximize from minimized
 
-                        let mut pane_ctx = ctx.clone();
-                        pane_ctx.size.height = restore_loc.height(ctx) as u16;
-                        pane_ctx.size.width = restore_loc.width(ctx) as u16;
-
-                        let mut top_bar_ctx = pane_ctx.clone();
-                        top_bar_ctx.size.height = 1;
-
                         self.pane.pane.set_dyn_location(restore_loc);
 
                         // send an event telling the top bar to hide its buttons
                         let (_, r) = self.top_bar.receive_event(
-                            &pane_ctx,
+                            &ctx,
                             Event::Custom(
                                 Self::WINDOW_MINIMIZE_RESTORE_EV_KEY.to_string(),
                                 Vec::with_capacity(0),
@@ -331,14 +300,14 @@ impl WindowPane {
                         );
                         resps.extend(r);
 
-                        let (_, r) = self.top_bar.receive_event(&top_bar_ctx, Event::Resize);
+                        let (_, r) = self.top_bar.receive_event(&ctx, Event::Resize);
                         resps.extend(r);
                         self.inner.set_visible(true);
 
                         self.minimized_restore.replace(None);
                     }
                     MouseEventKind::Down(MouseButton::Left) if !dragging && mr.is_none() => {
-                        let top_height = self.top_bar.get_dyn_location_set().l.height(ctx);
+                        let top_height = self.top_bar.get_dyn_location_set().l.height(&me.dr);
                         if me.row as usize >= top_height {
                             return;
                         }
@@ -349,16 +318,16 @@ impl WindowPane {
                         let mut dx = me.column as i32 - start_x as i32;
                         let mut dy = me.row as i32 - start_y as i32;
                         let loc = self.pane.pane.get_dyn_location();
-                        if loc.get_start_x(ctx) + dx < 0 {
-                            dx = loc.get_start_x(ctx);
+                        if loc.get_start_x(&me.dr) + dx < 0 {
+                            dx = loc.get_start_x(&me.dr);
                         }
-                        if loc.get_start_y(ctx) + dy < 0 {
-                            dy = loc.get_start_y(ctx);
+                        if loc.get_start_y(&me.dr) + dy < 0 {
+                            dy = loc.get_start_y(&me.dr);
                         }
-                        let x1 = loc.get_start_x(ctx) + dx;
-                        let y1 = loc.get_start_y(ctx) + dy;
-                        let x2 = loc.get_end_x(ctx) + dx;
-                        let y2 = loc.get_end_y(ctx) + dy;
+                        let x1 = loc.get_start_x(&me.dr) + dx;
+                        let y1 = loc.get_start_y(&me.dr) + dy;
+                        let x2 = loc.get_end_x(&me.dr) + dx;
+                        let y2 = loc.get_end_y(&me.dr) + dy;
                         self.pane.pane.set_start_x(DynVal::new_fixed(x1));
                         self.pane.pane.set_start_y(DynVal::new_fixed(y1));
                         self.pane.pane.set_end_x(DynVal::new_fixed(x2));
@@ -379,16 +348,16 @@ impl WindowPane {
                             let mut dx = me.column - start_x;
                             let mut dy = me.row - start_y;
                             let loc = self.pane.pane.get_dyn_location();
-                            if loc.get_start_x(ctx) + dx < 0 {
-                                dx = loc.get_start_x(ctx);
+                            if loc.get_start_x(&me.dr) + dx < 0 {
+                                dx = loc.get_start_x(&me.dr);
                             }
-                            if loc.get_start_y(ctx) + dy < 0 {
-                                dy = loc.get_start_y(ctx);
+                            if loc.get_start_y(&me.dr) + dy < 0 {
+                                dy = loc.get_start_y(&me.dr);
                             }
-                            let x1 = loc.get_start_x(ctx) + dx;
-                            let y1 = loc.get_start_y(ctx) + dy;
-                            let x2 = loc.get_end_x(ctx) + dx;
-                            let y2 = loc.get_end_y(ctx) + dy;
+                            let x1 = loc.get_start_x(&me.dr) + dx;
+                            let y1 = loc.get_start_y(&me.dr) + dy;
+                            let x2 = loc.get_end_x(&me.dr) + dx;
+                            let y2 = loc.get_end_y(&me.dr) + dy;
                             self.pane.pane.set_start_x(DynVal::new_fixed(x1));
                             self.pane.pane.set_start_y(DynVal::new_fixed(y1));
                             self.pane.pane.set_end_x(DynVal::new_fixed(x2));
@@ -413,7 +382,7 @@ impl Element for WindowPane {
         let mut event_to_inner = true;
         let dragging = self.dragging.borrow().is_some();
         if dragging {
-            if let Event::Mouse(me) = ev {
+            if let Event::Mouse(ref me) = ev {
                 if let MouseEventKind::Drag(MouseButton::Left) = me.kind {
                     event_to_inner = false;
                 }

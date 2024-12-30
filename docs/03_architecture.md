@@ -1,6 +1,15 @@
 
 🚧 this doc is under construction 🚧  
 
+
+ - The DrawRegion is only provided during drawing and not included within the
+   context throughout in order to make it easier to send events/ call functions
+   on an element from another event. If we required sending the DrawRegion into 
+   the element for these functions, it would make life difficult for the
+   developer having to calculate the draw region for an Element from an
+   arbitrary other element
+
+
 ## Event Routing
 
  -  Events which are not "captured" keep getting routed to other elements.

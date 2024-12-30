@@ -3,7 +3,7 @@ use {
         elements::menu::{MenuItem, MenuPath, MenuStyle},
         Keyboard as KB, *,
     },
-    crossterm::event::{KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
+    crossterm::event::{KeyEvent, KeyModifiers, MouseButton, MouseEventKind},
 };
 
 // TODO cache WrChs for efficiency. Also get_wrapped should return a Ref<WrChs>
@@ -53,7 +53,11 @@ impl TextBox {
                 tb_.post_hook_for_set_selectability();
             }));
 
-        let _ = tb.drawing(&init_ctx.child_context(&tb.pane.get_dyn_location()), true); // to set the pane content
+        //let _ = tb.drawing(
+        //    &init_ctx.child_context(&tb.pane.get_dyn_location()),
+        //    dr,
+        //    true,
+        //); // to set the pane content
         tb
     }
 
@@ -121,9 +125,10 @@ impl TextBox {
                 return;
             }
         }
-        let size = init_ctx
-            .child_context(&self.inner.borrow().pane.get_dyn_location())
-            .size;
+        //let size = init_ctx
+        //    .child_context(&self.inner.borrow().pane.get_dyn_location())
+        //    .size;
+        let size = Size::default();
         sb.set_scrollable_view_size(size);
         if let Some(x_sb) = &*self.x_scrollbar.borrow() {
             x_sb.set_scrollable_view_size(size);
@@ -132,8 +137,9 @@ impl TextBox {
         // wire the scrollbar to the textbox
         let pane_ = self.inner.borrow().pane.clone();
         let is_dirty = self.inner.borrow().is_dirty.clone();
-        let hook = Box::new(move |init_ctx, y| {
-            pane_.set_content_y_offset(&init_ctx, y);
+        let hook = Box::new(move |_, y| {
+            //pane_.set_content_y_offset(&init_ctx, y);
+            pane_.set_content_y_offset(None, y);
             is_dirty.replace(true);
         });
         *sb.position_changed_hook.borrow_mut() = Some(hook);
@@ -206,8 +212,8 @@ impl TextBox {
         // wire the scrollbar to the textbox
         let pane_ = self.inner.borrow().pane.clone();
         let is_dirty = self.inner.borrow().is_dirty.clone();
-        let hook = Box::new(move |init_ctx, x| {
-            pane_.set_content_x_offset(&init_ctx, x);
+        let hook = Box::new(move |_, x| {
+            pane_.set_content_x_offset(None, x);
             is_dirty.replace(true);
         });
         *sb.position_changed_hook.borrow_mut() = Some(hook);
@@ -218,24 +224,27 @@ impl TextBox {
         self.reset_sb_sizes(init_ctx);
     }
 
-    pub fn reset_sb_sizes(&self, init_ctx: &Context) {
-        let inner_ctx = init_ctx
-            .must_get_parent_context()
-            .child_context(&self.pane.get_dyn_location())
-            .child_context(&self.inner.borrow().pane.get_dyn_location());
+    pub fn reset_sb_sizes(&self, _init_ctx: &Context) {
+        //let inner_ctx = init_ctx
+        //    .must_get_parent_context()
+        //    .child_context(&self.pane.get_dyn_location())
+        //    .child_context(&self.inner.borrow().pane.get_dyn_location());
+        let size = Size::default();
         if let Some(y_sb) = &*self.y_scrollbar.borrow() {
-            y_sb.set_scrollable_view_size(inner_ctx.size);
-            *y_sb.scrollable_view_chs.borrow_mut() =
-                DynVal::new_fixed(inner_ctx.size.height as i32);
+            //y_sb.set_scrollable_view_size(inner_ctx.size);
+            y_sb.set_scrollable_view_size(size);
+            *y_sb.scrollable_view_chs.borrow_mut() = DynVal::new_fixed(size.height as i32);
+            //DynVal::new_fixed(inner_ctx.size.height as i32);
         }
         if let Some(x_sb) = &*self.x_scrollbar.borrow() {
-            x_sb.set_scrollable_view_size(inner_ctx.size);
-            *x_sb.scrollable_view_chs.borrow_mut() = DynVal::new_fixed(inner_ctx.size.width as i32);
+            x_sb.set_scrollable_view_size(size);
+            //*x_sb.scrollable_view_chs.borrow_mut() = DynVal::new_fixed(inner_ctx.size.width as i32);
+            *x_sb.scrollable_view_chs.borrow_mut() = DynVal::new_fixed(size.width as i32);
         }
 
         // correct offsets
-        let _ = self.inner.borrow().correct_ln_and_sbs(&inner_ctx);
-        let _ = self.drawing(&init_ctx.child_context(&self.pane.get_dyn_location()), true); // to set the pane content
+        //let _ = self.inner.borrow().correct_ln_and_sbs(&inner_ctx);
+        //let _ = self.drawing(&init_ctx.child_context(&self.pane.get_dyn_location()), true); // to set the pane content
         self.set_dirty();
     }
 
@@ -264,7 +273,7 @@ impl TextBox {
         let end_y = self.inner.borrow().pane.get_dyn_end_y();
 
         // determine the width of the line numbers textbox
-        let (lns, lnw) = self.inner.borrow().get_line_numbers(init_ctx);
+        let (lns, lnw) = self.inner.borrow().get_line_numbers(None);
 
         // create the line numbers textbox
         let ln_tb = TextBoxInner::new(init_ctx, lns)
@@ -759,14 +768,18 @@ impl TextBoxInner {
     }
 
     /// returns the wrapped characters of the text
-    pub fn get_wrapped(&self, ctx: &Context) -> WrChs {
+    pub fn get_wrapped(&self, draw_size: Option<Size>) -> WrChs {
+        let width = draw_size
+            .map(|s| s.width)
+            .unwrap_or(self.get_last_size().width) as usize;
+
         let mut rs = self.text.borrow().clone();
         rs.push(' '); // add the space for the final possible position
         let mut chs = vec![];
         let mut max_x = 0;
         let (mut x, mut y) = (0, 0); // working x and y position in the textbox
         for (abs_pos, r) in rs.iter().enumerate() {
-            if *self.wordwrap.borrow() && x == self.pane.get_width(ctx) {
+            if *self.wordwrap.borrow() && x == width {
                 y += 1;
                 x = 0;
                 if x > max_x {
@@ -810,8 +823,8 @@ impl TextBoxInner {
 
     /// returns the formatted line numbers of the textbox
     /// line numbers are right justified
-    pub fn get_line_numbers(&self, ctx: &Context) -> (String, usize) {
-        let wr_chs = self.get_wrapped(ctx);
+    pub fn get_line_numbers(&self, draw_size: Option<Size>) -> (String, usize) {
+        let wr_chs = self.get_wrapped(draw_size);
 
         // get the max line number
         let mut max_line_num = 0;
@@ -851,20 +864,20 @@ impl TextBoxInner {
     }
 
     /// NOTE the resp is sent in to potentially modify the offsets from numbers tb
-    pub fn correct_offsets(&self, ctx: &Context, w: &WrChs) -> EventResponse {
+    pub fn correct_offsets(&self, dr: &DrawRegion, w: &WrChs) -> EventResponse {
         let (x, y) = w.cursor_x_and_y(self.get_cursor_pos());
         let (x, y) = (x.unwrap_or(0), y.unwrap_or(0));
-        self.pane.correct_offsets_to_view_position(ctx, x, y);
-        self.correct_ln_and_sbs(ctx)
+        self.pane.correct_offsets_to_view_position(dr, x, y);
+        self.correct_ln_and_sbs(dr)
     }
 
     /// correct the line number (if applicable) and scrollbar positions
-    pub fn correct_ln_and_sbs(&self, ctx: &Context) -> EventResponse {
+    pub fn correct_ln_and_sbs(&self, dr: &DrawRegion) -> EventResponse {
         let y_offset = self.pane.get_content_y_offset();
         let x_offset = self.pane.get_content_x_offset();
 
-        let update_size = if *self.last_size_for_sbs.borrow() != ctx.size {
-            *self.last_size_for_sbs.borrow_mut() = ctx.size;
+        let update_size = if *self.last_size_for_sbs.borrow() != dr.size {
+            *self.last_size_for_sbs.borrow_mut() = dr.size;
             self.is_dirty.replace(true);
             true
         } else {
@@ -874,16 +887,16 @@ impl TextBoxInner {
         // update the scrollbars/line numbers textbox
         if let Some(sb) = self.y_scrollbar.borrow().as_ref() {
             if update_size {
-                sb.set_scrollable_view_size(ctx.size);
-                *sb.scrollable_view_chs.borrow_mut() = DynVal::new_fixed(ctx.size.height as i32);
+                sb.set_scrollable_view_size(dr.size);
+                *sb.scrollable_view_chs.borrow_mut() = DynVal::new_fixed(dr.size.height as i32);
             }
 
-            sb.external_change(y_offset, self.pane.content_height(), ctx.size);
+            sb.external_change(y_offset, self.pane.content_height(), dr.size);
         }
         let resp = EventResponse::default();
         if let Some(ln_tb) = self.line_number_tb.borrow().as_ref() {
-            let (lns, lnw) = self.get_line_numbers(ctx);
-            let last_lnw = ln_tb.pane.get_width(ctx);
+            let (lns, lnw) = self.get_line_numbers(Some(dr.size));
+            let last_lnw = ln_tb.pane.get_width(dr);
             if lnw != last_lnw {
                 let ln_start_x = ln_tb.pane.get_dyn_start_x();
                 let tb_start_x = ln_start_x.plus_fixed(lnw as i32);
@@ -891,14 +904,14 @@ impl TextBoxInner {
                 ln_tb.pane.set_dyn_width(DynVal::new_fixed(lnw as i32))
             }
             ln_tb.set_text(lns);
-            ln_tb.pane.set_content_y_offset(ctx, y_offset);
+            ln_tb.pane.set_content_y_offset(Some(dr), y_offset);
         }
         if let Some(sb) = self.x_scrollbar.borrow().as_ref() {
             if update_size {
-                sb.set_scrollable_view_size(ctx.size);
-                *sb.scrollable_view_chs.borrow_mut() = DynVal::new_fixed(ctx.size.width as i32);
+                sb.set_scrollable_view_size(dr.size);
+                *sb.scrollable_view_chs.borrow_mut() = DynVal::new_fixed(dr.size.width as i32);
             }
-            sb.external_change(x_offset, self.pane.content_width(), ctx.size);
+            sb.external_change(x_offset, self.pane.content_width(), dr.size);
         }
         resp
     }
@@ -951,15 +964,14 @@ impl TextBoxInner {
 
         *self.text.borrow_mut() = rs;
         *self.visual_mode.borrow_mut() = false;
-        let w = self.get_wrapped(ctx);
+        let w = self.get_wrapped(None);
         self.pane.set_content_from_string(w.wrapped_string());
-        let resp = self.correct_offsets(ctx, &w);
-        let mut resps = if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
+        self.is_dirty.replace(true);
+        let resps = if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
             hook(ctx.clone(), self.get_text())
         } else {
             EventResponses::default()
         };
-        resps.push(resp);
         resps
     }
 
@@ -1000,11 +1012,10 @@ impl TextBoxInner {
         *self.text.borrow_mut() = rs;
 
         self.incr_cursor_pos(cliprunes.len() as isize);
-        let w = self.get_wrapped(ctx);
+        let w = self.get_wrapped(None);
         self.pane.set_content_from_string(w.wrapped_string()); // See NOTE-1
 
-        let resp = self.correct_offsets(ctx, &w);
-        resps.push(resp);
+        self.is_dirty.replace(true);
 
         if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
             resps.extend(hook(ctx.clone(), self.get_text()));
@@ -1022,21 +1033,22 @@ impl TextBoxInner {
         if !*self.ch_cursor.borrow() {
             match true {
                 _ if ev[0] == KB::KEY_LEFT || ev[0] == KB::KEY_H => {
-                    self.pane.scroll_left(ctx);
+                    self.pane.scroll_left(None);
                 }
                 _ if ev[0] == KB::KEY_RIGHT || ev[0] == KB::KEY_L => {
-                    self.pane.scroll_right(ctx);
+                    self.pane.scroll_right(None);
                 }
                 _ if ev[0] == KB::KEY_DOWN || ev[0] == KB::KEY_J => {
-                    self.pane.scroll_down(ctx);
+                    self.pane.scroll_down(None);
                 }
                 _ if ev[0] == KB::KEY_UP || ev[0] == KB::KEY_K => {
-                    self.pane.scroll_up(ctx);
+                    self.pane.scroll_up(None);
                 }
                 _ => {}
             }
 
-            return (true, self.correct_ln_and_sbs(ctx).into());
+            //return (true, self.correct_ln_and_sbs(None).into());
+            return (true, EventResponses::default());
         }
 
         let mut visual_mode_event = false;
@@ -1053,8 +1065,8 @@ impl TextBoxInner {
                 }
                 if cursor_pos > 0 {
                     self.incr_cursor_pos(-1);
-                    let w = self.get_wrapped(ctx);
-                    resps = self.correct_offsets(ctx, &w).into();
+                    //let w = self.get_wrapped(None);
+                    //resps = self.correct_offsets(ctx, &w).into();
                 }
             }
 
@@ -1066,8 +1078,8 @@ impl TextBoxInner {
                 }
                 if cursor_pos < self.text.borrow().len() {
                     self.incr_cursor_pos(1);
-                    let w = self.get_wrapped(ctx);
-                    resps = self.correct_offsets(ctx, &w).into();
+                    //let w = self.get_wrapped(None);
+                    //resps = self.correct_offsets(ctx, &w).into();
                 }
             }
 
@@ -1077,10 +1089,10 @@ impl TextBoxInner {
                     *self.visual_mode.borrow_mut() = true;
                     *self.visual_mode_start_pos.borrow_mut() = cursor_pos;
                 }
-                let w = self.get_wrapped(ctx);
+                let w = self.get_wrapped(None);
                 if let Some(new_pos) = w.get_cursor_above_position(cursor_pos) {
                     self.set_cursor_pos(new_pos);
-                    resps = self.correct_offsets(ctx, &w).into();
+                    //resps = self.correct_offsets(ctx, &w).into();
                 }
             }
 
@@ -1090,10 +1102,10 @@ impl TextBoxInner {
                     *self.visual_mode.borrow_mut() = true;
                     *self.visual_mode_start_pos.borrow_mut() = cursor_pos;
                 }
-                let w = self.get_wrapped(ctx);
+                let w = self.get_wrapped(None);
                 if let Some(new_pos) = w.get_cursor_below_position(cursor_pos) {
                     self.set_cursor_pos(new_pos);
-                    resps = self.correct_offsets(ctx, &w).into();
+                    //resps = self.correct_offsets(ctx, &w).into();
                 }
             }
 
@@ -1102,8 +1114,8 @@ impl TextBoxInner {
                     // do not move left if at the beginning of a line
                     if self.text.borrow()[cursor_pos - 1] != '\n' {
                         self.incr_cursor_pos(-1);
-                        let w = self.get_wrapped(ctx);
-                        resps = self.correct_offsets(ctx, &w).into();
+                        //let w = self.get_wrapped(ctx);
+                        //resps = self.correct_offsets(ctx, &w).into();
                     }
                 }
             }
@@ -1112,24 +1124,24 @@ impl TextBoxInner {
                 // don't allow moving to the next line
                 if cursor_pos < self.text.borrow().len() && self.text.borrow()[cursor_pos] != '\n' {
                     self.incr_cursor_pos(1);
-                    let w = self.get_wrapped(ctx);
-                    resps = self.correct_offsets(ctx, &w).into();
+                    //let w = self.get_wrapped(ctx);
+                    //resps = self.correct_offsets(ctx, &w).into();
                 }
             }
 
             _ if ev[0] == KB::KEY_UP || (!*self.editable.borrow() && ev[0] == KB::KEY_K) => {
-                let w = self.get_wrapped(ctx);
+                let w = self.get_wrapped(None);
                 if let Some(new_pos) = w.get_cursor_above_position(cursor_pos) {
                     self.set_cursor_pos(new_pos);
-                    resps = self.correct_offsets(ctx, &w).into();
+                    //resps = self.correct_offsets(ctx, &w).into();
                 }
             }
 
             _ if ev[0] == KB::KEY_DOWN || (!*self.editable.borrow() && ev[0] == KB::KEY_J) => {
-                let w = self.get_wrapped(ctx);
+                let w = self.get_wrapped(None);
                 if let Some(new_pos) = w.get_cursor_below_position(cursor_pos) {
                     self.set_cursor_pos(new_pos);
-                    resps = self.correct_offsets(ctx, &w).into();
+                    //resps = self.correct_offsets(ctx, &w).into();
                 }
             }
 
@@ -1141,13 +1153,13 @@ impl TextBoxInner {
                     rs.remove(cursor_pos - 1);
                     self.incr_cursor_pos(-1);
                     *self.text.borrow_mut() = rs;
-                    let w = self.get_wrapped(ctx);
+                    let w = self.get_wrapped(None);
                     self.pane.set_content_from_string(w.wrapped_string()); // See NOTE-1
-                    let resp = self.correct_offsets(ctx, &w);
+                                                                           //let resp = self.correct_offsets(ctx, &w);
                     if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
                         resps = hook(ctx.clone(), self.get_text());
                     }
-                    resps.push(resp);
+                    //resps.push(resp);
                 }
             }
 
@@ -1156,13 +1168,13 @@ impl TextBoxInner {
                 rs.splice(cursor_pos..cursor_pos, std::iter::once('\n'));
                 *self.text.borrow_mut() = rs;
                 self.incr_cursor_pos(1);
-                let w = self.get_wrapped(ctx);
+                let w = self.get_wrapped(None);
                 self.pane.set_content_from_string(w.wrapped_string()); // See NOTE-1
-                let resp = self.correct_offsets(ctx, &w);
+                                                                       //let resp = self.correct_offsets(ctx, &w);
                 if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
                     resps = hook(ctx.clone(), self.get_text());
                 }
-                resps.push(resp);
+                //resps.push(resp);
             }
 
             _ if *self.editable.borrow() && KeyPossibility::Chars.matches_key(&ev[0]) => {
@@ -1172,19 +1184,19 @@ impl TextBoxInner {
                     rs.insert(cursor_pos, r);
                     *self.text.borrow_mut() = rs;
                     self.incr_cursor_pos(1);
-                    let w = self.get_wrapped(ctx);
+                    let w = self.get_wrapped(None);
 
                     // NOTE-1: must call SetContentFromString to update the content
                     // before updating the offset or else the offset amount may not
                     // exist in the content and the widget pane will reject the new
                     // offset
                     self.pane.set_content_from_string(w.wrapped_string());
-                    let resp = self.correct_offsets(ctx, &w);
+                    //let resp = self.correct_offsets(ctx, &w);
 
                     if let Some(hook) = &mut *self.text_changed_hook.borrow_mut() {
                         resps = hook(ctx.clone(), self.get_text());
                     }
-                    resps.push(resp);
+                    //resps.push(resp);
                 }
             }
 
@@ -1214,10 +1226,10 @@ impl TextBoxInner {
         false
     }
 
-    pub fn receive_mouse_event(&self, ctx: &Context, ev: MouseEvent) -> (bool, EventResponses) {
+    pub fn receive_mouse_event(&self, _: &Context, ev: MouseEvent) -> (bool, EventResponses) {
         // handle right click
         if let Some(rcm) = &*self.right_click_menu.borrow() {
-            if let Some(resps) = rcm.create_menu_if_right_click(ev) {
+            if let Some(resps) = rcm.create_menu_if_right_click(&ev) {
                 return (true, resps);
             }
         }
@@ -1235,7 +1247,7 @@ impl TextBoxInner {
                 if ev.modifiers == KeyModifiers::NONE
                     && selectedness == Selectability::Selected =>
             {
-                let w = self.get_wrapped(ctx);
+                let w = self.get_wrapped(Some(ev.dr.size));
                 let Some(new_pos) = w.get_cursor_below_position(cursor_pos) else {
                     return (
                         self.changes_made(cursor_pos, start_offset_x, start_offset_y),
@@ -1243,17 +1255,18 @@ impl TextBoxInner {
                     );
                 };
                 self.set_cursor_pos(new_pos);
-                let resp = self.correct_offsets(ctx, &w);
+                //let resp = self.correct_offsets(&ev.dr, &w);
                 return (
                     self.changes_made(cursor_pos, start_offset_x, start_offset_y),
-                    resp.into(),
+                    EventResponses::default(),
+                    //resp.into(),
                 );
             }
             MouseEventKind::ScrollUp
                 if ev.modifiers == KeyModifiers::NONE
                     && selectedness == Selectability::Selected =>
             {
-                let w = self.get_wrapped(ctx);
+                let w = self.get_wrapped(Some(ev.dr.size));
                 let Some(new_pos) = w.get_cursor_above_position(cursor_pos) else {
                     return (
                         self.changes_made(cursor_pos, start_offset_x, start_offset_y),
@@ -1261,17 +1274,18 @@ impl TextBoxInner {
                     );
                 };
                 self.set_cursor_pos(new_pos);
-                let resp = self.correct_offsets(ctx, &w);
+                //let resp = self.correct_offsets(ctx, &w);
                 return (
                     self.changes_made(cursor_pos, start_offset_x, start_offset_y),
-                    resp.into(),
+                    EventResponses::default(),
+                    //resp.into(),
                 );
             }
             MouseEventKind::ScrollLeft
                 if ev.modifiers == KeyModifiers::NONE
                     && selectedness == Selectability::Selected =>
             {
-                let w = self.get_wrapped(ctx);
+                let w = self.get_wrapped(Some(ev.dr.size));
                 let Some(new_pos) = w.get_cursor_left_position(cursor_pos) else {
                     return (
                         self.changes_made(cursor_pos, start_offset_x, start_offset_y),
@@ -1279,17 +1293,18 @@ impl TextBoxInner {
                     );
                 };
                 self.set_cursor_pos(new_pos);
-                let resp = self.correct_offsets(ctx, &w);
+                //let resp = self.correct_offsets(ctx, &w);
                 return (
                     self.changes_made(cursor_pos, start_offset_x, start_offset_y),
-                    resp.into(),
+                    EventResponses::default(),
+                    //resp.into(),
                 );
             }
             MouseEventKind::ScrollDown
                 if ev.modifiers == KeyModifiers::SHIFT
                     && selectedness == Selectability::Selected =>
             {
-                let w = self.get_wrapped(ctx);
+                let w = self.get_wrapped(Some(ev.dr.size));
                 let Some(new_pos) = w.get_cursor_left_position(cursor_pos) else {
                     return (
                         self.changes_made(cursor_pos, start_offset_x, start_offset_y),
@@ -1297,17 +1312,18 @@ impl TextBoxInner {
                     );
                 };
                 self.set_cursor_pos(new_pos);
-                let resp = self.correct_offsets(ctx, &w);
+                //let resp = self.correct_offsets(ctx, &w);
                 return (
                     self.changes_made(cursor_pos, start_offset_x, start_offset_y),
-                    resp.into(),
+                    EventResponses::default(),
+                    //resp.into(),
                 );
             }
             MouseEventKind::ScrollRight
                 if ev.modifiers == KeyModifiers::NONE
                     && selectedness == Selectability::Selected =>
             {
-                let w = self.get_wrapped(ctx);
+                let w = self.get_wrapped(Some(ev.dr.size));
                 let Some(new_pos) = w.get_cursor_right_position(cursor_pos) else {
                     return (
                         self.changes_made(cursor_pos, start_offset_x, start_offset_y),
@@ -1315,17 +1331,18 @@ impl TextBoxInner {
                     );
                 };
                 self.set_cursor_pos(new_pos);
-                let resp = self.correct_offsets(ctx, &w);
+                //let resp = self.correct_offsets(ctx, &w);
                 return (
                     self.changes_made(cursor_pos, start_offset_x, start_offset_y),
-                    resp.into(),
+                    EventResponses::default(),
+                    //resp.into(),
                 );
             }
             MouseEventKind::ScrollUp
                 if ev.modifiers == KeyModifiers::SHIFT
                     && selectedness == Selectability::Selected =>
             {
-                let w = self.get_wrapped(ctx);
+                let w = self.get_wrapped(Some(ev.dr.size));
                 let Some(new_pos) = w.get_cursor_right_position(cursor_pos) else {
                     return (
                         self.changes_made(cursor_pos, start_offset_x, start_offset_y),
@@ -1333,64 +1350,71 @@ impl TextBoxInner {
                     );
                 };
                 self.set_cursor_pos(new_pos);
-                let resp = self.correct_offsets(ctx, &w);
+                //let resp = self.correct_offsets(ctx, &w);
                 return (
                     self.changes_made(cursor_pos, start_offset_x, start_offset_y),
-                    resp.into(),
+                    EventResponses::default(),
+                    //resp.into(),
                 );
             }
             MouseEventKind::ScrollDown
                 if ev.modifiers == KeyModifiers::NONE && selectedness == Selectability::Ready =>
             {
-                self.pane.scroll_down(ctx);
+                self.pane.scroll_down(Some(&ev.dr));
                 return (
                     self.changes_made(cursor_pos, start_offset_x, start_offset_y),
-                    self.correct_ln_and_sbs(ctx).into(),
+                    EventResponses::default(),
+                    //self.correct_ln_and_sbs(ctx).into(),
                 );
             }
             MouseEventKind::ScrollUp
                 if ev.modifiers == KeyModifiers::NONE && selectedness == Selectability::Ready =>
             {
-                self.pane.scroll_up(ctx);
+                self.pane.scroll_up(Some(&ev.dr));
                 return (
                     self.changes_made(cursor_pos, start_offset_x, start_offset_y),
-                    self.correct_ln_and_sbs(ctx).into(),
+                    EventResponses::default(),
+                    //self.correct_ln_and_sbs(ctx).into(),
                 );
             }
             MouseEventKind::ScrollLeft
                 if ev.modifiers == KeyModifiers::NONE && selectedness == Selectability::Ready =>
             {
-                self.pane.scroll_left(ctx);
+                self.pane.scroll_left(Some(&ev.dr));
                 return (
                     self.changes_made(cursor_pos, start_offset_x, start_offset_y),
-                    self.correct_ln_and_sbs(ctx).into(),
+                    EventResponses::default(),
+                    //self.correct_ln_and_sbs(ctx).into(),
                 );
             }
             MouseEventKind::ScrollDown
                 if ev.modifiers == KeyModifiers::SHIFT && selectedness == Selectability::Ready =>
             {
-                self.pane.scroll_left(ctx);
+                self.pane.scroll_left(Some(&ev.dr));
                 return (
                     self.changes_made(cursor_pos, start_offset_x, start_offset_y),
-                    self.correct_ln_and_sbs(ctx).into(),
+                    EventResponses::default(),
+                    //self.correct_ln_and_sbs(ctx).into(),
                 );
             }
             MouseEventKind::ScrollRight
                 if ev.modifiers == KeyModifiers::NONE && selectedness == Selectability::Ready =>
             {
-                self.pane.scroll_right(ctx);
+                self.pane.scroll_right(Some(&ev.dr));
                 return (
                     self.changes_made(cursor_pos, start_offset_x, start_offset_y),
-                    self.correct_ln_and_sbs(ctx).into(),
+                    EventResponses::default(),
+                    //self.correct_ln_and_sbs(ctx).into(),
                 );
             }
             MouseEventKind::ScrollUp
                 if ev.modifiers == KeyModifiers::SHIFT && selectedness == Selectability::Ready =>
             {
-                self.pane.scroll_right(ctx);
+                self.pane.scroll_right(Some(&ev.dr));
                 return (
                     self.changes_made(cursor_pos, start_offset_x, start_offset_y),
-                    self.correct_ln_and_sbs(ctx).into(),
+                    EventResponses::default(),
+                    //self.correct_ln_and_sbs(ctx).into(),
                 );
             }
 
@@ -1405,9 +1429,10 @@ impl TextBoxInner {
             MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Drag(MouseButton::Left)
                 if selectedness == Selectability::Ready =>
             {
-                let w = self.get_wrapped(ctx);
-                let resp = self.correct_offsets(ctx, &w);
-                return (true, resp.into());
+                //let w = self.get_wrapped(ctx);
+                //let resp = self.correct_offsets(&ev.dr, &w);
+                //return (true, resp.into());
+                return (true, EventResponses::default());
             }
 
             // set the cursor to the mouse position on primary click
@@ -1416,7 +1441,7 @@ impl TextBoxInner {
             {
                 let x = ev.column as usize + self.pane.get_content_x_offset();
                 let y = ev.row as usize + self.pane.get_content_y_offset();
-                let w = self.get_wrapped(ctx);
+                let w = self.get_wrapped(Some(ev.dr.size));
 
                 let mouse_dragging = *self.mouse_dragging.borrow();
                 let visual_mode = *self.visual_mode.borrow();
@@ -1430,8 +1455,9 @@ impl TextBoxInner {
                 *self.mouse_dragging.borrow_mut() = true;
                 if let Some(new_pos) = w.get_nearest_valid_cursor_from_position(x, y) {
                     self.set_cursor_pos(new_pos);
-                    let resp = self.correct_offsets(ctx, &w);
-                    return (true, resp.into());
+                    //let resp = self.correct_offsets(ctx, &w);
+                    //return (true, resp.into());
+                    return (true, EventResponses::default());
                 }
                 return (true, EventResponses::default());
             }
@@ -1443,9 +1469,10 @@ impl TextBoxInner {
 
     /// updates the content of the textbox
     pub fn update_content(&self, ctx: &Context, dr: &DrawRegion) {
-        let w = self.get_wrapped(ctx);
+        let w = self.get_wrapped(Some(dr.size));
         let wrapped = w.wrapped_string();
-        self.correct_ln_and_sbs(ctx);
+        //self.correct_ln_and_sbs(ctx);
+        let _ = self.correct_offsets(dr, &w);
 
         let curr_sty = self.current_sty.borrow().clone();
         let mut sty = curr_sty.clone();
@@ -1520,9 +1547,9 @@ impl Element for TextBoxInner {
     }
 
     fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
-        if self.is_dirty.replace(false) || *self.last_size.borrow() != ctx.size || force_update {
-            self.update_content(ctx);
-            self.last_size.replace(ctx.size);
+        if self.is_dirty.replace(false) || *self.last_size.borrow() != dr.size || force_update {
+            self.update_content(ctx, dr);
+            self.last_size.replace(dr.size);
         }
         self.pane.drawing(ctx, dr, force_update)
     }

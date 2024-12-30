@@ -152,12 +152,12 @@ pub trait Element: DynClone {
     // -------------------------------------------------------
     /// used by scrollbars
 
-    fn set_content_x_offset(&self, dr: &DrawRegion, x: usize);
-    fn set_content_y_offset(&self, dr: &DrawRegion, y: usize);
+    fn set_content_x_offset(&self, dr: Option<&DrawRegion>, x: usize);
+    fn set_content_y_offset(&self, dr: Option<&DrawRegion>, y: usize);
     fn get_content_x_offset(&self) -> usize;
     fn get_content_y_offset(&self) -> usize;
-    fn get_content_width(&self, dr: &DrawRegion) -> usize;
-    fn get_content_height(&self, dr: &DrawRegion) -> usize;
+    fn get_content_width(&self, dr: Option<&DrawRegion>) -> usize;
+    fn get_content_height(&self, dr: Option<&DrawRegion>) -> usize;
 
     // -------------------------------------------------------
     /// Freebies

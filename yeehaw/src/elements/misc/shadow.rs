@@ -51,55 +51,51 @@ impl ShadowSty {
 impl Shadowed {
     pub const KIND: &'static str = "shadowed";
 
-    pub fn thin(ctx: &Context, inner: Box<dyn Element>) -> Shadowed {
+    pub fn thin(inner: Box<dyn Element>) -> Shadowed {
         let shadow_color = Color::new_with_alpha(100, 100, 100, 100);
         let out = Shadowed {
             inner,
             sh_sty: Rc::new(RefCell::new(ShadowSty::new_thin(shadow_color))),
             overflow: Rc::new(RefCell::new(true)),
         };
-        out.set_shadow_content(ctx);
+        //out.set_shadow_content(ctx);
         out
     }
 
-    pub fn thin_with_color(
-        ctx: &Context, inner: Box<dyn Element>, shadow_color: Color,
-    ) -> Shadowed {
+    pub fn thin_with_color(inner: Box<dyn Element>, shadow_color: Color) -> Shadowed {
         let out = Shadowed {
             inner,
             sh_sty: Rc::new(RefCell::new(ShadowSty::new_thin(shadow_color))),
             overflow: Rc::new(RefCell::new(true)),
         };
-        out.set_shadow_content(ctx);
+        //out.set_shadow_content(ctx);
         out
     }
 
-    pub fn thick(ctx: &Context, inner: Box<dyn Element>) -> Shadowed {
+    pub fn thick(inner: Box<dyn Element>) -> Shadowed {
         let shadow_color = Color::new_with_alpha(100, 100, 100, 100);
         let out = Shadowed {
             inner,
             sh_sty: Rc::new(RefCell::new(ShadowSty::new_thick(shadow_color))),
             overflow: Rc::new(RefCell::new(true)),
         };
-        out.set_shadow_content(ctx);
+        //out.set_shadow_content(ctx);
         out
     }
 
-    pub fn thick_with_color(
-        ctx: &Context, inner: Box<dyn Element>, shadow_color: Color,
-    ) -> Shadowed {
+    pub fn thick_with_color(inner: Box<dyn Element>, shadow_color: Color) -> Shadowed {
         let out = Shadowed {
             inner,
             sh_sty: Rc::new(RefCell::new(ShadowSty::new_thick(shadow_color))),
             overflow: Rc::new(RefCell::new(true)),
         };
-        out.set_shadow_content(ctx);
+        //out.set_shadow_content(ctx);
         out
     }
 
     /// TODO could cache this
-    pub fn set_shadow_content(&self, ctx: &Context) -> Vec<DrawChPos> {
-        let size = ctx.size;
+    pub fn set_shadow_content(&self, dr: &DrawRegion) -> Vec<DrawChPos> {
+        let size = dr.size;
         let sh_sty = self.sh_sty.borrow();
 
         let mut out = vec![];
@@ -132,8 +128,8 @@ impl Element for Shadowed {
             match upd.action {
                 DrawAction::Update(ref mut dcps) | DrawAction::Extend(ref mut dcps) => {
                     if *self.inner.get_ref_cell_overflow().borrow() {
-                        let width = ctx.size.width;
-                        let height = ctx.size.height;
+                        let width = dr.size.width;
+                        let height = dr.size.height;
                         dcps.par_iter_mut().for_each(move |dcp| {
                             if dcp.x >= width || dcp.y >= height {
                                 // it'd be better to delete, but we can't delete from a parallel iterator
@@ -152,7 +148,7 @@ impl Element for Shadowed {
         for upd in &mut upds {
             if upd.sub_id.is_empty() {
                 if let DrawAction::Update(ref mut dcps) = upd.action {
-                    dcps.extend(self.set_shadow_content(ctx));
+                    dcps.extend(self.set_shadow_content(dr));
                     break;
                 }
             }

@@ -4,7 +4,7 @@
 use {
     crate::*,
     compact_str::CompactString,
-    crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind},
+    crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEventKind},
     portable_pty::{native_pty_system, ChildKiller, CommandBuilder, MasterPty, PtySize},
     std::{
         io::{BufWriter, Read, Write},
@@ -175,17 +175,15 @@ impl TerminalPane {
         self.execute_command(cmd);
     }
 
-    pub fn resize_pty(&self, ctx: &Context) {
+    pub fn resize_pty(&self, dr: &DrawRegion) {
         let Ok(mut parser) = self.parser.write() else {
             log_err!("TerminalPane: failed to write to parser");
             return;
         };
-        parser
-            .screen_mut()
-            .set_size(ctx.size.height, ctx.size.width);
+        parser.screen_mut().set_size(dr.size.height, dr.size.width);
         if let Err(e) = self.master_pty.borrow().resize(PtySize {
-            rows: ctx.size.height,
-            cols: ctx.size.width,
+            rows: dr.size.height,
+            cols: dr.size.width,
             pixel_width: 0,
             pixel_height: 0,
         }) {
@@ -204,7 +202,7 @@ impl TerminalPane {
             }
         };
         if (*parser).screen().mouse_protocol_encoding() == vt100_yh::MouseProtocolEncoding::Sgr {
-            let input_bz = create_csi_sgr_mouse(*mouse);
+            let input_bz = create_csi_sgr_mouse(mouse);
             if self.writer.borrow_mut().write_all(&input_bz).is_err() {
                 return false;
             }
@@ -284,7 +282,7 @@ impl TerminalPane {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for TerminalPane {
-    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, _: &Context, ev: Event) -> (bool, EventResponses) {
         let (captured, resps) = match ev {
             Event::KeyCombo(ref keys) => {
                 let captured = self.handle_pane_key_event(&keys[0]);
@@ -295,7 +293,7 @@ impl Element for TerminalPane {
                 (captured, EventResponses::default())
             }
             Event::Resize => {
-                self.resize_pty(ctx);
+                // resize will be handled in the drawing function
                 (false, EventResponses::default())
             }
             Event::Exit => {
@@ -316,7 +314,7 @@ impl Element for TerminalPane {
 
         (captured, resps)
     }
-    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
+    fn drawing(&self, _: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         let mp_size = self.master_pty.borrow().get_size();
         let resize = if let Ok(mp_size) = mp_size {
             mp_size.rows != dr.size.height || mp_size.cols != dr.size.width
@@ -324,7 +322,7 @@ impl Element for TerminalPane {
             true
         };
         if resize {
-            self.resize_pty(ctx);
+            self.resize_pty(dr);
         }
 
         let mut out = Vec::with_capacity(dr.size.width as usize * dr.size.height as usize);
@@ -413,7 +411,7 @@ impl Element for TerminalPane {
 }
 
 // this function takes a MouseEvent and returns the bytes that represent the mouse input.
-pub fn create_csi_sgr_mouse(ev: MouseEvent) -> Vec<u8> {
+pub fn create_csi_sgr_mouse(ev: &MouseEvent) -> Vec<u8> {
     let mut kind = ev.kind;
     let modifiers = ev.modifiers;
 

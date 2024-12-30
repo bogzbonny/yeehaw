@@ -2,7 +2,7 @@ use crate::{DynLocation, Loc, Size};
 
 /// The draw region is passed to elements during key function calls where the element may need to
 /// know information relavent to its rendering.
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(Default, PartialEq, Eq, Clone, Debug)]
 pub struct DrawRegion {
     /// The size of the element, during initialization of an element this size will be unknown and
     /// will be set to a size of (0,0). During all subsiquent calls to the element, the size should

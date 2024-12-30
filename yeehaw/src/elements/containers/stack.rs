@@ -196,16 +196,16 @@ impl VerticalStack {
     /// get the average value of the elements in the stack
     /// this is useful for pushing new elements with an even size
     /// to the other elements
-    pub fn avg_height(&self, ctx: &Context) -> DynVal {
+    pub fn avg_height(&self) -> DynVal {
         let els = self.els.borrow();
         if els.is_empty() {
             return 1.0.into();
         }
         let virtual_size = 1000;
-        let virtual_context = ctx.clone().with_size(Size::new(virtual_size, virtual_size));
+        let virtual_dr = DrawRegion::default().with_size(Size::new(virtual_size, virtual_size));
         let avg = els
             .iter()
-            .map(|el| el.get_dyn_location_set().get_height_val(&virtual_context))
+            .map(|el| el.get_dyn_location_set().get_height_val(&virtual_dr))
             .sum::<usize>() as f64
             / els.len() as f64;
         let avg_flex = avg / virtual_size as f64;
@@ -221,15 +221,15 @@ impl VerticalStack {
         el.set_dyn_location_set(loc); // set loc without triggering hooks
     }
 
-    pub fn ensure_normalized_sizes(&self, ctx: &Context) {
-        if *self.last_size.borrow() != ctx.size || self.is_dirty.replace(false) {
-            self.normalize_locations(ctx);
-            *self.last_size.borrow_mut() = ctx.size;
+    pub fn ensure_normalized_sizes(&self, dr: &DrawRegion) {
+        if *self.last_size.borrow() != dr.size || self.is_dirty.replace(false) {
+            self.normalize_locations(dr);
+            *self.last_size.borrow_mut() = dr.size;
         }
     }
 
     /// normalize all the locations within the stack
-    pub fn normalize_locations(&self, ctx: &Context) {
+    pub fn normalize_locations(&self, dr: &DrawRegion) {
         let mut heights: Vec<DynVal> = self
             .els
             .borrow()
@@ -237,7 +237,7 @@ impl VerticalStack {
             .map(|el| el.get_dyn_location_set().get_dyn_height())
             .collect();
 
-        self.normalize_heights_to_context(ctx, &mut heights);
+        self.normalize_heights_to_context(dr, &mut heights);
 
         // set all the locations based on the heights
         self.adjust_locations_for_heights(&heights);
@@ -257,8 +257,8 @@ impl VerticalStack {
 
     /// incrementally change the flex value of each of the existing heights (evenly), until
     /// the context height is reached. max out at 30 iterations.
-    pub fn normalize_heights_to_context(&self, ctx: &Context, heights: &mut [DynVal]) {
-        adjust_els_to_fit_ctx_size(ctx.get_height(), heights, *self.min_resize_height.borrow());
+    pub fn normalize_heights_to_context(&self, dr: &DrawRegion, heights: &mut [DynVal]) {
+        adjust_els_to_fit_dr_size(dr.get_height(), heights, *self.min_resize_height.borrow());
     }
 
     /// adjust all the locations based on the heights
@@ -382,16 +382,16 @@ impl HorizontalStack {
     /// get the average value of the elements in the stack
     /// this is useful for pushing new elements with an even size
     /// to the other elements
-    pub fn avg_width(&self, ctx: &Context) -> DynVal {
+    pub fn avg_width(&self) -> DynVal {
         let els = self.els.borrow();
         if els.is_empty() {
             return 1.0.into();
         }
         let virtual_size = 1000;
-        let virtual_context = ctx.clone().with_size(Size::new(virtual_size, virtual_size));
+        let virtual_dr = DrawRegion::default().with_size(Size::new(virtual_size, virtual_size));
         let avg = els
             .iter()
-            .map(|el| el.get_dyn_location_set().get_width_val(&virtual_context))
+            .map(|el| el.get_dyn_location_set().get_width_val(&virtual_dr))
             .sum::<usize>() as f64
             / els.len() as f64;
         let avg_flex = avg / virtual_size as f64;
@@ -407,15 +407,15 @@ impl HorizontalStack {
         el.set_dyn_location_set(loc); // set loc without triggering hooks
     }
 
-    pub fn ensure_normalized_sizes(&self, ctx: &Context) {
-        if *self.last_size.borrow() != ctx.size || self.is_dirty.replace(false) {
-            self.normalize_locations(ctx);
-            *self.last_size.borrow_mut() = ctx.size;
+    pub fn ensure_normalized_sizes(&self, dr: &DrawRegion) {
+        if *self.last_size.borrow() != dr.size || self.is_dirty.replace(false) {
+            self.normalize_locations(dr);
+            *self.last_size.borrow_mut() = dr.size;
         }
     }
 
     /// normalize all the locations within the stack
-    pub fn normalize_locations(&self, ctx: &Context) {
+    pub fn normalize_locations(&self, dr: &DrawRegion) {
         let mut widths: Vec<DynVal> = self
             .els
             .borrow()
@@ -423,7 +423,7 @@ impl HorizontalStack {
             .map(|el| el.get_dyn_location_set().get_dyn_width())
             .collect();
 
-        self.normalize_widths_to_context(ctx, &mut widths);
+        self.normalize_widths_to_dr(dr, &mut widths);
 
         // set all the locations based on the widths
         self.adjust_locations_for_widths(&widths);
@@ -443,8 +443,8 @@ impl HorizontalStack {
 
     /// incrementally change the flex value of each of the existing widths (evenly), until
     /// the context width is reached. max out at 30 iterations.
-    pub fn normalize_widths_to_context(&self, ctx: &Context, widths: &mut [DynVal]) {
-        adjust_els_to_fit_ctx_size(ctx.get_width(), widths, *self.min_resize_width.borrow());
+    pub fn normalize_widths_to_dr(&self, dr: &DrawRegion, widths: &mut [DynVal]) {
+        adjust_els_to_fit_dr_size(dr.get_width(), widths, *self.min_resize_width.borrow());
     }
 
     /// adjust all the locations based on the widths
@@ -466,7 +466,7 @@ impl HorizontalStack {
 ///
 /// ctx.size is either the height or width of the context
 /// vals is either element heights or widths to be adjusted
-fn adjust_els_to_fit_ctx_size(ctx_size: u16, vals: &mut [DynVal], min_size: usize) {
+fn adjust_els_to_fit_dr_size(ctx_size: u16, vals: &mut [DynVal], min_size: usize) {
     vals.iter_mut().for_each(|v| v.flatten_internal());
     for _i in 0..30 {
         let total_size: i32 = vals.iter().map(|v| v.get_val(ctx_size)).sum();
@@ -496,7 +496,7 @@ fn adjust_els_to_fit_ctx_size(ctx_size: u16, vals: &mut [DynVal], min_size: usiz
 impl Element for VerticalStack {
     fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         //debug!("id: {}, focused: {}", self.id(), self.get_focused());
-        self.ensure_normalized_sizes(ctx);
+        //self.ensure_normalized_sizes(ctx);
         let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
 
         let mut resized = false;
@@ -555,12 +555,25 @@ impl Element for VerticalStack {
             let mut t_loc = top_el.get_dyn_location_set().clone();
             let mut b_loc = bottom_el.get_dyn_location_set().clone();
 
+            // XXX see if this works after DrawRegion refactor
+            //
+            // original code:
             // NOTE must set to a a fixed value (aka need to get the size for the pane DynVal
             // using ctx here. if we do not then the next pane position drag will be off
-            let t_start_y = t_loc.get_start_y(ctx);
-            let t_end_y = t_loc.get_end_y(ctx);
-            let b_start_y = b_loc.get_start_y(ctx);
-            let b_end_y = b_loc.get_end_y(ctx);
+            //let t_start_y = t_loc.get_start_y(ctx);
+            //let t_end_y = t_loc.get_end_y(ctx);
+            //let b_start_y = b_loc.get_start_y(ctx);
+            //let b_end_y = b_loc.get_end_y(ctx);
+            //let b_start_y_adj = b_start_y + change_dy;
+            //let t_end_y_adj = t_end_y + change_dy;
+
+            let last_size = *self.last_size.borrow();
+            let dr = DrawRegion::default().with_size(last_size);
+
+            let t_start_y = t_loc.get_start_y(&dr);
+            let t_end_y = t_loc.get_end_y(&dr);
+            let b_start_y = b_loc.get_start_y(&dr);
+            let b_end_y = b_loc.get_end_y(&dr);
 
             let b_start_y_adj = b_start_y + change_dy;
             let t_end_y_adj = t_end_y + change_dy;
@@ -584,13 +597,13 @@ impl Element for VerticalStack {
         if resized {
             let (_, r) = self.pane.receive_event(ctx, Event::Resize);
             resps.extend(r);
-            self.normalize_locations(ctx);
+            //self.normalize_locations(ctx);
         }
         (captured, resps)
     }
 
     fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
-        self.ensure_normalized_sizes(ctx);
+        self.ensure_normalized_sizes(dr);
         self.pane.drawing(ctx, dr, force_update)
     }
 }
@@ -599,7 +612,7 @@ impl Element for VerticalStack {
 impl Element for HorizontalStack {
     fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         //debug!("id: {}, focused: {}", self.id(), self.get_focused());
-        self.ensure_normalized_sizes(ctx);
+        //self.ensure_normalized_sizes(ctx);
         let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
 
         let mut resized = false;
@@ -656,12 +669,21 @@ impl Element for HorizontalStack {
             let mut l_loc = left_el.get_dyn_location_set().clone();
             let mut r_loc = right_el.get_dyn_location_set().clone();
 
+            // XXX
             // NOTE must set to a a fixed value (aka need to get the size for the pane DynVal
             // using ctx here. if we do not then the next pane position drag will be off
-            let l_start_x = l_loc.get_start_x(ctx);
-            let l_end_x = l_loc.get_end_x(ctx);
-            let r_start_x = r_loc.get_start_x(ctx);
-            let r_end_x = r_loc.get_end_x(ctx);
+            //let l_start_x = l_loc.get_start_x(ctx);
+            //let l_end_x = l_loc.get_end_x(ctx);
+            //let r_start_x = r_loc.get_start_x(ctx);
+            //let r_end_x = r_loc.get_end_x(ctx);
+
+            let last_size = *self.last_size.borrow();
+            let dr = DrawRegion::default().with_size(last_size);
+
+            let l_start_x = l_loc.get_start_x(&dr);
+            let l_end_x = l_loc.get_end_x(&dr);
+            let r_start_x = r_loc.get_start_x(&dr);
+            let r_end_x = r_loc.get_end_x(&dr);
 
             let r_start_x_adj = r_start_x + change_dx;
             let l_end_x_adj = l_end_x + change_dx;
@@ -685,12 +707,12 @@ impl Element for HorizontalStack {
         if resized {
             let (_, r) = self.pane.receive_event(ctx, Event::Resize);
             resps.extend(r);
-            self.normalize_locations(ctx);
+            //self.normalize_locations(ctx);
         }
         (captured, resps)
     }
     fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
-        self.ensure_normalized_sizes(ctx);
+        self.ensure_normalized_sizes(dr);
         self.pane.drawing(ctx, dr, force_update)
     }
 }
@@ -713,8 +735,8 @@ trait StackTr {
     fn with_style(self, style: Style) -> Self;
     fn with_transparent(self) -> Self;
     fn sanitize_el_location(el: &dyn Element);
-    fn ensure_normalized_sizes(&self, ctx: &Context);
-    fn normalize_locations(&self, ctx: &Context);
+    fn ensure_normalized_sizes(&self, dr: &DrawRegion);
+    fn normalize_locations(&self, dr: &DrawRegion);
 }
 
 impl StackTr for VerticalStack {
@@ -755,11 +777,11 @@ impl StackTr for VerticalStack {
     fn sanitize_el_location(el: &dyn Element) {
         VerticalStack::sanitize_el_location(el)
     }
-    fn ensure_normalized_sizes(&self, ctx: &Context) {
-        VerticalStack::ensure_normalized_sizes(self, ctx)
+    fn ensure_normalized_sizes(&self, dr: &DrawRegion) {
+        VerticalStack::ensure_normalized_sizes(self, dr)
     }
-    fn normalize_locations(&self, ctx: &Context) {
-        VerticalStack::normalize_locations(self, ctx)
+    fn normalize_locations(&self, dr: &DrawRegion) {
+        VerticalStack::normalize_locations(self, dr)
     }
 }
 
@@ -801,10 +823,10 @@ impl StackTr for HorizontalStack {
     fn sanitize_el_location(el: &dyn Element) {
         HorizontalStack::sanitize_el_location(el)
     }
-    fn ensure_normalized_sizes(&self, ctx: &Context) {
-        HorizontalStack::ensure_normalized_sizes(self, ctx)
+    fn ensure_normalized_sizes(&self, dr: &DrawRegion) {
+        HorizontalStack::ensure_normalized_sizes(self, dr)
     }
-    fn normalize_locations(&self, ctx: &Context) {
-        HorizontalStack::normalize_locations(self, ctx)
+    fn normalize_locations(&self, dr: &DrawRegion) {
+        HorizontalStack::normalize_locations(self, dr)
     }
 }

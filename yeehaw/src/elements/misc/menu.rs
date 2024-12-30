@@ -143,7 +143,7 @@ impl MenuBar {
         let mp = MenuPath(menu_path);
         self.ensure_folders(ctx, mp.clone());
         let item = MenuItem::new(ctx, mp).with_unselectable();
-        self.add_item_inner(ctx, item);
+        self.add_item_inner(item);
     }
 
     pub fn add_item(
@@ -153,7 +153,7 @@ impl MenuBar {
         let mp = MenuPath(menu_path);
         self.ensure_folders(ctx, mp.clone());
         let item = MenuItem::new(ctx, mp).with_fn(click_fn);
-        self.add_item_inner(ctx, item);
+        self.add_item_inner(item);
     }
 
     pub fn with_item(
@@ -167,7 +167,7 @@ impl MenuBar {
     pub fn set_items(&self, ctx: &Context, items: Vec<MenuItem>) {
         for item in items {
             self.ensure_folders(ctx, item.path.borrow().clone());
-            self.add_item_inner(ctx, item);
+            self.add_item_inner(item);
         }
     }
 
@@ -179,18 +179,18 @@ impl MenuBar {
             if !self.contains_menu_item(MenuPath(folder_path.clone())) {
                 let path = MenuPath(folder_path);
                 let item = MenuItem::new_folder(ctx, path);
-                self.add_item_inner(ctx, item);
+                self.add_item_inner(item);
             }
         }
     }
 
     /// the furthest location of the primary menu element
-    pub fn max_primary_x(&self, ctx: &Context) -> Option<i32> {
+    pub fn max_primary_x(&self, dr: &DrawRegion) -> Option<i32> {
         let mut max_x = None;
         for item in self.menu_items_order.borrow().iter() {
             if item.is_primary() {
                 let loc = self.pane.eo.get_location(&item.id()).expect("missing el").l;
-                let end_x = loc.get_end_x(ctx);
+                let end_x = loc.get_end_x(&dr);
                 if let Some(mx) = max_x {
                     if end_x > mx {
                         max_x = Some(end_x);
@@ -202,12 +202,12 @@ impl MenuBar {
         }
         max_x
     }
-    pub fn max_primary_y(&self, ctx: &Context) -> Option<i32> {
+    pub fn max_primary_y(&self, dr: &DrawRegion) -> Option<i32> {
         let mut max_y = None;
         for item in self.menu_items_order.borrow().iter() {
             if item.is_primary() {
                 let loc = self.pane.eo.get_location(&item.id()).expect("missing el").l;
-                let end_y = loc.get_end_y(ctx);
+                let end_y = loc.get_end_y(&dr);
                 if let Some(my) = max_y {
                     if end_y > my {
                         max_y = Some(end_y);
@@ -220,25 +220,27 @@ impl MenuBar {
         max_y
     }
 
-    fn add_item_inner(&self, ctx: &Context, item: MenuItem) {
+    fn add_item_inner(&self, item: MenuItem) {
         let is_primary = item.is_primary();
         if is_primary && !*self.primary_has_show_arrow.borrow() {
             *item.show_folder_arrow.borrow_mut() = false;
         }
+        let dr = DrawRegion::default().with_size(*self.get_last_size());
+
         let (loc, vis) = if is_primary {
             let item_width = item.min_width(
                 &self.menu_style.borrow(),
                 *self.primary_has_show_arrow.borrow(),
             ) as i32;
             let loc = if *self.horizontal_bar.borrow() {
-                let x = self.max_primary_x(ctx).unwrap_or(0); // returns max end_x which is exclusive (so don't +1)
+                let x = self.max_primary_x(&dr).unwrap_or(0); // returns max end_x which is exclusive (so don't +1)
                 let x1 = DynVal::new_fixed(x);
                 let x2 = DynVal::new_fixed(x + item_width);
                 let y1 = DynVal::new_fixed(0);
                 let y2 = DynVal::new_fixed(1);
                 DynLocation::new(x1, x2, y1, y2)
             } else {
-                let y = self.max_primary_y(ctx).unwrap_or(0); // returns max end_y which is exclusive (so don't +1)
+                let y = self.max_primary_y(&dr).unwrap_or(0); // returns max end_y which is exclusive (so don't +1)
                 let y1 = DynVal::new_fixed(y);
                 let y2 = DynVal::new_fixed(y + 1);
                 let x1 = DynVal::new_fixed(0);
@@ -309,9 +311,7 @@ impl MenuBar {
         None
     }
 
-    pub fn receive_mouse_event(
-        &self, ctx: &Context, ev: crossterm::event::MouseEvent,
-    ) -> (bool, EventResponses) {
+    pub fn receive_mouse_event(&self, ctx: &Context, ev: MouseEvent) -> (bool, EventResponses) {
         // must check if bar is activated
         let clicked = matches!(ev.kind, MouseEventKind::Down(_));
         let active_at_start = *self.activated.borrow();
@@ -372,7 +372,7 @@ impl MenuBar {
     }
 
     pub fn receive_external_mouse_event(
-        &self, _ctx: &Context, ev: RelMouseEvent,
+        &self, _ctx: &Context, ev: MouseEvent,
     ) -> (bool, EventResponses) {
         let clicked = matches!(
             ev.kind,
@@ -693,20 +693,21 @@ impl Element for MenuBar {
         for el_details in self.pane.eo.els.borrow().values() {
             // offset pos to location
             let child_ctx = ctx
-                .child_context(&el_details.loc.borrow().l)
+                .clone()
                 .with_metadata(Self::MENU_STYLE_MD_KEY.to_string(), menu_style_bz.clone());
+            let child_dr = dr.child_region(&el_details.loc.borrow().l);
 
             // a bit annoying as this generates ClearUpdates for every menu item every call draw
             // cycle
-            let mut upds = el_details.el.drawing(&child_ctx, force_update);
+            let mut upds = el_details.el.drawing(&child_ctx, &child_dr, force_update);
 
             for upd in &mut upds {
                 upd.prepend_id(el_details.el.id(), el_details.loc.borrow().z);
                 match upd.action {
                     DrawAction::Update(ref mut dcps) | DrawAction::Extend(ref mut dcps) => {
                         let l = el_details.loc.borrow().l.clone();
-                        let s = ctx.size;
-                        let child_s = child_ctx.size;
+                        let s = dr.size;
+                        let child_s = child_dr.size;
 
                         // NOTE this is a computational bottleneck
                         // currently using rayon for parallelization
@@ -759,7 +760,7 @@ impl Element for MenuItem {
     }
 
     // TODO refactor to cache instead of just returning updates every drawing
-    fn drawing(&self, ctx: &Context, _force_update: bool) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, dr: &DrawRegion, _force_update: bool) -> Vec<DrawUpdate> {
         if !self.get_visible() {
             return Vec::with_capacity(0);
         }
@@ -800,7 +801,7 @@ impl Element for MenuItem {
 
         // add filler space
         while x
-            < (ctx.size.width as usize)
+            < (dr.size.width as usize)
                 .saturating_sub(m_sty.right_padding + arrow_text.chars().count())
         {
             let dc = DrawCh::new(' ', sty.clone());

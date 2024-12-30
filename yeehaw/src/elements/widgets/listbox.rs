@@ -71,10 +71,9 @@ impl ListBox {
             .max()
             .unwrap_or(0);
         let line_count = entries.iter().map(|r| r.lines().count()).sum::<usize>() as i32;
-        let init_ctx = ctx.child_init_context();
-        let inner = ListBoxInner::new(&init_ctx, entries);
+        let inner = ListBoxInner::new(ctx, entries);
 
-        let pane = SelectablePane::new(&init_ctx, Self::KIND)
+        let pane = SelectablePane::new(ctx, Self::KIND)
             .with_styles(ListBoxInner::STYLE)
             .with_dyn_width(DynVal::new_fixed(max_entry_width as i32))
             .with_dyn_height(DynVal::new_fixed(line_count));
@@ -111,9 +110,10 @@ impl ListBox {
         *self.inner.borrow().selection_made_fn.borrow_mut() = lb_fn;
     }
 
-    pub fn with_styles(self, init_ctx: &Context, styles: SelStyles) -> Self {
+    pub fn with_styles(self, styles: SelStyles) -> Self {
         self.pane.set_styles(styles);
-        self.inner.borrow().update_content(init_ctx);
+        //self.inner.borrow().update_content(init_ctx);
+        self.inner.borrow().is_dirty.replace(true);
         self
     }
 
@@ -133,7 +133,8 @@ impl ListBox {
         let height = DynVal::FULL;
         let content_height = self.inner.borrow().pane.content_height();
 
-        let sb = VerticalScrollbar::new(init_ctx, height, init_ctx.size, content_height)
+        let size = *self.get_last_size();
+        let sb = VerticalScrollbar::new(init_ctx, height, size, content_height)
             .without_keyboard_events();
         match pos {
             VerticalSBPositions::ToTheLeft => {
@@ -151,11 +152,17 @@ impl ListBox {
                 return self;
             }
         }
-        sb.set_scrollable_view_size(init_ctx.child_context(&self.pane.get_dyn_location()).size);
+        //sb.set_scrollable_view_size(init_ctx.child_context(&self.pane.get_dyn_location().get_size(DrawRegion::default())).size);
+
+        let size = &self
+            .pane
+            .get_dyn_location()
+            .get_size(&DrawRegion::default());
+        sb.set_scrollable_view_size(*size);
 
         // wire the scrollbar to the listbox
         let pane_ = self.inner.borrow().pane.clone();
-        let hook = Box::new(move |ctx, y| pane_.set_content_y_offset(&ctx, y));
+        let hook = Box::new(move |_, y| pane_.set_content_y_offset(None, y));
         *sb.position_changed_hook.borrow_mut() = Some(hook);
         *self.scrollbar.borrow_mut() = Some(sb.clone());
         self.pane.pane.add_element(Box::new(sb.clone())); // no resps for sb
@@ -163,35 +170,40 @@ impl ListBox {
         self
     }
 
-    pub fn with_lines_per_item(self, init_ctx: &Context, lines: usize) -> Self {
+    pub fn with_lines_per_item(self, lines: usize) -> Self {
         *self.inner.borrow().lines_per_item.borrow_mut() = lines;
         self.pane.set_dyn_height(DynVal::new_fixed(
             self.inner.borrow().entries.borrow().len() as i32 * lines as i32,
         ));
-        self.inner.borrow().update_content(init_ctx);
+        //self.inner.borrow().update_content(init_ctx);
+        self.inner.borrow().is_dirty.replace(true);
         self
     }
 
-    pub fn with_selection_mode(self, init_ctx: &Context, mode: SelectionMode) -> Self {
+    pub fn with_selection_mode(self, mode: SelectionMode) -> Self {
         *self.inner.borrow().selection_mode.borrow_mut() = mode;
-        self.inner.borrow().update_content(init_ctx);
+        //self.inner.borrow().update_content(init_ctx);
+        self.inner.borrow().is_dirty.replace(true);
         self
     }
 
-    pub fn with_dyn_width(self, init_ctx: &Context, width: DynVal) -> Self {
+    pub fn with_dyn_width(self, width: DynVal) -> Self {
         self.pane.set_dyn_width(width);
-        self.inner.borrow().update_content(init_ctx);
+        //self.inner.borrow().update_content(init_ctx);
+        self.inner.borrow().is_dirty.replace(true);
         self
     }
-    pub fn with_dyn_height(self, init_ctx: &Context, height: DynVal) -> Self {
+    pub fn with_dyn_height(self, height: DynVal) -> Self {
         self.pane.set_dyn_height(height);
-        self.inner.borrow().update_content(init_ctx);
+        //self.inner.borrow().update_content(init_ctx);
+        self.inner.borrow().is_dirty.replace(true);
         self
     }
-    pub fn with_size(self, init_ctx: &Context, width: DynVal, height: DynVal) -> Self {
+    pub fn with_size(self, width: DynVal, height: DynVal) -> Self {
         self.pane.set_dyn_width(width);
         self.pane.set_dyn_height(height);
-        self.inner.borrow().update_content(init_ctx);
+        //self.inner.borrow().update_content(init_ctx);
+        self.inner.borrow().is_dirty.replace(true);
         self
     }
 
@@ -234,7 +246,8 @@ impl ListBoxInner {
             .with_dyn_height(DynVal::FULL)
             .with_focused(true);
 
-        let lb = ListBoxInner {
+        //lb.update_content(init_ctx);
+        ListBoxInner {
             pane,
             current_sty: Rc::new(RefCell::new(Style::default())),
             selectedness: Rc::new(RefCell::new(Selectability::Ready)),
@@ -251,9 +264,7 @@ impl ListBoxInner {
             selection_made_fn: Rc::new(RefCell::new(Box::new(|_, _| EventResponses::default()))),
             scrollbar: Rc::new(RefCell::new(None)),
             is_dirty: Rc::new(RefCell::new(true)),
-        };
-        lb.update_content(init_ctx);
-        lb
+        }
     }
 
     // ----------------------------------------------
@@ -286,25 +297,25 @@ impl ListBoxInner {
         text.join("\n")
     }
 
-    pub fn correct_offsets(&self, ctx: &Context) {
+    pub fn correct_offsets(&self, dr: &DrawRegion) {
         let Some(cursor) = *self.cursor.borrow() else {
             return;
         };
         let (start_y, end_y) = self.get_content_y_range_for_item_index(cursor);
         let y_offset = self.pane.get_content_y_offset();
-        let height = self.pane.get_height(ctx);
+        let height = self.pane.get_height(dr);
 
         if end_y >= y_offset + height {
-            self.pane.correct_offsets_to_view_position(ctx, 0, end_y);
+            self.pane.correct_offsets_to_view_position(dr, 0, end_y);
         } else if start_y < y_offset {
-            self.pane.correct_offsets_to_view_position(ctx, 0, start_y);
+            self.pane.correct_offsets_to_view_position(dr, 0, start_y);
         }
 
         let y_offset = self.pane.get_content_y_offset();
 
         // call the scrollbar external change hook if it exists
         if let Some(sb) = self.scrollbar.borrow().as_ref() {
-            sb.external_change(y_offset, self.pane.content_height(), ctx.size);
+            sb.external_change(y_offset, self.pane.content_height(), dr.size);
         }
         self.is_dirty.replace(true);
     }
@@ -321,28 +332,30 @@ impl ListBoxInner {
         (start_y, end_y)
     }
 
-    pub fn set_entries(&self, ctx: &Context, entries: Vec<String>) {
+    pub fn set_entries(&self, entries: Vec<String>) {
         *self.entries.borrow_mut() = entries;
-        self.update_content(ctx);
+        self.is_dirty.replace(true);
+        //self.update_content(ctx);
     }
 
-    pub fn update_content(&self, ctx: &Context) {
+    pub fn update_content(&self, dr: &DrawRegion) {
         let mut content = String::new();
         let entries_len = self.entries.borrow().len();
         for i in 0..entries_len {
             content +=
-                &self.get_text_for_entry(i, ctx.size.width.into(), *self.lines_per_item.borrow());
+                &self.get_text_for_entry(i, dr.size.width.into(), *self.lines_per_item.borrow());
             if i < entries_len - 1 {
                 content += "\n";
             }
         }
         self.pane.set_content_from_string(&content);
-        self.update_highlighting(ctx);
-        self.is_dirty.replace(true);
+        self.update_highlighting(dr);
+        self.correct_offsets(dr);
+        //self.is_dirty.replace(true);
     }
 
     /// need to reset the content in order to reflect active style
-    pub fn update_highlighting(&self, ctx: &Context) {
+    pub fn update_highlighting(&self, dr: &DrawRegion) {
         // change the style for selection and the cursor
         for i in 0..self.entries.borrow().len() {
             let cursor = *self.cursor.borrow();
@@ -375,7 +388,7 @@ impl ListBoxInner {
 
             // update the rest of the lines
             let entries_len = self.entries.borrow().len();
-            for i in entries_len * *self.lines_per_item.borrow()..self.pane.get_height(ctx) {
+            for i in entries_len * *self.lines_per_item.borrow()..self.pane.get_height(dr) {
                 let sty = self.current_sty.borrow().clone();
                 self.pane.get_content_mut().change_style_along_y(i, sty);
             }
@@ -383,7 +396,7 @@ impl ListBoxInner {
     }
 
     /// returns if the cursor was moved
-    pub fn cursor_up(&self, ctx: &Context) -> bool {
+    pub fn cursor_up(&self) -> bool {
         let mut out = true;
         let cursor = *self.cursor.borrow();
         match cursor {
@@ -393,7 +406,7 @@ impl ListBoxInner {
             None => {
                 if let Some(lcp) = *self.last_clicked_position.borrow() {
                     *self.cursor.borrow_mut() = Some(lcp);
-                    out = self.cursor_up(ctx);
+                    out = self.cursor_up();
                 } else {
                     *self.cursor.borrow_mut() = Some(self.entries.borrow().len() - 1);
                 }
@@ -402,12 +415,12 @@ impl ListBoxInner {
                 return false;
             }
         }
-        self.correct_offsets(ctx);
+        //self.correct_offsets(ctx);
         out
     }
 
     /// returns if the cursor was moved
-    pub fn cursor_down(&self, ctx: &Context) -> bool {
+    pub fn cursor_down(&self) -> bool {
         let mut out = true;
         let cursor = *self.cursor.borrow();
         match cursor {
@@ -417,7 +430,7 @@ impl ListBoxInner {
             None => {
                 if let Some(lcp) = *self.last_clicked_position.borrow() {
                     *self.cursor.borrow_mut() = Some(lcp);
-                    out = self.cursor_down(ctx);
+                    out = self.cursor_down();
                 } else {
                     *self.cursor.borrow_mut() = Some(0);
                 }
@@ -426,7 +439,7 @@ impl ListBoxInner {
                 return false;
             }
         }
-        self.correct_offsets(ctx);
+        //self.correct_offsets(ctx);
         out
     }
 
@@ -505,11 +518,11 @@ impl Element for ListBoxInner {
                         }
                     }
                     _ if ke[0] == KB::KEY_DOWN || ke[0] == KB::KEY_J => {
-                        let _ = self.cursor_down(ctx);
+                        let _ = self.cursor_down();
                         return (true, resps);
                     }
                     _ if ke[0] == KB::KEY_UP || ke[0] == KB::KEY_K => {
-                        let _ = self.cursor_up(ctx);
+                        let _ = self.cursor_up();
                         return (true, resps);
                     }
                     _ if ke[0] == KB::KEY_ENTER => {
@@ -552,11 +565,11 @@ impl Element for ListBoxInner {
 
                 match true {
                     _ if scroll_up => {
-                        let captured = self.cursor_up(ctx);
+                        let captured = self.cursor_up();
                         return (captured, resps);
                     }
                     _ if scroll_down => {
-                        let captured = self.cursor_down(ctx);
+                        let captured = self.cursor_down();
                         return (captured, resps);
                     }
                     _ if clicked => {
@@ -564,12 +577,12 @@ impl Element for ListBoxInner {
 
                         // check if this should be a scrollbar event
                         if let Some(sb) = self.scrollbar.borrow().as_ref() {
-                            if y > 0 && x == self.pane.get_width(ctx).saturating_sub(1) {
+                            if y > 0 && x == self.pane.get_width(&me.dr).saturating_sub(1) {
                                 if dragging {
                                     // send the the event to the scrollbar (x adjusted to 0)
                                     let mut me_ = me;
                                     me_.column = 0;
-                                    me_.row = y.saturating_sub(1) as u16;
+                                    me_.row = y as i32 - 1;
                                     let (captured, resps_) =
                                         sb.receive_event(ctx, Event::Mouse(me_));
                                     self.is_dirty.replace(true);
@@ -603,8 +616,8 @@ impl Element for ListBoxInner {
 
     fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         if self.is_dirty.replace(false) || force_update {
-            self.update_highlighting(ctx);
-            self.update_content(ctx);
+            self.update_highlighting(dr);
+            self.update_content(dr);
         }
         self.pane.drawing(ctx, dr, force_update)
     }
