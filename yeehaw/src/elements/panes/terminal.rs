@@ -51,15 +51,16 @@ impl TerminalPane {
     }
 
     pub fn new_with_builder(ctx: &Context, cmd: CommandBuilder) -> Result<Self, Error> {
-        let mut size = ctx.size;
+        //let mut size = ctx.size;
+        //if size.width == 0 {
+        //    size.width = 5;
+        //}
+        //if size.height == 0 {
+        //    size.height = 5;
+        //}
 
         // need this as the pty will not open if the size is 0
-        if size.width == 0 {
-            size.width = 30;
-        }
-        if size.height == 0 {
-            size.height = 30;
-        }
+        let size = Size::new(5, 5);
 
         let pane = Pane::new(ctx, Self::KIND);
 
@@ -315,10 +316,10 @@ impl Element for TerminalPane {
 
         (captured, resps)
     }
-    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         let mp_size = self.master_pty.borrow().get_size();
         let resize = if let Ok(mp_size) = mp_size {
-            mp_size.rows != ctx.size.height || mp_size.cols != ctx.size.width
+            mp_size.rows != dr.size.height || mp_size.cols != dr.size.width
         } else {
             true
         };
@@ -326,7 +327,7 @@ impl Element for TerminalPane {
             self.resize_pty(ctx);
         }
 
-        let mut out = Vec::with_capacity(ctx.size.width as usize * ctx.size.height as usize);
+        let mut out = Vec::with_capacity(dr.size.width as usize * dr.size.height as usize);
 
         let Ok(sc) = self.parser.read() else {
             log_err!("TerminalPane: failed to read parser");
@@ -338,11 +339,11 @@ impl Element for TerminalPane {
         let mut prev_draw_i = 0;
         let grid = screen.grid();
         for (y, row) in grid.visible_rows().enumerate() {
-            if y > ctx.size.height as usize {
+            if y > dr.size.height as usize {
                 break;
             }
             for (x, screen_cell) in row.cells().enumerate() {
-                if x > ctx.size.width as usize {
+                if x > dr.size.width as usize {
                     break;
                 }
 

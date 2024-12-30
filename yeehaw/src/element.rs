@@ -1,7 +1,7 @@
 use {
     crate::{
-        Context, DrawChPos, DynLocation, DynLocationSet, ElementID, Event, EventResponses, Label,
-        ReceivableEvents, ZIndex,
+        Context, DrawChPos, DrawRegion, DynLocation, DynLocationSet, ElementID, Event,
+        EventResponses, Label, ReceivableEvents, ZIndex,
     },
     dyn_clone::DynClone,
     std::{
@@ -59,7 +59,7 @@ pub trait Element: DynClone {
     /// Get the element's full drawing for the provided context.
     /// if force update is set to true then an DrawUpdate should be provided regardless of
     /// if the element has changed since the last draw
-    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate>;
+    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate>;
 
     /// Element attributes can be used to store arbitrary values (as encoded bytes) within the
     /// element. Typically if you are developing a new Element, you can simply store local values
@@ -152,12 +152,12 @@ pub trait Element: DynClone {
     // -------------------------------------------------------
     /// used by scrollbars
 
-    fn set_content_x_offset(&self, ctx: &Context, x: usize);
-    fn set_content_y_offset(&self, ctx: &Context, y: usize);
+    fn set_content_x_offset(&self, dr: &DrawRegion, x: usize);
+    fn set_content_y_offset(&self, dr: &DrawRegion, y: usize);
     fn get_content_x_offset(&self) -> usize;
     fn get_content_y_offset(&self) -> usize;
-    fn get_content_width(&self, ctx: &Context) -> usize;
-    fn get_content_height(&self, ctx: &Context) -> usize;
+    fn get_content_width(&self, dr: &DrawRegion) -> usize;
+    fn get_content_height(&self, dr: &DrawRegion) -> usize;
 
     // -------------------------------------------------------
     /// Freebies

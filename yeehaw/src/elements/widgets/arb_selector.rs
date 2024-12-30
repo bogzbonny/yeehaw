@@ -276,8 +276,11 @@ impl ArbSelector {
         self.positions.borrow().contains(&pos)
     }
 
-    pub fn get_pos_from_x_y(&self, x: u16, y: u16) -> Option<usize> {
+    pub fn get_pos_from_x_y(&self, x: i32, y: i32) -> Option<usize> {
         let pos_map = self.positions_map.borrow();
+        if y < 0 || x < 0 {
+            return None;
+        }
         let x = x as usize;
         let y = y as usize;
         pos_map[y][x]
@@ -430,10 +433,10 @@ impl Element for ArbSelector {
         }
         (false, resps)
     }
-    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         if self.is_dirty.replace(false) || force_update {
             self.update_content(ctx);
         }
-        self.pane.drawing(ctx, force_update)
+        self.pane.drawing(ctx, dr, force_update)
     }
 }

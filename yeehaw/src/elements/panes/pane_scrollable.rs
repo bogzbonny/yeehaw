@@ -83,60 +83,62 @@ impl PaneScrollable {
 
     // ------------------------------------
 
-    pub fn inner_ctx(&self, ctx: &Context) -> Context {
-        let mut inner_ctx = ctx.clone();
+    pub fn inner_draw_region(&self, dr: &DrawRegion) -> DrawRegion {
+        let mut inner_dr = dr.clone();
 
-        inner_ctx.size.width = self.get_content_width(ctx) as u16;
-        inner_ctx.size.height = self.get_content_height(ctx) as u16;
+        inner_dr.size.width = self.get_content_width(dr) as u16;
+        inner_dr.size.height = self.get_content_height(dr) as u16;
         //debug!(
-        //    "ctx: \twidth: {}, \theight: {}, inner_ctx: \twidth: {}, \theight: {}",
-        //    ctx.size.width, ctx.size.height, inner_ctx.size.width, inner_ctx.size.height
+        //    "dr: \twidth: {}, \theight: {}, inner_dr: \twidth: {}, \theight: {}",
+        //    dr.size.width, dr.size.height, inner_dr.size.width, inner_dr.size.height
         //);
         let x1 = *self.content_offset_x.borrow() as u16;
         let y1 = *self.content_offset_y.borrow() as u16;
-        let x2 = x1 + ctx.size.width;
-        let y2 = y1 + ctx.size.height;
+        let x2 = x1 + dr.size.width;
+        let y2 = y1 + dr.size.height;
         //debug!(
         //    "visible region: \n\tx1: {}, \n\tx2: {}, \n\ty1: {}, \n\ty2: {}",
         //    x1, x2, y1, y2
         //);
         let visible_region = Loc::new(x1, x2, y1, y2);
-        inner_ctx.visible_region = Some(visible_region);
-        inner_ctx
+        inner_dr.visible_region = Some(visible_region);
+        inner_dr
     }
 
-    pub fn get_width_val(&self, ctx: &Context) -> usize {
-        self.pane.get_dyn_location_set().get_width_val(ctx)
+    pub fn get_width_val(&self, dr: &DrawRegion) -> usize {
+        self.pane.get_dyn_location_set().get_width_val(dr)
     }
 
-    pub fn get_height_val(&self, ctx: &Context) -> usize {
-        self.pane.get_dyn_location_set().get_height_val(ctx)
+    pub fn get_height_val(&self, dr: &DrawRegion) -> usize {
+        self.pane.get_dyn_location_set().get_height_val(dr)
     }
 }
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for PaneScrollable {
-    fn receive_event(&self, ctx: &Context, mut ev: Event) -> (bool, EventResponses) {
-        let inner_ctx = self.inner_ctx(ctx);
-
-        if let Event::Mouse(me) = &mut ev {
-            // adjust the pos of the mouse event
-            me.column += *self.content_offset_x.borrow() as u16;
-            me.row += *self.content_offset_y.borrow() as u16;
-        }
-
-        if let Event::ExternalMouse(me) = &mut ev {
+    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        let mut adj_ev = ev.clone();
+        if let Event::Mouse(me) = &mut adj_ev {
             // adjust the pos of the mouse event
             me.column += *self.content_offset_x.borrow() as i32;
             me.row += *self.content_offset_y.borrow() as i32;
+            me.dr = self.inner_draw_region(&me.dr);
         }
 
-        let (mut captured, resps) = self.pane.receive_event(&inner_ctx, ev.clone());
+        if let Event::ExternalMouse(me) = &mut adj_ev {
+            // adjust the pos of the mouse event
+            me.column += *self.content_offset_x.borrow() as i32;
+            me.row += *self.content_offset_y.borrow() as i32;
+            me.dr = self.inner_draw_region(&me.dr);
+        }
+
+        //let (mut captured, resps) = self.pane.receive_event(&inner_dr, ev.clone());
+        let (mut captured, resps) = self.pane.receive_event(&ctx, adj_ev);
         if captured {
             return (captured, resps);
         }
 
-        if let Event::Mouse(me) = &mut ev {
+        if let Event::Mouse(me) = ev {
             let Some(sc_rate) = *self.scroll_rate.borrow() else {
                 return (captured, resps);
             };
@@ -167,7 +169,7 @@ impl Element for PaneScrollable {
                     } else {
                         start_x + dx as usize
                     };
-                    self.set_content_x_offset(ctx, x);
+                    self.set_content_x_offset(&me.dr, x);
                     let end_x = *self.content_offset_x.borrow();
                     if start_x != end_x {
                         captured = true;
@@ -184,7 +186,7 @@ impl Element for PaneScrollable {
                     } else {
                         *self.content_offset_y.borrow() + dy as usize
                     };
-                    self.set_content_y_offset(ctx, y);
+                    self.set_content_y_offset(&me.dr, y);
 
                     let end_y = *self.content_offset_y.borrow();
                     if start_y != end_y {
@@ -197,11 +199,11 @@ impl Element for PaneScrollable {
         (captured, resps)
     }
 
-    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         let x_off = *self.content_offset_x.borrow();
         let y_off = *self.content_offset_y.borrow();
-        let max_x = x_off + self.get_content_width(ctx);
-        let max_y = y_off + self.get_content_height(ctx);
+        let max_x = x_off + self.get_content_width(dr);
+        let max_y = y_off + self.get_content_height(dr);
 
         let scope_changed =
             if let Some(last_draw_details) = self.last_draw_details.borrow().as_ref() {
@@ -222,8 +224,8 @@ impl Element for PaneScrollable {
 
         let force_update = force_update || scope_changed;
 
-        let inner_ctx = self.inner_ctx(ctx);
-        let mut upds = self.pane.drawing(&inner_ctx, force_update);
+        let inner_dr = self.inner_draw_region(dr);
+        let mut upds = self.pane.drawing(ctx, &inner_dr, force_update);
 
         // NOTE computational bottleneck, use rayon
         upds.par_iter_mut().for_each(|upd| {
@@ -254,18 +256,18 @@ impl Element for PaneScrollable {
         upds
     }
 
-    fn set_content_x_offset(&self, ctx: &Context, x: usize) {
+    fn set_content_x_offset(&self, dr: &DrawRegion, x: usize) {
         let offset = self
-            .get_content_width(ctx)
-            .saturating_sub(ctx.size.width.into());
+            .get_content_width(dr)
+            .saturating_sub(dr.size.width.into());
         let offset = if x > offset { offset } else { x };
         *self.content_offset_x.borrow_mut() = offset
     }
 
-    fn set_content_y_offset(&self, ctx: &Context, y: usize) {
+    fn set_content_y_offset(&self, dr: &DrawRegion, y: usize) {
         let offset = self
-            .get_content_height(ctx)
-            .saturating_sub(ctx.size.height.into());
+            .get_content_height(dr)
+            .saturating_sub(dr.size.height.into());
         let offset = if y > offset { offset } else { y };
         *self.content_offset_y.borrow_mut() = offset
     }
@@ -276,20 +278,20 @@ impl Element for PaneScrollable {
     fn get_content_y_offset(&self) -> usize {
         *self.content_offset_y.borrow()
     }
-    fn get_content_width(&self, ctx: &Context) -> usize {
+    fn get_content_width(&self, dr: &DrawRegion) -> usize {
         if *self.expand_to_fill_width.borrow()
-            && ctx.size.width as usize > *self.content_width.borrow()
+            && dr.size.width as usize > *self.content_width.borrow()
         {
-            ctx.size.width as usize
+            dr.size.width as usize
         } else {
             *self.content_width.borrow()
         }
     }
-    fn get_content_height(&self, ctx: &Context) -> usize {
+    fn get_content_height(&self, dr: &DrawRegion) -> usize {
         if *self.expand_to_fill_height.borrow()
-            && ctx.size.height as usize > *self.content_height.borrow()
+            && dr.size.height as usize > *self.content_height.borrow()
         {
-            ctx.size.height as usize
+            dr.size.height as usize
         } else {
             *self.content_height.borrow()
         }

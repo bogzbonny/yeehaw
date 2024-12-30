@@ -673,7 +673,7 @@ impl Element for MenuBar {
         }
     }
 
-    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         if !self.get_visible() {
             return Vec::with_capacity(0);
         }
@@ -686,7 +686,7 @@ impl Element for MenuBar {
             }
         };
 
-        let mut out = self.pane.drawing(ctx, force_update);
+        let mut out = self.pane.drawing(ctx, dr, force_update);
         //return out;
 
         // draw each menu item

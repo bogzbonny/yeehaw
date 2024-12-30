@@ -1,5 +1,5 @@
 use {
-    crate::{Element, ElementID},
+    crate::{DrawRegion, Element, ElementID},
     std::ops::{Deref, DerefMut},
 };
 
@@ -27,7 +27,7 @@ pub enum Event {
 
     KeyCombo(Vec<crossterm::event::KeyEvent>),
 
-    Mouse(crossterm::event::MouseEvent),
+    Mouse(MouseEvent),
 
     /// The ExternalMouseEvent is send to all elements
     /// who are not considered to be the "Receiver" of the event
@@ -38,47 +38,66 @@ pub enum Event {
     ///
     /// NOTE the column and row are the column and row of the mouse event relative
     /// to the element receiving the event, hence they may be negative.
-    ExternalMouse(RelMouseEvent),
+    ExternalMouse(MouseEvent),
 
     /// custom event type with a name and a payload
     Custom(String, Vec<u8>),
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
-pub struct RelMouseEvent {
+pub struct MouseEvent {
+    /// The draw region of the element that received the event. This is necessary for the element
+    /// to know where the event occurred relative to itself. and also which sub-element to possibly
+    /// send the event to. This is coupled with the MouseEvent and not the Event because the
+    /// MouseEvent is the only event which should require knowing the DrawRegion when receiving an
+    /// event.
+    pub dr: DrawRegion,
+
     /// The kind of mouse event that was caused.
     pub kind: crossterm::event::MouseEventKind,
-    /// The relative column that the event occurred on.
+    /// The column that the event occurred on relative to the start of the element.
     pub column: i32,
-    /// The relative row that the event occurred on.
+    /// The row that the event occurred on relative to the start of the element.
     pub row: i32,
     /// The key modifiers active when the event occurred.
     pub modifiers: crossterm::event::KeyModifiers,
 }
 
-impl From<crossterm::event::MouseEvent> for RelMouseEvent {
-    fn from(me: crossterm::event::MouseEvent) -> Self {
-        RelMouseEvent {
-            kind: me.kind,
-            column: me.column as i32,
-            row: me.row as i32,
-            modifiers: me.modifiers,
+impl MouseEvent {
+    pub fn new(dr: DrawRegion, ev: crossterm::event::MouseEvent) -> Self {
+        MouseEvent {
+            dr,
+            kind: ev.kind,
+            column: ev.column as i32,
+            row: ev.row as i32,
+            modifiers: ev.modifiers,
         }
     }
 }
 
-impl From<RelMouseEvent> for crossterm::event::MouseEvent {
-    fn from(me: RelMouseEvent) -> Self {
-        let column = if me.column < 0 { 0 } else { me.column as u16 };
-        let row = if me.row < 0 { 0 } else { me.row as u16 };
-        crossterm::event::MouseEvent {
-            kind: me.kind,
-            column,
-            row,
-            modifiers: me.modifiers,
-        }
-    }
-}
+//impl From<crossterm::event::MouseEvent> for RelMouseEvent {
+//    fn from(me: crossterm::event::MouseEvent) -> Self {
+//        RelMouseEvent {
+//            kind: me.kind,
+//            column: me.column as i32,
+//            row: me.row as i32,
+//            modifiers: me.modifiers,
+//        }
+//    }
+//}
+
+//impl From<RelMouseEvent> for crossterm::event::MouseEvent {
+//    fn from(me: RelMouseEvent) -> Self {
+//        let column = if me.column < 0 { 0 } else { me.column as u16 };
+//        let row = if me.row < 0 { 0 } else { me.row as u16 };
+//        crossterm::event::MouseEvent {
+//            kind: me.kind,
+//            column,
+//            row,
+//            modifiers: me.modifiers,
+//        }
+//    }
+//}
 
 impl From<crossterm::event::KeyEvent> for ReceivableEvent {
     fn from(key: crossterm::event::KeyEvent) -> Self {

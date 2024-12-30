@@ -601,11 +601,11 @@ impl Element for ListBoxInner {
         (false, resps)
     }
 
-    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         if self.is_dirty.replace(false) || force_update {
             self.update_highlighting(ctx);
             self.update_content(ctx);
         }
-        self.pane.drawing(ctx, force_update)
+        self.pane.drawing(ctx, dr, force_update)
     }
 }

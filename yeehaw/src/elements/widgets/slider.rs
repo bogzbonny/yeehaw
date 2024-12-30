@@ -158,35 +158,37 @@ impl Slider {
     }
 
     /// get the position from the mouse x position
-    pub fn get_pos_from_x(&self, ctx: &Context, x: i32) -> f64 {
-        if ctx.size.width == 0 {
+    pub fn get_pos_from_x(&self, s: &Size, x: i32) -> f64 {
+        if s.width == 0 {
             return 0.0;
         }
-        let width = (ctx.size.width - 1) as f64;
+        let width = (s.width - 1) as f64;
         (x as f64) / width
     }
 
-    pub fn get_x_from_pos(&self, ctx: &Context) -> i32 {
+    pub fn get_x_from_pos(&self, s: &Size) -> i32 {
         let pos = self.get_position();
-        if ctx.size.width == 0 {
+        if s.width == 0 {
             return 0;
         }
-        let width = (ctx.size.width - 1) as f64;
+        let width = (s.width - 1) as f64;
         (pos * width).round_ties_even() as i32
     }
 
     pub fn increment_position(&self, ctx: &Context) -> EventResponses {
-        let pos = self.get_pos_from_x(ctx, self.get_x_from_pos(ctx) + 1);
+        let s = &*self.get_last_size();
+        let pos = self.get_pos_from_x(s, self.get_x_from_pos(s) + 1);
         self.perform_adjustment(ctx, pos)
     }
 
     pub fn decrement_position(&self, ctx: &Context) -> EventResponses {
-        let pos = self.get_pos_from_x(ctx, self.get_x_from_pos(ctx) - 1);
+        let s = &*self.get_last_size();
+        let pos = self.get_pos_from_x(s, self.get_x_from_pos(s) - 1);
         self.perform_adjustment(ctx, pos)
     }
 
-    pub fn update_content(&self, ctx: &Context) {
-        let width = ctx.size.width;
+    pub fn update_content(&self, ctx: &Context, dr: &DrawRegion) {
+        let width = dr.size.width;
         let pos = *self.position.borrow();
 
         let sty = self.pane.get_current_style();
@@ -265,7 +267,7 @@ impl Element for Slider {
                         if clicked_down =>
                     {
                         let x = me.column as usize;
-                        let pos = self.get_pos_from_x(ctx, x as i32);
+                        let pos = self.get_pos_from_x(&me.dr.size, x as i32);
                         let resps_ = self.perform_adjustment(ctx, pos);
                         resps.extend(resps_);
                         return (true, resps);
@@ -284,7 +286,7 @@ impl Element for Slider {
                         if clicked_down =>
                     {
                         let x = me.column as usize;
-                        let pos = self.get_pos_from_x(ctx, x as i32);
+                        let pos = self.get_pos_from_x(&me.dr.size, x as i32);
                         let resps_ = self.perform_adjustment(ctx, pos);
                         resps.extend(resps_);
                         return (true, resps);
@@ -303,10 +305,10 @@ impl Element for Slider {
         }
         (false, resps)
     }
-    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         if self.is_dirty.replace(false) || force_update {
-            self.update_content(ctx);
+            self.update_content(ctx, dr);
         }
-        self.pane.drawing(ctx, force_update)
+        self.pane.drawing(ctx, dr, force_update)
     }
 }

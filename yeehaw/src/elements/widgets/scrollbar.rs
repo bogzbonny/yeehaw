@@ -1010,10 +1010,10 @@ impl Element for VerticalScrollbar {
             _ => (false, EventResponses::default()),
         }
     }
-    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         let content = self.get_content(ctx);
         self.pane.set_content_if_diff(content);
-        self.pane.drawing(ctx, force_update)
+        self.pane.drawing(ctx, dr, force_update)
     }
 }
 
@@ -1027,10 +1027,10 @@ impl Element for HorizontalScrollbar {
             _ => (false, EventResponses::default()),
         }
     }
-    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         let content = self.get_content(ctx);
         self.pane.set_content_if_diff(content);
-        self.pane.drawing(ctx, force_update)
+        self.pane.drawing(ctx, dr, force_update)
     }
 }
 

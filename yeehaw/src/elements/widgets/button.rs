@@ -205,7 +205,7 @@ impl Button {
                                 .clone()
                                 .unwrap_or_default()
                                 .0
-                                .darken(&ctx.get_color_context());
+                                .darken(&ctx.color_store);
                             Style::default_const()
                                 .with_bg(Color::TRANSPARENT)
                                 .with_fg(fg)
@@ -257,7 +257,7 @@ impl Button {
                                 .clone()
                                 .unwrap_or_default()
                                 .0
-                                .darken(&ctx.get_color_context());
+                                .darken(&ctx.color_store);
                             Style::default_const()
                                 .with_bg(Color::TRANSPARENT)
                                 .with_fg(fg)

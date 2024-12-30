@@ -1097,11 +1097,11 @@ impl ColorsDemoColor {
     }
 
     pub fn default_bg(ctx: &Context) -> ColorsDemoColor {
-        let cctx = ctx.get_color_context();
+        let c_store = ctx.color_store;
         let three_colors = vec![
-            Color::RED.darken(&cctx),
-            Color::GREEN.darken(&cctx),
-            Color::BLUE.darken(&cctx),
+            Color::RED.darken(&c_store),
+            Color::GREEN.darken(&c_store),
+            Color::BLUE.darken(&c_store),
         ];
         let time_gr = TimeGradient::new_loop(ctx, Duration::from_secs(1), three_colors.clone());
 
@@ -1129,10 +1129,10 @@ impl ColorsDemoColor {
             three_colors.clone(),
         );
         let linear_time_colors = vec![
-            Color::VIOLET.darken(&cctx),
-            Color::INDIGO.darken(&cctx),
-            Color::AQUA.darken(&cctx),
-            Color::GREEN.darken(&cctx),
+            Color::VIOLET.darken(&c_store),
+            Color::INDIGO.darken(&c_store),
+            Color::AQUA.darken(&c_store),
+            Color::GREEN.darken(&c_store),
         ];
         let linear_time_gr = Gradient::new_grad_repeater_time_loop(
             ctx,

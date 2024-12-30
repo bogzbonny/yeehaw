@@ -223,7 +223,7 @@ impl Element for SelectablePane {
 
     fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         let (captured, mut resps) = match ev {
-            Event::Mouse(me) => {
+            Event::Mouse(ref me) => {
                 if matches!(me.kind, MouseEventKind::Up(MouseButton::Left)) {
                     (false, self.select())
                 } else {

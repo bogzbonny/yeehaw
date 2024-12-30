@@ -1,7 +1,7 @@
 use {
     crate::{
-        Color, Context, DrawCh, DrawChs2D, DrawUpdate, DynLocation, DynLocationSet, DynVal,
-        Element, ElementID, ElementOrganizer, Event, EventResponses, Pane, Parent,
+        Color, Context, DrawCh, DrawChs2D, DrawRegion, DrawUpdate, DynLocation, DynLocationSet,
+        DynVal, Element, ElementID, ElementOrganizer, Event, EventResponses, Pane, Parent,
         ReceivableEvents, Size, Style, ZIndex,
     },
     std::collections::HashMap,
@@ -138,12 +138,12 @@ impl Element for ParentPane {
         self.eo.event_process(ctx, ev, Box::new(self.clone()))
     }
 
-    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         if !self.get_visible() {
             return Vec::with_capacity(0);
         }
-        let mut out = self.pane.drawing(ctx, force_update);
-        out.extend(self.eo.all_drawing_updates(ctx, force_update));
+        let mut out = self.pane.drawing(ctx, dr, force_update);
+        out.extend(self.eo.all_drawing_updates(ctx, dr, force_update));
         out
     }
 }
@@ -176,14 +176,13 @@ impl Parent for ParentPane {
     ///
     /// NOTE the parent_ctx is the correct context for THIS parent pane.
     fn propagate_responses_upward(
-        &self, parent_ctx: &Context, child_el_id: &ElementID, mut resps: EventResponses,
+        &self, ctx: &Context, child_el_id: &ElementID, mut resps: EventResponses,
     ) {
         let b: Box<dyn Parent> = Box::new(self.clone());
         self.eo
-            .partially_process_ev_resps(parent_ctx, child_el_id, &mut resps, &b);
+            .partially_process_ev_resps(ctx, child_el_id, &mut resps, &b);
         if let Some(parent) = self.pane.parent.borrow_mut().deref() {
-            let next_parent_ctx = parent_ctx.must_get_parent_context();
-            parent.propagate_responses_upward(next_parent_ctx, &self.id(), resps);
+            parent.propagate_responses_upward(ctx, &self.id(), resps);
         }
     }
 

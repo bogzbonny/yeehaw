@@ -1,8 +1,8 @@
 use {
     crate::{
-        keyboard::Keyboard, ChPlus, ColorStore, Context, DrawingCache, DynLocation, DynLocationSet,
-        Element, ElementID, ElementOrganizer, Error, Event, EventResponse, EventResponses, Parent,
-        SortingHat,
+        keyboard::Keyboard, ChPlus, ColorStore, Context, DrawRegion, DrawingCache, DynLocation,
+        DynLocationSet, Element, ElementID, ElementOrganizer, Error, Event, EventResponse,
+        EventResponses, MouseEvent, Parent, SortingHat,
     },
     crossterm::{
         cursor::{self, MoveTo},
@@ -91,37 +91,38 @@ impl Tui {
             ev_recv,
         };
 
-        let ctx = Context::new_context_for_screen_no_dur(
-            &tui.cup.hat,
-            tui.cup.ev_tx.clone(),
-            &tui.cup.color_store,
-        );
-        let child_ctx = ctx.child_init_context();
-        Ok((tui, child_ctx))
+        let ctx =
+            Context::new_context_no_dur(&tui.cup.hat, tui.cup.ev_tx.clone(), &tui.cup.color_store);
+        Ok((tui, ctx))
     }
 
     pub fn context(&self) -> Context {
-        let mut ctx = Context::new_context_for_screen(
+        Context::new_context(
             self.launch_instant,
             &self.cup.hat,
             self.cup.ev_tx.clone(),
             &self.cup.color_store,
-        );
+        )
+    }
+
+    pub fn draw_region(&self) -> DrawRegion {
+        let mut dr = DrawRegion::new_for_screen();
         if let Some(inline) = &self.inline {
-            ctx.size.height = inline.borrow().tui_height;
+            dr.size.height = inline.borrow().tui_height;
         }
-        ctx
+        dr
     }
 
     pub async fn run(&mut self, main_el: Box<dyn Element>) -> Result<(), Error> {
         self.main_el_id = main_el.id();
         // add the element here after the location has been created
-        let ctx = Context::new_context_for_screen_no_dur(
+        let ctx = Context::new_context_no_dur(
             &self.cup.hat,
             self.cup.ev_tx.clone(),
             &self.cup.color_store,
         );
-        let loc = DynLocation::new_fixed(0, ctx.size.width as i32, 0, ctx.size.height as i32);
+        let dr = DrawRegion::new_for_screen();
+        let loc = DynLocation::new_fixed(0, dr.size.width as i32, 0, dr.size.height as i32);
         let loc = DynLocationSet::new(loc, vec![], 0);
         main_el.set_dyn_location_set(loc);
         main_el.set_visible(true);
@@ -148,13 +149,14 @@ impl Tui {
     ) -> Result<(), Error> {
         self.main_el_id = main_el.id();
         // add the element here after the location has been created
-        let mut ctx = Context::new_context_for_screen_no_dur(
+        let ctx = Context::new_context_no_dur(
             &self.cup.hat,
             self.cup.ev_tx.clone(),
             &self.cup.color_store,
         );
-        ctx.size.height = height;
-        let loc = DynLocation::new_fixed(0, ctx.size.width as i32, 0, ctx.size.height as i32);
+        let mut dr = DrawRegion::new_for_screen();
+        dr.size.height = height;
+        let loc = DynLocation::new_fixed(0, dr.size.width as i32, 0, dr.size.height as i32);
         let loc = DynLocationSet::new(loc, vec![], 0);
         main_el.set_dyn_location_set(loc);
         main_el.set_visible(true);
@@ -250,7 +252,8 @@ impl Tui {
                                     }
 
                                     let ctx = self.context();
-                                    let loc = DynLocation::new_fixed(0, ctx.size.width as i32, 0, ctx.size.height as i32);
+                                    let dr = self.draw_region();
+                                    let loc = DynLocation::new_fixed(0, dr.size.width as i32, 0, dr.size.height as i32);
                                     // There should only be one element at index 0 in the upper level EO
                                     self.cup.eo.update_el_primary_location(self.main_el_id.clone(), loc);
                                     let _ = self.cup.eo.get_element(&self.main_el_id).expect("main element missing").receive_event(&ctx, Event::Resize{});
@@ -333,17 +336,19 @@ impl Tui {
     ///                                                                       exit-tui
     pub fn process_event_mouse(&mut self, mut mouse_ev: CTMouseEvent) -> Result<bool, Error> {
         let ctx = self.context();
+        let dr = self.draw_region();
         if let Some(inline) = &self.inline {
             let inline = inline.borrow();
             if mouse_ev.row < inline.cursor_start_row {
                 return Ok(false);
             }
-            mouse_ev.row -= inline.cursor_start_row;
+            mouse_ev.row = mouse_ev.row.saturating_sub(inline.cursor_start_row);
             if mouse_ev.row >= inline.tui_height {
                 return Ok(false);
             }
         }
 
+        let mouse_ev = MouseEvent::new(dr, mouse_ev);
         let (_, resps) =
             self.cup
                 .eo
@@ -386,7 +391,8 @@ impl Tui {
 
         let mut sc = stdout();
         let ctx = self.context();
-        let updates = self.cup.eo.all_drawing_updates(&ctx, false);
+        let dr = self.draw_region();
+        let updates = self.cup.eo.all_drawing_updates(&ctx, &dr, false);
         let chs = self.drawing_cache.update_and_get(updates);
 
         // TODO could be optimized with rayon if we could draw everything that doesn't
@@ -394,7 +400,7 @@ impl Tui {
         let mut dedup_chs: HashMap<(u16, u16), StyledContent<ChPlus>> = HashMap::new();
         for c in chs {
             // remove out of bounds
-            if c.x >= ctx.size.width || c.y >= ctx.size.height {
+            if c.x >= dr.size.width || c.y >= dr.size.height {
                 continue;
             }
 
@@ -405,7 +411,7 @@ impl Tui {
             } else {
                 &StyledContent::new(ContentStyle::default(), ChPlus::Char(' '))
             };
-            let content = c.get_content_style(&ctx, prev_sty);
+            let content = c.get_content_style(&ctx, &dr.size, prev_sty);
             dedup_chs.insert((c.x, c.y), content);
         }
 

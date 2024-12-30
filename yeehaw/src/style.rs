@@ -64,7 +64,7 @@ impl Style {
 
     /// create a style which is semi-transparent
     pub fn opaque(ctx: &Context, c: Color, alpha: u8) -> Self {
-        let c = c.with_alpha(&ctx.get_color_context(), alpha);
+        let c = c.with_alpha(&ctx.color_store, alpha);
         Self {
             fg: Some((c.clone(), FgTranspSrc::LowerFg)),
             bg: Some((c, BgTranspSrc::LowerBg)),
@@ -271,7 +271,6 @@ impl Style {
 
     // overlays the overlay style on top of self colors
     pub fn overlay_style(&mut self, ctx: &Context, overlay: &Self) {
-        let cctx = ctx.get_color_context();
         let (under_fg, under_bg, under_ul) = (
             self.fg.clone(),
             self.bg.clone(),
@@ -284,7 +283,7 @@ impl Style {
                 BgTranspSrc::LowerUl => under_ul.clone().map(|(ul, _)| ul),
             };
             if let (Some(under), Some((bg, _))) = (under, &mut self.bg) {
-                *bg = under.overlay_color(&cctx, ol_bg.0);
+                *bg = under.overlay_color(&ctx.color_store, ol_bg.0);
             }
         };
         let this_bg = self.bg.clone();
@@ -297,7 +296,7 @@ impl Style {
                 FgTranspSrc::ThisBg => this_bg.clone().map(|(bg, _)| bg),
             };
             if let (Some(under), Some((fg, _))) = (under, &mut self.fg) {
-                *fg = under.overlay_color(&cctx, ol_fg.0);
+                *fg = under.overlay_color(&ctx.color_store, ol_fg.0);
             }
         };
 
@@ -309,7 +308,7 @@ impl Style {
                 UlTranspSrc::ThisBg => this_bg.clone().map(|(bg, _)| bg),
             };
             if let (Some(under), Some((ul, _))) = (under, &mut self.underline_color) {
-                *ul = under.overlay_color(&cctx, ol_ul.0);
+                *ul = under.overlay_color(&ctx.color_store, ol_ul.0);
             }
         }
     }

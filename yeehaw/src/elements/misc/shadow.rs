@@ -124,8 +124,8 @@ impl Shadowed {
 
 #[yeehaw_derive::impl_element_from(inner)]
 impl Element for Shadowed {
-    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
-        let mut upds = self.inner.drawing(ctx, force_update);
+    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
+        let mut upds = self.inner.drawing(ctx, dr, force_update);
 
         // because the shadow allows overflow, we must deal with any overflows here
         for upd in &mut upds {

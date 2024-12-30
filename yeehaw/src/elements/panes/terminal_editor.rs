@@ -221,7 +221,7 @@ impl Element for TermEditorPane {
         if !*self.editor_is_open.borrow() {
             // activate the editor on click
             let clicked_down = *self.clicked_down.borrow();
-            if let Event::Mouse(me) = ev {
+            if let Event::Mouse(ref me) = ev {
                 match me.kind {
                     MouseEventKind::Down(MouseButton::Left) => {
                         *self.clicked_down.borrow_mut() = true;
@@ -256,8 +256,8 @@ impl Element for TermEditorPane {
 
         (captured, resps)
     }
-    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
-        let out = self.pane.drawing(ctx, force_update);
+    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
+        let out = self.pane.drawing(ctx, dr, force_update);
 
         // TODO maybe do this somewhere else? on a different thread?
         // check for changes to the tempfile each draw

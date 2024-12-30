@@ -81,59 +81,59 @@ impl Label {
         let label = Self::new(ctx, text);
 
         // label to the right if a width of 1 otherwise label the top left
-        if el_loc.width(ctx) == 1 {
-            label.position_right_then_top(ctx, el_loc);
+        if el_loc.width(&DrawRegion::new_large()) == 1 {
+            label.position_right_then_top(el_loc);
         } else {
-            label.position_above_then_left(ctx, el_loc);
+            label.position_above_then_left(el_loc);
         }
         label
     }
 
     pub fn new_above_left_for_el(ctx: &Context, el_loc: DynLocation, text: &str) -> Self {
         let label = Self::new(ctx, text);
-        label.position_above_then_left(ctx, el_loc);
+        label.position_above_then_left(el_loc);
         label
     }
 
     pub fn new_above_right_for_el(ctx: &Context, el_loc: DynLocation, text: &str) -> Self {
         let label = Self::new(ctx, text);
-        label.position_above_then_right(ctx, el_loc);
+        label.position_above_then_right(el_loc);
         label
     }
 
     pub fn new_below_left_for_el(ctx: &Context, el_loc: DynLocation, text: &str) -> Self {
         let label = Self::new(ctx, text);
-        label.position_below_then_left(ctx, el_loc);
+        label.position_below_then_left(el_loc);
         label
     }
 
     pub fn new_below_right_for_el(ctx: &Context, el_loc: DynLocation, text: &str) -> Self {
         let label = Self::new(ctx, text);
-        label.position_below_then_right(ctx, el_loc);
+        label.position_below_then_right(el_loc);
         label
     }
 
     pub fn new_left_top_for_el(ctx: &Context, el_loc: DynLocation, text: &str) -> Self {
         let label = Self::new(ctx, text);
-        label.position_left_then_top(ctx, el_loc);
+        label.position_left_then_top(el_loc);
         label
     }
 
     pub fn new_left_bottom_for_el(ctx: &Context, el_loc: DynLocation, text: &str) -> Self {
         let label = Self::new(ctx, text);
-        label.position_left_then_bottom(ctx, el_loc);
+        label.position_left_then_bottom(el_loc);
         label
     }
 
     pub fn new_right_top_for_el(ctx: &Context, el_loc: DynLocation, text: &str) -> Self {
         let label = Self::new(ctx, text);
-        label.position_right_then_top(ctx, el_loc);
+        label.position_right_then_top(el_loc);
         label
     }
 
     pub fn new_right_bottom_for_el(ctx: &Context, el_loc: DynLocation, text: &str) -> Self {
         let label = Self::new(ctx, text);
-        label.position_right_then_bottom(ctx, el_loc);
+        label.position_right_then_bottom(el_loc);
         label
     }
 
@@ -143,7 +143,7 @@ impl Label {
         let label = Self::new(ctx, text)
             .with_rotated_text()
             .with_down_justification();
-        label.position_left_then_top(ctx, el_loc);
+        label.position_left_then_top(el_loc);
         label
     }
 
@@ -153,7 +153,7 @@ impl Label {
         let label = Self::new(ctx, text)
             .with_rotated_text()
             .with_up_justification();
-        label.position_left_then_bottom(ctx, el_loc);
+        label.position_left_then_bottom(el_loc);
         label
     }
 
@@ -163,7 +163,7 @@ impl Label {
         let label = Self::new(ctx, text)
             .with_rotated_text()
             .with_down_justification();
-        label.position_right_then_top(ctx, el_loc);
+        label.position_right_then_top(el_loc);
         label
     }
 
@@ -173,7 +173,7 @@ impl Label {
         let label = Self::new(ctx, text)
             .with_rotated_text()
             .with_up_justification();
-        label.position_right_then_bottom(ctx, el_loc);
+        label.position_right_then_bottom(el_loc);
         label
     }
 
@@ -370,63 +370,63 @@ impl Label {
     fn label_position_to_xy(
         l: DynLocation,
         p: LabelPosition,
-        label_width: usize,
-        label_height: usize,
+        label_width: DynVal,
+        label_height: DynVal,
         //(x    , y     )
     ) -> (DynVal, DynVal) {
         match p {
-            LabelPosition::AboveThenLeft => (l.start_x, l.start_y.minus_fixed(label_height as i32)),
-            LabelPosition::AboveThenRight => (l.end_x, l.start_y.minus_fixed(label_height as i32)),
+            LabelPosition::AboveThenLeft => (l.start_x, l.start_y.minus(label_height)),
+            LabelPosition::AboveThenRight => (l.end_x, l.start_y.minus(label_height)),
             LabelPosition::BelowThenLeft => (l.start_x, l.end_y),
             LabelPosition::BelowThenRight => (l.end_x, l.end_y),
-            LabelPosition::LeftThenTop => (l.start_x.minus_fixed(label_width as i32), l.start_y),
-            LabelPosition::LeftThenBottom => (l.start_x.minus_fixed(label_width as i32), l.end_y),
+            LabelPosition::LeftThenTop => (l.start_x.minus(label_width), l.start_y),
+            LabelPosition::LeftThenBottom => (l.start_x.minus(label_width), l.end_y),
             LabelPosition::RightThenTop => (l.end_x, l.start_y),
             LabelPosition::RightThenBottom => (l.end_x, l.end_y),
         }
     }
 
     /// positions the label relative to the element location
-    pub fn position_for(&self, ctx: &Context, el_loc: DynLocation, pos: LabelPosition) {
+    pub fn position_for(&self, el_loc: DynLocation, pos: LabelPosition) {
         let (x, y) = Self::label_position_to_xy(
             el_loc,
             pos,
-            self.pane.get_width(ctx),
-            self.pane.get_height(ctx),
+            self.pane.get_dyn_width(),
+            self.pane.get_dyn_height(),
         );
         self.set_at(x, y);
     }
 
-    pub fn position_above_then_left(&self, ctx: &Context, el_loc: DynLocation) {
-        self.position_for(ctx, el_loc, LabelPosition::AboveThenLeft);
+    pub fn position_above_then_left(&self, el_loc: DynLocation) {
+        self.position_for(el_loc, LabelPosition::AboveThenLeft);
     }
 
-    pub fn position_above_then_right(&self, ctx: &Context, el_loc: DynLocation) {
-        self.position_for(ctx, el_loc, LabelPosition::AboveThenRight);
+    pub fn position_above_then_right(&self, el_loc: DynLocation) {
+        self.position_for(el_loc, LabelPosition::AboveThenRight);
     }
 
-    pub fn position_below_then_left(&self, ctx: &Context, el_loc: DynLocation) {
-        self.position_for(ctx, el_loc, LabelPosition::BelowThenLeft);
+    pub fn position_below_then_left(&self, el_loc: DynLocation) {
+        self.position_for(el_loc, LabelPosition::BelowThenLeft);
     }
 
-    pub fn position_below_then_right(&self, ctx: &Context, el_loc: DynLocation) {
-        self.position_for(ctx, el_loc, LabelPosition::BelowThenRight);
+    pub fn position_below_then_right(&self, el_loc: DynLocation) {
+        self.position_for(el_loc, LabelPosition::BelowThenRight);
     }
 
-    pub fn position_left_then_top(&self, ctx: &Context, el_loc: DynLocation) {
-        self.position_for(ctx, el_loc, LabelPosition::LeftThenTop);
+    pub fn position_left_then_top(&self, el_loc: DynLocation) {
+        self.position_for(el_loc, LabelPosition::LeftThenTop);
     }
 
-    pub fn position_left_then_bottom(&self, ctx: &Context, el_loc: DynLocation) {
-        self.position_for(ctx, el_loc, LabelPosition::LeftThenBottom);
+    pub fn position_left_then_bottom(&self, el_loc: DynLocation) {
+        self.position_for(el_loc, LabelPosition::LeftThenBottom);
     }
 
-    pub fn position_right_then_top(&self, ctx: &Context, el_loc: DynLocation) {
-        self.position_for(ctx, el_loc, LabelPosition::RightThenTop);
+    pub fn position_right_then_top(&self, el_loc: DynLocation) {
+        self.position_for(el_loc, LabelPosition::RightThenTop);
     }
 
-    pub fn position_right_then_bottom(&self, ctx: &Context, el_loc: DynLocation) {
-        self.position_for(ctx, el_loc, LabelPosition::RightThenBottom);
+    pub fn position_right_then_bottom(&self, el_loc: DynLocation) {
+        self.position_for(el_loc, LabelPosition::RightThenBottom);
     }
 }
 

@@ -6,6 +6,7 @@ pub mod log; // note, must be first for the macro to work throughout
 pub mod ch;
 pub mod color;
 pub mod context;
+pub mod draw_region;
 pub mod dyn_location;
 pub mod dyn_value;
 pub mod element;
@@ -20,18 +21,17 @@ pub mod tui;
 
 pub use {
     ch::{ChPlus, DrawCh, DrawChPos, DrawChPosVec, DrawChs2D},
-    color::{
-        Color, ColorContext, ColorStore, Gradient, Pattern, RadialGradient, Rgba, TimeGradient,
-    },
+    color::{Color, ColorStore, Gradient, Pattern, RadialGradient, Rgba, TimeGradient},
     context::Context,
+    draw_region::DrawRegion,
     dyn_location::{DynLocation, DynLocationSet, Loc, Point, Size, ZIndex},
     dyn_value::DynVal,
     element::{DrawAction, DrawUpdate, DrawingCache, Element, HookFn as ElementHookFn, Parent},
     elements::{border::Corner as BorderCorner, border::PropertyCnr as BorderPropertyCnr, *},
     errors::Error,
     event::{
-        CommandEvent, Event, EventResponse, EventResponses, KeyPossibility, MoveResponse,
-        ReceivableEvent, ReceivableEvents, RelMouseEvent, ResizeResponse,
+        CommandEvent, Event, EventResponse, EventResponses, KeyPossibility, MouseEvent,
+        MoveResponse, ReceivableEvent, ReceivableEvents, ResizeResponse,
     },
     keyboard::Keyboard,
     organizer::ElementOrganizer,

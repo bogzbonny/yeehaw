@@ -27,12 +27,11 @@ pub fn image_demo(ctx: &Context) -> Box<dyn Element> {
         .bold()
         .at(x, y);
 
-    let cctx = ctx.get_color_context();
     el.add_element(Box::new(
         img_pane
             .label(ctx, above_text)
             .with_fg(Color::BLACK)
-            .with_bg(Color::WHITE.with_alpha(&cctx, 123)),
+            .with_bg(Color::WHITE.with_alpha(&ctx.color_store, 123)),
     ));
     el.add_element(Box::new(label_below));
     el.add_element(Box::new(img_pane));

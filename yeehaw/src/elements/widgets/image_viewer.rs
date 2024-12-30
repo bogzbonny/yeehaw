@@ -41,10 +41,10 @@ impl ImageViewer {
         let out = Self {
             pane: Pane::new(ctx, "debug_size_pane"),
             st_pro: Rc::new(RefCell::new(st_pro)),
-            last_size: Rc::new(RefCell::new(ctx.size)),
+            last_size: Rc::new(RefCell::new(Size::default())),
             resize: Rc::new(RefCell::new(Resize::Scale(None))),
         };
-        out.update_content(ctx);
+        //out.update_content(ctx);
         Ok(out)
     }
 
@@ -67,10 +67,8 @@ impl ImageViewer {
         *self.resize.borrow_mut() = resize.into();
     }
 
-    pub fn update_content(&self, ctx: &Context) {
-        let area = ratatui::layout::Rect::new(0, 0, ctx.size.width, ctx.size.height);
-        //let cell = ratatui::buffer::Cell::default();
-        //cell.set_bg(self.bg.into());
+    pub fn update_content(&self, dr: &DrawRegion) {
+        let area = ratatui::layout::Rect::new(0, 0, dr.size.width, dr.size.height);
 
         let mut buffer = ratatui::buffer::Buffer::empty(area);
         //let mut buffer = ratatui::buffer::Buffer::filled(area, cell);
@@ -86,12 +84,12 @@ impl ImageViewer {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for ImageViewer {
-    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
-        if ctx.size == *self.last_size.borrow() && !force_update {
+    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
+        if dr.size == *self.last_size.borrow() && !force_update {
             return Vec::with_capacity(0);
         }
-        self.update_content(ctx);
-        self.pane.drawing(ctx, force_update)
+        self.update_content(dr);
+        self.pane.drawing(ctx, dr, force_update)
     }
 }
 

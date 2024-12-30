@@ -1,8 +1,8 @@
 use {
     crate::{
-        Color, Context, DrawCh, DrawChPos, DrawChs2D, DrawUpdate, DynLocation, DynLocationSet,
-        DynVal, Element, ElementID, Event, EventResponses, Loc, Parent, ReceivableEvents, Size,
-        Style, ZIndex,
+        Color, Context, DrawCh, DrawChPos, DrawChs2D, DrawRegion, DrawUpdate, DynLocation,
+        DynLocationSet, DynVal, Element, ElementID, Event, EventResponses, Loc, Parent,
+        ReceivableEvents, Size, Style, ZIndex,
     },
     std::{
         collections::HashMap,
@@ -74,8 +74,8 @@ impl Pane {
             hooks: Rc::new(RefCell::new(HashMap::new())),
             content: Rc::new(RefCell::new(DrawChs2D::default())),
             is_content_dirty: Rc::new(RefCell::new(true)),
-            last_size: Rc::new(RefCell::new(ctx.size)),
-            last_visible_region: Rc::new(RefCell::new(ctx.visible_region)),
+            last_size: Rc::new(RefCell::new(Size::default())),
+            last_visible_region: Rc::new(RefCell::new(None)),
             default_ch: Rc::new(RefCell::new(DrawCh::default())),
             content_view_offset_x: Rc::new(RefCell::new(0)),
             content_view_offset_y: Rc::new(RefCell::new(0)),
@@ -158,20 +158,20 @@ impl Pane {
         self.loc.borrow_mut().l.set_end_y(y.into());
     }
 
-    pub fn get_start_x(&self, ctx: &Context) -> i32 {
-        self.loc.borrow().l.get_start_x(ctx)
+    pub fn get_start_x(&self, dr: &DrawRegion) -> i32 {
+        self.loc.borrow().l.get_start_x(dr)
     }
 
-    pub fn get_start_y(&self, ctx: &Context) -> i32 {
-        self.loc.borrow().l.get_start_y(ctx)
+    pub fn get_start_y(&self, dr: &DrawRegion) -> i32 {
+        self.loc.borrow().l.get_start_y(dr)
     }
 
-    pub fn get_end_x(&self, ctx: &Context) -> i32 {
-        self.loc.borrow().l.get_end_x(ctx)
+    pub fn get_end_x(&self, dr: &DrawRegion) -> i32 {
+        self.loc.borrow().l.get_end_x(dr)
     }
 
-    pub fn get_end_y(&self, ctx: &Context) -> i32 {
-        self.loc.borrow().l.get_end_y(ctx)
+    pub fn get_end_y(&self, dr: &DrawRegion) -> i32 {
+        self.loc.borrow().l.get_end_y(dr)
     }
 
     pub fn get_dyn_start_x(&self) -> DynVal {
@@ -190,12 +190,12 @@ impl Pane {
         self.loc.borrow().l.end_y.clone()
     }
 
-    pub fn get_height(&self, ctx: &Context) -> usize {
-        self.loc.borrow().l.height(ctx)
+    pub fn get_height(&self, dr: &DrawRegion) -> usize {
+        self.loc.borrow().l.height(dr)
     }
 
-    pub fn get_width(&self, ctx: &Context) -> usize {
-        self.loc.borrow().l.width(ctx)
+    pub fn get_width(&self, dr: &DrawRegion) -> usize {
+        self.loc.borrow().l.width(dr)
     }
 
     pub fn with_dyn_height<D: Into<DynVal>>(self, h: D) -> Pane {
@@ -241,6 +241,10 @@ impl Pane {
         self.loc.borrow_mut().l = l;
     }
 
+    pub fn get_last_size(&self) -> Ref<Size> {
+        *self.last_size.borrow()
+    }
+
     pub fn with_content(self, content: DrawChs2D) -> Pane {
         self.set_content(content);
         self
@@ -251,13 +255,13 @@ impl Pane {
     }
 
     /// sets content from string
-    pub fn set_content_from_string_with_style(&self, ctx: &Context, s: &str, sty: Style) {
+    pub fn set_content_from_string_with_style(&self, dr: &DrawRegion, s: &str, sty: Style) {
         *self.is_content_dirty.borrow_mut() = true;
         let lines = s.split('\n');
         let mut rs: Vec<Vec<char>> = Vec::new();
 
-        let mut width = ctx.size.width as usize;
-        let mut height = ctx.size.height as usize;
+        let mut width = dr.size.width as usize;
+        let mut height = dr.size.height as usize;
         for line in lines {
             if width < line.len() {
                 width = line.len();
@@ -333,24 +337,24 @@ impl Pane {
         Size::new(self.content_width() as u16, self.content_height() as u16)
     }
 
-    pub fn scroll_up(&self, ctx: &Context) {
+    pub fn scroll_up(&self, dr: &DrawRegion) {
         let view_offset_y = *self.content_view_offset_y.borrow();
-        self.set_content_y_offset(ctx, view_offset_y.saturating_sub(1));
+        self.set_content_y_offset(dr, view_offset_y.saturating_sub(1));
     }
 
-    pub fn scroll_down(&self, ctx: &Context) {
+    pub fn scroll_down(&self, dr: &DrawRegion) {
         let view_offset_y = *self.content_view_offset_y.borrow();
-        self.set_content_y_offset(ctx, view_offset_y + 1);
+        self.set_content_y_offset(dr, view_offset_y + 1);
     }
 
-    pub fn scroll_left(&self, ctx: &Context) {
+    pub fn scroll_left(&self, dr: &DrawRegion) {
         let view_offset_x = *self.content_view_offset_x.borrow();
-        self.set_content_x_offset(ctx, view_offset_x.saturating_sub(1));
+        self.set_content_x_offset(dr, view_offset_x.saturating_sub(1));
     }
 
-    pub fn scroll_right(&self, ctx: &Context) {
+    pub fn scroll_right(&self, dr: &DrawRegion) {
         let view_offset_x = *self.content_view_offset_x.borrow();
-        self.set_content_x_offset(ctx, view_offset_x + 1);
+        self.set_content_x_offset(dr, view_offset_x + 1);
     }
 
     pub fn with_default_ch(self, ch: DrawCh) -> Pane {
@@ -432,8 +436,9 @@ impl Pane {
     /// NOTE this name was chosen to distinguish itself from propagate_responses_upward
     pub fn send_responses_upward(&self, ctx: &Context, resps: EventResponses) {
         if let Some(parent) = self.parent.borrow().as_ref() {
-            let parent_ctx = ctx.must_get_parent_context();
-            parent.propagate_responses_upward(parent_ctx, &self.id(), resps);
+            //let parent_ctx = ctx.must_get_parent_context();
+            //parent.propagate_responses_upward(parent_ctx, &self.id(), resps);
+            parent.propagate_responses_upward(ctx, &self.id(), resps);
         }
     }
 
@@ -443,36 +448,36 @@ impl Pane {
 
     /// correct_offsets_to_view_position changes the content offsets within the
     /// pane in order to bring the given view position into view.
-    pub fn correct_offsets_to_view_position(&self, ctx: &Context, x: usize, y: usize) {
+    pub fn correct_offsets_to_view_position(&self, dr: &DrawRegion, x: usize, y: usize) {
         let view_offset_y = *self.content_view_offset_y.borrow();
         let view_offset_x = *self.content_view_offset_x.borrow();
-        let height = ctx.size.height as usize;
-        let width = ctx.size.width as usize;
+        let height = dr.size.height as usize;
+        let width = dr.size.width as usize;
 
         // set y offset if cursor out of bounds
         if y >= view_offset_y + height {
-            self.set_content_y_offset(ctx, y - height + 1);
+            self.set_content_y_offset(dr, y - height + 1);
         } else if y < view_offset_y {
-            self.set_content_y_offset(ctx, y);
+            self.set_content_y_offset(dr, y);
         }
 
         // correct the offset if the offset is now showing lines that don't exist in
         // the content
         if view_offset_y + height > self.content_height() {
-            self.set_content_y_offset(ctx, height);
+            self.set_content_y_offset(dr, height);
         }
 
         // set x offset if cursor out of bounds
         if x >= view_offset_x + width {
-            self.set_content_x_offset(ctx, x - width + 1);
+            self.set_content_x_offset(dr, x - width + 1);
         } else if x < view_offset_x {
-            self.set_content_x_offset(ctx, x);
+            self.set_content_x_offset(dr, x);
         }
 
         // correct the offset if the offset is now showing characters to the right
         // which don't exist in the content.
         if view_offset_x + width > self.content_width() {
-            self.set_content_x_offset(ctx, self.content_width());
+            self.set_content_x_offset(dr, self.content_width());
         }
     }
 }
@@ -517,31 +522,31 @@ impl Element for Pane {
     }
 
     /// Drawing compiles all of the DrawChPos necessary to draw this element
-    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
+    fn drawing(&self, _: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         if !force_update
             && !*self.is_content_dirty.borrow()
-            && *self.last_size.borrow() == ctx.size
-            && *self.last_visible_region.borrow() == ctx.visible_region
+            && *self.last_size.borrow() == dr.size
+            && *self.last_visible_region.borrow() == dr.visible_region
         {
             return Vec::with_capacity(0);
         }
 
         self.is_content_dirty.replace(false);
-        self.last_size.replace(ctx.size);
-        self.last_visible_region.replace(ctx.visible_region);
+        self.last_size.replace(dr.size);
+        self.last_visible_region.replace(dr.visible_region);
 
         let mut chs = vec![];
 
-        let (xmin, xmax, ymin, ymax) = if let Some(vis_region) = ctx.visible_region {
+        let (xmin, xmax, ymin, ymax) = if let Some(vis_region) = dr.visible_region {
             (
                 // take the intersection of the visibile region and the elements region
                 (vis_region.start_x as usize).max(0),
-                (vis_region.end_x as usize).min(ctx.size.width as usize),
+                (vis_region.end_x as usize).min(dr.size.width as usize),
                 (vis_region.start_y as usize).max(0),
-                (vis_region.end_y as usize).min(ctx.size.height as usize),
+                (vis_region.end_y as usize).min(dr.size.height as usize),
             )
         } else {
-            (0, ctx.size.width as usize, 0, ctx.size.height as usize)
+            (0, dr.size.width as usize, 0, dr.size.height as usize)
         };
 
         let view_offset_y = *self.content_view_offset_y.borrow();
@@ -642,9 +647,9 @@ impl Element for Pane {
         self.overflow.clone()
     }
 
-    fn set_content_x_offset(&self, ctx: &Context, x: usize) {
+    fn set_content_x_offset(&self, dr: &DrawRegion, x: usize) {
         let content_width = self.content.borrow().width();
-        let view_width = ctx.size.width as usize;
+        let view_width = dr.size.width as usize;
         let x = if x > content_width.saturating_sub(view_width) {
             content_width.saturating_sub(view_width)
         } else {
@@ -653,9 +658,9 @@ impl Element for Pane {
         *self.content_view_offset_x.borrow_mut() = x;
     }
 
-    fn set_content_y_offset(&self, ctx: &Context, y: usize) {
+    fn set_content_y_offset(&self, dr: &DrawRegion, y: usize) {
         let content_height = self.content.borrow().height();
-        let view_height = ctx.size.height as usize;
+        let view_height = dr.size.height as usize;
         let y = if y > content_height.saturating_sub(view_height) {
             content_height.saturating_sub(view_height)
         } else {
@@ -670,10 +675,10 @@ impl Element for Pane {
     fn get_content_y_offset(&self) -> usize {
         *self.content_view_offset_y.borrow()
     }
-    fn get_content_width(&self, _: &Context) -> usize {
+    fn get_content_width(&self, _: &DrawRegion) -> usize {
         self.content.borrow().width()
     }
-    fn get_content_height(&self, _: &Context) -> usize {
+    fn get_content_height(&self, _: &DrawRegion) -> usize {
         self.content.borrow().height()
     }
 }

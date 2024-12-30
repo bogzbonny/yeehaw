@@ -1355,9 +1355,9 @@ impl Element for Bordered {
 
         (captured, resps)
     }
-    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         self.ensure_scrollbar_size(ctx);
-        self.pane.drawing(ctx, force_update)
+        self.pane.drawing(ctx, dr, force_update)
     }
 }
 
@@ -1577,7 +1577,7 @@ impl VerticalSide {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for VerticalSide {
-    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         let out = if let Some((ref text, ref j)) = *self.text.borrow() {
             let text_height = text.len() as u16;
             let (start_y, end_y) = match j {
@@ -1784,7 +1784,7 @@ impl HorizontalSide {
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for HorizontalSide {
-    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         let out = if let Some((ref text, ref j)) = *self.text.borrow() {
             let text_width = text.len() as u16;
             let (start_x, end_x) = match j {

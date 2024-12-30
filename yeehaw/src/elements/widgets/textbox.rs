@@ -1442,7 +1442,7 @@ impl TextBoxInner {
     }
 
     /// updates the content of the textbox
-    pub fn update_content(&self, ctx: &Context) {
+    pub fn update_content(&self, ctx: &Context, dr: &DrawRegion) {
         let w = self.get_wrapped(ctx);
         let wrapped = w.wrapped_string();
         self.correct_ln_and_sbs(ctx);
@@ -1456,12 +1456,11 @@ impl TextBoxInner {
             // set greyed out text
             let text = self.text_when_empty.borrow();
             sty.set_fg(self.text_when_empty_fg.borrow().clone());
-            self.pane
-                .set_content_from_string_with_style(ctx, &text, sty);
+            self.pane.set_content_from_string_with_style(dr, &text, sty);
             return;
         } else {
             self.pane
-                .set_content_from_string_with_style(ctx, &wrapped, sty);
+                .set_content_from_string_with_style(dr, &wrapped, sty);
         }
 
         // set styles from hooks if applicable
@@ -1520,12 +1519,12 @@ impl Element for TextBoxInner {
         }
     }
 
-    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         if self.is_dirty.replace(false) || *self.last_size.borrow() != ctx.size || force_update {
             self.update_content(ctx);
             self.last_size.replace(ctx.size);
         }
-        self.pane.drawing(ctx, force_update)
+        self.pane.drawing(ctx, dr, force_update)
     }
 }
 

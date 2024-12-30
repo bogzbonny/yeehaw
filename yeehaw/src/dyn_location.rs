@@ -1,4 +1,4 @@
-use crate::{Context, DynVal, RelMouseEvent};
+use crate::{DrawRegion, DynVal, MouseEvent};
 
 /// ZIndex is the z-index or position in the z-dimension of the element
 /// The higher the z-index, further "on top" the element is.
@@ -44,8 +44,8 @@ impl DynLocation {
         }
     }
 
-    pub fn height(&self, ctx: &Context) -> usize {
-        let out = self.end_y.get_val(ctx.get_height()) - self.start_y.get_val(ctx.get_height());
+    pub fn height(&self, dr: &DrawRegion) -> usize {
+        let out = self.end_y.get_val(dr.get_height()) - self.start_y.get_val(dr.get_height());
         if out < 0 {
             0
         } else {
@@ -53,8 +53,8 @@ impl DynLocation {
         }
     }
 
-    pub fn width(&self, ctx: &Context) -> usize {
-        let out = self.end_x.get_val(ctx.get_width()) - self.start_x.get_val(ctx.get_width());
+    pub fn width(&self, dr: &DrawRegion) -> usize {
+        let out = self.end_x.get_val(dr.get_width()) - self.start_x.get_val(dr.get_width());
         if out < 0 {
             0
         } else {
@@ -62,8 +62,8 @@ impl DynLocation {
         }
     }
 
-    pub fn size(&self, ctx: &Context) -> Size {
-        Size::new(self.width(ctx) as u16, self.height(ctx) as u16)
+    pub fn size(&self, dr: &DrawRegion) -> Size {
+        Size::new(self.width(dr) as u16, self.height(dr) as u16)
     }
 
     pub fn set_at(&mut self, x: DynVal, y: DynVal) {
@@ -116,37 +116,37 @@ impl DynLocation {
     }
 
     /// X returns the start and end x values of the Location
-    pub fn get_start_x(&self, ctx: &Context) -> i32 {
-        self.start_x.get_val(ctx.get_width())
+    pub fn get_start_x(&self, dr: &DrawRegion) -> i32 {
+        self.start_x.get_val(dr.get_width())
     }
-    pub fn get_start_y(&self, ctx: &Context) -> i32 {
-        self.start_y.get_val(ctx.get_height())
+    pub fn get_start_y(&self, dr: &DrawRegion) -> i32 {
+        self.start_y.get_val(dr.get_height())
     }
     /// X returns the start and end x values of the Location
-    pub fn get_end_x(&self, ctx: &Context) -> i32 {
-        self.end_x.get_val(ctx.get_width())
+    pub fn get_end_x(&self, dr: &DrawRegion) -> i32 {
+        self.end_x.get_val(dr.get_width())
     }
-    pub fn get_end_y(&self, ctx: &Context) -> i32 {
-        self.end_y.get_val(ctx.get_height())
+    pub fn get_end_y(&self, dr: &DrawRegion) -> i32 {
+        self.end_y.get_val(dr.get_height())
     }
-    pub fn x(&self, ctx: &Context) -> (i32, i32) {
+    pub fn x(&self, dr: &DrawRegion) -> (i32, i32) {
         (
-            self.start_x.get_val(ctx.get_width()),
-            self.end_x.get_val(ctx.get_width()),
+            self.start_x.get_val(dr.get_width()),
+            self.end_x.get_val(dr.get_width()),
         )
     }
 
     /// Y returns the start and end y values of the Location
-    pub fn y(&self, ctx: &Context) -> (i32, i32) {
+    pub fn y(&self, dr: &DrawRegion) -> (i32, i32) {
         (
-            self.start_y.get_val(ctx.get_height()),
-            self.end_y.get_val(ctx.get_height()),
+            self.start_y.get_val(dr.get_height()),
+            self.end_y.get_val(dr.get_height()),
         )
     }
 
-    pub fn contains_point(&self, ctx: &Context, x: i32, y: i32) -> bool {
-        let (start_x, end_x) = self.x(ctx);
-        let (start_y, end_y) = self.y(ctx);
+    pub fn contains_point(&self, dr: &DrawRegion, x: i32, y: i32) -> bool {
+        let (start_x, end_x) = self.x(dr);
+        let (start_y, end_y) = self.y(dr);
         if x >= start_x && x < end_x && y >= start_y && y < end_y {
             return true;
         }
@@ -154,57 +154,51 @@ impl DynLocation {
     }
 
     /// GetSize returns the size of the Location
-    pub fn get_size(&self, ctx: &Context) -> Size {
-        Size::new(self.width(ctx) as u16, self.height(ctx) as u16)
+    pub fn get_size(&self, dr: &DrawRegion) -> Size {
+        Size::new(self.width(dr) as u16, self.height(dr) as u16)
     }
 
-    pub fn adjust_mouse_event(
-        &self, ctx: &Context, ev: &crossterm::event::MouseEvent,
-    ) -> crossterm::event::MouseEvent {
+    //pub fn adjusted_mouse_event(&self, ev: &MouseEvent) -> MouseEvent {
+    //    let (x_adj, y_adj) = (ev.column, ev.row);
+    //    let start_x = self.get_start_x(&ev.dr);
+    //    let start_y = self.get_start_y(&ev.dr);
+    //    let start_x = if start_x < 0 { 0 } else { start_x as u16 };
+    //    let start_y = if start_y < 0 { 0 } else { start_y as u16 };
+    //    let x_adj = x_adj.saturating_sub(start_x);
+    //    let y_adj = y_adj.saturating_sub(start_y);
+    //    let mut ev = ev.clone();
+    //    ev.dr = dr.child_region(&self);
+    //    ev.column = x_adj;
+    //    ev.row = y_adj;
+    //    ev
+    //}
+
+    pub fn adjusted_mouse_event(&self, ev: &MouseEvent) -> MouseEvent {
         let (x_adj, y_adj) = (ev.column, ev.row);
-        let start_x = self.get_start_x(ctx);
-        let start_y = self.get_start_y(ctx);
-        let start_x = if start_x < 0 { 0 } else { start_x as u16 };
-        let start_y = if start_y < 0 { 0 } else { start_y as u16 };
-        let x_adj = x_adj.saturating_sub(start_x);
-        let y_adj = y_adj.saturating_sub(start_y);
-        let mut ev = *ev;
-        // copy
-        ev.column = x_adj;
-        ev.row = y_adj;
-        ev
-    }
-
-    pub fn adjust_mouse_event_external(
-        &self, ctx: &Context, ev: &crossterm::event::MouseEvent,
-    ) -> RelMouseEvent {
-        let (x_adj, y_adj) = (ev.column as i32, ev.row as i32);
-        let start_x = self.get_start_x(ctx);
-        let start_y = self.get_start_y(ctx);
+        let start_x = self.get_start_x(&ev.dr);
+        let start_y = self.get_start_y(&ev.dr);
         let x_adj = x_adj - start_x;
         let y_adj = y_adj - start_y;
-        let mut ev: RelMouseEvent = (*ev).into();
-        // copy
-        ev.column = x_adj.clamp(-1000, 1000);
+        let mut ev = ev.clone();
+        ev.dr = ev.dr.child_region(&self);
         // for bugs when dragging off screen
+        ev.column = x_adj.clamp(-1000, 1000);
         ev.row = y_adj.clamp(-1000, 1000);
         ev
     }
 
-    /// TODO remove dup code with above
-    pub fn adjust_mouse_event_external2(
-        &self, ctx: &Context, mut ev: RelMouseEvent,
-    ) -> RelMouseEvent {
-        let (x_adj, y_adj) = (ev.column, ev.row);
-        let start_x = self.get_start_x(ctx);
-        let start_y = self.get_start_y(ctx);
-        let x_adj = x_adj - start_x;
-        let y_adj = y_adj - start_y;
-        ev.column = x_adj.clamp(-1000, 1000);
-        // for bugs when dragging off screen
-        ev.row = y_adj.clamp(-1000, 1000);
-        ev
-    }
+    ///// TODO remove dup code with above
+    //pub fn adjust_mouse_event_external2(&self, dr: &DrawRegion, mut ev: MouseEvent) -> MouseEvent {
+    //    let (x_adj, y_adj) = (ev.column, ev.row);
+    //    let start_x = self.get_start_x(dr);
+    //    let start_y = self.get_start_y(dr);
+    //    let x_adj = x_adj - start_x;
+    //    let y_adj = y_adj - start_y;
+    //    ev.column = x_adj.clamp(-1000, 1000);
+    //    // for bugs when dragging off screen
+    //    ev.row = y_adj.clamp(-1000, 1000);
+    //    ev
+    //}
 
     pub fn adjust_location_by(&mut self, x: DynVal, y: DynVal) {
         self.start_x.plus_in_place(x.clone());
@@ -332,33 +326,33 @@ impl DynLocationSet {
     }
 
     /// convenience function to get the start x of the primary location
-    pub fn get_start_x(&self, ctx: &Context) -> i32 {
-        self.l.get_start_x(ctx)
+    pub fn get_start_x(&self, dr: &DrawRegion) -> i32 {
+        self.l.get_start_x(dr)
     }
 
     /// convenience function to get the start y of the primary location
-    pub fn get_start_y(&self, ctx: &Context) -> i32 {
-        self.l.get_start_y(ctx)
+    pub fn get_start_y(&self, dr: &DrawRegion) -> i32 {
+        self.l.get_start_y(dr)
     }
 
     /// convenience function to get the end x of the primary location
-    pub fn get_end_x(&self, ctx: &Context) -> i32 {
-        self.l.get_end_x(ctx)
+    pub fn get_end_x(&self, dr: &DrawRegion) -> i32 {
+        self.l.get_end_x(dr)
     }
 
     /// convenience function to get the end y of the primary location
-    pub fn get_end_y(&self, ctx: &Context) -> i32 {
-        self.l.get_end_y(ctx)
+    pub fn get_end_y(&self, dr: &DrawRegion) -> i32 {
+        self.l.get_end_y(dr)
     }
 
     /// convenience function to get the width of the primary location
-    pub fn get_width_val(&self, ctx: &Context) -> usize {
-        self.l.width(ctx)
+    pub fn get_width_val(&self, dr: &DrawRegion) -> usize {
+        self.l.width(dr)
     }
 
     /// convenience function to get the height of the primary location
-    pub fn get_height_val(&self, ctx: &Context) -> usize {
-        self.l.height(ctx)
+    pub fn get_height_val(&self, dr: &DrawRegion) -> usize {
+        self.l.height(dr)
     }
 
     pub fn get_dyn_start_x(&self) -> DynVal {
@@ -389,20 +383,20 @@ impl DynLocationSet {
 
     /// Contains checks if the given location falls in the primary
     /// or extra location of an element
-    pub fn contains(&self, ctx: &Context, x: i32, y: i32) -> bool {
-        self.contains_within_primary(ctx, x, y) || self.contains_within_extra(ctx, x, y)
+    pub fn contains(&self, dr: &DrawRegion, x: i32, y: i32) -> bool {
+        self.contains_within_primary(dr, x, y) || self.contains_within_extra(dr, x, y)
     }
 
-    pub fn contains_within_primary(&self, ctx: &Context, x: i32, y: i32) -> bool {
-        if self.l.contains_point(ctx, x, y) {
+    pub fn contains_within_primary(&self, dr: &DrawRegion, x: i32, y: i32) -> bool {
+        if self.l.contains_point(dr, x, y) {
             return true;
         }
         false
     }
 
-    pub fn contains_within_extra(&self, ctx: &Context, x: i32, y: i32) -> bool {
+    pub fn contains_within_extra(&self, dr: &DrawRegion, x: i32, y: i32) -> bool {
         for eloc in self.extra.iter() {
-            if eloc.contains_point(ctx, x, y) {
+            if eloc.contains_point(dr, x, y) {
                 return true;
             }
         }
@@ -410,13 +404,13 @@ impl DynLocationSet {
     }
 
     /// returns None is the point is not contained by the DynLocationSet
-    pub fn get_z_index_for_point(&self, ctx: &Context, x: i32, y: i32) -> Option<ZIndex> {
-        if self.l.contains_point(ctx, x, y) {
+    pub fn get_z_index_for_point(&self, dr: &DrawRegion, x: i32, y: i32) -> Option<ZIndex> {
+        if self.l.contains_point(dr, x, y) {
             return Some(self.z);
         }
 
         for eloc in self.extra.iter() {
-            if eloc.contains_point(ctx, x, y) {
+            if eloc.contains_point(dr, x, y) {
                 return Some(self.z);
             }
         }
@@ -441,7 +435,7 @@ impl DynLocationSet {
 
 // --------------------------------------------------
 /// Size holds the width and height of an element
-#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Default, Debug, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Default, Debug, PartialEq, Eq)]
 pub struct Size {
     pub width: u16,
     pub height: u16,
@@ -472,7 +466,7 @@ impl Size {
 }
 
 /// inclusive start, exclusive end
-#[derive(Clone, Copy, Default, Debug, PartialEq)]
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 pub struct Loc {
     pub start_x: u16,
     pub end_x: u16,
@@ -490,9 +484,9 @@ impl Loc {
         }
     }
 
-    pub fn intersects_dyn_location_set(&self, ctx: &Context, d: &DynLocationSet) -> bool {
-        let (start_x, end_x) = d.l.x(ctx);
-        let (start_y, end_y) = d.l.y(ctx);
+    pub fn intersects_dyn_location_set(&self, dr: &DrawRegion, d: &DynLocationSet) -> bool {
+        let (start_x, end_x) = d.l.x(dr);
+        let (start_y, end_y) = d.l.y(dr);
         if self.start_x < end_x as u16
             && self.end_x > start_x as u16
             && self.start_y < end_y as u16
@@ -501,8 +495,8 @@ impl Loc {
             return true;
         }
         for loc in d.extra.iter() {
-            let (start_x, end_x) = loc.x(ctx);
-            let (start_y, end_y) = loc.y(ctx);
+            let (start_x, end_x) = loc.x(dr);
+            let (start_y, end_y) = loc.y(dr);
             if self.start_x < end_x as u16
                 && self.end_x > start_x as u16
                 && self.start_y < end_y as u16

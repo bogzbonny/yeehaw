@@ -1,5 +1,6 @@
 use {
-    crate::{ColorContext, ColorStore, DynLocation, Event, Loc, Size, SortingHat},
+    // crate::ColorContext,
+    crate::{ColorStore, Event, SortingHat},
     std::collections::HashMap,
     tokio::sync::mpsc::Sender,
 };
@@ -13,17 +14,9 @@ use {
 /// arbitrary information between elements.
 #[derive(Clone, Debug)]
 pub struct Context {
-    /// The size of the element, during initialization of an element this size will be unknown and
-    /// will be set to a size of (0,0). During all subsiquent calls to the element, the size should
-    /// be known.
-    pub size: Size,
     pub dur_since_launch: std::time::Duration,
-    /// the visible region of the element for very large elements, this may be a subset of the
-    /// entire element
-    pub visible_region: Option<Loc>,
     //                      key , value
     pub metadata: HashMap<String, Vec<u8>>,
-    pub parent_ctx: Option<Box<Context>>,
     pub hat: SortingHat,
     pub ev_tx: Sender<Event>,
     pub color_store: ColorStore,
@@ -47,108 +40,29 @@ pub struct Context {
 //}
 
 impl Context {
-    pub fn new_context_for_screen_no_dur(
+    pub fn new_context_no_dur(
         hat: &SortingHat, ev_tx: Sender<Event>, color_store: &ColorStore,
     ) -> Context {
-        let (xmax, ymax) = crossterm::terminal::size().expect("no terminal size");
         Context {
-            size: Size::new(xmax, ymax),
             dur_since_launch: std::time::Duration::default(),
-            visible_region: None,
             metadata: HashMap::new(),
-            parent_ctx: None,
             hat: hat.clone(),
             ev_tx,
             color_store: color_store.clone(),
         }
     }
 
-    pub fn new_context_for_screen(
+    pub fn new_context(
         launch_instant: std::time::Instant, hat: &SortingHat, ev_tx: Sender<Event>,
         color_store: &ColorStore,
     ) -> Context {
-        let (xmax, ymax) = crossterm::terminal::size().expect("no terminal size");
         Context {
-            size: Size::new(xmax, ymax),
             dur_since_launch: launch_instant.elapsed(),
-            visible_region: None,
             metadata: HashMap::new(),
-            parent_ctx: None,
             hat: hat.clone(),
             ev_tx,
             color_store: color_store.clone(),
         }
-    }
-
-    /// create a new context for a child element
-    /// provided its location and a higher level context
-    pub fn child_context(&self, child_loc: &DynLocation) -> Context {
-        let size = child_loc.get_size(self);
-        let visible_region = if let Some(mut vr) = self.visible_region {
-            // make the visible region relative to the el
-            // NOTE because this is a saturating_sub, if the visible region is outside the start
-            // bounds of the child, the visible region will be bounded to 0
-            let start_x = child_loc.get_start_x(self) as u16;
-            let start_y = child_loc.get_start_y(self) as u16;
-            vr.start_x = vr.start_x.saturating_sub(start_x);
-            vr.end_x = vr.end_x.saturating_sub(start_x);
-            vr.start_y = vr.start_y.saturating_sub(start_y);
-            vr.end_y = vr.end_y.saturating_sub(start_y);
-            Some(vr)
-        } else {
-            None
-        };
-        Context {
-            size,
-            dur_since_launch: self.dur_since_launch,
-            visible_region,
-            metadata: self.metadata.clone(),
-            parent_ctx: Some(Box::new(self.clone())),
-            hat: self.hat.clone(),
-            ev_tx: self.ev_tx.clone(),
-            color_store: self.color_store.clone(),
-        }
-    }
-
-    /// create a new context for initialization of a child element where the size of the child is
-    /// not yet known
-    pub fn child_init_context(&self) -> Context {
-        Context {
-            size: Size::default(),
-            dur_since_launch: self.dur_since_launch,
-            visible_region: None,
-            metadata: self.metadata.clone(),
-            parent_ctx: Some(Box::new(self.clone())),
-            hat: self.hat.clone(),
-            ev_tx: self.ev_tx.clone(),
-            color_store: self.color_store.clone(),
-        }
-    }
-
-    pub fn must_get_parent_context(&self) -> &Context {
-        self.parent_ctx
-            .as_ref()
-            .expect("all contexts besides the first (TUI) context must have a parent")
-    }
-
-    pub fn with_visible_region(mut self, vr: Option<Loc>) -> Self {
-        self.visible_region = vr;
-        self
-    }
-
-    pub fn with_size(mut self, s: Size) -> Self {
-        self.size = s;
-        self
-    }
-
-    pub fn with_height(mut self, h: u16) -> Self {
-        self.size.height = h;
-        self
-    }
-
-    pub fn with_width(mut self, w: u16) -> Self {
-        self.size.width = w;
-        self
     }
 
     pub fn with_metadata(mut self, key: String, md: Vec<u8>) -> Self {
@@ -164,19 +78,11 @@ impl Context {
         self.metadata.get(key).cloned()
     }
 
-    pub fn get_width(&self) -> u16 {
-        self.size.width
-    }
-
-    pub fn get_height(&self) -> u16 {
-        self.size.height
-    }
-
-    pub fn get_color_context(&self) -> ColorContext {
-        ColorContext {
-            store: self.color_store.clone(),
-            size: self.size,
-            dur_since_launch: self.dur_since_launch,
-        }
-    }
+    //pub fn get_color_context(&self) -> ColorContext {
+    //    ColorContext {
+    //        store: self.color_store.clone(),
+    //        size: self.size,
+    //        dur_since_launch: self.dur_since_launch,
+    //    }
+    //}
 }

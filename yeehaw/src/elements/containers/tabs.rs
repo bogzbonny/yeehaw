@@ -138,9 +138,9 @@ impl Element for TabsTop {
         }
         self.pane.receive_event(ctx, ev)
     }
-    fn drawing(&self, ctx: &Context, force_update: bool) -> Vec<DrawUpdate> {
+    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         // set the names of the tabs
-        let mut upds = self.pane.drawing(ctx, force_update);
+        let mut upds = self.pane.drawing(ctx, dr, force_update);
         if !force_update && !*self.is_dirty.borrow() {
             return upds;
         }
