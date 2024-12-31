@@ -12,10 +12,13 @@
 01. tuvix image off by one
 01. terminal inside window with border doesn't work
 01. disable debug logging in examples
+01. update rust version, update deps
+01. add docs, crates button banners to github readme
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-01. update rust version, update deps
+01. just use an image for the banner (and include the existing text as 
+    markdown comment
 
 01. gif of showcase example - will need to record with non-VHS/asciicinema-tool
     to get mouse movements
@@ -26,11 +29,6 @@
      - link to examples 
      - resolve broken links 
         cargo doc --open
-
-01. just use an image for the banner (and include the existing text as 
-    markdown comment
-
-01. add docs, crates button banners to github readme
 
 01. make sure duf can run it
 

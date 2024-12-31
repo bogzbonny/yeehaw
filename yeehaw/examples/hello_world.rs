@@ -9,8 +9,8 @@ async fn main() -> Result<(), Error> {
     let label = Label::new(&ctx, "Hello, World!").at(0.3, 0.3);
 
     // place the button 1 character below the label
-    let x = DynVal::new_flex(0.3); // 30% of the screen width
-    let y = DynVal::new_flex(0.3).plus(1.into()); // 30% of the screen height + 1 character
+    let x = DynVal::new_flex(0.3); // 30% screen width
+    let y = DynVal::new_flex(0.3).plus(1.into()); // 30% screen height + 1 ch
 
     let label_ = label.clone(); // clone for closure move
     let button = Button::new(&ctx, "Click Here!")

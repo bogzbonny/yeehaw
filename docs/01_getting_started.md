@@ -67,10 +67,12 @@ async fn main() -> Result<(), Error> {
  - stack panes (think vim-buffers) 
  - scrollable panes with scrollbars
 
-## Planned Stuff: <!-- NOTE duplicate in README.md --> 
- - embed a whole dang yeehaw TUI into stateful ratatui widget, why not!
+## Cool Features
  - mini-TUIs in the CLI (aka. use a TUI in-line with your command without taking
                          up the whole terminal)
+
+## Planned Stuff: <!-- NOTE duplicate in README.md --> 
+ - embed a whole dang yeehaw TUI into stateful ratatui widget, why not!
  - accordion stack container
  - hover comments for elements
  - vertical tabs (like brave browser) 
@@ -116,13 +118,14 @@ Looking to understand more? Checkout:
 
 ## Stability, Upcoming Refactors, Bugs <!-- NOTE duplicate in README.md -->
 
-If you plan to build on yeehaw right now, that's great news! I'd like to keep
-you apprised of some upcoming changes. If you do wish to experiment and or start
-development on yeehaw I wouldn't be too afraid of these upcoming changes, the
-majority of foreseeable major refactors have already been completed.  While
-yeehaw is pre-1.0.0 all breaking changes will take place with a semver minor
-version upgrades which will be all new releases. In the short-term I don't plan
-on providing patch updates for bug fixes for minor versions.
+If you plan on building/experimenting with yeehaw right now, that's great news!
+I'd like to keep you apprised of some upcoming changes. If you do wish to
+experiment and or start development on yeehaw I wouldn't be too afraid of these
+upcoming changes, the majority of foreseeable major refactors have already been
+completed.  While yeehaw is pre-1.0.0 all breaking changes will take place with
+a semver minor version upgrades which will be all new releases. In the
+short-term I don't plan on providing patch updates for bug fixes for minor
+versions.
 
 I'll try'n help out anyone who needs a hand understanding how to update their
 code if its been broken by a new release. Additionally a breaking changes doc
@@ -130,13 +133,6 @@ with upgrade instructions shall be maintained.
 
 HAVE NO FEAR
 
- - Currently rendering happens on a continuous basis which creates many niceties
-   for element development however also leads to inefficiencies particularly
-   with (nested) container elements and most noticeable when code is compiled in
-   debug mode. A refactor of this drawing system is to be undertaken to allow
-   for intelligent caching within containers while hopefully not majorly
-   effecting the niceties. The `drawing` function signature of `Element` may
-   change slightly in this refactor. 
  - There ain't much automated testing in here at all, soon a TUI snapshot tester
    is going to be developed, which should bring up coverage from about 0% as it
    stands. 
@@ -156,18 +152,10 @@ HAVE NO FEAR
    the height of each cell. Currently the angles work under an assumption of
    equal cell width and height, sometimes it produces funny/unexpected results
    for a gradient which has is supposed to just be at a 45-degree angle and
-   occur only once across the whole target area (`DynVal::full()`). Gradients on
+   occur only once across the whole target area (`DynVal::FULL`). Gradients on
    angles which are repetitive (`DynVal::fixed(..)`) work good, however the way
    the angle is interpreted will likely change to account for cell dimensions.
    Gradients on right-angles (0, 90, 180, 270 degrees) are stable.
- - Optimization: Lots of this code base has not been heavily optimized at the
-   granular level, although certain effort has been made for higher level
-   optimizations (printing cache, non-viewable elements are not rendered). As
-   yeehaw continues to evolve there will be a greater effort put into
-   optimizations, especially where visibly poor performance exists. Some
-   potential improvements will include more caching to `drawing` within
-   individual element implementions maybe even building in a few common caching
-   patterns which arise into the `pane` object.
 
 ## Performance Considerations
 
@@ -181,14 +169,9 @@ to itself, for each redraw a container element will then reposition all the draw
 information of sub-elements. Additionally each container also processes styles
 which change relative to time or position (gradients), All this reprocessing
 which takes place in container elements is computationally inefficient as it
-occurs with each redraw cycle. The inefficiency introduced by the current design
-may lead to slightly laggy interfaces but primarily only when compiled in debug
-mode and if deeply nested containers are used. Use of parallel computation with
-rayon has been implemented to help mitigate these inefficiencies. As such
-Elements are expected to cache their own drawing information to minimize the
-computational burden at render time. A common caching pattern will soon be
-integrated into the `Pane` to make Element drawing development a little bit more
-straightforward. Also, A refactor of this drawing system is to be undertaken to
-allow for intelligent caching within containers while hopefully not majorly
-effecting the niceties of this design. The `drawing` function signature of
-`Element` may change slightly in this refactor.
+occurs with each redraw cycle (on changes). The inefficiency introduced by the
+current design may lead to slightly laggy interfaces but primarily only when
+compiled in debug mode and if deeply nested containers are used. Use of parallel
+computation with rayon has been implemented to help mitigate these
+inefficiencies. As such Elements are expected to cache their own drawing
+information to minimize the computational burden at render time.

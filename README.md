@@ -15,16 +15,19 @@
 ░ꕤ                                  /     /        \   c  /                                 ꕤ ░
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 -->
-[IMAGE](TODO IMAGE OF BANNER HERE)
+
+![banner](./assets/banner.png)
+
+[![badge_crate]][crate] [![badge_docs]][docs]
 
 # YEEHAW
 
 ~ Batteries Included Text Based Application Framework ~
 
-yeehaw was born out of a need for an embeddable and reusable interface-element
-pattern for sophisticated text based applications. 
+yeehaw was born out of a need for an embeddable and reusable element pattern for
+sophisticated text based applications. 
 
-**Reasons why you need your application to be text-based:**
+**🖐️ Reasons why you need your application to be text-based:**
 1) it's the only way you'll ever be cool again
 2) they're conceptually straightforward, it's just a grid 
 3) they're rapidly iterable during development
@@ -33,8 +36,6 @@ pattern for sophisticated text based applications.
 5) they fas
 
 ##  Example Usage:
-
-[>>>>>>>>>>>>>> MORE GIFS <<<<<<<<<<<<<<<<<<](TODO LINK TO MORE GIFS)
 
 [TODO] Insert Showcase gif
 
@@ -54,8 +55,8 @@ async fn main() -> Result<(), Error> {
     let label = Label::new(&ctx, "Hello, World!").at(0.3, 0.3);
 
     // place the button 1 character below the label
-    let x = DynVal::new_flex(0.3); // 30% of the screen width
-    let y = DynVal::new_flex(0.3).plus(1.into()); // 30% of the screen height + 1 character
+    let x = DynVal::new_flex(0.3); // 30% screen width
+    let y = DynVal::new_flex(0.3).plus(1.into()); // 30% screen height + 1 ch
 
     let label_ = label.clone(); // clone for closure move
     let button = Button::new(&ctx, "Click Here!")
@@ -72,7 +73,6 @@ async fn main() -> Result<(), Error> {
 ```
 
 ## Existing Elements:   <!-- NOTE duplicate in 01_getting_started.md -->
-[TODO link to a separate markdown with a bunch of GIFS]
 
 #### Widgets
  - $EDITOR textbox (e.g. ACTUAL neovim... wow!)  
@@ -102,10 +102,12 @@ async fn main() -> Result<(), Error> {
  - stack panes (think vim-buffers) 
  - scrollable panes with scrollbars
 
-## Planned Stuff: <!-- NOTE duplicate in 01_getting_started.md -->
- - embed a whole dang yeehaw TUI into stateful ratatui widget, why not!
+## Cool Features
  - mini-TUIs in the CLI (aka. use a TUI in-line with your command without taking
                          up the whole terminal)
+
+## Planned Stuff: <!-- NOTE duplicate in 01_getting_started.md -->
+ - embed a whole dang yeehaw TUI into stateful ratatui widget, why not!
  - accordion stack container
  - hover comments for elements
  - vertical tabs (like brave browser) 
@@ -179,13 +181,14 @@ Looking to understand more? Checkout:
 
 ## Stability, Upcoming Refactors, Bugs <!-- NOTE duplicate in 01_getting_started.md -->
 
-If you plan to build on yeehaw right now, that's great news! I'd like to keep
-you apprised of some upcoming changes. If you do wish to experiment and or start
-development on yeehaw I wouldn't be too afraid of these upcoming changes, the
-majority of foreseeable major refactors have already been completed.  While
-yeehaw is pre-1.0.0 all breaking changes will take place with a semver minor
-version upgrades which will be all new releases. In the short-term I don't plan
-on providing patch updates for bug fixes for minor versions.
+If you plan on building/experimenting with yeehaw right now, that's great news!
+I'd like to keep you apprised of some upcoming changes. If you do wish to
+experiment and or start development on yeehaw I wouldn't be too afraid of these
+upcoming changes, the majority of foreseeable major refactors have already been
+completed.  While yeehaw is pre-1.0.0 all breaking changes will take place with
+a semver minor version upgrades which will be all new releases. In the
+short-term I don't plan on providing patch updates for bug fixes for minor
+versions.
 
 I'll try'n help out anyone who needs a hand understanding how to update their
 code if its been broken by a new release. Additionally a breaking changes doc
@@ -193,13 +196,6 @@ with upgrade instructions shall be maintained.
 
 HAVE NO FEAR
 
- - Currently rendering happens on a continuous basis which creates many niceties
-   for element development however also leads to inefficiencies particularly
-   with (nested) container elements and most noticeable when code is compiled in
-   debug mode. A refactor of this drawing system is to be undertaken to allow
-   for intelligent caching within containers while hopefully not majorly
-   effecting the niceties. The `drawing` function signature of `Element` may
-   change slightly in this refactor. 
  - There ain't much automated testing in here at all, soon a TUI snapshot tester
    is going to be developed, which should bring up coverage from about 0% as it
    stands. 
@@ -219,26 +215,17 @@ HAVE NO FEAR
    the height of each cell. Currently the angles work under an assumption of
    equal cell width and height, sometimes it produces funny/unexpected results
    for a gradient which has is supposed to just be at a 45-degree angle and
-   occur only once across the whole target area (`DynVal::full()`). Gradients on
+   occur only once across the whole target area (`DynVal::FULL`). Gradients on
    angles which are repetitive (`DynVal::fixed(..)`) work good, however the way
    the angle is interpreted will likely change to account for cell dimensions.
    Gradients on right-angles (0, 90, 180, 270 degrees) are stable.
- - Optimization: Lots of this code base has not been heavily optimized at the
-   granular level, although certain effort has been made for higher level
-   optimizations (printing cache, non-viewable elements are not rendered). As
-   yeehaw continues to evolve there will be a greater effort put into
-   optimizations, especially where visibly poor performance exists. Some
-   potential improvements will include more caching to `drawing` within
-   individual element implementions maybe even building in a few common caching
-   patterns which arise into the `pane` object.
-
 
 ## Tribute
 
- - [notcurses](https://github.com/dankamongmen/notcurses) insane
- - [jexer](https://gitlab.com/AutumnMeowMeow/jexer) what the shell!
- - [ratatui](https://ratatui.rs/) obviously rocks, [well done](https://www.youtube.com/watch?v=9wm1D6Rk8TE)
- - [bubbletea](https://github.com/charmbracelet/bubbletea) lookin' good! (golang)
+ - [notcurses](https://github.com/dankamongmen/notcurses) - insane
+ - [jexer](https://gitlab.com/AutumnMeowMeow/jexer) - what the shell!
+ - [ratatui](https://ratatui.rs/) - obviously rocks, [well done](https://www.youtube.com/watch?v=9wm1D6Rk8TE)
+ - [bubbletea](https://github.com/charmbracelet/bubbletea) - lookin' good! (golang)
 
 ## Contributing 
 
@@ -256,3 +243,8 @@ in (more on that later!).
 Any contribution you intentionally submit for inclusion in the work, as defined
 in the Apache-2.0 license, shall be Apache-2.0 license, without any additional
 terms or conditions.
+
+[badge_crate]: https://img.shields.io/crates/v/yeehaw?logo=rust&style=flat-square&logoColor=E05D44&color=E05D44
+[badge_docs]: https://img.shields.io/docsrs/yeehaw?logo=rust&style=flat-square&logoColor=E05D44
+[crate]: https://crates.io/crates/yeehaw
+[docs]: https://docs.rs/ratatui
