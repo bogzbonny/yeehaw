@@ -762,13 +762,10 @@ impl Bordered {
 
         let mut l = bordered.inner.borrow().get_dyn_location_set().clone();
         l.l.set_start_x(1.into());
-        //l.l.set_end_x(DynVal::FULL.minus(2));
         bordered.inner.borrow_mut().set_dyn_location_set(l);
 
         // shrink the view portal as understood by the x scrollbar
         *bordered.x_scrollbar_view_sub_from_full.borrow_mut() += 1;
-        //bordered.ensure_scrollbar_size(ctx);
-
         bordered
     }
 
@@ -1321,8 +1318,6 @@ impl Bordered {
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for Bordered {
     fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        //self.ensure_scrollbar_size(ctx);
-
         let (captured, mut resps) = self.pane.receive_event(ctx, ev);
         let last_size = *self.last_size.borrow();
         let dr = DrawRegion::default().with_size(last_size);

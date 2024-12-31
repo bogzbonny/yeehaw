@@ -82,12 +82,7 @@ async fn main() -> Result<(), Error> {
         .with_bg(Color::BLACK);
     central_pane.push(Box::new(left_pane.clone()));
 
-    // need to generate the context for the main_vs pane
-    // for upward propogation of events from the main_vs element
-    //let main_vs_ctx = ctx.child_context(&main_vs.get_dyn_location());
-
     left_pane.push(window_generation_zone(
-        //&main_vs_ctx,
         &ctx,
         Box::new(main_vs.pane.pane.clone()),
     ));
@@ -145,9 +140,9 @@ Check to make sure any new hardware or software is properly installed. If this i
 installation, ask your hardware or software manufacturer for any Windows updates you might need.
 
 If problems continue, disable or remove any newly installed hardware or software. Disable BIOS
-memory options such as caching or shadowing. Maybe Janeway shouldn't have killed Tuvix. If you need
-to use Safe Mode to remove or disable components, restart your computer, press F8 to select
-Advanced Startup Options, and then select Safe Mode. 
+memory options such as caching or shadowing. If you need to use Safe Mode to remove or disable
+components, restart your computer, press F8 to select Advanced Startup Options, and then select
+Safe Mode. 
 
 Technical information:
 
@@ -243,8 +238,6 @@ pub fn window_generation_zone(
     let counter_ = counter.clone();
 
     let generate_window_fn = Box::new(move |_, _| {
-        //ctx_.size.width = 30;
-        //ctx_.size.height = 20;
         let title = format!("Pane {}", *counter_.borrow());
 
         let alpha = (alpha_slider.get_position() * 255.0) as u8;

@@ -9,16 +9,16 @@ use {
 #[derive(Clone)]
 pub struct RadioButtons {
     pub pane: SelectablePane,
-    pub on_ch: Rc<RefCell<char>>,
     /// ch used for the selected
-    pub off_ch: Rc<RefCell<char>>,
+    pub on_ch: Rc<RefCell<char>>,
     /// ch used for the unselected
-    pub radios: Rc<RefCell<Vec<String>>>,
+    pub off_ch: Rc<RefCell<char>>,
     /// the text for each radio button
-    pub clicked_down: Rc<RefCell<bool>>,
+    pub radios: Rc<RefCell<Vec<String>>>,
     /// activated when mouse is clicked down while over object
-    pub selected: Rc<RefCell<usize>>,
+    pub clicked_down: Rc<RefCell<bool>>,
     /// which radio button is selected
+    pub selected: Rc<RefCell<usize>>,
 
     /// function which executes when the radio selection is changed
     ///                                           (index, selected)
@@ -32,7 +32,6 @@ pub type RadioButtonsFn = Box<dyn FnMut(Context, usize, String) -> EventResponse
 /// ◯ ◉ ◯ ○
 /// ◯ ◯   ●
 /// ⍟ ◉ ◯ ○
-
 impl RadioButtons {
     const KIND: &'static str = "radio";
 

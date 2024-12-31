@@ -275,11 +275,6 @@ impl WindowPane {
         match ev {
             Event::Mouse(me) => {
                 *captured = true;
-                //if let MouseEventKind::Down(_) = me.kind {
-                //    resps.push(EventResponse::BringToFront);
-                //    resps.push(EventResponse::UnfocusOthers);
-                //    resps.push(EventResponse::Focus);
-                //}
 
                 let mr = (*self.minimized_restore.borrow()).clone();
                 match me.kind {

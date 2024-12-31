@@ -262,7 +262,6 @@ pub fn impl_pane_basics_from(attr: TokenStream, item: TokenStream) -> TokenStrea
             let fn_args = quote! {#(#fn_args),*};
 
             // convert the function name from a "with_" to a "set_" function
-            //let fn_name = &tr_fn.sig.ident;
             let fn_name = syn::Ident::new(
                 &format!(
                     "set_{}",

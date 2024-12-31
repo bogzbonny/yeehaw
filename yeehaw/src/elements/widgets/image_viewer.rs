@@ -37,7 +37,6 @@ impl ImageViewer {
             Picker::from_query_stdio()?
         };
 
-        //let mut picker = Picker::from_fontsize((10, 20));
         let rgba = bg.to_rgba();
         picker.set_background_color([rgba.r, rgba.g, rgba.b, rgba.a]);
 
@@ -51,7 +50,6 @@ impl ImageViewer {
             last_size: Rc::new(RefCell::new(Size::default())),
             resize: Rc::new(RefCell::new(Resize::Scale(None))),
         };
-        //out.update_content(ctx);
         Ok(out)
     }
 
@@ -78,7 +76,6 @@ impl ImageViewer {
         let area = ratatui::layout::Rect::new(0, 0, dr.size.width, dr.size.height);
 
         let mut buffer = ratatui::buffer::Buffer::empty(area);
-        //let mut buffer = ratatui::buffer::Buffer::filled(area, cell);
         let st_image = StatefulImage::default().resize(self.resize.borrow().clone().into());
         st_image.render(area, &mut buffer, &mut self.st_pro.borrow_mut());
 
@@ -93,9 +90,7 @@ impl ImageViewer {
 impl Element for ImageViewer {
     fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         if let Event::Resize = ev {
-            debug!("resizing image");
             // need to re-get the picker as there should be a new font size
-
             let picker_proto = std::env::var("YH_IMG_PROTOCOL").is_ok();
             let mut picker = if picker_proto {
                 Picker::from_fontsize((10, 20))
@@ -107,7 +102,6 @@ impl Element for ImageViewer {
                 p
             };
 
-            //let mut picker = Picker::from_fontsize((10, 20));
             let rgba = self.bg.borrow().to_rgba();
             picker.set_background_color([rgba.r, rgba.g, rgba.b, rgba.a]);
 

@@ -55,15 +55,6 @@ impl DrawRegion {
         }
     }
 
-    /// create a new context for initialization of a child element where the size of the child is
-    /// not yet known
-    //pub fn child_init_draw_region(&self) -> Self {
-    //    Self {
-    //        size: Size::default(),
-    //        visible_region: None,
-    //    }
-    //}
-
     pub fn with_visible_region(mut self, vr: Option<Loc>) -> Self {
         self.visible_region = vr;
         self

@@ -377,7 +377,6 @@ impl Spacing {
         // get the label with 0 as the first value
         let max_lh_width = self.max_lefthand_width(labels.clone());
         let max_rh_width = self.max_righthand_width(labels.clone());
-        //debug!("max_lh_width: {}, max_rh_width: {}", max_lh_width, max_rh_width);
         let a = labels
             .iter()
             .find_map(|(i, l)| if *i == 0 { Some(l.clone()) } else { None })
@@ -719,9 +718,6 @@ impl Spacing {
                     pos_map_str = pos_map_str.split("\n").take(3).collect::<Vec<&str>>().join("\n");
                 }
 
-                //debug!("pos_map_str: \n{}", pos_map_str);
-                //debug!("base: \n{}", base);
-
                 let pos_map = ArbSelector::positions_string_to_map(&pos_map_str);
                 ArbSelector::new_inner(ctx, base, pos_map, sel_changes)
             }
@@ -1053,10 +1049,6 @@ impl Spacing {
                     sel_changes.push((11, l_sel_changes));
                 }
 
-                //debug!("PRE removing");
-                //debug!("pos_map_str: \n{}", pos_map_str);
-                //debug!("base: \n{}", base);
-
                 // remove 3 or 4 right hand column if there are no right hand labels
                 if !has_a && !has_b && !has_c && !has_d && !has_e && !has_f{
                     let n = if semi {3} else {4};
@@ -1097,7 +1089,6 @@ impl Spacing {
 
                 // remove the top if there are no top labels
                 if !has_l && !has_a {
-                    //debug!("removing top");
                     base.remove_top(1);
                     pos_map_str = pos_map_str.split("\n").skip(1).collect::<Vec<&str>>().join("\n"); 
                     for sel_change in sel_changes.iter_mut() {
@@ -1111,22 +1102,16 @@ impl Spacing {
                 //      OptionG  OptionF     
                 // remove the bottom of base and pos_map_str if there are no bottom labels
                 if !has_g && !has_f {
-                    //debug!("removing bottom");
                     base.remove_bottom(1);
                     let line_count = pos_map_str.split("\n").count();
                     pos_map_str = pos_map_str.split("\n").take(line_count - 1).collect::<Vec<&str>>().join("\n");
                 }
                 // remove the bottom again if there are no bottom labels for last two rows
                 if !has_g && !has_f && !has_h && !has_e {
-                    //debug!("removing bottom again");
                     base.remove_bottom(1);
                     let line_count = pos_map_str.split("\n").count();
                     pos_map_str = pos_map_str.split("\n").take(line_count - 1).collect::<Vec<&str>>().join("\n");
                 }
-
-                //debug!("POST removing");
-                //debug!("pos_map_str: \n{}", pos_map_str);
-                //debug!("base: \n{}", base);
 
                 let pos_map = ArbSelector::positions_string_to_map(&pos_map_str);
                 ArbSelector::new_inner(ctx, base, pos_map, sel_changes)

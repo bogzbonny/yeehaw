@@ -49,7 +49,7 @@ impl<N: Display + Clone + Copy + FromStr + PartialOrd + 'static> NumbersTextBox<
     }
 
     // ---------------------------------------------------------
-    /// Decorators
+    // Decorators
 
     pub fn with_fn(self, f: Option<ValueChangedHook<N>>) -> Self {
         self.set_fn(f);

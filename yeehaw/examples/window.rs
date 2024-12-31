@@ -17,8 +17,6 @@ async fn main() -> Result<(), Error> {
     let ctx_ = ctx.clone();
     let counter_ = counter.clone();
     let add_button_click_fn = Box::new(move |_btn: Button, _| {
-        //ctx_.size.width = 30;
-        //ctx_.size.height = 20;
         let title = format!("Pane {}", *counter_.borrow());
         let bg = Color::new_with_alpha(150, 150, 155, 150);
         let fg = Color::new_with_alpha(150, 150, 155, 150);
@@ -46,18 +44,12 @@ async fn main() -> Result<(), Error> {
             EventResponse::UnfocusOthers,
             EventResponse::Focus,
         ];
-        //let mut resps = btn.pane.deselect();
-        //let resp = EventResponse::NewElement(Box::new(window.clone()), Some(inner_resps.into()));
-        //resps.push(resp);
-        //resps
         EventResponse::NewElement(Box::new(window.clone()), Some(inner_resps.into())).into()
     });
 
     let ctx_ = ctx.clone();
     let counter_ = counter.clone();
     let add_button_scr_click_fn = Box::new(move |_, _| {
-        //ctx_.size.width = 30;
-        //ctx_.size.height = 20;
         let title = format!("Pane {}", *counter_.borrow());
         let bg = Color::new_with_alpha(150, 150, 155, 150);
         let fg = Color::new_with_alpha(150, 150, 155, 150);
@@ -73,7 +65,6 @@ async fn main() -> Result<(), Error> {
 
         let sc_pane = PaneScrollable::new_expanding(&ctx_, 30, 20);
         sc_pane.add_element(Box::new(el));
-        //let sc_pane = Bordered::new_borderless_with_scrollbars(&ctx_, Box::new(sc_pane), sty);
         let border_sty = sty.clone().with_fg(Color::WHITE);
         let sc_pane = Bordered::new_borderless_with_scrollbars_and_thin_left(
             &ctx_,
@@ -106,8 +97,6 @@ async fn main() -> Result<(), Error> {
     let ctx_ = ctx.clone();
     let counter_ = counter.clone();
     let add_term_click_fn = Box::new(move |_, _| {
-        //ctx_.size.width = 30;
-        //ctx_.size.height = 20;
         let title = format!("Pane {}", *counter_.borrow());
         let el = TerminalPane::new(&ctx_)
             .expect("terminal pane can't be created")
@@ -132,8 +121,6 @@ async fn main() -> Result<(), Error> {
     let ctx_ = ctx.clone();
     let counter_ = counter.clone();
     let add_button_bordered_resizer_fn = Box::new(move |_, _| {
-        //ctx_.size.width = 30;
-        //ctx_.size.height = 20;
         let title = format!("Bordered Pane {}", *counter_.borrow());
         let bg = Color::new_with_alpha(150, 150, 155, 150);
         let fg = Color::new_with_alpha(150, 150, 155, 150);
@@ -168,8 +155,6 @@ async fn main() -> Result<(), Error> {
     let ctx_ = ctx.clone();
     let counter_ = counter.clone();
     let add_button_bordered_mover_fn = Box::new(move |_, _| {
-        //ctx_.size.width = 30;
-        //ctx_.size.height = 20;
         let title = format!("Bordered Pane {}", *counter_.borrow());
         let bg = Color::new_with_alpha(150, 150, 155, 150);
         let fg = Color::new_with_alpha(150, 150, 155, 150);
@@ -203,8 +188,6 @@ async fn main() -> Result<(), Error> {
     let ctx_ = ctx.clone();
     let counter_ = counter.clone();
     let add_button_bordered_scr_click_fn = Box::new(move |_, _| {
-        //ctx_.size.width = 30;
-        //ctx_.size.height = 20;
         let title = format!("Pane {}", *counter_.borrow());
         let bg = Color::new_with_alpha(150, 150, 155, 150);
         let fg = Color::new_with_alpha(150, 150, 155, 150);

@@ -6,10 +6,10 @@ use {
 #[derive(Clone)]
 pub struct Checkbox {
     pub pane: SelectablePane,
-    pub checked: Rc<RefCell<bool>>,
     /// whether the checkbox is checked or not
-    pub clicked_down: Rc<RefCell<bool>>,
+    pub checked: Rc<RefCell<bool>>,
     /// activated when mouse is clicked down while over object
+    pub clicked_down: Rc<RefCell<bool>>,
 
     /// rune to use for the checkmark
     /// recommended:  √ X x ✖
@@ -26,7 +26,6 @@ impl Checkbox {
     const KIND: &'static str = "checkbox";
 
     const STYLE: SelStyles = SelStyles {
-        //selected_style: Style::new_const(Color::BLACK, Color::LIGHT_YELLOW2)
         selected_style: Style::new_const(Color::BLACK, Color::YELLOW)
             .with_attrs(Attributes::new().with_bold()),
         ready_style: Style::new_const(Color::BLACK, Color::WHITE)

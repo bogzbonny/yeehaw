@@ -50,10 +50,10 @@ pub type ListBoxFn = Box<dyn FnMut(Context, Vec<String>) -> EventResponses>;
 
 #[derive(Clone)]
 pub enum SelectionMode {
-    Single,
     /// only one item is selectable at a time, each selection will deselect the previous selected
-    NoLimit,
+    Single,
     /// all items are selectable
+    NoLimit,
 
     /// n items are selectable at a time, once n items are selected, no more items can
     /// be selected until one of the selected items is deselected
@@ -112,7 +112,6 @@ impl ListBox {
 
     pub fn with_styles(self, styles: SelStyles) -> Self {
         self.pane.set_styles(styles);
-        //self.inner.borrow().update_content(init_ctx);
         self.inner.borrow().is_dirty.replace(true);
         self
     }
@@ -152,7 +151,6 @@ impl ListBox {
                 return self;
             }
         }
-        //sb.set_scrollable_view_size(init_ctx.child_context(&self.pane.get_dyn_location().get_size(DrawRegion::default())).size);
 
         let size = &self
             .pane
@@ -175,34 +173,29 @@ impl ListBox {
         self.pane.set_dyn_height(DynVal::new_fixed(
             self.inner.borrow().entries.borrow().len() as i32 * lines as i32,
         ));
-        //self.inner.borrow().update_content(init_ctx);
         self.inner.borrow().is_dirty.replace(true);
         self
     }
 
     pub fn with_selection_mode(self, mode: SelectionMode) -> Self {
         *self.inner.borrow().selection_mode.borrow_mut() = mode;
-        //self.inner.borrow().update_content(init_ctx);
         self.inner.borrow().is_dirty.replace(true);
         self
     }
 
     pub fn with_dyn_width(self, width: DynVal) -> Self {
         self.pane.set_dyn_width(width);
-        //self.inner.borrow().update_content(init_ctx);
         self.inner.borrow().is_dirty.replace(true);
         self
     }
     pub fn with_dyn_height(self, height: DynVal) -> Self {
         self.pane.set_dyn_height(height);
-        //self.inner.borrow().update_content(init_ctx);
         self.inner.borrow().is_dirty.replace(true);
         self
     }
     pub fn with_size(self, width: DynVal, height: DynVal) -> Self {
         self.pane.set_dyn_width(width);
         self.pane.set_dyn_height(height);
-        //self.inner.borrow().update_content(init_ctx);
         self.inner.borrow().is_dirty.replace(true);
         self
     }
@@ -246,7 +239,6 @@ impl ListBoxInner {
             .with_dyn_height(DynVal::FULL)
             .with_focused(true);
 
-        //lb.update_content(init_ctx);
         ListBoxInner {
             pane,
             current_sty: Rc::new(RefCell::new(Style::default())),
@@ -335,7 +327,6 @@ impl ListBoxInner {
     pub fn set_entries(&self, entries: Vec<String>) {
         *self.entries.borrow_mut() = entries;
         self.is_dirty.replace(true);
-        //self.update_content(ctx);
     }
 
     pub fn update_content(&self, dr: &DrawRegion) {
@@ -351,7 +342,6 @@ impl ListBoxInner {
         self.pane.set_content_from_string(&content);
         self.update_highlighting(dr);
         self.correct_offsets(dr);
-        //self.is_dirty.replace(true);
     }
 
     /// need to reset the content in order to reflect active style
@@ -415,7 +405,6 @@ impl ListBoxInner {
                 return false;
             }
         }
-        //self.correct_offsets(ctx);
         out
     }
 
@@ -439,7 +428,6 @@ impl ListBoxInner {
                 return false;
             }
         }
-        //self.correct_offsets(ctx);
         out
     }
 

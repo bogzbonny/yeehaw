@@ -4,10 +4,10 @@ use {
     portable_pty::CommandBuilder,
 };
 
-/// TODO implement/test editor missing case
-/// save / revert buttons
+// TODO implement/test editor missing case
+// save / revert buttons
 
-/// TODO make into a selectible widget once widget is refactored into element
+// TODO make into a selectible widget once widget is refactored into element
 
 /// NOTE this is not the most secure thing as it uses temp files to store the text
 /// but it is the easiest way to get a text editor in a terminal
@@ -26,8 +26,8 @@ pub struct TermEditorPane {
     pub tempfile: Rc<RefCell<Option<tempfile::NamedTempFile>>>,
     pub editor_is_open: Rc<RefCell<bool>>,
 
-    pub non_editing_textbox: Rc<RefCell<TextBox>>,
     /// the textbox when not being edited for viewing the text
+    pub non_editing_textbox: Rc<RefCell<TextBox>>,
 
     /// if the tempfile was just created (and thus the text is empty)
     pub just_created: Rc<RefCell<bool>>,
@@ -225,7 +225,6 @@ impl Element for TermEditorPane {
                 match me.kind {
                     MouseEventKind::Down(MouseButton::Left) => {
                         *self.clicked_down.borrow_mut() = true;
-                        //return (true, EventResponses::default());
                     }
                     MouseEventKind::Up(MouseButton::Left) if clicked_down => {
                         self.pane.clear_elements();

@@ -75,30 +75,6 @@ impl MouseEvent {
     }
 }
 
-//impl From<crossterm::event::MouseEvent> for RelMouseEvent {
-//    fn from(me: crossterm::event::MouseEvent) -> Self {
-//        RelMouseEvent {
-//            kind: me.kind,
-//            column: me.column as i32,
-//            row: me.row as i32,
-//            modifiers: me.modifiers,
-//        }
-//    }
-//}
-
-//impl From<RelMouseEvent> for crossterm::event::MouseEvent {
-//    fn from(me: RelMouseEvent) -> Self {
-//        let column = if me.column < 0 { 0 } else { me.column as u16 };
-//        let row = if me.row < 0 { 0 } else { me.row as u16 };
-//        crossterm::event::MouseEvent {
-//            kind: me.kind,
-//            column,
-//            row,
-//            modifiers: me.modifiers,
-//        }
-//    }
-//}
-
 impl From<crossterm::event::KeyEvent> for ReceivableEvent {
     fn from(key: crossterm::event::KeyEvent) -> Self {
         ReceivableEvent::KeyCombo(vec![key.into()])

@@ -283,10 +283,6 @@ impl DropdownList {
         let h = self.expanded_height();
         self.pane.set_dyn_height(DynVal::new_fixed(h as i32));
 
-        // must set the content for the offsets to be correct
-        //let mut ctx = ctx.clone();
-        //ctx.size.height = h as u16;
-
         let mut dr = DrawRegion::default().with_size(*self.pane.get_last_size());
         dr.size.height = h as u16;
         self.pane.set_content_from_string(self.text(&dr));

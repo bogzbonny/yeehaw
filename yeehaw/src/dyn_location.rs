@@ -158,21 +158,6 @@ impl DynLocation {
         Size::new(self.width(dr) as u16, self.height(dr) as u16)
     }
 
-    //pub fn adjusted_mouse_event(&self, ev: &MouseEvent) -> MouseEvent {
-    //    let (x_adj, y_adj) = (ev.column, ev.row);
-    //    let start_x = self.get_start_x(&ev.dr);
-    //    let start_y = self.get_start_y(&ev.dr);
-    //    let start_x = if start_x < 0 { 0 } else { start_x as u16 };
-    //    let start_y = if start_y < 0 { 0 } else { start_y as u16 };
-    //    let x_adj = x_adj.saturating_sub(start_x);
-    //    let y_adj = y_adj.saturating_sub(start_y);
-    //    let mut ev = ev.clone();
-    //    ev.dr = dr.child_region(&self);
-    //    ev.column = x_adj;
-    //    ev.row = y_adj;
-    //    ev
-    //}
-
     pub fn adjusted_mouse_event(&self, ev: &MouseEvent) -> MouseEvent {
         let (x_adj, y_adj) = (ev.column, ev.row);
         let start_x = self.get_start_x(&ev.dr);
@@ -186,19 +171,6 @@ impl DynLocation {
         ev.row = y_adj.clamp(-1000, 1000);
         ev
     }
-
-    ///// TODO remove dup code with above
-    //pub fn adjust_mouse_event_external2(&self, dr: &DrawRegion, mut ev: MouseEvent) -> MouseEvent {
-    //    let (x_adj, y_adj) = (ev.column, ev.row);
-    //    let start_x = self.get_start_x(dr);
-    //    let start_y = self.get_start_y(dr);
-    //    let x_adj = x_adj - start_x;
-    //    let y_adj = y_adj - start_y;
-    //    ev.column = x_adj.clamp(-1000, 1000);
-    //    // for bugs when dragging off screen
-    //    ev.row = y_adj.clamp(-1000, 1000);
-    //    ev
-    //}
 
     pub fn adjust_location_by(&mut self, x: DynVal, y: DynVal) {
         self.start_x.plus_in_place(x.clone());

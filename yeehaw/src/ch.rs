@@ -729,27 +729,4 @@ mod tests {
         assert_eq!(chs3.size(), Size::new(3, 4));
         assert_eq!(chs3.to_string(), "abc\ndef\n123\n456");
     }
-
-    // TODO fix text
-    //#[test]
-    //fn test_adjust_by_location() {
-    //    let a = DrawCh::new('a', Style::default_const());
-    //    let b = DrawCh::new('b', Style::default_const());
-    //    let c = DrawCh::new('c', Style::default_const());
-    //    let chs = vec![
-    //        DrawChPos::new(a, 0, 0),
-    //        DrawChPos::new(b, 1, 0),
-    //        DrawChPos::new(c, 2, 3),
-    //    ];
-    //    let loc = Location::new(10, 20, 30, 40);
-
-    //    let mut out = Vec::new();
-    //    for mut ch in chs {
-    //        ch.adjust_by_location(&loc);
-    //        out.push(ch);
-    //    }
-    //    assert_eq!(out[0], DrawChPos::new(a, 10, 30));
-    //    assert_eq!(out[1], DrawChPos::new(b, 11, 30));
-    //    assert_eq!(out[2], DrawChPos::new(c, 12, 33));
-    //}
 }

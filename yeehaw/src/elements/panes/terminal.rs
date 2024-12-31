@@ -51,14 +51,6 @@ impl TerminalPane {
     }
 
     pub fn new_with_builder(ctx: &Context, cmd: CommandBuilder) -> Result<Self, Error> {
-        //let mut size = ctx.size;
-        //if size.width == 0 {
-        //    size.width = 5;
-        //}
-        //if size.height == 0 {
-        //    size.height = 5;
-        //}
-
         // need this as the pty will not open if the size is 0
         let size = Size::new(5, 5);
 

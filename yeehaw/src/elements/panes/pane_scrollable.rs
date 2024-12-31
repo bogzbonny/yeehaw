@@ -133,7 +133,6 @@ impl Element for PaneScrollable {
             me.dr = self.inner_draw_region(&me.dr);
         }
 
-        //let (mut captured, resps) = self.pane.receive_event(&inner_dr, ev.clone());
         let (mut captured, resps) = self.pane.receive_event(ctx, adj_ev);
         if captured {
             return (captured, resps);

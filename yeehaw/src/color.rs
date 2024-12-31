@@ -15,7 +15,7 @@ use {
 pub struct ColorStore {
     pub pos_gradients: Rc<RefCell<Vec<Vec<(DynVal, Color)>>>>,
     pub time_gradients: Rc<RefCell<Vec<Vec<(Duration, Color)>>>>,
-    pub patterns: Rc<RefCell<Vec<Vec<Vec<Color>>>>>,
+    pub patterns: Rc<RefCell<Vec<Vec<Vec<Color>>>>>, //(Vec< (y) < Vec< (x) < Color>>>)
 }
 
 impl ColorStore {
@@ -51,15 +51,7 @@ impl ColorStore {
     }
 }
 
-//#[derive(Clone)]
-//pub struct ColorContext {
-//    pub store: ColorStore,
-//    pub size: Size,
-//    pub dur_since_launch: Duration,
-//}
-
 // TODO color radial pinwheel (each angle has a different color)
-
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug)]
 pub enum Color {
     ANSI(CrosstermColor),
@@ -462,7 +454,6 @@ pub struct Gradient {
     pub angle_deg: f64,
 
     /// pos, color
-    //pub grad: Vec<(DynVal, Color)>,
     pub gradient_id: usize,
 }
 
@@ -1172,18 +1163,18 @@ impl TimeGradient {
 /// WARNING larger patterns render considerably more slowly
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Default)]
 pub struct Pattern {
-    //pub pattern: Vec<Vec<Color>>, // outer: y, inner: x
-    pub pattern_id: usize, // outer: y, inner: x
+    pub pattern_id: usize,
     pub offset: (i32, i32),
 }
 
 impl Pattern {
-    //pub fn new(pattern: Vec<Vec<Color>>) -> Self {
-    //    Pattern {
-    //        pattern,
-    //        offset: (0, 0),
-    //    }
-    //}
+    pub fn new(store: &ColorStore, pattern: Vec<Vec<Color>>) -> Self {
+        let pattern_id = store.add_pattern(pattern.clone());
+        Pattern {
+            pattern_id,
+            offset: (0, 0),
+        }
+    }
 
     // tile pattern with the given tile width and height
     pub fn new_tiles(
@@ -1203,16 +1194,7 @@ impl Pattern {
             }
             pattern.push(row);
         }
-
-        {
-            let patterns = store.patterns.borrow();
-            debug!("adding pattern, patterns len {}", patterns.len());
-        }
         let pattern_id = store.add_pattern(pattern.clone());
-        {
-            let patterns = store.patterns.borrow();
-            debug!("end adding pattern, patterns len {}", patterns.len());
-        }
 
         Pattern {
             pattern_id,
@@ -1319,40 +1301,40 @@ pub fn blend(c1: Rgba, c2: Rgba, perc_c2: f64) -> Rgba {
         as u8;
     let a = ((c1.a as f64 * perc_c1 * c1_a_perc + c2.a as f64 * perc_c2 * c2_a_perc) / a_blend_perc)
         as u8;
-    //let a = (a_blend_perc * 255.0) as u8;
-
     Rgba::new_with_alpha(r, g, b, a)
 }
 
-///// This is a different blend function that takes into account the alpha of the colors
-///// and mixes in the opposite color for each alpha.
-//pub fn blend2(c1: Rgba, c2: Rgba, perc_c2: f64) -> Rgba {
-//    let c1_a_perc = c1.a as f64 / 255.0;
-//    let c2_a_perc = c2.a as f64 / 255.0;
-//    let a_blend_perc = c1_a_perc + c2_a_perc - (c1_a_perc * c2_a_perc);
-//    //let a_blend_perc = (c1_a_perc + c2_a_perc) / 2.;
+/*
+/// This is a different blend function that takes into account the alpha of the colors
+/// and mixes in the opposite color for each alpha.
+pub fn blend2(c1: Rgba, c2: Rgba, perc_c2: f64) -> Rgba {
+    let c1_a_perc = c1.a as f64 / 255.0;
+    let c2_a_perc = c2.a as f64 / 255.0;
+    let a_blend_perc = c1_a_perc + c2_a_perc - (c1_a_perc * c2_a_perc);
+    //let a_blend_perc = (c1_a_perc + c2_a_perc) / 2.;
 
-//    let perc_c1 = 1. - perc_c2;
+    let perc_c1 = 1. - perc_c2;
 
-//    let r = ((c1.r as f64 * perc_c1 * c1_a_perc
-//        + c1.r as f64 * perc_c2 * (1. - c2_a_perc)
-//        + c2.r as f64 * perc_c2 * c2_a_perc
-//        + c2.r as f64 * perc_c1 * (1. - c1_a_perc))
-//        / a_blend_perc) as u8;
-//    let g = ((c1.g as f64 * perc_c1 * c1_a_perc
-//        + c1.g as f64 * perc_c2 * (1. - c2_a_perc)
-//        + c2.g as f64 * perc_c2 * c2_a_perc
-//        + c2.g as f64 * perc_c1 * (1. - c1_a_perc))
-//        / a_blend_perc) as u8;
-//    let b = ((c1.b as f64 * perc_c1 * c1_a_perc
-//        + c1.b as f64 * perc_c2 * (1. - c2_a_perc)
-//        + c2.b as f64 * perc_c2 * c2_a_perc
-//        + c2.b as f64 * perc_c1 * (1. - c1_a_perc))
-//        / a_blend_perc) as u8;
+    let r = ((c1.r as f64 * perc_c1 * c1_a_perc
+        + c1.r as f64 * perc_c2 * (1. - c2_a_perc)
+        + c2.r as f64 * perc_c2 * c2_a_perc
+        + c2.r as f64 * perc_c1 * (1. - c1_a_perc))
+        / a_blend_perc) as u8;
+    let g = ((c1.g as f64 * perc_c1 * c1_a_perc
+        + c1.g as f64 * perc_c2 * (1. - c2_a_perc)
+        + c2.g as f64 * perc_c2 * c2_a_perc
+        + c2.g as f64 * perc_c1 * (1. - c1_a_perc))
+        / a_blend_perc) as u8;
+    let b = ((c1.b as f64 * perc_c1 * c1_a_perc
+        + c1.b as f64 * perc_c2 * (1. - c2_a_perc)
+        + c2.b as f64 * perc_c2 * c2_a_perc
+        + c2.b as f64 * perc_c1 * (1. - c1_a_perc))
+        / a_blend_perc) as u8;
 
-//    let a = (a_blend_perc * 255.0) as u8;
-//    Rgba::new_with_alpha(r, g, b, a)
-//}
+    let a = (a_blend_perc * 255.0) as u8;
+    Rgba::new_with_alpha(r, g, b, a)
+}
+*/
 
 impl Rgba {
     pub const fn new(r: u8, g: u8, b: u8) -> Self {

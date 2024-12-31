@@ -92,7 +92,6 @@ pub trait Element: DynClone {
     /// NOTE use caution when setting hooks, they can be used to create circular references between elements
     /// el_id is the element-id of the element registering the hook to THIS element
     /// the hook is a function that takes the kind of the hook and the hooked element
-
     fn set_hook(&self, kind: &str, el_id: ElementID, hook: HookFn);
 
     fn remove_hook(&self, kind: &str, el_id: ElementID);
@@ -151,7 +150,6 @@ pub trait Element: DynClone {
 
     // -------------------------------------------------------
     /// used by scrollbars
-
     fn set_content_x_offset(&self, dr: Option<&DrawRegion>, x: usize);
     fn set_content_y_offset(&self, dr: Option<&DrawRegion>, y: usize);
     fn get_content_x_offset(&self) -> usize;
@@ -160,7 +158,7 @@ pub trait Element: DynClone {
     fn get_content_height(&self, dr: Option<&DrawRegion>) -> usize;
 
     // -------------------------------------------------------
-    /// Freebies
+    // Freebies
 
     fn with_description(self, desc: String) -> Self
     where
@@ -441,7 +439,6 @@ impl DrawingCache {
         //for (ids, z, _) in &self.0 {
         //    debug!("ids: {:?}, z: {:?}", ids, z);
         //}
-
         self.0.sort_by(|(_, a, _), (_, b, _)| a.cmp(b)); // sort by z-indicies ascending order
         self.0.iter().flat_map(|(_, _, d)| d.iter())
     }

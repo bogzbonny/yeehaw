@@ -39,9 +39,21 @@ pub struct Tui {
     pub drawing_cache: DrawingCache,
 
     pub animation_speed: Duration,
-    pub rendering: bool, // true if currently rendering
+
     /// the last time the screen was rendered
     pub last_render: std::time::Instant,
+    pub rendering: bool, // true if currently rendering
+
+    pub last_mouse: std::time::Instant,
+    pub mouse_processing: bool, // true if currently processing mouse events
+    /// A maximum of one mouse event is permitted to be processed per animation duration.
+    /// This prevents a backlog of events from building up when the mouse is moving rapidly.
+    ///
+    /// a mouse backlog is kept for the most recent mouse event which could not be processed due to
+    /// excess mouse events. This backlog is processed at the start of the next tick which will
+    /// normally occur after all the events have been processed by the through the event loop during
+    /// event heavy periods.
+    pub mouse_backlog: Option<CTMouseEvent>,
 
     pub kill_on_ctrl_c: bool,
 
@@ -81,8 +93,11 @@ impl Tui {
             kb: Keyboard::default(),
             launch_instant: std::time::Instant::now(),
             drawing_cache: DrawingCache::default(),
-            rendering: false,
             last_render: std::time::Instant::now(),
+            rendering: false,
+            last_mouse: std::time::Instant::now(),
+            mouse_processing: false,
+            mouse_backlog: Option::None,
             animation_speed: DEFAULT_ANIMATION_SPEED,
             kill_on_ctrl_c: true,
             inline: None,
@@ -286,6 +301,9 @@ impl Tui {
                 }
 
                 _ = delay => {
+                    if self.process_mouse_backlog()? {
+                        break Ok(());
+                    }
                     self.render(false)?;
                 },
             };
@@ -335,6 +353,13 @@ impl Tui {
     /// process_event_mouse handles mouse events
     ///                                                                       exit-tui
     pub fn process_event_mouse(&mut self, mut mouse_ev: CTMouseEvent) -> Result<bool, Error> {
+        if self.last_mouse.elapsed() < self.animation_speed || self.mouse_processing {
+            // add to the mouse backlock removing from the front if it gets too long
+            self.mouse_backlog.replace(mouse_ev);
+            return Ok(false);
+        }
+        self.mouse_processing = true;
+
         let ctx = self.context();
         let dr = self.draw_region();
         if let Some(inline) = &self.inline {
@@ -354,7 +379,19 @@ impl Tui {
                 .eo
                 .mouse_event_process(&ctx, &mouse_ev, Box::new(self.cup.clone()));
 
-        process_event_resps(resps, None, &self.cup.eo, self.main_el_id.clone())
+        let out = process_event_resps(resps, None, &self.cup.eo, self.main_el_id.clone());
+        self.last_mouse = std::time::Instant::now(); // important only set this at the end
+        self.mouse_processing = false;
+        out
+    }
+
+    pub fn process_mouse_backlog(&mut self) -> Result<bool, Error> {
+        if let Some(mouse_ev) = self.mouse_backlog.take() {
+            if self.process_event_mouse(mouse_ev)? {
+                return Ok(true);
+            }
+        }
+        Ok(false)
     }
 
     pub fn clear_screen(&mut self) -> Result<(), Error> {
@@ -378,11 +415,12 @@ impl Tui {
     /// provided by each element in order from the bottom of the tree to the top.
     /// This results in elements higher up the tree being able to overwrite elements
     /// lower down the tree.
-    pub fn render(&mut self, from_event: bool) -> Result<(), Error> {
+    pub fn render(&mut self, _from_event: bool) -> Result<(), Error> {
         // reduce the animation speed requirements if the tui is rendering from an event
         // this is to prevent the tui from feeling laggy when a lot of complex-to-render
         // events are being received
-        let delay = if from_event { self.animation_speed * 2 } else { self.animation_speed };
+        //let delay = if from_event { self.animation_speed * 2 } else { self.animation_speed };
+        let delay = self.animation_speed;
 
         if self.last_render.elapsed() < delay || self.rendering {
             return Ok(());

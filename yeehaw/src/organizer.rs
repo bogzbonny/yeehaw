@@ -180,7 +180,6 @@ impl ElementOrganizer {
 
     /// update_el_primary_location updates the primary location of the element with the given id
     pub fn update_el_location_set(&self, el_id: ElementID, loc: DynLocationSet) {
-        //self.locations.entry(el_id).and_modify(|l| (*l) = loc);
         self.els
             .borrow_mut()
             .entry(el_id)
@@ -189,7 +188,6 @@ impl ElementOrganizer {
 
     /// update_el_primary_location updates the primary location of the element with the given id
     pub fn update_el_primary_location(&self, el_id: ElementID, loc: DynLocation) {
-        //self.locations.entry(el_id).and_modify(|l| l.l = loc);
         self.els
             .borrow_mut()
             .entry(el_id)
@@ -536,8 +534,6 @@ impl ElementOrganizer {
                 .get_element_details(&el_id)
                 .expect("no element for destination id in routed_event_process");
 
-            //let child_ctx = ctx.child_context(&el_details.loc.borrow().l);
-            //let (captured, mut resps_) = el_details.el.receive_event(&child_ctx, ev.clone());
             let (captured, mut resps_) = el_details.el.receive_event(ctx, ev.clone());
             self.partially_process_ev_resps(ctx, &el_id, &mut resps_, &parent);
             resps.0.extend(resps_.drain(..));
@@ -586,8 +582,6 @@ impl ElementOrganizer {
     ) -> (bool, EventResponses) {
         let mut resps = EventResponses::default();
         for (el_id, details) in self.els.borrow().iter() {
-            //let el_ctx = ctx.child_context(&details.loc.borrow().l);
-            //let (_, mut resps_) = details.el.receive_event(&el_ctx, ev.clone());
             let (_, mut resps_) = details.el.receive_event(ctx, ev.clone());
             self.partially_process_ev_resps(ctx, el_id, &mut resps_, &parent);
             resps.0.extend(resps_.drain(..));
@@ -603,8 +597,6 @@ impl ElementOrganizer {
             .get_element_details(el_id)
             .expect("no element for destination id in send_event_to_el");
 
-        //let child_ctx = ctx.child_context(&details.loc.borrow().l);
-        //let (_, mut resps) = details.el.receive_event(&child_ctx, ev);
         let (_, mut resps) = details.el.receive_event(ctx, ev);
         self.partially_process_ev_resps(ctx, el_id, &mut resps, &parent);
         resps
@@ -619,8 +611,6 @@ impl ElementOrganizer {
         // initialize all children
         let mut resps = EventResponses::default();
         for (_, details) in self.els.borrow().iter() {
-            //let el_ctx = ctx.child_context(&details.loc.borrow().l);
-            //let (_, mut resp_) = details.el.receive_event(&el_ctx, Event::Initialize);
             let (_, mut resp_) = details.el.receive_event(ctx, Event::Initialize);
             self.partially_process_ev_resps(ctx, &details.el.id(), &mut resp_, &parent);
             resps.0.extend(resp_.drain(..));

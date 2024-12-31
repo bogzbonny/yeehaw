@@ -22,23 +22,6 @@ pub struct Context {
     pub color_store: ColorStore,
 }
 
-///// Default implementation for Context, use only as a dummy value
-//impl Default for Context {
-//    fn default() -> Self {
-//        let (ev_tx, _) = tokio::sync::mpsc::channel::<Event>(1);
-//        Context {
-//            size: Size::default(),
-//            dur_since_launch: std::time::Duration::default(),
-//            visible_region: None,
-//            metadata: HashMap::new(),
-//            parent_ctx: None,
-//            hat: SortingHat::default(),
-//            ev_tx,
-//            color_store: ColorStore::default(),
-//        }
-//    }
-//}
-
 impl Context {
     pub fn new_context_no_dur(
         hat: &SortingHat, ev_tx: Sender<Event>, color_store: &ColorStore,
@@ -77,12 +60,4 @@ impl Context {
     pub fn get_metadata(&self, key: &str) -> Option<Vec<u8>> {
         self.metadata.get(key).cloned()
     }
-
-    //pub fn get_color_context(&self) -> ColorContext {
-    //    ColorContext {
-    //        store: self.color_store.clone(),
-    //        size: self.size,
-    //        dur_since_launch: self.dur_since_launch,
-    //    }
-    //}
 }

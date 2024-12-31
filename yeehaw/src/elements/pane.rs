@@ -436,8 +436,6 @@ impl Pane {
     /// NOTE this name was chosen to distinguish itself from propagate_responses_upward
     pub fn send_responses_upward(&self, ctx: &Context, resps: EventResponses) {
         if let Some(parent) = self.parent.borrow().as_ref() {
-            //let parent_ctx = ctx.must_get_parent_context();
-            //parent.propagate_responses_upward(parent_ctx, &self.id(), resps);
             parent.propagate_responses_upward(ctx, &self.id(), resps);
         }
     }
@@ -552,8 +550,6 @@ impl Element for Pane {
         let view_offset_y = *self.content_view_offset_y.borrow();
         let view_offset_x = *self.content_view_offset_x.borrow();
         let default_ch = self.default_ch.borrow().clone();
-        //let content_height = self.content.borrow().height();
-        //let content_width = self.content.borrow().width();
 
         // convert the Content to DrawChPos
         for y in ymin..ymax {

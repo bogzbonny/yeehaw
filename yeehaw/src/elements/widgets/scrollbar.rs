@@ -5,9 +5,9 @@ use {
     std::ops::{Deref, DerefMut},
 };
 
-/// NOTE the code in this file is structured in a "zipper" fashion between vertical and horizontal
-/// scrollbar, although this increases the line count (extra impl lines everywhere) it is useful for
-/// ensuring that the two scrollbars have consistent code, as similar code is always grouped together.
+// NOTE the code in this file is structured in a "zipper" fashion between vertical and horizontal
+// scrollbar, although this increases the line count (extra impl lines everywhere) it is useful for
+// ensuring that the two scrollbars have consistent code, as similar code is always grouped together.
 
 /// up is backwards, down is forwards
 #[derive(Clone)]
@@ -238,8 +238,8 @@ pub struct Scrollbar {
     /// The ScrollableDomainChs is the scrollable dimension in true characters.
     /// It is AFFECTED by the scrollbar and NOT the literal area of the scrollbar
     /// itself.
-    pub scrollable_domain_chs: Rc<RefCell<usize>>,
     /// how large the area is that can be scrolled
+    pub scrollable_domain_chs: Rc<RefCell<usize>>,
 
     /// how much of the scrollable area is visible in true chars.
     pub scrollable_view_chs: Rc<RefCell<DynVal>>,
@@ -263,8 +263,8 @@ pub struct Scrollbar {
 
     /// is the scrollbar currently being dragged?
     pub currently_dragging: Rc<RefCell<bool>>,
-    pub start_drag_position: Rc<RefCell<usize>>,
     /// in true characters
+    pub start_drag_position: Rc<RefCell<usize>>,
 
     /// The percent (0-100) of the total scrollable domain
     /// to scroll when a click in the scrollbar whitespace is made.
@@ -684,7 +684,7 @@ impl Scrollbar {
 }
 
 // -------------------------------------------------------------------
-/// Specific implementations for the vertical and horizontal scrollbars
+// Specific implementations for the vertical and horizontal scrollbars
 
 impl VerticalScrollbar {
     pub fn external_change(

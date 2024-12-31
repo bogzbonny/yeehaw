@@ -84,7 +84,6 @@ impl ParentPane {
     // -------------------------------------
     // Element functions
 
-    //pub fn get_element_by_id(&self, el_id: &ElementID) -> Option<Rc<RefCell<dyn Element>>> {
     pub fn get_element(&self, el_id: &ElementID) -> Option<Box<dyn Element>> {
         self.eo.get_element(el_id)
     }
@@ -130,11 +129,8 @@ impl Element for ParentPane {
         rec
     }
 
-    //                                                     (captured, resp         )
+    //                                               (captured, resp          )
     fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        //if let Event::Mouse(_) = ev {
-        //    debug!("id: {}, focused: {}", self.id(), self.get_focused());
-        //}
         self.eo.event_process(ctx, ev, Box::new(self.clone()))
     }
 

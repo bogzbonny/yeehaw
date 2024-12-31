@@ -24,7 +24,6 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
     let y = DynVal::y_after(&description, 1);
     el.add_element(Box::new(description));
 
-    //let x_tog = DynVal::new_fixed(18);
     let x_tog = first_col_end.minus(12.into());
     let toggle = Toggle::new(ctx, "  fg  ".to_string(), "  bg  ".to_string()).at(x_tog, y.clone());
     let y = DynVal::y_after(&toggle, 0);
@@ -777,7 +776,6 @@ impl ColorsDemoState {
                 .get_selected_str()
                 .parse::<usize>()
                 .unwrap();
-            debug!("max_i: {}", max_i);
             match self.dial_color_kind.get_value().as_str() {
                 "Solid" => {
                     demo_color.solid_state =
@@ -806,7 +804,6 @@ impl ColorsDemoState {
                     colors[dd_i] = Color::new_with_alpha(r as u8, g as u8, b as u8, a as u8);
 
                     let trunc_colors = colors.iter().take(max_i).cloned().collect::<Vec<Color>>();
-                    debug!("trunc_colors len: {}", trunc_colors.len());
 
                     let dist = self.dist_ntb.get_value();
                     let gr = RadialGradient::new_basic_circle(
