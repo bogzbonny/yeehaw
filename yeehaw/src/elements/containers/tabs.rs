@@ -6,12 +6,11 @@ use {
 /// TODO dragging tabs
 /// TODO allow for buttons beside the tabs
 /// TODO tab commands
-
+///
 /// The upper tabs pane
 #[derive(Clone)]
 pub struct TabsTop {
     pub pane: ParentPane,
-    #[allow(clippy::type_complexity)]
 
     /// All the elements, their names, and their open functions
     //                      (ElementID, name,   on_open_fn)

@@ -499,7 +499,6 @@ impl Element for VerticalStack {
         //self.ensure_normalized_sizes(ctx);
         let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
 
-        let mut resized = false;
         for resp in resps.iter_mut() {
             let (el_id, top_dy, bottom_dy) = match resp {
                 EventResponse::Resize(r) => {
@@ -555,21 +554,11 @@ impl Element for VerticalStack {
             let mut t_loc = top_el.get_dyn_location_set().clone();
             let mut b_loc = bottom_el.get_dyn_location_set().clone();
 
-            // XXX see if this works after DrawRegion refactor
-            //
-            // original code:
-            // NOTE must set to a a fixed value (aka need to get the size for the pane DynVal
-            // using ctx here. if we do not then the next pane position drag will be off
-            //let t_start_y = t_loc.get_start_y(ctx);
-            //let t_end_y = t_loc.get_end_y(ctx);
-            //let b_start_y = b_loc.get_start_y(ctx);
-            //let b_end_y = b_loc.get_end_y(ctx);
-            //let b_start_y_adj = b_start_y + change_dy;
-            //let t_end_y_adj = t_end_y + change_dy;
-
             let last_size = *self.last_size.borrow();
             let dr = DrawRegion::default().with_size(last_size);
 
+            // NOTE must set to a a fixed value (aka need to get the size for the pane DynVal
+            // using ctx here. if we do not then the next pane position drag will be off
             let t_start_y = t_loc.get_start_y(&dr);
             let t_end_y = t_loc.get_end_y(&dr);
             let b_start_y = b_loc.get_start_y(&dr);
@@ -590,14 +579,8 @@ impl Element for VerticalStack {
             b_loc.set_start_y(b_start_y_adj);
             bottom_el.set_dyn_location_set(b_loc);
             top_el.set_dyn_location_set(t_loc);
-            resized = true;
 
             *resp = EventResponse::None;
-        }
-        if resized {
-            let (_, r) = self.pane.receive_event(ctx, Event::Resize);
-            resps.extend(r);
-            //self.normalize_locations(ctx);
         }
         (captured, resps)
     }
@@ -615,7 +598,6 @@ impl Element for HorizontalStack {
         //self.ensure_normalized_sizes(ctx);
         let (captured, mut resps) = self.pane.receive_event(ctx, ev.clone());
 
-        let mut resized = false;
         for resp in resps.iter_mut() {
             let (el_id, left_dx, right_dx) = match resp {
                 EventResponse::Resize(r) => {
@@ -669,17 +651,11 @@ impl Element for HorizontalStack {
             let mut l_loc = left_el.get_dyn_location_set().clone();
             let mut r_loc = right_el.get_dyn_location_set().clone();
 
-            // XXX
-            // NOTE must set to a a fixed value (aka need to get the size for the pane DynVal
-            // using ctx here. if we do not then the next pane position drag will be off
-            //let l_start_x = l_loc.get_start_x(ctx);
-            //let l_end_x = l_loc.get_end_x(ctx);
-            //let r_start_x = r_loc.get_start_x(ctx);
-            //let r_end_x = r_loc.get_end_x(ctx);
-
             let last_size = *self.last_size.borrow();
             let dr = DrawRegion::default().with_size(last_size);
 
+            // NOTE must set to a a fixed value (aka need to get the size for the pane DynVal
+            // using ctx here. if we do not then the next pane position drag will be off
             let l_start_x = l_loc.get_start_x(&dr);
             let l_end_x = l_loc.get_end_x(&dr);
             let r_start_x = r_loc.get_start_x(&dr);
@@ -700,14 +676,8 @@ impl Element for HorizontalStack {
             r_loc.set_start_x(r_start_x_adj);
             right_el.set_dyn_location_set(r_loc);
             left_el.set_dyn_location_set(l_loc);
-            resized = true;
 
             *resp = EventResponse::None;
-        }
-        if resized {
-            let (_, r) = self.pane.receive_event(ctx, Event::Resize);
-            resps.extend(r);
-            //self.normalize_locations(ctx);
         }
         (captured, resps)
     }

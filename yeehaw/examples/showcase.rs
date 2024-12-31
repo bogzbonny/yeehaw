@@ -5,7 +5,7 @@ use {
 };
 
 /// It is recommended to run this example with the `--release` flag (there is a lot going on)
-
+///
 /// NOTE this example requires steam locomotive (`sl`) to be installed if you want
 /// to see the train. Additionally it should be run from this showcase directory
 /// for the showcase-tab to work (which runs `cargo run --release --example showcase`).
@@ -14,7 +14,7 @@ use {
 async fn main() -> Result<(), Error> {
     // uncomment the following line to enable logging
     yeehaw::log::reset_log_file("./debug_test.log".to_string());
-    std::env::set_var("RUST_BACKTRACE", "1");
+    //std::env::set_var("RUST_BACKTRACE", "1");
 
     let (mut tui, ctx) = Tui::new()?;
     let main = PaneScrollable::new_expanding(&ctx, 135, 40);
@@ -285,7 +285,7 @@ pub fn window_generation_zone(
                 sc_pane.add_element(Box::new(el));
                 Box::new(sc_pane)
             }
-            "Terminal" => Box::new(TerminalPane::new(&ctx_).unwrap()),
+            "Terminal" => Box::new(TerminalPane::new(&ctx_).unwrap().with_focused(true)),
             _ => panic!("missing type implementation"),
         };
 

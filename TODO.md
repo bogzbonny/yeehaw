@@ -4,15 +4,16 @@
 01. replace receive_event_inner with just receive_event throughout
 01. unify all the action function names and with fns to just be "with_fn"
     "set_fn"
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 01. remove ctx from click functions thoughout elements... what a pain they are
      - either that or make them a super basic context, with just the ev_sender
        and hat... or not even if you need the context, you should just clone it
        in.
+01. resizing of tab with image in wezterm is leaving artifacts for kitty too.
+01. tuvix image off by one
+01. terminal inside window with border doesn't work
+01. disable debug logging in examples
 
-------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 01. update rust version, update deps
 
@@ -33,9 +34,10 @@
 
 01. make sure duf can run it
 
-01. disable debug logging in examples
-
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+01. in kitty, when expanding a stack with an image in it past the righthand 
+    side the image "loops" to the next line and leaves "skip" artifacts on the next row
 
 01. improper handling of "delete" (control-delete) in textbox interpreted as
     control-h

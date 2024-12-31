@@ -151,7 +151,7 @@ impl Color {
         match self {
             Color::ANSI(c) => crossterm_to_rgb(*c).to_rgba(),
             Color::Rgba(c) => *c,
-            _ => Rgba::new(0, 0, 0),
+            _ => Rgba::new_with_alpha(0, 0, 0, 0),
         }
     }
 
