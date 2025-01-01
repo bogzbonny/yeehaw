@@ -27,7 +27,7 @@
 yeehaw was born out of a need for an embeddable and reusable element pattern for
 sophisticated text based applications. 
 
-**🖐️ Reasons why you need your application to be text-based:**
+🖐️ **Reasons why you need your application to be text-based:**
 1) it's the only way you'll ever be cool again
 2) they're conceptually straightforward, it's just a grid 
 3) they're rapidly iterable during development
@@ -112,7 +112,7 @@ async fn main() -> Result<(), Error> {
  - hover comments for elements
  - vertical tabs (like brave browser) 
  - [.ans]-animation player (using an extended-ansi format)
- - optional mouse pixel support
+ - optional mouse **pixel** support (there's already mouse support)
  - wire-connectors between elements
  - color selector element
  - table element
@@ -185,10 +185,9 @@ If you plan on building/experimenting with yeehaw right now, that's great news!
 I'd like to keep you apprised of some upcoming changes. If you do wish to
 experiment and or start development on yeehaw I wouldn't be too afraid of these
 upcoming changes, the majority of foreseeable major refactors have already been
-completed.  While yeehaw is pre-1.0.0 all breaking changes will take place with
-a semver minor version upgrades which will be all new releases. In the
-short-term I don't plan on providing patch updates for bug fixes for minor
-versions.
+completed.  While yeehaw is pre-1.0.0 all breaking changes will bd semver minor
+version upgrades - in other words I don't plan on providing patch updates for bug
+fixes for minor versions.
 
 I'll try'n help out anyone who needs a hand understanding how to update their
 code if its been broken by a new release. Additionally a breaking changes doc
@@ -198,7 +197,7 @@ HAVE NO FEAR
 
  - There ain't much automated testing in here at all, soon a TUI snapshot tester
    is going to be developed, which should bring up coverage from about 0% as it
-   stands. 
+   stands (yikes!). 
  - Taffy is going to be integrated in as an extension to the `DynLocationSet`
    system. It won't change the existing location mechanisms just build on
    top of them.

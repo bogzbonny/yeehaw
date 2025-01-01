@@ -14,19 +14,16 @@
 01. disable debug logging in examples
 01. update rust version, update deps
 01. add docs, crates button banners to github readme
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 01. just use an image for the banner (and include the existing text as 
     markdown comment
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 01. gif of showcase example - will need to record with non-VHS/asciicinema-tool
     to get mouse movements
      - put the gif in a seperate repo for now to keep the repo lean.
 
 01. add landing page docs for docs.rs
-     - better, doc specific intro text before the example 
-     - link to examples 
      - resolve broken links 
         cargo doc --open
 
@@ -34,8 +31,20 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^ PRE-RELEASE ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+01. showcase bug left and right keys dont work good on the distance slider of
+    the colors example if the size of the screen is large, this is because the 
+    changes made by incrementing the slider by "1 tick" doesn't account for
+    enough of an integer change in the numbers text box, thus the slider gets
+    pushed back to its original output.
+      - solution: have a "minimum increment" option for the slider (in this
+        example it would be min 1/20th) if the position movement is less than
+        this minimum then bump it to the minimum.
+
 01. in kitty, when expanding a stack with an image in it past the righthand 
     side the image "loops" to the next line and leaves "skip" artifacts on the next row
+
+01. numbers textbox + dial slider is a nice pattern which should be grouped
+    together.
 
 01. improper handling of "delete" (control-delete) in textbox interpreted as
     control-h

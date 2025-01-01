@@ -193,7 +193,7 @@ pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
         .with_end_x(first_col_end.clone())
         .with_fn(Box::new(move |_, sl| {
             let p = sl.get_position();
-            let p = (p * 20.) as usize;
+            let p = (p * 20.).round() as usize;
             ntb_.set_value(p);
             EventResponses::default()
         }));

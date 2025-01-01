@@ -1,6 +1,6 @@
 
-`yeehaw` is a batteries included TUI framework, its designed to be highly
-extensible and 
+`yeehaw` is a batteries included TUI framework with a rendering strategy, full
+event routing system and a plethora of elements included.  
 
 ## Quickstart:   <!-- NOTE duplicate in README.md -->
 
@@ -77,7 +77,7 @@ async fn main() -> Result<(), Error> {
  - hover comments for elements
  - vertical tabs (like brave browser) 
  - [.ans]-animation player (using an extended-ansi format)
- - optional mouse pixel support
+ - optional mouse **pixel** support (there's already mouse support)
  - wire-connectors between elements
  - color selector element
  - table element
@@ -122,10 +122,9 @@ If you plan on building/experimenting with yeehaw right now, that's great news!
 I'd like to keep you apprised of some upcoming changes. If you do wish to
 experiment and or start development on yeehaw I wouldn't be too afraid of these
 upcoming changes, the majority of foreseeable major refactors have already been
-completed.  While yeehaw is pre-1.0.0 all breaking changes will take place with
-a semver minor version upgrades which will be all new releases. In the
-short-term I don't plan on providing patch updates for bug fixes for minor
-versions.
+completed.  While yeehaw is pre-1.0.0 all breaking changes will bd semver minor
+version upgrades - in other words I don't plan on providing patch updates for bug
+fixes for minor versions.
 
 I'll try'n help out anyone who needs a hand understanding how to update their
 code if its been broken by a new release. Additionally a breaking changes doc
@@ -135,7 +134,7 @@ HAVE NO FEAR
 
  - There ain't much automated testing in here at all, soon a TUI snapshot tester
    is going to be developed, which should bring up coverage from about 0% as it
-   stands. 
+   stands (yikes!). 
  - Taffy is going to be integrated in as an extension to the `DynLocationSet`
    system. It won't change the existing location mechanisms just build on
    top of them.
@@ -159,19 +158,21 @@ HAVE NO FEAR
 
 ## Performance Considerations
 
-TL;DR - Elements should cache their own drawing content, also things may be
-slighly laggy while in debug mode if deeply nested containers are used.
+TL;DR - Elements should provide drawing updates only when actually necessary,
+also things may be slightly laggy while in debug mode if deeply nested
+containers are used.
 
 The current design of the drawing system favours graphical flexibility over
 performance. Each element must implement the `Drawing` function which in turn
-returns a list of individual positions to draw (`DrawChPos`) which are relative
-to itself, for each redraw a container element will then reposition all the draw
-information of sub-elements. Additionally each container also processes styles
-which change relative to time or position (gradients), All this reprocessing
-which takes place in container elements is computationally inefficient as it
-occurs with each redraw cycle (on changes). The inefficiency introduced by the
-current design may lead to slightly laggy interfaces but primarily only when
-compiled in debug mode and if deeply nested containers are used. Use of parallel
-computation with rayon has been implemented to help mitigate these
-inefficiencies. As such Elements are expected to cache their own drawing
-information to minimize the computational burden at render time.
+returns `DrawUpdate`'s which can list of individual cell updates. For each
+redraw, container elements will then reposition all the draw information of
+their respective sub-elements. All this reprocessing which takes place in
+container elements is computationally inefficient as it occurs with each redraw
+cycle where changes occur. The inefficiency introduced by the current design may
+lead to slightly laggy interfaces but primarily only when compiled in debug mode
+and if deeply nested containers are used AND if those elements are providing
+continuous drawing updates. Use of parallel computation with rayon has been
+implemented to help mitigate these inefficiencies. In conclusion, to minimize
+the computational burden at render time, Elements should track their own state
+and only respond with drawing updates (in `fn drawing(..)`)  when their are
+actual state changes which warrant redrawing.

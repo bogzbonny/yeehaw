@@ -279,7 +279,7 @@ impl Tui {
                             // important to render here to not starve rendering when there
                             // are ample events coming in. Within render it will skip renders if
                             // the animation speed is not met
-                            self.render(true)?;
+                            self.render()?;
                         }
                         Some(Err(e)) => println!("Error: {e:?}\r"),
                         None => break Ok(()),
@@ -304,7 +304,7 @@ impl Tui {
                     if self.process_mouse_backlog()? {
                         break Ok(());
                     }
-                    self.render(false)?;
+                    self.render()?;
                 },
             };
         }
@@ -415,13 +415,8 @@ impl Tui {
     /// provided by each element in order from the bottom of the tree to the top.
     /// This results in elements higher up the tree being able to overwrite elements
     /// lower down the tree.
-    pub fn render(&mut self, _from_event: bool) -> Result<(), Error> {
-        // reduce the animation speed requirements if the tui is rendering from an event
-        // this is to prevent the tui from feeling laggy when a lot of complex-to-render
-        // events are being received
-        //let delay = if from_event { self.animation_speed * 2 } else { self.animation_speed };
+    pub fn render(&mut self) -> Result<(), Error> {
         let delay = self.animation_speed;
-
         if self.last_render.elapsed() < delay || self.rendering {
             return Ok(());
         }

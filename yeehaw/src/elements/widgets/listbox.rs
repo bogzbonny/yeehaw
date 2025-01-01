@@ -387,6 +387,7 @@ impl ListBoxInner {
 
     /// returns if the cursor was moved
     pub fn cursor_up(&self) -> bool {
+        self.is_dirty.replace(true);
         let mut out = true;
         let cursor = *self.cursor.borrow();
         match cursor {
@@ -410,6 +411,7 @@ impl ListBoxInner {
 
     /// returns if the cursor was moved
     pub fn cursor_down(&self) -> bool {
+        self.is_dirty.replace(true);
         let mut out = true;
         let cursor = *self.cursor.borrow();
         match cursor {
