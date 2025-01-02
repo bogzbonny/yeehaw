@@ -18,7 +18,7 @@ async fn main() -> Result<(), Error> {
 
     let (mut tui, ctx) = Tui::new()?;
     let main = PaneScrollable::new_expanding(&ctx, 135, 40);
-    //let limiter = PaneLimiter::new(Box::new(main.clone()), 135, 40);
+    let limiter = PaneLimiter::new(Box::new(main.clone()), 135, 40);
     //let limiter = PaneLimiter::new(Box::new(main.clone()), 1000, 1000);
     let main_vs = VerticalStackFocuser::new(&ctx);
     main.add_element(Box::new(main_vs.clone()));
@@ -91,7 +91,7 @@ async fn main() -> Result<(), Error> {
     let train_pane = TerminalPane::new(&ctx)?;
     train_pane.pane.set_dyn_height(0.7);
     train_pane.pane.set_focused(false);
-    train_pane.execute_command("for i in {1..20}; do sl -l; done ; exit");
+    train_pane.execute_command("for i in {1..200}; do sl -l; done ; exit");
     train_pane.disable_cursor();
     left_pane.push(Box::new(train_pane));
 
@@ -122,8 +122,8 @@ async fn main() -> Result<(), Error> {
     tabs.select(0);
     central_pane.push(Box::new(tabs));
 
-    tui.run(Box::new(main)).await
-    //tui.run(Box::new(limiter)).await
+    //tui.run(Box::new(main)).await
+    tui.run(Box::new(limiter)).await
 }
 
 pub fn bsod(ctx: &Context, main_pane: ParentPane) {

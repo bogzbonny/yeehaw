@@ -261,6 +261,7 @@ impl TextBox {
             .with_dyn_width(DynVal::new_fixed(lnw as i32))
             .with_no_wordwrap()
             .non_editable(init_ctx)
+            .with_no_ch_cursor()
             .non_navigable();
 
         ln_tb.pane.set_end_y(end_y);
@@ -483,23 +484,24 @@ pub struct TextBoxInner {
     pub last_size_for_sbs: Rc<RefCell<Size>>,
 
     pub text: Rc<RefCell<Vec<char>>>,
-    pub text_when_empty: Rc<RefCell<String>>,
     /// greyed out text when the textbox is empty
+    pub text_when_empty: Rc<RefCell<String>>,
     pub text_when_empty_fg: Rc<RefCell<Color>>,
-    pub ch_cursor: Rc<RefCell<bool>>,
+
     /// whether or not this tb has a ch cursor
-    pub editable: Rc<RefCell<bool>>,
+    pub ch_cursor: Rc<RefCell<bool>>,
     /// whether or not this tb can be edited
-    pub wordwrap: Rc<RefCell<bool>>,
+    pub editable: Rc<RefCell<bool>>,
     /// whether or not there are lefthand line numbers
-    pub cursor_pos: Rc<RefCell<usize>>,
+    pub wordwrap: Rc<RefCell<bool>>,
     /// cursor absolute position in the text
-    pub cursor_style: Rc<RefCell<Style>>,
+    pub cursor_pos: Rc<RefCell<usize>>,
     /// whether or not the cursor is visual selecting
-    pub visual_mode: Rc<RefCell<bool>>,
+    pub cursor_style: Rc<RefCell<Style>>,
     /// if the mouse is currently dragging
-    pub mouse_dragging: Rc<RefCell<bool>>,
+    pub visual_mode: Rc<RefCell<bool>>,
     /// the start position of the visual select
+    pub mouse_dragging: Rc<RefCell<bool>>,
     pub visual_mode_start_pos: Rc<RefCell<usize>>,
 
     /// this hook is called each time the text changes (for each letter)
@@ -669,6 +671,16 @@ impl TextBoxInner {
 
     pub fn with_wordwrap(self) -> Self {
         *self.wordwrap.borrow_mut() = true;
+        self
+    }
+
+    pub fn with_ch_cursor(self) -> Self {
+        *self.ch_cursor.borrow_mut() = true;
+        self
+    }
+
+    pub fn with_no_ch_cursor(self) -> Self {
+        *self.ch_cursor.borrow_mut() = false;
         self
     }
 
@@ -842,9 +854,11 @@ impl TextBoxInner {
 
     /// NOTE the resp is sent in to potentially modify the offsets from numbers tb
     pub fn correct_offsets(&self, dr: &DrawRegion, w: &WrChs) -> EventResponse {
-        let (x, y) = w.cursor_x_and_y(self.get_cursor_pos());
-        let (x, y) = (x.unwrap_or(0), y.unwrap_or(0));
-        self.pane.correct_offsets_to_view_position(dr, x, y);
+        if *self.ch_cursor.borrow() {
+            let (x, y) = w.cursor_x_and_y(self.get_cursor_pos());
+            let (x, y) = (x.unwrap_or(0), y.unwrap_or(0));
+            self.pane.correct_offsets_to_view_position(dr, x, y);
+        }
         self.correct_ln_and_sbs(dr)
     }
 
@@ -1138,7 +1152,6 @@ impl TextBoxInner {
             }
 
             _ if *self.editable.borrow() && KeyPossibility::Chars.matches_key(&ev[0]) => {
-                debug!("got char: {:?}", ev[0]);
                 if let crossterm::event::KeyCode::Char(r) = ev[0].code {
                     let mut rs = self.text.borrow().clone();
                     rs.insert(cursor_pos, r);

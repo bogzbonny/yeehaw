@@ -22,6 +22,11 @@
 01. gif of showcase example - will need to record with non-VHS/asciicinema-tool
     to get mouse movements
      - put the gif in a seperate repo for now to keep the repo lean.
+     - gif optimizations aren't actually doing good... should just use smaller 
+       zoomed in screen
+     ffmpeg -ss 00:00:00.000 -i yh.mov -pix_fmt rgb8 -r 10 -t 00:00:10.000 yh.gif
+       
+
 
 01. add landing page docs for docs.rs
      - resolve broken links 
@@ -135,6 +140,7 @@ REFACTORS
     matches or to ignore the wait and to proceed attempting to match the
     character in other ways.  
 
+10. Color gradient/pattern trait / generalization
 
 __________________________________________________________________________
 FEATURES

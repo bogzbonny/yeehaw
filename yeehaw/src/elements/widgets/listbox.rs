@@ -95,6 +95,7 @@ impl ListBox {
                 *lb_.inner.borrow().is_dirty.borrow_mut() = true;
             }));
         *lb.inner.borrow().current_sty.borrow_mut() = lb.pane.get_current_style();
+        lb.inner.borrow().update_content(&DrawRegion::default()); // needed for the sb
         lb
     }
 

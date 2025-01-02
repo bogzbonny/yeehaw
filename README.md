@@ -218,6 +218,9 @@ HAVE NO FEAR
    angles which are repetitive (`DynVal::fixed(..)`) work good, however the way
    the angle is interpreted will likely change to account for cell dimensions.
    Gradients on right-angles (0, 90, 180, 270 degrees) are stable.
+ - All the fancy color types (gradients, patterns) will likely get refactored
+   and lumped together into a common Trait whereby entirely new classes of
+   colors can be created by developers. 
 
 ## Tribute
 

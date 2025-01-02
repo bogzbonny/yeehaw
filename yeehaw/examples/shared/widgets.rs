@@ -149,10 +149,10 @@ pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
     let tb_width = col3_width.clone().minus(3.into());
     let tb_height = DynVal::new_flex(0.25).with_min(8);
 
-    let text = "";
-    //let text = "01234567890123456789012345678901234567890123456789\
-    //01234567890123456789012345678901234567890123456789\n\
-    //1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0";
+    //let text = "";
+    let text = "01234567890123456789012345678901234567890123456789\
+    01234567890123456789012345678901234567890123456789\n\
+    1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0";
     let tb = TextBox::new(ctx, text)
         .with_text_when_empty("enter text here")
         .with_dyn_width(tb_width)

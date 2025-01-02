@@ -653,6 +653,7 @@ impl Element for Pane {
             x
         };
         *self.content_view_offset_x.borrow_mut() = x;
+        *self.is_content_dirty.borrow_mut() = true;
     }
 
     fn set_content_y_offset(&self, dr: Option<&DrawRegion>, y: usize) {
@@ -665,6 +666,7 @@ impl Element for Pane {
             y
         };
         *self.content_view_offset_y.borrow_mut() = y;
+        *self.is_content_dirty.borrow_mut() = true;
     }
 
     fn get_content_x_offset(&self) -> usize {

@@ -18,7 +18,7 @@ pub fn editor_demo(ctx: &Context) -> Box<dyn Element> {
     let editor = TermEditorPane::new(ctx, "custom")
         .with_dyn_height(ed_height)
         .with_dyn_width(ed_width)
-        .at(1, 3);
+        .at(1, 4);
 
     let x = DynVal::x_after(&editor, 2);
     let output = Label::new(ctx, "nothing yet set in $EDITOR textbox").at(x, 1);
@@ -33,8 +33,9 @@ pub fn editor_demo(ctx: &Context) -> Box<dyn Element> {
 
     el.add_element(Box::new(editor.label(
         ctx,
-        "You can use any editor set in the $EDITOR\n\
-        environment variable as a yeehaw element",
+        "You can use any editor set in the\n\
+        $EDITOR environment variable as a\n\
+        yeehaw element",
     )));
     el.add_element(Box::new(editor));
     el.add_element(Box::new(output));
