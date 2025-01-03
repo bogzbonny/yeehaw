@@ -37,9 +37,14 @@ sophisticated text based applications.
 
 ##  Example Usage:
 
-[TODO] Insert Showcase gif
+[![watch showcase](https://raw.githubusercontent.com/bogzbonny/large_files/main/yeehaw/showcase_thumb.png)](https://raw.githubusercontent.com/bogzbonny/large_files/main/yeehaw/showcase.mov)
 
-## Quickstart:   <!-- NOTE duplicate in 01_getting_started.md -->
+running this example:
+```
+cargo run --release --example showcase
+```
+
+## Quickstart:   <!-- NOTE duplicate in docs/01_getting_started.md:10 -->
 
 A hello world example with a label and a reactive button:
 
@@ -72,7 +77,7 @@ async fn main() -> Result<(), Error> {
 }
 ```
 
-## Existing Elements:   <!-- NOTE duplicate in 01_getting_started.md -->
+## Existing Elements:   <!-- NOTE duplicate in docs/01_getting_started.md:30 -->
 
 #### Widgets
  - $EDITOR textbox (e.g. ACTUAL neovim... wow!)  
@@ -106,7 +111,7 @@ async fn main() -> Result<(), Error> {
  - mini-TUIs in the CLI (aka. use a TUI in-line with your command without taking
                          up the whole terminal)
 
-## Planned Stuff: <!-- NOTE duplicate in 01_getting_started.md -->
+## Planned Stuff: <!-- NOTE duplicate in docs/01_getting_started.md:74 -->
  - embed a whole dang yeehaw TUI into stateful ratatui widget, why not!
  - accordion stack container
  - hover comments for elements
@@ -122,7 +127,7 @@ async fn main() -> Result<(), Error> {
  - build out a system of feature-flags for feature restriction / compile time
    improvement.
 
-# Design Overview <!-- NOTE duplicate in 01_getting_started.md -->
+# Design Overview <!-- NOTE duplicate in docs/01_getting_started.md:90 -->
 
 Elements are arranged in a hierarchical manner while retaining semi-autonomy.
 Events (keyboard/mouse/custom) are routed from the top down (adjusted to be
@@ -145,11 +150,11 @@ can reuse the event routing system logic.
 
 Looking to understand more? Checkout:
  - [Examples](./yeehaw/examples/README.md)
- - [Element Trait](TODO)
- - [Pane](TODO) <- the standard base for all built in elements
- - [ParentPane](TODO) <- the standard base for all elements which hold other elements
- - [Context](TODO) <- an object which can be found nearly everywhere
- - [DynVal](TODO) <- the basis for all layouts and sizes
+ - [Element Trait](./yeehaw/src/element.rs)
+ - [Pane](./yeehaw/src/elements/pane.rs) <- the standard base for all built in elements
+ - [ParentPane](./yeehaw/src/elements/pane_parent.rs) <- the standard base for all elements which hold other elements
+ - [Context](./yeehaw/src/context.rs) <- an object which can be found nearly everywhere
+ - [DynVal](./yeehaw/src/dyn_value.rs) <- the basis for all layouts and sizes
 
 ### Design Principles 
 
@@ -173,13 +178,13 @@ Looking to understand more? Checkout:
    debug mode). Many small and strange UI bugs are resolvable via user
    intervention. Ideally yeehaw should never panic during release mode.
 
-### Non-Objectives <!-- NOTE duplicate in 01_getting_started.md -->
+### Non-Objectives <!-- NOTE duplicate in docs/01_getting_started.md:180 -->
 
  - catering to non-UTF-8 
  - catering (too much) to non-true-color terminals
  - minor performance improvements at the cost of developer ergonomics
 
-## Stability, Upcoming Refactors, Bugs <!-- NOTE duplicate in 01_getting_started.md -->
+## Stability, Upcoming Refactors, Bugs <!-- NOTE duplicate in docs/01_getting_started.md:190 -->
 
 If you plan on building/experimenting with yeehaw right now, that's great news!
 I'd like to keep you apprised of some upcoming changes. If you do wish to

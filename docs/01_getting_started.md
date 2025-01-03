@@ -2,7 +2,7 @@
 `yeehaw` is a batteries included TUI framework with a rendering strategy, full
 event routing system and a plethora of elements included.  
 
-## Quickstart:   <!-- NOTE duplicate in README.md -->
+## Quickstart:   <!-- NOTE duplicate in README.md:47 -->
 
 A hello world example with a label and a reactive button:
 
@@ -19,8 +19,8 @@ async fn main() -> Result<(), Error> {
     let label = Label::new(&ctx, "Hello, World!").at(0.3, 0.3);
 
     // place the button 1 character below the label
-    let x = DynVal::new_flex(0.3); // 30% of the screen width
-    let y = DynVal::new_flex(0.3).plus(1.into()); // 30% of the screen height + 1 character
+    let x = DynVal::new_flex(0.3); // 30% screen width
+    let y = DynVal::new_flex(0.3).plus(1.into()); // 30% screen height + 1 ch
 
     let label_ = label.clone(); // clone for closure move
     let button = Button::new(&ctx, "Click Here!")
@@ -36,8 +36,7 @@ async fn main() -> Result<(), Error> {
 }
 ```
 
-## Existing Elements:  <!-- NOTE duplicate in README.md -->
-[TODO link to a separate markdown with a bunch of GIFS]
+## Existing Elements:  <!-- NOTE duplicate in README.md:80 -->
 
 #### Widgets
  - $EDITOR textbox (e.g. ACTUAL neovim... wow!)  
@@ -71,7 +70,7 @@ async fn main() -> Result<(), Error> {
  - mini-TUIs in the CLI (aka. use a TUI in-line with your command without taking
                          up the whole terminal)
 
-## Planned Stuff: <!-- NOTE duplicate in README.md --> 
+## Planned Stuff: <!-- NOTE duplicate in README.md:70 --> 
  - embed a whole dang yeehaw TUI into stateful ratatui widget, why not!
  - accordion stack container
  - hover comments for elements
@@ -87,7 +86,7 @@ async fn main() -> Result<(), Error> {
  - build out a system of feature-flags for feature restriction / compile time
    improvement.
 
-# Design Overview <!-- NOTE duplicate in README.md -->
+# Design Overview <!-- NOTE duplicate in README.md:130 -->
 
 Elements are arranged in a hierarchical manner while retaining semi-autonomy.
 Events (keyboard/mouse/custom) are routed from the top down (adjusted to be
@@ -110,13 +109,13 @@ can reuse the event routing system logic.
 
 Looking to understand more? Checkout:
  - [Examples](./yeehaw/examples/README.md)
- - [Element Trait](TODO)
- - [Pane](TODO) <- the standard base for all built in elements
- - [ParentPane](TODO) <- the standard base for all elements which hold other elements
- - [Context](TODO) <- an object which can be found nearly everywhere
- - [DynVal](TODO) <- the basis for all layouts and sizes
+ - [Element Trait](./yeehaw/src/element.rs)
+ - [Pane](./yeehaw/src/elements/pane.rs) <- the standard base for all built in elements
+ - [ParentPane](./yeehaw/src/elements/pane_parent.rs) <- the standard base for all elements which hold other elements
+ - [Context](./yeehaw/src/context.rs) <- an object which can be found nearly everywhere
+ - [DynVal](./yeehaw/src/dyn_value.rs) <- the basis for all layouts and sizes
 
-## Stability, Upcoming Refactors, Bugs <!-- NOTE duplicate in README.md -->
+## Stability, Upcoming Refactors, Bugs <!-- NOTE duplicate in README.md:187 -->
 
 If you plan on building/experimenting with yeehaw right now, that's great news!
 I'd like to keep you apprised of some upcoming changes. If you do wish to

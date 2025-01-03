@@ -24,7 +24,7 @@
      - put the gif in a seperate repo for now to keep the repo lean.
      - gif optimizations aren't actually doing good... should just use smaller 
        zoomed in screen
-     ffmpeg -ss 00:00:00.000 -i yh.mov -pix_fmt rgb8 -r 10 -t 00:00:10.000 yh.gif
+ffmpeg -ss 00:00:00.000 -i yh.mov -pix_fmt rgb8 -r 10 -t 00:00:10.000 yh.gif
      - can get about 1mb/s so 30s = 30mb... aim for 25s clips
 
 01. add landing page docs for docs.rs
