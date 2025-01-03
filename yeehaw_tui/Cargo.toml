@@ -1,5 +1,5 @@
 [package]
-name = "yeehaw"
+name = "yeehaw_tui"
 version = "0.1.0"
 edition = "2021"
 authors = ["Bogz Bonny <bogzbonny@protonmail.com>", "The Yeehaw Developers"] 
@@ -42,6 +42,3 @@ ratatui-image = "4.1.0"
 image = { version = ">=0.24", default-features = false, features = ["jpeg"] }
 
 compact_str = "^0.8.0"
-
-[workspace.package]
-include = ["LICENSE", "README.md", "docs/01_getting_started.md"]

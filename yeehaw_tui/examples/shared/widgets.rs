@@ -1,4 +1,4 @@
-use yeehaw::*;
+use yeehaw_tui::*;
 
 pub fn widgets_demo(ctx: &Context) -> Box<dyn Element> {
     let el = ParentPaneOfSelectable::new(ctx).with_bg(Color::MIDNIGHT_BLUE);

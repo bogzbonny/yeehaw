@@ -2392,7 +2392,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cfe53a6657fd280eaa890a3bc59152892ffa3e30101319d168b781ed6529b049"
 
 [[package]]
-name = "yeehaw"
+name = "yeehaw_derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "yeehaw_tui"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -2419,15 +2428,6 @@ dependencies = [
  "tokio",
  "vt100_yh",
  "yeehaw_derive",
-]
-
-[[package]]
-name = "yeehaw_derive"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]

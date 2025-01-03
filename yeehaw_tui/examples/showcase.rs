@@ -1,7 +1,7 @@
 mod shared;
 use {
     shared::{colors::*, editor::*, image::*, widgets::*},
-    yeehaw::*,
+    yeehaw_tui::*,
 };
 
 /// It is recommended to run this example with the `--release` flag (there is a lot going on)

@@ -8,7 +8,7 @@ A hello world example with a label and a reactive button:
 
 <!-- NOTE do not run as crossterm panics in doc run mode -->
 ``` no_run
-use yeehaw::*;
+use yeehaw_tui::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {

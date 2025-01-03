@@ -1,4 +1,4 @@
-use yeehaw::*;
+use yeehaw_tui::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {

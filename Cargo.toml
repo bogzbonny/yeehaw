@@ -1,13 +1,13 @@
 [workspace]
 resolver = "2"
 members = [
-    "yeehaw",
+    "yeehaw_tui",
     "yeehaw_derive",
     "vt100_yh",
 ]
 
 [workspace.package]
-include = ["src/**/*.rs", "tests/**/*.rs", "LICENSE", "README.md", "docs/01_getting_started.md"]
+include = ["src/**/*.rs", "tests/**/*.rs", "LICENSE", "README.md"]
 edition = "2021"
 
 [workspace.dependencies]

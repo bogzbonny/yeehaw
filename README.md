@@ -49,7 +49,7 @@ cargo run --release --example showcase
 A hello world example with a label and a reactive button:
 
 ``` rust
-use yeehaw::*;
+use yeehaw_tui::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
