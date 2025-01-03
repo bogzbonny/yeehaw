@@ -332,7 +332,10 @@ impl DropdownList {
     }
 
     pub fn update_content(&self, dr: &DrawRegion) {
-        self.correct_offsets(dr);
+        let open = *self.open.borrow();
+        if open {
+            self.correct_offsets(dr);
+        }
 
         let sty = self.pane.get_current_style();
         let mut content = DrawChs2D::from_string(self.text(dr), sty);
@@ -340,8 +343,6 @@ impl DropdownList {
         // NOTE use the ctx width as the width as the context has already been shrunk to 100% of the
         // element size
         let width = dr.get_width();
-
-        let open = *self.open.borrow();
 
         // highlight the hovering entry
         if open {
@@ -368,7 +369,6 @@ impl DropdownList {
             offset,
         );
         content.apply_draw_ch_pos(arrow_ch);
-
         self.pane.set_content(content);
     }
 }
