@@ -37,9 +37,10 @@ sophisticated text based applications.
 
 ##  Example Usage:
 
-<!--[![watch showcase](https://raw.githubusercontent.com/bogzbonny/large_files/main/yeehaw/showcase_thumb.png)](https://raw.githubusercontent.com/bogzbonny/large_files/main/yeehaw/showcase.mov)-->
+<!--![watch showcase](https://player.vimeo.com/video/1043789242?h=33a004c59a)-->
+<!--<iframe title="vimeo-player" src="https://player.vimeo.com/video/1043789242?h=33a004c59a" width="640" height="360" frameborder="0"    allowfullscreen></iframe>-->
 
-https://raw.githubusercontent.com/bogzbonny/large_files/main/yeehaw/showcase.mov
+https://player.vimeo.com/video/1043789242?h=33a004c59a
 
 running this example:
 ```
