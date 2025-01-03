@@ -25,8 +25,7 @@
      - gif optimizations aren't actually doing good... should just use smaller 
        zoomed in screen
      ffmpeg -ss 00:00:00.000 -i yh.mov -pix_fmt rgb8 -r 10 -t 00:00:10.000 yh.gif
-       
-
+     - can get about 1mb/s so 30s = 30mb... aim for 25s clips
 
 01. add landing page docs for docs.rs
      - resolve broken links 
@@ -231,6 +230,7 @@ FEATURES
  
 
 10. Hyperlink element which can open in a browser when clicked
+     - https://docs.rs/open/latest/open/
 
 10. hover comments
      - hover comment event which is triggered after a certain amount of time
@@ -245,6 +245,9 @@ FEATURES
 __________________________________________________________________________
 BUGFIXES/PATCHES
 
+05. scrollbar bugfix. when in the textbox and deleting the final character
+    the v-scrollbar will often jump around back and forth between the middle and
+    the end
 
 10. resizing a scrollable pane should modify the offset of that pane to account
     for the extra space (instead of automatically extending out of range)
@@ -330,6 +333,10 @@ BUGFIXES/PATCHES
         imagine it just does a     │          │
           shimmer once...          │          │
                                    └──────────┘
+
+20. The textbox linenumbers tb should not be a tb and just a unique simple new
+    element which just extends the pane... causes weird bugs during refactors
+    sometimes
 
 __________________________________________________________________________
 CONTAINERS
@@ -444,15 +451,6 @@ WIDGETS
    ━━━━━━━━━━╋██████████████╋━━━━━━          
       ●━━━━━━━━━━━━━━━━━━━━● 
 
-20. dragable file-like/binary-like icon object:
-       ┌────┐
-       │prev│
-       └────┘
-     my-file.txt
-
-   - double click hook action
-   - make a few different fun icons, (a scroll for text files?)
-
 20. Prompt-Window
      - basically an old school prompt window which says some biz then gives you
        a couple options
@@ -499,6 +497,7 @@ WIDGETS
      - could eventually provide inter-pixel values too
      - optional coloring function for bg
      - cursor obviously an option
+     - possible: use tight box with an inner background
     ┌────────────┐ 
    1┤            │
  B  ┤    x       │
@@ -574,14 +573,14 @@ PROGRAMS
 __________________________________________________________________________
 LOW-PRIORITY
 
-30. provide a sync version of TUI 
+30. provide a sync version of TUI for the async adverse 
 
 30. gradients on angles: get the actual aspect ratio from the terminal and integrate it in. 
 
 30. :Command pane and functionality
       - use custom event routing system
 
-30. tabs with border, LOW PRIORITY
+30. tabs with border
 ╭─────╮────╮────╮──────╮  ╭─────╭────╮────╮──────╮ ╭─────╭────╭────╮──────╮
 │tabs1│tab2│tab3│ tab4 │  │tabs1│tab2│tab3│ tab4 │ │tabs1│tab2│tab3│ tab4 │
 │     └────────────────╮  ├─────┘    └────┴──────┤ ├─────┴────┘    └──────┤
@@ -590,6 +589,15 @@ LOW-PRIORITY
 │                      │  │                      │ │                      │
 │                      │  │                      │ │                      │
 └──────────────────────┘  └──────────────────────┘ └──────────────────────┘
+
+30. dragable file-like/binary-like icon object:
+       ┌────┐
+       │prev│
+       └────┘
+     my-file.txt
+
+   - double click hook action
+   - make a few different fun icons, (a scroll for text files?)
 
 40. custom mouse types using images (requires image support, and mouse pixel tracking) 
 

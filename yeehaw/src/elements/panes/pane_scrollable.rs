@@ -49,7 +49,7 @@ impl PaneScrollable {
             content_offset_y: Rc::new(RefCell::new(0)),
             expand_to_fill_width: Rc::new(RefCell::new(false)),
             expand_to_fill_height: Rc::new(RefCell::new(false)),
-            scroll_rate: Rc::new(RefCell::new(Some(1))),
+            scroll_rate: Rc::new(RefCell::new(Some(3))),
             last_draw_details: Rc::new(RefCell::new(None)),
         }
     }
@@ -65,7 +65,7 @@ impl PaneScrollable {
             content_offset_y: Rc::new(RefCell::new(0)),
             expand_to_fill_width: Rc::new(RefCell::new(true)),
             expand_to_fill_height: Rc::new(RefCell::new(true)),
-            scroll_rate: Rc::new(RefCell::new(Some(1))),
+            scroll_rate: Rc::new(RefCell::new(Some(3))),
             last_draw_details: Rc::new(RefCell::new(None)),
         }
     }

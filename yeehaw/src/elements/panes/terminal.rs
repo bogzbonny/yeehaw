@@ -380,7 +380,6 @@ impl Element for TerminalPane {
                     prev_draw_i += 1;
                 }
                 out.push(ch_out);
-                //}
             }
         }
 
