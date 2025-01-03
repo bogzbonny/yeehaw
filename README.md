@@ -37,10 +37,7 @@ sophisticated text based applications.
 
 ##  Example Usage:
 
-<!--![watch showcase](https://player.vimeo.com/video/1043789242?h=33a004c59a)-->
-<iframe title="vimeo-player" src="https://player.vimeo.com/video/1043789242?h=33a004c59a" width="640" height="360" frameborder="0"    allowfullscreen></iframe>
-
-https://player.vimeo.com/video/1043789242?h=33a004c59a
+https://github.com/user-attachments/assets/8b1c715a-4a26-4cdc-b3cd-9a8f10dd187e
 
 running this example:
 ```

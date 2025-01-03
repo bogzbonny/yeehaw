@@ -21,11 +21,8 @@
 
 01. gif of showcase example - will need to record with non-VHS/asciicinema-tool
     to get mouse movements
-     - put the gif in a seperate repo for now to keep the repo lean.
-     - gif optimizations aren't actually doing good... should just use smaller 
-       zoomed in screen
-ffmpeg -ss 00:00:00.000 -i yh.mov -pix_fmt rgb8 -r 10 -t 00:00:10.000 yh.gif
-     - can get about 1mb/s so 30s = 30mb... aim for 25s clips
+     keep under 10mb to upload to github (upload then close issue)
+     - ffmpeg -i showcase.mov -b:v 1000k showcase.mp4
 
 01. add landing page docs for docs.rs
      - resolve broken links 
