@@ -37,7 +37,9 @@ sophisticated text based applications.
 
 ##  Example Usage:
 
-[![watch showcase](https://raw.githubusercontent.com/bogzbonny/large_files/main/yeehaw/showcase_thumb.png)](https://raw.githubusercontent.com/bogzbonny/large_files/main/yeehaw/showcase.mov)
+<!--[![watch showcase](https://raw.githubusercontent.com/bogzbonny/large_files/main/yeehaw/showcase_thumb.png)](https://raw.githubusercontent.com/bogzbonny/large_files/main/yeehaw/showcase.mov)-->
+
+https://raw.githubusercontent.com/bogzbonny/large_files/main/yeehaw/showcase.mov
 
 running this example:
 ```
