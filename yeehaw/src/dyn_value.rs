@@ -20,11 +20,11 @@ pub struct DynVal {
     pub flex: f64,
 
     /// the DynVal adds all the provided SclVals
-    plus: Vec<DynVal>,
+    pub plus: Vec<DynVal>,
     /// the DynVal adds the minimum value of these provided SclVals
-    plus_min_of: Vec<DynVal>,
+    pub plus_min_of: Vec<DynVal>,
     /// the DynVal adds the maximum value of these provided SclVals
-    plus_max_of: Vec<DynVal>,
+    pub plus_max_of: Vec<DynVal>,
 }
 
 impl Default for DynVal {

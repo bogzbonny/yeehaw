@@ -4,6 +4,31 @@ will eventually be sifted through and included in actual docs - at which point
 this document will be deleted
 __________________________________________________
 
+01. go through and remove / or make dyn element fns named with_width with_height
+01. widgets example should be the same as showcase
+01. upgrade max_of to .with_max (and min)
+01. replace receive_event_inner with just receive_event throughout
+01. unify all the action function names and with fns to just be "with_fn"
+    "set_fn"
+01. remove ctx from click functions thoughout elements... what a pain they are
+     - either that or make them a super basic context, with just the ev_sender
+       and hat... or not even if you need the context, you should just clone it
+       in.
+01. resizing of tab with image in wezterm is leaving artifacts for kitty too.
+01. tuvix image off by one
+01. terminal inside window with border doesn't work
+01. disable debug logging in examples
+01. update rust version, update deps
+01. add docs, crates button banners to github readme
+01. just use an image for the banner (and include the existing text as 
+    markdown comment
+01. add landing page docs for docs.rs
+     - resolve broken links 
+        cargo doc --open
+01. gif of showcase example - will need to record with non-VHS/asciicinema-tool
+    to get mouse movements
+     keep under 10mb to upload to github (upload then close issue)
+     - ffmpeg -i showcase.mov -b:v 1000k showcase.mp4
 01. textbox cut/paste shouldn't work when non-editable
 01. dropdown list extends into white space if picking beyond the end (clicking
     that whitespace panics)

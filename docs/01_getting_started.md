@@ -75,7 +75,7 @@ async fn main() -> Result<(), Error> {
  - accordion stack container
  - hover comments for elements
  - vertical tabs (like brave browser) 
- - [.ans]-animation player (using an extended-ansi format)
+ - \[.ans\]-animation player (using an extended-ansi format)
  - optional mouse **pixel** support (there's already mouse support)
  - wire-connectors between elements
  - color selector element
@@ -85,6 +85,7 @@ async fn main() -> Result<(), Error> {
  - drag and drop TUI application builder (as a TUI of course)
  - build out a system of feature-flags for feature restriction / compile time
    improvement.
+ - a sync version of the TUI for those who don't want async
 
 # Design Overview <!-- NOTE duplicate in README.md:130 -->
 
@@ -108,12 +109,12 @@ kinds enabling developers to create entirely new sub-classes of elements which
 can reuse the event routing system logic. 
 
 Looking to understand more? Checkout:
- - [Examples](./yeehaw/examples/README.md)
- - [Element Trait](./yeehaw/src/element.rs)
- - [Pane](./yeehaw/src/elements/pane.rs) <- the standard base for all built in elements
- - [ParentPane](./yeehaw/src/elements/pane_parent.rs) <- the standard base for all elements which hold other elements
- - [Context](./yeehaw/src/context.rs) <- an object which can be found nearly everywhere
- - [DynVal](./yeehaw/src/dyn_value.rs) <- the basis for all layouts and sizes
+ - [Examples](https://github.com/bogzbonny/yeehaw/tree/main/yeehaw/examples)
+ - [Element Trait](crate::element::Element)
+ - [Pane](crate::elements::Pane) <- the standard base for all built in elements
+ - [ParentPane](crate::elements::ParentPane) <- the standard base for all elements which hold other elements
+ - [Context](crate::context::Context) <- an object which can be found nearly everywhere
+ - [DynVal](crate::dyn_value::DynVal) <- the basis for all layouts and sizes
 
 ## Stability, Upcoming Refactors, Bugs <!-- NOTE duplicate in README.md:187 -->
 
@@ -154,6 +155,9 @@ HAVE NO FEAR
    angles which are repetitive (`DynVal::fixed(..)`) work good, however the way
    the angle is interpreted will likely change to account for cell dimensions.
    Gradients on right-angles (0, 90, 180, 270 degrees) are stable.
+ - All the fancy color types (gradients, patterns) will likely get refactored
+   and lumped together into a common Trait whereby entirely new classes of
+   colors can be created by developers. 
 
 ## Performance Considerations
 

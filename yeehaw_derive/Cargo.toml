@@ -2,6 +2,12 @@
 name = "yeehaw_derive"
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/bogzbonny/yeehaw"
+authors = ["Bogz Bonny <bogzbonny@protonmail.com>", "The Yeehaw Developers"] 
+documentation = "https://docs.rs/yeehaw/latest/yeehaw_derive/"
+description = "Derive Macros for Yeehaw"
+license = "Apache-2.0"
+
 
 [lib]
 proc-macro = true

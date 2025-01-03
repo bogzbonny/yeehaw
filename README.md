@@ -116,7 +116,7 @@ async fn main() -> Result<(), Error> {
  - accordion stack container
  - hover comments for elements
  - vertical tabs (like brave browser) 
- - [.ans]-animation player (using an extended-ansi format)
+ - \[.ans\]-animation player (using an extended-ansi format)
  - optional mouse **pixel** support (there's already mouse support)
  - wire-connectors between elements
  - color selector element
@@ -126,6 +126,7 @@ async fn main() -> Result<(), Error> {
  - drag and drop TUI application builder (as a TUI of course)
  - build out a system of feature-flags for feature restriction / compile time
    improvement.
+ - a sync version of the TUI for those who don't want async
 
 # Design Overview <!-- NOTE duplicate in docs/01_getting_started.md:90 -->
 
