@@ -38,7 +38,7 @@ sophisticated text based applications.
 ##  Example Usage:
 
 <!--![watch showcase](https://player.vimeo.com/video/1043789242?h=33a004c59a)-->
-<!--<iframe title="vimeo-player" src="https://player.vimeo.com/video/1043789242?h=33a004c59a" width="640" height="360" frameborder="0"    allowfullscreen></iframe>-->
+<iframe title="vimeo-player" src="https://player.vimeo.com/video/1043789242?h=33a004c59a" width="640" height="360" frameborder="0"    allowfullscreen></iframe>
 
 https://player.vimeo.com/video/1043789242?h=33a004c59a
 
