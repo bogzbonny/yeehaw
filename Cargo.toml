@@ -7,7 +7,7 @@ members = [
 ]
 
 [workspace.package]
-include = ["src/**/*.rs", "tests/**/*.rs", "LICENSE", "README.md"]
+include = ["src/**/*.rs", "tests/**/*.rs", "LICENSE", "README.md", "docs/01_getting_started.md"]
 edition = "2021"
 
 [workspace.dependencies]

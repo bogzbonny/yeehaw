@@ -1,4 +1,4 @@
-#![doc = include_str!("../../docs/01_getting_started.md")]
+#![doc = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/README_DOCS.md"))]
 
 #[macro_use]
 pub mod log; // note, must be first for the macro to work throughout
