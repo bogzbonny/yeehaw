@@ -150,12 +150,12 @@ kinds enabling developers to create entirely new sub-classes of elements which
 can reuse the event routing system logic. 
 
 Looking to understand more? Checkout:
- - [Examples](./yeehaw/examples/README.md)
- - [Element Trait](./yeehaw/src/element.rs)
- - [Pane](./yeehaw/src/elements/pane.rs) <- the standard base for all built in elements
- - [ParentPane](./yeehaw/src/elements/pane_parent.rs) <- the standard base for all elements which hold other elements
- - [Context](./yeehaw/src/context.rs) <- an object which can be found nearly everywhere
- - [DynVal](./yeehaw/src/dyn_value.rs) <- the basis for all layouts and sizes
+ - [Examples](./yeehaw_tui/examples/README.md)
+ - [Element Trait](./yeehaw_tui/src/element.rs)
+ - [Pane](./yeehaw_tui/src/elements/pane.rs) <- the standard base for all built in elements
+ - [ParentPane](./yeehaw_tui/src/elements/pane_parent.rs) <- the standard base for all elements which hold other elements
+ - [Context](./yeehaw_tui/src/context.rs) <- an object which can be found nearly everywhere
+ - [DynVal](./yeehaw_tui/src/dyn_value.rs) <- the basis for all layouts and sizes
 
 ### Design Principles 
 
@@ -252,7 +252,7 @@ Any contribution you intentionally submit for inclusion in the work, as defined
 in the Apache-2.0 license, shall be Apache-2.0 license, without any additional
 terms or conditions.
 
-[badge_crate]: https://img.shields.io/crates/v/yeehaw?logo=rust&style=flat-square&logoColor=E05D44&color=E05D44
-[badge_docs]: https://img.shields.io/docsrs/yeehaw?logo=rust&style=flat-square&logoColor=E05D44
-[crate]: https://crates.io/crates/yeehaw
-[docs]: https://docs.rs/ratatui
+[badge_crate]: https://img.shields.io/crates/v/yeehaw_tui?logo=rust&style=flat-square&logoColor=E05D44&color=E05D44
+[badge_docs]: https://img.shields.io/docsrs/yeehaw_tui?logo=rust&style=flat-square&logoColor=E05D44
+[crate]: https://crates.io/crates/yeehaw_tui
+[docs]: https://docs.rs/yeehaw_tui
