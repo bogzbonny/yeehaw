@@ -245,6 +245,8 @@ FEATURES
 __________________________________________________________________________
 BUGFIXES/PATCHES
 
+05. neovim editor, doesn't save if you do :wq (does if you do :w)
+
 05. scrollbar bugfix. when in the textbox and deleting the final character
     the v-scrollbar will often jump around back and forth between the middle and
     the end

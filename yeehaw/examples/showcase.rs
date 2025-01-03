@@ -14,7 +14,7 @@ use {
 async fn main() -> Result<(), Error> {
     // uncomment the following line to enable logging
     //yeehaw::log::reset_log_file("./debug_test.log".to_string());
-    std::env::set_var("RUST_BACKTRACE", "1");
+    //std::env::set_var("RUST_BACKTRACE", "1");
 
     let (mut tui, ctx) = Tui::new()?;
     let main = PaneScrollable::new_expanding(&ctx, 135, 40);
