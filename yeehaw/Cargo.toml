@@ -15,8 +15,8 @@ license = "Apache-2.0"
 
 [dependencies]
 
-yeehaw_derive = { path = "../yeehaw_derive" }
-vt100_yh = { path = "../vt100_yh" }
+yeehaw_derive = { version = "0.1.0", path = "../yeehaw_derive" }
+vt100_yh = { version = "0.17.0", path = "../vt100_yh" }
 
 crossterm = {version = "^0.28.0", features = ["event-stream", "serde"]}
 futures = "^0.3.0"
