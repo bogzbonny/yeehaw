@@ -1,7 +1,4 @@
-#[allow(dead_code)]
-mod shared;
-
-use {shared::colors::*, yeehaw_tui::*};
+use yeehaw::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -9,6 +6,6 @@ async fn main() -> Result<(), Error> {
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let (mut tui, ctx) = Tui::new()?;
-    let el = colors_demo(&ctx);
-    tui.run(el).await
+    let pane = TerminalPane::new(&ctx)?;
+    tui.run(Box::new(pane)).await
 }

@@ -1,11 +1,11 @@
 [package]
-name = "yeehaw_tui"
+name = "yeehaw"
 version = "0.1.0"
 edition = "2021"
 authors = ["Bogz Bonny <bogzbonny@protonmail.com>", "The Yeehaw Developers"] 
 keywords = ["tui", "terminal", "gui", "cli"]
 description = "Batteries Included Text Based Application Framework"
-documentation = "https://docs.rs/yeehaw_tui/latest/yeehaw_tui/"
+documentation = "https://docs.rs/yeehaw/latest/yeehaw/"
 repository = "https://github.com/bogzbonny/yeehaw"
 categories = ["gui", "text-processing", "command-line-interface", "command-line-utilities"]
 readme = "README.md"

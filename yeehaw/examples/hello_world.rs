@@ -1,9 +1,9 @@
-use yeehaw_tui::*;
+use yeehaw::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     let (mut tui, ctx) = Tui::new()?;
-    let main_el = ParentPane::new(&ctx, "main_element").with_bg(Color::GREY10);
+    let main_el = ParentPane::new(&ctx, "main_element");
 
     // place the label at 30% of the screen width and height
     let label = Label::new(&ctx, "Hello, World!").at(0.3, 0.3);
@@ -22,5 +22,5 @@ async fn main() -> Result<(), Error> {
 
     main_el.add_element(Box::new(label));
     main_el.add_element(Box::new(button));
-    tui.run_in_line(Box::new(main_el), 10).await
+    tui.run(Box::new(main_el)).await
 }

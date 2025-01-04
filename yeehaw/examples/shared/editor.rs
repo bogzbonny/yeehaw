@@ -1,4 +1,4 @@
-use yeehaw_tui::*;
+use yeehaw::*;
 
 pub fn editor_demo(ctx: &Context) -> Box<dyn Element> {
     let el = ParentPane::new(ctx, "main").with_style(Style::default().with_bg(Color::GREY5));

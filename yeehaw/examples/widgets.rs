@@ -1,7 +1,7 @@
 #[allow(dead_code)]
 mod shared;
 
-use {shared::image::*, yeehaw_tui::*};
+use {shared::widgets::*, yeehaw::*};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -9,6 +9,6 @@ async fn main() -> Result<(), Error> {
     //std::env::set_var("RUST_BACKTRACE", "1");
 
     let (mut tui, ctx) = Tui::new()?;
-    let el = image_demo(&ctx);
+    let el = widgets_demo(&ctx);
     tui.run(el).await
 }

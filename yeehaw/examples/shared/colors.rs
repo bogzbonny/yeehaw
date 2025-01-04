@@ -1,4 +1,4 @@
-use {std::time::Duration, yeehaw_tui::*};
+use {std::time::Duration, yeehaw::*};
 
 pub fn colors_demo(ctx: &Context) -> Box<dyn Element> {
     let el = ParentPaneOfSelectable::new(ctx).with_bg(Color::DARK_OLIVE_GREEN);

@@ -1,7 +1,7 @@
 #[allow(dead_code)]
 mod shared;
 
-use {shared::editor::*, yeehaw_tui::*};
+use {shared::editor::*, yeehaw::*};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {

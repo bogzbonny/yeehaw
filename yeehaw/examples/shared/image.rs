@@ -1,4 +1,4 @@
-use yeehaw_tui::*;
+use yeehaw::*;
 
 pub fn image_demo(ctx: &Context) -> Box<dyn Element> {
     let bg: Color = Gradient::x_grad_rainbow(ctx, 10).into();

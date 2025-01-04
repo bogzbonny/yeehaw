@@ -8,7 +8,7 @@ A hello world example with a label and a reactive button:
 
 <!-- NOTE do not run as crossterm panics in doc run mode -->
 ``` no_run
-use yeehaw_tui::*;
+use yeehaw::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -109,7 +109,7 @@ kinds enabling developers to create entirely new sub-classes of elements which
 can reuse the event routing system logic. 
 
 Looking to understand more? Checkout:
- - [Examples](https://github.com/bogzbonny/yeehaw/tree/main/yeehaw_tui/examples)
+ - [Examples](https://github.com/bogzbonny/yeehaw/tree/main/yeehaw/examples)
  - [Element Trait](crate::element::Element)
  - [Pane](crate::elements::Pane) <- the standard base for all built in elements
  - [ParentPane](crate::elements::ParentPane) <- the standard base for all elements which hold other elements

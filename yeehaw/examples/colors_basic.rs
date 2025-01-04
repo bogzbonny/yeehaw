@@ -1,4 +1,4 @@
-use yeehaw_tui::*;
+use yeehaw::*;
 
 // this is a basic testing grounds for new color gradients
 
