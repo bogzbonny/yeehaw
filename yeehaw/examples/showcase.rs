@@ -6,7 +6,7 @@ use {
 
 /// It is recommended to run this example with the `--release` flag (there is a lot going on)
 ///
-/// NOTE this example requires steam locomotive (`sl`) to be installed if you want
+/// NOTE this example requires steam locomotive (the `sl` command) to be installed if you want
 /// to see the train. Additionally it should be run from this showcase directory
 /// for the showcase-tab to work (which runs `cargo run --release --example showcase`).
 
@@ -23,7 +23,6 @@ async fn main() -> Result<(), Error> {
     main.add_element(Box::new(main_vs.clone()));
 
     // adding the menu bar and menu items
-
     let mb = MenuBar::top_menu_bar(&ctx).at(0, 0);
     for i in 0..3 {
         mb.add_item(&ctx, format!("upper/item-{i}"), None);
@@ -63,6 +62,12 @@ async fn main() -> Result<(), Error> {
     .with_style(Style::default().with_fg(Color::Gradient(gr)))
     .at(0, DynVal::new_fixed(1));
     header_pane.add_element(Box::new(mtext));
+
+    let url_label = Label::new(&ctx, ">>>  https://github.com/bogzbonny/yeehaw  <<<")
+        .with_style(Style::default().with_fg(Color::WHITE).with_bold())
+        //.with_style(Style::default().with_fg(Color::WHITE))
+        .at(70, 3);
+    header_pane.add_element(Box::new(url_label));
 
     let main_ = main.clone();
     let ctx_ = ctx.clone();

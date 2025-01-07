@@ -44,6 +44,10 @@ running this example:
 cargo run --release --example showcase
 ```
 
+NOTE this example requires steam locomotive (the `sl` command) to be installed if you want
+to see the train. Additionally it should be run from this showcase directory
+for the showcase-tab to work (which runs `cargo run --release --example showcase`).
+
 ## Quickstart:   <!-- NOTE duplicate in docs/01_getting_started.md:10 -->
 
 A hello world example with a label and a reactive button:

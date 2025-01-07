@@ -226,20 +226,6 @@ BUGFIXES/PATCHES
 01. border pane text locations (either right, centre, left eg) should all be
     possible at the same time not ONLY one of those three options
 
-
-10. scrollbar style on pane option... use a half(widthwise) block character instead of the
-    thick border line... looks nice
-     - maybe dont use half characters for this one only full characters
-     - also maybe don't use arrows for this style
-     - could provide the "inner" or "outer" option
-
-┌─────────────────────┐
-│                     │
-│                     ▌
-│                     ▌
-│                     │
-└────▀▀▀▀▀▀▀▀▀▀▀▀─────┘
-
 10. File navigator updates 
     - ability to hide dotfiles ("ex. .git") navigator (toggle this functionality
       with Shift-i) 
@@ -287,7 +273,6 @@ BUGFIXES/PATCHES
 
 05. Ability to use arrow keys to select menu item when menu is open
 
-
 20. when drag resizing stack panes, sometimes panes which are further in the
     stack from drag location change by 1... should attempt to correct for this.
 
@@ -306,6 +291,18 @@ BUGFIXES/PATCHES
     element which just extends the pane... causes weird bugs during refactors
     sometimes
 
+20. scrollbar style on pane option... use a half(widthwise) block character instead of the
+    thick border line... looks nice
+     - maybe dont use half characters for this one only full characters
+     - also maybe don't use arrows for this style
+     - could provide the "inner" or "outer" option
+
+┌─────────────────────┐
+│                     │
+│                     ▌
+│                     ▌
+│                     │
+└────▀▀▀▀▀▀▀▀▀▀▀▀─────┘
 __________________________________________________________________________
 CONTAINERS
 
@@ -369,6 +366,35 @@ WIDGETS
      - explode out at first then fall down
      - reuse many of the options from the html version
 
+
+05. Click Locker 
+     - used for locking border and locking button.
+     - for important actions which you don't want to accidentally perform.
+      ┏┓  ┏┓  ┏┓ ┏┓   
+      ▀▀ ▀▀  ██  ██   🔓 🔐  
+     - could use the text "LK" and "UL" inside the two text characters
+       - green for locked, red of unlocked 
+     - have to click a lock icon a certain number of times within a certain
+       amount of time (10 clicks within 3 seconds to unlock)
+
+05. A locking button 
+     - the lock just is on the righthand side of the button... clicking the lock
+       will never click the button (I like that!) and you just have to click it
+       a certain number of times to unlock
+    ▒▒▒▒▒▖┏┓
+    ▝▀▀▀▀▘▓▓
+     - could use an ".as_locked_button" decorator
+
+20. A locking border - everything inside the border container is locked until 
+    an unlocking ceremony is performed. The color/character of the border could
+    be used to indicate if locked. 
+     - lock icon could be in one of the corners                      
+    ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐  ┌─────┏┓┐ ┌──────┏┓  ┌┏┓─────┐ ┏┓──────┐
+    │       │ │       │ │       │ │       │  │      ██ │      ██  ██      │ ██      │                                    
+    │       │ │       │ │       │ │       │  │       │ │       │  │       │ │       │
+    │┏┓     │ ┏┓      │ │      ┏┓ │     ┏┓│  │       │ │       │  │       │ │       │
+    ██──────┘ ██──────┘ └──────██ └──────██  └───────┘ └───────┘  └───────┘ └───────┘                                                                                       
+                                                      
 10. Loading spinners
     - maybe the easiest thing would be to allow for a character changes based on
       time (like a time gradient except for the character actually displayed).
@@ -569,6 +595,14 @@ LOW-PRIORITY
 
 40. custom mouse types using images (requires image support, and mouse pixel tracking) 
 
+50. visual cryptographic signature.
+     - a 16 x 16 grid gives 256 bits of entropy (same as 24 word bitcoin key) 
+     - a grid space could be used to query the user for inputs to then decrypt 
+       some information. 
+     - granted wouldn't be THAT good as patterns could be easily tested in this
+       system and human users would typically choose patterns, but still good as a
+       minor form of security. 
+
 40. volume bar (color in)  
    ▁▂▃▄▅▆▇
     - drag up/right to increase down/left to decrease 
@@ -601,4 +635,3 @@ ZELT reqd features
       - EASY
          - keep expanding the ctx until the upper left box (prev context)
            doesn't change. (ignoreing bottom 2 or 3 lines)
-    

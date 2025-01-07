@@ -35,7 +35,7 @@ pub fn editor_demo(ctx: &Context) -> Box<dyn Element> {
         ctx,
         "You can use any editor set in the\n\
         $EDITOR environment variable as a\n\
-        yeehaw element",
+        yeehaw element (eg. neovim)",
     )));
     el.add_element(Box::new(editor));
     el.add_element(Box::new(output));
