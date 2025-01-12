@@ -635,3 +635,5 @@ ZELT reqd features
       - EASY
          - keep expanding the ctx until the upper left box (prev context)
            doesn't change. (ignoreing bottom 2 or 3 lines)
+10. window $EDITOR - (for notes)
+10. 
