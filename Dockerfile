@@ -12,6 +12,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   pkg-config libssl-dev iputils-ping \
   make \
 
+  # Needed for copypasta (internal for kwaak)
+  libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+  && rm -rf /var/lib/apt/lists/* \
+  && cp /usr/bin/fdfind /usr/bin/fd
+
 RUN cargo install cargo-llvm-cov cargo-nextest
 
 COPY . /app
