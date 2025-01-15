@@ -39,17 +39,17 @@ main_branch = "main"
 #api_key = "env:KWAAK_OPENAI_API_KEY"
 #api_key = "file:./open_ai_token"
 [llm.indexing]
-api_key = "file:./open_ai_token"
+api_key = "env:KWAAK_OPENAI_API_KEY"
 provider = "OpenAI"
 prompt_model = "gpt-4o-mini"
 
 [llm.query]
-api_key = "file:./open_ai_token"
+api_key = "env:KWAAK_OPENAI_API_KEY"
 provider = "OpenAI"
 prompt_model = "gpt-4o"
 
 [llm.embedding]
-api_key = "file:./open_ai_token"
+api_key = "env:KWAAK_OPENAI_API_KEY"
 provider = "OpenAI"
 embedding_model = "text-embedding-3-large"
 
