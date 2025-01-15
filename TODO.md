@@ -1,6 +1,12 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+01. improper handling of "delete" (control-delete) in textbox interpreted as
+    control-h
+within the textbox element (file is textbox.rs) there is improper handling of
+the usage of the "delete" key (control-delete on mac) the textbox interprets it
+as control-h. Fix this so it will actually perform a delete
+
 01. showcase bug left and right keys dont work good on the distance slider of
     the colors example if the size of the screen is large, this is because the 
     changes made by incrementing the slider by "1 tick" doesn't account for
@@ -15,9 +21,6 @@
 
 01. numbers textbox + dial slider is a nice pattern which should be grouped
     together.
-
-01. improper handling of "delete" (control-delete) in textbox interpreted as
-    control-h
 
 05. showcase window generator
      - the selectable pane keyboard stops working after the first window is generated.
