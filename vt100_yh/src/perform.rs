@@ -45,7 +45,13 @@ impl vte::Perform for WrappedScreen {
         );
     }
 
-    fn csi_dispatch(&mut self, params: &vte::Params, intermediates: &[u8], _ignore: bool, c: char) {
+    fn csi_dispatch(
+        &mut self,
+        params: &vte::Params,
+        intermediates: &[u8],
+        _ignore: bool,
+        c: char,
+    ) {
         match intermediates.first() {
             None => match c {
                 '@' => self.0.ich(canonicalize_params_1(params, 1)),
@@ -69,13 +75,18 @@ impl vte::Perform for WrappedScreen {
                 'h' => self.0.sm(params),
                 'l' => self.0.rm(params),
                 'm' => self.0.sgr(params),
-                'r' => self
-                    .0
-                    .decstbm(canonicalize_params_decstbm(params, self.0.grid().size())),
+                'r' => self.0.decstbm(canonicalize_params_decstbm(
+                    params,
+                    self.0.grid().size(),
+                )),
                 't' => self.0.xtwinops(params),
                 _ => {
                     if log::log_enabled!(log::Level::Debug) {
-                        log::debug!("unhandled csi sequence: CSI {} {}", param_str(params), c);
+                        log::debug!(
+                            "unhandled csi sequence: CSI {} {}",
+                            param_str(params),
+                            c
+                        );
                     }
                 }
             },
@@ -86,7 +97,11 @@ impl vte::Perform for WrappedScreen {
                 'l' => self.0.decrst(params),
                 _ => {
                     if log::log_enabled!(log::Level::Debug) {
-                        log::debug!("unhandled csi sequence: CSI ? {} {}", param_str(params), c);
+                        log::debug!(
+                            "unhandled csi sequence: CSI ? {} {}",
+                            param_str(params),
+                            c
+                        );
                     }
                 }
             },
@@ -110,13 +125,22 @@ impl vte::Perform for WrappedScreen {
             (Some(&b"2"), Some(s)) => self.0.osc2(s),
             _ => {
                 if log::log_enabled!(log::Level::Debug) {
-                    log::debug!("unhandled osc sequence: OSC {}", osc_param_str(params),);
+                    log::debug!(
+                        "unhandled osc sequence: OSC {}",
+                        osc_param_str(params),
+                    );
                 }
             }
         }
     }
 
-    fn hook(&mut self, params: &vte::Params, intermediates: &[u8], _ignore: bool, action: char) {
+    fn hook(
+        &mut self,
+        params: &vte::Params,
+        intermediates: &[u8],
+        _ignore: bool,
+        action: char,
+    ) {
         if log::log_enabled!(log::Level::Debug) {
             intermediates.first().map_or_else(
                 || {
@@ -148,7 +172,11 @@ fn canonicalize_params_1(params: &vte::Params, default: u16) -> u16 {
     }
 }
 
-fn canonicalize_params_2(params: &vte::Params, default1: u16, default2: u16) -> (u16, u16) {
+fn canonicalize_params_2(
+    params: &vte::Params,
+    default1: u16,
+    default2: u16,
+) -> (u16, u16) {
     let mut iter = params.iter();
     let first = iter.next().map_or(0, |x| *x.first().unwrap_or(&0));
     let first = if first == 0 { default1 } else { first };
@@ -159,7 +187,10 @@ fn canonicalize_params_2(params: &vte::Params, default1: u16, default2: u16) -> 
     (first, second)
 }
 
-fn canonicalize_params_decstbm(params: &vte::Params, size: crate::grid::Size) -> (u16, u16) {
+fn canonicalize_params_decstbm(
+    params: &vte::Params,
+    size: crate::grid::Size,
+) -> (u16, u16) {
     let mut iter = params.iter();
     let top = iter.next().map_or(0, |x| *x.first().unwrap_or(&0));
     let top = if top == 0 { 1 } else { top };
@@ -198,12 +229,17 @@ pub struct WrappedScreenWithCallbacks<'a, T: crate::callbacks::Callbacks> {
 }
 
 impl<'a, T: crate::callbacks::Callbacks> WrappedScreenWithCallbacks<'a, T> {
-    pub fn new(screen: &'a mut crate::perform::WrappedScreen, callbacks: &'a mut T) -> Self {
+    pub fn new(
+        screen: &'a mut crate::perform::WrappedScreen,
+        callbacks: &'a mut T,
+    ) -> Self {
         Self { screen, callbacks }
     }
 }
 
-impl<T: crate::callbacks::Callbacks> vte::Perform for WrappedScreenWithCallbacks<'_, T> {
+impl<T: crate::callbacks::Callbacks> vte::Perform
+    for WrappedScreenWithCallbacks<'_, T>
+{
     fn print(&mut self, c: char) {
         if c == '\u{fffd}' || ('\u{80}'..'\u{a0}').contains(&c) {
             self.callbacks.error(&mut self.screen.0);
@@ -229,18 +265,24 @@ impl<T: crate::callbacks::Callbacks> vte::Perform for WrappedScreenWithCallbacks
         self.screen.esc_dispatch(intermediates, ignore, b);
     }
 
-    fn csi_dispatch(&mut self, params: &vte::Params, intermediates: &[u8], ignore: bool, c: char) {
+    fn csi_dispatch(
+        &mut self,
+        params: &vte::Params,
+        intermediates: &[u8],
+        ignore: bool,
+        c: char,
+    ) {
         if intermediates.is_empty() && c == 't' {
             let mut iter = params.iter();
             let op = iter.next().and_then(|x| x.first().copied());
             if op == Some(8) {
                 let (screen_rows, screen_cols) = self.screen.0.size();
-                let rows = iter
-                    .next()
-                    .map_or(screen_rows, |x| *x.first().unwrap_or(&screen_rows));
-                let cols = iter
-                    .next()
-                    .map_or(screen_cols, |x| *x.first().unwrap_or(&screen_cols));
+                let rows = iter.next().map_or(screen_rows, |x| {
+                    *x.first().unwrap_or(&screen_rows)
+                });
+                let cols = iter.next().map_or(screen_cols, |x| {
+                    *x.first().unwrap_or(&screen_cols)
+                });
                 self.callbacks.resize(&mut self.screen.0, (rows, cols));
             }
         }
@@ -251,7 +293,13 @@ impl<T: crate::callbacks::Callbacks> vte::Perform for WrappedScreenWithCallbacks
         self.screen.osc_dispatch(params, bel_terminated);
     }
 
-    fn hook(&mut self, params: &vte::Params, intermediates: &[u8], ignore: bool, action: char) {
+    fn hook(
+        &mut self,
+        params: &vte::Params,
+        intermediates: &[u8],
+        ignore: bool,
+        action: char,
+    ) {
         self.screen.hook(params, intermediates, ignore, action);
     }
 }
