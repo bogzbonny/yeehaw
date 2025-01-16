@@ -18,6 +18,9 @@ be made exclusively within textbox.rs
 querying for code explaining `control-delete key handling in Rust`
 Running Completions
 
+always halts at running completions
+
+
 01. showcase bug left and right keys dont work good on the distance slider of
     the colors example if the size of the screen is large, this is because the 
     changes made by incrementing the slider by "1 tick" doesn't account for
