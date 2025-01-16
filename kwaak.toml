@@ -31,8 +31,7 @@ lint_and_fix = "cargo clippy --fix --allow-dirty --allow-staged && cargo fmt"
 owner = "bogzbonny"
 repository = "yeehaw"
 main_branch = "main"
-## The token is expected to have read and write access for git, and the ability to create and update pull requests.
-# token = "env:KWAAK_GITHUB_TOKEN"
+token = "env:KWAAK_GITHUB_TOKEN"
 
 ## Kwaak uses different LLMs for different tasks. As a rule of thumb, tasks that happen often (like indexing, summarizing) require a small, fast model
 ## and tasks that happen less often (like completion) can use a larger, more accurate model.
