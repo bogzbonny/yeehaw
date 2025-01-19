@@ -355,6 +355,10 @@ CONTAINERS
 __________________________________________________________________________
 WIDGETS
 
+10. Scrollable log screen like kwaak uses.
+
+10. right hand tabs like kwaak
+
 10. wire-connectors
     - for visualizing routing of information between elements
     - could be directional or non-directional (aka use an arrow or not)
