@@ -17,11 +17,11 @@ tavily_api_key = "env:TAVILY_API_KEY"
 [commands]
 test = "cargo test -p yeehaw --no-fail-fast --color=never"
 # Example: coverage = "cargo llvm-cov --no-clean --summary-only"
-coverage = "cargo llvm-cov nextest --no-clean --summary-only"
+coverage = "cargo llvm-cov nextest -p yeehaw --no-clean --summary-only"
 
 ## Optional: Lint and fix command. This command is run after each completion cycle, before committing the code.
 ## Recommended to use, as it avoids the LLM getting distracted by linting issues
-#lint_and_fix = "cargo clippy --fix --allow-dirty --allow-staged && cargo fmt"
+lint_and_fix = "cargo clippy --fix --allow-dirty --allow-staged && cargo fmt"
 
 ## Git and GitHub configuration
 #
