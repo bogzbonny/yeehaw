@@ -2,6 +2,8 @@ language = "Rust"
 
 project_name = "yeehaw"
 
+otel_enabled = true
+
 ## Optional: Connect kwaak to tavily to enable it to search the web
 tavily_api_key = "env:TAVILY_API_KEY"
 github_api_key = "env:KWAAK_GITHUB_TOKEN"
