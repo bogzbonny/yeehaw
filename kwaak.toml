@@ -15,7 +15,7 @@ tavily_api_key = "env:TAVILY_API_KEY"
 ## Test and coverage are required. Kwaak expects coverage to run the tests as well and echo both the test and coverage results to stdout
 ## At the moment, the format of the output does not matter.
 [commands]
-test = "cargo test --no-fail-fast --color=never"
+test = "cargo test -p yeehaw --no-fail-fast --color=never"
 # Example: coverage = "cargo llvm-cov --no-clean --summary-only"
 coverage = "cargo llvm-cov nextest --no-clean --summary-only"
 
@@ -27,7 +27,7 @@ coverage = "cargo llvm-cov nextest --no-clean --summary-only"
 #
 ## Kwaak can create and update PRs on Github, search github code, and interact with the git repository. This requires a github token.
 ## If you leave the token empty, kwaak will not create PRs.
-[github]
+[git]
 owner = "bogzbonny"
 repository = "yeehaw"
 main_branch = "main"
@@ -52,15 +52,5 @@ api_key = "env:KWAAK_OPENAI_API_KEY"
 provider = "OpenAI"
 embedding_model = "text-embedding-3-large"
 
-## Docker configuration
-## kwaak requires a Dockerfile for the tool execution environment.
-## Besides the dependencies to run the code, there are several additional dependencies:
-## - `git` for interacting with the codebase
-## - `rg` (ripgrep) for searching the codebase
-## - `fd` (fd) for effective file searching
-##
-## In the future, an executor is planned that does not have these dependencies, but for now, they are required.
-##
-## If your project already has a Dockerfile and you want to keep it clean, you can specify a different file to use.
 [docker]
 dockerfile = "Dockerfile"

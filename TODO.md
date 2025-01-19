@@ -5,20 +5,13 @@
 
 01. improper handling of "delete" (control-delete) in textbox interpreted as
     control-h
-produces error:
-within the textbox element (file is textbox.rs) there is improper handling of
-the usage of the "delete" key (control-delete on mac) the textbox interprets it
-as control-h. Fix this so it will actually perform a delete
 
-within the textbox element (file is textbox.rs) there is improper handling of
-the usage of the "delete" key (control-delete on mac) the textbox interprets it
-as control-h. Fix this so it will actually perform a delete, all changes should
-be made exclusively within textbox.rs
+within the textbox element (file is "yeehaw/src/elements/widgets/textbox.rs")
+there is improper handling of the "delete" key (control-delete on mac) the
+textbox interprets it as control-h. Fix this so it will actually perform a
+delete and not type 'h'. All changes should only be made within the "textbox.rs"
+file.
 
-querying for code explaining `control-delete key handling in Rust`
-Running Completions
-
-always halts at running completions
 
 
 01. showcase bug left and right keys dont work good on the distance slider of
