@@ -8,9 +8,11 @@
 
 Change the scrollable pane element
 (yeehaw/src/elements/panes/pane_scrollable.rs) so that it modifies its offset
-when ever it's resized. Resizing a scrollable pane should modify the starting
-offsets of that pane to account for the extra space instead of automatically
-extending the pane out of range.
+appropriately when ever it's resized. When increasing the size of a scrollable
+pane if the offsets are larger than 0, then the offsets should be reduced (to
+a minimum of 0) so that the scrollable pane does not extend beyond its provided
+range
+
 
 01. improper handling of "delete" (control-delete) in textbox interpreted as
     control-h
