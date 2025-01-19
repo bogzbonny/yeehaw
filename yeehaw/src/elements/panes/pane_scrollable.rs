@@ -138,6 +138,26 @@ impl Element for PaneScrollable {
             return (captured, resps);
         }
 
+        if let Event::Resize = ev {
+            let prev_width = *self.content_width.borrow();
+            let prev_height = *self.content_height.borrow();
+            let new_width = self.get_content_width(None);
+            let new_height = self.get_content_height(None);
+
+            if new_width > prev_width {
+                let new_offset_x =
+                    new_width.saturating_sub(prev_width + *self.content_offset_x.borrow());
+                self.set_content_x_offset(None, *self.content_offset_x.borrow() + new_offset_x);
+            }
+
+            if new_height > prev_height {
+                let new_offset_y =
+                    new_height.saturating_sub(prev_height + *self.content_offset_y.borrow());
+                self.set_content_y_offset(None, *self.content_offset_y.borrow() + new_offset_y);
+            }
+            return (true, resps);
+        }
+
         if let Event::Mouse(me) = ev {
             let Some(sc_rate) = *self.scroll_rate.borrow() else {
                 return (captured, resps);
