@@ -3,6 +3,15 @@
 
 
 
+10. resizing a scrollable pane should modify the offset of that pane to account
+    for the extra space (instead of automatically extending out of range)
+
+Change the scrollable pane element
+(yeehaw/src/elements/panes/pane_scrollable.rs) so that it modifies its offset
+when ever it's resized. Resizing a scrollable pane should modify the starting
+offsets of that pane to account for the extra space instead of automatically
+extending the pane out of range.
+
 01. improper handling of "delete" (control-delete) in textbox interpreted as
     control-h
 
@@ -10,8 +19,6 @@ within the textbox element (file is "yeehaw/src/elements/widgets/textbox.rs")
 there is improper handling of the "delete" key (control-delete on mac) the
 textbox interprets it as control-h. Fix this so it will actually perform a
 delete and not type 'h'. All changes should only be made within the "textbox.rs"
-file.
-
 
 
 01. showcase bug left and right keys dont work good on the distance slider of
@@ -229,6 +236,13 @@ BUGFIXES/PATCHES
 
 10. resizing a scrollable pane should modify the offset of that pane to account
     for the extra space (instead of automatically extending out of range)
+
+Change the scrollable pane element
+(yeehaw/src/elements/panes/pane_scrollable.rs) so that it modifies its offset
+when ever it's resized. Resizing a scrollable pane should modify the starting
+offsets of that pane to account for the extra space instead of automatically
+extending the pane out of range.
+
 
 01. dropdownlist option to deselect on enter (useful for usage in non-selection
     parent pane)

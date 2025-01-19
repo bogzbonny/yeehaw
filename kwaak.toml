@@ -1,54 +1,33 @@
-# This is a a prefilled template for `kwaak`
-#
-# Several assumptions and defaults have been filled in. For proper usage, please customize the values to your needs.
-project_name = "yeehaw"
 language = "Rust"
+
+project_name = "yeehaw"
 
 ## Optional: Connect kwaak to tavily to enable it to search the web
 tavily_api_key = "env:TAVILY_API_KEY"
+github_api_key = "env:KWAAK_GITHUB_TOKEN"
+openai_api_key = "env:KWAAK_OPENAI_API_KEY"
 
-## Optional: Override the tool executor. Valid options are `local` and `docker`
-## Since agents write code, running kwaak in a sandbox is highly recommended
-#tool_executor = "docker"
+tool_executor = "docker"
 
-## Commands the agent uses for tools
-## Test and coverage are required. Kwaak expects coverage to run the tests as well and echo both the test and coverage results to stdout
-## At the moment, the format of the output does not matter.
 [commands]
 test = "cargo test -p yeehaw --no-fail-fast --color=never"
-# Example: coverage = "cargo llvm-cov --no-clean --summary-only"
 coverage = "cargo llvm-cov nextest -p yeehaw --no-clean --summary-only"
-
-## Optional: Lint and fix command. This command is run after each completion cycle, before committing the code.
-## Recommended to use, as it avoids the LLM getting distracted by linting issues
 lint_and_fix = "cargo clippy --fix --allow-dirty --allow-staged && cargo fmt"
 
-## Git and GitHub configuration
-#
-## Kwaak can create and update PRs on Github, search github code, and interact with the git repository. This requires a github token.
-## If you leave the token empty, kwaak will not create PRs.
 [git]
 owner = "bogzbonny"
 repository = "yeehaw"
 main_branch = "main"
-token = "env:KWAAK_GITHUB_TOKEN"
 
-## Kwaak uses different LLMs for different tasks. As a rule of thumb, tasks that happen often (like indexing, summarizing) require a small, fast model
-## and tasks that happen less often (like completion) can use a larger, more accurate model.
-#api_key = "env:KWAAK_OPENAI_API_KEY"
-#api_key = "file:./open_ai_token"
 [llm.indexing]
-api_key = "env:KWAAK_OPENAI_API_KEY"
 provider = "OpenAI"
 prompt_model = "gpt-4o-mini"
 
 [llm.query]
-api_key = "env:KWAAK_OPENAI_API_KEY"
 provider = "OpenAI"
 prompt_model = "gpt-4o"
 
 [llm.embedding]
-api_key = "env:KWAAK_OPENAI_API_KEY"
 provider = "OpenAI"
 embedding_model = "text-embedding-3-large"
 
