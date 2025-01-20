@@ -1,8 +1,6 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
-
 10. resizing a scrollable pane should modify the offset of that pane to account
     for the extra space (instead of automatically extending out of range)
 
@@ -16,6 +14,8 @@ range
 
 01. improper handling of "delete" (control-delete) in textbox interpreted as
     control-h
+
+errors out after about 6 minutes:
 
 within the textbox element (file is "yeehaw/src/elements/widgets/textbox.rs")
 there is improper handling of the "delete" key (control-delete on mac) the
@@ -535,6 +535,8 @@ __________________________________________________________________________
 PROGRAMS
 
 01. Snapshot TUI Tester (just call this tui-tester, binary: tuit (lol)) 
+     - consider building as an extension of insta: 
+        - https://insta.rs/
      - always multi-stage
        - record each action then take a snapshot, however don't save the
          snapshot if it's the same as the previous snapshot. 
