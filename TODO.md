@@ -299,6 +299,13 @@ extending the pane out of range.
 
 05. Ability to use arrow keys to select menu item when menu is open
 
+Within the menu bar element (menu.rs), currently the only way choose a menu item
+is with the mouse. Please extend the functionality such that once the menu bar
+is open the arrow keys can be used to change the menu item selection. For sub
+menu items, the user should need to use the right arrow to move to the sub menu.
+Once the user has choosed a menu item using the enter key should act similarly
+to having clicked that menu item.  
+
 20. when drag resizing stack panes, sometimes panes which are further in the
     stack from drag location change by 1... should attempt to correct for this.
 

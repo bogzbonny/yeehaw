@@ -15,7 +15,7 @@ Directory Structure:
 - yeehaw/src/elements/widgets/: Location of all the yeehaw tui widgets
 
 Setup:
-- Install Cargo
+- At startup always install cargo using: `curl https://sh.rustup.rs -sSf | sh`
 - Run `cargo build` for ensuring code builds
 - Run `cargo test -p yeehaw --no-fail-fast` for testing
 
