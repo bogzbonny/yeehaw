@@ -525,6 +525,10 @@ impl MenuBar {
         }
 
         let current_idx = if let Some(current_id) = self.selected_item.borrow().as_ref().cloned() {
+            // Unselect current item
+            if let Some(current_item) = self.menu_items.borrow().get(&current_id) {
+                current_item.unselect();
+            }
             primary_items.iter()
                 .position(|item| item.id() == current_id)
                 .unwrap_or(0)
@@ -543,7 +547,9 @@ impl MenuBar {
         new_item.select();
 
         self.collapse_non_primary();
-        self.expand_folder(&new_item, *self.primary_open_dir.borrow());
+        if *new_item.is_folder.borrow() {
+            self.expand_folder(&new_item, *self.primary_open_dir.borrow());
+        }
         self.update_extra_locations();
     }
 
@@ -558,6 +564,10 @@ impl MenuBar {
         }
 
         let current_idx = if let Some(current_id) = self.selected_item.borrow().as_ref().cloned() {
+            // Unselect current item
+            if let Some(current_item) = self.menu_items.borrow().get(&current_id) {
+                current_item.unselect();
+            }
             primary_items.iter()
                 .position(|item| item.id() == current_id)
                 .unwrap_or(0)
@@ -571,7 +581,9 @@ impl MenuBar {
         new_item.select();
 
         self.collapse_non_primary();
-        self.expand_folder(&new_item, *self.primary_open_dir.borrow());
+        if *new_item.is_folder.borrow() {
+            self.expand_folder(&new_item, *self.primary_open_dir.borrow());
+        }
         self.update_extra_locations();
     }
 
@@ -605,6 +617,16 @@ impl MenuBar {
 
         *self.selected_item.borrow_mut() = Some(new_item.id());
         new_item.select();
+        
+        if *new_item.is_folder.borrow() {
+            let open_dir = if new_item.is_primary() {
+                *self.primary_open_dir.borrow()
+            } else {
+                *self.secondary_open_dir.borrow()
+            };
+            self.expand_folder(&new_item, open_dir);
+            self.update_extra_locations();
+        }
     }
 
     fn select_prev_item(&self) {
@@ -642,6 +664,16 @@ impl MenuBar {
 
         *self.selected_item.borrow_mut() = Some(new_item.id());
         new_item.select();
+        
+        if *new_item.is_folder.borrow() {
+            let open_dir = if new_item.is_primary() {
+                *self.primary_open_dir.borrow()
+            } else {
+                *self.secondary_open_dir.borrow()
+            };
+            self.expand_folder(&new_item, open_dir);
+            self.update_extra_locations();
+        }
     }
 
     fn expand_current_submenu(&self) {
