@@ -24,4 +24,7 @@ Guidelines:
 - When building new elements and widgets always use other elements and widget as
   a template to work from.
 - Write tests for all new features.
+- After writing code always run `cargo test` to make sure the code builds and
+  runs. fix any errors that occur
+
 
