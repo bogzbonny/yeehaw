@@ -1,5 +1,5 @@
 use {
-    crate::*,
+    crate::{Keyboard as KB, *},
     crossterm::event::{KeyCode, KeyEvent, MouseButton, MouseEventKind},
     rayon::prelude::*,
     std::collections::HashMap,
@@ -87,12 +87,23 @@ impl MenuBar {
     /// very frontward
     const MENU_STYLE_MD_KEY: &'static str = "menu_style";
 
+    pub fn default_receivable_events() -> ReceivableEvents {
+        ReceivableEvents(vec![
+            (KB::KEY_ENTER.into()),
+            (KB::KEY_DOWN.into()),
+            (KB::KEY_UP.into()),
+            (KB::KEY_LEFT.into()),
+            (KB::KEY_RIGHT.into()),
+        ])
+    }
+
     pub fn top_menu_bar(ctx: &Context) -> Self {
         let menu_sty = MenuStyle::default();
         let pane = ParentPane::new(ctx, MenuBar::KIND)
             .with_z(MenuBar::Z_INDEX)
             .with_style(menu_sty.unselected_style.clone())
-            .with_overflow();
+            .with_overflow()
+            .with_focused_receivable_events(Self::default_receivable_events());
 
         MenuBar {
             pane,
@@ -115,7 +126,8 @@ impl MenuBar {
     pub fn right_click_menu(ctx: &Context) -> Self {
         let pane = ParentPane::new(ctx, MenuBar::KIND)
             .with_z(MenuBar::Z_INDEX)
-            .with_overflow();
+            .with_overflow()
+            .with_focused_receivable_events(Self::default_receivable_events());
         MenuBar {
             pane,
             horizontal_bar: Rc::new(RefCell::new(false)),
