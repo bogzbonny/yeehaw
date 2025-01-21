@@ -468,43 +468,77 @@ impl MenuBar {
             return (true, EventResponses::default());
         }
 
+        // Get current item info
+        let current_item = if let Some(item_id) = self.selected_item.borrow().as_ref().cloned() {
+            self.menu_items.borrow().get(&item_id).cloned()
+        } else {
+            None
+        };
+
+        let is_primary = current_item.as_ref().map_or(true, |item| item.is_primary());
+        let is_horizontal = *self.horizontal_bar.borrow();
+
         match ke.code {
             KeyCode::Left => {
-                if *self.horizontal_bar.borrow() {
+                if is_horizontal && is_primary {
+                    // In horizontal mode, left/right moves between primary items
                     self.select_prev_primary();
-                } else {
+                } else if !is_primary {
+                    // When in a submenu, left collapses back to parent
                     self.collapse_current_submenu();
                 }
                 (true, EventResponses::default())
             }
             KeyCode::Right => {
-                if *self.horizontal_bar.borrow() {
+                if is_horizontal && is_primary {
+                    // In horizontal mode, left/right moves between primary items
                     self.select_next_primary();
-                } else {
-                    self.expand_current_submenu();
+                } else if let Some(item) = current_item {
+                    if *item.is_folder.borrow() {
+                        // Right key always expands folders
+                        self.expand_current_submenu();
+                    }
                 }
                 (true, EventResponses::default())
             }
             KeyCode::Up => {
-                self.select_prev_item();
+                if !is_horizontal && is_primary {
+                    // In vertical mode, up/down moves between primary items
+                    self.select_prev_primary();
+                } else if !is_primary {
+                    // In submenus, up/down moves between visible items
+                    self.select_prev_item();
+                }
                 (true, EventResponses::default())
             }
             KeyCode::Down => {
-                self.select_next_item();
+                if is_primary {
+                    if is_horizontal {
+                        // In horizontal mode, down moves into submenu
+                        if let Some(item) = current_item {
+                            if *item.is_folder.borrow() {
+                                self.expand_current_submenu();
+                            }
+                        }
+                    } else {
+                        // In vertical mode, up/down moves between primary items
+                        self.select_next_primary();
+                    }
+                } else {
+                    // In submenus, up/down moves between visible items
+                    self.select_next_item();
+                }
                 (true, EventResponses::default())
             }
             KeyCode::Enter => {
-                if let Some(item_id) = self.selected_item.borrow().as_ref().cloned() {
-                    if let Some(item) = self.menu_items.borrow().get(&item_id) {
-                        if *item.is_folder.borrow() {
-                            self.expand_current_submenu();
-                            return (true, EventResponses::default());
-                        } else if *item.selectable.borrow() {
-                            if let Some(ref mut click_fn) = *item.click_fn.borrow_mut() {
-                                let resps = click_fn(ctx.clone());
-                                self.closedown();
-                                return (true, resps);
-                            }
+                if let Some(item) = current_item {
+                    if *item.is_folder.borrow() {
+                        self.expand_current_submenu();
+                    } else if *item.selectable.borrow() {
+                        if let Some(ref mut click_fn) = *item.click_fn.borrow_mut() {
+                            let resps = click_fn(ctx.clone());
+                            self.closedown();
+                            return (true, resps);
                         }
                     }
                 }
@@ -617,16 +651,6 @@ impl MenuBar {
 
         *self.selected_item.borrow_mut() = Some(new_item.id());
         new_item.select();
-        
-        if *new_item.is_folder.borrow() {
-            let open_dir = if new_item.is_primary() {
-                *self.primary_open_dir.borrow()
-            } else {
-                *self.secondary_open_dir.borrow()
-            };
-            self.expand_folder(&new_item, open_dir);
-            self.update_extra_locations();
-        }
     }
 
     fn select_prev_item(&self) {
@@ -664,16 +688,6 @@ impl MenuBar {
 
         *self.selected_item.borrow_mut() = Some(new_item.id());
         new_item.select();
-        
-        if *new_item.is_folder.borrow() {
-            let open_dir = if new_item.is_primary() {
-                *self.primary_open_dir.borrow()
-            } else {
-                *self.secondary_open_dir.borrow()
-            };
-            self.expand_folder(&new_item, open_dir);
-            self.update_extra_locations();
-        }
     }
 
     fn expand_current_submenu(&self) {
