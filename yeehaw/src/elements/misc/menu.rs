@@ -1,6 +1,6 @@
 use {
     crate::*,
-    crossterm::event::{MouseButton, MouseEventKind},
+    crossterm::event::{KeyCode, KeyEvent, MouseButton, MouseEventKind},
     rayon::prelude::*,
     std::collections::HashMap,
 };
@@ -31,6 +31,8 @@ pub struct MenuBar {
     make_invisible_on_closedown: Rc<RefCell<bool>>,
     /// close the menubar on a click of a primary menu item
     close_on_primary_click: Rc<RefCell<bool>>,
+    /// currently selected menu item for keyboard navigation
+    selected_item: Rc<RefCell<Option<ElementID>>>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
@@ -104,6 +106,7 @@ impl MenuBar {
             menu_style: Rc::new(RefCell::new(menu_sty)),
             make_invisible_on_closedown: Rc::new(RefCell::new(false)),
             close_on_primary_click: Rc::new(RefCell::new(true)),
+            selected_item: Rc::new(RefCell::new(None)),
         }
         .with_dyn_height(1)
         .with_dyn_width(DynVal::FULL)
@@ -125,6 +128,7 @@ impl MenuBar {
             menu_style: Rc::new(RefCell::new(MenuStyle::default())),
             make_invisible_on_closedown: Rc::new(RefCell::new(true)),
             close_on_primary_click: Rc::new(RefCell::new(false)),
+            selected_item: Rc::new(RefCell::new(None)),
         }
     }
 
@@ -400,6 +404,9 @@ impl MenuBar {
             }
         }
 
+        // Clear selected item
+        *self.selected_item.borrow_mut() = None;
+
         // update extra locations for parent eo
         self.update_extra_locations();
 
@@ -433,6 +440,236 @@ impl MenuBar {
 
     pub fn activate(&self) {
         *self.activated.borrow_mut() = true;
+
+        // Select first primary item if none is selected
+        if self.selected_item.borrow().is_none() {
+            let menu_items = self.menu_items_order.borrow();
+            if let Some(first_primary) = menu_items.iter().find(|item| item.is_primary()) {
+                *self.selected_item.borrow_mut() = Some(first_primary.id());
+                first_primary.select();
+            }
+        }
+    }
+
+    pub fn receive_key_event(&self, ctx: &Context, ke: KeyEvent) -> (bool, EventResponses) {
+        if !*self.activated.borrow() {
+            return (true, EventResponses::default());
+        }
+
+        match ke.code {
+            KeyCode::Left => {
+                if *self.horizontal_bar.borrow() {
+                    self.select_prev_primary();
+                } else {
+                    self.collapse_current_submenu();
+                }
+                (true, EventResponses::default())
+            }
+            KeyCode::Right => {
+                if *self.horizontal_bar.borrow() {
+                    self.select_next_primary();
+                } else {
+                    self.expand_current_submenu();
+                }
+                (true, EventResponses::default())
+            }
+            KeyCode::Up => {
+                self.select_prev_item();
+                (true, EventResponses::default())
+            }
+            KeyCode::Down => {
+                self.select_next_item();
+                (true, EventResponses::default())
+            }
+            KeyCode::Enter => {
+                if let Some(item_id) = self.selected_item.borrow().as_ref().cloned() {
+                    if let Some(item) = self.menu_items.borrow().get(&item_id) {
+                        if *item.is_folder.borrow() {
+                            self.expand_current_submenu();
+                            return (true, EventResponses::default());
+                        } else if *item.selectable.borrow() {
+                            if let Some(ref mut click_fn) = *item.click_fn.borrow_mut() {
+                                let resps = click_fn(ctx.clone());
+                                self.closedown();
+                                return (true, resps);
+                            }
+                        }
+                    }
+                }
+                (true, EventResponses::default())
+            }
+            _ => (true, EventResponses::default()),
+        }
+    }
+
+    fn select_prev_primary(&self) {
+        let menu_items = self.menu_items_order.borrow();
+        let primary_items: Vec<_> = menu_items.iter()
+            .filter(|item| item.is_primary())
+            .collect();
+
+        if primary_items.is_empty() {
+            return;
+        }
+
+        let current_idx = if let Some(current_id) = self.selected_item.borrow().as_ref().cloned() {
+            primary_items.iter()
+                .position(|item| item.id() == current_id)
+                .unwrap_or(0)
+        } else {
+            0
+        };
+
+        let new_idx = if current_idx == 0 {
+            primary_items.len() - 1
+        } else {
+            current_idx - 1
+        };
+
+        let new_item = primary_items[new_idx].clone();
+        *self.selected_item.borrow_mut() = Some(new_item.id());
+        new_item.select();
+
+        self.collapse_non_primary();
+        self.expand_folder(&new_item, *self.primary_open_dir.borrow());
+        self.update_extra_locations();
+    }
+
+    fn select_next_primary(&self) {
+        let menu_items = self.menu_items_order.borrow();
+        let primary_items: Vec<_> = menu_items.iter()
+            .filter(|item| item.is_primary())
+            .collect();
+
+        if primary_items.is_empty() {
+            return;
+        }
+
+        let current_idx = if let Some(current_id) = self.selected_item.borrow().as_ref().cloned() {
+            primary_items.iter()
+                .position(|item| item.id() == current_id)
+                .unwrap_or(0)
+        } else {
+            0
+        };
+
+        let new_idx = (current_idx + 1) % primary_items.len();
+        let new_item = primary_items[new_idx].clone();
+        *self.selected_item.borrow_mut() = Some(new_item.id());
+        new_item.select();
+
+        self.collapse_non_primary();
+        self.expand_folder(&new_item, *self.primary_open_dir.borrow());
+        self.update_extra_locations();
+    }
+
+    fn select_next_item(&self) {
+        let menu_items = self.menu_items_order.borrow();
+        let visible_items: Vec<_> = menu_items.iter()
+            .filter(|item| item.get_visible())
+            .collect();
+
+        if visible_items.is_empty() {
+            return;
+        }
+
+        let current_idx = if let Some(current_id) = self.selected_item.borrow().as_ref().cloned() {
+            visible_items.iter()
+                .position(|item| item.id() == current_id)
+                .unwrap_or(0)
+        } else {
+            0
+        };
+
+        let new_idx = (current_idx + 1) % visible_items.len();
+        let new_item = visible_items[new_idx].clone();
+        
+        // Unselect current item
+        if let Some(current_id) = self.selected_item.borrow().as_ref().cloned() {
+            if let Some(current_item) = self.menu_items.borrow().get(&current_id) {
+                current_item.unselect();
+            }
+        }
+
+        *self.selected_item.borrow_mut() = Some(new_item.id());
+        new_item.select();
+    }
+
+    fn select_prev_item(&self) {
+        let menu_items = self.menu_items_order.borrow();
+        let visible_items: Vec<_> = menu_items.iter()
+            .filter(|item| item.get_visible())
+            .collect();
+
+        if visible_items.is_empty() {
+            return;
+        }
+
+        let current_idx = if let Some(current_id) = self.selected_item.borrow().as_ref().cloned() {
+            visible_items.iter()
+                .position(|item| item.id() == current_id)
+                .unwrap_or(0)
+        } else {
+            0
+        };
+
+        let new_idx = if current_idx == 0 {
+            visible_items.len() - 1
+        } else {
+            current_idx - 1
+        };
+
+        let new_item = visible_items[new_idx].clone();
+        
+        // Unselect current item
+        if let Some(current_id) = self.selected_item.borrow().as_ref().cloned() {
+            if let Some(current_item) = self.menu_items.borrow().get(&current_id) {
+                current_item.unselect();
+            }
+        }
+
+        *self.selected_item.borrow_mut() = Some(new_item.id());
+        new_item.select();
+    }
+
+    fn expand_current_submenu(&self) {
+        if let Some(current_id) = self.selected_item.borrow().as_ref().cloned() {
+            if let Some(current_item) = self.menu_items.borrow().get(&current_id) {
+                if *current_item.is_folder.borrow() {
+                    let open_dir = if current_item.is_primary() {
+                        *self.primary_open_dir.borrow()
+                    } else {
+                        *self.secondary_open_dir.borrow()
+                    };
+                    self.expand_folder(current_item, open_dir);
+                    self.update_extra_locations();
+                }
+            }
+        }
+    }
+
+    fn collapse_current_submenu(&self) {
+        if let Some(current_id) = self.selected_item.borrow().as_ref().cloned() {
+            if let Some(current_item) = self.menu_items.borrow().get(&current_id) {
+                if !current_item.is_primary() {
+                    // Find the parent menu item
+                    let current_path = current_item.path.borrow();
+                    let folders = current_path.folders();
+                    if !folders.is_empty() {
+                        let parent_path = folders.join("/");
+                        if let Some(parent_item) = self.get_menu_item_from_path(MenuPath(parent_path)) {
+                            // Select the parent and collapse everything else
+                            *self.selected_item.borrow_mut() = Some(parent_item.id());
+                            parent_item.select();
+                            current_item.unselect();
+                            self.collapse_non_primary();
+                            self.expand_up_to_item(&parent_item);
+                            self.update_extra_locations();
+                        }
+                    }
+                }
+            }
+        }
     }
 
     pub fn extra_locations(&self) -> Vec<DynLocation> {
@@ -669,6 +906,7 @@ impl Element for MenuBar {
         match ev {
             Event::Mouse(me) => self.receive_mouse_event(ctx, me),
             Event::ExternalMouse(me) => self.receive_external_mouse_event(ctx, me),
+            Event::KeyCombo(keys) if !keys.is_empty() => self.receive_key_event(ctx, keys[0]),
             _ => self.pane.receive_event(ctx, ev.clone()),
         }
     }
