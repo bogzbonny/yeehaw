@@ -1,3 +1,4 @@
+05. Ability to use arrow keys to select menu item when menu is open
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -297,7 +298,6 @@ extending the pane out of range.
            parent pane has this hook registered for resized on each
            minimization.
 
-05. Ability to use arrow keys to select menu item when menu is open
 
 Within the menu bar element (menu.rs), currently the only way choose a menu item
 is with the mouse. Please extend the functionality such that once the menu bar
