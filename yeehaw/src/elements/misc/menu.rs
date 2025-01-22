@@ -656,12 +656,16 @@ impl MenuBar {
 
         new_item.select();
 
+        // Collapse all non-primary items and re-expand to the current item
+        self.collapse_non_primary();
+        self.expand_up_to_item(&new_item);
+
         // If the newly selected item is a folder and not a primary item, expand it
         if !new_item.is_primary() && *new_item.is_folder.borrow() {
             let open_dir = *self.secondary_open_dir.borrow();
             self.expand_folder(&new_item, open_dir);
-            self.update_extra_locations();
         }
+        self.update_extra_locations();
     }
 
     fn select_prev_item(&self) {
@@ -697,12 +701,16 @@ impl MenuBar {
 
         new_item.select();
 
+        // Collapse all non-primary items and re-expand to the current item
+        self.collapse_non_primary();
+        self.expand_up_to_item(&new_item);
+
         // If the newly selected item is a folder and not a primary item, expand it
         if !new_item.is_primary() && *new_item.is_folder.borrow() {
             let open_dir = *self.secondary_open_dir.borrow();
             self.expand_folder(&new_item, open_dir);
-            self.update_extra_locations();
         }
+        self.update_extra_locations();
     }
 
     fn expand_current_submenu(&self) {
