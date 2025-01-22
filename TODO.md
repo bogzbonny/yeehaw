@@ -1,3 +1,4 @@
+05. Ability to use arrow keys to select menu item when menu is open
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -297,7 +298,6 @@ extending the pane out of range.
            parent pane has this hook registered for resized on each
            minimization.
 
-05. Ability to use arrow keys to select menu item when menu is open
 
 20. when drag resizing stack panes, sometimes panes which are further in the
     stack from drag location change by 1... should attempt to correct for this.
