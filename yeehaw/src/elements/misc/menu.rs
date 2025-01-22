@@ -728,8 +728,35 @@ impl MenuBar {
             KeyCode::Enter => {
                 if let Some(item) = current_item {
                     if *item.is_folder.borrow() {
+                        // For folders, expand them
                         self.expand_current_submenu();
+                        
+                        // If it's a primary folder in horizontal mode, also move to first sub-item
+                        if is_horizontal && is_primary {
+                            let menu_items = self.menu_items_order.borrow();
+                            let current_path = item.path.borrow().clone();
+                            if let Some(first_sub_item) = menu_items.iter()
+                                .filter(|sub_item| {
+                                    let sub_path = sub_item.path.borrow();
+                                    current_path.is_immediate_parent_of(&sub_path)
+                                })
+                                .next()
+                            {
+                                // Unselect current item
+                                item.unselect();
+                                // Select first sub-item
+                                first_sub_item.select();
+                                
+                                // If the first sub-item is a folder, expand it
+                                if *first_sub_item.is_folder.borrow() {
+                                    let open_dir = *self.secondary_open_dir.borrow();
+                                    self.expand_folder(first_sub_item, open_dir);
+                                    self.update_extra_locations();
+                                }
+                            }
+                        }
                     } else if *item.selectable.borrow() {
+                        // For non-folder items, call their click function
                         if let Some(ref mut click_fn) = *item.click_fn.borrow_mut() {
                             let resps = click_fn(ctx.clone());
                             self.closedown();
