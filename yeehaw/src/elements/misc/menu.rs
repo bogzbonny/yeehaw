@@ -516,8 +516,25 @@ impl MenuBar {
                     if is_horizontal {
                         // In horizontal mode, down moves into submenu
                         if let Some(item) = current_item {
+                            // First expand the folder if it is one
                             if *item.is_folder.borrow() {
                                 self.expand_current_submenu();
+                            }
+                            // Get the first sub-item of this primary item
+                            let menu_items = self.menu_items_order.borrow();
+                            let current_path = item.path.borrow().clone();
+                            if let Some(first_sub_item) = menu_items.iter()
+                                .filter(|sub_item| {
+                                    let sub_path = sub_item.path.borrow();
+                                    current_path.is_immediate_parent_of(&sub_path)
+                                })
+                                .next()
+                            {
+                                // Unselect current item
+                                item.unselect();
+                                // Select first sub-item
+                                *self.selected_item.borrow_mut() = Some(first_sub_item.id());
+                                first_sub_item.select();
                             }
                         }
                     } else {
