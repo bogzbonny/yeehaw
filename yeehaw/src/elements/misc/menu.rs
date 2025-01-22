@@ -756,14 +756,34 @@ impl MenuBar {
                             }
                         }
                     } else if *item.selectable.borrow() {
-                        // For non-folder items, call their click function
+                        // For non-folder items, call their click function and close menu
                         if let Some(ref mut click_fn) = *item.click_fn.borrow_mut() {
                             let resps = click_fn(ctx.clone());
-                            self.closedown();
+                            // Deactivate and collapse everything
+                            *self.activated.borrow_mut() = false;
+                            self.collapse_non_primary();
+                            // Unselect all items
+                            let menu_items = self.menu_items.borrow();
+                            for item in menu_items.values() {
+                                item.unselect();
+                            }
+                            self.update_extra_locations();
                             return (true, resps);
                         }
                     }
                 }
+                (true, EventResponses::default())
+            }
+            KeyCode::Esc => {
+                // Deactivate and collapse everything
+                *self.activated.borrow_mut() = false;
+                self.collapse_non_primary();
+                // Unselect all items
+                let menu_items = self.menu_items.borrow();
+                for item in menu_items.values() {
+                    item.unselect();
+                }
+                self.update_extra_locations();
                 (true, EventResponses::default())
             }
             _ => (true, EventResponses::default()),
