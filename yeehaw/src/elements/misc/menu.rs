@@ -469,16 +469,18 @@ impl MenuBar {
     fn get_first_subitem(&self, parent_item: &MenuItem) -> Option<MenuItem> {
         let menu_items = self.menu_items_order.borrow();
         let parent_path = parent_item.path.borrow().clone();
-        menu_items.iter().find(|sub_item| {
-            parent_path.is_immediate_parent_of(&sub_item.path.borrow())
-        }).cloned()
+        menu_items
+            .iter()
+            .find(|sub_item| parent_path.is_immediate_parent_of(&sub_item.path.borrow()))
+            .cloned()
     }
 
     fn get_visible_siblings(&self, current_item: &MenuItem) -> Vec<MenuItem> {
         let current_path = current_item.path.borrow();
         let current_folders = current_path.folders();
         let menu_items = self.menu_items_order.borrow();
-        menu_items.iter()
+        menu_items
+            .iter()
             .filter(|item| {
                 item.get_visible() && {
                     let item_path = item.path.borrow();
@@ -509,7 +511,9 @@ impl MenuBar {
         self.update_extra_locations();
     }
 
-    fn handle_left_key(&self, current_item: Option<MenuItem>, is_primary: bool, is_horizontal: bool) -> (bool, EventResponses) {
+    fn handle_left_key(
+        &self, current_item: Option<MenuItem>, is_primary: bool, is_horizontal: bool,
+    ) -> (bool, EventResponses) {
         if is_horizontal && is_primary {
             self.select_prev_primary();
             return (true, EventResponses::default());
@@ -543,7 +547,9 @@ impl MenuBar {
         (true, EventResponses::default())
     }
 
-    fn handle_right_key(&self, current_item: Option<MenuItem>, is_primary: bool, is_horizontal: bool) -> (bool, EventResponses) {
+    fn handle_right_key(
+        &self, current_item: Option<MenuItem>, is_primary: bool, is_horizontal: bool,
+    ) -> (bool, EventResponses) {
         if is_horizontal && is_primary {
             self.select_next_primary();
             return (true, EventResponses::default());
@@ -567,7 +573,9 @@ impl MenuBar {
         (true, EventResponses::default())
     }
 
-    fn handle_up_key(&self, current_item: Option<MenuItem>, is_primary: bool, is_horizontal: bool) -> (bool, EventResponses) {
+    fn handle_up_key(
+        &self, current_item: Option<MenuItem>, is_primary: bool, is_horizontal: bool,
+    ) -> (bool, EventResponses) {
         if is_primary {
             if !is_horizontal {
                 self.select_prev_primary();
@@ -587,7 +595,8 @@ impl MenuBar {
                 let parent_path = folders.join("/");
                 if let Some(parent_item) = self.get_menu_item_from_path(MenuPath(parent_path)) {
                     if parent_item.is_primary() {
-                        let is_first_subitem = self.get_first_subitem(&parent_item)
+                        let is_first_subitem = self
+                            .get_first_subitem(&parent_item)
                             .map(|first_sub| first_sub.id() == current_item.id())
                             .unwrap_or(false);
 
@@ -606,7 +615,8 @@ impl MenuBar {
             return (true, EventResponses::default());
         }
 
-        let current_idx = visible_siblings.iter()
+        let current_idx = visible_siblings
+            .iter()
             .position(|item| item.id() == current_item.id())
             .unwrap_or(0);
 
@@ -620,7 +630,9 @@ impl MenuBar {
         (true, EventResponses::default())
     }
 
-    fn handle_down_key(&self, current_item: Option<MenuItem>, is_primary: bool, is_horizontal: bool) -> (bool, EventResponses) {
+    fn handle_down_key(
+        &self, current_item: Option<MenuItem>, is_primary: bool, is_horizontal: bool,
+    ) -> (bool, EventResponses) {
         if is_primary {
             if is_horizontal {
                 let Some(item) = current_item else {
@@ -651,7 +663,8 @@ impl MenuBar {
             return (true, EventResponses::default());
         }
 
-        let current_idx = visible_siblings.iter()
+        let current_idx = visible_siblings
+            .iter()
             .position(|item| item.id() == current_item.id())
             .unwrap_or(0);
 
@@ -666,7 +679,9 @@ impl MenuBar {
         (true, EventResponses::default())
     }
 
-    fn handle_enter_key(&self, current_item: Option<MenuItem>, is_primary: bool, is_horizontal: bool, ctx: &Context) -> (bool, EventResponses) {
+    fn handle_enter_key(
+        &self, current_item: Option<MenuItem>, is_primary: bool, is_horizontal: bool, ctx: &Context,
+    ) -> (bool, EventResponses) {
         let Some(item) = current_item else {
             return (true, EventResponses::default());
         };
