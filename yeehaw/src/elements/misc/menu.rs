@@ -483,8 +483,32 @@ impl MenuBar {
                     // In horizontal mode, left/right moves between primary items
                     self.select_prev_primary();
                 } else if !is_primary {
-                    // When in a submenu, left collapses back to parent
-                    self.collapse_current_submenu();
+                    // When in a submenu, left selects the parent folder
+                    if let Some(item) = current_item {
+                        let current_path = item.path.borrow();
+                        let folders = current_path.folders();
+                        if !folders.is_empty() {
+                            let parent_path = folders.join("/");
+                            if let Some(parent_item) = self.get_menu_item_from_path(MenuPath(parent_path)) {
+                                // Select the parent folder
+                                item.unselect();
+                                parent_item.select();
+                                
+                                // Collapse and re-expand to show the proper menu structure
+                                self.collapse_non_primary();
+                                self.expand_up_to_item(&parent_item);
+                                if *parent_item.is_folder.borrow() {
+                                    let open_dir = if parent_item.is_primary() {
+                                        *self.primary_open_dir.borrow()
+                                    } else {
+                                        *self.secondary_open_dir.borrow()
+                                    };
+                                    self.expand_folder(&parent_item, open_dir);
+                                }
+                                self.update_extra_locations();
+                            }
+                        }
+                    }
                 }
                 (true, EventResponses::default())
             }
@@ -494,8 +518,28 @@ impl MenuBar {
                     self.select_next_primary();
                 } else if let Some(item) = current_item {
                     if *item.is_folder.borrow() {
-                        // Right key always expands folders
+                        // Right key expands folders and selects first sub-item
                         self.expand_current_submenu();
+                        
+                        // Find and select the first sub-item
+                        let item_mp = (*item.path.borrow()).clone();
+                        let menu_items = self.menu_items_order.borrow();
+                        if let Some(first_sub_item) = menu_items.iter()
+                            .find(|sub_item| item_mp.is_immediate_parent_of(&sub_item.path.borrow()))
+                        {
+                            // Select the first sub-item
+                            item.unselect();
+                            first_sub_item.select();
+                            
+                            // Collapse and re-expand to show the proper menu structure
+                            self.collapse_non_primary();
+                            self.expand_up_to_item(first_sub_item);
+                            if *first_sub_item.is_folder.borrow() {
+                                let open_dir = *self.secondary_open_dir.borrow();
+                                self.expand_folder(first_sub_item, open_dir);
+                            }
+                            self.update_extra_locations();
+                        }
                     }
                 }
                 (true, EventResponses::default())
@@ -727,36 +771,6 @@ impl MenuBar {
         }
     }
 
-    fn collapse_current_submenu(&self) {
-        if let Some(current_item) = self.get_selected_item() {
-            if !current_item.is_primary() {
-                // Find the parent menu item
-                let current_path = current_item.path.borrow();
-                let folders = current_path.folders();
-                if !folders.is_empty() {
-                    let parent_path = folders.join("/");
-                    if let Some(parent_item) = self.get_menu_item_from_path(MenuPath(parent_path)) {
-                        // Select the parent and collapse everything else
-                        parent_item.select();
-                        current_item.unselect();
-                        self.collapse_non_primary();
-                        self.expand_up_to_item(&parent_item);
-                        self.update_extra_locations();
-                    }
-                } else {
-                    // If there are no folders, this is a top-level sub-item
-                    // Just collapse everything and select the primary item
-                    let menu_items = self.menu_items_order.borrow();
-                    if let Some(primary_item) = menu_items.iter().find(|item| item.is_primary()) {
-                        primary_item.select();
-                        current_item.unselect();
-                        self.collapse_non_primary();
-                        self.update_extra_locations();
-                    }
-                }
-            }
-        }
-    }
 
     pub fn extra_locations(&self) -> Vec<DynLocation> {
         let bar_loc = self.get_dyn_location_set();
