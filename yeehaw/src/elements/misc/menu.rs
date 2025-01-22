@@ -661,6 +661,13 @@ impl MenuBar {
                                     item.unselect();
                                     // Select first sub-item
                                     first_sub_item.select();
+                                    
+                                    // If the first sub-item is a folder, expand it
+                                    if *first_sub_item.is_folder.borrow() {
+                                        let open_dir = *self.secondary_open_dir.borrow();
+                                        self.expand_folder(first_sub_item, open_dir);
+                                        self.update_extra_locations();
+                                    }
                                 }
                             }
                         }
