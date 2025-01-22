@@ -621,11 +621,11 @@ impl MenuBar {
                             .position(|item| item.id() == current_item.id())
                             .unwrap_or(0);
                         
-                        let new_idx = if current_idx == 0 {
-                            visible_siblings.len() - 1
-                        } else {
-                            current_idx - 1
-                        };
+                        // For sub-items, don't wrap around to the end
+                        if current_idx == 0 {
+                            return (true, EventResponses::default());
+                        }
+                        let new_idx = current_idx - 1;
                         let new_item = visible_siblings[new_idx].clone();
                         
                         // Unselect current item
@@ -701,7 +701,11 @@ impl MenuBar {
                             .position(|item| item.id() == current_item.id())
                             .unwrap_or(0);
                         
-                        let new_idx = (current_idx + 1) % visible_siblings.len();
+                        // For sub-items, don't wrap around to the beginning
+                        let new_idx = current_idx + 1;
+                        if new_idx >= visible_siblings.len() {
+                            return (true, EventResponses::default());
+                        }
                         let new_item = visible_siblings[new_idx].clone();
                         
                         // Unselect current item
