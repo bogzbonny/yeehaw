@@ -741,6 +741,17 @@ impl MenuBar {
                             self.expand_up_to_item(&parent_item);
                             self.update_extra_locations();
                         }
+                    } else {
+                        // If there are no folders, this is a top-level sub-item
+                        // Just collapse everything and select the primary item
+                        let menu_items = self.menu_items_order.borrow();
+                        if let Some(primary_item) = menu_items.iter().find(|item| item.is_primary()) {
+                            *self.selected_item.borrow_mut() = Some(primary_item.id());
+                            primary_item.select();
+                            current_item.unselect();
+                            self.collapse_non_primary();
+                            self.update_extra_locations();
+                        }
                     }
                 }
             }
