@@ -31,7 +31,6 @@ pub struct MenuBar {
     make_invisible_on_closedown: Rc<RefCell<bool>>,
     /// close the menubar on a click of a primary menu item
     close_on_primary_click: Rc<RefCell<bool>>,
-
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
@@ -88,6 +87,7 @@ impl MenuBar {
 
     pub fn default_receivable_events() -> ReceivableEvents {
         ReceivableEvents(vec![
+            (KB::KEY_ESC.into()),
             (KB::KEY_ENTER.into()),
             (KB::KEY_DOWN.into()),
             (KB::KEY_UP.into()),
@@ -489,7 +489,9 @@ impl MenuBar {
                         let folders = current_path.folders();
                         if !folders.is_empty() {
                             let parent_path = folders.join("/");
-                            if let Some(parent_item) = self.get_menu_item_from_path(MenuPath(parent_path)) {
+                            if let Some(parent_item) =
+                                self.get_menu_item_from_path(MenuPath(parent_path))
+                            {
                                 // Only return to primary items with left key in vertical menus
                                 if parent_item.is_primary() && is_horizontal {
                                     return (true, EventResponses::default());
@@ -498,7 +500,7 @@ impl MenuBar {
                                 // Select the parent folder
                                 item.unselect();
                                 parent_item.select();
-                                
+
                                 // Collapse and re-expand to show the proper menu structure
                                 self.collapse_non_primary();
                                 self.expand_up_to_item(&parent_item);
@@ -525,17 +527,17 @@ impl MenuBar {
                     if *item.is_folder.borrow() {
                         // Right key expands folders and selects first sub-item
                         self.expand_current_submenu();
-                        
+
                         // Find and select the first sub-item
                         let item_mp = (*item.path.borrow()).clone();
                         let menu_items = self.menu_items_order.borrow();
-                        if let Some(first_sub_item) = menu_items.iter()
-                            .find(|sub_item| item_mp.is_immediate_parent_of(&sub_item.path.borrow()))
-                        {
+                        if let Some(first_sub_item) = menu_items.iter().find(|sub_item| {
+                            item_mp.is_immediate_parent_of(&sub_item.path.borrow())
+                        }) {
                             // Select the first sub-item
                             item.unselect();
                             first_sub_item.select();
-                            
+
                             // Collapse and re-expand to show the proper menu structure
                             self.collapse_non_primary();
                             self.expand_up_to_item(first_sub_item);
@@ -559,17 +561,23 @@ impl MenuBar {
                     let current_item = current_item.expect("Should have current item");
                     let current_path = current_item.path.borrow();
                     let current_folders = current_path.folders();
-                    
+
                     // Only handle first sub-items in horizontal menus
                     if is_horizontal && !current_folders.is_empty() {
                         let parent_path = current_folders.join("/");
-                        if let Some(parent_item) = self.get_menu_item_from_path(MenuPath(parent_path.clone())) {
+                        if let Some(parent_item) =
+                            self.get_menu_item_from_path(MenuPath(parent_path.clone()))
+                        {
                             if parent_item.is_primary() {
                                 let is_first_subitem = {
                                     let menu_items = self.menu_items_order.borrow();
                                     let parent_path = parent_item.path.borrow().clone();
-                                    menu_items.iter()
-                                        .filter(|sub_item| parent_path.is_immediate_parent_of(&sub_item.path.borrow()))
+                                    menu_items
+                                        .iter()
+                                        .filter(|sub_item| {
+                                            parent_path
+                                                .is_immediate_parent_of(&sub_item.path.borrow())
+                                        })
                                         .next()
                                         .map(|first_sub| first_sub.id() == current_item.id())
                                         .unwrap_or(false)
@@ -579,7 +587,7 @@ impl MenuBar {
                                     // Select the parent primary item
                                     current_item.unselect();
                                     parent_item.select();
-                                    
+
                                     // Collapse and re-expand to show the proper menu structure
                                     self.collapse_non_primary();
                                     self.expand_up_to_item(&parent_item);
@@ -596,7 +604,8 @@ impl MenuBar {
 
                     // Get all visible items that are siblings (share the same parent)
                     let menu_items = self.menu_items_order.borrow();
-                    let visible_siblings: Vec<_> = menu_items.iter()
+                    let visible_siblings: Vec<_> = menu_items
+                        .iter()
                         .filter(|item| {
                             if !item.get_visible() {
                                 return false;
@@ -609,23 +618,24 @@ impl MenuBar {
                         .collect();
 
                     if !visible_siblings.is_empty() {
-                        let current_idx = visible_siblings.iter()
+                        let current_idx = visible_siblings
+                            .iter()
                             .position(|item| item.id() == current_item.id())
                             .unwrap_or(0);
-                        
+
                         // For sub-items, don't wrap around to the end
                         if current_idx == 0 {
                             return (true, EventResponses::default());
                         }
                         let new_idx = current_idx - 1;
                         let new_item = visible_siblings[new_idx].clone();
-                        
+
                         // Unselect current item
                         current_item.unselect();
-                        
+
                         // Select new item
                         new_item.select();
-                        
+
                         // Collapse and re-expand to show the proper menu structure
                         self.collapse_non_primary();
                         self.expand_up_to_item(&new_item);
@@ -646,11 +656,12 @@ impl MenuBar {
                             // First expand the folder if it is one
                             if *item.is_folder.borrow() {
                                 self.expand_current_submenu();
-                                
+
                                 // Get the first sub-item of this primary item
                                 let menu_items = self.menu_items_order.borrow();
                                 let current_path = item.path.borrow().clone();
-                                if let Some(first_sub_item) = menu_items.iter()
+                                if let Some(first_sub_item) = menu_items
+                                    .iter()
                                     .filter(|sub_item| {
                                         let sub_path = sub_item.path.borrow();
                                         current_path.is_immediate_parent_of(&sub_path)
@@ -661,7 +672,7 @@ impl MenuBar {
                                     item.unselect();
                                     // Select first sub-item
                                     first_sub_item.select();
-                                    
+
                                     // If the first sub-item is a folder, expand it
                                     if *first_sub_item.is_folder.borrow() {
                                         let open_dir = *self.secondary_open_dir.borrow();
@@ -680,10 +691,11 @@ impl MenuBar {
                     let current_item = current_item.expect("Should have current item");
                     let current_path = current_item.path.borrow();
                     let current_folders = current_path.folders();
-                    
+
                     // Get all visible items that are siblings (share the same parent)
                     let menu_items = self.menu_items_order.borrow();
-                    let visible_siblings: Vec<_> = menu_items.iter()
+                    let visible_siblings: Vec<_> = menu_items
+                        .iter()
                         .filter(|item| {
                             if !item.get_visible() {
                                 return false;
@@ -696,23 +708,24 @@ impl MenuBar {
                         .collect();
 
                     if !visible_siblings.is_empty() {
-                        let current_idx = visible_siblings.iter()
+                        let current_idx = visible_siblings
+                            .iter()
                             .position(|item| item.id() == current_item.id())
                             .unwrap_or(0);
-                        
+
                         // For sub-items, don't wrap around to the beginning
                         let new_idx = current_idx + 1;
                         if new_idx >= visible_siblings.len() {
                             return (true, EventResponses::default());
                         }
                         let new_item = visible_siblings[new_idx].clone();
-                        
+
                         // Unselect current item
                         current_item.unselect();
-                        
+
                         // Select new item
                         new_item.select();
-                        
+
                         // Collapse and re-expand to show the proper menu structure
                         self.collapse_non_primary();
                         self.expand_up_to_item(&new_item);
@@ -730,12 +743,13 @@ impl MenuBar {
                     if *item.is_folder.borrow() {
                         // For folders, expand them
                         self.expand_current_submenu();
-                        
+
                         // If it's a primary folder in horizontal mode, also move to first sub-item
                         if is_horizontal && is_primary {
                             let menu_items = self.menu_items_order.borrow();
                             let current_path = item.path.borrow().clone();
-                            if let Some(first_sub_item) = menu_items.iter()
+                            if let Some(first_sub_item) = menu_items
+                                .iter()
                                 .filter(|sub_item| {
                                     let sub_path = sub_item.path.borrow();
                                     current_path.is_immediate_parent_of(&sub_path)
@@ -746,7 +760,7 @@ impl MenuBar {
                                 item.unselect();
                                 // Select first sub-item
                                 first_sub_item.select();
-                                
+
                                 // If the first sub-item is a folder, expand it
                                 if *first_sub_item.is_folder.borrow() {
                                     let open_dir = *self.secondary_open_dir.borrow();
@@ -757,19 +771,21 @@ impl MenuBar {
                         }
                     } else if *item.selectable.borrow() {
                         // For non-folder items, call their click function and close menu
-                        if let Some(ref mut click_fn) = *item.click_fn.borrow_mut() {
-                            let resps = click_fn(ctx.clone());
-                            // Deactivate and collapse everything
-                            *self.activated.borrow_mut() = false;
-                            self.collapse_non_primary();
-                            // Unselect all items
-                            let menu_items = self.menu_items.borrow();
-                            for item in menu_items.values() {
-                                item.unselect();
-                            }
-                            self.update_extra_locations();
-                            return (true, resps);
+                        let resps = if let Some(ref mut click_fn) = *item.click_fn.borrow_mut() {
+                            click_fn(ctx.clone())
+                        } else {
+                            EventResponses::default()
+                        };
+                        // Deactivate and collapse everything
+                        *self.activated.borrow_mut() = false;
+                        self.collapse_non_primary();
+                        // Unselect all items
+                        let menu_items = self.menu_items.borrow();
+                        for item in menu_items.values() {
+                            item.unselect();
                         }
+                        self.update_extra_locations();
+                        return (true, resps);
                     }
                 }
                 (true, EventResponses::default())
@@ -792,9 +808,7 @@ impl MenuBar {
 
     fn select_prev_primary(&self) {
         let menu_items = self.menu_items_order.borrow();
-        let primary_items: Vec<_> = menu_items.iter()
-            .filter(|item| item.is_primary())
-            .collect();
+        let primary_items: Vec<_> = menu_items.iter().filter(|item| item.is_primary()).collect();
 
         if primary_items.is_empty() {
             return;
@@ -802,18 +816,15 @@ impl MenuBar {
 
         let current_idx = if let Some(current_item) = self.get_selected_item() {
             current_item.unselect();
-            primary_items.iter()
+            primary_items
+                .iter()
                 .position(|item| item.id() == current_item.id())
                 .unwrap_or(0)
         } else {
             0
         };
 
-        let new_idx = if current_idx == 0 {
-            primary_items.len() - 1
-        } else {
-            current_idx - 1
-        };
+        let new_idx = if current_idx == 0 { primary_items.len() - 1 } else { current_idx - 1 };
 
         let new_item = primary_items[new_idx].clone();
         new_item.select();
@@ -827,9 +838,7 @@ impl MenuBar {
 
     fn select_next_primary(&self) {
         let menu_items = self.menu_items_order.borrow();
-        let primary_items: Vec<_> = menu_items.iter()
-            .filter(|item| item.is_primary())
-            .collect();
+        let primary_items: Vec<_> = menu_items.iter().filter(|item| item.is_primary()).collect();
 
         if primary_items.is_empty() {
             return;
@@ -837,7 +846,8 @@ impl MenuBar {
 
         let current_idx = if let Some(current_item) = self.get_selected_item() {
             current_item.unselect();
-            primary_items.iter()
+            primary_items
+                .iter()
                 .position(|item| item.id() == current_item.id())
                 .unwrap_or(0)
         } else {
@@ -855,8 +865,6 @@ impl MenuBar {
         self.update_extra_locations();
     }
 
-
-
     fn expand_current_submenu(&self) {
         if let Some(current_item) = self.get_selected_item() {
             if *current_item.is_folder.borrow() {
@@ -870,7 +878,6 @@ impl MenuBar {
             }
         }
     }
-
 
     pub fn extra_locations(&self) -> Vec<DynLocation> {
         let bar_loc = self.get_dyn_location_set();
