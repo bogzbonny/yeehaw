@@ -483,29 +483,42 @@ impl MenuBar {
                     // In horizontal mode, left/right moves between primary items
                     self.select_prev_primary();
                 } else if !is_primary {
-                    // When in a submenu, left selects the parent folder
+                    // When in a submenu, check if this is a first sub-item of a horizontal primary menu
                     if let Some(item) = current_item {
                         let current_path = item.path.borrow();
                         let folders = current_path.folders();
                         if !folders.is_empty() {
                             let parent_path = folders.join("/");
                             if let Some(parent_item) = self.get_menu_item_from_path(MenuPath(parent_path)) {
-                                // Select the parent folder
-                                item.unselect();
-                                parent_item.select();
-                                
-                                // Collapse and re-expand to show the proper menu structure
-                                self.collapse_non_primary();
-                                self.expand_up_to_item(&parent_item);
-                                if *parent_item.is_folder.borrow() {
-                                    let open_dir = if parent_item.is_primary() {
-                                        *self.primary_open_dir.borrow()
-                                    } else {
-                                        *self.secondary_open_dir.borrow()
-                                    };
-                                    self.expand_folder(&parent_item, open_dir);
+                                // If this is a first sub-item of a horizontal primary menu, let the up key handle it
+                                let is_first_subitem = {
+                                    let menu_items = self.menu_items_order.borrow();
+                                    let parent_path = parent_item.path.borrow().clone();
+                                    menu_items.iter()
+                                        .filter(|sub_item| parent_path.is_immediate_parent_of(&sub_item.path.borrow()))
+                                        .next()
+                                        .map(|first_sub| first_sub.id() == item.id())
+                                        .unwrap_or(false)
+                                };
+
+                                if !(is_horizontal && parent_item.is_primary() && is_first_subitem) {
+                                    // Select the parent folder
+                                    item.unselect();
+                                    parent_item.select();
+                                    
+                                    // Collapse and re-expand to show the proper menu structure
+                                    self.collapse_non_primary();
+                                    self.expand_up_to_item(&parent_item);
+                                    if *parent_item.is_folder.borrow() {
+                                        let open_dir = if parent_item.is_primary() {
+                                            *self.primary_open_dir.borrow()
+                                        } else {
+                                            *self.secondary_open_dir.borrow()
+                                        };
+                                        self.expand_folder(&parent_item, open_dir);
+                                    }
+                                    self.update_extra_locations();
                                 }
-                                self.update_extra_locations();
                             }
                         }
                     }
@@ -551,11 +564,44 @@ impl MenuBar {
                         self.select_prev_primary();
                     }
                 } else {
-                    // In submenus, up/down moves between visible siblings
                     let current_item = current_item.expect("Should have current item");
                     let current_path = current_item.path.borrow();
                     let current_folders = current_path.folders();
                     
+                    // Check if this is a first sub-item of a horizontal primary menu
+                    if is_horizontal && !current_folders.is_empty() {
+                        let parent_path = current_folders.join("/");
+                        if let Some(parent_item) = self.get_menu_item_from_path(MenuPath(parent_path.clone())) {
+                            if parent_item.is_primary() {
+                                let is_first_subitem = {
+                                    let menu_items = self.menu_items_order.borrow();
+                                    let parent_path = parent_item.path.borrow().clone();
+                                    menu_items.iter()
+                                        .filter(|sub_item| parent_path.is_immediate_parent_of(&sub_item.path.borrow()))
+                                        .next()
+                                        .map(|first_sub| first_sub.id() == current_item.id())
+                                        .unwrap_or(false)
+                                };
+
+                                if is_first_subitem {
+                                    // Select the parent primary item
+                                    current_item.unselect();
+                                    parent_item.select();
+                                    
+                                    // Collapse and re-expand to show the proper menu structure
+                                    self.collapse_non_primary();
+                                    self.expand_up_to_item(&parent_item);
+                                    if *parent_item.is_folder.borrow() {
+                                        let open_dir = *self.primary_open_dir.borrow();
+                                        self.expand_folder(&parent_item, open_dir);
+                                    }
+                                    self.update_extra_locations();
+                                    return (true, EventResponses::default());
+                                }
+                            }
+                        }
+                    }
+
                     // Get all visible items that are siblings (share the same parent)
                     let menu_items = self.menu_items_order.borrow();
                     let visible_siblings: Vec<_> = menu_items.iter()
