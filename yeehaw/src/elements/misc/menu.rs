@@ -545,12 +545,58 @@ impl MenuBar {
                 (true, EventResponses::default())
             }
             KeyCode::Up => {
-                if !is_horizontal && is_primary {
-                    // In vertical mode, up/down moves between primary items
-                    self.select_prev_primary();
-                } else if !is_primary {
-                    // In submenus, up/down moves between visible items
-                    self.select_prev_item();
+                if is_primary {
+                    if !is_horizontal {
+                        // In vertical mode, up/down moves between primary items
+                        self.select_prev_primary();
+                    }
+                } else {
+                    // In submenus, up/down moves between visible siblings
+                    let current_item = current_item.expect("Should have current item");
+                    let current_path = current_item.path.borrow();
+                    let current_folders = current_path.folders();
+                    
+                    // Get all visible items that are siblings (share the same parent)
+                    let menu_items = self.menu_items_order.borrow();
+                    let visible_siblings: Vec<_> = menu_items.iter()
+                        .filter(|item| {
+                            if !item.get_visible() {
+                                return false;
+                            }
+                            let item_path = item.path.borrow();
+                            let item_folders = item_path.folders();
+                            // Items are siblings if they have the same parent path
+                            current_folders == item_folders
+                        })
+                        .collect();
+
+                    if !visible_siblings.is_empty() {
+                        let current_idx = visible_siblings.iter()
+                            .position(|item| item.id() == current_item.id())
+                            .unwrap_or(0);
+                        
+                        let new_idx = if current_idx == 0 {
+                            visible_siblings.len() - 1
+                        } else {
+                            current_idx - 1
+                        };
+                        let new_item = visible_siblings[new_idx].clone();
+                        
+                        // Unselect current item
+                        current_item.unselect();
+                        
+                        // Select new item
+                        new_item.select();
+                        
+                        // Collapse and re-expand to show the proper menu structure
+                        self.collapse_non_primary();
+                        self.expand_up_to_item(&new_item);
+                        if *new_item.is_folder.borrow() {
+                            let open_dir = *self.secondary_open_dir.borrow();
+                            self.expand_folder(&new_item, open_dir);
+                        }
+                        self.update_extra_locations();
+                    }
                 }
                 (true, EventResponses::default())
             }
@@ -562,21 +608,22 @@ impl MenuBar {
                             // First expand the folder if it is one
                             if *item.is_folder.borrow() {
                                 self.expand_current_submenu();
-                            }
-                            // Get the first sub-item of this primary item
-                            let menu_items = self.menu_items_order.borrow();
-                            let current_path = item.path.borrow().clone();
-                            if let Some(first_sub_item) = menu_items.iter()
-                                .filter(|sub_item| {
-                                    let sub_path = sub_item.path.borrow();
-                                    current_path.is_immediate_parent_of(&sub_path)
-                                })
-                                .next()
-                            {
-                                // Unselect current item
-                                item.unselect();
-                                // Select first sub-item
-                                first_sub_item.select();
+                                
+                                // Get the first sub-item of this primary item
+                                let menu_items = self.menu_items_order.borrow();
+                                let current_path = item.path.borrow().clone();
+                                if let Some(first_sub_item) = menu_items.iter()
+                                    .filter(|sub_item| {
+                                        let sub_path = sub_item.path.borrow();
+                                        current_path.is_immediate_parent_of(&sub_path)
+                                    })
+                                    .next()
+                                {
+                                    // Unselect current item
+                                    item.unselect();
+                                    // Select first sub-item
+                                    first_sub_item.select();
+                                }
                             }
                         }
                     } else {
@@ -584,8 +631,48 @@ impl MenuBar {
                         self.select_next_primary();
                     }
                 } else {
-                    // In submenus, up/down moves between visible items
-                    self.select_next_item();
+                    // In submenus, up/down moves between visible siblings
+                    let current_item = current_item.expect("Should have current item");
+                    let current_path = current_item.path.borrow();
+                    let current_folders = current_path.folders();
+                    
+                    // Get all visible items that are siblings (share the same parent)
+                    let menu_items = self.menu_items_order.borrow();
+                    let visible_siblings: Vec<_> = menu_items.iter()
+                        .filter(|item| {
+                            if !item.get_visible() {
+                                return false;
+                            }
+                            let item_path = item.path.borrow();
+                            let item_folders = item_path.folders();
+                            // Items are siblings if they have the same parent path
+                            current_folders == item_folders
+                        })
+                        .collect();
+
+                    if !visible_siblings.is_empty() {
+                        let current_idx = visible_siblings.iter()
+                            .position(|item| item.id() == current_item.id())
+                            .unwrap_or(0);
+                        
+                        let new_idx = (current_idx + 1) % visible_siblings.len();
+                        let new_item = visible_siblings[new_idx].clone();
+                        
+                        // Unselect current item
+                        current_item.unselect();
+                        
+                        // Select new item
+                        new_item.select();
+                        
+                        // Collapse and re-expand to show the proper menu structure
+                        self.collapse_non_primary();
+                        self.expand_up_to_item(&new_item);
+                        if *new_item.is_folder.borrow() {
+                            let open_dir = *self.secondary_open_dir.borrow();
+                            self.expand_folder(&new_item, open_dir);
+                        }
+                        self.update_extra_locations();
+                    }
                 }
                 (true, EventResponses::default())
             }
@@ -672,90 +759,7 @@ impl MenuBar {
         self.update_extra_locations();
     }
 
-    fn select_next_item(&self) {
-        let menu_items = self.menu_items_order.borrow();
-        let visible_items: Vec<_> = menu_items.iter()
-            .filter(|item| item.get_visible())
-            .collect();
 
-        if visible_items.is_empty() {
-            return;
-        }
-
-        let current_idx = if let Some(current_item) = self.get_selected_item() {
-            visible_items.iter()
-                .position(|item| item.id() == current_item.id())
-                .unwrap_or(0)
-        } else {
-            0
-        };
-
-        let new_idx = (current_idx + 1) % visible_items.len();
-        let new_item = visible_items[new_idx].clone();
-        
-        // Unselect current item
-        if let Some(current_item) = self.get_selected_item() {
-            current_item.unselect();
-        }
-
-        new_item.select();
-
-        // Collapse all non-primary items and re-expand to the current item
-        self.collapse_non_primary();
-        self.expand_up_to_item(&new_item);
-
-        // If the newly selected item is a folder and not a primary item, expand it
-        if !new_item.is_primary() && *new_item.is_folder.borrow() {
-            let open_dir = *self.secondary_open_dir.borrow();
-            self.expand_folder(&new_item, open_dir);
-        }
-        self.update_extra_locations();
-    }
-
-    fn select_prev_item(&self) {
-        let menu_items = self.menu_items_order.borrow();
-        let visible_items: Vec<_> = menu_items.iter()
-            .filter(|item| item.get_visible())
-            .collect();
-
-        if visible_items.is_empty() {
-            return;
-        }
-
-        let current_idx = if let Some(current_item) = self.get_selected_item() {
-            visible_items.iter()
-                .position(|item| item.id() == current_item.id())
-                .unwrap_or(0)
-        } else {
-            0
-        };
-
-        let new_idx = if current_idx == 0 {
-            visible_items.len() - 1
-        } else {
-            current_idx - 1
-        };
-
-        let new_item = visible_items[new_idx].clone();
-        
-        // Unselect current item
-        if let Some(current_item) = self.get_selected_item() {
-            current_item.unselect();
-        }
-
-        new_item.select();
-
-        // Collapse all non-primary items and re-expand to the current item
-        self.collapse_non_primary();
-        self.expand_up_to_item(&new_item);
-
-        // If the newly selected item is a folder and not a primary item, expand it
-        if !new_item.is_primary() && *new_item.is_folder.borrow() {
-            let open_dir = *self.secondary_open_dir.borrow();
-            self.expand_folder(&new_item, open_dir);
-        }
-        self.update_extra_locations();
-    }
 
     fn expand_current_submenu(&self) {
         if let Some(current_item) = self.get_selected_item() {
