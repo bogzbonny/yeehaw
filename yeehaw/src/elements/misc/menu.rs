@@ -31,8 +31,7 @@ pub struct MenuBar {
     make_invisible_on_closedown: Rc<RefCell<bool>>,
     /// close the menubar on a click of a primary menu item
     close_on_primary_click: Rc<RefCell<bool>>,
-    /// currently selected menu item for keyboard navigation
-    selected_item: Rc<RefCell<Option<ElementID>>>,
+
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
@@ -117,7 +116,6 @@ impl MenuBar {
             menu_style: Rc::new(RefCell::new(menu_sty)),
             make_invisible_on_closedown: Rc::new(RefCell::new(false)),
             close_on_primary_click: Rc::new(RefCell::new(true)),
-            selected_item: Rc::new(RefCell::new(None)),
         }
         .with_dyn_height(1)
         .with_dyn_width(DynVal::FULL)
@@ -140,7 +138,6 @@ impl MenuBar {
             menu_style: Rc::new(RefCell::new(MenuStyle::default())),
             make_invisible_on_closedown: Rc::new(RefCell::new(true)),
             close_on_primary_click: Rc::new(RefCell::new(false)),
-            selected_item: Rc::new(RefCell::new(None)),
         }
     }
 
@@ -402,6 +399,16 @@ impl MenuBar {
 
     /// closedown routine
     /// TODO cleanup, can remove EventResponses
+    fn get_selected_item(&self) -> Option<MenuItem> {
+        let menu_items = self.menu_items.borrow();
+        for item in menu_items.values() {
+            if *item.is_selected.borrow() {
+                return Some(item.clone());
+            }
+        }
+        None
+    }
+
     pub fn closedown(&self) -> (bool, EventResponses) {
         *self.activated.borrow_mut() = false;
         let make_invis = *self.make_invisible_on_closedown.borrow();
@@ -415,9 +422,6 @@ impl MenuBar {
                 item.unselect();
             }
         }
-
-        // Clear selected item
-        *self.selected_item.borrow_mut() = None;
 
         // update extra locations for parent eo
         self.update_extra_locations();
@@ -454,10 +458,9 @@ impl MenuBar {
         *self.activated.borrow_mut() = true;
 
         // Select first primary item if none is selected
-        if self.selected_item.borrow().is_none() {
+        if self.get_selected_item().is_none() {
             let menu_items = self.menu_items_order.borrow();
             if let Some(first_primary) = menu_items.iter().find(|item| item.is_primary()) {
-                *self.selected_item.borrow_mut() = Some(first_primary.id());
                 first_primary.select();
             }
         }
@@ -469,11 +472,7 @@ impl MenuBar {
         }
 
         // Get current item info
-        let current_item = if let Some(item_id) = self.selected_item.borrow().as_ref().cloned() {
-            self.menu_items.borrow().get(&item_id).cloned()
-        } else {
-            None
-        };
+        let current_item = self.get_selected_item();
 
         let is_primary = current_item.as_ref().map_or(true, |item| item.is_primary());
         let is_horizontal = *self.horizontal_bar.borrow();
@@ -533,7 +532,6 @@ impl MenuBar {
                                 // Unselect current item
                                 item.unselect();
                                 // Select first sub-item
-                                *self.selected_item.borrow_mut() = Some(first_sub_item.id());
                                 first_sub_item.select();
                             }
                         }
@@ -575,13 +573,10 @@ impl MenuBar {
             return;
         }
 
-        let current_idx = if let Some(current_id) = self.selected_item.borrow().as_ref().cloned() {
-            // Unselect current item
-            if let Some(current_item) = self.menu_items.borrow().get(&current_id) {
-                current_item.unselect();
-            }
+        let current_idx = if let Some(current_item) = self.get_selected_item() {
+            current_item.unselect();
             primary_items.iter()
-                .position(|item| item.id() == current_id)
+                .position(|item| item.id() == current_item.id())
                 .unwrap_or(0)
         } else {
             0
@@ -594,7 +589,6 @@ impl MenuBar {
         };
 
         let new_item = primary_items[new_idx].clone();
-        *self.selected_item.borrow_mut() = Some(new_item.id());
         new_item.select();
 
         self.collapse_non_primary();
@@ -614,13 +608,10 @@ impl MenuBar {
             return;
         }
 
-        let current_idx = if let Some(current_id) = self.selected_item.borrow().as_ref().cloned() {
-            // Unselect current item
-            if let Some(current_item) = self.menu_items.borrow().get(&current_id) {
-                current_item.unselect();
-            }
+        let current_idx = if let Some(current_item) = self.get_selected_item() {
+            current_item.unselect();
             primary_items.iter()
-                .position(|item| item.id() == current_id)
+                .position(|item| item.id() == current_item.id())
                 .unwrap_or(0)
         } else {
             0
@@ -628,7 +619,6 @@ impl MenuBar {
 
         let new_idx = (current_idx + 1) % primary_items.len();
         let new_item = primary_items[new_idx].clone();
-        *self.selected_item.borrow_mut() = Some(new_item.id());
         new_item.select();
 
         self.collapse_non_primary();
@@ -648,9 +638,9 @@ impl MenuBar {
             return;
         }
 
-        let current_idx = if let Some(current_id) = self.selected_item.borrow().as_ref().cloned() {
+        let current_idx = if let Some(current_item) = self.get_selected_item() {
             visible_items.iter()
-                .position(|item| item.id() == current_id)
+                .position(|item| item.id() == current_item.id())
                 .unwrap_or(0)
         } else {
             0
@@ -660,13 +650,10 @@ impl MenuBar {
         let new_item = visible_items[new_idx].clone();
         
         // Unselect current item
-        if let Some(current_id) = self.selected_item.borrow().as_ref().cloned() {
-            if let Some(current_item) = self.menu_items.borrow().get(&current_id) {
-                current_item.unselect();
-            }
+        if let Some(current_item) = self.get_selected_item() {
+            current_item.unselect();
         }
 
-        *self.selected_item.borrow_mut() = Some(new_item.id());
         new_item.select();
     }
 
@@ -680,9 +667,9 @@ impl MenuBar {
             return;
         }
 
-        let current_idx = if let Some(current_id) = self.selected_item.borrow().as_ref().cloned() {
+        let current_idx = if let Some(current_item) = self.get_selected_item() {
             visible_items.iter()
-                .position(|item| item.id() == current_id)
+                .position(|item| item.id() == current_item.id())
                 .unwrap_or(0)
         } else {
             0
@@ -697,61 +684,52 @@ impl MenuBar {
         let new_item = visible_items[new_idx].clone();
         
         // Unselect current item
-        if let Some(current_id) = self.selected_item.borrow().as_ref().cloned() {
-            if let Some(current_item) = self.menu_items.borrow().get(&current_id) {
-                current_item.unselect();
-            }
+        if let Some(current_item) = self.get_selected_item() {
+            current_item.unselect();
         }
 
-        *self.selected_item.borrow_mut() = Some(new_item.id());
         new_item.select();
     }
 
     fn expand_current_submenu(&self) {
-        if let Some(current_id) = self.selected_item.borrow().as_ref().cloned() {
-            if let Some(current_item) = self.menu_items.borrow().get(&current_id) {
-                if *current_item.is_folder.borrow() {
-                    let open_dir = if current_item.is_primary() {
-                        *self.primary_open_dir.borrow()
-                    } else {
-                        *self.secondary_open_dir.borrow()
-                    };
-                    self.expand_folder(current_item, open_dir);
-                    self.update_extra_locations();
-                }
+        if let Some(current_item) = self.get_selected_item() {
+            if *current_item.is_folder.borrow() {
+                let open_dir = if current_item.is_primary() {
+                    *self.primary_open_dir.borrow()
+                } else {
+                    *self.secondary_open_dir.borrow()
+                };
+                self.expand_folder(&current_item, open_dir);
+                self.update_extra_locations();
             }
         }
     }
 
     fn collapse_current_submenu(&self) {
-        if let Some(current_id) = self.selected_item.borrow().as_ref().cloned() {
-            if let Some(current_item) = self.menu_items.borrow().get(&current_id) {
-                if !current_item.is_primary() {
-                    // Find the parent menu item
-                    let current_path = current_item.path.borrow();
-                    let folders = current_path.folders();
-                    if !folders.is_empty() {
-                        let parent_path = folders.join("/");
-                        if let Some(parent_item) = self.get_menu_item_from_path(MenuPath(parent_path)) {
-                            // Select the parent and collapse everything else
-                            *self.selected_item.borrow_mut() = Some(parent_item.id());
-                            parent_item.select();
-                            current_item.unselect();
-                            self.collapse_non_primary();
-                            self.expand_up_to_item(&parent_item);
-                            self.update_extra_locations();
-                        }
-                    } else {
-                        // If there are no folders, this is a top-level sub-item
-                        // Just collapse everything and select the primary item
-                        let menu_items = self.menu_items_order.borrow();
-                        if let Some(primary_item) = menu_items.iter().find(|item| item.is_primary()) {
-                            *self.selected_item.borrow_mut() = Some(primary_item.id());
-                            primary_item.select();
-                            current_item.unselect();
-                            self.collapse_non_primary();
-                            self.update_extra_locations();
-                        }
+        if let Some(current_item) = self.get_selected_item() {
+            if !current_item.is_primary() {
+                // Find the parent menu item
+                let current_path = current_item.path.borrow();
+                let folders = current_path.folders();
+                if !folders.is_empty() {
+                    let parent_path = folders.join("/");
+                    if let Some(parent_item) = self.get_menu_item_from_path(MenuPath(parent_path)) {
+                        // Select the parent and collapse everything else
+                        parent_item.select();
+                        current_item.unselect();
+                        self.collapse_non_primary();
+                        self.expand_up_to_item(&parent_item);
+                        self.update_extra_locations();
+                    }
+                } else {
+                    // If there are no folders, this is a top-level sub-item
+                    // Just collapse everything and select the primary item
+                    let menu_items = self.menu_items_order.borrow();
+                    if let Some(primary_item) = menu_items.iter().find(|item| item.is_primary()) {
+                        primary_item.select();
+                        current_item.unselect();
+                        self.collapse_non_primary();
+                        self.update_extra_locations();
                     }
                 }
             }
