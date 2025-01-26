@@ -246,6 +246,18 @@ when ever it's resized. Resizing a scrollable pane should modify the starting
 offsets of that pane to account for the extra space instead of automatically
 extending the pane out of range.
 
+10. menu item accessibility keys:
+   The ability to jump to an item based on the items first letter? I wouldn't
+   mind having that capability, also maybe the ability to manually set a hotkey
+   for an item (in case of duplicate first letters for instance). 
+    - bold the letter which is the hotkey
+    - if the letter isn't available panic on the menu
+
+10. menu item shortcut key labelling On this subject, I'll probably also put in
+    the ability to have shortcut keys labelled in a greyed out fashion on the
+    righthand side of a menu item 
+
+10. menu item with a search bar (like mac help).
 
 01. dropdownlist option to deselect on enter (useful for usage in non-selection
     parent pane)
