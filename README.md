@@ -246,7 +246,9 @@ widgets in this baby with first class support from this project (hiding behind
 feature flags to not gum up the compile times). All ideas will be considered
 with an open mind, if you'd like to build and element and merge it into yeehaw
 it'd be an honour, if you'd like to build a element with highly specific needs
-and the current Element trait is non-satisfactory, let's upgrade it. 
+and the current Element trait is non-satisfactory, let's upgrade it - yeehaw
+should be able to build any TUI. 
+
 In the future, This repo will be transitioning to dynamic ownership based on
 contributions, so if your code becomes merged then your be gaining a specialized
 part piece of ownership in the project whenever dynamic ownership is integrated
