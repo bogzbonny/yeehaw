@@ -169,7 +169,7 @@ Looking to understand more? Checkout:
  - The element trait, and yeehaw's design in general should be as versatile as
    possible - allowing for the development of highly specific obscure elements 
    and features without having to break the core design.
- - Developing a simple element should require as no information about its
+ - Developing a simple element should require as little information about its
    surrounding environment. This said, more complex elements should still be
    able to responsibly interact with its surroundings directly if necessary -
    elements should __not__ be limited to only interacting with its parent in the
