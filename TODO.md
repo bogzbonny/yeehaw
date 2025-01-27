@@ -4,6 +4,13 @@
 
 01. reduce CPU load by attempting to minimize the amount of calculations in the
     main tui render loop
+     - aparently this line is a bottleneck https://github.com/bogzbonny/yeehaw/blob/main/yeehaw/src/tui.rs#L479
+        - Yeah that line is basically checking to see if the content on the
+          screen needs to be redrawn at the provided position, yeehaw keeps a
+          hashmap of what it last drew on the screen which it's referencing
+          there. I'm sure there's a cheaper way to do perform this logic, either
+          through just using a 2D array or dashmap. 
+     - also this section: https://github.com/bogzbonny/yeehaw/blob/main/yeehaw/src/tui.rs#L433 
 
 10. resizing a scrollable pane should modify the offset of that pane to account
     for the extra space (instead of automatically extending out of range)
@@ -351,6 +358,8 @@ to having clicked that menu item.
 │                     ▌
 │                     │
 └────▀▀▀▀▀▀▀▀▀▀▀▀─────┘
+
+20. Window animation for minimizing and unminimizing (and maximizing) 
 __________________________________________________________________________
 CONTAINERS
 
