@@ -18,19 +18,19 @@ pub struct ListBoxInner {
     pub current_sty: Rc<RefCell<Style>>,
     pub selectedness: Rc<RefCell<Selectability>>,
     pub entries: Rc<RefCell<Vec<String>>>,
-    pub selected: Rc<RefCell<Vec<usize>>>,
     /// the entries which have been selected
+    pub selected: Rc<RefCell<Vec<usize>>>,
+    /// position of a listbox cursor
     pub cursor: Rc<RefCell<Option<usize>>>,
 
     /// the last listbox position which was clicked, used for initialization
     /// of a new keyboard cursor if none exists and then it is initialized.
     pub last_clicked_position: Rc<RefCell<Option<usize>>>,
 
-    /// position of a listbox cursor
-    pub clicked_down: Rc<RefCell<bool>>,
     /// activated when mouse is clicked down while over object
-    pub lines_per_item: Rc<RefCell<usize>>,
+    pub clicked_down: Rc<RefCell<bool>>,
     /// how many lines each item is to take up
+    pub lines_per_item: Rc<RefCell<usize>>,
     pub selection_mode: Rc<RefCell<SelectionMode>>,
 
     #[allow(clippy::type_complexity)]
@@ -38,6 +38,26 @@ pub struct ListBoxInner {
     /// simultaniously if the ListBox is configured to allow it. If multiple items are selected,
     /// all the selected items will be passed to the function at every selection change.
     pub selection_made_fn: Rc<RefCell<ListBoxFn>>,
+
+    /// deleting is allowed
+    pub deleting_allowed: Rc<RefCell<bool>>,
+
+    /// renaming is allowed
+    pub renaming_allowed: Rc<RefCell<bool>>,
+
+    /// if the listbox is in renaming mode, this will contain the index of the item being renamed
+    /// renaming only renames the entries
+    pub renaming: Rc<RefCell<Option<usize>>>,
+
+    pub right_click_menu: Rc<RefCell<Option<RightClickMenu>>>,
+
+    /// override the color of the unselected items
+    pub override_unselected_color: Rc<RefCell<Vec<(usize, Color)>>>,
+
+    /// entry prefix before the text
+    pub entry_prefix: Rc<RefCell<Option<String>>>,
+    /// entry suffix after the text, right justified
+    pub entry_suffix: Rc<RefCell<Option<String>>>,
 
     pub item_selected_style: Rc<RefCell<Style>>,
     pub cursor_over_unselected_style: Rc<RefCell<Style>>,
