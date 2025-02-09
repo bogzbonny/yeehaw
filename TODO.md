@@ -237,15 +237,30 @@ FEATURES
        - will have to refactor code such that everything now DOES call the pane
          receive event function.
 
+10. webbrowser backend with WASM 
+      - https://github.com/segeljakt/xterm-js-rs
+         - https://github.com/segeljakt/xterm-js-rs/blob/master/example/src/lib.rs
+         - deploying to github: https://github.com/segeljakt/xterm-js-rs/blob/master/.github/workflows/gh-pages.yml
+      - https://github.com/aschey/ratatui-xterm-js?tab=readme-ov-file
+      - https://github.com/aschey/rooibos/blob/main/crates/rooibos-xterm-js/src/backend.rs
+    Alternatives: 
+      - https://github.com/rrbutani/xterm-js-sys
+      - BAD https://github.com/fubarnetes/webterm
+      - other: https://git.meli-email.org/meli/wasm-demo
+
+10. put the showcase on a github page!
 
 __________________________________________________________________________
 BUGFIXES/PATCHES
+
+
 
 05. neovim editor, doesn't save if you do :wq (does if you do :w)
 
 05. scrollbar bugfix. when in the textbox and deleting the final character
     the v-scrollbar will often jump around back and forth between the middle and
     the end
+
 
 10. resizing a scrollable pane should modify the offset of that pane to account
     for the extra space (instead of automatically extending out of range)
@@ -255,6 +270,9 @@ Change the scrollable pane element
 when ever it's resized. Resizing a scrollable pane should modify the starting
 offsets of that pane to account for the extra space instead of automatically
 extending the pane out of range.
+
+10. dropdownlist hook for "before open" 
+     - this could refresh items in the list the moment before it was opened 
 
 10. menu item accessibility keys:
    The ability to jump to an item based on the items first letter? I wouldn't
