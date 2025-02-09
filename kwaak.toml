@@ -8,6 +8,7 @@ otel_enabled = true
 tavily_api_key = "env:TAVILY_API_KEY"
 github_api_key = "env:KWAAK_GITHUB_TOKEN"
 openai_api_key = "env:KWAAK_OPENAI_API_KEY"
+#openrouter_api_key = "env:OPENROUTER_API_KEY"
 
 tool_executor = "docker"
 
@@ -30,6 +31,7 @@ prompt_model = "gpt-4o-mini"
 #prompt_model = "gpt-4o"
 provider = "OpenRouter"
 prompt_model = "deepseek/deepseek-r1"
+api_key = "env:OPENROUTER_API_KEY"
 
 [llm.embedding]
 provider = "OpenAI"
