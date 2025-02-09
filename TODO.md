@@ -237,7 +237,7 @@ FEATURES
        - will have to refactor code such that everything now DOES call the pane
          receive event function.
 
-10. webbrowser backend with WASM 
+10. webbrowser backend with WASM  
       - https://github.com/segeljakt/xterm-js-rs
          - https://github.com/segeljakt/xterm-js-rs/blob/master/example/src/lib.rs
          - deploying to github: https://github.com/segeljakt/xterm-js-rs/blob/master/.github/workflows/gh-pages.yml
@@ -248,11 +248,15 @@ FEATURES
       - BAD https://github.com/fubarnetes/webterm
       - other: https://git.meli-email.org/meli/wasm-demo
 
+OR use egui??? https://github.com/gold-silver-copper/egui_ratatui
+
 10. put the showcase on a github page!
+
+30. Android/Iphone backend with https://capacitorjs.com/solution/react 
+     - once xterm.js backend is a thing
 
 __________________________________________________________________________
 BUGFIXES/PATCHES
-
 
 
 05. neovim editor, doesn't save if you do :wq (does if you do :w)
@@ -273,6 +277,8 @@ extending the pane out of range.
 
 10. dropdownlist hook for "before open" 
      - this could refresh items in the list the moment before it was opened 
+
+10. clicking on a button shadow should not click the button
 
 10. menu item accessibility keys:
    The ability to jump to an item based on the items first letter? I wouldn't

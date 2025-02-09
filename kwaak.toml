@@ -1,6 +1,5 @@
-language = "Rust"
-
 project_name = "yeehaw"
+language = "rust"
 
 ## docker run --rm --name jaeger -p 16686:16686 -p 4317:4317 -p 4318:4318 -p 5778:5778 -p 9411:9411 jaegertracing/jaeger:2.2.0
 otel_enabled = true
@@ -15,7 +14,7 @@ tool_executor = "docker"
 [commands]
 test = "cargo test -p yeehaw --no-fail-fast --color=never"
 coverage = "cargo llvm-cov nextest -p yeehaw --no-clean --summary-only"
-lint_and_fix = "cargo clippy --fix --allow-dirty --allow-staged && cargo fmt"
+#lint_and_fix = "cargo clippy --fix --allow-dirty --allow-staged && cargo fmt"
 
 [git]
 owner = "bogzbonny"
@@ -27,8 +26,10 @@ provider = "OpenAI"
 prompt_model = "gpt-4o-mini"
 
 [llm.query]
-provider = "OpenAI"
-prompt_model = "gpt-4o"
+#provider = "OpenAI"
+#prompt_model = "gpt-4o"
+provider = "OpenRouter"
+prompt_model = "deepseek/deepseek-r1"
 
 [llm.embedding]
 provider = "OpenAI"
