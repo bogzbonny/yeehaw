@@ -20,6 +20,9 @@ Setup:
 - Run `cargo test -p yeehaw --no-fail-fast` for testing
 
 Guidelines:
+- ONLY EVER make changes to files inside the `yeehaw/` folder, DO NOT add a root
+  level `src/` folder or root level `examples/` folder, instead work within
+  `yeehaw/src/` and `yeehaw/examples`. 
 - Never import new libraries unless explicitly asked too.
 - This is a new TUI framework which is not ratatui, do not use ratatui types unless explicitly asked too
 - When writing yeehaw examples, look at other examples stored in `yeehaw/yeehaw/examples/` first 
