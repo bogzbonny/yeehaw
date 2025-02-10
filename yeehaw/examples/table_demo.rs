@@ -1,6 +1,6 @@
 use crossterm::style::Color;
 use yeehaw::{
-    elements::{containers::{Table, TableStyle}, Label},
+    elements::containers::{Table, TableStyle},
     Context, DynLocation, DynVal, TuiBuilder,
 };
 
@@ -8,6 +8,8 @@ fn main() -> std::io::Result<()> {
     let mut tui = TuiBuilder::default()
         .description("Table Container Demo")
         .build()?;
+
+    let ctx = Context::new_context();
 
     let style = TableStyle {
         header_line: true,
@@ -22,11 +24,11 @@ fn main() -> std::io::Result<()> {
     };
 
     // Create table data mixing strings and custom elements
-    let mut table = Table::new(&Context::mock(), style);
+    let mut table = Table::new(&ctx, style);
     
     // Header row
     let header = vec![
-        "ID",
+        "ID", 
         "Name",
         "Role",
         "Status",
@@ -48,7 +50,7 @@ fn main() -> std::io::Result<()> {
         DynVal::new_flex(0.2),   // Status (20% of remaining)
     ];
 
-    // Create custom label with different color
+    // Create rows combining header and data
     let mut rows = Vec::new();
     rows.push(header.into_iter().map(|s| s.into()).collect());
 
