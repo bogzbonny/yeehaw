@@ -7,8 +7,9 @@ use std::{
 use crossterm::style::Color;
 
 use crate::{
-    Context, DrawAction, DrawCh, DrawChPos, DrawRegion, DrawUpdate, DynLocation, DynLocationSet,
-    DynVal, Element, ElementID, Event, EventResponses, HookFn, Label, Parent, ReceivableEvents,
+    Context, DrawAction, DrawChPos, DrawRegion, DrawUpdate, DynLocationSet,
+    DynVal, Element, ElementID, Event, EventResponses, element::HookFn, Label, Parent, 
+    ReceivableEvents,
 };
 
 /// Box drawing characters for table borders
@@ -85,7 +86,7 @@ impl Table {
     /// Create a new table with the given dimensions and style
     pub fn new(ctx: &Context, style: TableStyle) -> Self {
         Self {
-            id: ctx.new_context().get_element_id(),
+            id: ctx.get_element_id(),
             cells: Vec::new(),
             column_widths: Vec::new(),
             row_heights: Vec::new(),
@@ -139,7 +140,7 @@ impl Table {
                 self.column_widths[i].get_val(total_width as u16) as usize
             } else {
                 // Default to equal distribution
-                total_width / num_cols
+                total_width as usize / num_cols
             };
             col_widths.push(width);
         }
@@ -227,7 +228,7 @@ impl Element for Table {
         self.receivable.clone()
     }
 
-    fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+    fn receive_event(&self, _ctx: &Context, _ev: Event) -> (bool, EventResponses) {
         // For now, tables don't handle events
         (false, EventResponses::default())
     }
@@ -240,7 +241,7 @@ impl Element for Table {
         *self.focused.borrow()
     }
 
-    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
+    fn drawing(&self, _ctx: &Context, dr: &DrawRegion, _force_update: bool) -> Vec<DrawUpdate> {
         if !self.get_visible() {
             return vec![DrawUpdate::clear_all()];
         }
@@ -270,24 +271,12 @@ impl Element for Table {
                         line_char = BOX_HORIZONTAL_DOWN;
                     }
 
-                    draw_chars.push(DrawChPos::new(
-                        x,
-                        y,
-                        line_char as u8,
-                        None,
-                        None
-                    ));
+                    draw_chars.push(DrawChPos::new(line_char, x, y));
                     x += 1;
 
                     // Fill the rest of the column with horizontal lines
                     for _ in 1..*width {
-                        draw_chars.push(DrawChPos::new(
-                            x,
-                            y,
-                            BOX_HORIZONTAL as u8,
-                            None,
-                            None
-                        ));
+                        draw_chars.push(DrawChPos::new(BOX_HORIZONTAL, x, y));
                         x += 1;
                     }
                 }
@@ -303,24 +292,12 @@ impl Element for Table {
 
                 // Draw vertical line before cell if enabled
                 if self.style.vertical_lines && col_idx > 0 {
-                    draw_chars.push(DrawChPos::new(
-                        x - 1,
-                        y,
-                        BOX_VERTICAL as u8,
-                        None,
-                        None
-                    ));
+                    draw_chars.push(DrawChPos::new(BOX_VERTICAL, x - 1, y));
                 }
 
                 // Draw cell content
                 for dx in 0..width {
-                    draw_chars.push(DrawChPos::new(
-                        x + dx,
-                        y,
-                        b' ',
-                        fg_color,
-                        bg_color
-                    ));
+                    draw_chars.push(DrawChPos::new(' ', x + dx, y));
                 }
 
                 x += width;
@@ -342,23 +319,11 @@ impl Element for Table {
                         line_char = BOX_CROSS;
                     }
 
-                    draw_chars.push(DrawChPos::new(
-                        x,
-                        y,
-                        line_char as u8,
-                        None,
-                        None
-                    ));
+                    draw_chars.push(DrawChPos::new(line_char, x, y));
                     x += 1;
 
                     for _ in 1..*width {
-                        draw_chars.push(DrawChPos::new(
-                            x,
-                            y,
-                            BOX_HORIZONTAL as u8,
-                            None,
-                            None
-                        ));
+                        draw_chars.push(DrawChPos::new(BOX_HORIZONTAL, x, y));
                         x += 1;
                     }
                 }
@@ -378,7 +343,7 @@ impl Element for Table {
         updates
     }
 
-    fn get_attribute(&self, key: &str) -> Option<Vec<u8>> {
+    fn get_attribute(&self, _key: &str) -> Option<Vec<u8>> {
         None
     }
 
