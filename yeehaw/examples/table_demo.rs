@@ -9,7 +9,7 @@ fn main() -> std::io::Result<()> {
         .description("Table Container Demo")
         .build()?;
 
-    let ctx = Context::new_context();
+    let ctx = &tui.get_context();
 
     let style = TableStyle {
         header_line: true,
@@ -24,7 +24,7 @@ fn main() -> std::io::Result<()> {
     };
 
     // Create table data mixing strings and custom elements
-    let mut table = Table::new(&ctx, style);
+    let mut table = Table::new(ctx, style);
     
     // Header row
     let header = vec![
