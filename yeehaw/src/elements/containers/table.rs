@@ -4,11 +4,11 @@ use std::{
     rc::Rc,
 };
 
-use crossterm::style::{Color, Stylize};
+use crossterm::style::Color;
 
 use crate::{
-    Context, DrawAction, DrawChPos, DrawRegion, DrawUpdate, DynLocation, DynLocationSet, DynVal,
-    Element, ElementID, Event, EventResponses, HookFn, Label, Parent, ReceivableEvents,
+    Context, DrawAction, DrawCh, DrawChPos, DrawRegion, DrawUpdate, DynLocation, DynLocationSet,
+    DynVal, Element, ElementID, Event, EventResponses, HookFn, Label, Parent, ReceivableEvents,
 };
 
 /// Box drawing characters for table borders
@@ -85,7 +85,7 @@ impl Table {
     /// Create a new table with the given dimensions and style
     pub fn new(ctx: &Context, style: TableStyle) -> Self {
         Self {
-            id: ctx.get_element_id(),
+            id: ctx.new_context().get_element_id(),
             cells: Vec::new(),
             column_widths: Vec::new(),
             row_heights: Vec::new(),
@@ -129,17 +129,17 @@ impl Table {
         let mut col_widths = Vec::new();
         let mut row_heights = Vec::new();
         
-        let total_width = dr.width() as u16;
-        let total_height = dr.height() as u16;
+        let total_width = dr.get_width();
+        let total_height = dr.get_height();
 
         // Calculate column widths
         let num_cols = self.cells.first().map_or(0, |r| r.len());
         for i in 0..num_cols {
             let width = if i < self.column_widths.len() {
-                self.column_widths[i].get_val(total_width) as usize
+                self.column_widths[i].get_val(total_width as u16) as usize
             } else {
                 // Default to equal distribution
-                total_width as usize / num_cols
+                total_width / num_cols
             };
             col_widths.push(width);
         }
@@ -187,7 +187,7 @@ impl Table {
 impl Clone for Table {
     fn clone(&self) -> Self {
         Self {
-            id: self.id,
+            id: self.id.clone(),
             cells: self.cells.clone(),
             column_widths: self.column_widths.clone(),
             row_heights: self.row_heights.clone(),
@@ -211,7 +211,7 @@ impl Element for Table {
     }
 
     fn id(&self) -> ElementID {
-        self.id
+        self.id.clone()
     }
 
     fn can_receive(&self, ev: &Event) -> bool {
@@ -228,7 +228,7 @@ impl Element for Table {
     }
 
     fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
-        // Implement event handling for table interaction
+        // For now, tables don't handle events
         (false, EventResponses::default())
     }
 
@@ -248,8 +248,8 @@ impl Element for Table {
         let mut updates = Vec::new();
         let mut draw_chars = Vec::new();
         let location = self.get_dyn_location_set();
-        let base_x = location.l.get_x().get_val(dr.width() as u16) as usize;
-        let base_y = location.l.get_y().get_val(dr.height() as u16) as usize;
+        let base_x = location.l.get_end_x(dr) as usize;
+        let base_y = location.l.get_end_y(dr) as usize;
         
         let (col_widths, row_heights) = self.calculate_grid_layout(dr);
 
@@ -270,24 +270,24 @@ impl Element for Table {
                         line_char = BOX_HORIZONTAL_DOWN;
                     }
 
-                    draw_chars.push(DrawChPos {
-                        ch: line_char,
+                    draw_chars.push(DrawChPos::new(
                         x,
                         y,
-                        fg: None,
-                        bg: None,
-                    });
+                        line_char as u8,
+                        None,
+                        None
+                    ));
                     x += 1;
 
                     // Fill the rest of the column with horizontal lines
                     for _ in 1..*width {
-                        draw_chars.push(DrawChPos {
-                            ch: BOX_HORIZONTAL,
+                        draw_chars.push(DrawChPos::new(
                             x,
                             y,
-                            fg: None,
-                            bg: None,
-                        });
+                            BOX_HORIZONTAL as u8,
+                            None,
+                            None
+                        ));
                         x += 1;
                     }
                 }
@@ -303,24 +303,24 @@ impl Element for Table {
 
                 // Draw vertical line before cell if enabled
                 if self.style.vertical_lines && col_idx > 0 {
-                    draw_chars.push(DrawChPos {
-                        ch: BOX_VERTICAL,
-                        x: x - 1,
+                    draw_chars.push(DrawChPos::new(
+                        x - 1,
                         y,
-                        fg: None,
-                        bg: None,
-                    });
+                        BOX_VERTICAL as u8,
+                        None,
+                        None
+                    ));
                 }
 
                 // Draw cell content
                 for dx in 0..width {
-                    draw_chars.push(DrawChPos {
-                        ch: ' ',
-                        x: x + dx,
+                    draw_chars.push(DrawChPos::new(
+                        x + dx,
                         y,
-                        fg: fg_color,
-                        bg: bg_color,
-                    });
+                        b' ',
+                        fg_color,
+                        bg_color
+                    ));
                 }
 
                 x += width;
@@ -342,23 +342,23 @@ impl Element for Table {
                         line_char = BOX_CROSS;
                     }
 
-                    draw_chars.push(DrawChPos {
-                        ch: line_char,
+                    draw_chars.push(DrawChPos::new(
                         x,
                         y,
-                        fg: None,
-                        bg: None,
-                    });
+                        line_char as u8,
+                        None,
+                        None
+                    ));
                     x += 1;
 
                     for _ in 1..*width {
-                        draw_chars.push(DrawChPos {
-                            ch: BOX_HORIZONTAL,
+                        draw_chars.push(DrawChPos::new(
                             x,
                             y,
-                            fg: None,
-                            bg: None,
-                        });
+                            BOX_HORIZONTAL as u8,
+                            None,
+                            None
+                        ));
                         x += 1;
                     }
                 }
@@ -470,15 +470,15 @@ impl Element for Table {
     }
 }
 
-// Implement string to element conversion
+// Implement string to element conversion using Label
 impl From<String> for Box<dyn Element> {
     fn from(s: String) -> Self {
-        Box::new(Label::new(&Context::mock(), DynLocation::default(), &s))
+        Box::new(Label::new(&Context::new_context(), &s))
     }
 }
 
 impl From<&str> for Box<dyn Element> {
     fn from(s: &str) -> Self {
-        Box::new(Label::new(&Context::mock(), DynLocation::default(), s))
+        Box::new(Label::new(&Context::new_context(), s))
     }
 }
