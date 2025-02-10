@@ -4,12 +4,25 @@ use std::{
     rc::Rc,
 };
 
-use crossterm::style::Color;
+use crossterm::style::{Color, Stylize};
 
 use crate::{
-    Context, DrawChPos, DrawRegion, DynLocation, DynLocationSet, DynVal, Element, ElementID,
-    Event, EventResponses, HookFn, Label, Parent, ReceivableEvents,
+    Context, DrawAction, DrawChPos, DrawRegion, DrawUpdate, DynLocation, DynLocationSet, DynVal,
+    Element, ElementID, Event, EventResponses, HookFn, Label, Parent, ReceivableEvents,
 };
+
+/// Box drawing characters for table borders
+const BOX_HORIZONTAL: char = '─';
+const BOX_VERTICAL: char = '│';
+const BOX_CROSS: char = '┼';
+const BOX_DOWN_RIGHT: char = '┌';
+const BOX_DOWN_LEFT: char = '┐';
+const BOX_UP_RIGHT: char = '└';
+const BOX_UP_LEFT: char = '┘';
+const BOX_VERTICAL_RIGHT: char = '├';
+const BOX_VERTICAL_LEFT: char = '┤';
+const BOX_HORIZONTAL_DOWN: char = '┬';
+const BOX_HORIZONTAL_UP: char = '┴';
 
 /// Style configuration for table appearance
 #[derive(Clone, Debug)]
@@ -110,6 +123,65 @@ impl Table {
     pub fn set_row_heights(&mut self, heights: Vec<DynVal>) {
         self.row_heights = heights;
     }
+
+    /// Calculate column widths based on content and provided DynVal settings
+    fn calculate_grid_layout(&self, dr: &DrawRegion) -> (Vec<usize>, Vec<usize>) {
+        let mut col_widths = Vec::new();
+        let mut row_heights = Vec::new();
+        
+        let total_width = dr.width() as u16;
+        let total_height = dr.height() as u16;
+
+        // Calculate column widths
+        let num_cols = self.cells.first().map_or(0, |r| r.len());
+        for i in 0..num_cols {
+            let width = if i < self.column_widths.len() {
+                self.column_widths[i].get_val(total_width) as usize
+            } else {
+                // Default to equal distribution
+                total_width as usize / num_cols
+            };
+            col_widths.push(width);
+        }
+
+        // Calculate row heights (default to 1 for now)
+        for _ in 0..self.cells.len() {
+            row_heights.push(1);
+        }
+
+        (col_widths, row_heights)
+    }
+
+    /// Get the background color for a cell based on row/column alternation
+    fn get_cell_bg_color(&self, row: usize, col: usize) -> Option<Color> {
+        if row == 0 {
+            return self.style.header_bg_color;
+        }
+
+        // Row alternation takes precedence over column alternation
+        if let Some((color, length)) = self.style.row_alternation {
+            if (row - 1) % length == 0 {
+                return Some(color);
+            }
+        }
+
+        if let Some((color, length)) = self.style.column_alternation {
+            if col % length == 0 {
+                return Some(color);
+            }
+        }
+
+        self.style.content_bg_color
+    }
+
+    /// Get the foreground color for a cell
+    fn get_cell_fg_color(&self, row: usize) -> Option<Color> {
+        if row == 0 {
+            self.style.header_fg_color
+        } else {
+            self.style.content_fg_color
+        }
+    }
 }
 
 impl Clone for Table {
@@ -169,8 +241,140 @@ impl Element for Table {
     }
 
     fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
+        if !self.get_visible() {
+            return vec![DrawUpdate::clear_all()];
+        }
+
         let mut updates = Vec::new();
-        // TODO: Implement table drawing with borders and styles
+        let mut draw_chars = Vec::new();
+        let location = self.get_dyn_location_set();
+        let base_x = location.l.get_x().get_val(dr.width() as u16) as usize;
+        let base_y = location.l.get_y().get_val(dr.height() as u16) as usize;
+        
+        let (col_widths, row_heights) = self.calculate_grid_layout(dr);
+
+        // Draw cell contents and borders
+        let mut y = base_y;
+        for (row_idx, row) in self.cells.iter().enumerate() {
+            let mut x = base_x;
+
+            // Draw horizontal line above header if it's the first row
+            if row_idx == 0 && self.style.header_line {
+                for (col_idx, width) in col_widths.iter().enumerate() {
+                    let mut line_char = BOX_HORIZONTAL;
+                    if col_idx == 0 {
+                        line_char = BOX_DOWN_RIGHT;
+                    } else if col_idx == col_widths.len() - 1 {
+                        line_char = BOX_DOWN_LEFT;
+                    } else if self.style.vertical_lines {
+                        line_char = BOX_HORIZONTAL_DOWN;
+                    }
+
+                    draw_chars.push(DrawChPos {
+                        ch: line_char,
+                        x,
+                        y,
+                        fg: None,
+                        bg: None,
+                    });
+                    x += 1;
+
+                    // Fill the rest of the column with horizontal lines
+                    for _ in 1..*width {
+                        draw_chars.push(DrawChPos {
+                            ch: BOX_HORIZONTAL,
+                            x,
+                            y,
+                            fg: None,
+                            bg: None,
+                        });
+                        x += 1;
+                    }
+                }
+                y += 1;
+            }
+
+            x = base_x;
+            // Draw cell contents
+            for (col_idx, cell) in row.iter().enumerate() {
+                let width = col_widths[col_idx];
+                let bg_color = self.get_cell_bg_color(row_idx, col_idx);
+                let fg_color = self.get_cell_fg_color(row_idx);
+
+                // Draw vertical line before cell if enabled
+                if self.style.vertical_lines && col_idx > 0 {
+                    draw_chars.push(DrawChPos {
+                        ch: BOX_VERTICAL,
+                        x: x - 1,
+                        y,
+                        fg: None,
+                        bg: None,
+                    });
+                }
+
+                // Draw cell content
+                for dx in 0..width {
+                    draw_chars.push(DrawChPos {
+                        ch: ' ',
+                        x: x + dx,
+                        y,
+                        fg: fg_color,
+                        bg: bg_color,
+                    });
+                }
+
+                x += width;
+            }
+
+            // Draw horizontal line below cells if enabled
+            if (row_idx > 0 || self.style.header_line) && 
+               (row_idx < self.cells.len() - 1) && 
+               self.style.horizontal_lines {
+                y += 1;
+                let mut x = base_x;
+                for (col_idx, width) in col_widths.iter().enumerate() {
+                    let mut line_char = BOX_HORIZONTAL;
+                    if col_idx == 0 {
+                        line_char = BOX_VERTICAL_RIGHT;
+                    } else if col_idx == col_widths.len() - 1 {
+                        line_char = BOX_VERTICAL_LEFT;
+                    } else if self.style.vertical_lines {
+                        line_char = BOX_CROSS;
+                    }
+
+                    draw_chars.push(DrawChPos {
+                        ch: line_char,
+                        x,
+                        y,
+                        fg: None,
+                        bg: None,
+                    });
+                    x += 1;
+
+                    for _ in 1..*width {
+                        draw_chars.push(DrawChPos {
+                            ch: BOX_HORIZONTAL,
+                            x,
+                            y,
+                            fg: None,
+                            bg: None,
+                        });
+                        x += 1;
+                    }
+                }
+                y += 1;
+            } else {
+                y += row_heights[row_idx];
+            }
+        }
+
+        // Create final update
+        updates.push(DrawUpdate {
+            sub_id: vec![self.id()],
+            z_indicies: vec![location.z],
+            action: DrawAction::Update(draw_chars),
+        });
+
         updates
     }
 
@@ -178,9 +382,7 @@ impl Element for Table {
         None
     }
 
-    fn set_attribute_inner(&self, key: &str, value: Vec<u8>) {
-        // Not needed for basic table implementation
-    }
+    fn set_attribute_inner(&self, _key: &str, _value: Vec<u8>) {}
 
     fn set_hook(&self, kind: &str, el_id: ElementID, hook: HookFn) {
         self.hooks.borrow_mut()
@@ -249,12 +451,22 @@ impl Element for Table {
         *self.content_y_offset.borrow()
     }
 
-    fn get_content_width(&self, _dr: Option<&DrawRegion>) -> usize {
-        0 // TODO: Calculate total table width
+    fn get_content_width(&self, dr: Option<&DrawRegion>) -> usize {
+        if let Some(dr) = dr {
+            let (col_widths, _) = self.calculate_grid_layout(dr);
+            col_widths.iter().sum()
+        } else {
+            0
+        }
     }
 
-    fn get_content_height(&self, _dr: Option<&DrawRegion>) -> usize {
-        0 // TODO: Calculate total table height
+    fn get_content_height(&self, dr: Option<&DrawRegion>) -> usize {
+        if let Some(dr) = dr {
+            let (_, row_heights) = self.calculate_grid_layout(dr);
+            row_heights.iter().sum()
+        } else {
+            0
+        }
     }
 }
 
