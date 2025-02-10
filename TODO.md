@@ -18,6 +18,10 @@ Create a new table container element (should be stored in yeehaw/src/elements/co
 
 Note that all of these options should be optional (lines are not mandatory). Each table grid location should be able to store an element, however there should be quick functionality where the user uses a String instead of an element. The String should be converted into a basic Label element when this is the case. 
 
+Please build in considerations for how the width of each of column and height of each row will be determined. Build out some options for this, for instanced fixed widths, or auto-fit widths based on the size of each input elements for each cell.
+
+please ensure that all code you write compiles with `cargo build` and `cargo test`
+
 01. reduce CPU load by attempting to minimize the amount of calculations in the
     main tui render loop
      - aparently this line is a bottleneck https://github.com/bogzbonny/yeehaw/blob/main/yeehaw/src/tui.rs#L479
