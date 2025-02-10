@@ -30,8 +30,8 @@ prompt_model = "gpt-4o-mini"
 #provider = "OpenAI"
 #prompt_model = "gpt-4o"
 provider = "OpenRouter"
-prompt_model = "deepseek/deepseek-r1"
-#prompt_model = "anthropic/claude-3.5-sonnet"
+#prompt_model = "deepseek/deepseek-r1"
+prompt_model = "anthropic/claude-3.5-sonnet"
 api_key = "env:OPENROUTER_API_KEY"
 
 [llm.embedding]
