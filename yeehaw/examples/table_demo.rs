@@ -1,7 +1,7 @@
 use crossterm::style::Color;
 use yeehaw::{
     elements::containers::{Table, TableStyle},
-    Context, DynLocation, DynVal, TuiBuilder,
+    Context, DynVal, TuiBuilder,
 };
 
 fn main() -> std::io::Result<()> {
