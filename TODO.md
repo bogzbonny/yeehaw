@@ -8,6 +8,10 @@
 
 Please open up a new branch for the following feature. Use bogzbonny as the git username, and bogzbonny@protonmail.com as the email. Always push code using these credentials. Everytime you make changes to the files, push your code to github to save the work you've done
 
+---- 
+
+Please start working from the `table-container` branch on github, you may push your code updates there too. Use bogzbonny as the git username, and bogzbonny@protonmail.com as the email. Always push code using these credentials. Everytime you make changes to the files, push your code to github to save the work you've done
+
 Create a new table container element (should be stored in yeehaw/src/elements/containers). Also create an example TUI (in yeehaw/examples/) which demonstrates the capabilities of this new table element. A new type for the table style should be created, use the name `TableStyle`. The table style options should be: 
  - top row (header row) horizontal box-drawing line (underline the top row)
  - vertical box-drawing lines for inbetween the rows
