@@ -20,6 +20,10 @@ Setup:
 - Run `cargo test -p yeehaw --no-fail-fast` for testing
 
 Guidelines:
+- Never import new libraries unless explicitly asked too.
+- This is a new TUI framework which is not ratatui, do not use ratatui types unless explicitly asked too
+- When writing yeehaw examples, look at other examples stored in `yeehaw/yeehaw/examples/` first 
+- When writing new yeehaw elements, look at other elements are programmed in `yeehaw/yeehaw/elements/`, use these as examples.
 - Always code in Rust.
 - When building new elements and widgets always use other elements and widget as
   a template to work from.

@@ -7,14 +7,13 @@ pub fn editor_demo(ctx: &Context) -> Box<dyn Element> {
     let ed_width = DynVal::HALF.minus(2.into()).with_min(20).with_max(70);
 
     // for testing for when no editor is found
-    /*
-    let editor = TermEditorPane::new_with_custom_editor(
-        &ctx,
-        "custom",
-        Some("bloop".into()),
-        "editor not found",
-    )
-    */
+
+    //let editor = TermEditorPane::new_with_custom_editor(
+    //    ctx,
+    //    "custom-editor-title",
+    //    std::env::var("SOUP").ok(),
+    //    "editor not found",
+    //)
     let editor = TermEditorPane::new(ctx, "custom")
         .with_dyn_height(ed_height)
         .with_dyn_width(ed_width)

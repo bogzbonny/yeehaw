@@ -2,6 +2,22 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+10. table element
+     - option to use underline instead of box drawing ch
+     - autowidth or fixed width options
+
+Please open up a new branch for the following feature. Use bogzbonny as the git username, and bogzbonny@protonmail.com as the email. Always push code using these credentials. Everytime you make changes to the files, push your code to github to save the work you've done
+
+Create a new table container element (should be stored in yeehaw/src/elements/containers). Also create an example TUI (in yeehaw/examples/) which demonstrates the capabilities of this new table element. A new type for the table style should be created, use the name `TableStyle`. The table style options should be: 
+ - top row (header row) horizontal box-drawing line (underline the top row)
+ - vertical box-drawing lines for inbetween the rows
+ - horizontal box-drawing lines for inbetween the non-top rows (content rows)
+ - default bg/fg colors for the header row, and seperately for the content rows
+ - overriding alternating colors for the bg by row OR column (these can provide the effect of lines without requiring using box drawing characters)
+   - these overriding alternating colors should be seperate for row and column and also have a "length" for the alternation (eg, 5 rows red, then 5 rows default) 
+
+Note that all of these options should be optional (lines are not mandatory). Each table grid location should be able to store an element, however there should be quick functionality where the user uses a String instead of an element. The String should be converted into a basic Label element when this is the case. 
+
 01. reduce CPU load by attempting to minimize the amount of calculations in the
     main tui render loop
      - aparently this line is a bottleneck https://github.com/bogzbonny/yeehaw/blob/main/yeehaw/src/tui.rs#L479
@@ -538,19 +554,6 @@ WIDGETS
          - could use a big transparent pane that captures all events for this
          - could "flash" the topzone of the window when the users clicks
            elsewhere than the window
-
-10. table element
-     - option to use underline instead of box drawing ch
-     - autowidth or fixed width options
-
-Create a new table container element (should be stored in yeehaw/src/elements/containers). Also create an example TUI (in yeehaw/examples/) which demonstrates the capabilities of this new table element. A new type for the table style should be created, use the name `TableStyle`. The table style options should be: 
- - top row (header row) horizontal box-drawing line (underline the top row)
- - vertical box-drawing lines for inbetween the rows
- - horizontal box-drawing lines for inbetween the non-top rows (content rows)
- - default bg/fg colors for the header row, and seperately for the content rows
- - overriding alternating colors for the bg by row OR column (these can provide the effect of lines without requiring using box drawing characters)
-   - these overriding alternating colors should be seperate for row and column and also have a "length" for the alternation (eg, 5 rows red, then 5 rows default) 
-Note that all of these options should be optional (lines are not mandatory). Each table grid location should be able to store an element, however there should be quick functionality where the user uses a String instead of an element. The String should be converted into a basic Label element when this is the case. 
 
 20. listbox over entire elements
     - abstract the listbox selector except to allow for an
