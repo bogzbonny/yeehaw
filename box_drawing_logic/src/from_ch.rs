@@ -686,7 +686,7 @@ impl BoxDrawingCh {
                 dashes: None,
             }),
             '╓' => Some(BoxDrawingCh {
-                left: None
+                left: None,
                 right: Some(SideAttribute::Thin),
                 up: None,
                 down: Some(SideAttribute::Double),

@@ -5,7 +5,14 @@ pub mod to_ch;
 /// Many combinations of attributes will give rise to non-existent characters.
 ///
 /// for reference here are all 128 box drawing characters:
-/// ─━│┃┄┅┆┇┈┉┊┋┌┍┎┏┐┑┒┓└┕┖┗┘┙┚┛├┝┞┟┠┡┢┣┤┥┦┧┨┩┪┫┬┭┮┯┰┱┲┳┴┵┶┷┸┹┺┻┼┽┾┿╀╁╂╃╄╅╆╇╈╉╊╋╌╍╎╏═║╒╓╔╕╖╗╘╙╚╛╜╝╞╟╠╡╢╣╤╥╦╧╨╩╪╫╬╭╮╯╰╱╲╳╴╵╶╷╸╹╺╻╼╽╾╿
+/// ─━│┃┄┅┆┇┈┉┊┋┌┍┎┏
+/// ┐┑┒┓└┕┖┗┘┙┚┛├┝┞┟
+/// ┠┡┢┣┤┥┦┧┨┩┪┫┬┭┮┯
+/// ┰┱┲┳┴┵┶┷┸┹┺┻┼┽┾┿
+/// ╀╁╂╃╄╅╆╇╈╉╊╋╌╍╎╏
+/// ═║╒╓╔╕╖╗╘╙╚╛╜╝╞╟
+/// ╠╡╢╣╤╥╦╧╨╩╪╫╬╭╮╯
+/// ╰╱╲╳╴╵╶╷╸╹╺╻╼╽╾╿
 pub struct BoxDrawingCh {
     pub left: Option<SideAttribute>,
     pub right: Option<SideAttribute>,
