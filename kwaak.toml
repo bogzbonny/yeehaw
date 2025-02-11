@@ -30,15 +30,14 @@ provider = "OpenAI"
 prompt_model = "gpt-4o-mini"
 
 [llm.query]
-provider = "Anthropic"
-prompt_model = "claude-3-5-sonnet-latest"
-api_key = "env:ANTHROPIC_API_KEY"
-#provider = "OpenAI"
-#prompt_model = "gpt-4o"
-#provider = "OpenRouter"
+#provider = "Anthropic"
+#prompt_model = "claude-3-5-sonnet-latest"
+#api_key = "env:ANTHROPIC_API_KEY"
+
+provider = "OpenRouter"
+prompt_model = "anthropic/claude-3.5-sonnet"
+api_key = "env:OPENROUTER_API_KEY"
 #prompt_model = "deepseek/deepseek-r1"
-#prompt_model = "anthropic/claude-3.5-sonnet"
-#api_key = "env:OPENROUTER_API_KEY"
 
 [llm.embedding]
 provider = "OpenAI"
