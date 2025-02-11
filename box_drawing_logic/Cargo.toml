@@ -1,0 +1,11 @@
+[package]
+name = "box_drawing_logic"
+version = "0.1.0"
+edition = "2021"
+repository = "https://github.com/bogzbonny/yeehaw"
+authors = ["Bogz Bonny <bogzbonny@protonmail.com>"] 
+documentation = "https://docs.rs/box_drawing_logic/latest/box_drawing_logic/"
+description = "Logic for box drawing characters"
+license = "Apache-2.0"
+
+[dependencies]

@@ -4,6 +4,7 @@ members = [
     "yeehaw",
     "yeehaw_derive",
     "vt100_yh",
+    "box_drawing_logic",
 ]
 
 [workspace.package]
