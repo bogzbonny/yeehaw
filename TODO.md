@@ -2,6 +2,7 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+
 10. table element
      - option to use underline instead of box drawing ch
      - autowidth or fixed width options
@@ -60,6 +61,8 @@ there is improper handling of the "delete" key (control-delete on mac) the
 textbox interprets it as control-h. Fix this so it will actually perform a
 delete and not type 'h'. All changes should only be made within the "textbox.rs"
 
+20. add functionality for terminal-title renaming through the esc sequence: 
+      - echo -ne "\e]0;Your New Tab Title\a"
 
 01. showcase bug left and right keys dont work good on the distance slider of
     the colors example if the size of the screen is large, this is because the 
