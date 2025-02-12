@@ -1,10 +1,15 @@
-/*
-use crate::*;
+use {
+    crate::*,
+    box_drawing_logic::{BoxDrawingCh, SideAttribute as BoxSideAttr},
+};
 
 // TODO coloring for cells
 // TODO when the table has lines, those lines should be draggable
 // TODO justification within cells
 // TODO Equal setting for TableDimension
+// TODO optionaly use underlined ansi for the table rows
+//       - this will require fixed underlines
+// TODO optionize the line style
 
 /// A table container element that can display data in a grid format.
 /// Each cell can contain any element
@@ -13,17 +18,11 @@ pub struct Table {
     pub pane: ParentPane,
     pub column_dim: Rc<RefCell<TableDimension>>,
     pub row_dim: Rc<RefCell<TableDimension>>,
+    #[allow(clippy::type_complexity)]
     pub cells: Rc<RefCell<Vec<Vec<Option<Box<dyn Element>>>>>>,
     pub style: Rc<RefCell<TableStyle>>,
     pub last_size: Rc<RefCell<Size>>,
     pub is_dirty: Rc<RefCell<bool>>,
-}
-
-#[derive(Clone, Debug)]
-pub enum TableLineKind {
-    Thin,
-    Thick,
-    Double,
 }
 
 pub enum TableDimension {
@@ -43,13 +42,13 @@ pub enum TableDimension {
 #[derive(Clone, Debug, Default)]
 pub struct TableStyle {
     /// Draw a horizontal line under the header row
-    pub header_line: Option<TableLineKind>,
+    pub header_line: Option<BoxSideAttr>,
     /// Draw vertical lines between columns
-    pub vertical_lines: Option<TableLineKind>,
+    pub vertical_lines: Option<BoxSideAttr>,
     /// Draw horizontal lines between content rows
-    pub horizontal_lines: Option<TableLineKind>,
+    pub horizontal_lines: Option<BoxSideAttr>,
     /// border around the table
-    pub border: Option<TableLineKind>,
+    pub border: Option<BoxSideAttr>,
 }
 
 impl Table {
@@ -76,7 +75,34 @@ impl Table {
         self.is_dirty.replace(true);
     }
 
+    pub fn set_data(&self, ctx: &Context, data: Vec<Vec<&str>>) {
+        for (row, row_data) in data.into_iter().enumerate() {
+            self.set_row(ctx, row, row_data);
+        }
+    }
+
+    pub fn set_data_el(&self, data: Vec<Vec<Box<dyn Element>>>) {
+        for (row, row_data) in data.into_iter().enumerate() {
+            self.set_row_el(row, row_data);
+        }
+    }
+
     /// set a row of cells
+    pub fn set_row_el(&self, row: usize, data: Vec<Box<dyn Element>>) {
+        let mut cells = self.cells.borrow_mut();
+        if row >= cells.len() {
+            cells.resize(row + 1, Vec::new());
+        }
+        let col_count = data.len();
+        if cells[row].len() < col_count {
+            cells[row].resize(col_count, None);
+        }
+        for (col, s) in data.into_iter().enumerate() {
+            cells[row][col] = Some(s);
+        }
+        self.is_dirty.replace(true);
+    }
+
     pub fn set_row(&self, ctx: &Context, row: usize, data: Vec<&str>) {
         let mut cells = self.cells.borrow_mut();
         if row >= cells.len() {
@@ -156,12 +182,8 @@ impl Table {
         // determine the positions of each cell and draw the lines at the same time
         let mut col_widths = Vec::new();
         let mut row_heights = Vec::new();
-        let mut vertical_line_positions: Vec<usize> = Vec::new();
-        let mut horizontal_line_positions: Vec<usize> = Vec::new();
         let cells = self.cells.borrow();
 
-        let max_widths = Vec::new();
-        let max_heights = Vec::new();
         let end_row = cells.len();
         let end_col = cells.iter().map(|row| row.len()).max().unwrap_or(0);
 
@@ -169,174 +191,302 @@ impl Table {
         // given the table TableDimension strategy
         match &*self.column_dim.borrow() {
             TableDimension::Fixed(size) => {
-                for col in 0..end_col {
-                    col_widths.push((*size).into());
+                for _ in 0..end_col {
+                    col_widths.push(*size);
                 }
             }
             TableDimension::Manual(sizes) => {
-                col_widths = sizes.clone();
+                for col in 0..end_col {
+                    // compute the size
+                    let size = sizes
+                        .get(col)
+                        .or_else(|| sizes.last())
+                        .map(|size| size.get_val(dr.size.width));
+                    match size {
+                        Some(size) => {
+                            if size < 1 {
+                                col_widths.push(1);
+                                continue;
+                            }
+                            col_widths.push(size as usize);
+                        }
+                        None => col_widths.push(1),
+                    }
+                }
             }
             TableDimension::Auto => {
                 // first compile the max widths and heights for each row and col
                 for col in 0..end_col {
-                    col_widths.push(self.max_width_for_column(col).into());
+                    col_widths.push(self.max_width_for_column(col));
                 }
             }
         }
         match &*self.row_dim.borrow() {
             TableDimension::Fixed(size) => {
-                for row in 0..end_row {
-                    row_heights.push((*size).into());
+                for _ in 0..end_row {
+                    row_heights.push(*size);
                 }
             }
             TableDimension::Manual(sizes) => {
-                row_heights = sizes.clone();
+                for row in 0..end_row {
+                    // compute the size
+                    let size = sizes
+                        .get(row)
+                        .or_else(|| sizes.last())
+                        .map(|size| size.get_val(dr.size.height));
+                    match size {
+                        Some(size) => {
+                            if size < 1 {
+                                row_heights.push(1);
+                                continue;
+                            }
+                            row_heights.push(size as usize);
+                        }
+                        None => row_heights.push(1),
+                    }
+                }
             }
             TableDimension::Auto => {
                 for row in 0..end_row {
-                    row_heights.push(self.max_height_for_row(row).into());
+                    row_heights.push(self.max_height_for_row(row));
                 }
             }
         }
 
-        let content = DrawChs2D::new_empty_of_size(
+        let mut x = 0;
+        let mut y = 0;
+        let has_border = self.style.borrow().border.is_some();
+
+        // first consider if there is a border
+        if has_border {
+            x += 1;
+            y += 1;
+        }
+
+        // iterate through all the cells and set the position el.set_dyn_location(l) considering
+        // border and lines positions
+        for row in 0..end_row {
+            let height = row_heights[row];
+            for (col, width) in col_widths.iter().enumerate() {
+                let cell = cells[row][col].as_ref().unwrap();
+                cell.set_dyn_location(DynLocation::new(
+                    x.into(),
+                    (x + width).into(),
+                    y.into(),
+                    (y + height).into(),
+                ));
+                x += width + 1;
+                // consider lines
+                if self.style.borrow().vertical_lines.is_some() {
+                    x += 1;
+                }
+            }
+            y += height + 1;
+            x = if has_border { 1 } else { 0 };
+
+            // consider lines
+            if row == 0 {
+                if self.style.borrow().header_line.is_some() {
+                    y += 1;
+                }
+            } else if self.style.borrow().vertical_lines.is_some() {
+                y += 1;
+            }
+        }
+
+        // the content layer of the parent pane, will contains background colors a
+        // and box drawing characters
+        let mut content = DrawChs2D::new_empty_of_size(
             dr.size.width.into(),
             dr.size.height.into(),
             self.pane.pane.get_style(),
         );
 
-        // iterate through all the cells and set the position el.set_dyn_location(l) for each of them
-        // set the content for all the lines, given the TableLineKind
-        // and the position for each of the lines
+        // TODO optionize the line style
+        let line_sty = Style::transparent().with_fg(Color::WHITE);
 
-        let mut x = 0;
-        let mut y = 0;
+        // Draw the horizontal header table line
+        let mut y = if has_border { 1 } else { 0 };
+        if let Some(line_attr) = self.style.borrow().header_line {
+            let line = BoxDrawingCh::new_with_side_attr(true, true, false, false, line_attr);
+            let ch = line.to_char_permissive().expect("box drawing logic broken");
+            let ch = DrawCh::new(ch, line_sty.clone());
 
-        // first consider if there is a border
+            let height = row_heights.first().unwrap_or(&0);
+            y += height + 1;
+            for x in 0..dr.size.width as usize {
+                content.set_ch(x, y, ch.clone());
+            }
+        }
 
-        for row in 0..end_row {
-            let mut x = 0;
-            let row_height = row_heights
-                .get(row)
-                .cloned()
-                .unwrap_or_else(|| row_heights.last().cloned().unwrap_or(1.into()));
-            let row_height = row_height.get_val(dr.size.height);
+        // Draw horizontal table lines, combining with the previous box drawing character at
+        // intersecting positions
+        if let Some(line_attr) = self.style.borrow().horizontal_lines {
+            let line = BoxDrawingCh::new_with_side_attr(true, true, false, false, line_attr);
+            let ch = line.to_char_permissive().expect("box drawing logic broken");
+            let ch = DrawCh::new(ch, line_sty.clone());
 
-            for col in 0..end_col {
-                let col_width = col_widths
-                    .get(col)
-                    .cloned()
-                    .unwrap_or_else(|| col_widths.last().cloned().unwrap_or(1.into()));
-                let col_width = col_width.get_val(dr.size.width);
-
-                if let Some(Some(cell)) = cells.get(row).and_then(|r| r.get(col)) {
-                    let loc = DynLocation::new(
-                        x.into(),
-                        x.into() + col_width,
-                        y.into(),
-                        y.into() + row_height,
-                    );
-                    cell.set_dyn_location(loc);
+            for (i, height) in row_heights.iter().enumerate() {
+                y += height + 1;
+                if i == 0 || i == row_heights.len() - 1 {
+                    continue; // skip header line and last line
                 }
-
-                x += col_width;
-                vertical_line_positions.push(x as usize);
-            }
-
-            y += row_height;
-            horizontal_line_positions.push(y as usize);
-        }
-
-        // Draw table lines based on style
-        let style = self.style.borrow();
-
-        // Helper function to get line characters based on style
-        let get_line_chars = |line_kind: &TableLineKind| -> (char, char, char, char, char, char) {
-            match line_kind {
-                TableLineKind::Thin => ('─', '│', '┌', '┐', '└', '┘'),
-                TableLineKind::Thick => ('━', '┃', '┏', '┓', '┗', '┛'),
-                TableLineKind::Double => ('═', '║', '╔', '╗', '╚', '╝'),
-            }
-        };
-
-        // Draw border if specified
-        if let Some(border_style) = &style.border {
-            let (h, v, tl, tr, bl, br) = get_line_chars(border_style);
-            // Top border
-            for x in 0..dr.size.width {
-                content.set_ch(x.into(), 0, DrawCh::new(h, self.pane.pane.get_style()));
-            }
-            // Bottom border
-            for x in 0..dr.size.width {
-                content.set_ch(
-                    x.into(),
-                    dr.size.height.into() - 1,
-                    DrawCh::new(h, self.pane.pane.get_style()),
-                );
-            }
-            // Left border
-            for y in 0..dr.size.height {
-                content.set_ch(0, y.into(), DrawCh::new(v, self.pane.pane.get_style()));
-            }
-            // Right border
-            for y in 0..dr.size.height {
-                content.set_ch(
-                    dr.size.width.into() - 1,
-                    y.into(),
-                    DrawCh::new(v, self.pane.pane.get_style()),
-                );
-            }
-            // Corners
-            content.set_ch(0, 0, DrawCh::new(tl, self.pane.pane.get_style()));
-            content.set_ch(
-                dr.size.width.into() - 1,
-                0,
-                DrawCh::new(tr, self.pane.pane.get_style()),
-            );
-            content.set_ch(
-                0,
-                dr.size.height.into() - 1,
-                DrawCh::new(bl, self.pane.pane.get_style()),
-            );
-            content.set_ch(
-                dr.size.width.into() - 1,
-                dr.size.height.into() - 1,
-                DrawCh::new(br, self.pane.pane.get_style()),
-            );
-        }
-
-        // Draw vertical lines
-        if let Some(line_style) = &style.vertical_lines {
-            let (_, v, _, _, _, _) = get_line_chars(line_style);
-            for x in &vertical_line_positions {
-                for y in 0..dr.size.height {
-                    content.set_ch(*x, y.into(), DrawCh::new(v, self.pane.pane.get_style()));
+                for x in 0..dr.size.width as usize {
+                    content.set_ch(x, y, ch.clone());
                 }
             }
         }
 
-        // Draw horizontal lines
-        if let Some(line_style) = &style.horizontal_lines {
-            let (h, _, _, _, _, _) = get_line_chars(line_style);
-            for y in &horizontal_line_positions {
-                for x in 0..dr.size.width {
-                    content.set_ch(x.into(), *y, DrawCh::new(h, self.pane.pane.get_style()));
+        // Draw vertical table lines, combining with the previous box drawing character at
+        // intersecting positions (aka horizontal lines)
+        if let Some(line_attr) = self.style.borrow().vertical_lines {
+            let mut x = if has_border { 1 } else { 0 };
+            let line = BoxDrawingCh::new_with_side_attr(false, false, true, true, line_attr);
+            let ch = line.to_char_permissive().expect("box drawing logic broken");
+            let ch = DrawCh::new(ch, line_sty.clone());
+
+            for (i, width) in col_widths.iter().enumerate() {
+                x += width + 1;
+                if i == row_heights.len() - 1 {
+                    continue; // skip the final line
+                }
+                for y in 0..dr.size.height as usize {
+                    let mut ch_to_set = ch.clone();
+                    'if_: {
+                        let prev_ch = content.get_at(x, y);
+                        let Some(prev_ch) = prev_ch else {
+                            break 'if_;
+                        };
+                        let ChPlus::Char(prev_ch) = prev_ch.ch else {
+                            break 'if_;
+                        };
+                        let Some(mut prev_box_ch) = BoxDrawingCh::from_char(prev_ch) else {
+                            break 'if_;
+                        };
+                        prev_box_ch.overlay_with(line);
+                        let Some(ch) = prev_box_ch.to_char_permissive() else {
+                            break 'if_;
+                        };
+                        ch_to_set = DrawCh::new(ch, line_sty.clone());
+                    }
+                    content.set_ch(x, y, ch_to_set);
                 }
             }
         }
 
-        // Draw header line if specified
-        if let Some(header_style) = &style.header_line {
-            let (h, _, _, _, _, _) = get_line_chars(header_style);
-            if let Some(first_row_height) = row_heights.first() {
-                let header_y = first_row_height.get_val(&dr);
-                for x in 0..dr.size.width {
-                    content.set_ch(
-                        x.into(),
-                        header_y as usize,
-                        DrawCh::new(h, self.pane.pane.get_style()),
-                    );
+        // Draw the border
+        if let Some(line_attr) = self.style.borrow().border {
+            // horizontal lines
+            let line = BoxDrawingCh::new_with_side_attr(true, true, false, false, line_attr);
+            let ch = line.to_char_permissive().expect("box drawing logic broken");
+            let ch = DrawCh::new(ch, line_sty.clone());
+            for y in [0, dr.size.height as usize - 1].iter() {
+                for x in 0..dr.size.width as usize {
+                    let mut ch_to_set = ch.clone();
+                    'if_: {
+                        let prev_ch = content.get_at(x, *y);
+                        let Some(prev_ch) = prev_ch else {
+                            break 'if_;
+                        };
+                        let ChPlus::Char(prev_ch) = prev_ch.ch else {
+                            break 'if_;
+                        };
+                        let Some(mut prev_box_ch) = BoxDrawingCh::from_char(prev_ch) else {
+                            break 'if_;
+                        };
+                        prev_box_ch.overlay_with(line);
+                        let Some(ch) = prev_box_ch.to_char_permissive() else {
+                            break 'if_;
+                        };
+                        ch_to_set = DrawCh::new(ch, line_sty.clone());
+                    }
+                    content.set_ch(x, *y, ch_to_set);
                 }
+            }
+
+            // vertical lines
+            let line = BoxDrawingCh::new_with_side_attr(false, false, true, true, line_attr);
+            let ch = line.to_char_permissive().expect("box drawing logic broken");
+            let ch = DrawCh::new(ch, line_sty.clone());
+            for x in [0, dr.size.width as usize - 1].iter() {
+                for y in 0..dr.size.height as usize {
+                    let mut ch_to_set = ch.clone();
+                    'if_: {
+                        let prev_ch = content.get_at(*x, y);
+                        let Some(prev_ch) = prev_ch else {
+                            break 'if_;
+                        };
+                        let ChPlus::Char(prev_ch) = prev_ch.ch else {
+                            break 'if_;
+                        };
+                        let Some(mut prev_box_ch) = BoxDrawingCh::from_char(prev_ch) else {
+                            break 'if_;
+                        };
+                        prev_box_ch.overlay_with(line);
+                        let Some(ch) = prev_box_ch.to_char_permissive() else {
+                            break 'if_;
+                        };
+                        ch_to_set = DrawCh::new(ch, line_sty.clone());
+                    }
+                    content.set_ch(*x, y, ch_to_set);
+                }
+            }
+
+            // trim the outermost box-drawing sides of the border
+            // top
+            let y = 0;
+            for x in 0..dr.size.width as usize {
+                let ch = content.get_at(x, y);
+                let Some(ch) = ch else {
+                    continue;
+                };
+                let ChPlus::Char(ch) = ch.ch else {
+                    continue;
+                };
+                let ch = box_drawing_logic::remove_up(ch);
+                content.set_ch(x, y, DrawCh::new(ch, line_sty.clone()));
+            }
+
+            // bottom
+            let y = dr.size.height as usize - 1;
+            for x in 0..dr.size.width as usize {
+                let ch = content.get_at(x, y);
+                let Some(ch) = ch else {
+                    continue;
+                };
+                let ChPlus::Char(ch) = ch.ch else {
+                    continue;
+                };
+                let ch = box_drawing_logic::remove_down(ch);
+                content.set_ch(x, y, DrawCh::new(ch, line_sty.clone()));
+            }
+
+            // left
+            let x = 0;
+            for y in 0..dr.size.height as usize {
+                let ch = content.get_at(x, y);
+                let Some(ch) = ch else {
+                    continue;
+                };
+                let ChPlus::Char(ch) = ch.ch else {
+                    continue;
+                };
+                let ch = box_drawing_logic::remove_left(ch);
+                content.set_ch(x, y, DrawCh::new(ch, line_sty.clone()));
+            }
+
+            // right
+            let x = dr.size.width as usize - 1;
+            for y in 0..dr.size.height as usize {
+                let ch = content.get_at(x, y);
+                let Some(ch) = ch else {
+                    continue;
+                };
+                let ChPlus::Char(ch) = ch.ch else {
+                    continue;
+                };
+                let ch = box_drawing_logic::remove_right(ch);
+                content.set_ch(x, y, DrawCh::new(ch, line_sty.clone()));
             }
         }
 
@@ -359,4 +509,3 @@ impl Element for Table {
         self.pane.drawing(ctx, dr, force_update)
     }
 }
-*/

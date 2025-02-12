@@ -60,43 +60,24 @@ pub struct BoxAdjContext {
 
 impl BoxDrawingCh {
     pub fn new(left: bool, right: bool, up: bool, down: bool) -> Self {
-        let left = if left { Some(SideAttribute::Thin) } else { None };
-        let right = if right { Some(SideAttribute::Thin) } else { None };
-        let up = if up { Some(SideAttribute::Thin) } else { None };
-        let down = if down { Some(SideAttribute::Thin) } else { None };
-
-        Self {
-            left,
-            right,
-            up,
-            down,
-            curved: false,
-            dashes: None,
-        }
+        Self::new_with_side_attr(left, right, up, down, SideAttribute::Thin)
     }
 
     pub fn new_thick(left: bool, right: bool, up: bool, down: bool) -> Self {
-        let left = if left { Some(SideAttribute::Thick) } else { None };
-        let right = if right { Some(SideAttribute::Thick) } else { None };
-        let up = if up { Some(SideAttribute::Thick) } else { None };
-        let down = if down { Some(SideAttribute::Thick) } else { None };
-
-        Self {
-            left,
-            right,
-            up,
-            down,
-            curved: false,
-            dashes: None,
-        }
+        Self::new_with_side_attr(left, right, up, down, SideAttribute::Thick)
     }
 
     pub fn new_double(left: bool, right: bool, up: bool, down: bool) -> Self {
-        let left = if left { Some(SideAttribute::Double) } else { None };
-        let right = if right { Some(SideAttribute::Double) } else { None };
-        let up = if up { Some(SideAttribute::Double) } else { None };
-        let down = if down { Some(SideAttribute::Double) } else { None };
+        Self::new_with_side_attr(left, right, up, down, SideAttribute::Double)
+    }
 
+    pub fn new_with_side_attr(
+        left: bool, right: bool, up: bool, down: bool, side_attr: SideAttribute,
+    ) -> Self {
+        let left = if left { Some(side_attr) } else { None };
+        let right = if right { Some(side_attr) } else { None };
+        let up = if up { Some(side_attr) } else { None };
+        let down = if down { Some(side_attr) } else { None };
         Self {
             left,
             right,
@@ -279,6 +260,9 @@ impl BoxDrawingCh {
     //    Up,
     //    Down,
     //}
+    //
+    // MAYBE we should be drawing in half increments instead of full increments? takes
+    // some of the guess work out of it... something to think about.
     //
     // This function is used for drawing box characters, with a cursor (think DrawIt).
     // NOTE we maybe should add in the origin_ctx and next_ctx??
@@ -491,23 +475,23 @@ pub fn remove_curve_edge(c: char) -> char {
     }
 }
 
-/// adds double dashes to the box character if it's a horizontal or vertical line
+/// removes dashes from the box character if it's a horizontal or vertical line
 /// taking into account the thickness of the line.
-/// double lines are converted into single thin lines
-pub fn add_double_dash(c: char) -> char {
+pub fn remove_dash(c: char) -> char {
     if let Some(mut box_ch) = BoxDrawingCh::from_char(c) {
-        box_ch.add_double_dashes();
+        box_ch.remove_dashes();
         box_ch.to_char_permissive().unwrap_or(c)
     } else {
         c
     }
 }
 
-/// removes double dashes from the box character if it's a horizontal or vertical line
+/// adds double dashes to the box character if it's a horizontal or vertical line
 /// taking into account the thickness of the line.
-pub fn remove_double_dash(c: char) -> char {
+/// double lines are converted into single thin lines
+pub fn add_double_dash(c: char) -> char {
     if let Some(mut box_ch) = BoxDrawingCh::from_char(c) {
-        box_ch.remove_dashes();
+        box_ch.add_double_dashes();
         box_ch.to_char_permissive().unwrap_or(c)
     } else {
         c
@@ -526,34 +510,12 @@ pub fn add_triple_dash(c: char) -> char {
     }
 }
 
-/// removes triple dashes from the box character if it's a horizontal or vertical line
-/// taking into account the thickness of the line.
-pub fn remove_triple_dash(c: char) -> char {
-    if let Some(mut box_ch) = BoxDrawingCh::from_char(c) {
-        box_ch.remove_dashes();
-        box_ch.to_char_permissive().unwrap_or(c)
-    } else {
-        c
-    }
-}
-
 /// adds quadruple dashes to the box character if it's a horizontal or vertical line
 /// taking into account the thickness of the line.
 /// quadruple lines are converted into single thin lines
 pub fn add_quadruple_dash(c: char) -> char {
     if let Some(mut box_ch) = BoxDrawingCh::from_char(c) {
         box_ch.add_quadruple_dash();
-        box_ch.to_char_permissive().unwrap_or(c)
-    } else {
-        c
-    }
-}
-
-/// removes quadruple dashes from the box character if it's a horizontal or vertical line
-/// taking into account the thickness of the line.
-pub fn remove_quadruple_dash(c: char) -> char {
-    if let Some(mut box_ch) = BoxDrawingCh::from_char(c) {
-        box_ch.remove_dashes();
         box_ch.to_char_permissive().unwrap_or(c)
     } else {
         c
@@ -584,6 +546,46 @@ pub fn make_thin(c: char) -> char {
 pub fn make_double(c: char) -> char {
     if let Some(mut box_ch) = BoxDrawingCh::from_char(c) {
         box_ch.make_double();
+        box_ch.to_char_permissive().unwrap_or(c)
+    } else {
+        c
+    }
+}
+
+/// removes the left side of a box character
+pub fn remove_left(c: char) -> char {
+    if let Some(mut box_ch) = BoxDrawingCh::from_char(c) {
+        box_ch.left = None;
+        box_ch.to_char_permissive().unwrap_or(c)
+    } else {
+        c
+    }
+}
+
+/// removes the right side of a box character
+pub fn remove_right(c: char) -> char {
+    if let Some(mut box_ch) = BoxDrawingCh::from_char(c) {
+        box_ch.right = None;
+        box_ch.to_char_permissive().unwrap_or(c)
+    } else {
+        c
+    }
+}
+
+/// removes the top side of a box character
+pub fn remove_up(c: char) -> char {
+    if let Some(mut box_ch) = BoxDrawingCh::from_char(c) {
+        box_ch.up = None;
+        box_ch.to_char_permissive().unwrap_or(c)
+    } else {
+        c
+    }
+}
+
+/// removes the bottom side of a box character
+pub fn remove_down(c: char) -> char {
+    if let Some(mut box_ch) = BoxDrawingCh::from_char(c) {
+        box_ch.down = None;
         box_ch.to_char_permissive().unwrap_or(c)
     } else {
         c

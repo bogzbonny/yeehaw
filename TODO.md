@@ -2,7 +2,6 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
 10. table element
      - option to use underline instead of box drawing ch
      - autowidth or fixed width options

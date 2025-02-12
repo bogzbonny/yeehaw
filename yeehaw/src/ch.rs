@@ -441,6 +441,10 @@ impl DrawChs2D {
         out
     }
 
+    pub fn get_at(&self, x: usize, y: usize) -> Option<&DrawCh> {
+        self.0.get(y).and_then(|row| row.get(x))
+    }
+
     pub fn width(&self) -> usize {
         if self.0.is_empty() {
             return 0;
