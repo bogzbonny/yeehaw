@@ -6,7 +6,7 @@ use crate::{BoxDrawingCh, Dashes, SideAttribute};
 impl BoxDrawingCh {
     /// gets the BoxDrawingCh from the character provided,
     /// if the character is not a box drawing character, returns None
-    pub fn get_from_char(c: char) -> Option<BoxDrawingCh> {
+    pub fn from_char(c: char) -> Option<BoxDrawingCh> {
         // giant match statement of all 125 box drawing characters (excluding the 3 diagonal characters)
         // also consider the Space to be a box drawing character
         // so in total there should be 126 match arms

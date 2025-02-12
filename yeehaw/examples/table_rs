@@ -28,7 +28,7 @@ fn main() -> std::io::Result<()> {
     };
 
     let mut table = Table::new(ctx, style);
-    
+
     // Create header using strings (auto-converted to Labels)
     let header = vec!["ID", "Name", "Status", "Actions"];
 

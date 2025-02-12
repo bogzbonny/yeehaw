@@ -1,3 +1,4 @@
+/*
 use crate::*;
 
 // TODO coloring for cells
@@ -358,3 +359,4 @@ impl Element for Table {
         self.pane.drawing(ctx, dr, force_update)
     }
 }
+*/
