@@ -792,8 +792,91 @@ impl BoxDrawingCh {
                 Some('╿')
             }
 
-            // If we can't find a match, return space
+            // If we can't find a match, attempt to find a match without certain attributes
             _ => None,
+        }
+    }
+
+    /// like `to_char`, but if we can't find a match, attempt to find a match by modifying
+    /// `curved`, `dashes` and `SideAttribute`s. Only if it's impossible to create a reasonable box
+    /// drawing character return None.
+    /// the function attempts to keep the most important attributes in this order:
+    ///  - keep all the sides of the line, never remove one of the line-parts in order to keep any other attribute
+    ///  - keep the SideAttribute of each line-part, if necessary attempt to change some of the SideAttribute to make the combination viable
+    ///  - discard the dashes if necessary
+    ///  - discard the curved attribute if necessary
+    pub fn to_char_permissive(&self) -> Option<char> {
+        match self.to_char() {
+            Some(c) => Some(c),
+
+            // If we can't find a match, attempt to find a match without certain attributes
+            None => {
+                if self.curved {
+                    let b = BoxDrawingCh {
+                        curved: false,
+                        ..*self
+                    }
+                    .to_char();
+                    if b.is_some() {
+                        return b;
+                    }
+                }
+                if self.dashes.is_some() {
+                    let b = BoxDrawingCh {
+                        dashes: None,
+                        ..*self
+                    }
+                    .to_char();
+                    if b.is_some() {
+                        return b;
+                    }
+                }
+                if self.curved && self.dashes.is_some() {
+                    let b = BoxDrawingCh {
+                        curved: false,
+                        dashes: None,
+                        ..*self
+                    }
+                    .to_char();
+                    if b.is_some() {
+                        return b;
+                    }
+                }
+
+                // turn off `curved` and `dashes`.
+                let mut b = BoxDrawingCh {
+                    curved: false,
+                    dashes: None,
+                    ..*self
+                };
+
+                // determine the primary attribute
+                let Some(attr) = self.primary_side_attribute() else {
+                    return Some(' ');
+                };
+
+                // set all the sides to the primary attribute
+                // NOTE there are more complex strategies which may be able to
+                //      come up with slightly better matches (e.g. a box character with
+                //      3 different side attributes may be able to get resolved to a
+                //      character with 2 different side attributes), but this is too
+                //      complicated for the time being and doesn't really matter.
+                if b.left.is_some() {
+                    b.left = Some(attr);
+                }
+                if b.right.is_some() {
+                    b.right = Some(attr);
+                }
+                if b.up.is_some() {
+                    b.up = Some(attr);
+                }
+                if b.down.is_some() {
+                    b.down = Some(attr);
+                }
+
+                // final try
+                b.to_char()
+            }
         }
     }
 }
