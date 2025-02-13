@@ -64,6 +64,54 @@ impl Table {
         }
     }
 
+    pub fn with_fixed_row_height(self, height: usize) -> Self {
+        self.row_dim.replace(TableDimension::Fixed(height));
+        self.is_dirty.replace(true);
+        self
+    }
+
+    pub fn with_fixed_column_width(self, width: usize) -> Self {
+        self.column_dim.replace(TableDimension::Fixed(width));
+        self.is_dirty.replace(true);
+        self
+    }
+
+    pub fn with_auto_column_width(self) -> Self {
+        self.column_dim.replace(TableDimension::Auto);
+        self.is_dirty.replace(true);
+        self
+    }
+
+    pub fn with_auto_row_height(self) -> Self {
+        self.row_dim.replace(TableDimension::Auto);
+        self.is_dirty.replace(true);
+        self
+    }
+
+    pub fn with_border(self, line_attr: Option<BoxSideAttr>) -> Self {
+        self.style.borrow_mut().border = line_attr;
+        self.is_dirty.replace(true);
+        self
+    }
+
+    pub fn with_header_line(self, line_attr: Option<BoxSideAttr>) -> Self {
+        self.style.borrow_mut().header_line = line_attr;
+        self.is_dirty.replace(true);
+        self
+    }
+
+    pub fn with_horizontal_lines(self, line_attr: Option<BoxSideAttr>) -> Self {
+        self.style.borrow_mut().horizontal_lines = line_attr;
+        self.is_dirty.replace(true);
+        self
+    }
+
+    pub fn with_vertical_lines(self, line_attr: Option<BoxSideAttr>) -> Self {
+        self.style.borrow_mut().vertical_lines = line_attr;
+        self.is_dirty.replace(true);
+        self
+    }
+
     pub fn set_cell(&self, ctx: &Context, row: usize, col: usize, text: &str) {
         self.set_element(row, col, Box::new(Label::new(ctx, text)));
         self.is_dirty.replace(true);
@@ -77,13 +125,13 @@ impl Table {
 
     pub fn set_data(&self, ctx: &Context, data: Vec<Vec<&str>>) {
         for (row, row_data) in data.into_iter().enumerate() {
-            self.set_row(ctx, row, row_data);
+            self.set_row(ctx, row + 1, row_data); // row starts at 1 as 0 is reserved for the header row
         }
     }
 
     pub fn set_data_el(&self, data: Vec<Vec<Box<dyn Element>>>) {
         for (row, row_data) in data.into_iter().enumerate() {
-            self.set_row_el(row, row_data);
+            self.set_row_el(row + 1, row_data); // row starts at 1 as 0 is reserved for the header row
         }
     }
 
@@ -97,8 +145,9 @@ impl Table {
         if cells[row].len() < col_count {
             cells[row].resize(col_count, None);
         }
-        for (col, s) in data.into_iter().enumerate() {
-            cells[row][col] = Some(s);
+        for (col, el) in data.into_iter().enumerate() {
+            self.pane.add_element(el.clone());
+            cells[row][col] = Some(el);
         }
         self.is_dirty.replace(true);
     }
@@ -113,7 +162,9 @@ impl Table {
             cells[row].resize(col_count, None);
         }
         for (col, s) in data.into_iter().enumerate() {
-            cells[row][col] = Some(Box::new(Label::new(ctx, s)));
+            let el = Box::new(Label::new(ctx, s));
+            self.pane.add_element(el.clone());
+            cells[row][col] = Some(el);
         }
         self.is_dirty.replace(true);
     }
@@ -127,7 +178,9 @@ impl Table {
             if col >= cells[row].len() {
                 cells[row].resize(col + 1, None);
             }
-            cells[row][col] = Some(Box::new(Label::new(ctx, s)));
+            let el = Box::new(Label::new(ctx, s));
+            self.pane.add_element(el.clone());
+            cells[row][col] = Some(el);
         }
         self.is_dirty.replace(true);
     }
@@ -140,6 +193,7 @@ impl Table {
         if col >= cells[row].len() {
             cells[row].resize(col + 1, None);
         }
+        self.pane.add_element(element.clone());
         cells[row][col] = Some(element);
         self.is_dirty.replace(true);
     }
@@ -275,13 +329,13 @@ impl Table {
                     y.into(),
                     (y + height).into(),
                 ));
-                x += width + 1;
+                x += width;
                 // consider lines
                 if self.style.borrow().vertical_lines.is_some() {
                     x += 1;
                 }
             }
-            y += height + 1;
+            y += height;
             x = if has_border { 1 } else { 0 };
 
             // consider lines
@@ -289,7 +343,7 @@ impl Table {
                 if self.style.borrow().header_line.is_some() {
                     y += 1;
                 }
-            } else if self.style.borrow().vertical_lines.is_some() {
+            } else if self.style.borrow().horizontal_lines.is_some() {
                 y += 1;
             }
         }
@@ -313,10 +367,11 @@ impl Table {
             let ch = DrawCh::new(ch, line_sty.clone());
 
             let height = row_heights.first().unwrap_or(&0);
-            y += height + 1;
+            y += height;
             for x in 0..dr.size.width as usize {
                 content.set_ch(x, y, ch.clone());
             }
+            y += 1; // account for the line
         }
 
         // Draw horizontal table lines, combining with the previous box drawing character at
@@ -327,13 +382,14 @@ impl Table {
             let ch = DrawCh::new(ch, line_sty.clone());
 
             for (i, height) in row_heights.iter().enumerate() {
-                y += height + 1;
                 if i == 0 || i == row_heights.len() - 1 {
                     continue; // skip header line and last line
                 }
+                y += height;
                 for x in 0..dr.size.width as usize {
                     content.set_ch(x, y, ch.clone());
                 }
+                y += 1; // account for the line
             }
         }
 
@@ -346,7 +402,7 @@ impl Table {
             let ch = DrawCh::new(ch, line_sty.clone());
 
             for (i, width) in col_widths.iter().enumerate() {
-                x += width + 1;
+                x += width;
                 if i == row_heights.len() - 1 {
                     continue; // skip the final line
                 }
@@ -371,6 +427,7 @@ impl Table {
                     }
                     content.set_ch(x, y, ch_to_set);
                 }
+                x += 1; // account for the line
             }
         }
 
@@ -490,6 +547,14 @@ impl Table {
             }
         }
 
+        // debug, print all the table cell locations
+        for (row_i, row) in self.cells.borrow().iter().enumerate() {
+            for (col, cell) in row.iter().enumerate() {
+                let loc = cell.as_ref().unwrap().get_dyn_location_set().l.clone();
+                debug!("loc (row: {:?}, col: {:?}): {:?}", row_i, col, loc);
+            }
+        }
+
         // Update the pane's content
         self.pane.pane.set_content(content);
     }
@@ -506,6 +571,13 @@ impl Table {
 impl Element for Table {
     fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         self.ensure_correct_positions(dr);
-        self.pane.drawing(ctx, dr, force_update)
+        let out = self.pane.drawing(ctx, dr, force_update);
+        for o in out.iter() {
+            if let DrawAction::Update(ref up) = o.action {
+                let dcp = DrawChs2D::from_vec_draw_ch_pos(up.clone(), DrawCh::transparent());
+                debug!("table update:\n{}", dcp);
+            }
+        }
+        out
     }
 }

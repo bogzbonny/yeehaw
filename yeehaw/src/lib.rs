@@ -40,9 +40,13 @@ pub use {
     tui::Tui,
 };
 
-// we re-export these so that the user doesn't have to import them from std
-// if they are using yeehaw-derive
-pub use std::{
-    cell::{Ref, RefCell, RefMut},
-    rc::Rc,
+pub use {
+    box_drawing_logic::{BoxDrawingCh, SideAttribute as BoxSideAttr},
+
+    // we re-export these so that the user doesn't have to import them from std
+    // while using yeehaw-derive
+    std::{
+        cell::{Ref, RefCell, RefMut},
+        rc::Rc,
+    },
 };
