@@ -16,6 +16,8 @@
           through just using a 2D array or dashmap. 
      - also this section: https://github.com/bogzbonny/yeehaw/blob/main/yeehaw/src/tui.rs#L433 
            yeehaw/src/tui.rs:433 
+     - BUGS
+       - seems like each elements are overwriting things to their right?
 
 10. resizing a scrollable pane should modify the offset of that pane to account
     for the extra space (instead of automatically extending out of range)
