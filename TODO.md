@@ -609,6 +609,10 @@ PROGRAMS
 01. Snapshot TUI Tester (just call this tui-tester, binary: tuit (lol)) 
      - consider building as an extension of insta: 
         - https://insta.rs/
+     - Use ANSI-extended format to be know the element names at each position
+        - this way we can test on any binary all the same but then have
+          additional special functionality if its a yeehaw TUI
+        - would require special build flag for the tui to be in testing mode
      - always multi-stage
        - record each action then take a snapshot, however don't save the
          snapshot if it's the same as the previous snapshot. 

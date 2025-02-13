@@ -139,6 +139,14 @@ impl Color {
         Color::Rgba(Rgba::new(r, g, b))
     }
 
+    // is the evaluation of the color effected by time
+    pub fn is_time_effected(&self) -> bool {
+        match self {
+            Color::TimeGradient(_) => true,
+            _ => false,
+        }
+    }
+
     pub fn to_rgba(&self) -> Rgba {
         match self {
             Color::ANSI(c) => crossterm_to_rgb(*c).to_rgba(),

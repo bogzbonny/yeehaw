@@ -312,6 +312,20 @@ impl Style {
             }
         }
     }
+
+    pub fn is_time_effected(&self) -> bool {
+        if let Some((fg, _)) = &self.fg {
+            if fg.is_time_effected() {
+                return true;
+            }
+        }
+        if let Some((bg, _)) = &self.bg {
+            if bg.is_time_effected() {
+                return true;
+            }
+        }
+        false
+    }
 }
 
 impl From<(Color, Color)> for Style {

@@ -6,6 +6,7 @@ pub mod log; // note, must be first for the macro to work throughout
 pub mod ch;
 pub mod color;
 pub mod context;
+pub mod draw_cache;
 pub mod draw_region;
 pub mod dyn_location;
 pub mod dyn_value;
@@ -23,10 +24,11 @@ pub use {
     ch::{ChPlus, DrawCh, DrawChPos, DrawChPosVec, DrawChs2D},
     color::{Color, ColorStore, Gradient, Pattern, RadialGradient, Rgba, TimeGradient},
     context::Context,
+    draw_cache::{CachedPos, DrawingCache},
     draw_region::DrawRegion,
     dyn_location::{DynLocation, DynLocationSet, Loc, Point, Size, ZIndex},
     dyn_value::DynVal,
-    element::{DrawAction, DrawUpdate, DrawingCache, Element, HookFn as ElementHookFn, Parent},
+    element::{DrawAction, DrawUpdate, Element, HookFn as ElementHookFn, Parent},
     elements::{border::Corner as BorderCorner, border::PropertyCnr as BorderPropertyCnr, *},
     errors::Error,
     event::{

@@ -309,10 +309,10 @@ pub struct DrawUpdate {
 }
 
 /// A single combined id (for one el) which has all the sub-ids concatenated together
-type ElementIDPath = Vec<ElementID>;
+pub type ElementIDPath = Vec<ElementID>;
 
 /// a single combined z-index (for one el) which has all the z-indices concatenated together
-type ZIndexPath = Vec<ZIndex>;
+pub type ZIndexPath = Vec<ZIndex>;
 
 impl From<DrawUpdate> for Vec<DrawUpdate> {
     fn from(d: DrawUpdate) -> Self {
@@ -389,66 +389,5 @@ impl DrawUpdate {
     pub fn prepend_id(&mut self, id: ElementID, z: ZIndex) {
         self.sub_id.insert(0, id);
         self.z_indicies.insert(0, z);
-    }
-}
-
-// ------------------------------------
-
-#[derive(Default, Clone)]
-pub struct DrawingCache(Vec<(ElementIDPath, ZIndexPath, Vec<DrawChPos>)>);
-
-impl DrawingCache {
-    pub fn update_and_get(&mut self, updates: Vec<DrawUpdate>) -> impl Iterator<Item = &DrawChPos> {
-        self.update(updates);
-        self.get_drawing()
-    }
-
-    // update the cache based on DrawUpdates provided
-    pub fn update(&mut self, mut updates: Vec<DrawUpdate>) {
-        for update in updates.drain(..) {
-            match update.action {
-                DrawAction::ClearAll => {
-                    //debug!("clearing all at sub_id: {:?}", update.sub_id);
-                    self.0
-                        .retain(|(ids, _, _)| !ids.starts_with(&update.sub_id));
-                }
-                DrawAction::Remove => {
-                    //debug!("removing at sub_id: {:?}", update.sub_id);
-                    self.0.retain(|(ids, _, _)| ids != &update.sub_id);
-                }
-                DrawAction::Update(d) => {
-                    //debug!("updating at sub_id: {:?}", update.sub_id);
-                    if let Some((_, z, draw)) =
-                        self.0.iter_mut().find(|(ids, _, _)| ids == &update.sub_id)
-                    {
-                        *draw = d;
-                        *z = update.z_indicies.clone();
-                    } else {
-                        self.0.push((update.sub_id, update.z_indicies, d));
-                    }
-                }
-                DrawAction::Extend(d) => {
-                    //debug!("extending at sub_id: {:?}", update.sub_id);
-                    if let Some((_, z, draw)) =
-                        self.0.iter_mut().find(|(ids, _, _)| ids == &update.sub_id)
-                    {
-                        draw.extend(d.clone());
-                        *z = update.z_indicies.clone();
-                    } else {
-                        self.0.push((update.sub_id, update.z_indicies, d));
-                    }
-                }
-            }
-        }
-    }
-
-    /// flatten the drawing cache into a single DrawChPos array
-    pub fn get_drawing(&mut self) -> impl Iterator<Item = &DrawChPos> {
-        //debug!("------------");
-        //for (ids, z, _) in &self.0 {
-        //    debug!("ids: {:?}, z: {:?}", ids, z);
-        //}
-        self.0.sort_by(|(_, a, _), (_, b, _)| a.cmp(b)); // sort by z-indicies ascending order
-        self.0.iter().flat_map(|(_, _, d)| d.iter())
     }
 }
