@@ -12,4 +12,3 @@ include = ["src/**/*.rs", "tests/**/*.rs", "LICENSE", "README.md"]
 edition = "2021"
 
 [workspace.dependencies]
-

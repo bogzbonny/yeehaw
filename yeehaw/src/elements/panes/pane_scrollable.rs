@@ -70,6 +70,32 @@ impl PaneScrollable {
         }
     }
 
+    /// Create a scrollable pane which expands to fill the parent pane when the parent pane is
+    /// larger than the width and height provided.
+    pub fn new_expanding_with_kind(
+        ctx: &Context, kind: &'static str, width: usize, height: usize,
+    ) -> Self {
+        Self {
+            pane: ParentPane::new(ctx, kind).with_transparent(),
+            content_width: Rc::new(RefCell::new(width)),
+            content_height: Rc::new(RefCell::new(height)),
+            content_offset_x: Rc::new(RefCell::new(0)),
+            content_offset_y: Rc::new(RefCell::new(0)),
+            expand_to_fill_width: Rc::new(RefCell::new(true)),
+            expand_to_fill_height: Rc::new(RefCell::new(true)),
+            scroll_rate: Rc::new(RefCell::new(Some(3))),
+            last_draw_details: Rc::new(RefCell::new(None)),
+        }
+    }
+
+    pub fn set_content_width(&self, width: usize) {
+        *self.content_width.borrow_mut() = width;
+    }
+
+    pub fn set_content_height(&self, height: usize) {
+        *self.content_height.borrow_mut() = height;
+    }
+
     pub fn add_element(&self, el: Box<dyn Element>) {
         self.pane.add_element(el.clone())
     }

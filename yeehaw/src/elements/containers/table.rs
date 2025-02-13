@@ -3,24 +3,33 @@ use {
     box_drawing_logic::{BoxDrawingCh, SideAttribute as BoxSideAttr},
 };
 
-// TODO coloring for cells
+// TODO coloring for cells (such as alternating colors)
 // TODO when the table has lines, those lines should be draggable
 // TODO justification within cells
 // TODO Equal setting for TableDimension
 // TODO optionaly use underlined ansi for the table rows
 //       - this will require fixed underlines
 // TODO optionize the line style
+// TODO left and right padding for the positions
+
+// TODO do something better than using a PaneScrollable internally
+//       - the header row should stay fixed
+//       - the border should be fixed
+//       - the border could have scrollbars
+//         - potentially combine the internal border with the Border element
+//           once the border element can nicely connect to internal box characters
 
 /// A table container element that can display data in a grid format.
 /// Each cell can contain any element
 #[derive(Clone)]
 pub struct Table {
-    pub pane: ParentPane,
+    pub pane: PaneScrollable,
     pub column_dim: Rc<RefCell<TableDimension>>,
     pub row_dim: Rc<RefCell<TableDimension>>,
     #[allow(clippy::type_complexity)]
     pub cells: Rc<RefCell<Vec<Vec<Option<Box<dyn Element>>>>>>,
     pub style: Rc<RefCell<TableStyle>>,
+
     pub last_size: Rc<RefCell<Size>>,
     pub is_dirty: Rc<RefCell<bool>>,
 }
@@ -52,9 +61,13 @@ pub struct TableStyle {
 }
 
 impl Table {
+    pub const KIND: &'static str = "table";
+
     pub fn new(ctx: &Context) -> Self {
+        // size of 1 is arbitrary for now it will be updated when the table is drawn
+        let pane = PaneScrollable::new_expanding_with_kind(ctx, Self::KIND, 1, 1);
         Self {
-            pane: ParentPane::new(ctx, "table"),
+            pane,
             column_dim: Rc::new(RefCell::new(TableDimension::Auto)),
             row_dim: Rc::new(RefCell::new(TableDimension::Auto)),
             cells: Rc::new(RefCell::new(Vec::new())),
@@ -173,7 +186,7 @@ impl Table {
         let mut cells = self.cells.borrow_mut();
         for (row, s) in data.into_iter().enumerate() {
             if row >= cells.len() {
-                cells.resize(row + 1, Vec::new());
+                cells.resize(row, Vec::new());
             }
             if col >= cells[row].len() {
                 cells[row].resize(col + 1, None);
@@ -181,6 +194,43 @@ impl Table {
             let el = Box::new(Label::new(ctx, s));
             self.pane.add_element(el.clone());
             cells[row][col] = Some(el);
+        }
+        self.is_dirty.replace(true);
+    }
+
+    /// push a row of data to the end of the table
+    pub fn push_row(&self, ctx: &Context, data: Vec<&str>) {
+        let row_count = self.cells.borrow().len();
+        self.set_row(ctx, row_count, data);
+    }
+
+    pub fn push_column(&self, ctx: &Context, data: Vec<&str>) {
+        let col_count = self.cells.borrow()[0].len();
+        self.set_column(ctx, col_count, data);
+    }
+
+    pub fn remove_row(&self, row: usize) {
+        let mut cells = self.cells.borrow_mut();
+        if row >= cells.len() - 1 {
+            return;
+        }
+        let removed_row = cells.remove(row + 1);
+        for cell in removed_row.into_iter().flatten() {
+            self.pane.remove_element(&cell.id());
+        }
+        self.is_dirty.replace(true);
+    }
+
+    pub fn remove_column(&self, col: usize) {
+        let mut cells = self.cells.borrow_mut();
+        if col >= cells[0].len() {
+            return;
+        }
+        for row in cells.iter_mut() {
+            let cell = row.remove(col + 1);
+            if let Some(cell) = cell {
+                self.pane.remove_element(&cell.id());
+            }
         }
         self.is_dirty.replace(true);
     }
@@ -316,6 +366,7 @@ impl Table {
             x += 1;
             y += 1;
         }
+        let (mut max_x, mut max_y) = (x, y);
 
         // iterate through all the cells and set the position el.set_dyn_location(l) considering
         // border and lines positions
@@ -330,12 +381,19 @@ impl Table {
                     (y + height).into(),
                 ));
                 x += width;
+                if max_x < x {
+                    max_x = x;
+                }
+
                 // consider lines
                 if self.style.borrow().vertical_lines.is_some() {
                     x += 1;
                 }
             }
             y += height;
+            if max_y < y {
+                max_y = y;
+            }
             x = if has_border { 1 } else { 0 };
 
             // consider lines
@@ -348,13 +406,21 @@ impl Table {
             }
         }
 
+        if has_border {
+            max_x += 1;
+            max_y += 1;
+        }
+        self.pane.set_content_width(max_x);
+        self.pane.set_content_height(max_y);
+        debug!("setting max_x: {}, max_y: {}", max_x, max_y);
+
+        let content_width = self.pane.get_content_width(Some(dr));
+        let content_height = self.pane.get_content_height(Some(dr));
+
         // the content layer of the parent pane, will contains background colors a
         // and box drawing characters
-        let mut content = DrawChs2D::new_empty_of_size(
-            dr.size.width.into(),
-            dr.size.height.into(),
-            self.pane.pane.get_style(),
-        );
+        let mut content =
+            DrawChs2D::new_empty_of_size(content_width, content_height, self.pane.pane.get_style());
 
         // TODO optionize the line style
         let line_sty = Style::transparent().with_fg(Color::WHITE);
@@ -368,7 +434,7 @@ impl Table {
 
             let height = row_heights.first().unwrap_or(&0);
             y += height;
-            for x in 0..dr.size.width as usize {
+            for x in 0..content_width {
                 content.set_ch(x, y, ch.clone());
             }
             y += 1; // account for the line
@@ -386,7 +452,7 @@ impl Table {
                     continue; // skip header line and last line
                 }
                 y += height;
-                for x in 0..dr.size.width as usize {
+                for x in 0..content_width {
                     content.set_ch(x, y, ch.clone());
                 }
                 y += 1; // account for the line
@@ -403,10 +469,11 @@ impl Table {
 
             for (i, width) in col_widths.iter().enumerate() {
                 x += width;
-                if i == row_heights.len() - 1 {
+                if i == col_widths.len() - 1 {
                     continue; // skip the final line
                 }
-                for y in 0..dr.size.height as usize {
+                for y in 0..content_height {
+                    //for y in 0..dr.size.height as usize {
                     let mut ch_to_set = ch.clone();
                     'if_: {
                         let prev_ch = content.get_at(x, y);
@@ -437,8 +504,8 @@ impl Table {
             let line = BoxDrawingCh::new_with_side_attr(true, true, false, false, line_attr);
             let ch = line.to_char_permissive().expect("box drawing logic broken");
             let ch = DrawCh::new(ch, line_sty.clone());
-            for y in [0, dr.size.height as usize - 1].iter() {
-                for x in 0..dr.size.width as usize {
+            for y in [0, content_height - 1].iter() {
+                for x in 0..content_width {
                     let mut ch_to_set = ch.clone();
                     'if_: {
                         let prev_ch = content.get_at(x, *y);
@@ -465,8 +532,8 @@ impl Table {
             let line = BoxDrawingCh::new_with_side_attr(false, false, true, true, line_attr);
             let ch = line.to_char_permissive().expect("box drawing logic broken");
             let ch = DrawCh::new(ch, line_sty.clone());
-            for x in [0, dr.size.width as usize - 1].iter() {
-                for y in 0..dr.size.height as usize {
+            for x in [0, content_width - 1].iter() {
+                for y in 0..content_height {
                     let mut ch_to_set = ch.clone();
                     'if_: {
                         let prev_ch = content.get_at(*x, y);
@@ -492,7 +559,7 @@ impl Table {
             // trim the outermost box-drawing sides of the border
             // top
             let y = 0;
-            for x in 0..dr.size.width as usize {
+            for x in 0..content_width {
                 let ch = content.get_at(x, y);
                 let Some(ch) = ch else {
                     continue;
@@ -505,8 +572,8 @@ impl Table {
             }
 
             // bottom
-            let y = dr.size.height as usize - 1;
-            for x in 0..dr.size.width as usize {
+            let y = content_height - 1;
+            for x in 0..content_width {
                 let ch = content.get_at(x, y);
                 let Some(ch) = ch else {
                     continue;
@@ -520,7 +587,7 @@ impl Table {
 
             // left
             let x = 0;
-            for y in 0..dr.size.height as usize {
+            for y in 0..content_height {
                 let ch = content.get_at(x, y);
                 let Some(ch) = ch else {
                     continue;
@@ -533,8 +600,8 @@ impl Table {
             }
 
             // right
-            let x = dr.size.width as usize - 1;
-            for y in 0..dr.size.height as usize {
+            let x = content_width - 1;
+            for y in 0..content_height {
                 let ch = content.get_at(x, y);
                 let Some(ch) = ch else {
                     continue;
@@ -547,16 +614,17 @@ impl Table {
             }
         }
 
-        // debug, print all the table cell locations
-        for (row_i, row) in self.cells.borrow().iter().enumerate() {
-            for (col, cell) in row.iter().enumerate() {
-                let loc = cell.as_ref().unwrap().get_dyn_location_set().l.clone();
-                debug!("loc (row: {:?}, col: {:?}): {:?}", row_i, col, loc);
-            }
-        }
+        //// debug, print all the table cell locations
+        //for (row_i, row) in self.cells.borrow().iter().enumerate() {
+        //    for (col, cell) in row.iter().enumerate() {
+        //        let loc = cell.as_ref().unwrap().get_dyn_location_set().l.clone();
+        //        debug!("loc (row: {:?}, col: {:?}): {:?}", row_i, col, loc);
+        //    }
+        //}
 
         // Update the pane's content
-        self.pane.pane.set_content(content);
+        debug!("content:\n{}", content);
+        self.pane.pane.pane.set_content(content);
     }
 
     pub fn ensure_correct_positions(&self, dr: &DrawRegion) {
@@ -571,13 +639,6 @@ impl Table {
 impl Element for Table {
     fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
         self.ensure_correct_positions(dr);
-        let out = self.pane.drawing(ctx, dr, force_update);
-        for o in out.iter() {
-            if let DrawAction::Update(ref up) = o.action {
-                let dcp = DrawChs2D::from_vec_draw_ch_pos(up.clone(), DrawCh::transparent());
-                debug!("table update:\n{}", dcp);
-            }
-        }
-        out
+        self.pane.drawing(ctx, dr, force_update)
     }
 }

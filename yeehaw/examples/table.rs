@@ -7,6 +7,8 @@ async fn main() -> Result<(), Error> {
 
     let (mut tui, ctx) = Tui::new()?;
 
+    let main = ParentPane::new(&ctx, "main");
+
     let table = Table::new(&ctx)
         //.with_fixed_row_height(1)
         //.with_fixed_column_width(20)
@@ -19,16 +21,38 @@ async fn main() -> Result<(), Error> {
     table.set_data(
         &ctx,
         vec![
-            //vec!["1", "Alice Thompson", "01234567890123456789", "Edit"],
-            //vec!["2", "Bob Wilson", "Pending", "Edit"],
-            //vec!["3", "Charlie Brown", "Inactive", "Edit"],
             vec!["1", "Alice Thompson", "✓ Active\ntest", "Edit"],
             vec!["2", "Bob Wilson", "⚠ Pending", "Edit"],
             vec!["3", "Charlie Brown", "✗ Inactive", "Edit"],
         ],
     );
 
-    let limiter = PaneLimiter::new(Box::new(table), 100, 30);
+    table.pane.set_at(0.into(), 3.into());
+    let limiter = PaneLimiter::new(Box::new(table.clone()), 100, 15);
+    main.add_element(Box::new(limiter));
 
-    tui.run(Box::new(limiter)).await
+    let ctx_ = ctx.clone();
+    let table_ = table.clone();
+    let counter = Rc::new(RefCell::new(4));
+    let add_row_btn = Button::new(&ctx, "add_row")
+        .with_fn(Box::new(move |_, _| {
+            let count = *counter.borrow();
+            let c = count.to_string();
+            table_.push_row(&ctx_, vec![&c, "Alice Thompson", "✓ Active", "Edit"]);
+            counter.replace(count + 1);
+            EventResponses::default()
+        }))
+        .at(1, 0);
+    main.add_element(Box::new(add_row_btn));
+
+    let table_ = table.clone();
+    let remove_row_btn = Button::new(&ctx, "remove_row")
+        .with_fn(Box::new(move |_, _| {
+            table_.remove_row(0);
+            EventResponses::default()
+        }))
+        .at(12, 0);
+    main.add_element(Box::new(remove_row_btn));
+
+    tui.run(Box::new(main)).await
 }

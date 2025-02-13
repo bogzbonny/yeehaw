@@ -15,6 +15,7 @@ license = "Apache-2.0"
 
 [dependencies]
 
+
 yeehaw_derive = { version = "0.1.0", path = "../yeehaw_derive" }
 vt100_yh = { version = "0.17.0", path = "../vt100_yh" }
 box_drawing_logic = { version = "0.1.0", path = "../box_drawing_logic" }
