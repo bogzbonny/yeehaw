@@ -288,7 +288,7 @@ pub trait Parent: DynClone {
 // -----------------------------------------------------
 
 #[derive(Clone, Debug)]
-/// The \x60DrawUpdate\x60 is a primitive type used to convey draw updates of an element.
+/// The DrawUpdate is a primitive type used to convey draw updates of an element.
 /// A sub-id is provided to allow for an element to sub-divide its draw updates into
 /// sub-sections. This is useful for container elements which contain sub-elements which
 /// may only be updated individually.
@@ -296,14 +296,23 @@ pub struct DrawUpdate {
     /// sub element-id attributed to these changes too. This is useful for container elements which
     /// contain sub-elements which may only be updated individually.
     /// For non-container elements, this should just be an empty vector.
-    pub sub_id: Vec<ElementID>,
+    pub sub_id: ElementIDPath,
 
     /// cooresponding z-index for each layer of element-id
-    pub z_indicies: Vec<ZIndex>,
+    /// NOTE we need to use the entire z-index path (instead of just the upper most z index)
+    ///      to be able to resolve the upper drawing order of elements where the upper most
+    ///      z-indicies are the same. This will occur for container elements.
+    pub z_indicies: ZIndexPath,
 
     /// The draw update action to take
     pub action: DrawAction,
 }
+
+/// A single combined id (for one el) which has all the sub-ids concatenated together
+type ElementIDPath = Vec<ElementID>;
+
+/// a single combined z-index (for one el) which has all the z-indices concatenated together
+type ZIndexPath = Vec<ZIndex>;
 
 impl From<DrawUpdate> for Vec<DrawUpdate> {
     fn from(d: DrawUpdate) -> Self {
@@ -386,7 +395,7 @@ impl DrawUpdate {
 // ------------------------------------
 
 #[derive(Default, Clone)]
-pub struct DrawingCache(Vec<(Vec<ElementID>, Vec<ZIndex>, Vec<DrawChPos>)>);
+pub struct DrawingCache(Vec<(ElementIDPath, ZIndexPath, Vec<DrawChPos>)>);
 
 impl DrawingCache {
     pub fn update_and_get(&mut self, updates: Vec<DrawUpdate>) -> impl Iterator<Item = &DrawChPos> {
