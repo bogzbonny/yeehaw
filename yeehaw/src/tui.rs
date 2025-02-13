@@ -65,6 +65,9 @@ pub struct Tui {
     //pub sc_last_flushed: HashMap<(u16, u16), StyledContent<ChPlus>>,
     pub sc_last_flushed: Vec<Vec<Option<StyledContent<ChPlus>>>>,
 
+    // kept so we don't need to re-allocate each render cycle
+    dedup_chs: Vec<Vec<Option<StyledContent<ChPlus>>>>,
+
     /// true if exit
     pub exit_recv: WatchReceiver<bool>,
     /// event receiver for internally generated events
@@ -104,6 +107,7 @@ impl Tui {
             kill_on_ctrl_c: true,
             inline: None,
             sc_last_flushed: Vec::new(),
+            dedup_chs: Vec::new(),
             exit_recv,
             ev_recv,
         };
@@ -432,8 +436,7 @@ impl Tui {
 
         // TODO could be optimized with rayon if we could draw everything that doesn't
         // depend on anything else in seperate passes.
-        //let mut dedup_chs: HashMap<(u16, u16), StyledContent<ChPlus>> = HashMap::new();
-        let mut dedup_chs: Vec<Vec<Option<StyledContent<ChPlus>>>> = Vec::new();
+        self.dedup_chs.clear();
         for c in chs {
             // remove out of bounds
             if c.x >= dr.size.width || c.y >= dr.size.height {
@@ -442,7 +445,7 @@ impl Tui {
 
             // determine the character style, provide the underlying content
             // for alpha considerations
-            let prev_content = if let Some(row) = dedup_chs.get(c.y as usize) {
+            let prev_content = if let Some(row) = self.dedup_chs.get(c.y as usize) {
                 if let Some(Some(prev_content)) = row.get(c.x as usize) {
                     prev_content
                 } else {
@@ -454,15 +457,15 @@ impl Tui {
             let content = c.get_content_style(&ctx, &dr.size, prev_content);
 
             // insert the new content
-            match dedup_chs.get_mut(c.y as usize) {
+            match self.dedup_chs.get_mut(c.y as usize) {
                 Some(row) => {
                     row.resize(c.x as usize + 1, None);
                     row[c.x as usize] = Some(content);
                 }
                 None => {
                     let empty_row = vec![None; c.x as usize + 1];
-                    dedup_chs.resize(c.y as usize + 1, empty_row);
-                    dedup_chs[c.y as usize][c.x as usize] = Some(content);
+                    self.dedup_chs.resize(c.y as usize + 1, empty_row);
+                    self.dedup_chs[c.y as usize][c.x as usize] = Some(content);
                 }
             }
         }
@@ -471,7 +474,7 @@ impl Tui {
             if let Some(inline) = &self.inline { inline.borrow().cursor_start_row } else { 0 };
 
         let mut do_flush = false;
-        for (y, row) in dedup_chs.iter().enumerate() {
+        for (y, row) in self.dedup_chs.iter().enumerate() {
             for (x, sty) in row.iter().enumerate() {
                 let Some(sty) = sty else {
                     continue;
