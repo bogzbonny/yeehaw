@@ -1,33 +1,10 @@
 05. Ability to use arrow keys to select menu item when menu is open
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 10. table element
      - option to use underline instead of box drawing ch
      - autowidth or fixed width options
 
-Please open up a new branch for the following feature. Use bogzbonny as the git username, and bogzbonny@protonmail.com as the email. Always push code using these credentials. Everytime you make changes to the files, push your code to github to save the work you've done
-
----- 
-
-Please start working from the `table-container` branch on github, you may push your code updates there too. Use bogzbonny as the git username, and bogzbonny@protonmail.com as the email. Always push code using these credentials. Everytime you make changes to the files, push your code to github to save the work you've done
-
----- 
-you're in the middle of building a feature from a previous session:
-
-Create a new table container element (should be stored in yeehaw/src/elements/containers). Also create an example TUI (in yeehaw/examples/) which demonstrates the capabilities of this new table element. A new type for the table style should be created, use the name `TableStyle`. The table style options should be: 
- - top row (header row) horizontal box-drawing line (underline the top row)
- - vertical box-drawing lines for inbetween the rows
- - horizontal box-drawing lines for inbetween the non-top rows (content rows)
- - default bg/fg colors for the header row, and seperately for the content rows
- - overriding alternating colors for the bg by row OR column (these can provide the effect of lines without requiring using box drawing characters)
-   - these overriding alternating colors should be seperate for row and column and also have a "length" for the alternation (eg, 5 rows red, then 5 rows default) 
-
-Note that all of these options should be optional (lines are not mandatory). Each table grid location should be able to store an element, however there should be quick functionality where the user uses a String instead of an element. The String should be converted into a basic Label element when this is the case. 
-
-Please build in considerations for how the width of each of column and height of each row will be determined. Build out some options for this, for instanced fixed/percent widths (using DynVal), or auto-fit widths based on the size of each input elements for each cell.
-
-please ensure that all code you write compiles with `cargo build` and `cargo test`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 01. reduce CPU load by attempting to minimize the amount of calculations in the
     main tui render loop
@@ -38,6 +15,7 @@ please ensure that all code you write compiles with `cargo build` and `cargo tes
           there. I'm sure there's a cheaper way to do perform this logic, either
           through just using a 2D array or dashmap. 
      - also this section: https://github.com/bogzbonny/yeehaw/blob/main/yeehaw/src/tui.rs#L433 
+           yeehaw/src/tui.rs:433 
 
 10. resizing a scrollable pane should modify the offset of that pane to account
     for the extra space (instead of automatically extending out of range)
@@ -48,7 +26,6 @@ appropriately when ever it's resized. When increasing the size of a scrollable
 pane if the offsets are larger than 0, then the offsets should be reduced (to
 a minimum of 0) so that the scrollable pane does not extend beyond its provided
 range
-
 
 01. improper handling of "delete" (control-delete) in textbox interpreted as
     control-h

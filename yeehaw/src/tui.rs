@@ -62,7 +62,9 @@ pub struct Tui {
 
     /// last flushed internal screen, used to determine what needs to be flushed next
     //                            x  , y
-    pub sc_last_flushed: HashMap<(u16, u16), StyledContent<ChPlus>>,
+    //pub sc_last_flushed: HashMap<(u16, u16), StyledContent<ChPlus>>,
+    pub sc_last_flushed: Vec<Vec<Option<StyledContent<ChPlus>>>>,
+
     /// true if exit
     pub exit_recv: WatchReceiver<bool>,
     /// event receiver for internally generated events
@@ -101,7 +103,7 @@ impl Tui {
             animation_speed: DEFAULT_ANIMATION_SPEED,
             kill_on_ctrl_c: true,
             inline: None,
-            sc_last_flushed: HashMap::new(),
+            sc_last_flushed: Vec::new(),
             exit_recv,
             ev_recv,
         };
@@ -430,7 +432,8 @@ impl Tui {
 
         // TODO could be optimized with rayon if we could draw everything that doesn't
         // depend on anything else in seperate passes.
-        let mut dedup_chs: HashMap<(u16, u16), StyledContent<ChPlus>> = HashMap::new();
+        //let mut dedup_chs: HashMap<(u16, u16), StyledContent<ChPlus>> = HashMap::new();
+        let mut dedup_chs: Vec<Vec<Option<StyledContent<ChPlus>>>> = Vec::new();
         for c in chs {
             // remove out of bounds
             if c.x >= dr.size.width || c.y >= dr.size.height {
@@ -439,29 +442,60 @@ impl Tui {
 
             // determine the character style, provide the underlying content
             // for alpha considerations
-            let prev_sty = if let Some(prev_sty) = dedup_chs.get(&(c.x, c.y)) {
-                prev_sty
+            let prev_content = if let Some(row) = dedup_chs.get(c.y as usize) {
+                if let Some(Some(prev_content)) = row.get(c.x as usize) {
+                    prev_content
+                } else {
+                    &StyledContent::new(ContentStyle::default(), ChPlus::Char(' '))
+                }
             } else {
                 &StyledContent::new(ContentStyle::default(), ChPlus::Char(' '))
             };
-            let content = c.get_content_style(&ctx, &dr.size, prev_sty);
-            dedup_chs.insert((c.x, c.y), content);
+            let content = c.get_content_style(&ctx, &dr.size, prev_content);
+
+            // insert the new content
+            match dedup_chs.get_mut(c.y as usize) {
+                Some(row) => {
+                    row.resize(c.x as usize + 1, None);
+                    row[c.x as usize] = Some(content);
+                }
+                None => {
+                    let empty_row = vec![None; c.x as usize + 1];
+                    dedup_chs.resize(c.y as usize + 1, empty_row);
+                    dedup_chs[c.y as usize][c.x as usize] = Some(content);
+                }
+            }
         }
 
         let y_offset =
             if let Some(inline) = &self.inline { inline.borrow().cursor_start_row } else { 0 };
 
         let mut do_flush = false;
-        for ((x, y), sty) in dedup_chs {
-            let y = y + y_offset;
-            if self.is_ch_style_at_position_dirty(x, y, &sty) {
-                queue!(
-                    &mut sc,
-                    MoveTo(x, y),
-                    style::PrintStyledContent(sty.clone())
-                )?;
-                self.sc_last_flushed.insert((x, y), sty);
-                do_flush = true;
+        for (y, row) in dedup_chs.iter().enumerate() {
+            for (x, sty) in row.iter().enumerate() {
+                let Some(sty) = sty else {
+                    continue;
+                };
+                let y = y + y_offset as usize;
+                if self.is_ch_style_at_position_dirty(x as u16, y as u16, sty) {
+                    queue!(
+                        &mut sc,
+                        MoveTo(x as u16, y as u16),
+                        style::PrintStyledContent(sty.clone())
+                    )?;
+                    match self.sc_last_flushed.get_mut(y) {
+                        Some(row) => {
+                            row.resize(x + 1, None);
+                            row[x] = Some(sty.clone());
+                        }
+                        None => {
+                            let empty_row = vec![None; x + 1];
+                            self.sc_last_flushed.resize(y + 1, empty_row);
+                            self.sc_last_flushed[y][x] = Some(sty.clone());
+                        }
+                    }
+                    do_flush = true;
+                }
             }
         }
 
@@ -476,7 +510,13 @@ impl Tui {
     pub fn is_ch_style_at_position_dirty(
         &self, x: u16, y: u16, sty: &StyledContent<ChPlus>,
     ) -> bool {
-        let Some(existing_sty) = self.sc_last_flushed.get(&(x, y)) else {
+        let Some(row) = self.sc_last_flushed.get(y as usize) else {
+            return true;
+        };
+        let Some(existing_sty) = row.get(x as usize) else {
+            return true;
+        };
+        let Some(existing_sty) = existing_sty else {
             return true;
         };
         !(existing_sty == sty)
