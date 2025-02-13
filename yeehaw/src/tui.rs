@@ -459,12 +459,16 @@ impl Tui {
             // insert the new content
             match self.dedup_chs.get_mut(c.y as usize) {
                 Some(row) => {
-                    row.resize(c.x as usize + 1, None);
+                    if row.len() <= c.x as usize {
+                        row.resize(c.x as usize + 1, None);
+                    }
                     row[c.x as usize] = Some(content);
                 }
                 None => {
-                    let empty_row = vec![None; c.x as usize + 1];
-                    self.dedup_chs.resize(c.y as usize + 1, empty_row);
+                    if self.dedup_chs.len() <= c.y as usize {
+                        let empty_row = vec![None; c.x as usize + 1];
+                        self.dedup_chs.resize(c.y as usize + 1, empty_row);
+                    }
                     self.dedup_chs[c.y as usize][c.x as usize] = Some(content);
                 }
             }
@@ -475,11 +479,11 @@ impl Tui {
 
         let mut do_flush = false;
         for (y, row) in self.dedup_chs.iter().enumerate() {
+            let y = y + y_offset as usize;
             for (x, sty) in row.iter().enumerate() {
                 let Some(sty) = sty else {
                     continue;
                 };
-                let y = y + y_offset as usize;
                 if self.is_ch_style_at_position_dirty(x as u16, y as u16, sty) {
                     queue!(
                         &mut sc,
@@ -488,12 +492,16 @@ impl Tui {
                     )?;
                     match self.sc_last_flushed.get_mut(y) {
                         Some(row) => {
-                            row.resize(x + 1, None);
+                            if row.len() <= x {
+                                row.resize(x + 1, None);
+                            }
                             row[x] = Some(sty.clone());
                         }
                         None => {
                             let empty_row = vec![None; x + 1];
-                            self.sc_last_flushed.resize(y + 1, empty_row);
+                            if self.sc_last_flushed.len() <= y {
+                                self.sc_last_flushed.resize(y + 1, empty_row);
+                            }
                             self.sc_last_flushed[y][x] = Some(sty.clone());
                         }
                     }
