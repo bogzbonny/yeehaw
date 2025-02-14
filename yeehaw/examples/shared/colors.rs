@@ -538,14 +538,14 @@ impl ColorsDemoState {
                     self.time_ntb.tb.pane.enable();
                     self.time_slider.pane.enable();
 
-                    let max = demo_color.time_gradient_state.0.len(ctx) - 1;
+                    let max = demo_color.time_gradient_state.0.len(&ctx.color_store) - 1;
                     let _ = self
                         .max_gr_colors_dd
                         .set_selected_str(ctx, &max.to_string());
                     self.update_for_color_dd_change_from_demo_color("Time-Gradient", &demo_color);
 
                     // update the time
-                    let time = demo_color.time_gradient_state.0.get_grad(ctx)[1]
+                    let time = demo_color.time_gradient_state.0.get_grad(&ctx.color_store)[1]
                         .0
                         .as_millis() as usize;
                     self.time_ntb.set_value(time);
@@ -562,14 +562,19 @@ impl ColorsDemoState {
                     self.color_dd.pane.enable();
                     self.max_gr_colors_dd.pane.enable();
 
-                    let max = demo_color.radial_gradient_state.0.len(ctx);
+                    let max = demo_color.radial_gradient_state.0.len(&ctx.color_store);
                     let _ = self
                         .max_gr_colors_dd
                         .set_selected_str(ctx, &max.to_string());
                     self.update_for_color_dd_change_from_demo_color("Radial-Gradient", &demo_color);
 
                     // update the dist
-                    let dist = demo_color.radial_gradient_state.0.get_grad(ctx)[1].0.fixed;
+                    let dist = demo_color
+                        .radial_gradient_state
+                        .0
+                        .get_grad(&ctx.color_store)[1]
+                        .0
+                        .fixed;
                     self.dist_ntb.set_value(dist as usize);
                 }
                 "Linear-Gradient" => {
@@ -585,14 +590,19 @@ impl ColorsDemoState {
                     self.color_dd.pane.enable();
                     self.max_gr_colors_dd.pane.enable();
 
-                    let max = demo_color.linear_gradient_state.0.len(ctx) - 1;
+                    let max = demo_color.linear_gradient_state.0.len(&ctx.color_store) - 1;
                     let _ = self
                         .max_gr_colors_dd
                         .set_selected_str(ctx, &max.to_string());
                     self.update_for_color_dd_change_from_demo_color("Linear-Gradient", &demo_color);
 
                     // update the dist
-                    let dist = demo_color.linear_gradient_state.0.get_grad(ctx)[1].0.fixed;
+                    let dist = demo_color
+                        .linear_gradient_state
+                        .0
+                        .get_grad(&ctx.color_store)[1]
+                        .0
+                        .fixed;
                     self.dist_ntb.set_value(dist as usize);
 
                     // update the angle
@@ -612,18 +622,18 @@ impl ColorsDemoState {
                     self.color_dd.pane.enable();
                     self.max_gr_colors_dd.pane.enable();
 
-                    let max = demo_color.radial_time_state.0.len(ctx);
+                    let max = demo_color.radial_time_state.0.len(&ctx.color_store);
                     let _ = self
                         .max_gr_colors_dd
                         .set_selected_str(ctx, &max.to_string());
                     self.update_for_color_dd_change_from_demo_color("Radial-Time", &demo_color);
 
                     // update the time
-                    let grad = demo_color.radial_time_state.0.get_grad(ctx);
+                    let grad = demo_color.radial_time_state.0.get_grad(&ctx.color_store);
                     let Color::TimeGradient(ref tg) = grad[1].1 else {
                         return;
                     };
-                    let time = tg.get_grad(ctx)[1].0.as_millis() as usize;
+                    let time = tg.get_grad(&ctx.color_store)[1].0.as_millis() as usize;
                     self.time_ntb.set_value(time);
 
                     // update the dist
@@ -641,18 +651,18 @@ impl ColorsDemoState {
                     self.color_dd.pane.enable();
                     self.max_gr_colors_dd.pane.enable();
 
-                    let max = demo_color.linear_time_state.0.len(ctx) - 1;
+                    let max = demo_color.linear_time_state.0.len(&ctx.color_store) - 1;
                     let _ = self
                         .max_gr_colors_dd
                         .set_selected_str(ctx, &max.to_string());
                     self.update_for_color_dd_change_from_demo_color("Linear-Time", &demo_color);
 
                     // update the time
-                    let grad = demo_color.linear_time_state.0.get_grad(ctx);
+                    let grad = demo_color.linear_time_state.0.get_grad(&ctx.color_store);
                     let Color::TimeGradient(ref tg) = grad[1].1 else {
                         return;
                     };
-                    let time = tg.get_grad(ctx)[1].0.as_millis() as usize;
+                    let time = tg.get_grad(&ctx.color_store)[1].0.as_millis() as usize;
                     self.time_ntb.set_value(time);
 
                     // update the dist
@@ -676,7 +686,7 @@ impl ColorsDemoState {
                     self.time_slider.pane.disable();
 
                     // update the dist
-                    let pat = demo_color.tiles_state.0.get_pattern(ctx);
+                    let pat = demo_color.tiles_state.0.get_pattern(&ctx.color_store);
                     let dist = pat[1].len() / 2;
                     self.dist_ntb.set_value(dist);
 

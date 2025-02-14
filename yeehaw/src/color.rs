@@ -23,7 +23,7 @@ impl ColorStore {
     pub fn add_pattern(&self, pattern: Vec<Vec<Color>>) -> usize {
         let mut time_effected = false;
         for c in pattern.iter().flatten() {
-            if c.is_time_effected(&self) {
+            if c.is_time_effected(self) {
                 time_effected = true;
                 break;
             }
@@ -41,7 +41,7 @@ impl ColorStore {
     pub fn add_pos_gradient(&self, gr: Vec<(DynVal, Color)>) -> usize {
         let mut time_effected = false;
         for (_, c) in gr.iter() {
-            if c.is_time_effected(&self) {
+            if c.is_time_effected(self) {
                 time_effected = true;
                 break;
             }
@@ -232,7 +232,8 @@ impl Color {
     #[allow(clippy::too_many_arguments)]
     /// blends two colors together with the given percentage of the other color
     pub fn blend(
-        &self, ctx: &Context, draw_size: &Size, x: u16, y: u16, other: Color, percent_other: f64,
+        &self, cs: &ColorStore, dsl: &Duration, draw_size: &Size, x: u16, y: u16, other: Color,
+        percent_other: f64,
     ) -> Color {
         match self {
             Color::ANSI(a) => {
@@ -240,7 +241,7 @@ impl Color {
                     return other.clone();
                 }
                 let c = crossterm_to_rgb(*a);
-                c.blend(ctx, draw_size, x, y, other, percent_other)
+                c.blend(cs, dsl, draw_size, x, y, other, percent_other)
             }
             Color::Rgba(c) => match other {
                 Color::ANSI(a) => {
@@ -248,41 +249,45 @@ impl Color {
                         return self.clone();
                     }
                     let oc = crossterm_to_rgb(a);
-                    self.blend(ctx, draw_size, x, y, oc, percent_other)
+                    self.blend(cs, dsl, draw_size, x, y, oc, percent_other)
                 }
                 Color::Rgba(oc) => Color::Rgba(blend(*c, oc, percent_other)),
                 Color::Gradient(gr) => {
-                    let gr = gr.to_color(ctx, draw_size, x, y);
-                    self.clone().blend(ctx, draw_size, x, y, gr, percent_other)
+                    let gr = gr.to_color(cs, dsl, draw_size, x, y);
+                    self.clone()
+                        .blend(cs, dsl, draw_size, x, y, gr, percent_other)
                 }
                 Color::TimeGradient(g) => {
-                    let g = g.to_color(ctx, draw_size, x, y);
-                    self.clone().blend(ctx, draw_size, x, y, g, percent_other)
+                    let g = g.to_color(cs, dsl, draw_size, x, y);
+                    self.clone()
+                        .blend(cs, dsl, draw_size, x, y, g, percent_other)
                 }
                 Color::RadialGradient(rg) => {
-                    let rg = rg.to_color(ctx, draw_size, x, y);
-                    self.clone().blend(ctx, draw_size, x, y, rg, percent_other)
+                    let rg = rg.to_color(cs, dsl, draw_size, x, y);
+                    self.clone()
+                        .blend(cs, dsl, draw_size, x, y, rg, percent_other)
                 }
                 Color::Pattern(p) => {
-                    let p = p.to_color(ctx, x, y);
-                    self.clone().blend(ctx, draw_size, x, y, p, percent_other)
+                    let p = p.to_color(cs, dsl, x, y);
+                    self.clone()
+                        .blend(cs, dsl, draw_size, x, y, p, percent_other)
                 }
             },
             Color::Gradient(gr) => {
-                let gr = gr.to_color(ctx, draw_size, x, y);
-                gr.blend(ctx, draw_size, x, y, other, percent_other)
+                let gr = gr.to_color(cs, dsl, draw_size, x, y);
+                gr.blend(cs, dsl, draw_size, x, y, other, percent_other)
             }
             Color::TimeGradient(gr) => {
-                let gr = gr.to_color(ctx, draw_size, x, y);
-                gr.blend(ctx, draw_size, x, y, other, percent_other)
+                let gr = gr.to_color(cs, dsl, draw_size, x, y);
+                gr.blend(cs, dsl, draw_size, x, y, other, percent_other)
             }
             Color::RadialGradient(gr) => {
-                let gr = gr.to_color(ctx, draw_size, x, y);
-                gr.blend(ctx, draw_size, x, y, other, percent_other)
+                let gr = gr.to_color(cs, dsl, draw_size, x, y);
+                gr.blend(cs, dsl, draw_size, x, y, other, percent_other)
             }
             Color::Pattern(p) => {
-                let p = p.to_color(ctx, x, y);
-                p.blend(ctx, draw_size, x, y, other, percent_other)
+                let p = p.to_color(cs, dsl, x, y);
+                p.blend(cs, dsl, draw_size, x, y, other, percent_other)
             }
         }
     }
@@ -371,34 +376,37 @@ impl Color {
 
     /// considers the alpha of the self and blends with the previous color
     pub fn to_crossterm_color(
-        &self, ctx: &Context, draw_size: &Size, prev: Option<CrosstermColor>, x: u16, y: u16,
+        &self, cs: &ColorStore, dsl: &Duration, draw_size: &Size, prev: Option<CrosstermColor>,
+        x: u16, y: u16,
     ) -> CrosstermColor {
         match self {
             Color::ANSI(c) => *c,
             Color::Rgba(c) => c.to_crossterm_color(prev),
             Color::Gradient(gr) => gr
-                .to_color(ctx, draw_size, x, y)
-                .to_crossterm_color(ctx, draw_size, prev, x, y),
+                .to_color(cs, dsl, draw_size, x, y)
+                .to_crossterm_color(cs, dsl, draw_size, prev, x, y),
             Color::TimeGradient(g) => g
-                .to_color(ctx, draw_size, x, y)
-                .to_crossterm_color(ctx, draw_size, prev, x, y),
+                .to_color(cs, dsl, draw_size, x, y)
+                .to_crossterm_color(cs, dsl, draw_size, prev, x, y),
             Color::RadialGradient(rg) => rg
-                .to_color(ctx, draw_size, x, y)
-                .to_crossterm_color(ctx, draw_size, prev, x, y),
+                .to_color(cs, dsl, draw_size, x, y)
+                .to_crossterm_color(cs, dsl, draw_size, prev, x, y),
             Color::Pattern(p) => p
-                .to_color(ctx, x, y)
-                .to_crossterm_color(ctx, draw_size, prev, x, y),
+                .to_color(cs, dsl, x, y)
+                .to_crossterm_color(cs, dsl, draw_size, prev, x, y),
         }
     }
 
     /// to color with the given context and position
-    pub fn to_color(self, ctx: &Context, draw_size: &Size, x: u16, y: u16) -> Color {
+    pub fn to_color(
+        self, cs: &ColorStore, dsl: &Duration, draw_size: &Size, x: u16, y: u16,
+    ) -> Color {
         match self {
             Color::ANSI(_) | Color::Rgba(_) => self,
-            Color::Gradient(gr) => gr.to_color(ctx, draw_size, x, y),
-            Color::TimeGradient(g) => g.to_color(ctx, draw_size, x, y),
-            Color::RadialGradient(rg) => rg.to_color(ctx, draw_size, x, y),
-            Color::Pattern(p) => p.to_color(ctx, x, y),
+            Color::Gradient(gr) => gr.to_color(cs, dsl, draw_size, x, y),
+            Color::TimeGradient(g) => g.to_color(cs, dsl, draw_size, x, y),
+            Color::RadialGradient(rg) => rg.to_color(cs, dsl, draw_size, x, y),
+            Color::Pattern(p) => p.to_color(cs, dsl, x, y),
         }
     }
 
@@ -691,14 +699,15 @@ impl Gradient {
     }
 
     pub fn to_crossterm_color(
-        &self, ctx: &Context, draw_size: &Size, prev: Option<CrosstermColor>, x: u16, y: u16,
+        &self, cs: &ColorStore, dsl: &Duration, draw_size: &Size, prev: Option<CrosstermColor>,
+        x: u16, y: u16,
     ) -> CrosstermColor {
-        self.to_color(ctx, draw_size, x, y)
-            .to_crossterm_color(ctx, draw_size, prev, x, y)
+        self.to_color(cs, dsl, draw_size, x, y)
+            .to_crossterm_color(cs, dsl, draw_size, prev, x, y)
     }
 
-    pub fn len(&self, ctx: &Context) -> usize {
-        let grs = ctx.color_store.pos_gradients.borrow();
+    pub fn len(&self, cs: &ColorStore) -> usize {
+        let grs = cs.pos_gradients.borrow();
         let grad = grs.get(self.gradient_id);
         let Some(grad) = grad else {
             return 0;
@@ -706,8 +715,8 @@ impl Gradient {
         grad.0.len()
     }
 
-    pub fn get_grad(&self, ctx: &Context) -> Vec<(DynVal, Color)> {
-        let grs = ctx.color_store.pos_gradients.borrow();
+    pub fn get_grad(&self, cs: &ColorStore) -> Vec<(DynVal, Color)> {
+        let grs = cs.pos_gradients.borrow();
         let grad = grs.get(self.gradient_id);
         let Some(grad) = grad else {
             return vec![];
@@ -720,8 +729,10 @@ impl Gradient {
         cs.is_gradient_time_effected(self.gradient_id)
     }
 
-    pub fn to_color(&self, ctx: &Context, draw_size: &Size, x: u16, y: u16) -> Color {
-        let grs = ctx.color_store.pos_gradients.borrow();
+    pub fn to_color(
+        &self, cs: &ColorStore, dsl: &Duration, draw_size: &Size, x: u16, y: u16,
+    ) -> Color {
+        let grs = cs.pos_gradients.borrow();
         let grad = grs.get(self.gradient_id);
         let Some(grad) = grad else {
             return Color::TRANSPARENT;
@@ -845,7 +856,7 @@ impl Gradient {
         let start_pos = start_pos.unwrap_or_else(|| grad.0[0].0.get_val(max_ctx_val));
         let end_pos = end_pos.unwrap_or_else(|| grad.0[grad.0.len() - 1].0.get_val(max_ctx_val));
         let percent = (pos - start_pos) as f64 / (end_pos - start_pos) as f64;
-        start_clr.blend(ctx, &draw_size, x, y, end_clr, percent)
+        start_clr.blend(cs, dsl, &draw_size, x, y, end_clr, percent)
     }
 
     #[allow(clippy::type_complexity)]
@@ -952,8 +963,8 @@ impl RadialGradient {
         )
     }
 
-    pub fn len(&self, ctx: &Context) -> usize {
-        let grs = ctx.color_store.pos_gradients.borrow();
+    pub fn len(&self, cs: &ColorStore) -> usize {
+        let grs = cs.pos_gradients.borrow();
         let grad = grs.get(self.gradient_id);
         let Some(grad) = grad else {
             return 0;
@@ -961,8 +972,8 @@ impl RadialGradient {
         grad.0.len()
     }
 
-    pub fn get_grad(&self, ctx: &Context) -> Vec<(DynVal, Color)> {
-        let grs = ctx.color_store.pos_gradients.borrow();
+    pub fn get_grad(&self, cs: &ColorStore) -> Vec<(DynVal, Color)> {
+        let grs = cs.pos_gradients.borrow();
         let grad = grs.get(self.gradient_id);
         let Some(grad) = grad else {
             return vec![];
@@ -996,8 +1007,10 @@ impl RadialGradient {
         cs.is_gradient_time_effected(self.gradient_id)
     }
 
-    pub fn to_color(&self, ctx: &Context, draw_size: &Size, x: u16, y: u16) -> Color {
-        let grs = ctx.color_store.pos_gradients.borrow();
+    pub fn to_color(
+        &self, cs: &ColorStore, dsl: &Duration, draw_size: &Size, x: u16, y: u16,
+    ) -> Color {
+        let grs = cs.pos_gradients.borrow();
         let grad = grs.get(self.gradient_id);
         let Some(grad) = grad else {
             return Color::TRANSPARENT;
@@ -1075,7 +1088,7 @@ impl RadialGradient {
         let end_pos = end_pos
             .unwrap_or_else(|| grad.0[grad.0.len() - 1].0.get_val(s.width.max(s.height)) as f64);
         let percent = (dist - start_pos) / (end_pos - start_pos);
-        start_clr.blend(ctx, &draw_size, x, y, end_clr, percent)
+        start_clr.blend(cs, dsl, &draw_size, x, y, end_clr, percent)
     }
 
     #[allow(clippy::type_complexity)]
@@ -1136,8 +1149,8 @@ impl TimeGradient {
         Self::new(ctx, total_dur, grad)
     }
 
-    pub fn len(&self, ctx: &Context) -> usize {
-        let tgs = ctx.color_store.time_gradients.borrow();
+    pub fn len(&self, cs: &ColorStore) -> usize {
+        let tgs = cs.time_gradients.borrow();
         let grad = tgs.get(self.gradient_id);
         let Some(grad) = grad else {
             return 0;
@@ -1145,8 +1158,8 @@ impl TimeGradient {
         grad.len()
     }
 
-    pub fn get_grad(&self, ctx: &Context) -> Vec<(Duration, Color)> {
-        let tgs = ctx.color_store.time_gradients.borrow();
+    pub fn get_grad(&self, cs: &ColorStore) -> Vec<(Duration, Color)> {
+        let tgs = cs.time_gradients.borrow();
         let grad = tgs.get(self.gradient_id);
         let Some(grad) = grad else {
             return vec![];
@@ -1154,8 +1167,10 @@ impl TimeGradient {
         grad.clone()
     }
 
-    pub fn to_color(&self, ctx: &Context, draw_size: &Size, x: u16, y: u16) -> Color {
-        let tgs = ctx.color_store.time_gradients.borrow();
+    pub fn to_color(
+        &self, cs: &ColorStore, dsl: &Duration, draw_size: &Size, x: u16, y: u16,
+    ) -> Color {
+        let tgs = cs.time_gradients.borrow();
         let grad = tgs.get(self.gradient_id);
         let Some(grad) = grad else {
             return Color::TRANSPARENT;
@@ -1164,7 +1179,7 @@ impl TimeGradient {
             return Color::TRANSPARENT;
         }
 
-        let mut d = ctx.dur_since_launch;
+        let mut d = *dsl;
         // calculate d so that it is within the range
         while d >= self.total_dur {
             d -= self.total_dur;
@@ -1187,7 +1202,7 @@ impl TimeGradient {
         let start_time = start_time.unwrap_or_else(|| grad[0].0);
         let end_time = end_time.unwrap_or_else(|| grad[grad.len() - 1].0);
         let percent = (d - start_time).as_secs_f64() / (end_time - start_time).as_secs_f64();
-        start_clr.blend(ctx, draw_size, x, y, end_clr, percent)
+        start_clr.blend(cs, dsl, draw_size, x, y, end_clr, percent)
     }
 
     #[allow(clippy::type_complexity)]
@@ -1221,8 +1236,8 @@ pub struct Pattern {
 }
 
 impl Pattern {
-    pub fn new(store: &ColorStore, pattern: Vec<Vec<Color>>) -> Self {
-        let pattern_id = store.add_pattern(pattern.clone());
+    pub fn new(ctx: &Context, pattern: Vec<Vec<Color>>) -> Self {
+        let pattern_id = ctx.color_store.add_pattern(pattern.clone());
         Pattern {
             pattern_id,
             offset: (0, 0),
@@ -1231,7 +1246,7 @@ impl Pattern {
 
     // tile pattern with the given tile width and height
     pub fn new_tiles(
-        store: &ColorStore, tile_width: usize, tile_height: usize, tile1: Color, tile2: Color,
+        ctx: &Context, tile_width: usize, tile_height: usize, tile1: Color, tile2: Color,
     ) -> Self {
         let mut pattern = Vec::with_capacity(tile_height * 2);
         for y in 0..tile_height * 2 {
@@ -1247,7 +1262,7 @@ impl Pattern {
             }
             pattern.push(row);
         }
-        let pattern_id = store.add_pattern(pattern.clone());
+        let pattern_id = ctx.color_store.add_pattern(pattern.clone());
 
         Pattern {
             pattern_id,
@@ -1259,7 +1274,7 @@ impl Pattern {
     pub fn new_sqr_tiles(ctx: &Context, tile_width: usize, tile1: Color, tile2: Color) -> Self {
         // TODO use actual aspect ratio of the terminal if provided
         let tile_height = (tile_width as f64 * 0.55).round() as usize;
-        Pattern::new_tiles(&ctx.color_store, tile_width, tile_height, tile1, tile2)
+        Pattern::new_tiles(ctx, tile_width, tile_height, tile1, tile2)
     }
 
     pub fn add_to_offset(&mut self, x: i32, y: i32) {
@@ -1267,8 +1282,8 @@ impl Pattern {
         self.offset.1 += y;
     }
 
-    pub fn get_pattern(&self, ctx: &Context) -> Vec<Vec<Color>> {
-        let patterns = ctx.color_store.patterns.borrow();
+    pub fn get_pattern(&self, cs: &ColorStore) -> Vec<Vec<Color>> {
+        let patterns = cs.patterns.borrow();
         let pattern = patterns.get(self.pattern_id);
         let Some(pattern) = pattern else {
             return vec![];
@@ -1282,8 +1297,8 @@ impl Pattern {
     }
 
     // get the color at the given x, y on the pattern, looping once the end is reached
-    pub fn to_color(&self, ctx: &Context, x: u16, y: u16) -> Color {
-        let patterns = ctx.color_store.patterns.borrow();
+    pub fn to_color(&self, cs: &ColorStore, _dsl: &Duration, x: u16, y: u16) -> Color {
+        let patterns = cs.patterns.borrow();
         let pattern = patterns.get(self.pattern_id);
         let Some(pattern) = pattern else {
             debug!(

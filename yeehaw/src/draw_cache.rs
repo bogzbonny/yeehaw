@@ -1,7 +1,9 @@
 use {
     super::element::{ElementIDPath, ZIndexPath},
-    crate::{ChPlus, Context, DrawAction, DrawChPos, DrawUpdate, Size},
+    crate::{ChPlus, ColorStore, Context, DrawAction, DrawChPos, DrawUpdate, Size},
     crossterm::style::{ContentStyle, StyledContent},
+    //rayon::prelude::*,
+    std::time::Duration,
 };
 
 /// cached position on the screen
@@ -35,7 +37,9 @@ impl Default for CachedPos {
 
 impl CachedPos {
     /// gets the draw content at this position if an update is necessary
-    pub fn get_update(&mut self, ctx: &Context, draw_size: &Size) -> Option<StyledContent<ChPlus>> {
+    pub fn get_update(
+        &mut self, cs: &ColorStore, dsl: &Duration, draw_size: &Size,
+    ) -> Option<StyledContent<ChPlus>> {
         // first sort the layers by z-index if dirty
         if self.dirty {
             self.layers.sort_by(|a, b| a.1.cmp(&b.1));
@@ -48,7 +52,7 @@ impl CachedPos {
 
             // iterate the layers from back to front creating the output ch
             for (_, _, dcp) in self.layers.iter() {
-                draw_ch = dcp.get_content_style(ctx, draw_size, &draw_ch);
+                draw_ch = dcp.get_content_style(cs, dsl, draw_size, &draw_ch);
             }
             if let Some(ref last_draw_ch) = self.last_draw_ch {
                 if last_draw_ch == &draw_ch {
@@ -62,8 +66,10 @@ impl CachedPos {
     }
 
     /// gets the draw content at this position independent of the dirty state
-    pub fn must_get_draw_ch(&mut self, ctx: &Context, draw_size: &Size) -> StyledContent<ChPlus> {
-        if let Some(ch) = self.get_update(ctx, draw_size) {
+    pub fn must_get_draw_ch(
+        &mut self, cs: &ColorStore, dsl: &Duration, draw_size: &Size,
+    ) -> StyledContent<ChPlus> {
+        if let Some(ch) = self.get_update(cs, dsl, draw_size) {
             ch
         } else if let Some(ref ch) = self.last_draw_ch {
             ch.clone()
@@ -273,14 +279,29 @@ impl DrawingCache {
             return Vec::new();
         }
 
+        let cs = &ctx.color_store;
+        let dsl = &ctx.dur_since_launch;
+
         let mut out = Vec::new();
         for (y, row) in self.cache_2d.iter_mut().enumerate() {
             for (x, cell) in row.iter_mut().enumerate() {
-                if let Some(upd) = cell.get_update(ctx, draw_size) {
+                if let Some(upd) = cell.get_update(cs, dsl, draw_size) {
                     out.push((x, y, upd));
                 }
             }
         }
         out
+        //let mut out = Vec::new();
+        //for (y, row) in self.cache_2d.iter_mut().enumerate() {
+        //    // NOTE computational bottleneck, use rayon
+        //    out.par_extend(row.into_par_iter().enumerate().filter_map(|(x, cell)| {
+        //        if let Some(upd) = cell.get_update(ctx, draw_size) {
+        //            Some((x, y, upd))
+        //        } else {
+        //            None
+        //        }
+        //    }));
+        //}
+        //out
     }
 }

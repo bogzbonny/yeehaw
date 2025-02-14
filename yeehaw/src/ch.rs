@@ -1,9 +1,12 @@
 use {
-    crate::{BgTranspSrc, Color, Context, DynLocation, FgTranspSrc, Size, Style, UlTranspSrc},
+    crate::{
+        BgTranspSrc, Color, ColorStore, Context, DynLocation, FgTranspSrc, Size, Style, UlTranspSrc,
+    },
     anyhow::{anyhow, Error},
     compact_str::CompactString,
     crossterm::style::{ContentStyle, StyledContent},
     std::ops::{Deref, DerefMut},
+    std::time::Duration,
 };
 
 /// DrawCh is a character with a style and transparency
@@ -201,7 +204,7 @@ impl DrawChPos {
 
     /// get the content style for this DrawChPos given the underlying style
     pub fn get_content_style(
-        &self, ctx: &Context, draw_size: &Size, prev: &StyledContent<ChPlus>,
+        &self, cs: &ColorStore, dsl: &Duration, draw_size: &Size, prev: &StyledContent<ChPlus>,
     ) -> StyledContent<ChPlus> {
         let (ch, attr) = if matches!(self.ch.ch, ChPlus::Transparent) {
             (prev.content(), prev.style().attributes)
@@ -221,7 +224,7 @@ impl DrawChPos {
                 BgTranspSrc::LowerBg => prev_bg,
                 BgTranspSrc::LowerUl => prev_ul,
             };
-            bg.0.to_crossterm_color(ctx, draw_size, transp_src, self.x, self.y)
+            bg.0.to_crossterm_color(cs, dsl, draw_size, transp_src, self.x, self.y)
         });
 
         let fg = self.ch.style.fg.clone().map(|fg| {
@@ -231,7 +234,7 @@ impl DrawChPos {
                 FgTranspSrc::LowerUl => prev_ul,
                 FgTranspSrc::ThisBg => bg,
             };
-            fg.0.to_crossterm_color(ctx, draw_size, transp_src, self.x, self.y)
+            fg.0.to_crossterm_color(cs, dsl, draw_size, transp_src, self.x, self.y)
         });
         let ul = self.ch.style.underline_color.clone().map(|ul| {
             let transp_src = match ul.1 {
@@ -240,7 +243,7 @@ impl DrawChPos {
                 UlTranspSrc::LowerUl => prev_ul,
                 UlTranspSrc::ThisBg => bg,
             };
-            ul.0.to_crossterm_color(ctx, draw_size, transp_src, self.x, self.y)
+            ul.0.to_crossterm_color(cs, dsl, draw_size, transp_src, self.x, self.y)
         });
 
         let cs = ContentStyle {
