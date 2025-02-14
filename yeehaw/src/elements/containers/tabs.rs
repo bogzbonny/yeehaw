@@ -171,7 +171,8 @@ impl Element for TabsTop {
             chs.extend(name_chs);
         }
         self.is_dirty.replace(false);
-        let upd = DrawUpdate::update(chs);
+        // NOTE extend instead of update as we already have an update (don't want to overwrite)
+        let upd = DrawUpdate::extend(chs);
         upds.push(upd);
         upds
     }
@@ -191,9 +192,9 @@ impl Tabs {
 
     pub fn new(ctx: &Context) -> Self {
         let tabs_top = TabsTop::new(ctx, Rc::new(RefCell::new(Vec::new())));
-        let pane = VerticalStack::new(ctx);
-        pane.pane.pane.set_kind(Self::KIND);
         let lower = ParentPane::new(ctx, Self::LOWER_KIND);
+
+        let pane = VerticalStack::new_with_kind(ctx, Self::KIND);
         pane.push(Box::new(tabs_top.clone()));
         pane.push(Box::new(lower.clone()));
         Self {

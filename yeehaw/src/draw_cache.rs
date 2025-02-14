@@ -5,7 +5,7 @@ use {
 };
 
 /// cached position on the screen
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct CachedPos {
     /// does one of the layers have a time gradient
     /// if so it will recalculate the time gradient at
@@ -72,33 +72,38 @@ impl CachedPos {
         }
     }
 
-    // returns true if the time gradient count decreased
-    pub fn remove(&mut self, ctx: &Context, ids: &ElementIDPath) -> bool {
-        let mut out = false;
-        for i in 0..self.layers.len() {
-            if &self.layers[i].0 == ids {
-                let (_, _, dcp) = self.layers.remove(i);
-                if dcp.ch.style.is_time_effected(ctx) {
-                    // TODO non-saturating for debug
-                    self.time_grad_count = self.time_grad_count.saturating_sub(1);
-                    out = true;
+    // returns the number of time gradient count decreases
+    pub fn remove(&mut self, ctx: &Context, ids: &ElementIDPath) -> usize {
+        let mut out = 0;
+        // NOTE there may be more than one element to remove with this id in this layer
+        self.layers.retain(|(layer_ids, _, layer_dcp)| {
+            if layer_ids == ids {
+                if layer_dcp.ch.style.is_time_effected(ctx) {
+                    if cfg!(debug_assertions) {
+                        self.time_grad_count -= 1;
+                    } else {
+                        self.time_grad_count = self.time_grad_count.saturating_sub(1);
+                    }
+                    out += 1;
                 }
-                break;
+                false
+            } else {
+                true
             }
-        }
+        });
         self.dirty = true;
         out
     }
 
-    // returns true if the time gradient count increased
+    // returns the number of time gradient count increases
     pub fn add(
         &mut self, ctx: &Context, ids: &ElementIDPath, zs: &ZIndexPath, dcp: DrawChPos,
-    ) -> bool {
+    ) -> usize {
         let out = if dcp.ch.style.is_time_effected(ctx) {
             self.time_grad_count += 1;
-            true
+            1
         } else {
-            false
+            0
         };
         self.layers.push((ids.clone(), zs.clone(), dcp));
         self.dirty = true;
@@ -218,8 +223,8 @@ impl DrawingCache {
             for dcp in dcps.drain(..) {
                 let (x, y) = (dcp.x, dcp.y);
                 let Some(row) = self.cache_2d.get_mut(y as usize) else {
-                    // NOTE this can happen when removing hidden elements
-                    // notibly the tabs element will trigger this
+                    // NOTE this can happen when an element passes multiple updates
+                    // notibly the tabs top element triggers this at startup
                     continue;
                 };
                 let Some(cell) = row.get_mut(x as usize) else {
@@ -227,8 +232,13 @@ impl DrawingCache {
                     continue;
                 };
                 let time_grad_count_decr = cell.remove(ctx, &ids);
-                if time_grad_count_decr {
-                    self.time_grad_count = self.time_grad_count.saturating_sub(1);
+                if time_grad_count_decr > 0 {
+                    if cfg!(debug_assertions) {
+                        self.time_grad_count -= time_grad_count_decr;
+                    } else {
+                        self.time_grad_count =
+                            self.time_grad_count.saturating_sub(time_grad_count_decr);
+                    }
                 }
             }
         }
@@ -245,8 +255,8 @@ impl DrawingCache {
                 }
                 let cell = row.get_mut(x as usize).expect("impossible");
                 let time_grad_count_incr = cell.add(ctx, &ids, &zs, dcp);
-                if time_grad_count_incr {
-                    self.time_grad_count += 1;
+                if time_grad_count_incr > 0 {
+                    self.time_grad_count += time_grad_count_incr;
                 }
             }
         }
@@ -269,12 +279,8 @@ impl DrawingCache {
                 if let Some(upd) = cell.get_update(ctx, draw_size) {
                     out.push((x, y, upd));
                 }
-                //let upd = cell.must_get_draw_ch(ctx, draw_size);
-                //out.push((x, y, upd));
             }
         }
-        debug!("drawing_cache.update_and_get2: out.len(): {}", out.len());
-
         out
     }
 }
