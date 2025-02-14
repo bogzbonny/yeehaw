@@ -2,3 +2,4 @@ target
 Cargo.lock
 debug_test.log
 open_ai_token
+flame.svg
