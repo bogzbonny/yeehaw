@@ -24,8 +24,8 @@ use {
 /// the amount of time the tui will wait in between calls to re-render.
 /// If this value is set too large it will give the tui a laggy feel, but if it's set too low then
 /// drawing may consume excessive CPU time and starve events from being processed.
-/// recommended setting: 10ms (100 frames per second)
-const DEFAULT_ANIMATION_SPEED: Duration = Duration::from_millis(10);
+/// recommended setting: 35ms (28.6 frames per second, like a vhs)
+pub const DEFAULT_ANIMATION_SPEED: Duration = Duration::from_millis(35);
 
 /// configuration of a tui instance
 pub struct Tui {

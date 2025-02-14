@@ -1,11 +1,9 @@
 use {
     crate::{Context, DynVal, Size},
     crossterm::style::Color as CrosstermColor,
-    parking_lot::RwLock,
     rand::Rng,
-    std::sync::Arc,
     std::time::Duration,
-    //std::{cell::RefCell, rc::Rc},
+    std::{cell::RefCell, rc::Rc},
 };
 
 /// The color store is a simple store for complex data within each color. This allows for
@@ -16,9 +14,9 @@ use {
 #[allow(clippy::type_complexity)]
 pub struct ColorStore {
     // NOTE the second bool is a store of if the gradient is effected by time
-    pub pos_gradients: Arc<RwLock<Vec<(Vec<(DynVal, Color)>, bool)>>>,
-    pub time_gradients: Arc<RwLock<Vec<Vec<(Duration, Color)>>>>, // no need for the bool, time gradients are ALWAYS time effected
-    pub patterns: Arc<RwLock<Vec<(Vec<Vec<Color>>, bool)>>>,      //(Vec< (y) < Vec< (x) < Color>>>)
+    pub pos_gradients: Rc<RefCell<Vec<(Vec<(DynVal, Color)>, bool)>>>,
+    pub time_gradients: Rc<RefCell<Vec<Vec<(Duration, Color)>>>>, // no need for the bool, time gradients are ALWAYS time effected
+    pub patterns: Rc<RefCell<Vec<(Vec<Vec<Color>>, bool)>>>,      //(Vec< (y) < Vec< (x) < Color>>>)
 }
 
 impl ColorStore {
@@ -32,13 +30,13 @@ impl ColorStore {
         }
 
         // attempt to find the pattern in the store before adding it
-        for (i, p) in self.patterns.read().iter().enumerate() {
+        for (i, p) in self.patterns.borrow().iter().enumerate() {
             if p.0 == pattern {
                 return i;
             }
         }
-        self.patterns.write().push((pattern, time_effected));
-        self.patterns.read().len() - 1
+        self.patterns.borrow_mut().push((pattern, time_effected));
+        self.patterns.borrow().len() - 1
     }
     pub fn add_pos_gradient(&self, gr: Vec<(DynVal, Color)>) -> usize {
         let mut time_effected = false;
@@ -50,34 +48,34 @@ impl ColorStore {
         }
 
         // attempt to find the gradient in the store before adding it
-        for (i, g) in self.pos_gradients.read().iter().enumerate() {
+        for (i, g) in self.pos_gradients.borrow().iter().enumerate() {
             if g.0 == gr {
                 return i;
             }
         }
-        self.pos_gradients.write().push((gr, time_effected));
-        self.pos_gradients.read().len() - 1
+        self.pos_gradients.borrow_mut().push((gr, time_effected));
+        self.pos_gradients.borrow().len() - 1
     }
     pub fn add_time_gradient(&self, gr: Vec<(Duration, Color)>) -> usize {
         // attempt to find the gradient in the store before adding it
-        for (i, g) in self.time_gradients.read().iter().enumerate() {
+        for (i, g) in self.time_gradients.borrow().iter().enumerate() {
             if g == &gr {
                 return i;
             }
         }
-        self.time_gradients.write().push(gr);
-        self.time_gradients.read().len() - 1
+        self.time_gradients.borrow_mut().push(gr);
+        self.time_gradients.borrow().len() - 1
     }
 
     pub fn is_pattern_time_effected(&self, id: usize) -> bool {
-        if let Some((_, te)) = self.patterns.read().get(id) {
+        if let Some((_, te)) = self.patterns.borrow().get(id) {
             return *te;
         }
         false
     }
 
     pub fn is_gradient_time_effected(&self, id: usize) -> bool {
-        if let Some((_, te)) = self.pos_gradients.read().get(id) {
+        if let Some((_, te)) = self.pos_gradients.borrow().get(id) {
             return *te;
         }
         false
@@ -709,7 +707,7 @@ impl Gradient {
     }
 
     pub fn len(&self, cs: &ColorStore) -> usize {
-        let grs = cs.pos_gradients.read();
+        let grs = cs.pos_gradients.borrow();
         let grad = grs.get(self.gradient_id);
         let Some(grad) = grad else {
             return 0;
@@ -718,7 +716,7 @@ impl Gradient {
     }
 
     pub fn get_grad(&self, cs: &ColorStore) -> Vec<(DynVal, Color)> {
-        let grs = cs.pos_gradients.read();
+        let grs = cs.pos_gradients.borrow();
         let grad = grs.get(self.gradient_id);
         let Some(grad) = grad else {
             return vec![];
@@ -734,7 +732,7 @@ impl Gradient {
     pub fn to_color(
         &self, cs: &ColorStore, dsl: &Duration, draw_size: &Size, x: u16, y: u16,
     ) -> Color {
-        let grs = cs.pos_gradients.read();
+        let grs = cs.pos_gradients.borrow();
         let grad = grs.get(self.gradient_id);
         let Some(grad) = grad else {
             return Color::TRANSPARENT;
@@ -866,7 +864,7 @@ impl Gradient {
         &self, store: &ColorStore, f: Box<dyn Fn(&ColorStore, &Color) -> Color>,
     ) -> Self {
         let mod_gr = {
-            let grs = store.pos_gradients.read();
+            let grs = store.pos_gradients.borrow();
             let gr = grs.get(self.gradient_id);
             let Some(gr) = gr else {
                 return self.clone();
@@ -966,7 +964,7 @@ impl RadialGradient {
     }
 
     pub fn len(&self, cs: &ColorStore) -> usize {
-        let grs = cs.pos_gradients.read();
+        let grs = cs.pos_gradients.borrow();
         let grad = grs.get(self.gradient_id);
         let Some(grad) = grad else {
             return 0;
@@ -975,7 +973,7 @@ impl RadialGradient {
     }
 
     pub fn get_grad(&self, cs: &ColorStore) -> Vec<(DynVal, Color)> {
-        let grs = cs.pos_gradients.read();
+        let grs = cs.pos_gradients.borrow();
         let grad = grs.get(self.gradient_id);
         let Some(grad) = grad else {
             return vec![];
@@ -1012,7 +1010,7 @@ impl RadialGradient {
     pub fn to_color(
         &self, cs: &ColorStore, dsl: &Duration, draw_size: &Size, x: u16, y: u16,
     ) -> Color {
-        let grs = cs.pos_gradients.read();
+        let grs = cs.pos_gradients.borrow();
         let grad = grs.get(self.gradient_id);
         let Some(grad) = grad else {
             return Color::TRANSPARENT;
@@ -1098,7 +1096,7 @@ impl RadialGradient {
         &self, store: &ColorStore, f: Box<dyn Fn(&ColorStore, &Color) -> Color>,
     ) -> Self {
         let mod_gr = {
-            let grs = store.pos_gradients.read();
+            let grs = store.pos_gradients.borrow();
             let gr = grs.get(self.gradient_id);
             let Some(gr) = gr else {
                 return self.clone();
@@ -1152,7 +1150,7 @@ impl TimeGradient {
     }
 
     pub fn len(&self, cs: &ColorStore) -> usize {
-        let tgs = cs.time_gradients.read();
+        let tgs = cs.time_gradients.borrow();
         let grad = tgs.get(self.gradient_id);
         let Some(grad) = grad else {
             return 0;
@@ -1161,7 +1159,7 @@ impl TimeGradient {
     }
 
     pub fn get_grad(&self, cs: &ColorStore) -> Vec<(Duration, Color)> {
-        let tgs = cs.time_gradients.read();
+        let tgs = cs.time_gradients.borrow();
         let grad = tgs.get(self.gradient_id);
         let Some(grad) = grad else {
             return vec![];
@@ -1172,7 +1170,7 @@ impl TimeGradient {
     pub fn to_color(
         &self, cs: &ColorStore, dsl: &Duration, draw_size: &Size, x: u16, y: u16,
     ) -> Color {
-        let tgs = cs.time_gradients.read();
+        let tgs = cs.time_gradients.borrow();
         let grad = tgs.get(self.gradient_id);
         let Some(grad) = grad else {
             return Color::TRANSPARENT;
@@ -1212,7 +1210,7 @@ impl TimeGradient {
         &self, store: &ColorStore, f: Box<dyn Fn(&ColorStore, &Color) -> Color>,
     ) -> Self {
         let mod_gr = {
-            let time_grs = store.time_gradients.read();
+            let time_grs = store.time_gradients.borrow();
             let time_gr = time_grs.get(self.gradient_id);
             let Some(time_gr) = time_gr else {
                 return self.clone();
@@ -1285,7 +1283,7 @@ impl Pattern {
     }
 
     pub fn get_pattern(&self, cs: &ColorStore) -> Vec<Vec<Color>> {
-        let patterns = cs.patterns.read();
+        let patterns = cs.patterns.borrow();
         let pattern = patterns.get(self.pattern_id);
         let Some(pattern) = pattern else {
             return vec![];
@@ -1300,7 +1298,7 @@ impl Pattern {
 
     // get the color at the given x, y on the pattern, looping once the end is reached
     pub fn to_color(&self, cs: &ColorStore, _dsl: &Duration, x: u16, y: u16) -> Color {
-        let patterns = cs.patterns.read();
+        let patterns = cs.patterns.borrow();
         let pattern = patterns.get(self.pattern_id);
         let Some(pattern) = pattern else {
             debug!(
@@ -1326,7 +1324,7 @@ impl Pattern {
         &self, store: &ColorStore, f: Box<dyn Fn(&ColorStore, &Color) -> Color>,
     ) -> Self {
         let mod_pattern = {
-            let patterns = store.patterns.read();
+            let patterns = store.patterns.borrow();
             let pattern = patterns.get(self.pattern_id);
             let Some(pattern) = pattern else {
                 return self.clone();
