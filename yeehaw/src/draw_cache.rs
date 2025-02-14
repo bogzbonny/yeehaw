@@ -214,16 +214,16 @@ impl DrawingCache {
 
         // now that the the updated are added to the cached_upd, we need to update
         // the cache_2d based on the removals and additions
-        debug!("upd_2d_rm.len(): {}", upd_2d_rm.len());
         for (ids, mut dcps) in upd_2d_rm.drain(..) {
             for dcp in dcps.drain(..) {
                 let (x, y) = (dcp.x, dcp.y);
                 let Some(row) = self.cache_2d.get_mut(y as usize) else {
-                    debug_assert!(false, "attempted to remove from a row that doesn't exist");
+                    // NOTE this can happen when removing hidden elements
+                    // notibly the tabs element will trigger this
                     continue;
                 };
                 let Some(cell) = row.get_mut(x as usize) else {
-                    debug_assert!(false, "attempted to remove from a cell that doesn't exist");
+                    // same as above note
                     continue;
                 };
                 let time_grad_count_decr = cell.remove(ctx, &ids);

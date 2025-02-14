@@ -18,10 +18,11 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-05. BUG tabs panics in debug mode (probably for same reason as showcase)
+01. BUG the do not click window still has the tabs-top in it
 
-05. BUG for inline TUI clicking outside of the tui disables its from being able
-    to click anymore VERIFY THIS WAS THE CASE PRIOR to the draw_cache refactor
+01. BUG for inline TUI moving the mouse outside of the tui disables its from
+    being able to click anymore - this has been the case FOR A WHILE, I suspect
+    that it is getting caught in some kind of infinite loop 
 
 10. resizing a scrollable pane should modify the offset of that pane to account
     for the extra space (instead of automatically extending out of range)
@@ -35,8 +36,6 @@ range
 
 01. improper handling of "delete" (control-delete) in textbox interpreted as
     control-h
-
-errors out after about 6 minutes:
 
 within the textbox element (file is "yeehaw/src/elements/widgets/textbox.rs")
 there is improper handling of the "delete" key (control-delete on mac) the
