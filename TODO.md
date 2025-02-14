@@ -1,6 +1,6 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
+  
 01. improve efficiency more, don't look through the entire cache constantly! 
      - the within draw_cache the dirty cells should just add themselves to a
        list
@@ -11,10 +11,10 @@
         - FIRST the time-effected list (do this first as it will fix anything on 
           the duplicate dirty list)
         - SECOND the dirty list
-
+  
 01. wezterm-term demo
      - https://github.com/wezterm/wezterm/issues/6663
-
+  
 01. BUG for inline TUI moving the mouse outside of the tui disables its from
     being able to click anymore - this has been the case FOR A WHILE, I suspect
     that it is getting caught in some kind of infinite loop 
@@ -604,10 +604,6 @@ PROGRAMS
 01. Snapshot TUI Tester (just call this tui-tester, binary: tuit (lol)) 
      - consider building as an extension of insta: 
         - https://insta.rs/
-     - Use ANSI-extended format to be know the element names at each position
-        - this way we can test on any binary all the same but then have
-          additional special functionality if its a yeehaw TUI
-        - would require special build flag for the tui to be in testing mode
      - always multi-stage
        - record each action then take a snapshot, however don't save the
          snapshot if it's the same as the previous snapshot. 
@@ -615,6 +611,16 @@ PROGRAMS
        - Option to just take a snapshot every X ms.
          - or Option to just record a screen change when it happens on its own?
      - Binary Mode or Yeehaw Mode (start with Yeehaw Mode)
+        - attempt to make everything binary mode!
+          - Use ANSI-extended format to be know the element names at each position
+             - this way we can test on any binary all the same but then have
+               additional special functionality if its a yeehaw TUI
+             - would require special build flag for the tui to be in testing mode
+          - For time shifts see https://github.com/wolfcw/libfaketime
+             - alternative simple system: 
+                - flag on yeehaw allows the time to be taken from an env. var.
+                - the snapshot tester just changes an env. var. when it's appropriate 
+                  to do so.
      - Integrate into regular testing
      - TUI ideally we should keep everything in one window.
        - diff view (only show the differences)
