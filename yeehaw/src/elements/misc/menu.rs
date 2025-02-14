@@ -5,6 +5,7 @@ use {
     std::collections::HashMap,
 };
 
+// TODO refactor to cache instead of just returning updates every drawing
 // TODO add :command hints on the right hand side for command menu items
 //      kind of like mac hotkey hints
 // TODO add keyboard interation

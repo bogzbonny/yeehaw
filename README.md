@@ -205,6 +205,13 @@ with upgrade instructions shall be maintained.
 
 HAVE NO FEAR
 
+ - The terminal widget consumes a lot of cpu because its constantly
+   recalculating (non-intelligently). This is going to be refactored and should
+   drastically reduce it's CPU usage. 
+ - There is a planned migration of the backend of the Terminal from vt100 to
+   wezterm-term + termwiz. This should have no effect on downstream users.
+ - The menu-bar needs a basic refactor to reduce cpu usage, it's constantly
+   recalculating each update.
  - There ain't much automated testing in here at all, soon a TUI snapshot tester
    is going to be developed, which should bring up coverage from about 0% as it
    stands (yikes!). 
@@ -231,6 +238,33 @@ HAVE NO FEAR
  - All the fancy color types (gradients, patterns) will likely get refactored
    and lumped together into a common Trait whereby entirely new classes of
    colors can be created by developers. 
+
+## Performance Considerations <!-- NOTE duplicate in docs/01_getting_started.md:169 -->
+
+TL;DR - Elements should provide drawing updates only when actually necessary,
+also things may be slightly laggy while in debug mode if deeply nested
+containers are used. Also currently time-base gradients trigger constant
+recalculation and will substantially increase cpu usage.
+
+The current design of the drawing system favours graphical flexibility over
+performance. Each element must implement the `Drawing` function which in turn
+returns `DrawUpdate`'s which can list of individual cell updates. For each
+redraw, container elements will then reposition all the draw information of
+their respective sub-elements. All this reprocessing which takes place in
+container elements is computationally inefficient as it occurs with each redraw
+cycle where changes occur. The inefficiency introduced by the current design may
+lead to slightly laggy interfaces but primarily only when compiled in debug mode
+and if deeply nested containers are used AND if those elements are providing
+continuous drawing updates. Use of parallel computation with rayon has been
+implemented to help mitigate these inefficiencies. In conclusion, to minimize
+the computational burden at render time, Elements should track their own state
+and only respond with drawing updates (in `fn drawing(..)`)  when their are
+actual state changes which warrant redrawing.
+
+The time based gradient design currently will cause ample recalculations, this
+will hopefully be improved with time, but just be aware that if you want to use
+those sweet sweet time gradient colors it will cost you. If you choose not to
+use time gradients you will be unaffected by these CPU drains.  
 
 ## Tribute
 

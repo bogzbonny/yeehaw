@@ -85,7 +85,6 @@ impl CachedPos {
                 }
                 break;
             }
-            debug_assert!(false, "attempted to remove from a layer that doesn't exist");
         }
         self.dirty = true;
         out

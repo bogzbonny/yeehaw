@@ -3,9 +3,6 @@
 10. table element
      - option to use underline instead of box drawing ch
      - autowidth or fixed width options
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 01. reduce CPU load by attempting to minimize the amount of calculations in the
     main tui render loop
      - aparently this line is a bottleneck https://github.com/bogzbonny/yeehaw/blob/main/yeehaw/src/tui.rs#L479
@@ -19,9 +16,12 @@
      - BUGS
        - seems like each elements are overwriting things to their right?
 
-05. An open window which is doing nothing consistently consumes large amounts of
-    CPU (see the window example, just open a basic debug window and watch the
-    cpu)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+05. BUG tabs panics in debug mode (probably for same reason as showcase)
+
+05. BUG for inline TUI clicking outside of the tui disables its from being able
+    to click anymore VERIFY THIS WAS THE CASE PRIOR to the draw_cache refactor
 
 10. resizing a scrollable pane should modify the offset of that pane to account
     for the extra space (instead of automatically extending out of range)
@@ -86,18 +86,9 @@ delete and not type 'h'. All changes should only be made within the "textbox.rs"
        refresh everywhere
 
 __________________________________________________________________________
-REFACTORS
+EFFICIENCY
 
-01. refactor organizer clear_elements and remove_element to take in a context
-    and send an exit event down. From the showcase:
-          // we need to send an exit command down to close the terminals...
-          // TODO this should be handled automatically within clear_elements
-          // just requires refactoring the context in.
-          let _ = main_pane.receive_event_inner(ctx, Event::Exit);
-          bsod.add_element(Box::new(text.clone()));
-          main_pane.clear_elements();
-
-01. Improving speed for Terminal Element
+01. Improving speed for Terminal Element, uses way to much CPU right now
     - The terminal can't really be optimized in quite the same way as the
       element; although it would be possible to take a diff on the terminal 
       and then only feed back the changed terminal-chs, we would need the
@@ -108,6 +99,28 @@ REFACTORS
             individual positions if they exist... this would require storing the
             DrawChPos in either a hashmap, or iterating through it all the time,
             either option seems not super ideal. 
+
+01. menu bar is constantly drawing a lot of CPU - probably because it's updating
+    constantly whether or not it needs too!
+
+10. panes within stack are consuming pretty amount CPU even when inactive
+    similar to window
+
+10. An open window which is doing nothing consistently consumes a pretty amounts of
+    CPU (see the window example, just open a basic debug window and watch the
+    cpu).. not that bad but maybe could be better
+
+__________________________________________________________________________
+REFACTORS
+
+01. refactor organizer clear_elements and remove_element to take in a context
+    and send an exit event down. From the showcase:
+          // we need to send an exit command down to close the terminals...
+          // TODO this should be handled automatically within clear_elements
+          // just requires refactoring the context in.
+          let _ = main_pane.receive_event_inner(ctx, Event::Exit);
+          bsod.add_element(Box::new(text.clone()));
+          main_pane.clear_elements();
 
 10. MousePossibility events: 
     - adjust mouse event logic to mirror that of the keyboard, each element
