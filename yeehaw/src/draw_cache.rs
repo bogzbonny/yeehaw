@@ -40,14 +40,14 @@ impl CachedPos {
         if self.dirty {
             self.layers.sort_by(|a, b| a.1.cmp(&b.1));
         }
-        if self.time_grad_count > 0 || self.dirty {
+        if self.dirty || self.time_grad_count > 0 {
             self.dirty = false;
 
             // start with the default
             let mut draw_ch = StyledContent::new(ContentStyle::default(), ChPlus::Char(' '));
 
             // iterate the layers from back to front creating the output ch
-            for (_, _, dcp) in self.layers.iter().rev() {
+            for (_, _, dcp) in self.layers.iter() {
                 draw_ch = dcp.get_content_style(ctx, draw_size, &draw_ch);
             }
             if let Some(ref last_draw_ch) = self.last_draw_ch {
@@ -72,27 +72,38 @@ impl CachedPos {
         }
     }
 
-    pub fn remove(&mut self, ids: &ElementIDPath) {
+    // returns true if the time gradient count decreased
+    pub fn remove(&mut self, ctx: &Context, ids: &ElementIDPath) -> bool {
+        let mut out = false;
         for i in 0..self.layers.len() {
-            if self.layers[i].0 == *ids {
+            if &self.layers[i].0 == ids {
                 let (_, _, dcp) = self.layers.remove(i);
-                if dcp.ch.style.is_time_effected() {
+                if dcp.ch.style.is_time_effected(ctx) {
                     // TODO non-saturating for debug
                     self.time_grad_count = self.time_grad_count.saturating_sub(1);
+                    out = true;
                 }
                 break;
             }
-            // TODO debug assert here?
+            debug_assert!(false, "attempted to remove from a layer that doesn't exist");
         }
         self.dirty = true;
+        out
     }
 
-    pub fn add(&mut self, ids: &ElementIDPath, zs: &ZIndexPath, dcp: DrawChPos) {
-        if dcp.ch.style.is_time_effected() {
+    // returns true if the time gradient count increased
+    pub fn add(
+        &mut self, ctx: &Context, ids: &ElementIDPath, zs: &ZIndexPath, dcp: DrawChPos,
+    ) -> bool {
+        let out = if dcp.ch.style.is_time_effected(ctx) {
             self.time_grad_count += 1;
-        }
+            true
+        } else {
+            false
+        };
         self.layers.push((ids.clone(), zs.clone(), dcp));
         self.dirty = true;
+        out
     }
 }
 
@@ -123,7 +134,7 @@ impl DrawingCache {
         }
     }
 
-    pub fn update(&mut self, mut updates: Vec<DrawUpdate>) {
+    pub fn update(&mut self, ctx: &Context, mut updates: Vec<DrawUpdate>) {
         if updates.is_empty() {
             return;
         }
@@ -135,8 +146,6 @@ impl DrawingCache {
             match update.action {
                 DrawAction::ClearAll => {
                     //debug!("clearing all at sub_id: {:?}", update.sub_id);
-                    //self.cached_upd
-                    //    .retain(|(ids, _, _)| !ids.starts_with(&update.sub_id));
 
                     // take all entries with the prefix and remove them
                     let mut cached = Vec::with_capacity(self.cached_upd.len());
@@ -151,42 +160,35 @@ impl DrawingCache {
                 }
                 DrawAction::Remove => {
                     //debug!("removing at sub_id: {:?}", update.sub_id);
-                    //self.cached_upd.retain(|(ids, _, _)| ids != &update.sub_id);
 
                     // take all entries with the prefix and remove them
                     let mut cached = Vec::with_capacity(self.cached_upd.len());
                     for (ids, zs, dcps) in self.cached_upd.drain(..) {
-                        if ids != update.sub_id {
-                            cached.push((ids, zs, dcps));
-                        } else {
+                        if ids == update.sub_id {
                             upd_2d_rm.push((ids, dcps));
+                        } else {
+                            cached.push((ids, zs, dcps));
                         }
                     }
                     self.cached_upd = cached;
                 }
                 DrawAction::Update(upd_dcps) => {
                     //debug!("updating at sub_id: {:?}", update.sub_id);
-                    //if let Some((_, z, draw)) = self
-                    //    .cached_upd
-                    //    .iter_mut()
-                    //    .find(|(ids, zs, dcps)| ids == &update.sub_id)
-                    //{
-                    //    *draw = d;
-                    //    *z = update.z_indicies.clone();
-                    //} else {
-                    //    self.cached_upd.push((update.sub_id, update.z_indicies, d));
-                    //}
 
                     // take all entries with the prefix and remove them, then add in the update
                     let mut cached = Vec::with_capacity(self.cached_upd.len());
                     for (ids, zs, dcps) in self.cached_upd.drain(..) {
-                        if ids != update.sub_id {
-                            cached.push((ids, zs, dcps));
-                        } else {
+                        if ids == update.sub_id {
                             upd_2d_rm.push((ids.clone(), dcps));
-                            cached.push((ids.clone(), update.z_indicies.clone(), upd_dcps.clone()));
+                        } else {
+                            cached.push((ids, zs, dcps));
                         }
                     }
+                    cached.push((
+                        update.sub_id.clone(),
+                        update.z_indicies.clone(),
+                        upd_dcps.clone(),
+                    ));
                     upd_2d_add.push((update.sub_id, update.z_indicies, upd_dcps));
                     self.cached_upd = cached;
                 }
@@ -213,6 +215,7 @@ impl DrawingCache {
 
         // now that the the updated are added to the cached_upd, we need to update
         // the cache_2d based on the removals and additions
+        debug!("upd_2d_rm.len(): {}", upd_2d_rm.len());
         for (ids, mut dcps) in upd_2d_rm.drain(..) {
             for dcp in dcps.drain(..) {
                 let (x, y) = (dcp.x, dcp.y);
@@ -224,7 +227,10 @@ impl DrawingCache {
                     debug_assert!(false, "attempted to remove from a cell that doesn't exist");
                     continue;
                 };
-                cell.remove(&ids);
+                let time_grad_count_decr = cell.remove(ctx, &ids);
+                if time_grad_count_decr {
+                    self.time_grad_count = self.time_grad_count.saturating_sub(1);
+                }
             }
         }
 
@@ -239,15 +245,24 @@ impl DrawingCache {
                     row.resize(x as usize + 1, CachedPos::default());
                 }
                 let cell = row.get_mut(x as usize).expect("impossible");
-                cell.add(&ids, &zs, dcp);
+                let time_grad_count_incr = cell.add(ctx, &ids, &zs, dcp);
+                if time_grad_count_incr {
+                    self.time_grad_count += 1;
+                }
             }
         }
     }
 
-    pub fn update_and_get2(
+    pub fn update_and_get(
         &mut self, ctx: &Context, draw_size: &Size, updates: Vec<DrawUpdate>,
     ) -> Vec<(usize, usize, StyledContent<ChPlus>)> {
-        self.update(updates);
+        let upd_len = updates.len();
+        self.update(ctx, updates);
+
+        // no updates, no time gradients, no need to do anything
+        if upd_len == 0 && self.time_grad_count == 0 {
+            return Vec::new();
+        }
 
         let mut out = Vec::new();
         for (y, row) in self.cache_2d.iter_mut().enumerate() {
@@ -255,24 +270,12 @@ impl DrawingCache {
                 if let Some(upd) = cell.get_update(ctx, draw_size) {
                     out.push((x, y, upd));
                 }
+                //let upd = cell.must_get_draw_ch(ctx, draw_size);
+                //out.push((x, y, upd));
             }
         }
+        debug!("drawing_cache.update_and_get2: out.len(): {}", out.len());
+
         out
-    }
-
-    // XXX remove
-    pub fn update_and_get(&mut self, updates: Vec<DrawUpdate>) -> impl Iterator<Item = &DrawChPos> {
-        self.update(updates);
-        self.get_all_drawing()
-    }
-
-    // XXX remove
-    pub fn get_all_drawing(&mut self) -> impl Iterator<Item = &DrawChPos> {
-        //debug!("------------");
-        //for (ids, z, _) in &self.0 {
-        //    debug!("ids: {:?}, z: {:?}", ids, z);
-        //}
-        self.cached_upd.sort_by(|(_, a, _), (_, b, _)| a.cmp(b)); // sort by z-indicies ascending order
-        self.cached_upd.iter().flat_map(|(_, _, d)| d.iter())
     }
 }

@@ -13,30 +13,47 @@ use {
 #[derive(Clone, Default, Debug)]
 #[allow(clippy::type_complexity)]
 pub struct ColorStore {
-    pub pos_gradients: Rc<RefCell<Vec<Vec<(DynVal, Color)>>>>,
-    pub time_gradients: Rc<RefCell<Vec<Vec<(Duration, Color)>>>>,
-    pub patterns: Rc<RefCell<Vec<Vec<Vec<Color>>>>>, //(Vec< (y) < Vec< (x) < Color>>>)
+    // NOTE the second bool is a store of if the gradient is effected by time
+    pub pos_gradients: Rc<RefCell<Vec<(Vec<(DynVal, Color)>, bool)>>>,
+    pub time_gradients: Rc<RefCell<Vec<Vec<(Duration, Color)>>>>, // no need for the bool, time gradients are ALWAYS time effected
+    pub patterns: Rc<RefCell<Vec<(Vec<Vec<Color>>, bool)>>>,      //(Vec< (y) < Vec< (x) < Color>>>)
 }
 
 impl ColorStore {
     pub fn add_pattern(&self, pattern: Vec<Vec<Color>>) -> usize {
+        let mut time_effected = false;
+        for c in pattern.iter().flatten() {
+            if c.is_time_effected(&self) {
+                time_effected = true;
+                break;
+            }
+        }
+
         // attempt to find the pattern in the store before adding it
         for (i, p) in self.patterns.borrow().iter().enumerate() {
-            if p == &pattern {
+            if p.0 == pattern {
                 return i;
             }
         }
-        self.patterns.borrow_mut().push(pattern);
+        self.patterns.borrow_mut().push((pattern, time_effected));
         self.patterns.borrow().len() - 1
     }
     pub fn add_pos_gradient(&self, gr: Vec<(DynVal, Color)>) -> usize {
+        let mut time_effected = false;
+        for (_, c) in gr.iter() {
+            if c.is_time_effected(&self) {
+                time_effected = true;
+                break;
+            }
+        }
+
         // attempt to find the gradient in the store before adding it
         for (i, g) in self.pos_gradients.borrow().iter().enumerate() {
-            if g == &gr {
+            if g.0 == gr {
                 return i;
             }
         }
-        self.pos_gradients.borrow_mut().push(gr);
+        self.pos_gradients.borrow_mut().push((gr, time_effected));
         self.pos_gradients.borrow().len() - 1
     }
     pub fn add_time_gradient(&self, gr: Vec<(Duration, Color)>) -> usize {
@@ -48,6 +65,20 @@ impl ColorStore {
         }
         self.time_gradients.borrow_mut().push(gr);
         self.time_gradients.borrow().len() - 1
+    }
+
+    pub fn is_pattern_time_effected(&self, id: usize) -> bool {
+        if let Some((_, te)) = self.patterns.borrow().get(id) {
+            return *te;
+        }
+        false
+    }
+
+    pub fn is_gradient_time_effected(&self, id: usize) -> bool {
+        if let Some((_, te)) = self.pos_gradients.borrow().get(id) {
+            return *te;
+        }
+        false
     }
 }
 
@@ -140,9 +171,12 @@ impl Color {
     }
 
     // is the evaluation of the color effected by time
-    pub fn is_time_effected(&self) -> bool {
+    pub fn is_time_effected(&self, cs: &ColorStore) -> bool {
         match self {
             Color::TimeGradient(_) => true,
+            Color::Gradient(c) => c.is_time_effected(cs),
+            Color::RadialGradient(c) => c.is_time_effected(cs),
+            Color::Pattern(c) => c.is_time_effected(cs),
             _ => false,
         }
     }
@@ -669,7 +703,7 @@ impl Gradient {
         let Some(grad) = grad else {
             return 0;
         };
-        grad.len()
+        grad.0.len()
     }
 
     pub fn get_grad(&self, ctx: &Context) -> Vec<(DynVal, Color)> {
@@ -678,7 +712,12 @@ impl Gradient {
         let Some(grad) = grad else {
             return vec![];
         };
-        grad.clone()
+        grad.0.clone()
+    }
+
+    // is the evaluation of this gradient effected by time
+    pub fn is_time_effected(&self, cs: &ColorStore) -> bool {
+        cs.is_gradient_time_effected(self.gradient_id)
     }
 
     pub fn to_color(&self, ctx: &Context, draw_size: &Size, x: u16, y: u16) -> Color {
@@ -688,7 +727,7 @@ impl Gradient {
             return Color::TRANSPARENT;
         };
 
-        if grad.is_empty() {
+        if grad.0.is_empty() {
             return Color::TRANSPARENT;
         }
 
@@ -775,6 +814,7 @@ impl Gradient {
 
         // loop the pos if it is outside the maximum value
         let max_pos = grad
+            .0
             .last()
             .expect("should not be empty")
             .0
@@ -791,7 +831,7 @@ impl Gradient {
         let mut end_clr: Option<Color> = None;
         let mut start_pos: Option<i32> = None;
         let mut end_pos: Option<i32> = None;
-        for ((p1, c1), (p2, c2)) in grad.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
+        for ((p1, c1), (p2, c2)) in grad.0.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
             if (p1.get_val(max_ctx_val) <= pos) && (pos < p2.get_val(max_ctx_val)) {
                 start_clr = Some(c1.clone());
                 end_clr = Some(c2.clone());
@@ -800,10 +840,10 @@ impl Gradient {
                 break;
             }
         }
-        let start_clr = start_clr.unwrap_or_else(|| grad[0].1.clone());
-        let end_clr = end_clr.unwrap_or_else(|| grad[grad.len() - 1].1.clone());
-        let start_pos = start_pos.unwrap_or_else(|| grad[0].0.get_val(max_ctx_val));
-        let end_pos = end_pos.unwrap_or_else(|| grad[grad.len() - 1].0.get_val(max_ctx_val));
+        let start_clr = start_clr.unwrap_or_else(|| grad.0[0].1.clone());
+        let end_clr = end_clr.unwrap_or_else(|| grad.0[grad.0.len() - 1].1.clone());
+        let start_pos = start_pos.unwrap_or_else(|| grad.0[0].0.get_val(max_ctx_val));
+        let end_pos = end_pos.unwrap_or_else(|| grad.0[grad.0.len() - 1].0.get_val(max_ctx_val));
         let percent = (pos - start_pos) as f64 / (end_pos - start_pos) as f64;
         start_clr.blend(ctx, &draw_size, x, y, end_clr, percent)
     }
@@ -818,7 +858,7 @@ impl Gradient {
             let Some(gr) = gr else {
                 return self.clone();
             };
-            let mut mod_gr = gr.clone();
+            let mut mod_gr = gr.0.clone();
             for (_, c) in mod_gr.iter_mut() {
                 *c = f(store, c);
             }
@@ -918,7 +958,7 @@ impl RadialGradient {
         let Some(grad) = grad else {
             return 0;
         };
-        grad.len()
+        grad.0.len()
     }
 
     pub fn get_grad(&self, ctx: &Context) -> Vec<(DynVal, Color)> {
@@ -927,7 +967,7 @@ impl RadialGradient {
         let Some(grad) = grad else {
             return vec![];
         };
-        grad.clone()
+        grad.0.clone()
     }
 
     fn dist_from_center(
@@ -951,13 +991,18 @@ impl RadialGradient {
         self.offset.1 += y;
     }
 
+    // is the evaluation of this gradient effected by time
+    pub fn is_time_effected(&self, cs: &ColorStore) -> bool {
+        cs.is_gradient_time_effected(self.gradient_id)
+    }
+
     pub fn to_color(&self, ctx: &Context, draw_size: &Size, x: u16, y: u16) -> Color {
         let grs = ctx.color_store.pos_gradients.borrow();
         let grad = grs.get(self.gradient_id);
         let Some(grad) = grad else {
             return Color::TRANSPARENT;
         };
-        if grad.is_empty() {
+        if grad.0.is_empty() {
             return Color::TRANSPARENT;
         }
 
@@ -1011,7 +1056,7 @@ impl RadialGradient {
         let mut end_clr: Option<Color> = None;
         let mut start_pos: Option<f64> = None;
         let mut end_pos: Option<f64> = None;
-        for ((p1, c1), (p2, c2)) in grad.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
+        for ((p1, c1), (p2, c2)) in grad.0.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
             if (p1.get_val(s.width.max(s.height)) as f64 <= dist)
                 && (dist < p2.get_val(s.width.max(s.height)) as f64)
             {
@@ -1023,12 +1068,12 @@ impl RadialGradient {
             }
         }
 
-        let start_clr = start_clr.unwrap_or_else(|| grad[0].1.clone());
-        let end_clr = end_clr.unwrap_or_else(|| grad[grad.len() - 1].1.clone());
+        let start_clr = start_clr.unwrap_or_else(|| grad.0[0].1.clone());
+        let end_clr = end_clr.unwrap_or_else(|| grad.0[grad.0.len() - 1].1.clone());
         let start_pos =
-            start_pos.unwrap_or_else(|| grad[0].0.get_val(s.width.max(s.height)) as f64);
-        let end_pos =
-            end_pos.unwrap_or_else(|| grad[grad.len() - 1].0.get_val(s.width.max(s.height)) as f64);
+            start_pos.unwrap_or_else(|| grad.0[0].0.get_val(s.width.max(s.height)) as f64);
+        let end_pos = end_pos
+            .unwrap_or_else(|| grad.0[grad.0.len() - 1].0.get_val(s.width.max(s.height)) as f64);
         let percent = (dist - start_pos) / (end_pos - start_pos);
         start_clr.blend(ctx, &draw_size, x, y, end_clr, percent)
     }
@@ -1043,7 +1088,7 @@ impl RadialGradient {
             let Some(gr) = gr else {
                 return self.clone();
             };
-            let mut mod_gr = gr.clone();
+            let mut mod_gr = gr.0.clone();
             for (_, c) in mod_gr.iter_mut() {
                 *c = f(store, c);
             }
@@ -1228,7 +1273,12 @@ impl Pattern {
         let Some(pattern) = pattern else {
             return vec![];
         };
-        pattern.clone()
+        pattern.0.clone()
+    }
+
+    // is the evaluation of this gradient effected by time
+    pub fn is_time_effected(&self, cs: &ColorStore) -> bool {
+        cs.is_pattern_time_effected(self.pattern_id)
     }
 
     // get the color at the given x, y on the pattern, looping once the end is reached
@@ -1243,15 +1293,15 @@ impl Pattern {
             );
             return Color::TRANSPARENT;
         };
-        if pattern.is_empty() {
+        if pattern.0.is_empty() {
             debug!("pattern is empty: {}", self.pattern_id);
             return Color::TRANSPARENT;
         }
         let x = (x as i32 - self.offset.0) as usize;
         let y = (y as i32 - self.offset.1) as usize;
-        let x = x % pattern[0].len();
-        let y = y % pattern.len();
-        pattern[y][x].clone()
+        let x = x % pattern.0[0].len();
+        let y = y % pattern.0.len();
+        pattern.0[y][x].clone()
     }
 
     #[allow(clippy::type_complexity)]
@@ -1264,7 +1314,7 @@ impl Pattern {
             let Some(pattern) = pattern else {
                 return self.clone();
             };
-            let mut mod_pattern = pattern.clone();
+            let mut mod_pattern = pattern.0.clone();
             for cs in mod_pattern.iter_mut() {
                 for c in cs.iter_mut() {
                     *c = f(store, c);

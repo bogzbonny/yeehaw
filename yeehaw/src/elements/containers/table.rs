@@ -412,7 +412,7 @@ impl Table {
         }
         self.pane.set_content_width(max_x);
         self.pane.set_content_height(max_y);
-        debug!("setting max_x: {}, max_y: {}", max_x, max_y);
+        //debug!("setting max_x: {}, max_y: {}", max_x, max_y);
 
         let content_width = self.pane.get_content_width(Some(dr));
         let content_height = self.pane.get_content_height(Some(dr));
@@ -623,7 +623,7 @@ impl Table {
         //}
 
         // Update the pane's content
-        debug!("content:\n{}", content);
+        //debug!("content:\n{}", content);
         self.pane.pane.pane.set_content(content);
     }
 

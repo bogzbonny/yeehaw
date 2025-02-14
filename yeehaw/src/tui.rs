@@ -58,13 +58,6 @@ pub struct Tui {
     /// if Some then the TUI is rendered inline in the terminal
     pub inline: Option<Rc<RefCell<InlineTui>>>,
 
-    // last flushed internal screen, used to determine what needs to be flushed next
-    //                            x  , y
-    //pub sc_last_flushed: HashMap<(u16, u16), StyledContent<ChPlus>>,
-    //pub sc_last_flushed: Vec<Vec<Option<StyledContent<ChPlus>>>>,
-
-    // kept so we don't need to re-allocate each render cycle
-    //dedup_chs: Vec<Vec<Option<StyledContent<ChPlus>>>>,
     /// true if exit
     pub exit_recv: WatchReceiver<bool>,
     /// event receiver for internally generated events
@@ -103,8 +96,6 @@ impl Tui {
             animation_speed: DEFAULT_ANIMATION_SPEED,
             kill_on_ctrl_c: true,
             inline: None,
-            //sc_last_flushed: Vec::new(),
-            //dedup_chs: Vec::new(),
             exit_recv,
             ev_recv,
         };
@@ -430,82 +421,10 @@ impl Tui {
         let ctx = self.context();
         let dr = self.draw_region();
         let updates = self.cup.eo.all_drawing_updates(&ctx, &dr, false);
-        //let chs = self.drawing_cache.update_and_get(updates);
 
-        //// TODO could be optimized with rayon if we could draw everything that doesn't
-        //// depend on anything else in seperate passes.
-        //self.dedup_chs.clear();
-        //for c in chs {
-        //    // remove out of bounds
-        //    if c.x >= dr.size.width || c.y >= dr.size.height {
-        //        continue;
-        //    }
+        //self.drawing_cache.clear_screen();
+        let mut upd = self.drawing_cache.update_and_get(&ctx, &dr.size, updates);
 
-        //    // determine the character style, provide the underlying content
-        //    // for alpha considerations
-        //    let prev_content = if let Some(row) = self.dedup_chs.get(c.y as usize) {
-        //        if let Some(Some(prev_content)) = row.get(c.x as usize) {
-        //            prev_content
-        //        } else {
-        //            &StyledContent::new(ContentStyle::default(), ChPlus::Char(' '))
-        //        }
-        //    } else {
-        //        &StyledContent::new(ContentStyle::default(), ChPlus::Char(' '))
-        //    };
-        //    let content = c.get_content_style(&ctx, &dr.size, prev_content);
-
-        //    // insert the new content
-        //    match self.dedup_chs.get_mut(c.y as usize) {
-        //        Some(row) => {
-        //            if row.len() <= c.x as usize {
-        //                row.resize(c.x as usize + 1, None);
-        //            }
-        //            row[c.x as usize] = Some(content);
-        //        }
-        //        None => {
-        //            if self.dedup_chs.len() <= c.y as usize {
-        //                let empty_row = vec![None; c.x as usize + 1];
-        //                self.dedup_chs.resize(c.y as usize + 1, empty_row);
-        //            }
-        //            self.dedup_chs[c.y as usize][c.x as usize] = Some(content);
-        //        }
-        //    }
-        //}
-
-        let mut upd = self.drawing_cache.update_and_get2(&ctx, &dr.size, updates);
-
-        //let mut do_flush = false;
-        //for (y, row) in self.dedup_chs.iter().enumerate() {
-        //    let y = y + y_offset as usize;
-        //    for (x, sty) in row.iter().enumerate() {
-        //        let Some(sty) = sty else {
-        //            continue;
-        //        };
-        //        if self.is_ch_style_at_position_dirty(x as u16, y as u16, sty) {
-        //            queue!(
-        //                &mut sc,
-        //                MoveTo(x as u16, y as u16),
-        //                style::PrintStyledContent(sty.clone())
-        //            )?;
-        //            match self.sc_last_flushed.get_mut(y) {
-        //                Some(row) => {
-        //                    if row.len() <= x {
-        //                        row.resize(x + 1, None);
-        //                    }
-        //                    row[x] = Some(sty.clone());
-        //                }
-        //                None => {
-        //                    let empty_row = vec![None; x + 1];
-        //                    if self.sc_last_flushed.len() <= y {
-        //                        self.sc_last_flushed.resize(y + 1, empty_row);
-        //                    }
-        //                    self.sc_last_flushed[y][x] = Some(sty.clone());
-        //                }
-        //            }
-        //            do_flush = true;
-        //        }
-        //    }
-        //}
         if !upd.is_empty() {
             let y_offset = if let Some(inline) = &self.inline {
                 inline.borrow().cursor_start_row as usize
@@ -520,31 +439,13 @@ impl Tui {
                     style::PrintStyledContent(upd)
                 )?;
             }
+            sc.flush()?;
         }
 
-        //if do_flush {
-        //    sc.flush()?;
-        //}
-        sc.flush()?;
         self.last_render = std::time::Instant::now(); // important only set this at the end
         self.rendering = false;
         Ok(())
     }
-
-    //pub fn is_ch_style_at_position_dirty(
-    //    &self, x: u16, y: u16, sty: &StyledContent<ChPlus>,
-    //) -> bool {
-    //    let Some(row) = self.sc_last_flushed.get(y as usize) else {
-    //        return true;
-    //    };
-    //    let Some(existing_sty) = row.get(x as usize) else {
-    //        return true;
-    //    };
-    //    let Some(existing_sty) = existing_sty else {
-    //        return true;
-    //    };
-    //    !(existing_sty == sty)
-    //}
 }
 
 pub fn process_event_resps(

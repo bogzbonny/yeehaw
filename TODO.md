@@ -19,6 +19,10 @@
      - BUGS
        - seems like each elements are overwriting things to their right?
 
+05. An open window which is doing nothing consistently consumes large amounts of
+    CPU (see the window example, just open a basic debug window and watch the
+    cpu)
+
 10. resizing a scrollable pane should modify the offset of that pane to account
     for the extra space (instead of automatically extending out of range)
 

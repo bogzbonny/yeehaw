@@ -313,14 +313,14 @@ impl Style {
         }
     }
 
-    pub fn is_time_effected(&self) -> bool {
+    pub fn is_time_effected(&self, ctx: &Context) -> bool {
         if let Some((fg, _)) = &self.fg {
-            if fg.is_time_effected() {
+            if fg.is_time_effected(&ctx.color_store) {
                 return true;
             }
         }
         if let Some((bg, _)) = &self.bg {
-            if bg.is_time_effected() {
+            if bg.is_time_effected(&ctx.color_store) {
                 return true;
             }
         }
