@@ -1,69 +1,23 @@
-05. Ability to use arrow keys to select menu item when menu is open
-
-10. table element
-     - option to use underline instead of box drawing ch
-     - autowidth or fixed width options
-01. reduce CPU load by attempting to minimize the amount of calculations in the
-    main tui render loop
-     - aparently this line is a bottleneck https://github.com/bogzbonny/yeehaw/blob/main/yeehaw/src/tui.rs#L479
-        - Yeah that line is basically checking to see if the content on the
-          screen needs to be redrawn at the provided position, yeehaw keeps a
-          hashmap of what it last drew on the screen which it's referencing
-          there. I'm sure there's a cheaper way to do perform this logic, either
-          through just using a 2D array or dashmap. 
-     - also this section: https://github.com/bogzbonny/yeehaw/blob/main/yeehaw/src/tui.rs#L433 
-           yeehaw/src/tui.rs:433 
-     - BUGS
-       - seems like each elements are overwriting things to their right?
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-01. BUG the do not click window still has the tabs-top in it
+01. improve efficiency more, don't look through the entire cache constantly! 
+     - the within draw_cache the dirty cells should just add themselves to a
+       list
+     - the time-effected should add themselves to a seperate list
+     - keep a "all-dirty" bool which can be turned on when the screen is cleared
+        - this will enfore an entire 2d-cache loopthrough
+     - rather than looping through the entire 2d-cache we could just look at
+        - FIRST the time-effected list (do this first as it will fix anything on 
+          the duplicate dirty list)
+        - SECOND the dirty list
+
+01. wezterm-term demo
+     - https://github.com/wezterm/wezterm/issues/6663
 
 01. BUG for inline TUI moving the mouse outside of the tui disables its from
     being able to click anymore - this has been the case FOR A WHILE, I suspect
     that it is getting caught in some kind of infinite loop 
-
-10. resizing a scrollable pane should modify the offset of that pane to account
-    for the extra space (instead of automatically extending out of range)
-
-Change the scrollable pane element
-(yeehaw/src/elements/panes/pane_scrollable.rs) so that it modifies its offset
-appropriately when ever it's resized. When increasing the size of a scrollable
-pane if the offsets are larger than 0, then the offsets should be reduced (to
-a minimum of 0) so that the scrollable pane does not extend beyond its provided
-range
-
-01. improper handling of "delete" (control-delete) in textbox interpreted as
-    control-h
-
-within the textbox element (file is "yeehaw/src/elements/widgets/textbox.rs")
-there is improper handling of the "delete" key (control-delete on mac) the
-textbox interprets it as control-h. Fix this so it will actually perform a
-delete and not type 'h'. All changes should only be made within the "textbox.rs"
-
-20. add functionality for terminal-title renaming through the esc sequence: 
-      - echo -ne "\e]0;Your New Tab Title\a"
-
-01. showcase bug left and right keys dont work good on the distance slider of
-    the colors example if the size of the screen is large, this is because the 
-    changes made by incrementing the slider by "1 tick" doesn't account for
-    enough of an integer change in the numbers text box, thus the slider gets
-    pushed back to its original output.
-      - solution: have a "minimum increment" option for the slider (in this
-        example it would be min 1/20th) if the position movement is less than
-        this minimum then bump it to the minimum.
-
-01. in kitty, when expanding a stack with an image in it past the righthand 
-    side the image "loops" to the next line and leaves "skip" artifacts on the next row
-
-01. numbers textbox + dial slider is a nice pattern which should be grouped
-    together.
-
-05. showcase window generator
-     - the selectable pane keyboard stops working after the first window is generated.
-        - maybe because window generation calles unfocus others
-05. showcase bugs with keyboard event routing within recursive showcase tab
 
 05. Theme Manager - it would be awesome to be able to just get the colors for
     each element from a provided theme manager
@@ -276,12 +230,26 @@ OR use egui??? https://github.com/gold-silver-copper/egui_ratatui
 
 10. put the showcase on a github page!
 
+20. add functionality for terminal-title renaming through the esc sequence: 
+      - echo -ne "\e]0;Your New Tab Title\a"
+
 30. Android/Iphone backend with https://capacitorjs.com/solution/react 
      - once xterm.js backend is a thing
 
 __________________________________________________________________________
 BUGFIXES/PATCHES
 
+05. showcase bug left and right keys dont work good on the distance slider of
+    the colors example if the size of the screen is large, this is because the 
+    changes made by incrementing the slider by "1 tick" doesn't account for
+    enough of an integer change in the numbers text box, thus the slider gets
+    pushed back to its original output.
+      - solution: have a "minimum increment" option for the slider (in this
+        example it would be min 1/20th) if the position movement is less than
+        this minimum then bump it to the minimum.
+
+05. in kitty, when expanding a stack with an image in it past the righthand 
+    side the image "loops" to the next line and leaves "skip" artifacts on the next row
 
 05. neovim editor, doesn't save if you do :wq (does if you do :w)
 
@@ -298,6 +266,14 @@ Change the scrollable pane element
 when ever it's resized. Resizing a scrollable pane should modify the starting
 offsets of that pane to account for the extra space instead of automatically
 extending the pane out of range.
+
+10. improper handling of "delete" (control-delete) in textbox interpreted as
+    control-h
+
+within the textbox element (file is "yeehaw/src/elements/widgets/textbox.rs")
+there is improper handling of the "delete" key (control-delete on mac) the
+textbox interprets it as control-h. Fix this so it will actually perform a
+delete and not type 'h'. All changes should only be made within the "textbox.rs"
 
 10. dropdownlist hook for "before open" 
      - this could refresh items in the list the moment before it was opened 
@@ -442,6 +418,9 @@ CONTAINERS
 
 __________________________________________________________________________
 WIDGETS
+
+10. numbers textbox + dial slider is a nice pattern which should be grouped
+    together.
 
 10. Scrollable log screen like kwaak uses.
 
@@ -698,10 +677,10 @@ LOW-PRIORITY
 30. :Command pane and functionality
       - use custom event routing system
 
-30. tabs with border
-╭─────╮────╮────╮──────╮  ╭─────╭────╮────╮──────╮ ╭─────╭────╭────╮──────╮
-│tabs1│tab2│tab3│ tab4 │  │tabs1│tab2│tab3│ tab4 │ │tabs1│tab2│tab3│ tab4 │
-│     └────────────────╮  ├─────┘    └────┴──────┤ ├─────┴────┘    └──────┤
+30. tabs with border 
+╭────╮╭────╮╭────╮╭────╮  ╭────╮╭────╮╭────╮╭────╮ ╭────╮╭────╮╭────╮╭────╮
+│tab1││tab2││tab3││tab4│  │tab1││tab2││tab3││tab4│ │tab1││tab2││tab3││tab4│
+│    └─────────────────╮  ╭─────┘    └───────────╮ ╭─────────────────┘    │
 │                      │  │                      │ │                      │
 │                      │  │                      │ │                      │
 │                      │  │                      │ │                      │

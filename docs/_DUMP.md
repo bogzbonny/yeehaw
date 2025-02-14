@@ -4,6 +4,24 @@ will eventually be sifted through and included in actual docs - at which point
 this document will be deleted
 __________________________________________________
 
+
+05. Ability to use arrow keys to select menu item when menu is open
+10. table element
+     - option to use underline instead of box drawing ch
+     - autowidth or fixed width options
+01. reduce CPU load by attempting to minimize the amount of calculations in the
+    main tui render loop
+     - aparently this line is a bottleneck https://github.com/bogzbonny/yeehaw/blob/main/yeehaw/src/tui.rs#L479
+        - Yeah that line is basically checking to see if the content on the
+          screen needs to be redrawn at the provided position, yeehaw keeps a
+          hashmap of what it last drew on the screen which it's referencing
+          there. I'm sure there's a cheaper way to do perform this logic, either
+          through just using a 2D array or dashmap. 
+     - also this section: https://github.com/bogzbonny/yeehaw/blob/main/yeehaw/src/tui.rs#L433 
+           yeehaw/src/tui.rs:433 
+     - BUGS
+       - seems like each elements are overwriting things to their right?
+01. BUG the do not click window still has the tabs-top in it
 01. go through and remove / or make dyn element fns named with_width with_height
 01. widgets example should be the same as showcase
 01. upgrade max_of to .with_max (and min)
