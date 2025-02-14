@@ -38,7 +38,12 @@ impl ColorStore {
         self.patterns.borrow_mut().push((pattern, time_effected));
         self.patterns.borrow().len() - 1
     }
-    pub fn add_pos_gradient(&self, gr: Vec<(DynVal, Color)>) -> usize {
+    pub fn add_pos_gradient(&self, mut gr: Vec<(DynVal, Color)>) -> usize {
+        //flatten all the DynVals, this will improve color clone efficiency
+        for g in gr.iter_mut() {
+            g.0.flatten_internal();
+        }
+
         let mut time_effected = false;
         for (_, c) in gr.iter() {
             if c.is_time_effected(self) {
@@ -232,7 +237,7 @@ impl Color {
     #[allow(clippy::too_many_arguments)]
     /// blends two colors together with the given percentage of the other color
     pub fn blend(
-        &self, cs: &ColorStore, dsl: &Duration, draw_size: &Size, x: u16, y: u16, other: Color,
+        &self, cs: &ColorStore, dsl: &Duration, draw_size: &Size, x: u16, y: u16, other: &Color,
         percent_other: f64,
     ) -> Color {
         match self {
@@ -245,32 +250,28 @@ impl Color {
             }
             Color::Rgba(c) => match other {
                 Color::ANSI(a) => {
-                    if a == CrosstermColor::Reset {
+                    if *a == CrosstermColor::Reset {
                         return self.clone();
                     }
-                    let oc = crossterm_to_rgb(a);
-                    self.blend(cs, dsl, draw_size, x, y, oc, percent_other)
+                    let oc = crossterm_to_rgb(*a);
+                    self.blend(cs, dsl, draw_size, x, y, &oc, percent_other)
                 }
-                Color::Rgba(oc) => Color::Rgba(blend(*c, oc, percent_other)),
+                Color::Rgba(oc) => Color::Rgba(blend(c, oc, percent_other)),
                 Color::Gradient(gr) => {
                     let gr = gr.to_color(cs, dsl, draw_size, x, y);
-                    self.clone()
-                        .blend(cs, dsl, draw_size, x, y, gr, percent_other)
+                    self.blend(cs, dsl, draw_size, x, y, &gr, percent_other)
                 }
                 Color::TimeGradient(g) => {
                     let g = g.to_color(cs, dsl, draw_size, x, y);
-                    self.clone()
-                        .blend(cs, dsl, draw_size, x, y, g, percent_other)
+                    self.blend(cs, dsl, draw_size, x, y, &g, percent_other)
                 }
                 Color::RadialGradient(rg) => {
                     let rg = rg.to_color(cs, dsl, draw_size, x, y);
-                    self.clone()
-                        .blend(cs, dsl, draw_size, x, y, rg, percent_other)
+                    self.blend(cs, dsl, draw_size, x, y, &rg, percent_other)
                 }
                 Color::Pattern(p) => {
                     let p = p.to_color(cs, dsl, x, y);
-                    self.clone()
-                        .blend(cs, dsl, draw_size, x, y, p, percent_other)
+                    self.blend(cs, dsl, draw_size, x, y, &p, percent_other)
                 }
             },
             Color::Gradient(gr) => {
@@ -838,21 +839,21 @@ impl Gradient {
         }
 
         // find the two colors to blend
-        let mut start_clr: Option<Color> = None;
-        let mut end_clr: Option<Color> = None;
+        let mut start_clr: Option<&Color> = None;
+        let mut end_clr: Option<&Color> = None;
         let mut start_pos: Option<i32> = None;
         let mut end_pos: Option<i32> = None;
-        for ((p1, c1), (p2, c2)) in grad.0.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
+        for ((p1, c1), (p2, c2)) in grad.0.windows(2).map(|w| (&w[0], &w[1])) {
             if (p1.get_val(max_ctx_val) <= pos) && (pos < p2.get_val(max_ctx_val)) {
-                start_clr = Some(c1.clone());
-                end_clr = Some(c2.clone());
+                start_clr = Some(c1);
+                end_clr = Some(c2);
                 start_pos = Some(p1.get_val(max_ctx_val));
                 end_pos = Some(p2.get_val(max_ctx_val));
                 break;
             }
         }
-        let start_clr = start_clr.unwrap_or_else(|| grad.0[0].1.clone());
-        let end_clr = end_clr.unwrap_or_else(|| grad.0[grad.0.len() - 1].1.clone());
+        let start_clr = start_clr.unwrap_or_else(|| &grad.0[0].1);
+        let end_clr = end_clr.unwrap_or_else(|| &grad.0[grad.0.len() - 1].1);
         let start_pos = start_pos.unwrap_or_else(|| grad.0[0].0.get_val(max_ctx_val));
         let end_pos = end_pos.unwrap_or_else(|| grad.0[grad.0.len() - 1].0.get_val(max_ctx_val));
         let percent = (pos - start_pos) as f64 / (end_pos - start_pos) as f64;
@@ -1065,24 +1066,24 @@ impl RadialGradient {
             dist -= max_dist;
         }
 
-        let mut start_clr: Option<Color> = None;
-        let mut end_clr: Option<Color> = None;
+        let mut start_clr: Option<&Color> = None;
+        let mut end_clr: Option<&Color> = None;
         let mut start_pos: Option<f64> = None;
         let mut end_pos: Option<f64> = None;
-        for ((p1, c1), (p2, c2)) in grad.0.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
+        for ((p1, c1), (p2, c2)) in grad.0.windows(2).map(|w| (&w[0], &w[1])) {
             if (p1.get_val(s.width.max(s.height)) as f64 <= dist)
                 && (dist < p2.get_val(s.width.max(s.height)) as f64)
             {
-                start_clr = Some(c1.clone());
-                end_clr = Some(c2.clone());
+                start_clr = Some(c1);
+                end_clr = Some(c2);
                 start_pos = Some(p1.get_val(s.width.max(s.height)) as f64);
                 end_pos = Some(p2.get_val(s.width.max(s.height)) as f64);
                 break;
             }
         }
 
-        let start_clr = start_clr.unwrap_or_else(|| grad.0[0].1.clone());
-        let end_clr = end_clr.unwrap_or_else(|| grad.0[grad.0.len() - 1].1.clone());
+        let start_clr = start_clr.unwrap_or_else(|| &grad.0[0].1);
+        let end_clr = end_clr.unwrap_or_else(|| &grad.0[grad.0.len() - 1].1);
         let start_pos =
             start_pos.unwrap_or_else(|| grad.0[0].0.get_val(s.width.max(s.height)) as f64);
         let end_pos = end_pos
@@ -1184,21 +1185,21 @@ impl TimeGradient {
         while d >= self.total_dur {
             d -= self.total_dur;
         }
-        let mut start_clr: Option<Color> = None;
-        let mut end_clr: Option<Color> = None;
+        let mut start_clr: Option<&Color> = None;
+        let mut end_clr: Option<&Color> = None;
         let mut start_time: Option<Duration> = None;
         let mut end_time: Option<Duration> = None;
-        for ((t1, c1), (t2, c2)) in grad.windows(2).map(|w| (w[0].clone(), w[1].clone())) {
-            if (t1 <= d) && (d < t2) {
-                start_clr = Some(c1.clone());
-                end_clr = Some(c2.clone());
-                start_time = Some(t1);
-                end_time = Some(t2);
+        for ((t1, c1), (t2, c2)) in grad.windows(2).map(|w| (&w[0], &w[1])) {
+            if (*t1 <= d) && (d < *t2) {
+                start_clr = Some(c1);
+                end_clr = Some(c2);
+                start_time = Some(*t1);
+                end_time = Some(*t2);
                 break;
             }
         }
-        let start_clr = start_clr.unwrap_or_else(|| grad[0].1.clone());
-        let end_clr = end_clr.unwrap_or_else(|| grad[grad.len() - 1].1.clone());
+        let start_clr = start_clr.unwrap_or_else(|| &grad[0].1);
+        let end_clr = end_clr.unwrap_or_else(|| &grad[grad.len() - 1].1);
         let start_time = start_time.unwrap_or_else(|| grad[0].0);
         let end_time = end_time.unwrap_or_else(|| grad[grad.len() - 1].0);
         let percent = (d - start_time).as_secs_f64() / (end_time - start_time).as_secs_f64();
@@ -1359,7 +1360,7 @@ impl Default for Rgba {
     }
 }
 
-pub fn blend(c1: Rgba, c2: Rgba, perc_c2: f64) -> Rgba {
+pub fn blend(c1: &Rgba, c2: &Rgba, perc_c2: f64) -> Rgba {
     let c1_a_perc = c1.a as f64 / 255.0;
     let c2_a_perc = c2.a as f64 / 255.0;
     let a_blend_perc = c1_a_perc + c2_a_perc - (c1_a_perc * c2_a_perc);

@@ -40,6 +40,7 @@
 
 __________________________________________________________________________
 EFFICIENCY
+flamegraph -o flame.svg --image-width=4000 --root -- ./target/debug/examples/colors teeff
 
 01. Improving speed for Terminal Element, uses way to much CPU right now
     - The terminal can't really be optimized in quite the same way as the

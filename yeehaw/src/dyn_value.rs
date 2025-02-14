@@ -180,7 +180,7 @@ impl DynVal {
         out.plus(padding.into())
     }
 
-    /// Get the value from the absolute and relative psvts
+    /// Get the value from the absolute and relative parts  
     pub fn get_val(&self, max_size: u16) -> i32 {
         let flex = max_size as f64 * self.flex;
         let flex = f64::round(flex) as i32;
