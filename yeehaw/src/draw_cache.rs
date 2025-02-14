@@ -2,7 +2,7 @@ use {
     super::element::{ElementIDPath, ZIndexPath},
     crate::{ChPlus, ColorStore, Context, DrawAction, DrawChPos, DrawUpdate, Size},
     crossterm::style::{ContentStyle, StyledContent},
-    //rayon::prelude::*,
+    rayon::prelude::*,
     std::time::Duration,
 };
 
@@ -282,26 +282,22 @@ impl DrawingCache {
         let cs = &ctx.color_store;
         let dsl = &ctx.dur_since_launch;
 
-        let mut out = Vec::new();
-        for (y, row) in self.cache_2d.iter_mut().enumerate() {
-            for (x, cell) in row.iter_mut().enumerate() {
-                if let Some(upd) = cell.get_update(cs, dsl, draw_size) {
-                    out.push((x, y, upd));
-                }
-            }
-        }
-        out
         //let mut out = Vec::new();
         //for (y, row) in self.cache_2d.iter_mut().enumerate() {
-        //    // NOTE computational bottleneck, use rayon
-        //    out.par_extend(row.into_par_iter().enumerate().filter_map(|(x, cell)| {
-        //        if let Some(upd) = cell.get_update(ctx, draw_size) {
-        //            Some((x, y, upd))
-        //        } else {
-        //            None
+        //    for (x, cell) in row.iter_mut().enumerate() {
+        //        if let Some(upd) = cell.get_update(cs, dsl, draw_size) {
+        //            out.push((x, y, upd));
         //        }
-        //    }));
+        //    }
         //}
         //out
+        let mut out = Vec::new();
+        for (y, row) in self.cache_2d.iter_mut().enumerate() {
+            // NOTE computational bottleneck, use rayon
+            out.par_extend(row.into_par_iter().enumerate().filter_map(|(x, cell)| {
+                cell.get_update(cs, dsl, draw_size).map(|upd| (x, y, upd))
+            }));
+        }
+        out
     }
 }
