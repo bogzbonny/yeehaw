@@ -136,6 +136,13 @@ impl Table {
         self.is_dirty.replace(true);
     }
 
+    /// doesn't clear the header (1st) row
+    pub fn clear_data(&self) {
+        for row in 1..self.cells.borrow().len() {
+            self.remove_row(row);
+        }
+    }
+
     pub fn set_data(&self, ctx: &Context, data: Vec<Vec<&str>>) {
         for (row, row_data) in data.into_iter().enumerate() {
             self.set_row(ctx, row + 1, row_data); // row starts at 1 as 0 is reserved for the header row
@@ -198,15 +205,40 @@ impl Table {
         self.is_dirty.replace(true);
     }
 
+    pub fn set_column_el(&self, col: usize, data: Vec<Box<dyn Element>>) {
+        let mut cells = self.cells.borrow_mut();
+        for (row, el) in data.into_iter().enumerate() {
+            if row >= cells.len() {
+                cells.resize(row, Vec::new());
+            }
+            if col >= cells[row].len() {
+                cells[row].resize(col + 1, None);
+            }
+            self.pane.add_element(el.clone());
+            cells[row][col] = Some(el);
+        }
+        self.is_dirty.replace(true);
+    }
+
     /// push a row of data to the end of the table
     pub fn push_row(&self, ctx: &Context, data: Vec<&str>) {
         let row_count = self.cells.borrow().len();
         self.set_row(ctx, row_count, data);
     }
 
+    pub fn push_row_el(&self, data: Vec<Box<dyn Element>>) {
+        let row_count = self.cells.borrow().len();
+        self.set_row_el(row_count, data);
+    }
+
     pub fn push_column(&self, ctx: &Context, data: Vec<&str>) {
         let col_count = self.cells.borrow()[0].len();
         self.set_column(ctx, col_count, data);
+    }
+
+    pub fn push_column_el(&self, data: Vec<Box<dyn Element>>) {
+        let col_count = self.cells.borrow()[0].len();
+        self.set_column_el(col_count, data);
     }
 
     pub fn remove_row(&self, row: usize) {
@@ -614,16 +646,7 @@ impl Table {
             }
         }
 
-        //// debug, print all the table cell locations
-        //for (row_i, row) in self.cells.borrow().iter().enumerate() {
-        //    for (col, cell) in row.iter().enumerate() {
-        //        let loc = cell.as_ref().unwrap().get_dyn_location_set().l.clone();
-        //        debug!("loc (row: {:?}, col: {:?}): {:?}", row_i, col, loc);
-        //    }
-        //}
-
         // Update the pane's content
-        //debug!("content:\n{}", content);
         self.pane.pane.pane.set_content(content);
     }
 
