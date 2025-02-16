@@ -36,6 +36,14 @@ async fn main() -> Result<(), Error> {
         ],
     );
 
+    table.highlight_row(
+        0,
+        Style::default()
+            .with_bg(Color::YELLOW)
+            .with_fg(Color::BLACK),
+    );
+    table.clear_highlights();
+
     table.pane.set_at(0.into(), 3.into());
     let limiter = PaneLimiter::new(Box::new(table.clone()), 100, 15);
     main.add_element(Box::new(limiter));

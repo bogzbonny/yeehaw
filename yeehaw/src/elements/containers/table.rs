@@ -30,6 +30,13 @@ pub struct Table {
     pub cells: Rc<RefCell<Vec<Vec<Option<Box<dyn Element>>>>>>,
     pub style: Rc<RefCell<TableStyle>>,
 
+    /// position (y) and height of each row
+    //                           (y    , height)
+    pub row_attr: Rc<RefCell<Vec<(usize, usize)>>>,
+
+    // highlighted row positions and colors
+    pub row_highlights: Rc<RefCell<Vec<(usize, Style)>>>,
+
     pub last_size: Rc<RefCell<Size>>,
     pub is_dirty: Rc<RefCell<bool>>,
 }
@@ -72,6 +79,8 @@ impl Table {
             row_dim: Rc::new(RefCell::new(TableDimension::Auto)),
             cells: Rc::new(RefCell::new(Vec::new())),
             style: Rc::new(RefCell::new(TableStyle::default())),
+            row_attr: Rc::new(RefCell::new(Vec::new())),
+            row_highlights: Rc::new(RefCell::new(Vec::new())),
             last_size: Rc::new(RefCell::new(Size::new(0, 0))),
             is_dirty: Rc::new(RefCell::new(true)),
         }
@@ -126,7 +135,11 @@ impl Table {
     }
 
     pub fn set_cell(&self, ctx: &Context, row: usize, col: usize, text: &str) {
-        self.set_element(row, col, Box::new(Label::new(ctx, text)));
+        self.set_element(
+            row,
+            col,
+            Box::new(Label::new(ctx, text).with_style(Style::transparent())),
+        );
         self.is_dirty.replace(true);
     }
 
@@ -183,7 +196,7 @@ impl Table {
             cells[row].resize(col_count, None);
         }
         for (col, s) in data.into_iter().enumerate() {
-            let el = Box::new(Label::new(ctx, s));
+            let el = Box::new(Label::new(ctx, s).with_style(Style::transparent()));
             self.pane.add_element(el.clone());
             cells[row][col] = Some(el);
         }
@@ -199,7 +212,7 @@ impl Table {
             if col >= cells[row].len() {
                 cells[row].resize(col + 1, None);
             }
-            let el = Box::new(Label::new(ctx, s));
+            let el = Box::new(Label::new(ctx, s).with_style(Style::transparent()));
             self.pane.add_element(el.clone());
             cells[row][col] = Some(el);
         }
@@ -278,6 +291,17 @@ impl Table {
         }
         self.pane.add_element(element.clone());
         cells[row][col] = Some(element);
+        self.is_dirty.replace(true);
+    }
+
+    pub fn highlight_row(&self, row: usize, sty: Style) {
+        let row = row + 1; // to skip header row
+        self.row_highlights.borrow_mut().push((row, sty));
+        self.is_dirty.replace(true);
+    }
+
+    pub fn clear_highlights(&self) {
+        self.row_highlights.borrow_mut().clear();
         self.is_dirty.replace(true);
     }
 
@@ -403,8 +427,11 @@ impl Table {
 
         // iterate through all the cells and set the position el.set_dyn_location(l) considering
         // border and lines positions
+        // also set the row attributes
+        self.row_attr.borrow_mut().clear();
         for row in 0..end_row {
             let height = row_heights[row];
+            self.row_attr.borrow_mut().push((y, height));
             for (col, width) in col_widths.iter().enumerate() {
                 let cell = cells[row][col].as_ref().unwrap();
                 cell.set_dyn_location(DynLocation::new(
@@ -456,7 +483,8 @@ impl Table {
             DrawChs2D::new_empty_of_size(content_width, content_height, self.pane.pane.get_style());
 
         // TODO optionize the line style
-        let line_sty = Style::transparent().with_fg(Color::WHITE);
+        //let line_sty = Style::transparent().with_fg(Color::WHITE);
+        let line_sty = Style::transparent();
 
         // Draw the horizontal header table line
         let mut y = if has_border { 1 } else { 0 };
@@ -528,6 +556,15 @@ impl Table {
                     content.set_ch(x, y, ch_to_set);
                 }
                 x += 1; // account for the line
+            }
+        }
+
+        // set the highlighted rows
+        for (row_idx, sty) in self.row_highlights.borrow().iter() {
+            // get the content position from the
+            let (y, height) = self.row_attr.borrow()[*row_idx];
+            for y_ in 0..height {
+                content.change_style_along_y(y + y_, sty.clone());
             }
         }
 

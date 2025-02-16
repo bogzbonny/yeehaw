@@ -645,6 +645,24 @@ impl DrawChs2D {
         }
     }
 
+    pub fn change_style_bg_along_y(&mut self, y: usize, bg: &Color) {
+        if y >= self.0.len() {
+            return;
+        }
+        for x in 0..self.0[y].len() {
+            self.0[y][x].style.set_bg(bg.clone());
+        }
+    }
+
+    pub fn change_style_fg_along_y(&mut self, y: usize, fg: &Color) {
+        if y >= self.0.len() {
+            return;
+        }
+        for x in 0..self.0[y].len() {
+            self.0[y][x].style.set_fg(fg.clone());
+        }
+    }
+
     /// Changes the style of all the characters in the array
     /// at provided x column.
     pub fn change_style_along_x(&mut self, x: usize, sty: Style) {
@@ -653,6 +671,24 @@ impl DrawChs2D {
         }
         for y in 0..self.0.len() {
             self.0[y][x].style = sty.clone();
+        }
+    }
+
+    pub fn change_style_bg_along_x(&mut self, x: usize, bg: &Color) {
+        if x >= self.0[0].len() {
+            return;
+        }
+        for y in 0..self.0.len() {
+            self.0[y][x].style.set_bg(bg.clone());
+        }
+    }
+
+    pub fn change_style_fg_along_x(&mut self, x: usize, fg: &Color) {
+        if x >= self.0[0].len() {
+            return;
+        }
+        for y in 0..self.0.len() {
+            self.0[y][x].style.set_fg(fg.clone());
         }
     }
 
