@@ -26,6 +26,15 @@ async fn main() -> Result<(), Error> {
             vec!["3", "Charlie Brown", "✗ Inactive", "Edit"],
         ],
     );
+    table.clear_data();
+    table.set_data(
+        &ctx,
+        vec![
+            vec!["1", "Alice Thompson", "✓ Active\ntest", "Edit"],
+            vec!["2", "Bob Wilson", "⚠ Pending", "Edit"],
+            vec!["3", "Charlie Brown", "✗ Inactive", "Edit"],
+        ],
+    );
 
     table.pane.set_at(0.into(), 3.into());
     let limiter = PaneLimiter::new(Box::new(table.clone()), 100, 15);
