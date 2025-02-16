@@ -140,7 +140,7 @@ impl Table {
     pub fn clear_data(&self) {
         let len = self.cells.borrow().len();
         for _ in 1..len {
-            self.remove_row(1);
+            self.remove_row(0);
         }
     }
 
