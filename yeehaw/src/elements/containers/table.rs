@@ -139,8 +139,8 @@ impl Table {
     /// doesn't clear the header (1st) row
     pub fn clear_data(&self) {
         let len = self.cells.borrow().len();
-        for row in 1..len {
-            self.remove_row(row);
+        for _ in 1..len {
+            self.remove_row(1);
         }
     }
 
