@@ -20,14 +20,16 @@ pub struct ColorStore {
 }
 
 impl ColorStore {
+    /// Adds a new pattern to the pattern store.
+    ///
+    /// # Arguments
+    /// * `pattern` - A 2D vector of colors representing the pattern to add
+    ///
+    /// # Returns
+    /// The index of the pattern in the store. If the pattern already exists,
+    /// returns the index of the existing pattern.
     pub fn add_pattern(&self, pattern: Vec<Vec<Color>>) -> usize {
-        let mut time_effected = false;
-        for c in pattern.iter().flatten() {
-            if c.is_time_effected(self) {
-                time_effected = true;
-                break;
-            }
-        }
+        let time_effected = pattern.iter().flatten().any(|c| c.is_time_effected(self));
 
         // attempt to find the pattern in the store before adding it
         for (i, p) in self.patterns.borrow().iter().enumerate() {
@@ -38,19 +40,13 @@ impl ColorStore {
         self.patterns.borrow_mut().push((pattern, time_effected));
         self.patterns.borrow().len() - 1
     }
+
     pub fn add_pos_gradient(&self, mut gr: Vec<(DynVal, Color)>) -> usize {
         //flatten all the DynVals, this will improve color clone efficiency
         for g in gr.iter_mut() {
             g.0.flatten_internal();
         }
-
-        let mut time_effected = false;
-        for (_, c) in gr.iter() {
-            if c.is_time_effected(self) {
-                time_effected = true;
-                break;
-            }
-        }
+        let time_effected = gr.iter().any(|(_, c)| c.is_time_effected(self));
 
         // attempt to find the gradient in the store before adding it
         for (i, g) in self.pos_gradients.borrow().iter().enumerate() {
