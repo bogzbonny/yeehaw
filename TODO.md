@@ -7,8 +7,6 @@
 
 01. wezterm-term demo
      - https://github.com/wezterm/wezterm/issues/6663
-
-01. .dockerignore file for kwaak
   
 05. Theme Manager - it would be awesome to be able to just get the colors for
     each element from a provided theme manager
@@ -28,19 +26,6 @@
        "button"" for example. This way the Color could be modifed at the theme
        level (day/night switch for example) and the colors would automatically
        refresh everywhere
-
-10. webbrowser backend with WASM  
-     - USE ratzilla DOM backend? https://github.com/orhun/ratzilla
-        - needs mouse functionality built into it still.
-      - https://github.com/segeljakt/xterm-js-rs
-         - https://github.com/segeljakt/xterm-js-rs/blob/master/example/src/lib.rs
-         - deploying to github: https://github.com/segeljakt/xterm-js-rs/blob/master/.github/workflows/gh-pages.yml
-      - https://github.com/aschey/ratatui-xterm-js?tab=readme-ov-file
-      - https://github.com/aschey/rooibos/blob/main/crates/rooibos-xterm-js/src/backend.rs
-    Alternatives: 
-      - https://github.com/rrbutani/xterm-js-sys
-      - BAD https://github.com/fubarnetes/webterm
-      - other: https://git.meli-email.org/meli/wasm-demo
 
 __________________________________________________________________________
 EFFICIENCY
@@ -125,6 +110,19 @@ REFACTORS
 
 __________________________________________________________________________
 FEATURES
+
+10. webbrowser backend with WASM  
+     - USE ratzilla DOM backend? https://github.com/orhun/ratzilla
+        - needs mouse functionality built into it still.
+      - https://github.com/segeljakt/xterm-js-rs
+         - https://github.com/segeljakt/xterm-js-rs/blob/master/example/src/lib.rs
+         - deploying to github: https://github.com/segeljakt/xterm-js-rs/blob/master/.github/workflows/gh-pages.yml
+      - https://github.com/aschey/ratatui-xterm-js?tab=readme-ov-file
+      - https://github.com/aschey/rooibos/blob/main/crates/rooibos-xterm-js/src/backend.rs
+    Alternatives: 
+      - https://github.com/rrbutani/xterm-js-sys
+      - BAD https://github.com/fubarnetes/webterm
+      - other: https://git.meli-email.org/meli/wasm-demo
 
 05. Time Base Events. add a "future event" to a part of the EventResponse. In
     the future event there is a timestamp which says when this event should be
