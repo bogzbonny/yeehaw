@@ -1,8 +1,8 @@
 use {
     crate::{
-        keyboard::Keyboard, ColorStore, Context, DrawRegion, DrawingCache, DynLocation,
-        DynLocationSet, Element, ElementID, ElementOrganizer, Error, Event, EventResponse,
-        EventResponses, MouseEvent, Parent, SortingHat,
+        ColorStore, Context, DrawRegion, DrawingCache, DynLocation, DynLocationSet, Element,
+        ElementID, ElementOrganizer, Error, Event, EventResponse, EventResponses, MouseEvent,
+        Parent, SortingHat, keyboard::Keyboard,
     },
     crossterm::{
         cursor::{self, MoveTo},
@@ -12,9 +12,9 @@ use {
         },
         execute, queue, style, terminal,
     },
-    futures::{future::FutureExt, StreamExt},
+    futures::{StreamExt, future::FutureExt},
     std::collections::HashMap,
-    std::io::{stdout, Write},
+    std::io::{Write, stdout},
     std::{cell::RefCell, rc::Rc},
     tokio::sync::mpsc::{Receiver as MpscReceiver, Sender as MpscSender},
     tokio::sync::watch::{Receiver as WatchReceiver, Sender as WatchSender},
@@ -64,7 +64,7 @@ pub struct Tui {
     pub ev_recv: MpscReceiver<Event>,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct InlineTui {
     /// the cursor start row of the tui
     pub cursor_start_row: u16,
@@ -345,7 +345,7 @@ impl Tui {
     }
 
     /// process_event_mouse handles mouse events
-    ///                                                                       exit-tui
+    //                                                                        exit-tui
     pub fn process_event_mouse(&mut self, mut mouse_ev: CTMouseEvent) -> Result<bool, Error> {
         if self.last_mouse.elapsed() < self.animation_speed || self.mouse_processing {
             // add to the mouse backlock removing from the front if it gets too long
@@ -356,24 +356,28 @@ impl Tui {
 
         let ctx = self.context();
         let dr = self.draw_region();
+        let mut in_bounds = true;
         if let Some(inline) = &self.inline {
             let inline = inline.borrow();
             if mouse_ev.row < inline.cursor_start_row {
-                return Ok(false);
+                in_bounds = false;
             }
             mouse_ev.row = mouse_ev.row.saturating_sub(inline.cursor_start_row);
             if mouse_ev.row >= inline.tui_height {
-                return Ok(false);
+                in_bounds = false;
             }
         }
 
-        let mouse_ev = MouseEvent::new(dr, mouse_ev);
-        let (_, resps) =
-            self.cup
-                .eo
-                .mouse_event_process(&ctx, &mouse_ev, Box::new(self.cup.clone()));
-
-        let out = process_event_resps(resps, None, &self.cup.eo, self.main_el_id.clone());
+        let out = if in_bounds {
+            let mouse_ev = MouseEvent::new(dr, mouse_ev);
+            let (_, resps) =
+                self.cup
+                    .eo
+                    .mouse_event_process(&ctx, &mouse_ev, Box::new(self.cup.clone()));
+            process_event_resps(resps, None, &self.cup.eo, self.main_el_id.clone())
+        } else {
+            Ok(false)
+        };
         self.last_mouse = std::time::Instant::now(); // important only set this at the end
         self.mouse_processing = false;
         out

@@ -1,24 +1,15 @@
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  
-01. improve efficiency more, don't look through the entire cache constantly! 
-     - the within draw_cache the dirty cells should just add themselves to a
-       list
-     - the time-effected should add themselves to a seperate list
-     - keep a "all-dirty" bool which can be turned on when the screen is cleared
-        - this will enfore an entire 2d-cache loopthrough
-     - rather than looping through the entire 2d-cache we could just look at
-        - FIRST the time-effected list (do this first as it will fix anything on 
-          the duplicate dirty list)
-        - SECOND the dirty list
-  
-01. wezterm-term demo
-     - https://github.com/wezterm/wezterm/issues/6663
-  
 01. BUG for inline TUI moving the mouse outside of the tui disables its from
     being able to click anymore - this has been the case FOR A WHILE, I suspect
     that it is getting caught in some kind of infinite loop 
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+01. wezterm-term demo
+     - https://github.com/wezterm/wezterm/issues/6663
+
+01. .dockerignore file for kwaak
+  
 05. Theme Manager - it would be awesome to be able to just get the colors for
     each element from a provided theme manager
      - could replicate a new trait similar to Into<Color/Style> but where the
@@ -37,6 +28,19 @@
        "button"" for example. This way the Color could be modifed at the theme
        level (day/night switch for example) and the colors would automatically
        refresh everywhere
+
+10. webbrowser backend with WASM  
+     - USE ratzilla DOM backend? https://github.com/orhun/ratzilla
+        - needs mouse functionality built into it still.
+      - https://github.com/segeljakt/xterm-js-rs
+         - https://github.com/segeljakt/xterm-js-rs/blob/master/example/src/lib.rs
+         - deploying to github: https://github.com/segeljakt/xterm-js-rs/blob/master/.github/workflows/gh-pages.yml
+      - https://github.com/aschey/ratatui-xterm-js?tab=readme-ov-file
+      - https://github.com/aschey/rooibos/blob/main/crates/rooibos-xterm-js/src/backend.rs
+    Alternatives: 
+      - https://github.com/rrbutani/xterm-js-sys
+      - BAD https://github.com/fubarnetes/webterm
+      - other: https://git.meli-email.org/meli/wasm-demo
 
 __________________________________________________________________________
 EFFICIENCY
@@ -219,16 +223,6 @@ FEATURES
        - will have to refactor code such that everything now DOES call the pane
          receive event function.
 
-10. webbrowser backend with WASM  
-      - https://github.com/segeljakt/xterm-js-rs
-         - https://github.com/segeljakt/xterm-js-rs/blob/master/example/src/lib.rs
-         - deploying to github: https://github.com/segeljakt/xterm-js-rs/blob/master/.github/workflows/gh-pages.yml
-      - https://github.com/aschey/ratatui-xterm-js?tab=readme-ov-file
-      - https://github.com/aschey/rooibos/blob/main/crates/rooibos-xterm-js/src/backend.rs
-    Alternatives: 
-      - https://github.com/rrbutani/xterm-js-sys
-      - BAD https://github.com/fubarnetes/webterm
-      - other: https://git.meli-email.org/meli/wasm-demo
 
 OR use egui??? https://github.com/gold-silver-copper/egui_ratatui
 

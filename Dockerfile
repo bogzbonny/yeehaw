@@ -1,5 +1,5 @@
 # Always build against latest stable
-ARG RUST_VERSION=1.83-slim
+ARG RUST_VERSION=1.85-slim
 FROM rust:${RUST_VERSION} as builder
 
 RUN rustup component add clippy rustfmt

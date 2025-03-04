@@ -9,6 +9,6 @@ members = [
 
 [workspace.package]
 include = ["src/**/*.rs", "tests/**/*.rs", "LICENSE", "README.md"]
-edition = "2021"
+edition = "2024"
 
 [workspace.dependencies]
