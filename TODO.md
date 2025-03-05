@@ -22,10 +22,12 @@
            sub-theme in a particular grouping of sub-elements
      - Theme should use a map of of strings for the names of theme, so that its
        fully extensible and future proof. 
-     - Note we could also make a new Color kind which is "Color from theme for
-       "button"" for example. This way the Color could be modifed at the theme
-       level (day/night switch for example) and the colors would automatically
-       refresh everywhere
+     - night day themes could be accomplished by just reseting all the theme
+       colors (or swapping out the entire theme object?) 
+        - DONT DO Note we could also make a new Color kind which is "Color from theme for
+          "button"" for example. This way the Color could be modifed at the theme
+          level (day/night switch for example) and the colors would automatically
+          refresh everywhere
 
 __________________________________________________________________________
 EFFICIENCY
@@ -107,6 +109,9 @@ REFACTORS
     character in other ways.  
 
 10. Color gradient/pattern trait / generalization
+
+30. consider using https://github.com/mazznoer/colorgrad-rs for gradient
+    calculations instead of manually blending them?
 
 __________________________________________________________________________
 FEATURES
