@@ -6,6 +6,7 @@ pub mod dropdownlist;
 pub mod figlet;
 pub mod image_viewer;
 pub mod label;
+pub mod list_control;
 pub mod listbox;
 pub mod radio;
 pub mod scrollbar;
@@ -23,6 +24,7 @@ pub use {
     figlet::FigletText,
     image_viewer::ImageViewer,
     label::Label,
+    list_control::ListControl,
     listbox::ListBox,
     radio::RadioButtons,
     scrollbar::{
