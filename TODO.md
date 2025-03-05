@@ -534,14 +534,17 @@ WIDGETS
    ━━━━━━━━━━╋██████████████╋━━━━━━          
       ●━━━━━━━━━━━━━━━━━━━━● 
 
-20. Prompt-Window
+20. Prompt-Window Pop-up Window
+     - this is called "Modal" design 
      - basically an old school prompt window which says some biz then gives you
        a couple options
      - Optionally it could also sieze control of the whole screen, not allowing
        you to interact with the other elements until you answer the prompt
-         - could use a big transparent pane that captures all events for this
-         - could "flash" the topzone of the window when the users clicks
+         - could use a big transparent (or opaque) pane that captures all events for this
+         - optionally could "flash" the topzone of the window when the users clicks
            elsewhere than the window
+           - OR optionally could close the window on external click (for
+             non-important things)
 
 20. listbox over entire elements
     - abstract the listbox selector except to allow for an
