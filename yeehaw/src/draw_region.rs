@@ -23,6 +23,9 @@ impl DrawRegion {
         }
     }
 
+    /// Creates a new DrawRegion with a large size (1000x1000) for testing purposes.
+    /// This is particularly useful for scenarios where a large drawing area is needed
+    /// without the constraints of a visible region.
     /// used for testing
     pub fn new_large() -> Self {
         DrawRegion {
