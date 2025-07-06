@@ -12,14 +12,7 @@ use {
 // TODO duplicate option in right click menu
 // TODO allow for renaming on slow double click
 // TODO option for righthand x button for delete
-// ---------------
-
-// TODO finish right click menu
-// TODO add hooks for on delete, on rename, on create entry
-// TODO once-edit textbox element, which deletes itself after editing and then calls
-// a function when it deletes itself at the end. - used for renaming
-
-// BUG: deleting all entries leaves a the last entry as a relic
+// TODO rename entry
 
 #[derive(Clone)]
 pub struct ListControl {
@@ -30,6 +23,10 @@ pub struct ListControl {
     pub inner: Rc<RefCell<ListControlInner>>,
     pub new_entry_tb: Rc<RefCell<Option<SingleLineTextBox>>>,
     pub scrollbar: Rc<RefCell<Option<VerticalScrollbar>>>,
+
+    pub deleting_allowed: Rc<RefCell<bool>>,
+    pub shifting_allowed: Rc<RefCell<bool>>,
+    pub right_click_menu: Rc<RefCell<Option<RightClickMenu>>>,
 }
 
 #[derive(Clone)]
@@ -57,22 +54,8 @@ pub struct ListControlInner {
     /// simultaniously if the ListControl is configured to allow it. If multiple items are selected,
     /// all the selected items will be passed to the function at every selection change.
     pub selection_made_fn: Rc<RefCell<ListControlFn>>,
-
-    /// deleting is allowed
-    pub deleting_allowed: Rc<RefCell<bool>>,
-
-    /// renaming is allowed
-    pub renaming_allowed: Rc<RefCell<bool>>,
-
-    /// if the listbox is in renaming mode, this will contain the index of the item being renamed
-    /// renaming only renames the entries
-    pub renaming: Rc<RefCell<Option<usize>>>,
-
-    // TODO delete, rename, re-order down, re-order up
-    pub right_click_menu: Rc<RefCell<Option<RightClickMenu>>>,
-
-    /// override the color of the unselected items
-    pub override_unselected_color: Rc<RefCell<Vec<(usize, Color)>>>,
+    pub on_delete_fn: Rc<RefCell<ListControlFn>>,
+    pub on_create_entry_fn: Rc<RefCell<ListControlFn>>,
 
     /// entry prefix before the each entry
     pub entry_prefix: Rc<RefCell<Option<String>>>,
@@ -112,6 +95,9 @@ impl ListControl {
             inner: Rc::new(RefCell::new(inner)),
             new_entry_tb: Rc::new(RefCell::new(None)),
             scrollbar: Rc::new(RefCell::new(None)),
+            deleting_allowed: Rc::new(RefCell::new(true)),
+            shifting_allowed: Rc::new(RefCell::new(true)),
+            right_click_menu: Rc::new(RefCell::new(None)),
         };
         let lb_ = lb.clone();
         lb.pane
@@ -148,13 +134,14 @@ impl ListControl {
 
         let tb_ = tb.clone();
         let inner_ = self.inner.clone();
-        tb.set_hook(Box::new(move |_ctx, is_escaped, text| {
+        tb.set_hook(Box::new(move |ctx, is_escaped, text| {
+            let mut resps = EventResponses::default();
             if !is_escaped && !text.is_empty() {
-                inner_.borrow_mut().add_entry(text);
+                resps = inner_.borrow_mut().add_entry(&ctx, text);
             }
             tb_.set_text("".to_string());
             inner_.borrow_mut().is_dirty.replace(true);
-            EventResponses::default()
+            resps
         }));
 
         let tb_ = tb.clone();
@@ -179,10 +166,16 @@ impl ListControl {
     }
 
     pub fn set_right_click_menu(&self, ctx: &Context) {
-        let (lb1, lb2, lb3) = (self.clone(), self.clone(), self.clone());
-        let rcm = RightClickMenu::new(ctx, MenuStyle::default()).with_menu_items(
-            ctx,
-            vec![
+        let (lb1, /*lb2,*/ lb3, lb4) = (
+            self.clone(),
+            /*self.clone(),*/ self.clone(),
+            self.clone(),
+        );
+        let mut rcm_entries = Vec::new();
+
+        let ctx_ = ctx.clone();
+        if *self.deleting_allowed.borrow() {
+            rcm_entries.push(
                 MenuItem::new(ctx, MenuPath("Delete".to_string())).with_fn(Some(Box::new(
                     move |ctx_inner| {
                         let pos_bz = ctx_inner.get_metadata(RightClickMenu::MENU_POSITION_MD_KEY);
@@ -191,28 +184,68 @@ impl ListControl {
                                 let y = pos.y;
                                 // adjust for listbox scrolling
                                 let y = y + lb1.inner.borrow().pane.get_content_y_offset() as i32;
-                                lb1.inner.borrow().remove_entry(y as usize);
+                                return lb1.inner.borrow().remove_entry(&ctx_, y as usize);
                             };
                         }
                         EventResponses::default()
                     },
                 ))),
-                MenuItem::new(ctx, MenuPath("Rename".to_string())).with_fn(Some(Box::new(
-                    move |_ctx| {
-                        lb2.inner.borrow().is_dirty.replace(true);
-                        todo!();
-                        //EventResponses::default()
-                    },
-                ))),
+            );
+        }
+
+        if *self.shifting_allowed.borrow() {
+            rcm_entries.push(
                 MenuItem::new(ctx, MenuPath("Shift Up".to_string())).with_fn(Some(Box::new(
-                    move |_ctx| {
-                        lb3.inner.borrow().is_dirty.replace(true);
-                        todo!();
+                    move |ctx_inner| {
+                        let pos_bz = ctx_inner.get_metadata(RightClickMenu::MENU_POSITION_MD_KEY);
+                        if let Some(pos_bz) = pos_bz {
+                            if let Ok(pos) = serde_json::from_slice::<Point>(&pos_bz) {
+                                let y = pos.y;
+                                // adjust for listbox scrolling
+                                let y = y + lb3.inner.borrow().pane.get_content_y_offset() as i32;
+                                lb3.inner.borrow().shift_up(y as usize);
+                            };
+                        }
+                        EventResponses::default()
                     },
                 ))),
-            ],
-        );
-        *self.inner.borrow_mut().right_click_menu.borrow_mut() = Some(rcm);
+            );
+            rcm_entries.push(
+                MenuItem::new(ctx, MenuPath("Shift Down".to_string())).with_fn(Some(Box::new(
+                    move |ctx_inner| {
+                        let pos_bz = ctx_inner.get_metadata(RightClickMenu::MENU_POSITION_MD_KEY);
+                        if let Some(pos_bz) = pos_bz {
+                            if let Ok(pos) = serde_json::from_slice::<Point>(&pos_bz) {
+                                let y = pos.y;
+                                // adjust for listbox scrolling
+                                let y = y + lb4.inner.borrow().pane.get_content_y_offset() as i32;
+                                lb4.inner.borrow().shift_down(y as usize);
+                            };
+                        }
+                        EventResponses::default()
+                    },
+                ))),
+            );
+        }
+        //MenuItem::new(ctx, MenuPath("Rename".to_string())).with_fn(Some(Box::new(
+        //    move |ctx_inner| {
+        //        let pos_bz = ctx_inner.get_metadata(RightClickMenu::MENU_POSITION_MD_KEY);
+        //        if let Some(pos_bz) = pos_bz {
+        //            if let Ok(pos) = serde_json::from_slice::<Point>(&pos_bz) {
+        //                let y = pos.y;
+        //                // adjust for listbox scrolling
+        //                let index =
+        //                    y + lb2.inner.borrow().pane.get_content_y_offset() as i32;
+        //                lb2.rename_entry(&ctx_, y as usize, index as usize)
+        //            }
+        //        }
+        //        EventResponses::default()
+        //    },
+        //))),
+
+        //let ctx_ = ctx.clone();
+        let rcm = RightClickMenu::new(ctx, MenuStyle::default()).with_menu_items(ctx, rcm_entries);
+        *self.right_click_menu.borrow_mut() = Some(rcm);
     }
 
     pub fn with_fn(self, lb_fn: ListControlFn) -> Self {
@@ -222,6 +255,24 @@ impl ListControl {
 
     pub fn set_fn(&self, lb_fn: ListControlFn) {
         *self.inner.borrow().selection_made_fn.borrow_mut() = lb_fn;
+    }
+
+    pub fn with_on_delete_fn(self, lb_fn: ListControlFn) -> Self {
+        self.set_on_delete_fn(lb_fn);
+        self
+    }
+
+    pub fn set_on_delete_fn(&self, lb_fn: ListControlFn) {
+        *self.inner.borrow().on_delete_fn.borrow_mut() = lb_fn;
+    }
+
+    pub fn with_on_create_entry_fn(self, lb_fn: ListControlFn) -> Self {
+        self.set_on_create_entry_fn(lb_fn);
+        self
+    }
+
+    pub fn set_on_create_entry_fn(&self, lb_fn: ListControlFn) {
+        *self.inner.borrow().on_create_entry_fn.borrow_mut() = lb_fn;
     }
 
     pub fn with_styles(self, styles: SelStyles) -> Self {
@@ -312,6 +363,53 @@ impl ListControl {
         self.pane.set_at(loc_x.into(), loc_y.into());
         self
     }
+
+    // ---------------------------------------------------------
+    // NOTE doesn't destroy the textbox properly yet
+    pub fn rename_entry(&self, ctx: &Context, y: usize, entry_i: usize) {
+        if entry_i >= self.inner.borrow().entries.borrow().len() {
+            return;
+        }
+        let tb = SingleLineTextBox::new(ctx)
+            .with_dyn_width(DynVal::FULL)
+            .with_dyn_height(DynVal::new_fixed(1))
+            .with_text(self.inner.borrow().entries.borrow()[entry_i].clone())
+            .at(0, y);
+
+        // need to set the z to greater than the inner listbox for "Enter" key
+        let z = self.pane.get_z() + 1;
+        tb.tb.pane.set_z(z);
+
+        let self_ = self.clone();
+        //let id = tb.id().clone();
+        tb.set_hook(Box::new(move |_ctx, is_escaped, text| {
+            if !is_escaped && !text.is_empty() {
+                self_.inner.borrow().entries.borrow_mut()[entry_i] = text;
+            }
+            self_.inner.borrow().is_dirty.replace(true);
+            //self_.parent.remove_element(&id);
+            //EventResponses::default()
+            EventResponse::Destruct.into()
+        }));
+        self.parent.add_element(Box::new(tb.clone()));
+
+        //let tb_ = tb.clone();
+        //let self_ = self.clone();
+        //let id = tb.id().clone();
+        //tb.tb
+        //    .pane
+        //    .set_post_hook_for_set_selectability(Box::new(move |_, _| {
+        //        let sel = tb_.tb.pane.get_selectability();
+        //        if sel != Selectability::Selected {
+        //            self_.parent.remove_element(&id);
+        //        }
+        //    }));
+
+        //self.is_dirty.replace(true);
+
+        //let resps = EventResponse::BringToFront.into();
+        //Some(EventResponse::NewElement(Box::new(tb.clone()), Some(resps)).into())
+    }
 }
 
 impl ListControlInner {
@@ -361,12 +459,9 @@ impl ListControlInner {
             cursor_over_unselected_style: Rc::new(RefCell::new(Self::STYLE_CURSOR_OVER_UNSELECTED)),
             cursor_over_selected_style: Rc::new(RefCell::new(Self::STYLE_CURSOR_OVER_SELECTED)),
             selection_made_fn: Rc::new(RefCell::new(Box::new(|_, _| EventResponses::default()))),
-            deleting_allowed: Rc::new(RefCell::new(false)),
-            renaming_allowed: Rc::new(RefCell::new(false)),
-            renaming: Rc::new(RefCell::new(None)),
+            on_delete_fn: Rc::new(RefCell::new(Box::new(|_, _| EventResponses::default()))),
+            on_create_entry_fn: Rc::new(RefCell::new(Box::new(|_, _| EventResponses::default()))),
             entry_prefix: Rc::new(RefCell::new(None)),
-            override_unselected_color: Rc::new(RefCell::new(Vec::new())),
-            right_click_menu: Rc::new(RefCell::new(None)),
             scrollbar: Rc::new(RefCell::new(None)),
             is_dirty: Rc::new(RefCell::new(true)),
         }
@@ -445,7 +540,7 @@ impl ListControlInner {
         self.is_dirty.replace(true);
     }
 
-    pub fn add_entry(&self, entry: String) {
+    pub fn add_entry(&self, ctx: &Context, entry: String) -> EventResponses {
         // check if the entry already exists, if so append (2) (or (3) etc.) to the end
         if self.entries.borrow().contains(&entry) {
             // if (2) already exists, then find the next available number
@@ -460,19 +555,84 @@ impl ListControlInner {
             let mut entries = self.entries.borrow().clone();
             entries.push(format!("{} ({})", entry, i));
             self.set_entries(entries);
-            return;
+            return EventResponses::default();
         }
 
         self.entries.borrow_mut().push(entry);
         self.is_dirty.replace(true);
+
+        let entries = self.entries.borrow().clone();
+        let selected_entries = self
+            .selected
+            .borrow()
+            .iter()
+            .map(|i| entries[*i].clone())
+            .collect();
+        (self.on_create_entry_fn.borrow_mut())(ctx.clone(), selected_entries)
     }
 
-    pub fn remove_entry(&self, entry_i: usize) {
+    pub fn remove_entry(&self, ctx: &Context, entry_i: usize) -> EventResponses {
         if entry_i >= self.entries.borrow().len() {
-            return;
+            return EventResponses::default();
         }
         self.entries.borrow_mut().remove(entry_i);
         self.selected.borrow_mut().retain(|&r| r != entry_i);
+
+        self.is_dirty.replace(true);
+
+        let entries = self.entries.borrow().clone();
+        let selected_entries = self
+            .selected
+            .borrow()
+            .iter()
+            .map(|i| entries[*i].clone())
+            .collect();
+        (self.on_delete_fn.borrow_mut())(ctx.clone(), selected_entries)
+    }
+
+    pub fn shift_up(&self, entry_i: usize) {
+        if entry_i >= self.entries.borrow().len() || entry_i == 0 {
+            return;
+        }
+        self.entries.borrow_mut().swap(entry_i, entry_i - 1);
+
+        // change the selected indices
+        let old_sel_i = self.selected.borrow().iter().position(|&r| r == entry_i);
+        let old_sel_im1 = self
+            .selected
+            .borrow()
+            .iter()
+            .position(|&r| r == entry_i - 1);
+        if let Some(sel) = old_sel_i {
+            self.selected.borrow_mut()[sel] = entry_i - 1;
+        }
+        if let Some(sel) = old_sel_im1 {
+            self.selected.borrow_mut()[sel] = entry_i;
+        }
+
+        self.is_dirty.replace(true);
+    }
+
+    pub fn shift_down(&self, entry_i: usize) {
+        if entry_i >= self.entries.borrow().len() - 1 {
+            return;
+        }
+        self.entries.borrow_mut().swap(entry_i, entry_i + 1);
+
+        // change the selected indices
+        let old_sel_i = self.selected.borrow().iter().position(|&r| r == entry_i);
+        let old_sel_ip1 = self
+            .selected
+            .borrow()
+            .iter()
+            .position(|&r| r == entry_i + 1);
+        if let Some(sel) = old_sel_i {
+            self.selected.borrow_mut()[sel] = entry_i + 1;
+        }
+        if let Some(sel) = old_sel_ip1 {
+            self.selected.borrow_mut()[sel] = entry_i;
+        }
+
         self.is_dirty.replace(true);
     }
 
@@ -608,7 +768,7 @@ impl Element for ListControl {
     fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         // handle right click
         if let Event::Mouse(ref me) = ev {
-            if let Some(rcm) = &*self.inner.borrow().right_click_menu.borrow() {
+            if let Some(rcm) = &*self.right_click_menu.borrow() {
                 if let Some(resps) = rcm.create_menu_if_right_click(me) {
                     return (true, resps);
                 }
