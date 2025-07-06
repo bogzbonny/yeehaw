@@ -1,7 +1,8 @@
 use {
     crate::{
+        Keyboard as KB,
         elements::menu::{MenuItem, MenuPath, MenuStyle},
-        Keyboard as KB, *,
+        *,
     },
     crossterm::event::{KeyEvent, KeyModifiers, MouseButton, MouseEventKind},
 };
@@ -507,7 +508,7 @@ pub struct TextBoxInner {
     /// this hook is called each time the text changes (for each letter)
     pub text_changed_hook: Rc<RefCell<Option<Box<dyn FnMut(Context, String) -> EventResponses>>>>,
 
-    /// When this hook is non-nil each characters style will be determineda via this hook.
+    /// When this hook is non-nil each characters style will be determined via this hook.
     /// This is intended to be used if the caller of the textbox wishes granular control
     /// over the text styling.
     ///                                                              abs_pos, existing
@@ -548,6 +549,7 @@ impl TextBoxInner {
             (KeyPossibility::Chars.into()),
             (KB::KEY_BACKSPACE.into()),
             (KB::KEY_ENTER.into()),
+            (KB::KEY_ESC.into()),
             (KB::KEY_SHIFT_ENTER.into()),
             (KB::KEY_LEFT.into()),
             (KB::KEY_RIGHT.into()),
@@ -729,20 +731,12 @@ impl TextBoxInner {
         let cur_pos = *self.cursor_pos.borrow();
         // NOTE the cursor can be placed at the end of the text
         // hence the position is the length
-        if cur_pos > self.text.borrow().len() {
-            self.text.borrow().len()
-        } else {
-            cur_pos
-        }
+        if cur_pos > self.text.borrow().len() { self.text.borrow().len() } else { cur_pos }
     }
 
     pub fn get_visual_mode_start_pos(&self) -> usize {
         let pos = *self.visual_mode_start_pos.borrow();
-        if pos >= self.text.borrow().len() {
-            self.text.borrow().len() - 1
-        } else {
-            pos
-        }
+        if pos >= self.text.borrow().len() { self.text.borrow().len() - 1 } else { pos }
     }
 
     pub fn set_cursor_pos(&self, new_abs_pos: usize) -> EventResponses {

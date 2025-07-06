@@ -13,6 +13,7 @@ pub mod scrollbar;
 pub mod slider;
 pub mod textbox;
 pub mod textbox_numbers;
+pub mod textbox_single_line;
 pub mod toggle;
 
 pub use {
@@ -34,5 +35,6 @@ pub use {
     slider::Slider,
     textbox::TextBox,
     textbox_numbers::NumbersTextBox,
+    textbox_single_line::SingleLineTextBox,
     toggle::Toggle,
 };
