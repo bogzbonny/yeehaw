@@ -549,7 +549,6 @@ impl TextBoxInner {
             (KeyPossibility::Chars.into()),
             (KB::KEY_BACKSPACE.into()),
             (KB::KEY_ENTER.into()),
-            (KB::KEY_ESC.into()),
             (KB::KEY_SHIFT_ENTER.into()),
             (KB::KEY_LEFT.into()),
             (KB::KEY_RIGHT.into()),

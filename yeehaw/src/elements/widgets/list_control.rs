@@ -19,6 +19,8 @@ use {
 // TODO once-edit textbox element, which deletes itself after editing and then calls
 // a function when it deletes itself at the end. - used for renaming
 
+// BUG: deleting all entries leaves a the last entry as a relic
+
 #[derive(Clone)]
 pub struct ListControl {
     pub pane: SelectablePane,
@@ -147,7 +149,7 @@ impl ListControl {
         let tb_ = tb.clone();
         let inner_ = self.inner.clone();
         tb.set_hook(Box::new(move |_ctx, is_escaped, text| {
-            if !is_escaped {
+            if !is_escaped && !text.is_empty() {
                 inner_.borrow_mut().add_entry(text);
             }
             tb_.set_text("".to_string());
@@ -155,17 +157,16 @@ impl ListControl {
             EventResponses::default()
         }));
 
-        //let inner_ = self.inner.clone();
-        //tb.tb
-        //    .pane
-        //    .set_post_hook_for_set_selectability(Box::new(move |_, _| {
-        //        let sel = tb.tb.pane.get_selectability();
-        //        if sel == Selectability::Selected {
-        //            inner_
-        //                .borrow()
-        //                .set_selectability(Selectability::Ready, false);
-        //        }
-        //    }));
+        let tb_ = tb.clone();
+        tb.tb
+            .pane
+            .set_post_hook_for_set_selectability(Box::new(move |_, _| {
+                let sel = tb_.tb.pane.get_selectability();
+                if sel != Selectability::Selected {
+                    //tb_.tb.pane.pane.unfocus();
+                    tb_.set_text("".to_string());
+                }
+            }));
 
         *self.new_entry_tb.borrow_mut() = Some(tb.clone());
         self.parent.add_element(Box::new(tb));
@@ -467,6 +468,9 @@ impl ListControlInner {
     }
 
     pub fn remove_entry(&self, entry_i: usize) {
+        if entry_i >= self.entries.borrow().len() {
+            return;
+        }
         self.entries.borrow_mut().remove(entry_i);
         self.selected.borrow_mut().retain(|&r| r != entry_i);
         self.is_dirty.replace(true);
@@ -602,6 +606,15 @@ impl ListControlInner {
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for ListControl {
     fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
+        // handle right click
+        if let Event::Mouse(ref me) = ev {
+            if let Some(rcm) = &*self.inner.borrow().right_click_menu.borrow() {
+                if let Some(resps) = rcm.create_menu_if_right_click(me) {
+                    return (true, resps);
+                }
+            }
+        }
+
         if self.pane.get_selectability() == Selectability::Unselectable {
             return (false, EventResponses::default());
         }
@@ -616,6 +629,7 @@ impl Element for ListControlInner {
         if captured {
             return (true, resps);
         }
+
         match ev {
             Event::KeyCombo(ke) => {
                 if ke.is_empty() {
@@ -657,13 +671,6 @@ impl Element for ListControlInner {
                 };
             }
             Event::Mouse(me) => {
-                // handle right click
-                if let Some(rcm) = &*self.right_click_menu.borrow() {
-                    if let Some(resps) = rcm.create_menu_if_right_click(&me) {
-                        return (true, resps);
-                    }
-                }
-
                 let clicked_down = *self.clicked_down.borrow();
                 let (mut clicked, mut dragging, mut scroll_up, mut scroll_down) =
                     (false, false, false, false);
@@ -718,6 +725,7 @@ impl Element for ListControlInner {
                         // get item index at click position
                         let item_i = self.get_item_index_for_view_y(y);
                         if item_i >= self.entries.borrow().len() {
+                            *self.clicked_down.borrow_mut() = false;
                             return (false, resps);
                         }
 
@@ -728,7 +736,10 @@ impl Element for ListControlInner {
                         resps.extend(resps_);
                         return (true, resps);
                     }
-                    _ => return (false, resps),
+                    _ => {
+                        *self.clicked_down.borrow_mut() = false;
+                        return (false, resps);
+                    }
                 };
             }
             _ => {}

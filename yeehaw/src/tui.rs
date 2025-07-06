@@ -425,7 +425,7 @@ impl Tui {
         let dr = self.draw_region();
         let updates = self.cup.eo.all_drawing_updates(&ctx, &dr, false);
 
-        //self.drawing_cache.clear_screen(); // helpful for debugging
+        //self.drawing_cache.clear_screen(); // helpful for debugging, force constant redraw
         let mut upd = self.drawing_cache.update_and_get(&ctx, &dr.size, updates);
 
         if !upd.is_empty() {

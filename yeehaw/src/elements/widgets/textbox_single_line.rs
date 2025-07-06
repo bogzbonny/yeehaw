@@ -80,16 +80,18 @@ impl Element for SingleLineTextBox {
 
                 match true {
                     _ if ke[0] == KB::KEY_ESC => {
-                        self.tb.pane.set_selectability(Selectability::Ready, false);
                         if let Some(hook) = &mut *self.hook.borrow_mut() {
-                            return (true, hook(ctx.clone(), true, self.tb.get_text()));
+                            let resps = hook(ctx.clone(), true, self.tb.get_text());
+                            self.tb.pane.set_selectability(Selectability::Ready, false);
+                            return (true, resps);
                         }
                         (false, EventResponses::default())
                     }
                     _ if ke[0] == KB::KEY_ENTER => {
-                        self.tb.pane.set_selectability(Selectability::Ready, false);
                         if let Some(hook) = &mut *self.hook.borrow_mut() {
-                            return (true, hook(ctx.clone(), false, self.tb.get_text()));
+                            let resps = hook(ctx.clone(), false, self.tb.get_text());
+                            self.tb.pane.set_selectability(Selectability::Ready, false);
+                            return (true, resps);
                         }
                         (false, EventResponses::default())
                     }

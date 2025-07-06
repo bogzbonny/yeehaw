@@ -1,9 +1,9 @@
 use {
     crate::{
-        elements::menu::{MenuItem, MenuStyle},
         Context, DrawRegion, DrawUpdate, DynLocation, DynLocationSet, DynVal, Element, ElementID,
         Event, EventResponse, EventResponses, MenuBar, MouseEvent, Parent, Point, ReceivableEvents,
         ZIndex,
+        elements::menu::{MenuItem, MenuStyle},
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},
@@ -29,7 +29,7 @@ pub struct RightClickMenu {
 
 impl RightClickMenu {
     pub const MENU_POSITION_MD_KEY: &'static str = "menu_position";
-    pub const Z_INDEX: ZIndex = 100;
+    pub const Z_INDEX: ZIndex = 200;
 
     pub fn new(ctx: &Context, sty: MenuStyle) -> Self {
         let menu = MenuBar::right_click_menu(ctx).with_menu_style(sty);
@@ -78,7 +78,9 @@ impl RightClickMenu {
         self.menu.set_visible(true);
         *self.just_created.borrow_mut() = true;
 
-        Some(EventResponse::NewElement(Box::new(self.clone()), None).into())
+        let resps = EventResponse::BringToFront.into();
+
+        Some(EventResponse::NewElement(Box::new(self.clone()), Some(resps)).into())
     }
 }
 
