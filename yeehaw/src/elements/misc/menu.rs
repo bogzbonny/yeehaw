@@ -962,6 +962,10 @@ pub struct MenuItem {
     is_folder: Rc<RefCell<bool>>,
     /// is the item a folder
     show_folder_arrow: Rc<RefCell<bool>>,
+
+    /// is the item drawing dirty
+    is_dirty: Rc<RefCell<bool>>,
+
     /// show the folder arrow, false for primary horizontal bar
     #[allow(clippy::type_complexity)]
     click_fn: Rc<RefCell<Option<MenuItemFn>>>,
@@ -981,6 +985,7 @@ impl MenuItem {
             is_selected: Rc::new(RefCell::new(false)),
             is_folder: Rc::new(RefCell::new(false)),
             show_folder_arrow: Rc::new(RefCell::new(true)),
+            is_dirty: Rc::new(RefCell::new(true)),
             click_fn: Rc::new(RefCell::new(None)),
         }
     }
@@ -1012,10 +1017,12 @@ impl MenuItem {
 
     pub fn select(&self) {
         *self.is_selected.borrow_mut() = true;
+        *self.is_dirty.borrow_mut() = true;
     }
 
     pub fn unselect(&self) {
         *self.is_selected.borrow_mut() = false;
+        *self.is_dirty.borrow_mut() = true;
     }
 
     pub fn is_primary(&self) -> bool {
@@ -1050,6 +1057,66 @@ impl MenuItem {
         }
         (x, dcps)
     }
+
+    pub fn draw(&self, ctx: &Context, dr: &DrawRegion) -> Vec<DrawUpdate> {
+        if !self.get_visible() {
+            return Vec::with_capacity(0);
+        }
+
+        let Some(ref md) = ctx.get_metadata(MenuBar::MENU_STYLE_MD_KEY) else {
+            return Vec::with_capacity(0);
+        };
+
+        let m_sty: MenuStyle = match serde_json::from_slice(md) {
+            Ok(v) => v,
+            Err(e) => {
+                log_err!("error deserializing menu style: {}", e);
+                return Vec::with_capacity(0);
+            }
+        };
+
+        let sty = match (*self.is_selected.borrow(), *self.selectable.borrow()) {
+            (true, _) => m_sty.selected_style,
+            (false, true) => m_sty.unselected_style,
+            (false, false) => m_sty.disabled_style,
+        };
+
+        let (mut x, mut out) = MenuItem::draw_padding(m_sty.left_padding, 0, sty.clone(), vec![]);
+
+        // draw name
+        let name = self.path.borrow().name().to_string();
+        let name_chs = DrawChPos::new_from_string(name, x as u16, 0, sty.clone());
+        x += name_chs.len();
+        out.extend(name_chs);
+
+        let arrow_text = if *self.is_folder.borrow()
+            && (!self.is_primary() || (self.is_primary() && *self.show_folder_arrow.borrow()))
+        {
+            m_sty.folder_arrow
+        } else {
+            String::new()
+        };
+
+        // add filler space
+        while x
+            < (dr.size.width as usize)
+                .saturating_sub(m_sty.right_padding + arrow_text.chars().count())
+        {
+            let dc = DrawCh::new(' ', sty.clone());
+            let dcp = DrawChPos::new(dc, x as u16, 0);
+            out.push(dcp);
+            x += 1;
+        }
+
+        // draw folder arrow
+        let arrow_chs = DrawChPos::new_from_string(arrow_text, x as u16, 0, sty.clone());
+        x += arrow_chs.len();
+        out.extend(arrow_chs);
+
+        // add right padding
+        let (_, out) = MenuItem::draw_padding(m_sty.right_padding, x, sty.clone(), out);
+        DrawUpdate::update(out).into()
+    }
 }
 
 #[yeehaw_derive::impl_element_from(pane)]
@@ -1077,7 +1144,6 @@ impl Element for MenuBar {
         };
 
         let mut out = self.pane.drawing(ctx, dr, force_update);
-        //return out;
 
         // draw each menu item
         for el_details in self.pane.eo.els.borrow().values() {
@@ -1149,65 +1215,12 @@ impl Element for MenuItem {
         }
     }
 
-    // TODO refactor to cache instead of just returning updates every drawing
-    fn drawing(&self, ctx: &Context, dr: &DrawRegion, _force_update: bool) -> Vec<DrawUpdate> {
-        if !self.get_visible() {
-            return Vec::with_capacity(0);
-        }
-
-        let Some(ref md) = ctx.get_metadata(MenuBar::MENU_STYLE_MD_KEY) else {
-            return Vec::with_capacity(0);
-        };
-
-        let m_sty: MenuStyle = match serde_json::from_slice(md) {
-            Ok(v) => v,
-            Err(e) => {
-                log_err!("error deserializing menu style: {}", e);
-                return Vec::with_capacity(0);
-            }
-        };
-
-        let sty = match (*self.is_selected.borrow(), *self.selectable.borrow()) {
-            (true, _) => m_sty.selected_style,
-            (false, true) => m_sty.unselected_style,
-            (false, false) => m_sty.disabled_style,
-        };
-
-        let (mut x, mut out) = MenuItem::draw_padding(m_sty.left_padding, 0, sty.clone(), vec![]);
-
-        // draw name
-        let name = self.path.borrow().name().to_string();
-        let name_chs = DrawChPos::new_from_string(name, x as u16, 0, sty.clone());
-        x += name_chs.len();
-        out.extend(name_chs);
-
-        let arrow_text = if *self.is_folder.borrow()
-            && (!self.is_primary() || (self.is_primary() && *self.show_folder_arrow.borrow()))
-        {
-            m_sty.folder_arrow
+    fn drawing(&self, ctx: &Context, dr: &DrawRegion, force_update: bool) -> Vec<DrawUpdate> {
+        if self.is_dirty.replace(false) || force_update {
+            self.draw(ctx, dr)
         } else {
-            String::new()
-        };
-
-        // add filler space
-        while x
-            < (dr.size.width as usize)
-                .saturating_sub(m_sty.right_padding + arrow_text.chars().count())
-        {
-            let dc = DrawCh::new(' ', sty.clone());
-            let dcp = DrawChPos::new(dc, x as u16, 0);
-            out.push(dcp);
-            x += 1;
+            Vec::with_capacity(0)
         }
-
-        // draw folder arrow
-        let arrow_chs = DrawChPos::new_from_string(arrow_text, x as u16, 0, sty.clone());
-        x += arrow_chs.len();
-        out.extend(arrow_chs);
-
-        // add right padding
-        let (_, out) = MenuItem::draw_padding(m_sty.right_padding, x, sty.clone(), out);
-        DrawUpdate::update(out).into()
     }
 }
 
