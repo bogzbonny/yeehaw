@@ -1226,21 +1226,13 @@ impl MenuPath {
     /// Name returns the name of the menu item at the end of the menu path
     pub fn name(&self) -> &str {
         let split: Vec<&str> = self.0.split('/').collect();
-        if !split.is_empty() {
-            split[split.len() - 1]
-        } else {
-            ""
-        }
+        if !split.is_empty() { split[split.len() - 1] } else { "" }
     }
 
     /// Folders returns the folders of the menu path
     pub fn folders(&self) -> Vec<&str> {
         let split: Vec<&str> = self.0.split('/').collect();
-        if !split.is_empty() {
-            split[..split.len() - 1].to_vec()
-        } else {
-            vec![]
-        }
+        if !split.is_empty() { split[..split.len() - 1].to_vec() } else { vec![] }
     }
 
     pub fn is_root(&self) -> bool {

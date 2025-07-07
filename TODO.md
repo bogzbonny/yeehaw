@@ -29,18 +29,6 @@
           level (day/night switch for example) and the colors would automatically
           refresh everywhere
 
-05. Selectable Panes Navigation by location with hjkl instead of tab!
-     - ex. if going right with 'l' first attempt to find an element "in the same
-       line(s)" if can't find then expand outward by 1 line up and 1 line down. 
-       - kinda strange if things to the right in the same line are very far
-         away yet things slightly up or down are more near... probably each
-         element should just have a calculation for nearness in a direction to
-         each other element which encapsulates upward and downward distance as
-         well. for instance something with is "up 1 right 5" would be closer to
-         the right than something which is "up 0 right 20".
-
-
-
 __________________________________________________________________________
 EFFICIENCY
 flamegraph -o flame.svg --image-width=4000 --root -- ./target/debug/examples/colors teeff
@@ -127,6 +115,16 @@ REFACTORS
 
 __________________________________________________________________________
 FEATURES
+
+05. Selectable Panes Navigation by location with hjkl instead of tab!
+     - ex. if going right with 'l' first attempt to find an element "in the same
+       line(s)" if can't find then expand outward by 1 line up and 1 line down. 
+       - kinda strange if things to the right in the same line are very far
+         away yet things slightly up or down are more near... probably each
+         element should just have a calculation for nearness in a direction to
+         each other element which encapsulates upward and downward distance as
+         well. for instance something with is "up 1 right 5" would be closer to
+         the right than something which is "up 0 right 20".
 
 10. webbrowser backend with WASM  
      - USE ratzilla DOM backend? https://github.com/orhun/ratzilla
