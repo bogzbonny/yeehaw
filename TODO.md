@@ -49,7 +49,8 @@ cargo flamegraph --post-process 'flamelens --echo' [other cargo flamegraph argum
             either option seems not super ideal. 
 
 01. menu bar is constantly drawing a lot of CPU - probably because it's updating
-    constantly whether or not it needs too!
+    constantly whether or not it needs too! - requires refactor of
+    extra-locations (see below)
 
 10. panes within stack are consuming pretty amount CPU even when inactive
     similar to window
@@ -615,6 +616,16 @@ WIDGETS
 __________________________________________________________________________
 PROGRAMS
 
+01. tui.mcp
+     - mcp for LLMs to understand what's happening in a TUI 
+       - Use ANSI-extended format to be know the element names at each position
+          - this way we can test on any binary all the same but then have
+            additional special functionality if its a yeehaw TUI
+          - would require special build flag for the tui to be in testing mode
+          - ALSO could/should include all the hidden elements underneith as
+            well? Keep a list of all the elements as layers within this
+            special ANSI extended format. Good for LLM programming TUIs
+
 01. Snapshot TUI Tester (just call this tui-tester, binary: tuit (lol)) 
      - consider building as an extension of insta: 
         - https://insta.rs/
@@ -624,12 +635,9 @@ PROGRAMS
        - Option to record with all time indices (slower to test)  
        - Option to just take a snapshot every X ms.
          - or Option to just record a screen change when it happens on its own?
-     - Binary Mode or Yeehaw Mode (start with Yeehaw Mode)
+     - Binary Mode
         - attempt to make everything binary mode!
-          - Use ANSI-extended format to be know the element names at each position
-             - this way we can test on any binary all the same but then have
-               additional special functionality if its a yeehaw TUI
-             - would require special build flag for the tui to be in testing mode
+          - Use ANSI-extended format (see above)
           - For time shifts see https://github.com/wolfcw/libfaketime
              - alternative simple system: 
                 - flag on yeehaw allows the time to be taken from an env. var.
