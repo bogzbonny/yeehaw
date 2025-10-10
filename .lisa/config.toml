@@ -1,0 +1,13 @@
+agent_cmd = "codex exec --oss --sandbox workspace-write -m gpt-oss:120b"
+timeout_minutes = 30
+task_namer_model = "qwen3:0.6b"
+task_chooser_model = "gpt-oss:120b"
+must_pass = [
+    "cargo test --quiet",
+    "cargo clippy -- -D warnings",
+]
+initialization_cmd = "docker-compose -f ~/dev/src/github.com/DevsHero/search-scrape/docker-compose.yml up searxng -d && alias grep='rg'"
+fmt_cmd = "cargo fmt"
+auto_push = false
+planning_turns = 3
+max_task_reruns = 4
