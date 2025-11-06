@@ -8,11 +8,11 @@ use {
     crossterm::event::{MouseButton, MouseEventKind},
 };
 
-// TODO bordered pane option.
 // TODO duplicate option in right click menu
 // TODO allow for renaming on slow double click
-// TODO option for righthand x button for delete
 // TODO rename entry
+// TODO option for righthand x button for delete
+// TODO bordered pane option.
 
 #[derive(Clone)]
 pub struct ListControl {
