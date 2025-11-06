@@ -9,11 +9,10 @@ use {
     crossterm::event::{MouseButton, MouseEventKind},
 };
 
-// TODO duplicate option in right click menu
 // TODO allow for renaming on slow double click
 // TODO rename entry
 // TODO option for righthand x button for delete
-// TODO bordered pane option.
+// TODO bordered pane option with scrollbars
 
 #[derive(Clone)]
 pub struct ListControl {
@@ -185,23 +184,23 @@ impl ListControl {
         let mut rcm_entries = Vec::new();
 
         if *self.deleting_allowed.borrow() {
-        rcm_entries.push(
-            MenuItem::new(ctx, MenuPath("Delete".to_string())).with_fn(Some(Box::new(
-                move |ctx_inner| {
-                    let ctx = ctx_del.clone();
-                    let pos_bz = ctx_inner.get_metadata(RightClickMenu::MENU_POSITION_MD_KEY);
-                    if let Some(pos_bz) = pos_bz {
-                        if let Ok(pos) = serde_json::from_slice::<Point>(&pos_bz) {
-                            let y = pos.y;
-                            // adjust for listbox scrolling
-                    let y = y + inner1.borrow().pane.get_content_y_offset() as i32;
-                    return inner1.borrow().remove_entry(&ctx, y as usize);
-                        };
-                    }
-                    EventResponses::default()
-                },
-            ))),
-        );
+            rcm_entries.push(
+                MenuItem::new(ctx, MenuPath("Delete".to_string())).with_fn(Some(Box::new(
+                    move |ctx_inner| {
+                        let ctx = ctx_del.clone();
+                        let pos_bz = ctx_inner.get_metadata(RightClickMenu::MENU_POSITION_MD_KEY);
+                        if let Some(pos_bz) = pos_bz {
+                            if let Ok(pos) = serde_json::from_slice::<Point>(&pos_bz) {
+                                let y = pos.y;
+                                // adjust for listbox scrolling
+                                let y = y + inner1.borrow().pane.get_content_y_offset() as i32;
+                                return inner1.borrow().remove_entry(&ctx, y as usize);
+                            };
+                        }
+                        EventResponses::default()
+                    },
+                ))),
+            );
         }
 
         if *self.shifting_allowed.borrow() {
@@ -622,11 +621,7 @@ impl ListControlInner {
         let original = self.entries.borrow()[idx].clone();
         // Determine base name by stripping a trailing " (n)" if present.
         let base = if let Some(pos) = original.rfind(" (") {
-            if original.ends_with(')') {
-                original[..pos].to_string()
-            } else {
-                original.clone()
-            }
+            if original.ends_with(')') { original[..pos].to_string() } else { original.clone() }
         } else {
             original.clone()
         };
