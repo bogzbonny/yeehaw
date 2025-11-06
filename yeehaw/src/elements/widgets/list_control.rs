@@ -1,3 +1,4 @@
+// test patch line
 use {
     super::{VerticalSBPositions, VerticalScrollbar},
     crate::{
@@ -56,6 +57,8 @@ pub struct ListControlInner {
     pub selection_made_fn: Rc<RefCell<ListControlFn>>,
     pub on_delete_fn: Rc<RefCell<ListControlFn>>,
     pub on_create_entry_fn: Rc<RefCell<ListControlFn>>,
+    // Hook called when an entry is duplicated via the right‑click menu.
+    pub on_duplicated_fn: Rc<RefCell<ListControlFn>>,
 
     /// entry prefix before the each entry
     pub entry_prefix: Rc<RefCell<Option<String>>>,
@@ -171,26 +174,34 @@ impl ListControl {
             /*self.clone(),*/ self.clone(),
             self.clone(),
         );
+        // Clone inner Rc references for use inside closures without moving the original structs
+        let inner1 = lb1.inner.clone();
+        // separate clones for each closure to avoid move conflicts
+        let inner3_up = lb3.inner.clone();
+        let inner3_dup = lb3.inner.clone();
+        let inner4 = lb4.inner.clone();
+        let ctx_del = ctx.clone();
+        let ctx_dup = ctx.clone();
         let mut rcm_entries = Vec::new();
 
-        let ctx_ = ctx.clone();
         if *self.deleting_allowed.borrow() {
-            rcm_entries.push(
-                MenuItem::new(ctx, MenuPath("Delete".to_string())).with_fn(Some(Box::new(
-                    move |ctx_inner| {
-                        let pos_bz = ctx_inner.get_metadata(RightClickMenu::MENU_POSITION_MD_KEY);
-                        if let Some(pos_bz) = pos_bz {
-                            if let Ok(pos) = serde_json::from_slice::<Point>(&pos_bz) {
-                                let y = pos.y;
-                                // adjust for listbox scrolling
-                                let y = y + lb1.inner.borrow().pane.get_content_y_offset() as i32;
-                                return lb1.inner.borrow().remove_entry(&ctx_, y as usize);
-                            };
-                        }
-                        EventResponses::default()
-                    },
-                ))),
-            );
+        rcm_entries.push(
+            MenuItem::new(ctx, MenuPath("Delete".to_string())).with_fn(Some(Box::new(
+                move |ctx_inner| {
+                    let ctx = ctx_del.clone();
+                    let pos_bz = ctx_inner.get_metadata(RightClickMenu::MENU_POSITION_MD_KEY);
+                    if let Some(pos_bz) = pos_bz {
+                        if let Ok(pos) = serde_json::from_slice::<Point>(&pos_bz) {
+                            let y = pos.y;
+                            // adjust for listbox scrolling
+                    let y = y + inner1.borrow().pane.get_content_y_offset() as i32;
+                    return inner1.borrow().remove_entry(&ctx, y as usize);
+                        };
+                    }
+                    EventResponses::default()
+                },
+            ))),
+        );
         }
 
         if *self.shifting_allowed.borrow() {
@@ -202,8 +213,8 @@ impl ListControl {
                             if let Ok(pos) = serde_json::from_slice::<Point>(&pos_bz) {
                                 let y = pos.y;
                                 // adjust for listbox scrolling
-                                let y = y + lb3.inner.borrow().pane.get_content_y_offset() as i32;
-                                lb3.inner.borrow().shift_up(y as usize);
+                                let y = y + inner3_up.borrow().pane.get_content_y_offset() as i32;
+                                inner3_up.borrow().shift_up(y as usize);
                             };
                         }
                         EventResponses::default()
@@ -218,8 +229,8 @@ impl ListControl {
                             if let Ok(pos) = serde_json::from_slice::<Point>(&pos_bz) {
                                 let y = pos.y;
                                 // adjust for listbox scrolling
-                                let y = y + lb4.inner.borrow().pane.get_content_y_offset() as i32;
-                                lb4.inner.borrow().shift_down(y as usize);
+                                let y = y + inner4.borrow().pane.get_content_y_offset() as i32;
+                                inner4.borrow().shift_down(y as usize);
                             };
                         }
                         EventResponses::default()
@@ -227,6 +238,24 @@ impl ListControl {
                 ))),
             );
         }
+        // Add duplicate menu entry
+        rcm_entries.push(
+            MenuItem::new(ctx, MenuPath("Duplicate".to_string())).with_fn(Some(Box::new(
+                move |ctx_inner| {
+                    let ctx = ctx_dup.clone();
+                    let pos_bz = ctx_inner.get_metadata(RightClickMenu::MENU_POSITION_MD_KEY);
+                    if let Some(pos_bz) = pos_bz {
+                        if let Ok(pos) = serde_json::from_slice::<Point>(&pos_bz) {
+                            let y = pos.y;
+                            // adjust for listbox scrolling
+                            let y = y + inner3_dup.borrow().pane.get_content_y_offset() as i32;
+                            return inner3_dup.borrow().duplicate_entry(&ctx, y as usize);
+                        }
+                    }
+                    EventResponses::default()
+                },
+            ))),
+        );
         //MenuItem::new(ctx, MenuPath("Rename".to_string())).with_fn(Some(Box::new(
         //    move |ctx_inner| {
         //        let pos_bz = ctx_inner.get_metadata(RightClickMenu::MENU_POSITION_MD_KEY);
@@ -273,6 +302,16 @@ impl ListControl {
 
     pub fn set_on_create_entry_fn(&self, lb_fn: ListControlFn) {
         *self.inner.borrow().on_create_entry_fn.borrow_mut() = lb_fn;
+    }
+
+    /// Set a hook that is called when an entry is duplicated via the right‑click menu.
+    pub fn with_on_duplicated_fn(self, lb_fn: ListControlFn) -> Self {
+        self.set_on_duplicated_fn(lb_fn);
+        self
+    }
+
+    pub fn set_on_duplicated_fn(&self, lb_fn: ListControlFn) {
+        *self.inner.borrow().on_duplicated_fn.borrow_mut() = lb_fn;
     }
 
     pub fn with_styles(self, styles: SelStyles) -> Self {
@@ -461,6 +500,7 @@ impl ListControlInner {
             selection_made_fn: Rc::new(RefCell::new(Box::new(|_, _| EventResponses::default()))),
             on_delete_fn: Rc::new(RefCell::new(Box::new(|_, _| EventResponses::default()))),
             on_create_entry_fn: Rc::new(RefCell::new(Box::new(|_, _| EventResponses::default()))),
+            on_duplicated_fn: Rc::new(RefCell::new(Box::new(|_, _| EventResponses::default()))),
             entry_prefix: Rc::new(RefCell::new(None)),
             scrollbar: Rc::new(RefCell::new(None)),
             is_dirty: Rc::new(RefCell::new(true)),
@@ -569,6 +609,69 @@ impl ListControlInner {
             .map(|i| entries[*i].clone())
             .collect();
         (self.on_create_entry_fn.borrow_mut())(ctx.clone(), selected_entries)
+    }
+
+    /// Duplicate an entry at the given index, inserting the duplicate right after it.
+    /// The duplicated entry will have a suffix " (n)" where n is the next
+    /// available integer for that base name. Existing suffixes are respected.
+    pub fn duplicate_entry(&self, ctx: &Context, idx: usize) -> EventResponses {
+        let entries_len = self.entries.borrow().len();
+        if idx >= entries_len {
+            return EventResponses::default();
+        }
+        let original = self.entries.borrow()[idx].clone();
+        // Determine base name by stripping a trailing " (n)" if present.
+        let base = if let Some(pos) = original.rfind(" (") {
+            if original.ends_with(')') {
+                original[..pos].to_string()
+            } else {
+                original.clone()
+            }
+        } else {
+            original.clone()
+        };
+        // Determine the smallest unused suffix number for this base.
+        // Collect all used suffixes (including the base entry itself as suffix 0).
+        let mut used: std::collections::HashSet<usize> = std::collections::HashSet::new();
+        for e in self.entries.borrow().iter() {
+            if e == &base {
+                used.insert(0);
+            } else if e.starts_with(&format!("{} (", base)) && e.ends_with(')') {
+                if let Some(start) = e.rfind('(') {
+                    if let Some(end) = e.rfind(')') {
+                        let num_str = &e[start + 1..end];
+                        if let Ok(num) = num_str.parse::<usize>() {
+                            used.insert(num);
+                        }
+                    }
+                }
+            }
+        }
+        // Find the smallest positive integer not present in `used`.
+        let mut suffix = 1usize;
+        while used.contains(&suffix) {
+            suffix += 1;
+        }
+        // Build the new entry using the discovered suffix.
+        let new_entry = if suffix == 1 && !used.contains(&0) {
+            // If the base entry itself does not exist, duplicate as "base (1)".
+            format!("{} (1)", base)
+        } else {
+            format!("{} ({})", base, suffix)
+        };
+        // Insert after the original index.
+        let mut new_entries = self.entries.borrow().clone();
+        new_entries.insert(idx + 1, new_entry);
+        self.set_entries(new_entries);
+        // Invoke duplicate hook similar to create entry hook.
+        let entries = self.entries.borrow().clone();
+        let selected_entries = self
+            .selected
+            .borrow()
+            .iter()
+            .map(|i| entries[*i].clone())
+            .collect();
+        (self.on_duplicated_fn.borrow_mut())(ctx.clone(), selected_entries)
     }
 
     pub fn remove_entry(&self, ctx: &Context, entry_i: usize) -> EventResponses {
