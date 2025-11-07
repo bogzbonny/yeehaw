@@ -307,6 +307,10 @@ impl ListControl {
                                 );
                             }
                         }
+
+                        //lb_rename.pane.set_focused(true);
+                        //lb_rename.parent.set_focused(true);
+                        //lb_rename.pane.select()
                         EventResponses::default()
                     },
                 ))),

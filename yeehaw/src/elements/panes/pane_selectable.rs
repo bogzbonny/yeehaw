@@ -227,11 +227,12 @@ impl Element for SelectablePane {
                 }
             }
             Event::ExternalMouse(ref me) => {
+                // NOTE do NOT deselect on Up left click... this will deselect the element
+                // on selection of a right click menu item
                 if matches!(
                     me.kind,
                     MouseEventKind::Down(MouseButton::Left)
                         | MouseEventKind::Drag(MouseButton::Left)
-                        | MouseEventKind::Up(MouseButton::Left)
                 ) {
                     let resps = self.deselect();
                     (false, resps)

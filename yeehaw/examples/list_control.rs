@@ -23,12 +23,12 @@ async fn main() -> Result<(), Error> {
         .with_dyn_width(DynVal::new_fixed(30))
         .with_dyn_height(DynVal::new_fixed(5))
         .with_new_entry_tb(&ctx, "new entry...")
-        .with_right_click_menu(&ctx)
-        .with_scrollbar(&ctx)
         .with_deleting_allowed()
         .with_shifting_allowed()
         .with_duplicating_allowed()
         .with_renaming_allowed()
+        .with_right_click_menu(&ctx)
+        .with_scrollbar(&ctx)
         .at(x, y);
 
     main_el.add_element(Box::new(lc));
