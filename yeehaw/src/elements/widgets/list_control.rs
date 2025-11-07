@@ -281,7 +281,6 @@ impl ListControl {
             );
         }
 
-        //let ctx_ = ctx.clone();
         let rcm = RightClickMenu::new(ctx, MenuStyle::default()).with_menu_items(ctx, rcm_entries);
         *self.right_click_menu.borrow_mut() = Some(rcm);
     }
@@ -414,12 +413,21 @@ impl ListControl {
 
     // ---------------------------------------------------------
     // XXX SOMETIMES the enter key is being routed improperly
+    // XXX seems like the esc key is NEVER being routed properly
+    // XXX the rename textbox is NOT selected when it's opened
     pub fn rename_entry(&self, ctx: &Context, y: usize, entry_i: usize) {
         if entry_i >= self.inner.borrow().entries.borrow().len() {
             return;
         }
+
+        let width = if self.scrollbar.borrow().is_some() {
+            DynVal::FULL.minus(1.into())
+        } else {
+            DynVal::FULL
+        };
+
         let tb = SingleLineTextBox::new(ctx)
-            .with_dyn_width(DynVal::FULL)
+            .with_dyn_width(width)
             .with_dyn_height(DynVal::new_fixed(1))
             .with_text(self.inner.borrow().entries.borrow()[entry_i].clone())
             .at(0, y);
@@ -451,9 +459,11 @@ impl ListControl {
 
         let resp = tb.tb.pane.select();
         tb.send_responses_upward(ctx, resp);
+        tb.tb.inner.borrow().is_dirty.replace(true);
 
         self.pane.select();
-        self.inner.borrow().pane.deselect();
+
+        //self.inner.borrow().pane.deselect();
         //let resps = EventResponse::BringToFront.into();
         //Some(EventResponse::NewElement(Box::new(tb.clone()), Some(resps)))
     }
