@@ -272,7 +272,9 @@ impl ListControl {
                                 // compute entry index accounting for scroll offset
                                 let entry_i =
                                     y + inner_rename.borrow().pane.get_content_y_offset() as i32;
-                                lb_rename.rename_entry(&ctx_rename, y as usize, entry_i as usize);
+                                return lb_rename
+                                    .rename_entry(&ctx_rename, y as usize, entry_i as usize)
+                                    .into();
                             }
                         }
                         EventResponses::default()
@@ -415,9 +417,10 @@ impl ListControl {
     // XXX SOMETIMES the enter key is being routed improperly
     // XXX seems like the esc key is NEVER being routed properly
     // XXX the rename textbox is NOT selected when it's opened
-    pub fn rename_entry(&self, ctx: &Context, y: usize, entry_i: usize) {
+    pub fn rename_entry(&self, ctx: &Context, y: usize, entry_i: usize) -> EventResponse {
         if entry_i >= self.inner.borrow().entries.borrow().len() {
-            return;
+            //return;
+            return EventResponse::default();
         }
 
         let width = if self.scrollbar.borrow().is_some() {
@@ -437,6 +440,8 @@ impl ListControl {
         // need to set the z to greater than the inner listbox for "Enter" key
         //let z = self.inner.borrow().get_z() + 2;
         let z = self.parent.get_z() + 1;
+        //let z = self.pane.get_z() + 1;
+        debug!("setting z to {z}");
         tb.set_z(z);
 
         let self_ = self.clone();
@@ -465,7 +470,8 @@ impl ListControl {
 
         //self.inner.borrow().pane.deselect();
         //let resps = EventResponse::BringToFront.into();
-        //Some(EventResponse::NewElement(Box::new(tb.clone()), Some(resps)))
+        //EventResponse::NewElement(Box::new(tb.clone()), Some(resps))
+        EventResponse::default()
     }
 }
 

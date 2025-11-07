@@ -58,6 +58,10 @@ impl ElDetails {
         *self.vis.borrow_mut() = vis;
     }
 
+    pub fn get_z_index(&self) -> i32 {
+        self.loc.borrow().z
+    }
+
     pub fn set_location_set(&self, loc: DynLocationSet) {
         *self.loc.borrow_mut() = loc;
     }
@@ -207,10 +211,10 @@ impl ElementOrganizer {
     ///
     /// NOTE: if the given index is taken, the element currently filling that index
     /// will be pushed further back in the z-dimension (i.e. its z-index will be
-    /// incremented)
+    /// decremented)
     pub fn update_el_z_index(&self, el_id: &ElementID, z: ZIndex) {
         if let Some(details) = self.get_el_at_z_index(z) {
-            self.increment_z_index_for_el(details);
+            self.decrement_z_index_for_el(details);
         }
         self.els
             .borrow_mut()
@@ -421,6 +425,8 @@ impl ElementOrganizer {
                     // NOTE continue to propogate the focus event upwards
                 }
                 EventResponse::NewElement(new_el, ref mut new_el_resps) => {
+                    //debug!("adding new el: {:?}", new_el.id());
+
                     // adjust the location of the window to be relative to the given element and adds the element
                     // to the element organizer
                     let mut ls = new_el.get_dyn_location_set().clone();
@@ -552,10 +558,12 @@ impl ElementOrganizer {
         let mut dests = vec![];
         for (el_id, el_det) in self.els.borrow().iter() {
             if el_det.el.can_receive(input_ev) {
-                dests.push(el_id.clone());
+                dests.push((el_id.clone(), el_det.get_z_index()));
             }
         }
-        dests
+        // order from highest z to lowest z
+        dests.sort_by(|a, b| b.1.cmp(&a.1));
+        dests.drain(..).map(|a| a.0).collect::<Vec<ElementID>>()
     }
 
     pub fn get_destination_el_from_kb(
@@ -747,20 +755,19 @@ impl ElementOrganizer {
     ///
     /// To move an element in the z-dimension, relative to other elements, use
     /// update_z_index_for_el_id
-    pub fn increment_z_index_for_el(&self, el_details: ElDetails) {
+    pub fn decrement_z_index_for_el(&self, el_details: ElDetails) {
         let z = el_details.loc.borrow().z;
         // current z of element
         // check if element exists at next z-index
-        if let Some(details2) = self.get_el_at_z_index(z + 1) {
+        if let Some(details2) = self.get_el_at_z_index(z - 1) {
             // recursively increment z-index of element at next z-index
-            self.increment_z_index_for_el(details2);
+            self.decrement_z_index_for_el(details2);
         }
-
-        // increment z-index of the element
+        // decrement z-index of the element
         self.els
             .borrow_mut()
             .entry(el_details.el.id().clone())
-            .and_modify(|ed| ed.loc.borrow_mut().z = z + 1);
+            .and_modify(|ed| ed.loc.borrow_mut().z = z - 1);
     }
 
     /// is_z_index_occupied returns true if an element exists at the given z-index

@@ -2,7 +2,7 @@ use crate::{DrawRegion, DynVal, MouseEvent};
 
 /// ZIndex is the z-index or position in the z-dimension of the element
 /// The higher the z-index, further "on top" the element is.
-pub type ZIndex = u32;
+pub type ZIndex = i32;
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct DynLocation {
@@ -46,20 +46,12 @@ impl DynLocation {
 
     pub fn height(&self, dr: &DrawRegion) -> usize {
         let out = self.end_y.get_val(dr.get_height()) - self.start_y.get_val(dr.get_height());
-        if out < 0 {
-            0
-        } else {
-            out as usize
-        }
+        if out < 0 { 0 } else { out as usize }
     }
 
     pub fn width(&self, dr: &DrawRegion) -> usize {
         let out = self.end_x.get_val(dr.get_width()) - self.start_x.get_val(dr.get_width());
-        if out < 0 {
-            0
-        } else {
-            out as usize
-        }
+        if out < 0 { 0 } else { out as usize }
     }
 
     pub fn size(&self, dr: &DrawRegion) -> Size {
