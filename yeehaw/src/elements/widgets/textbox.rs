@@ -456,6 +456,11 @@ impl TextBox {
         self.inner.borrow().set_cursor_pos(pos);
         self.set_dirty();
     }
+
+    pub fn set_cursor_pos_to_end(&self) {
+        self.inner.borrow().set_cursor_pos_to_end();
+        self.set_dirty();
+    }
 }
 
 #[yeehaw_derive::impl_element_from(pane)]
@@ -745,6 +750,10 @@ impl TextBoxInner {
         } else {
             EventResponses::default()
         }
+    }
+
+    pub fn set_cursor_pos_to_end(&self) -> EventResponses {
+        self.set_cursor_pos(self.text.borrow().len())
     }
 
     pub fn incr_cursor_pos(&self, pos_change: isize) -> EventResponses {

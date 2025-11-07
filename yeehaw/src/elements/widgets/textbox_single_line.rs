@@ -33,6 +33,10 @@ impl SingleLineTextBox {
         self.tb.set_text(text);
     }
 
+    pub fn set_cursor_pos_to_end(&self) {
+        self.tb.set_cursor_pos_to_end();
+    }
+
     pub fn with_text_when_empty<S: Into<String>>(self, text: S) -> Self {
         self.tb.set_text_when_empty(text.into());
         self

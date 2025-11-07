@@ -353,7 +353,7 @@ impl ParentPaneOfSelectable {
     }
 
     #[must_use]
-    fn set_selectability_for_el(
+    pub fn set_selectability_for_el(
         &self, ctx: &Context, el_id: &ElementID, s: Selectability,
     ) -> EventResponses {
         let ev_bz = serde_json::to_vec(&s);

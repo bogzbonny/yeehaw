@@ -746,7 +746,7 @@ impl ElementOrganizer {
     /// well.
     ///
     /// To move an element in the z-dimension, relative to other elements, use
-    /// UpdateZIndexForElID
+    /// update_z_index_for_el_id
     pub fn increment_z_index_for_el(&self, el_details: ElDetails) {
         let z = el_details.loc.borrow().z;
         // current z of element

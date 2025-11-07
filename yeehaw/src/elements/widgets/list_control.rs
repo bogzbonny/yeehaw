@@ -413,7 +413,7 @@ impl ListControl {
     }
 
     // ---------------------------------------------------------
-    // NOTE doesn't destroy the textbox properly yet
+    // XXX SOMETIMES the enter key is being routed improperly
     pub fn rename_entry(&self, ctx: &Context, y: usize, entry_i: usize) {
         if entry_i >= self.inner.borrow().entries.borrow().len() {
             return;
@@ -424,39 +424,38 @@ impl ListControl {
             .with_text(self.inner.borrow().entries.borrow()[entry_i].clone())
             .at(0, y);
 
+        tb.set_cursor_pos_to_end();
+
         // need to set the z to greater than the inner listbox for "Enter" key
-        let z = self.pane.get_z() + 1;
-        tb.tb.pane.set_z(z);
+        //let z = self.inner.borrow().get_z() + 2;
+        let z = self.parent.get_z() + 1;
+        tb.set_z(z);
 
         let self_ = self.clone();
-        //let id = tb.id().clone();
+        let id = tb.id().clone();
+        //let id2 = tb.id().clone();
         tb.set_hook(Box::new(move |_ctx, is_escaped, text| {
             if !is_escaped && !text.is_empty() {
+                //panic!("setting inner text to: {text}");
                 self_.inner.borrow().entries.borrow_mut()[entry_i] = text;
             }
             self_.inner.borrow().is_dirty.replace(true);
-            //self_.parent.remove_element(&id);
-            //EventResponses::default()
-            EventResponse::Destruct.into()
+            self_.pane.pane.remove_element(&id);
+            EventResponses::default()
+            //EventResponse::Destruct.into()
         }));
-        self.parent.add_element(Box::new(tb.clone()));
+        self.pane.pane.add_element(Box::new(tb.clone()));
+        //let _ = self
+        //    .parent
+        //    .set_selectability_for_el(ctx, &id2, Selectability::Selected);
 
-        //let tb_ = tb.clone();
-        //let self_ = self.clone();
-        //let id = tb.id().clone();
-        //tb.tb
-        //    .pane
-        //    .set_post_hook_for_set_selectability(Box::new(move |_, _| {
-        //        let sel = tb_.tb.pane.get_selectability();
-        //        if sel != Selectability::Selected {
-        //            self_.parent.remove_element(&id);
-        //        }
-        //    }));
+        let resp = tb.tb.pane.select();
+        tb.send_responses_upward(ctx, resp);
 
-        //self.is_dirty.replace(true);
-
+        self.pane.select();
+        self.inner.borrow().pane.deselect();
         //let resps = EventResponse::BringToFront.into();
-        //Some(EventResponse::NewElement(Box::new(tb.clone()), Some(resps)).into())
+        //Some(EventResponse::NewElement(Box::new(tb.clone()), Some(resps)))
     }
 }
 
