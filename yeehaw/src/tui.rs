@@ -183,7 +183,8 @@ impl Tui {
         // get the cursor position
         let (_, mut cur_row) = cursor::position()?;
         let scr_height = terminal::size()?.1;
-        let offset = if cur_row + height > scr_height { cur_row + height - scr_height } else { 0 };
+        //let offset = if cur_row + height > scr_height { cur_row + height - scr_height } else { 0 };
+        let offset = (cur_row + height).saturating_sub(scr_height);
 
         cur_row -= offset;
         let inline = Rc::new(RefCell::new(InlineTui {
@@ -253,8 +254,7 @@ impl Tui {
 
                                                 // if increasing the screen height, and the tui is not
                                                 // fully visible, then move the cursor start row up
-                                                let offset = if cur_row + tui_height > scr_height {
-                                                    cur_row + tui_height - scr_height } else { 0 };
+                                                let offset = (cur_row + tui_height).saturating_sub(scr_height);
                                                 inline.cursor_start_row = cur_row.saturating_sub(offset);
                                             }
                                         }

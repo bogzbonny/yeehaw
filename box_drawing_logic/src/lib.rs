@@ -292,19 +292,19 @@ impl BoxDrawingCh {
         let all_thin = self
             .left
             .as_ref()
-            .map_or(true, |s| matches!(s, SideAttribute::Thin))
+            .is_none_or(|s| matches!(s, SideAttribute::Thin))
             && self
                 .right
                 .as_ref()
-                .map_or(true, |s| matches!(s, SideAttribute::Thin))
+                .is_none_or(|s| matches!(s, SideAttribute::Thin))
             && self
                 .up
                 .as_ref()
-                .map_or(true, |s| matches!(s, SideAttribute::Thin))
+                .is_none_or(|s| matches!(s, SideAttribute::Thin))
             && self
                 .down
                 .as_ref()
-                .map_or(true, |s| matches!(s, SideAttribute::Thin));
+                .is_none_or(|s| matches!(s, SideAttribute::Thin));
 
         // Only allow curving for corner pieces (exactly two adjacent sides)
         let side_count = [&self.left, &self.right, &self.up, &self.down]

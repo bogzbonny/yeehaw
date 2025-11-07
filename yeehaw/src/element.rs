@@ -107,7 +107,7 @@ pub trait Element: DynClone {
     fn set_parent(&self, up: Box<dyn Parent>);
 
     /// get/set the scalable location of the widget
-    fn get_dyn_location_set(&self) -> Ref<DynLocationSet>;
+    fn get_dyn_location_set(&self) -> Ref<'_, DynLocationSet>;
     fn get_visible(&self) -> bool;
 
     fn get_z(&self) -> ZIndex {

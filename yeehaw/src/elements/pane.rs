@@ -241,7 +241,7 @@ impl Pane {
         self.loc.borrow_mut().l = l;
     }
 
-    pub fn get_last_size(&self) -> Ref<Size> {
+    pub fn get_last_size(&self) -> Ref<'_, Size> {
         self.last_size.borrow()
     }
 
@@ -316,11 +316,11 @@ impl Pane {
         *self.is_content_dirty.borrow_mut() = true;
     }
 
-    pub fn get_content(&self) -> Ref<DrawChs2D> {
+    pub fn get_content(&self) -> Ref<'_, DrawChs2D> {
         self.content.borrow()
     }
 
-    pub fn get_content_mut(&self) -> RefMut<DrawChs2D> {
+    pub fn get_content_mut(&self) -> RefMut<'_, DrawChs2D> {
         *self.is_content_dirty.borrow_mut() = true;
         self.content.borrow_mut()
     }
@@ -626,7 +626,7 @@ impl Element for Pane {
         }
     }
 
-    fn get_dyn_location_set(&self) -> Ref<DynLocationSet> {
+    fn get_dyn_location_set(&self) -> Ref<'_, DynLocationSet> {
         self.loc.borrow()
     }
     fn get_visible(&self) -> bool {

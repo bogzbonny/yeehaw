@@ -68,7 +68,7 @@ async fn main() -> Result<(), Error> {
 
 ## Cool Features
  - mini-TUIs in the CLI (aka. use a TUI in-line with your command without taking
-                         up the whole terminal)
+   up the whole terminal)
 
 ## Planned Stuff: <!-- NOTE duplicate in README.md:70 --> 
  - embed a whole dang yeehaw TUI into stateful ratatui widget, why not!

@@ -728,7 +728,7 @@ impl MenuBar {
 
         // Get current item info
         let current_item = self.get_selected_item();
-        let is_primary = current_item.as_ref().map_or(true, |item| item.is_primary());
+        let is_primary = current_item.as_ref().is_none_or(|item| item.is_primary());
         let is_horizontal = *self.horizontal_bar.borrow();
 
         match ke.code {

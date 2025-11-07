@@ -255,21 +255,31 @@ impl ListControl {
                 },
             ))),
         );
-        //MenuItem::new(ctx, MenuPath("Rename".to_string())).with_fn(Some(Box::new(
-        //    move |ctx_inner| {
-        //        let pos_bz = ctx_inner.get_metadata(RightClickMenu::MENU_POSITION_MD_KEY);
-        //        if let Some(pos_bz) = pos_bz {
-        //            if let Ok(pos) = serde_json::from_slice::<Point>(&pos_bz) {
-        //                let y = pos.y;
-        //                // adjust for listbox scrolling
-        //                let index =
-        //                    y + lb2.inner.borrow().pane.get_content_y_offset() as i32;
-        //                lb2.rename_entry(&ctx_, y as usize, index as usize)
-        //            }
-        //        }
-        //        EventResponses::default()
-        //    },
-        //))),
+        // Add rename menu entry
+        {
+            let lb_rename = self.clone();
+            let inner_rename = self.inner.clone();
+            let ctx_rename = ctx.clone();
+            rcm_entries.push(
+                MenuItem::new(ctx, MenuPath("Rename".to_string())).with_fn(Some(Box::new(
+                    move |ctx_inner| {
+                        // retrieve right‑click position from metadata
+                        if let Some(pos_bz) =
+                            ctx_inner.get_metadata(RightClickMenu::MENU_POSITION_MD_KEY)
+                        {
+                            if let Ok(pos) = serde_json::from_slice::<Point>(&pos_bz) {
+                                let y = pos.y;
+                                // compute entry index accounting for scroll offset
+                                let entry_i =
+                                    y + inner_rename.borrow().pane.get_content_y_offset() as i32;
+                                lb_rename.rename_entry(&ctx_rename, y as usize, entry_i as usize);
+                            }
+                        }
+                        EventResponses::default()
+                    },
+                ))),
+            );
+        }
 
         //let ctx_ = ctx.clone();
         let rcm = RightClickMenu::new(ctx, MenuStyle::default()).with_menu_items(ctx, rcm_entries);
@@ -1011,5 +1021,30 @@ impl Element for ListControlInner {
             self.update_content(dr);
         }
         self.pane.drawing(ctx, dr, force_update)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::elements::menu::MenuPath;
+    use crate::{ColorStore, Context, SortingHat};
+    use tokio::sync::mpsc;
+
+    #[test]
+    fn right_click_menu_contains_rename() {
+        // create a minimal context
+        let (tx, _rx) = mpsc::channel::<Event>(1);
+        let ctx = Context::new_context_no_dur(&SortingHat::default(), tx, &ColorStore::default());
+
+        let lc = ListControl::new(&ctx, vec!["first".to_string(), "second".to_string()]);
+        lc.set_right_click_menu(&ctx);
+        let rcm = lc.right_click_menu.borrow();
+        assert!(rcm.is_some(), "right click menu should be set");
+        let menu = &rcm.as_ref().unwrap().menu;
+        assert!(
+            menu.contains_menu_item(MenuPath("Rename".to_string())),
+            "Rename entry should exist in the right‑click menu"
+        );
     }
 }
