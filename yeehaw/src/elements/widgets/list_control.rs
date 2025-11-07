@@ -11,11 +11,12 @@ use {
 
 // TODO list from the bottom up instead of top down
 // TODO allow for double click (both for mouse and keyboard enter ontop of already selected)
-// TODO have rename textbox properly selected
 
 // TODO allow for renaming on slow double click
 // TODO option for righthand x button for delete
 // TODO bordered pane option with scrollbars
+// TODO all right click menu items (besides renaming) deselect the list control once the rcm item
+//      is clicked. The list_control should stay selected after the right click selection
 
 #[derive(Clone)]
 pub struct ListControl {
@@ -285,9 +286,8 @@ impl ListControl {
         }
         // Add rename menu entry
         if *self.renaming_allowed.borrow() {
-            let lb_rename = self.clone();
-            let inner_rename = self.inner.clone();
-            let ctx_rename = ctx.clone();
+            let self_ = self.clone();
+            let ctx_ = ctx.clone();
             rcm_entries.push(
                 MenuItem::new(ctx, MenuPath("Rename".to_string())).with_fn(Some(Box::new(
                     move |ctx_inner| {
@@ -299,18 +299,10 @@ impl ListControl {
                                 let y = pos.y;
                                 // compute entry index accounting for scroll offset
                                 let entry_i =
-                                    y + inner_rename.borrow().pane.get_content_y_offset() as i32;
-                                return lb_rename.rename_entry(
-                                    &ctx_rename,
-                                    y as usize,
-                                    entry_i as usize,
-                                );
+                                    y + self_.inner.borrow().pane.get_content_y_offset() as i32;
+                                return self_.rename_entry(&ctx_, y as usize, entry_i as usize);
                             }
                         }
-
-                        //lb_rename.pane.set_focused(true);
-                        //lb_rename.parent.set_focused(true);
-                        //lb_rename.pane.select()
                         EventResponses::default()
                     },
                 ))),
@@ -447,12 +439,8 @@ impl ListControl {
         self
     }
 
-    // ---------------------------------------------------------
-    // XXX seems like the esc key is NEVER being routed
-    // XXX the rename textbox is NOT selected when it's opened
     pub fn rename_entry(&self, ctx: &Context, y: usize, entry_i: usize) -> EventResponses {
         if entry_i >= self.inner.borrow().entries.borrow().len() {
-            //return;
             return EventResponses::default();
         }
 
@@ -473,30 +461,17 @@ impl ListControl {
 
         // need to set the z to greater than the inner listbox for "Enter" key
         let z = self.inner.borrow().get_z() + 2;
-        //let z = self.parent.get_z() + 1;
-        //let z = self.pane.get_z() + 1;
-        debug!("setting z to {z}");
         tb.set_z(z);
 
         let self_ = self.clone();
-        //let id = tb.id().clone();
         tb.set_hook(Box::new(move |_ctx, is_escaped, text| {
             if !is_escaped && !text.is_empty() {
-                //panic!("setting inner text to: {text}");
                 self_.inner.borrow().entries.borrow_mut()[entry_i] = text;
             }
             self_.inner.borrow().is_dirty.replace(true);
-            //self_.pane.pane.remove_element(&id);
-
-            //self_.parent.remove_element(&id);
-            //EventResponses::default()
             EventResponse::Destruct.into()
         }));
-        //self.pane.pane.add_element(Box::new(tb.clone()));
         self.parent.add_element(Box::new(tb.clone()));
-        //let _ = self
-        //    .parent
-        //    .set_selectability_for_el(ctx, &id2, Selectability::Selected);
 
         let resp = tb.tb.pane.select();
         tb.send_responses_upward(ctx, resp);
@@ -505,13 +480,7 @@ impl ListControl {
         tb.set_focused(true);
         self.pane.set_focused(true);
         self.parent.set_focused(true);
-
         self.pane.select()
-
-        //self.inner.borrow().pane.deselect();
-        //let resps = EventResponse::BringToFront.into();
-        //EventResponse::NewElement(Box::new(tb.clone()), Some(resps))
-        //EventResponse::default()
     }
 }
 
