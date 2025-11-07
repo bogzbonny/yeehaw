@@ -109,6 +109,10 @@ impl ParentPane {
         self.set_focused(false);
     }
 
+    pub fn has_element(&self, el_id: &ElementID) -> bool {
+        self.eo.has_element(el_id)
+    }
+
     /// sends an event to a specific element
     #[must_use]
     pub fn send_event_to_el(&self, ctx: &Context, el_id: &ElementID, ev: Event) -> EventResponses {

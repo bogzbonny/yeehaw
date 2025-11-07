@@ -414,7 +414,10 @@ impl ParentPaneOfSelectable {
                             let old_sel_el_id = self.selected.borrow().clone();
                             *self.selected.borrow_mut() = Some(s_resp.id.clone());
                             if let Some(old_sel_el_id) = old_sel_el_id {
-                                if old_sel_el_id != s_resp.id {
+                                // ignore if that element nolonger exists (can occur if deleted)
+                                if old_sel_el_id != s_resp.id
+                                    && self.pane.has_element(&old_sel_el_id)
+                                {
                                     // deselect the old selected element
                                     let resps_ = self.set_selectability_for_el(
                                         ctx,

@@ -131,6 +131,11 @@ impl ElementOrganizer {
         details.el.set_focused(true);
     }
 
+    /// does the element exist in the organizer
+    pub fn has_element(&self, el_id: &ElementID) -> bool {
+        self.els.borrow().contains_key(el_id)
+    }
+
     /// get_element_by_id returns the element registered under the given id in the eo
     pub fn get_element_details(&self, el_id: &ElementID) -> Option<ElDetails> {
         self.els.borrow().get(el_id).cloned()
@@ -530,8 +535,14 @@ impl ElementOrganizer {
     pub fn routed_event_process(
         &self, ctx: &Context, ev: Event, parent: Box<dyn Parent>,
     ) -> (Option<ElementID>, EventResponses) {
+        debug!(
+            "routed_event_process: ev: {ev:?}, parent: {:?}",
+            (*parent).get_id()
+        );
+
         // determine element_id to send events to
         let el_ids = self.get_destination_el(&ev);
+        debug!("\t\tel_ids: {el_ids:?}");
 
         let mut resps = EventResponses::default();
         let mut capturing_el_id = None;
@@ -682,7 +693,6 @@ impl ElementOrganizer {
             let ev_adj = details.loc.borrow().l.adjusted_mouse_event(ev);
 
             // send mouse event to the element
-            //let (captured, mut resps_) = details.el.receive_event(&child_ctx, Event::Mouse(ev_adj));
             let (captured, mut resps_) = details.el.receive_event(ctx, Event::Mouse(ev_adj));
             self.partially_process_ev_resps(ctx, el_id, &mut resps_, &parent);
             resps.0.extend(resps_.drain(..));
@@ -697,9 +707,11 @@ impl ElementOrganizer {
             break;
         }
 
-        // send the mouse event as an external event to all other elements
-        // capture the responses
-        for (el_id2, details2) in self.els.borrow().iter() {
+        // need to clone as may be borrowed when processing responses (leading to runtime error)
+        let els = self.els.borrow().clone();
+
+        // send the mouse event as an external event to all other elements capture the responses
+        for (el_id2, details2) in els.iter() {
             if let Some(ref capturing_el_id) = capturing_el_id {
                 if capturing_el_id == el_id2 {
                     continue;
@@ -722,7 +734,9 @@ impl ElementOrganizer {
         &self, ctx: &Context, ev: &MouseEvent, parent: Box<dyn Parent>,
     ) -> EventResponses {
         let mut resps = EventResponses::default();
-        for (el_id, details) in self.els.borrow().iter() {
+        // need to clone as may be borrowed when processing responses (leading to runtime error)
+        let els = self.els.borrow().clone();
+        for (el_id, details) in els.iter() {
             //let child_ctx = ctx.child_context(&details.loc.borrow().l);
             let ev_adj = details.loc.borrow().l.adjusted_mouse_event(ev);
             let (_, mut resps_) = details

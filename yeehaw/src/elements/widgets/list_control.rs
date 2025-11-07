@@ -9,8 +9,11 @@ use {
     crossterm::event::{MouseButton, MouseEventKind},
 };
 
+// TODO list from the bottom up instead of top down
+// TODO allow for double click (both for mouse and keyboard enter ontop of already selected)
+// TODO have rename textbox properly selected
+
 // TODO allow for renaming on slow double click
-// TODO rename entry
 // TODO option for righthand x button for delete
 // TODO bordered pane option with scrollbars
 
@@ -26,6 +29,8 @@ pub struct ListControl {
 
     pub deleting_allowed: Rc<RefCell<bool>>,
     pub shifting_allowed: Rc<RefCell<bool>>,
+    pub duplicating_allowed: Rc<RefCell<bool>>,
+    pub renaming_allowed: Rc<RefCell<bool>>,
     pub right_click_menu: Rc<RefCell<Option<RightClickMenu>>>,
 }
 
@@ -49,7 +54,6 @@ pub struct ListControlInner {
     /// how many lines each item is to take up
     pub lines_per_item: Rc<RefCell<usize>>,
 
-    #[allow(clippy::type_complexity)]
     /// function which executes when the selection changes. NOTE multiple items may be selected
     /// simultaniously if the ListControl is configured to allow it. If multiple items are selected,
     /// all the selected items will be passed to the function at every selection change.
@@ -97,8 +101,10 @@ impl ListControl {
             inner: Rc::new(RefCell::new(inner)),
             new_entry_tb: Rc::new(RefCell::new(None)),
             scrollbar: Rc::new(RefCell::new(None)),
-            deleting_allowed: Rc::new(RefCell::new(true)),
-            shifting_allowed: Rc::new(RefCell::new(true)),
+            deleting_allowed: Rc::new(RefCell::new(false)),
+            shifting_allowed: Rc::new(RefCell::new(false)),
+            duplicating_allowed: Rc::new(RefCell::new(false)),
+            renaming_allowed: Rc::new(RefCell::new(false)),
             right_click_menu: Rc::new(RefCell::new(None)),
         };
         let lb_ = lb.clone();
@@ -159,6 +165,26 @@ impl ListControl {
 
         *self.new_entry_tb.borrow_mut() = Some(tb.clone());
         self.parent.add_element(Box::new(tb));
+        self
+    }
+
+    pub fn with_deleting_allowed(self) -> Self {
+        *self.deleting_allowed.borrow_mut() = true;
+        self
+    }
+
+    pub fn with_shifting_allowed(self) -> Self {
+        *self.shifting_allowed.borrow_mut() = true;
+        self
+    }
+
+    pub fn with_duplicating_allowed(self) -> Self {
+        *self.duplicating_allowed.borrow_mut() = true;
+        self
+    }
+
+    pub fn with_renaming_allowed(self) -> Self {
+        *self.renaming_allowed.borrow_mut() = true;
         self
     }
 
@@ -237,26 +263,28 @@ impl ListControl {
                 ))),
             );
         }
-        // Add duplicate menu entry
-        rcm_entries.push(
-            MenuItem::new(ctx, MenuPath("Duplicate".to_string())).with_fn(Some(Box::new(
-                move |ctx_inner| {
-                    let ctx = ctx_dup.clone();
-                    let pos_bz = ctx_inner.get_metadata(RightClickMenu::MENU_POSITION_MD_KEY);
-                    if let Some(pos_bz) = pos_bz {
-                        if let Ok(pos) = serde_json::from_slice::<Point>(&pos_bz) {
-                            let y = pos.y;
-                            // adjust for listbox scrolling
-                            let y = y + inner3_dup.borrow().pane.get_content_y_offset() as i32;
-                            return inner3_dup.borrow().duplicate_entry(&ctx, y as usize);
+        if *self.duplicating_allowed.borrow() {
+            // Add duplicate menu entry
+            rcm_entries.push(
+                MenuItem::new(ctx, MenuPath("Duplicate".to_string())).with_fn(Some(Box::new(
+                    move |ctx_inner| {
+                        let ctx = ctx_dup.clone();
+                        let pos_bz = ctx_inner.get_metadata(RightClickMenu::MENU_POSITION_MD_KEY);
+                        if let Some(pos_bz) = pos_bz {
+                            if let Ok(pos) = serde_json::from_slice::<Point>(&pos_bz) {
+                                let y = pos.y;
+                                // adjust for listbox scrolling
+                                let y = y + inner3_dup.borrow().pane.get_content_y_offset() as i32;
+                                return inner3_dup.borrow().duplicate_entry(&ctx, y as usize);
+                            }
                         }
-                    }
-                    EventResponses::default()
-                },
-            ))),
-        );
+                        EventResponses::default()
+                    },
+                ))),
+            );
+        }
         // Add rename menu entry
-        {
+        if *self.renaming_allowed.borrow() {
             let lb_rename = self.clone();
             let inner_rename = self.inner.clone();
             let ctx_rename = ctx.clone();
@@ -272,9 +300,11 @@ impl ListControl {
                                 // compute entry index accounting for scroll offset
                                 let entry_i =
                                     y + inner_rename.borrow().pane.get_content_y_offset() as i32;
-                                return lb_rename
-                                    .rename_entry(&ctx_rename, y as usize, entry_i as usize)
-                                    .into();
+                                return lb_rename.rename_entry(
+                                    &ctx_rename,
+                                    y as usize,
+                                    entry_i as usize,
+                                );
                             }
                         }
                         EventResponses::default()
@@ -414,13 +444,12 @@ impl ListControl {
     }
 
     // ---------------------------------------------------------
-    // XXX SOMETIMES the enter key is being routed improperly
-    // XXX seems like the esc key is NEVER being routed properly
+    // XXX seems like the esc key is NEVER being routed
     // XXX the rename textbox is NOT selected when it's opened
-    pub fn rename_entry(&self, ctx: &Context, y: usize, entry_i: usize) -> EventResponse {
+    pub fn rename_entry(&self, ctx: &Context, y: usize, entry_i: usize) -> EventResponses {
         if entry_i >= self.inner.borrow().entries.borrow().len() {
             //return;
-            return EventResponse::default();
+            return EventResponses::default();
         }
 
         let width = if self.scrollbar.borrow().is_some() {
@@ -433,31 +462,34 @@ impl ListControl {
             .with_dyn_width(width)
             .with_dyn_height(DynVal::new_fixed(1))
             .with_text(self.inner.borrow().entries.borrow()[entry_i].clone())
+            .with_destroy_on_external_ev()
             .at(0, y);
 
         tb.set_cursor_pos_to_end();
 
         // need to set the z to greater than the inner listbox for "Enter" key
-        //let z = self.inner.borrow().get_z() + 2;
-        let z = self.parent.get_z() + 1;
+        let z = self.inner.borrow().get_z() + 2;
+        //let z = self.parent.get_z() + 1;
         //let z = self.pane.get_z() + 1;
         debug!("setting z to {z}");
         tb.set_z(z);
 
         let self_ = self.clone();
-        let id = tb.id().clone();
-        //let id2 = tb.id().clone();
+        //let id = tb.id().clone();
         tb.set_hook(Box::new(move |_ctx, is_escaped, text| {
             if !is_escaped && !text.is_empty() {
                 //panic!("setting inner text to: {text}");
                 self_.inner.borrow().entries.borrow_mut()[entry_i] = text;
             }
             self_.inner.borrow().is_dirty.replace(true);
-            self_.pane.pane.remove_element(&id);
-            EventResponses::default()
-            //EventResponse::Destruct.into()
+            //self_.pane.pane.remove_element(&id);
+
+            //self_.parent.remove_element(&id);
+            //EventResponses::default()
+            EventResponse::Destruct.into()
         }));
-        self.pane.pane.add_element(Box::new(tb.clone()));
+        //self.pane.pane.add_element(Box::new(tb.clone()));
+        self.parent.add_element(Box::new(tb.clone()));
         //let _ = self
         //    .parent
         //    .set_selectability_for_el(ctx, &id2, Selectability::Selected);
@@ -466,12 +498,16 @@ impl ListControl {
         tb.send_responses_upward(ctx, resp);
         tb.tb.inner.borrow().is_dirty.replace(true);
 
-        self.pane.select();
+        tb.set_focused(true);
+        self.pane.set_focused(true);
+        self.parent.set_focused(true);
+
+        self.pane.select()
 
         //self.inner.borrow().pane.deselect();
         //let resps = EventResponse::BringToFront.into();
         //EventResponse::NewElement(Box::new(tb.clone()), Some(resps))
-        EventResponse::default()
+        //EventResponse::default()
     }
 }
 

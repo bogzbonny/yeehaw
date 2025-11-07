@@ -25,6 +25,10 @@ async fn main() -> Result<(), Error> {
         .with_new_entry_tb(&ctx, "new entry...")
         .with_right_click_menu(&ctx)
         .with_scrollbar(&ctx)
+        .with_deleting_allowed()
+        .with_shifting_allowed()
+        .with_duplicating_allowed()
+        .with_renaming_allowed()
         .at(x, y);
 
     main_el.add_element(Box::new(lc));
