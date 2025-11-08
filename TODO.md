@@ -5,8 +5,6 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-01. wezterm-term demo
-     - https://github.com/wezterm/wezterm/issues/6663
   
 05. Theme Manager - it would be awesome to be able to just get the colors for
     each element from a provided theme manager
@@ -35,19 +33,6 @@ flamegraph -o flame.svg --image-width=4000 --root -- ./target/debug/examples/col
 try using flamelens! : 
 cargo flamegraph --post-process 'flamelens --echo' [other cargo flamegraph arguments]
 
-
-01. Improving speed for Terminal Element, uses way to much CPU right now
-    - The terminal can't really be optimized in quite the same way as the
-      element; although it would be possible to take a diff on the terminal 
-      and then only feed back the changed terminal-chs, we would need the
-      ability to quickly replace a limited subset of chs - two options: 
- DO THIS -> (1) setup a higher level grid over the Terminal Element and update
-            piecemeal on this grid using the standard Update DrawAction
-            (2) create a new kind of update like Extend but which actually replaces
-            individual positions if they exist... this would require storing the
-            DrawChPos in either a hashmap, or iterating through it all the time,
-            either option seems not super ideal. 
-
 01. menu bar is constantly drawing a lot of CPU - probably because it's updating
     constantly whether or not it needs too! - requires refactor of
     extra-locations (see below)
@@ -58,6 +43,8 @@ cargo flamegraph --post-process 'flamelens --echo' [other cargo flamegraph argum
 10. An open window which is doing nothing consistently consumes a pretty amounts of
     CPU (see the window example, just open a basic debug window and watch the
     cpu).. not that bad but maybe could be better
+
+30. gpu accelerate color calculations / positioning calculations with CubeCL
 
 __________________________________________________________________________
 REFACTORS
@@ -111,9 +98,18 @@ REFACTORS
 
 10. Color gradient/pattern trait / generalization
 
+20. wezterm-term demo
+     - https://github.com/wezterm/wezterm/issues/6663
+     - not sure if this is a great idea or not? vt100_yh now has `dirty` built
+       in which is essential for fast formatting, would have to recreate this or
+       merge in?
+      // TODO use termwiz+wezterm_term instead of vt100? ... would maybe have to use the wezterm-term crate too, which is not published
+      // one issue is that to be to query for the terminal mouse state you'd need to use wezterm-term
+      //          https://docs.rs/termwiz/latest/termwiz/
+      //          https://github.com/wez/wezterm/blob/main/termwiz/examples/widgets_nested.rs
+
 30. consider using https://github.com/mazznoer/colorgrad-rs for gradient
     calculations instead of manually blending them?
-
 __________________________________________________________________________
 FEATURES
 

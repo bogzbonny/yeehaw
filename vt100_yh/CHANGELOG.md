@@ -1,6 +1,12 @@
 # Changelog
 
-## [Unreleased]
+## [0.17.1]
+
+### Added
+ * `dirty` field added to `Screen` which allows for the caller to determine if
+   redraws are required
+
+## [0.17.0]
 
 ### Added
 

@@ -1,6 +1,6 @@
 [package]
 name = "vt100_yh"
-version = "0.17.0"
+version = "0.17.1"
 authors = [
     "Bogz Bonny <bogzbonny@protonmail.com>",
     "Chris Titus <contact@christitus.com>",
