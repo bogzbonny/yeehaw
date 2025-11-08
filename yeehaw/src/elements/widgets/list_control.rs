@@ -588,7 +588,17 @@ impl ListControlInner {
         let Some(cursor) = *self.cursor.borrow() else {
             return;
         };
-        let (start_y, end_y) = self.get_content_y_range_for_item_index(cursor);
+        let (mut start_y, mut end_y) = self.get_content_y_range_for_item_index(cursor);
+        // Account for top padding when bottom‑justified.
+        if *self.bottom_justified.borrow() {
+            let total_height = dr.size.height as usize;
+            let content_height = self.entries.borrow().len() * *self.lines_per_item.borrow();
+            if total_height > content_height {
+                let pad = total_height - content_height;
+                start_y += pad;
+                end_y += pad;
+            }
+        }
         let y_offset = self.pane.get_content_y_offset();
         let height = self.pane.get_height(dr);
 
@@ -811,6 +821,15 @@ impl ListControlInner {
     /// need to reset the content in order to reflect active style
     pub fn update_highlighting(&self, dr: &DrawRegion) {
         // change the style for selection and the cursor
+        // Compute any top padding introduced by bottom justification.
+        let pad_offset = if *self.bottom_justified.borrow() {
+            let total_height = dr.size.height as usize;
+            let content_height = self.entries.borrow().len() * *self.lines_per_item.borrow();
+            total_height.saturating_sub(content_height)
+        } else {
+            0
+        };
+
         for i in 0..self.entries.borrow().len() {
             let cursor = *self.cursor.borrow();
             let item_selected = self.selected.borrow().contains(&i);
@@ -834,7 +853,7 @@ impl ListControlInner {
             };
 
             let (y_start, y_end) = self.get_content_y_range_for_item_index(i);
-            for y in y_start..=y_end {
+            for y in (y_start + pad_offset)..=(y_end + pad_offset) {
                 self.pane
                     .get_content_mut()
                     .change_style_along_y(y, sty.clone());
@@ -842,7 +861,9 @@ impl ListControlInner {
 
             // update the rest of the lines
             let entries_len = self.entries.borrow().len();
-            for i in entries_len * *self.lines_per_item.borrow()..self.pane.get_height(dr) {
+            // Fill any remaining lines after the content (including padding) with the default style.
+            let start_line = entries_len * *self.lines_per_item.borrow() + pad_offset;
+            for i in start_line..self.pane.get_height(dr) {
                 let sty = self.current_sty.borrow().clone();
                 self.pane.get_content_mut().change_style_along_y(i, sty);
             }
@@ -1039,8 +1060,24 @@ impl Element for ListControlInner {
                             }
                         }
 
+                        // Adjust y for any top padding introduced by bottom justification.
+                        let pad_offset = if *self.bottom_justified.borrow() {
+                            let total_height = me.dr.size.height as usize;
+                            let content_height =
+                                self.entries.borrow().len() * *self.lines_per_item.borrow();
+                            total_height.saturating_sub(content_height)
+                        } else {
+                            0
+                        };
+                        // If the click is within the padding region, ignore it.
+                        if y < pad_offset {
+                            *self.clicked_down.borrow_mut() = false;
+                            return (false, resps);
+                        }
+                        // Convert the screen y coordinate to the content coordinate.
+                        let view_y = y - pad_offset;
                         // get item index at click position
-                        let item_i = self.get_item_index_for_view_y(y);
+                        let item_i = self.get_item_index_for_view_y(view_y);
                         if item_i >= self.entries.borrow().len() {
                             *self.clicked_down.borrow_mut() = false;
                             return (false, resps);

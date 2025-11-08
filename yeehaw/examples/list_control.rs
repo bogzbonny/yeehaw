@@ -13,11 +13,15 @@ async fn main() -> Result<(), Error> {
     let x = DynVal::new_flex(0.3); // 30% screen width
     let y = DynVal::new_flex(0.3).plus(1.into()); // 30% screen height + 1 ch
 
+    let label = Label::new(&ctx, "list control").at(x.clone(), y.minus(1.into()).clone());
+
     let entries = vec![
         "entry 1".to_string(),
         "entry 2".to_string(),
         "entry 3".to_string(),
     ];
+
+    let label_ = label.clone();
 
     let lc = ListControl::new(&ctx, entries)
         .with_dyn_width(DynVal::new_fixed(30))
@@ -30,8 +34,13 @@ async fn main() -> Result<(), Error> {
         .with_right_click_menu(&ctx)
         .with_scrollbar(&ctx)
         .with_bottom_justified()
+        .with_fn(Box::new(move |_, sel| {
+            label_.set_text(format!("selected: {:?}", sel));
+            EventResponses::default()
+        }))
         .at(x, y);
 
     main_el.add_element(Box::new(lc));
+    main_el.add_element(Box::new(label));
     tui.run(Box::new(main_el)).await
 }
