@@ -5,8 +5,6 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-01. list_control - switch renaming to simply using the listbox
-
 01. wezterm-term demo
      - https://github.com/wezterm/wezterm/issues/6663
   

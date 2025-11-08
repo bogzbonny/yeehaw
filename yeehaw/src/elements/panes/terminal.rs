@@ -5,7 +5,7 @@ use {
     crate::*,
     compact_str::CompactString,
     crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEventKind},
-    portable_pty::{native_pty_system, ChildKiller, CommandBuilder, MasterPty, PtySize},
+    portable_pty::{ChildKiller, CommandBuilder, MasterPty, PtySize, native_pty_system},
     std::{
         io::{BufWriter, Read, Write},
         sync::{Arc, RwLock},
@@ -328,6 +328,7 @@ impl Element for TerminalPane {
         let mut dirty = force_update;
         let mut prev_draw_i = 0;
         let grid = screen.grid();
+        let mut prev_draw = self.prev_draw.borrow_mut();
         for (y, row) in grid.visible_rows().enumerate() {
             if y > dr.size.height as usize {
                 break;
@@ -369,16 +370,19 @@ impl Element for TerminalPane {
                     x: x as u16,
                     y: y as u16,
                 };
-                if !dirty {
-                    if let Some(prev_draw) = self.prev_draw.borrow().get(prev_draw_i) {
-                        if prev_draw != &ch_out {
-                            dirty = true;
-                        }
-                    } else {
+                if let Some(prev_ch) = prev_draw.get_mut(prev_draw_i) {
+                    if prev_ch != &ch_out {
+                        *prev_ch = ch_out.clone();
                         dirty = true;
                     }
-                    prev_draw_i += 1;
+                } else {
+                    if prev_draw_i == out.len() {
+                        // exact len so can push to final element
+                        prev_draw.push(ch_out.clone());
+                    }
+                    dirty = true;
                 }
+                prev_draw_i += 1;
                 out.push(ch_out);
             }
         }
@@ -394,8 +398,10 @@ impl Element for TerminalPane {
         }
 
         if dirty {
+            //debug!("terminal dirty, prev_draw len: {}", prev_draw.len());
             DrawUpdate::update(out).into()
         } else {
+            //debug!("terminal clean, prev_draw len: {}", prev_draw.len());
             Vec::new()
         }
     }
