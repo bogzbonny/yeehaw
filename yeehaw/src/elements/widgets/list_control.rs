@@ -9,9 +9,6 @@ use {
     crossterm::event::{MouseButton, MouseEventKind},
 };
 
-// TODO list from the bottom up instead of top down
-// TODO allow for double click (both for mouse and keyboard enter ontop of already selected)
-
 // TODO allow for renaming on slow double click
 // TODO option for righthand x button for delete
 // TODO bordered pane option with scrollbars
@@ -35,6 +32,9 @@ pub struct ListControl {
     pub right_click_menu: Rc<RefCell<Option<RightClickMenu>>>,
     /// When true, list items are bottom‑justified within the allocated height.
     pub bottom_justified: Rc<RefCell<bool>>,
+
+    /// When true, double‑clicking a selected item triggers a hook.
+    pub double_click_enabled: Rc<RefCell<bool>>,
 }
 
 #[derive(Clone)]
@@ -65,6 +65,10 @@ pub struct ListControlInner {
     pub on_create_entry_fn: Rc<RefCell<ListControlFn>>,
     // Hook called when an entry is duplicated via the right‑click menu.
     pub on_duplicated_fn: Rc<RefCell<ListControlFn>>,
+    /// Hook called when a selected item is double‑clicked.
+    pub on_double_clicked_fn: Rc<RefCell<ListControlFn>>,
+    /// Enables the double‑click behaviour.
+    pub double_click_enabled: Rc<RefCell<bool>>,
 
     /// entry prefix before the each entry
     pub entry_prefix: Rc<RefCell<Option<String>>>,
@@ -112,6 +116,7 @@ impl ListControl {
             renaming_allowed: Rc::new(RefCell::new(false)),
             bottom_justified: Rc::new(RefCell::new(false)),
             right_click_menu: Rc::new(RefCell::new(None)),
+            double_click_enabled: Rc::new(RefCell::new(false)),
         };
         let lb_ = lb.clone();
         lb.pane
@@ -200,6 +205,21 @@ impl ListControl {
         // also propagate to the inner representation used for drawing
         *self.inner.borrow().bottom_justified.borrow_mut() = true;
         self
+    }
+
+    /// Enable double‑click support. When enabled, clicking an already‑selected
+    /// item (or pressing Enter while it is selected) will invoke the
+    /// `on_double_clicked_fn` hook instead of toggling the selection.
+    pub fn with_double_click_enabled(self) -> Self {
+        *self.double_click_enabled.borrow_mut() = true;
+        *self.inner.borrow().double_click_enabled.borrow_mut() = true;
+        self
+    }
+
+    /// Set the double‑click enabled flag directly.
+    pub fn set_double_click_enabled(&self, enabled: bool) {
+        *self.double_click_enabled.borrow_mut() = enabled;
+        *self.inner.borrow().double_click_enabled.borrow_mut() = enabled;
     }
 
     pub fn with_right_click_menu(self, ctx: &Context) -> Self {
@@ -367,6 +387,17 @@ impl ListControl {
         self.pane.set_styles(styles);
         self.inner.borrow().is_dirty.replace(true);
         self
+    }
+
+    /// Set a hook that is called when a selected item is double‑clicked.
+    pub fn with_on_double_clicked_fn(self, lb_fn: ListControlFn) -> Self {
+        self.set_on_double_clicked_fn(lb_fn);
+        self
+    }
+
+    /// Replace the double‑click hook.
+    pub fn set_on_double_clicked_fn(&self, lb_fn: ListControlFn) {
+        *self.inner.borrow().on_double_clicked_fn.borrow_mut() = lb_fn;
     }
 
     pub fn with_left_scrollbar(self, init_ctx: &Context) -> Self {
@@ -547,6 +578,8 @@ impl ListControlInner {
             on_delete_fn: Rc::new(RefCell::new(Box::new(|_, _| EventResponses::default()))),
             on_create_entry_fn: Rc::new(RefCell::new(Box::new(|_, _| EventResponses::default()))),
             on_duplicated_fn: Rc::new(RefCell::new(Box::new(|_, _| EventResponses::default()))),
+            on_double_clicked_fn: Rc::new(RefCell::new(Box::new(|_, _| EventResponses::default()))),
+            double_click_enabled: Rc::new(RefCell::new(false)),
             entry_prefix: Rc::new(RefCell::new(None)),
             bottom_justified: Rc::new(RefCell::new(false)),
             scrollbar: Rc::new(RefCell::new(None)),
@@ -923,7 +956,20 @@ impl ListControlInner {
         let already_selected = self.selected.borrow().contains(&i);
 
         if already_selected {
-            self.selected.borrow_mut().retain(|&r| r != i);
+            // If double‑click is enabled, invoke the double‑click hook instead of
+            // deselecting the entry.
+            if *self.double_click_enabled.borrow() {
+                let entries = self.entries.borrow().clone();
+                let selected_entries = self
+                    .selected
+                    .borrow()
+                    .iter()
+                    .map(|i| entries[*i].clone())
+                    .collect();
+                return (self.on_double_clicked_fn.borrow_mut())(ctx.clone(), selected_entries);
+            } else {
+                self.selected.borrow_mut().retain(|&r| r != i);
+            }
         } else {
             self.selected.borrow_mut().clear();
             self.selected.borrow_mut().push(i);
