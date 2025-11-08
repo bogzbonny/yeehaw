@@ -94,7 +94,6 @@ impl Element for SingleLineTextBox {
     fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
         match ev {
             Event::KeyCombo(ref ke) => {
-                debug!("SingleLineTextBox::receive_key event: {:?}", ke);
                 if self.tb.pane.get_selectability() != Selectability::Selected || ke.is_empty() {
                     return (false, EventResponses::default());
                 }

@@ -1298,15 +1298,15 @@ impl Pattern {
         let patterns = cs.patterns.borrow();
         let pattern = patterns.get(self.pattern_id);
         let Some(pattern) = pattern else {
-            debug!(
-                "pattern not found: {}, patterns len {}",
-                self.pattern_id,
-                patterns.len()
-            );
+            //debug!(
+            //    "pattern not found: {}, patterns len {}",
+            //    self.pattern_id,
+            //    patterns.len()
+            //);
             return Color::TRANSPARENT;
         };
         if pattern.0.is_empty() {
-            debug!("pattern is empty: {}", self.pattern_id);
+            //debug!("pattern is empty: {}", self.pattern_id);
             return Color::TRANSPARENT;
         }
         let x = (x as i32 - self.offset.0) as usize;

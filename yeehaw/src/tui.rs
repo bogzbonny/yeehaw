@@ -320,7 +320,7 @@ impl Tui {
             return Ok(true);
         }
 
-        debug!("tui Key event: {:?}", key_ev);
+        //debug!("tui Key event: {:?}", key_ev);
 
         // we only care about the event response as all keys are sent to the main
         // element no matter what
@@ -330,11 +330,11 @@ impl Tui {
         // NOTE the element ID is not used from GetDestinationElFromKB as it is
         // re-determined within the KeyEventsProcess (inefficient but convenient)
 
-        let Some((dest, evs)) = self.cup.eo.get_destination_el_from_kb(&mut self.kb) else {
+        let Some((_, evs)) = self.cup.eo.get_destination_el_from_kb(&mut self.kb) else {
             return Ok(false);
         };
         let ctx = self.context();
-        debug!("tui destination: {:?}", dest);
+        //debug!("tui destination: {:?}", dest);
 
         let (_, resps) =
             self.cup

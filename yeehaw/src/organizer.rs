@@ -535,14 +535,14 @@ impl ElementOrganizer {
     pub fn routed_event_process(
         &self, ctx: &Context, ev: Event, parent: Box<dyn Parent>,
     ) -> (Option<ElementID>, EventResponses) {
-        debug!(
-            "routed_event_process: ev: {ev:?}, parent: {:?}",
-            (*parent).get_id()
-        );
+        //debug!(
+        //    "routed_event_process: ev: {ev:?}, parent: {:?}",
+        //    (*parent).get_id()
+        //);
 
         // determine element_id to send events to
         let el_ids = self.get_destination_el(&ev);
-        debug!("\t\tel_ids: {el_ids:?}");
+        //debug!("\t\tel_ids: {el_ids:?}");
 
         let mut resps = EventResponses::default();
         let mut capturing_el_id = None;
