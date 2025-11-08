@@ -63,6 +63,10 @@ impl Default for MouseProtocolEncoding {
 /// Represents the overall terminal state.
 #[derive(Clone, Debug)]
 pub struct Screen {
+    /// anytime any change is made to the screen dirty is set to true
+    /// `dirty` must be set to false manually by the caller
+    dirty: bool,
+
     grid: crate::grid::Grid,
     alternate_grid: crate::grid::Grid,
 
@@ -82,6 +86,8 @@ impl Screen {
         let mut grid = crate::grid::Grid::new(size, scrollback_len);
         grid.allocate_rows();
         Self {
+            dirty: true,
+
             grid,
             alternate_grid: crate::grid::Grid::new(size, 0),
 
@@ -97,8 +103,18 @@ impl Screen {
         }
     }
 
+    pub fn set_dirty(&mut self, dirty: bool) {
+        self.dirty = dirty;
+    }
+
+    #[must_use]
+    pub fn is_dirty(&self) -> bool {
+        self.dirty
+    }
+
     /// Resizes the terminal.
     pub fn set_size(&mut self, rows: u16, cols: u16) {
+        self.dirty = true;
         self.grid.set_size(crate::grid::Size { rows, cols });
         self.alternate_grid
             .set_size(crate::grid::Size { rows, cols });
@@ -124,6 +140,7 @@ impl Screen {
     ///
     /// The value given will be clamped to the actual size of the scrollback.
     pub fn set_scrollback(&mut self, rows: usize) {
+        self.dirty = true;
         self.grid_mut().set_scrollback(rows);
     }
 
@@ -628,6 +645,7 @@ impl Screen {
     }
 
     fn enter_alternate_grid(&mut self) {
+        self.dirty = true;
         self.grid_mut().set_scrollback(0);
         self.set_mode(MODE_ALTERNATE_SCREEN);
         self.alternate_grid.allocate_rows();
@@ -638,20 +656,24 @@ impl Screen {
     }
 
     fn save_cursor(&mut self) {
+        self.dirty = true;
         self.grid_mut().save_cursor();
         self.saved_attrs = self.attrs;
     }
 
     fn restore_cursor(&mut self) {
+        self.dirty = true;
         self.grid_mut().restore_cursor();
         self.attrs = self.saved_attrs;
     }
 
     fn set_mode(&mut self, mode: u8) {
+        self.dirty = true;
         self.modes |= mode;
     }
 
     fn clear_mode(&mut self, mode: u8) {
+        self.dirty = true;
         self.modes &= !mode;
     }
 
@@ -660,20 +682,24 @@ impl Screen {
     }
 
     fn set_mouse_mode(&mut self, mode: MouseProtocolMode) {
+        self.dirty = true;
         self.mouse_protocol_mode = mode;
     }
 
     fn clear_mouse_mode(&mut self, mode: MouseProtocolMode) {
+        self.dirty = true;
         if self.mouse_protocol_mode == mode {
             self.mouse_protocol_mode = MouseProtocolMode::default();
         }
     }
 
     fn set_mouse_encoding(&mut self, encoding: MouseProtocolEncoding) {
+        self.dirty = true;
         self.mouse_protocol_encoding = encoding;
     }
 
     fn clear_mouse_encoding(&mut self, encoding: MouseProtocolEncoding) {
+        self.dirty = true;
         if self.mouse_protocol_encoding == encoding {
             self.mouse_protocol_encoding = MouseProtocolEncoding::default();
         }
@@ -682,6 +708,7 @@ impl Screen {
 
 impl Screen {
     pub(crate) fn text(&mut self, c: char) {
+        self.dirty = true;
         let pos = self.grid().pos();
         let size = self.grid().size();
         let attrs = self.attrs;
@@ -923,26 +950,32 @@ impl Screen {
     // control codes
 
     pub(crate) fn bs(&mut self) {
+        self.dirty = true;
         self.grid_mut().col_dec(1);
     }
 
     pub(crate) fn tab(&mut self) {
+        self.dirty = true;
         self.grid_mut().col_tab();
     }
 
     pub(crate) fn lf(&mut self) {
+        self.dirty = true;
         self.grid_mut().row_inc_scroll(1);
     }
 
     pub(crate) fn vt(&mut self) {
+        self.dirty = true;
         self.lf();
     }
 
     pub(crate) fn ff(&mut self) {
+        self.dirty = true;
         self.lf();
     }
 
     pub(crate) fn cr(&mut self) {
+        self.dirty = true;
         self.grid_mut().col_set(0);
     }
 
@@ -950,31 +983,37 @@ impl Screen {
 
     // ESC 7
     pub(crate) fn decsc(&mut self) {
+        self.dirty = true;
         self.save_cursor();
     }
 
     // ESC 8
     pub(crate) fn decrc(&mut self) {
+        self.dirty = true;
         self.restore_cursor();
     }
 
     // ESC =
     pub(crate) fn deckpam(&mut self) {
+        self.dirty = true;
         self.set_mode(MODE_APPLICATION_KEYPAD);
     }
 
     // ESC >
     pub(crate) fn deckpnm(&mut self) {
+        self.dirty = true;
         self.clear_mode(MODE_APPLICATION_KEYPAD);
     }
 
     // ESC M
     pub(crate) fn ri(&mut self) {
+        self.dirty = true;
         self.grid_mut().row_dec_scroll(1);
     }
 
     // ESC c
     pub(crate) fn ris(&mut self) {
+        self.dirty = true;
         let title = self.title.clone();
         let icon_name = self.icon_name.clone();
 
@@ -988,48 +1027,57 @@ impl Screen {
 
     // CSI @
     pub(crate) fn ich(&mut self, count: u16) {
+        self.dirty = true;
         self.grid_mut().insert_cells(count);
     }
 
     // CSI A
     pub(crate) fn cuu(&mut self, offset: u16) {
+        self.dirty = true;
         self.grid_mut().row_dec_clamp(offset);
     }
 
     // CSI B
     pub(crate) fn cud(&mut self, offset: u16) {
+        self.dirty = true;
         self.grid_mut().row_inc_clamp(offset);
     }
 
     // CSI C
     pub(crate) fn cuf(&mut self, offset: u16) {
+        self.dirty = true;
         self.grid_mut().col_inc_clamp(offset);
     }
 
     // CSI D
     pub(crate) fn cub(&mut self, offset: u16) {
+        self.dirty = true;
         self.grid_mut().col_dec(offset);
     }
 
     // CSI E
     pub(crate) fn cnl(&mut self, offset: u16) {
+        self.dirty = true;
         self.grid_mut().col_set(0);
         self.grid_mut().row_inc_clamp(offset);
     }
 
     // CSI F
     pub(crate) fn cpl(&mut self, offset: u16) {
+        self.dirty = true;
         self.grid_mut().col_set(0);
         self.grid_mut().row_dec_clamp(offset);
     }
 
     // CSI G
     pub(crate) fn cha(&mut self, col: u16) {
+        self.dirty = true;
         self.grid_mut().col_set(col - 1);
     }
 
     // CSI H
     pub(crate) fn cup(&mut self, (row, col): (u16, u16)) {
+        self.dirty = true;
         self.grid_mut().set_pos(crate::grid::Pos {
             row: row - 1,
             col: col - 1,
@@ -1038,6 +1086,7 @@ impl Screen {
 
     // CSI J
     pub(crate) fn ed(&mut self, mode: u16) {
+        self.dirty = true;
         let attrs = self.attrs;
         match mode {
             0 => self.grid_mut().erase_all_forward(attrs),
@@ -1051,11 +1100,13 @@ impl Screen {
 
     // CSI ? J
     pub(crate) fn decsed(&mut self, mode: u16) {
+        self.dirty = true;
         self.ed(mode);
     }
 
     // CSI K
     pub(crate) fn el(&mut self, mode: u16) {
+        self.dirty = true;
         let attrs = self.attrs;
         match mode {
             0 => self.grid_mut().erase_row_forward(attrs),
@@ -1069,48 +1120,57 @@ impl Screen {
 
     // CSI ? K
     pub(crate) fn decsel(&mut self, mode: u16) {
+        self.dirty = true;
         self.el(mode);
     }
 
     // CSI L
     pub(crate) fn il(&mut self, count: u16) {
+        self.dirty = true;
         self.grid_mut().insert_lines(count);
     }
 
     // CSI M
     pub(crate) fn dl(&mut self, count: u16) {
+        self.dirty = true;
         self.grid_mut().delete_lines(count);
     }
 
     // CSI P
     pub(crate) fn dch(&mut self, count: u16) {
+        self.dirty = true;
         self.grid_mut().delete_cells(count);
     }
 
     // CSI S
     pub(crate) fn su(&mut self, count: u16) {
+        self.dirty = true;
         self.grid_mut().scroll_up(count);
     }
 
     // CSI T
     pub(crate) fn sd(&mut self, count: u16) {
+        self.dirty = true;
         self.grid_mut().scroll_down(count);
     }
 
     // CSI X
     pub(crate) fn ech(&mut self, count: u16) {
+        self.dirty = true;
         let attrs = self.attrs;
         self.grid_mut().erase_cells(count, attrs);
     }
 
     // CSI d
     pub(crate) fn vpa(&mut self, row: u16) {
+        self.dirty = true;
         self.grid_mut().row_set(row - 1);
     }
 
     // CSI h
     #[allow(clippy::unused_self)]
     pub(crate) fn sm(&mut self, params: &vte::Params) {
+        self.dirty = true;
         // nothing, i think?
         if log::log_enabled!(log::Level::Debug) {
             log::debug!("unhandled SM mode: {}", crate::perform::param_str(params));
@@ -1119,6 +1179,7 @@ impl Screen {
 
     // CSI ? h
     pub(crate) fn decset(&mut self, params: &vte::Params) {
+        self.dirty = true;
         for param in params {
             match param {
                 &[1] => self.set_mode(MODE_APPLICATION_CURSOR),
@@ -1167,6 +1228,7 @@ impl Screen {
     // CSI l
     #[allow(clippy::unused_self)]
     pub(crate) fn rm(&mut self, params: &vte::Params) {
+        self.dirty = true;
         // nothing, i think?
         if log::log_enabled!(log::Level::Debug) {
             log::debug!("unhandled RM mode: {}", crate::perform::param_str(params));
@@ -1175,6 +1237,7 @@ impl Screen {
 
     // CSI ? l
     pub(crate) fn decrst(&mut self, params: &vte::Params) {
+        self.dirty = true;
         for param in params {
             match param {
                 &[1] => self.clear_mode(MODE_APPLICATION_CURSOR),
@@ -1225,6 +1288,7 @@ impl Screen {
 
     // CSI m
     pub(crate) fn sgr(&mut self, params: &vte::Params) {
+        self.dirty = true;
         // TODO really i want to just be able to pass in a default Params
         // instance with a 0 in it, but vte doesn't allow creating new Params
         // instances
@@ -1408,6 +1472,7 @@ impl Screen {
 
     // CSI r
     pub(crate) fn decstbm(&mut self, (top, bottom): (u16, u16)) {
+        self.dirty = true;
         self.grid_mut().set_scroll_region(top - 1, bottom - 1);
     }
 
@@ -1427,17 +1492,20 @@ impl Screen {
     // osc codes
 
     pub(crate) fn osc0(&mut self, s: &[u8]) {
+        self.dirty = true;
         self.osc1(s);
         self.osc2(s);
     }
 
     pub(crate) fn osc1(&mut self, s: &[u8]) {
+        self.dirty = true;
         if let Ok(s) = std::str::from_utf8(s) {
             self.icon_name = s.to_string();
         }
     }
 
     pub(crate) fn osc2(&mut self, s: &[u8]) {
+        self.dirty = true;
         if let Ok(s) = std::str::from_utf8(s) {
             self.title = s.to_string();
         }

@@ -319,11 +319,15 @@ impl Element for TerminalPane {
 
         let mut out = Vec::with_capacity(dr.size.width as usize * dr.size.height as usize);
 
-        let Ok(sc) = self.parser.read() else {
+        let Ok(mut sc) = self.parser.write() else {
             log_err!("TerminalPane: failed to read parser");
             return Vec::new();
         };
-        let screen = sc.screen();
+        let screen = sc.screen_mut();
+
+        if !screen.is_dirty() {
+            return Vec::new();
+        }
 
         let mut dirty = force_update;
         let mut prev_draw_i = 0;
@@ -396,6 +400,9 @@ impl Element for TerminalPane {
                 y,
             });
         }
+
+        // everything will be written so can set to clean
+        screen.set_dirty(false);
 
         if dirty {
             //debug!("terminal dirty, prev_draw len: {}", prev_draw.len());
