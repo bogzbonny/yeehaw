@@ -1,10 +1,9 @@
 
-01. BUG for inline TUI moving the mouse outside of the tui disables its from
-    being able to click anymore - this has been the case FOR A WHILE, I suspect
-    that it is getting caught in some kind of infinite loop 
-
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+10. bat preview window integration.
+     - with scroll functionality
+     - https://github.com/sharkdp/bat/blob/master/src/pretty_printer.rs
 __________________________________________________________________________
 EFFICIENCY
 flamegraph -o flame.svg --image-width=4000 --root -- ./target/debug/examples/colors teeff
@@ -266,7 +265,6 @@ BUGFIXES/PATCHES
 05. scrollbar bugfix. when in the textbox and deleting the final character
     the v-scrollbar will often jump around back and forth between the middle and
     the end
-
 
 10. resizing a scrollable pane should modify the offset of that pane to account
     for the extra space (instead of automatically extending out of range)
@@ -532,8 +530,6 @@ WIDGETS
       ┃   ┃                                 0  1  2
       ┻   ┻ 7 
 
-10. bat preview window integration.
-     - https://github.com/sharkdp/bat/blob/master/src/pretty_printer.rs
 
 20. double sided slider bar
      - start ch
