@@ -21,7 +21,7 @@ async fn main() -> Result<(), Error> {
 
     let lc = ListControl::new(&ctx, entries)
         .with_dyn_width(DynVal::new_fixed(30))
-        .with_dyn_height(DynVal::new_fixed(5))
+        .with_dyn_height(DynVal::new_fixed(10))
         .with_new_entry_tb(&ctx, "new entry...")
         .with_deleting_allowed()
         .with_shifting_allowed()
@@ -29,6 +29,7 @@ async fn main() -> Result<(), Error> {
         .with_renaming_allowed()
         .with_right_click_menu(&ctx)
         .with_scrollbar(&ctx)
+        .with_bottom_justified()
         .at(x, y);
 
     main_el.add_element(Box::new(lc));

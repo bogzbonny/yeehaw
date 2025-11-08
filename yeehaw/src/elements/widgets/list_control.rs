@@ -33,6 +33,8 @@ pub struct ListControl {
     pub duplicating_allowed: Rc<RefCell<bool>>,
     pub renaming_allowed: Rc<RefCell<bool>>,
     pub right_click_menu: Rc<RefCell<Option<RightClickMenu>>>,
+    /// When true, list items are bottom‑justified within the allocated height.
+    pub bottom_justified: Rc<RefCell<bool>>,
 }
 
 #[derive(Clone)]
@@ -66,6 +68,8 @@ pub struct ListControlInner {
 
     /// entry prefix before the each entry
     pub entry_prefix: Rc<RefCell<Option<String>>>,
+    /// When true, the list items are rendered bottom‑justified.
+    pub bottom_justified: Rc<RefCell<bool>>,
 
     pub item_selected_style: Rc<RefCell<Style>>,
     pub cursor_over_unselected_style: Rc<RefCell<Style>>,
@@ -106,6 +110,7 @@ impl ListControl {
             shifting_allowed: Rc::new(RefCell::new(false)),
             duplicating_allowed: Rc::new(RefCell::new(false)),
             renaming_allowed: Rc::new(RefCell::new(false)),
+            bottom_justified: Rc::new(RefCell::new(false)),
             right_click_menu: Rc::new(RefCell::new(None)),
         };
         let lb_ = lb.clone();
@@ -186,6 +191,14 @@ impl ListControl {
 
     pub fn with_renaming_allowed(self) -> Self {
         *self.renaming_allowed.borrow_mut() = true;
+        self
+    }
+
+    /// When enabled, list items are rendered bottom‑justified within the allocated height.
+    pub fn with_bottom_justified(self) -> Self {
+        *self.bottom_justified.borrow_mut() = true;
+        // also propagate to the inner representation used for drawing
+        *self.inner.borrow().bottom_justified.borrow_mut() = true;
         self
     }
 
@@ -535,6 +548,7 @@ impl ListControlInner {
             on_create_entry_fn: Rc::new(RefCell::new(Box::new(|_, _| EventResponses::default()))),
             on_duplicated_fn: Rc::new(RefCell::new(Box::new(|_, _| EventResponses::default()))),
             entry_prefix: Rc::new(RefCell::new(None)),
+            bottom_justified: Rc::new(RefCell::new(false)),
             scrollbar: Rc::new(RefCell::new(None)),
             is_dirty: Rc::new(RefCell::new(true)),
         }
@@ -776,6 +790,17 @@ impl ListControlInner {
                 &self.get_text_for_entry(i, dr.size.width.into(), *self.lines_per_item.borrow());
             if i < entries_len - 1 {
                 content += "\n";
+            }
+        }
+        // Apply bottom justification if enabled and there is extra vertical space.
+        if *self.bottom_justified.borrow() {
+            let total_height = dr.size.height as usize;
+            let content_height = entries_len * *self.lines_per_item.borrow();
+            if total_height > content_height {
+                let pad_lines = total_height - content_height;
+                let padding = "\n".repeat(pad_lines);
+                // prepend padding so that items appear at the bottom of the view.
+                content = format!("{}{}", padding, content);
             }
         }
         self.pane.set_content_from_string(&content);
