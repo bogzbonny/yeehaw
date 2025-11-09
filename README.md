@@ -48,7 +48,7 @@ NOTE this example requires steam locomotive (the `sl` command) to be installed i
 to see the train. Additionally it should be run from this showcase directory
 for the showcase-tab to work (which runs `cargo run --release --example showcase`).
 
-## Quickstart:   <!-- NOTE duplicate in docs/01_getting_started.md:10 -->
+## Quickstart:   <!-- NOTE duplicate in yeehaw/README_DOCS.md:10 -->
 
 A hello world example with a label and a reactive button:
 
@@ -81,7 +81,7 @@ async fn main() -> Result<(), Error> {
 }
 ```
 
-## Existing Elements:   <!-- NOTE duplicate in docs/01_getting_started.md:30 -->
+## Existing Elements:   <!-- NOTE duplicate in yeehaw/README_DOCS.md:39 -->
 
 #### Widgets
  - $EDITOR textbox (e.g. ACTUAL neovim... wow!)  
@@ -115,7 +115,7 @@ async fn main() -> Result<(), Error> {
  - mini-TUIs in the CLI (aka. use a TUI in-line with your command without taking
                          up the whole terminal)
 
-## Planned Stuff: <!-- NOTE duplicate in docs/01_getting_started.md:74 -->
+## Planned Stuff: <!-- NOTE duplicate in yeehaw/README_DOCS.md:73 -->
  - embed a whole dang yeehaw TUI into stateful ratatui widget, why not!
  - accordion stack container
  - hover comments for elements
@@ -132,7 +132,7 @@ async fn main() -> Result<(), Error> {
    improvement.
  - a sync version of the TUI for those who don't want async
 
-# Design Overview <!-- NOTE duplicate in docs/01_getting_started.md:90 -->
+# Design Overview <!-- NOTE duplicate in yeehaw/README_DOCS.md:90 -->
 
 Elements are arranged in a hierarchical manner while retaining semi-autonomy.
 Events (keyboard/mouse/custom) are routed from the top down (adjusted to be
@@ -183,13 +183,13 @@ Looking to understand more? Checkout:
    debug mode). Many small and strange UI bugs are resolvable via user
    intervention. Ideally yeehaw should never panic during release mode.
 
-### Non-Objectives <!-- NOTE duplicate in docs/01_getting_started.md:180 -->
+### Non-Objectives <!-- NOTE duplicate in yeehaw/README_DOCS.md:180 -->
 
  - catering to non-UTF-8 
  - catering (too much) to non-true-color terminals
  - minor performance improvements at the cost of developer ergonomics
 
-## Stability, Upcoming Refactors, Bugs <!-- NOTE duplicate in docs/01_getting_started.md:190 -->
+## Stability, Upcoming Refactors, Bugs <!-- NOTE duplicate in yeehaw/README_DOCS.md:119 -->
 
 If you plan on building/experimenting with yeehaw right now, that's great news!
 I'd like to keep you apprised of some upcoming changes. If you do wish to
@@ -239,7 +239,7 @@ HAVE NO FEAR
    and lumped together into a common Trait whereby entirely new classes of
    colors can be created by developers. 
 
-## Performance Considerations <!-- NOTE duplicate in docs/01_getting_started.md:169 -->
+## Performance Considerations <!-- NOTE duplicate in yeehaw/README_DOCS.md:169 -->
 
 TL;DR - Elements should provide drawing updates only when actually necessary,
 also things may be slightly laggy while in debug mode if deeply nested
@@ -261,10 +261,10 @@ the computational burden at render time, Elements should track their own state
 and only respond with drawing updates (in `fn drawing(..)`)  when their are
 actual state changes which warrant redrawing.
 
-The time based gradient design currently will cause ample recalculations, this
-will hopefully be improved with time, but just be aware that if you want to use
-those sweet sweet time gradient colors it will cost you. If you choose not to
-use time gradients you will be unaffected by these CPU drains.  
+The time based gradient design currently will cause ample CPU recalculations,
+this will hopefully be improved with time (GPU), but just be aware that if you
+want to use those sweet sweet time gradient colors it will cost you. If you
+choose not to use time gradients you will be unaffected by these CPU drains.  
 
 ## Tribute
 
@@ -275,18 +275,13 @@ use time gradients you will be unaffected by these CPU drains.
 
 ## Contributing 
 
-Yes! It'd be cool for this repo to become a mega repo. I want all sorts of funky
-widgets in this baby with first class support from this project (hiding behind
+Yes! It'd be cool for this repo to become a monolith. I want all sorts of funky
+widgets in here with first class support from this project (hiding behind
 feature flags to not gum up the compile times). All ideas will be considered
 with an open mind, if you'd like to build and element and merge it into yeehaw
 it'd be an honour, if you'd like to build a element with highly specific needs
 and the current Element trait is non-satisfactory, let's upgrade it - yeehaw
 should be able to build any TUI. 
-
-In the future, This repo will be transitioning to dynamic ownership based on
-contributions, so if your code becomes merged then your be gaining a specialized
-part piece of ownership in the project whenever dynamic ownership is integrated
-in (more on that later!).
 
 Any contribution you intentionally submit for inclusion in the work, as defined
 in the Apache-2.0 license, shall be Apache-2.0 license, without any additional

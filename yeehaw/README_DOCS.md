@@ -2,7 +2,7 @@
 `yeehaw` is a batteries included TUI framework with a rendering strategy, full
 event routing system and a plethora of elements included.  
 
-## Quickstart:   <!-- NOTE duplicate in README.md:47 -->
+## Quickstart:   <!-- NOTE duplicate in README.md:51 -->
 
 A hello world example with a label and a reactive button:
 
@@ -36,7 +36,7 @@ async fn main() -> Result<(), Error> {
 }
 ```
 
-## Existing Elements:  <!-- NOTE duplicate in README.md:80 -->
+## Existing Elements:  <!-- NOTE duplicate in README.md:84 -->
 
 #### Widgets
  - $EDITOR textbox (e.g. ACTUAL neovim... wow!)  
@@ -70,7 +70,7 @@ async fn main() -> Result<(), Error> {
  - mini-TUIs in the CLI (aka. use a TUI in-line with your command without taking
    up the whole terminal)
 
-## Planned Stuff: <!-- NOTE duplicate in README.md:70 --> 
+## Planned Stuff: <!-- NOTE duplicate in README.md:118 --> 
  - embed a whole dang yeehaw TUI into stateful ratatui widget, why not!
  - accordion stack container
  - hover comments for elements
@@ -87,7 +87,7 @@ async fn main() -> Result<(), Error> {
    improvement.
  - a sync version of the TUI for those who don't want async
 
-# Design Overview <!-- NOTE duplicate in README.md:130 -->
+# Design Overview <!-- NOTE duplicate in README.md:135 -->
 
 Elements are arranged in a hierarchical manner while retaining semi-autonomy.
 Events (keyboard/mouse/custom) are routed from the top down (adjusted to be
@@ -116,7 +116,7 @@ Looking to understand more? Checkout:
  - [Context](crate::context::Context) <- an object which can be found nearly everywhere
  - [DynVal](crate::dyn_value::DynVal) <- the basis for all layouts and sizes
 
-## Stability, Upcoming Refactors, Bugs <!-- NOTE duplicate in README.md:187 -->
+## Stability, Upcoming Refactors, Bugs <!-- NOTE duplicate in README.md:192 -->
 
 If you plan on building/experimenting with yeehaw right now, that's great news!
 I'd like to keep you apprised of some upcoming changes. If you do wish to
@@ -188,7 +188,7 @@ the computational burden at render time, Elements should track their own state
 and only respond with drawing updates (in `fn drawing(..)`)  when their are
 actual state changes which warrant redrawing.
 
-The time based gradient design currently will cause ample recalculations, this
-will hopefully be improved with time, but just be aware that if you want to use
-those sweet sweet time gradient colors it will cost you. If you choose not to
-use time gradients you will be unaffected by these CPU drains.  
+The time based gradient design currently will cause ample CPU recalculations,
+this will hopefully be improved with time (GPU), but just be aware that if you
+want to use those sweet sweet time gradient colors it will cost you. If you
+choose not to use time gradients you will be unaffected by these CPU drains.  
