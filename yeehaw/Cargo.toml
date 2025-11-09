@@ -1,6 +1,6 @@
 [package]
 name = "yeehaw"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Bogz Bonny <bogzbonny@protonmail.com>", "The Yeehaw Developers"] 
 keywords = ["tui", "terminal", "gui", "cli"]
@@ -11,36 +11,115 @@ categories = ["gui", "text-processing", "command-line-interface", "command-line-
 readme = "README.md"
 license = "Apache-2.0"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+# https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-
-
+#bytes = "^1.8.0"
 yeehaw_derive = { version = "0.1.0", path = "../yeehaw_derive" }
-vt100_yh = { version = "0.17.0", path = "../vt100_yh" }
-box_drawing_logic = { version = "0.1.0", path = "../box_drawing_logic" }
-
 crossterm = {version = "^0.28.0", features = ["event-stream", "serde"]}
 futures = "^0.3.0"
-anyhow = "^1.0.0"
-rand = "^0.8.0"
-parking_lot = {version = "^0.12.0", features = ["hardware-lock-elision"] }
-once_cell = "^1.19.0"
-tokio = { version = "^1.35.0", features = ["time", "sync", "rt", "macros", "rt-multi-thread"] }
+compact_str = "^0.8.0"
 snafu = { version = "^0.8.0", features = ["backtrace"] }
 serde = { version = "^1.0.207", features = ["derive"] }
 serde_json = "^1.0.124"
-arboard = "^3.2.0"
-figlet-rs = "^0.1.5"
+tokio = { version = "^1.35.0", features = ["time", "sync", "rt", "macros", "rt-multi-thread"] }
+parking_lot = {version = "^0.12.0", features = ["hardware-lock-elision"] }
+once_cell = "^1.19.0"
 dyn-clone = "^1.0.17"
-tempfile = "3"
-num-traits = "^0.2.0"
 rayon = "^1.10.0"
-portable-pty = { version = "0.8.1" }
-bytes = "^1.8.0"
 
-ratatui = "^0.29.0"
-ratatui-image = "4.1.0"
-image = { version = ">=0.24", default-features = false, features = ["jpeg"] }
+ratatui = {version = "^0.29.0", optional = true}
+ratatui-image = {version = "4.1.0", optional =true}
+image = { version = ">=0.24", default-features = false, features = ["jpeg"], optional = true }
 
-compact_str = "^0.8.0"
+# figlet feature deps
+figlet-rs = {version = "^0.1.5", optional = true}
+
+# textbox feature deps
+arboard = {version = "^3.2.0", optional = true}
+num-traits = {version = "^0.2.0", optional = true}
+
+# terminal feature deps
+anyhow = {version = "^1.0.0", optional = true} 
+vt100_yh = { version = "0.17.0", path = "../vt100_yh", optional = true }
+portable-pty = { version = "0.8.1", optional = true}
+
+# terminal_editor feature deps
+tempfile = {version = "3", optional = true}
+
+# used with table feature
+box_drawing_logic = { version = "0.1.0", path = "../box_drawing_logic", optional = true }
+
+# used for random colors (rand feature)
+rand = {version = "^0.8.0", optional = true}
+
+# ------------------------------------------------------------------------------------------------------
+
+[features]
+# NOTE crate-features are documented in yeehaw/README_DOCS.md:119
+default = []
+full = ["table", "rand", "terminal", "terminal_editor", "textbox", "figlet", "image"] # enable everything
+rand = ["dep:rand"] # enables random colors, but requires the rand crate
+table = ["dep:box_drawing_logic"] # enable table element
+textbox = ["dep:arboard", "dep:num-traits"] # enable textbox, list-control, and file-editor elements
+figlet = ["dep:figlet-rs"] # enable figlet element
+terminal = ["dep:anyhow", "dep:vt100_yh", "dep:portable-pty"] # enable terminal panes
+terminal_editor = ["terminal", "dep:tempfile"] # enable terminal-editor panes
+image = ["ratatui", "dep:image", "dep:ratatui-image"] # enable image viewing pane
+ratatui = ["dep:ratatui"] # enable ratatui compatibility functionality for ratatui ported elements
+
+# ------------------------------------------------------------------------------------------------------
+[[example]]
+name = "table"
+path = "examples/table.rs"
+required-features = ["table"]
+
+[[example]]
+name = "showcase"
+path = "examples/showcase.rs"
+required-features = ["full"]
+
+[[example]]
+name = "terminal"
+path = "examples/terminal.rs"
+required-features = ["terminal"]
+
+[[example]]
+name = "editor"
+path = "examples/editor.rs"
+required-features = ["terminal"]
+
+[[example]]
+name = "window"
+path = "examples/window.rs"
+required-features = ["terminal_editor"]
+
+[[example]]
+name = "widgets"
+path = "examples/widgets.rs"
+required-features = ["textbox", "figlet"]
+
+[[example]]
+name = "figlet"
+path = "examples/figlet.rs"
+required-features = ["figlet"]
+
+[[example]]
+name = "image"
+path = "examples/image.rs"
+required-features = ["image"]
+
+[[example]]
+name = "list_control"
+path = "examples/list_control.rs"
+required-features = ["textbox"]
+
+[[example]]
+name = "file_nav"
+path = "examples/file_nav.rs"
+required-features = ["textbox"]
+
+[[example]]
+name = "colors"
+path = "examples/colors.rs"
+required-features = ["textbox"]

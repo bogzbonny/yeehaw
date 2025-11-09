@@ -3,18 +3,26 @@ pub mod button;
 pub mod checkbox;
 pub mod dial;
 pub mod dropdownlist;
-pub mod figlet;
-pub mod image_viewer;
 pub mod label;
-pub mod list_control;
 pub mod listbox;
 pub mod radio;
 pub mod scrollbar;
 pub mod slider;
-pub mod textbox;
-pub mod textbox_numbers;
-pub mod textbox_single_line;
 pub mod toggle;
+
+#[cfg(feature = "image")]
+pub mod image_viewer;
+#[cfg(feature = "textbox")]
+pub mod list_control;
+#[cfg(feature = "textbox")]
+pub mod textbox;
+#[cfg(feature = "textbox")]
+pub mod textbox_numbers;
+#[cfg(feature = "textbox")]
+pub mod textbox_single_line;
+
+#[cfg(feature = "figlet")]
+pub mod figlet;
 
 pub use {
     arb_selector::ArbSelector,
@@ -22,10 +30,7 @@ pub use {
     checkbox::Checkbox,
     dial::Dial,
     dropdownlist::DropdownList,
-    figlet::FigletText,
-    image_viewer::ImageViewer,
     label::Label,
-    list_control::ListControl,
     listbox::ListBox,
     radio::RadioButtons,
     scrollbar::{
@@ -33,8 +38,17 @@ pub use {
         VerticalScrollbar,
     },
     slider::Slider,
-    textbox::TextBox,
-    textbox_numbers::NumbersTextBox,
-    textbox_single_line::SingleLineTextBox,
     toggle::Toggle,
+};
+
+#[cfg(feature = "image")]
+pub use image_viewer::ImageViewer;
+
+#[cfg(feature = "figlet")]
+pub use figlet::FigletText;
+
+#[cfg(feature = "textbox")]
+pub use {
+    list_control::ListControl, textbox::TextBox, textbox_numbers::NumbersTextBox,
+    textbox_single_line::SingleLineTextBox,
 };

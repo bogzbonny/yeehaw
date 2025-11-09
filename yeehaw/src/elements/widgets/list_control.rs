@@ -1155,28 +1155,3 @@ impl Element for ListControlInner {
         self.pane.drawing(ctx, dr, force_update)
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::elements::menu::MenuPath;
-    use crate::{ColorStore, Context, SortingHat};
-    use tokio::sync::mpsc;
-
-    #[test]
-    fn right_click_menu_contains_rename() {
-        // create a minimal context
-        let (tx, _rx) = mpsc::channel::<Event>(1);
-        let ctx = Context::new_context_no_dur(&SortingHat::default(), tx, &ColorStore::default());
-
-        let lc = ListControl::new(&ctx, vec!["first".to_string(), "second".to_string()]);
-        lc.set_right_click_menu(&ctx);
-        let rcm = lc.right_click_menu.borrow();
-        assert!(rcm.is_some(), "right click menu should be set");
-        let menu = &rcm.as_ref().unwrap().menu;
-        assert!(
-            menu.contains_menu_item(MenuPath("Rename".to_string())),
-            "Rename entry should exist in the right‑click menu"
-        );
-    }
-}

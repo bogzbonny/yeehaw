@@ -1,6 +1,5 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 10. bat preview window integration.
      - with scroll functionality
      - https://github.com/sharkdp/bat/blob/master/src/pretty_printer.rs
@@ -265,6 +264,10 @@ BUGFIXES/PATCHES
 05. scrollbar bugfix. when in the textbox and deleting the final character
     the v-scrollbar will often jump around back and forth between the middle and
     the end
+
+05. TerminalPane scrollback doesn't seem to work (although neovim WITHIN a
+    terminal pane does seem to register scrolls properly... maybe a bug with
+    vt100? or maybe need to build this functionality custom into TerminalPane)
 
 10. resizing a scrollable pane should modify the offset of that pane to account
     for the extra space (instead of automatically extending out of range)

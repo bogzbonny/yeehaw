@@ -1,10 +1,12 @@
 use {
     crate::{Context, DynVal, Size},
     crossterm::style::Color as CrosstermColor,
-    rand::Rng,
     std::time::Duration,
     std::{cell::RefCell, rc::Rc},
 };
+
+#[cfg(feature = "rand")]
+use rand::Rng;
 
 /// The color store is a simple store for complex data within each color. This allows for
 /// significantly less data to be cloned each time a color is cloned. This is a bit annoying to
@@ -100,6 +102,7 @@ impl Default for Color {
     }
 }
 
+#[cfg(feature = "ratatui")]
 impl From<ratatui::style::Color> for Color {
     fn from(c: ratatui::style::Color) -> Self {
         Self::ANSI(c.into())
@@ -112,6 +115,7 @@ impl From<CrosstermColor> for Color {
     }
 }
 
+#[cfg(feature = "terminal")]
 impl From<vt100_yh::Color> for Color {
     #[inline]
     fn from(value: vt100_yh::Color) -> Self {
@@ -289,6 +293,7 @@ impl Color {
         }
     }
 
+    #[cfg(feature = "rand")]
     pub fn random_light() -> Self {
         let r: u8 = rand::thread_rng().gen_range(150..=255);
         let g: u8 = rand::thread_rng().gen_range(150..=255);
@@ -296,6 +301,7 @@ impl Color {
         Self::new(r, g, b)
     }
 
+    #[cfg(feature = "rand")]
     pub fn random_dark() -> Self {
         let r: u8 = rand::thread_rng().gen_range(0..150);
         let g: u8 = rand::thread_rng().gen_range(0..150);

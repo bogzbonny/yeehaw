@@ -43,8 +43,6 @@ pub use {
 };
 
 pub use {
-    box_drawing_logic::{BoxDrawingCh, SideAttribute as BoxSideAttr},
-
     // we re-export these so that the user doesn't have to import them from std
     // while using yeehaw-derive
     std::{

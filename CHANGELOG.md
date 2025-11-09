@@ -2,11 +2,12 @@
 # UNRELEASED
 
 ## Features
+ - added feature flags to yeehaw to pair down unnecessary dependencies
  - better overall rendering cache approach which massively reduces cpu usage 
+ - drastically improve terminal cpu usage 
  - menu bar now allows for navigation with arrow keys
  - introduced a table container element 
  - box drawing logic crate 
- - drastically improve terminal cpu usage 
  - added list control element 
 
 ## Bugfixes

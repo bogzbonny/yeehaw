@@ -1,7 +1,6 @@
 use {
     crate::{Color, Context, Size},
     crossterm::style::{Attribute as CrAttribute, Attributes as CrAttributes},
-    ratatui::style::Modifier as RAttributes,
 };
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug, Default)]
@@ -339,6 +338,7 @@ impl From<(Color, Color)> for Style {
     }
 }
 
+#[cfg(feature = "ratatui")]
 impl From<ratatui::buffer::Cell> for Style {
     fn from(cell: ratatui::buffer::Cell) -> Self {
         Self {
@@ -576,6 +576,10 @@ impl From<CrAttributes> for Attributes {
     }
 }
 
+#[cfg(feature = "ratatui")]
+use ratatui::style::Modifier as RAttributes;
+
+#[cfg(feature = "ratatui")]
 impl From<RAttributes> for Attributes {
     fn from(attr: RAttributes) -> Self {
         Self {

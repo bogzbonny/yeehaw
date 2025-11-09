@@ -1,8 +1,8 @@
 use {
     crate::{
-        BgTranspSrc, Color, ColorStore, Context, DynLocation, FgTranspSrc, Size, Style, UlTranspSrc,
+        BgTranspSrc, Color, ColorStore, Context, DynLocation, Error, FgTranspSrc, Size, Style,
+        UlTranspSrc,
     },
-    anyhow::{anyhow, Error},
     compact_str::CompactString,
     crossterm::style::{ContentStyle, StyledContent},
     std::ops::{Deref, DerefMut},
@@ -275,6 +275,7 @@ impl From<Vec<DrawChPos>> for DrawChPosVec {
     }
 }
 
+#[cfg(feature = "ratatui")]
 impl From<ratatui::buffer::Buffer> for DrawChs2D {
     fn from(buf: ratatui::buffer::Buffer) -> Self {
         let mut out = Vec::new();
@@ -598,7 +599,7 @@ impl DrawChs2D {
             return Ok(self.clone());
         }
         if self.height() != chs2.height() {
-            return Err(anyhow!(
+            return Err(Error::new(
                 "DrawChs2D ConcatRuneMatrices: chs.len() != chs2.len()",
             ));
         }

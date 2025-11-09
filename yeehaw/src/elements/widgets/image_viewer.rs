@@ -2,9 +2,8 @@ use {
     crate::*,
     image::DynamicImage,
     ratatui::widgets::StatefulWidget,
-    //ratatui::widgets::StatefulWidget;
     ratatui_image::{
-        picker::Picker, protocol::StatefulProtocol, Resize as RatResize, StatefulImage,
+        Resize as RatResize, StatefulImage, picker::Picker, protocol::StatefulProtocol,
     },
 };
 
