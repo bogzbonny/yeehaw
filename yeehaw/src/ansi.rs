@@ -291,96 +291,6 @@ pub fn get_chs_2d(s: &[u8], sty: Style) -> DrawChs2D {
     DrawChs2D(out)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::{Color, ChPlus};
-    use crossterm::style::Color as CrosstermColor;
-
-    #[test]
-    fn test_get_chs_2d_simple() {
-        let s = b"ab\nc";
-        let chs = get_chs_2d(s, Style::default_const());
-        assert_eq!(chs.width(), 2);
-        assert_eq!(chs.height(), 2);
-        // Row 0
-        assert_eq!(chs[0][0].ch, ChPlus::Char('a'));
-        assert_eq!(chs[0][1].ch, ChPlus::Char('b'));
-        // Row 1
-        assert_eq!(chs[1][0].ch, ChPlus::Char('c'));
-    }
-
-    #[test]
-    fn test_get_chs_2d_ansi_color() {
-        // Red foreground for 'X', then reset, then normal 'Y'
-        let s = b"\x1b[31mX\x1b[0mY";
-        let chs = get_chs_2d(s, Style::default_const());
-        assert_eq!(chs.width(), 2);
-        // First character should have red foreground
-        match &chs[0][0].style.fg {
-            Some((Color::ANSI(CrosstermColor::DarkRed), _)) => {}
-            _ => panic!("First char does not have expected red foreground"),
-        }
-        // Second character should have no foreground set (default)
-        assert!(chs[0][1].style.fg.is_none());
-    }
-}
-
-//pub(crate) fn text(mut s: &[u8]) -> IResult<&[u8], Text<'static>> {
-//    let mut lines = Vec::new();
-//    let mut last = Style::new();
-//    while let Ok((_s, (line, style))) = line(last)(s) {
-//        lines.push(line);
-//        last = style;
-//        s = _s;
-//        if s.is_empty() {
-//            break;
-//        }
-//    }
-//    Ok((s, Text::from(lines)))
-//}
-
-//fn line(style: Style) -> impl Fn(&[u8]) -> IResult<&[u8], (Line<'static>, Style)> {
-//    move |s: &[u8]| -> IResult<&[u8], (Line<'static>, Style)> {
-//        let (s, mut text) = take_while(|c| c != b'\n').parse(s)?;
-//        let (s, _) = opt(tag("\n")).parse(s)?;
-//        let mut spans = Vec::new();
-//        let mut last = style;
-//        while let Ok((s, span)) = span(last)(text) {
-//            // Since reset now tracks seperately we can skip the reset check
-//            last = last.patch(span.style);
-
-//            if !span.content.is_empty() {
-//                spans.push(span);
-//            }
-//            text = s;
-//            if text.is_empty() {
-//                break;
-//            }
-//        }
-
-//        Ok((s, (Line::from(spans), last)))
-//    }
-//}
-
-//fn span(last: Style) -> impl Fn(&[u8]) -> IResult<&[u8], Span<'static>, nom::error::Error<&[u8]>> {
-//    move |s: &[u8]| -> IResult<&[u8], Span<'static>> {
-//        let mut last = last;
-//        let (s, style) = opt(style_f(last)).parse(s)?;
-
-//        let (s, text) = map_res(take_while(|c| c != b'\x1b' && c != b'\n'), |t| {
-//            std::str::from_utf8(t)
-//        })
-//        .parse(s)?;
-
-//        if let Some(style) = style.flatten() {
-//            last = last.patch(style);
-//        }
-
-//        Ok((s, Span::styled(text.to_owned(), last)))
-//    }
-//}
-
 fn style_f(
     style: Style,
 ) -> impl Fn(&[u8]) -> IResult<&[u8], Option<Style>, nom::error::Error<&[u8]>> {
@@ -488,84 +398,157 @@ fn color_type(s: &[u8]) -> IResult<&[u8], ColorType> {
 
 // ------------------------------------------------
 
-#[test]
-fn color_test() {
-    let c = color(b"2;255;255;255").unwrap();
-    assert_eq!(c.1, Color::new(255, 255, 255));
-    let c = color(b"5;255").unwrap();
-    assert_eq!(c.1, CrosstermColor::AnsiValue(255).into());
-    let err = color(b"10;255");
-    assert_ne!(err, Ok(c));
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{ChPlus, Color};
+    use crossterm::style::Color as CrosstermColor;
 
-#[test]
-fn ansi_items_test() {
-    let sc: Style = Default::default();
-    let t = style_f(sc.clone())(b"\x1b[38;2;3;3;3m").unwrap().1.unwrap();
-    assert_eq!(
-        t,
-        Style::from(AnsiStates {
-            style: sc.clone(),
-            items: vec![AnsiItem {
-                code: AnsiCode::SetForegroundColor,
-                color: Some(Color::new(3, 3, 3))
-            }]
-            .into()
-        })
-    );
-    assert_eq!(
-        style_f(sc.clone())(b"\x1b[38;5;3m").unwrap().1.unwrap(),
-        Style::from(AnsiStates {
-            style: sc.clone(),
-            items: vec![AnsiItem {
-                code: AnsiCode::SetForegroundColor,
-                color: Some(CrosstermColor::AnsiValue(3).into())
-            }]
-            .into()
-        })
-    );
-    assert_eq!(
-        style_f(sc.clone())(b"\x1b[38;5;3;48;5;3m")
-            .unwrap()
-            .1
-            .unwrap(),
-        Style::from(AnsiStates {
-            style: sc.clone(),
-            items: vec![
-                AnsiItem {
+    #[test]
+    fn test_get_chs_2d_simple() {
+        let s = b"ab\nc";
+        let chs = get_chs_2d(s, Style::default_const());
+        assert_eq!(chs.width(), 2);
+        assert_eq!(chs.height(), 2);
+        // Row 0
+        assert_eq!(chs[0][0].ch, ChPlus::Char('a'));
+        assert_eq!(chs[0][1].ch, ChPlus::Char('b'));
+        // Row 1
+        assert_eq!(chs[1][0].ch, ChPlus::Char('c'));
+    }
+
+    #[test]
+    fn test_get_chs_2d_ansi_color() {
+        // Red foreground for 'X', then reset, then normal 'Y'
+        let s = b"\x1b[31mX\x1b[0mY";
+        let chs = get_chs_2d(s, Style::default_const());
+        assert_eq!(chs.width(), 2);
+        // First character should have red foreground
+        match &chs[0][0].style.fg {
+            Some((Color::ANSI(CrosstermColor::DarkRed), _)) => {}
+            _ => panic!("First char does not have expected red foreground"),
+        }
+        // Second character should have no foreground set (default)
+        assert!(chs[0][1].style.fg.is_none());
+    }
+
+    #[test]
+    fn test_get_chs_2d_rgb_fg_bg() {
+        // Set foreground to RGB (10,20,30), then background to RGB (100,110,120), then reset.
+        let s = b"\x1b[38;2;10;20;30mA\x1b[48;2;100;110;120mB\x1b[0mC";
+        let chs = get_chs_2d(s, Style::default_const());
+        assert_eq!(chs.width(), 3);
+        // First character: foreground RGB, no background.
+        match &chs[0][0].style.fg {
+            Some((Color::Rgba(rgba), _)) => {
+                assert_eq!(rgba.r, 10);
+                assert_eq!(rgba.g, 20);
+                assert_eq!(rgba.b, 30);
+            }
+            _ => panic!("First char missing expected RGB foreground"),
+        }
+        assert!(chs[0][0].style.bg.is_none());
+        // Second character: inherits foreground RGB, adds background RGB.
+        match &chs[0][1].style.fg {
+            Some((Color::Rgba(rgba), _)) => {
+                assert_eq!(rgba.r, 10);
+                assert_eq!(rgba.g, 20);
+                assert_eq!(rgba.b, 30);
+            }
+            _ => panic!("Second char missing expected RGB foreground"),
+        }
+        match &chs[0][1].style.bg {
+            Some((Color::Rgba(rgba), _)) => {
+                assert_eq!(rgba.r, 100);
+                assert_eq!(rgba.g, 110);
+                assert_eq!(rgba.b, 120);
+            }
+            _ => panic!("Second char missing expected RGB background"),
+        }
+        // Third character after reset should have no fg/bg.
+        assert!(chs[0][2].style.fg.is_none());
+        assert!(chs[0][2].style.bg.is_none());
+    }
+
+    #[test]
+    fn color_test() {
+        let c = color(b"2;255;255;255").unwrap();
+        assert_eq!(c.1, Color::new(255, 255, 255));
+        let c = color(b"5;255").unwrap();
+        assert_eq!(c.1, CrosstermColor::AnsiValue(255).into());
+        let err = color(b"10;255");
+        assert_ne!(err, Ok(c));
+    }
+
+    #[test]
+    fn ansi_items_test() {
+        let sc: Style = Default::default();
+        let t = style_f(sc.clone())(b"\x1b[38;2;3;3;3m").unwrap().1.unwrap();
+        assert_eq!(
+            t,
+            Style::from(AnsiStates {
+                style: sc.clone(),
+                items: vec![AnsiItem {
+                    code: AnsiCode::SetForegroundColor,
+                    color: Some(Color::new(3, 3, 3))
+                }]
+                .into()
+            })
+        );
+        assert_eq!(
+            style_f(sc.clone())(b"\x1b[38;5;3m").unwrap().1.unwrap(),
+            Style::from(AnsiStates {
+                style: sc.clone(),
+                items: vec![AnsiItem {
                     code: AnsiCode::SetForegroundColor,
                     color: Some(CrosstermColor::AnsiValue(3).into())
-                },
-                AnsiItem {
-                    code: AnsiCode::SetBackgroundColor,
-                    color: Some(CrosstermColor::AnsiValue(3).into())
-                }
-            ]
-            .into()
-        })
-    );
-    assert_eq!(
-        style_f(sc.clone())(b"\x1b[38;5;3;48;5;3;1m")
-            .unwrap()
-            .1
-            .unwrap(),
-        Style::from(AnsiStates {
-            style: sc.clone(),
-            items: vec![
-                AnsiItem {
-                    code: AnsiCode::SetForegroundColor,
-                    color: Some(CrosstermColor::AnsiValue(3).into())
-                },
-                AnsiItem {
-                    code: AnsiCode::SetBackgroundColor,
-                    color: Some(CrosstermColor::AnsiValue(3).into())
-                },
-                AnsiItem {
-                    code: AnsiCode::Bold,
-                    color: None
-                }
-            ]
-            .into()
-        })
-    );
+                }]
+                .into()
+            })
+        );
+        assert_eq!(
+            style_f(sc.clone())(b"\x1b[38;5;3;48;5;3m")
+                .unwrap()
+                .1
+                .unwrap(),
+            Style::from(AnsiStates {
+                style: sc.clone(),
+                items: vec![
+                    AnsiItem {
+                        code: AnsiCode::SetForegroundColor,
+                        color: Some(CrosstermColor::AnsiValue(3).into())
+                    },
+                    AnsiItem {
+                        code: AnsiCode::SetBackgroundColor,
+                        color: Some(CrosstermColor::AnsiValue(3).into())
+                    }
+                ]
+                .into()
+            })
+        );
+        assert_eq!(
+            style_f(sc.clone())(b"\x1b[38;5;3;48;5;3;1m")
+                .unwrap()
+                .1
+                .unwrap(),
+            Style::from(AnsiStates {
+                style: sc.clone(),
+                items: vec![
+                    AnsiItem {
+                        code: AnsiCode::SetForegroundColor,
+                        color: Some(CrosstermColor::AnsiValue(3).into())
+                    },
+                    AnsiItem {
+                        code: AnsiCode::SetBackgroundColor,
+                        color: Some(CrosstermColor::AnsiValue(3).into())
+                    },
+                    AnsiItem {
+                        code: AnsiCode::Bold,
+                        color: None
+                    }
+                ]
+                .into()
+            })
+        );
+    }
 }
