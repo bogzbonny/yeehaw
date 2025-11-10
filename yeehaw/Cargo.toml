@@ -28,6 +28,7 @@ once_cell = "^1.19.0"
 dyn-clone = "^1.0.17"
 rayon = "^1.10.0"
 
+# image feature deps
 ratatui = {version = "^0.29.0", optional = true}
 ratatui-image = {version = "4.1.0", optional =true}
 image = { version = ">=0.24", default-features = false, features = ["jpeg"], optional = true }
@@ -53,20 +54,25 @@ box_drawing_logic = { version = "0.1.0", path = "../box_drawing_logic", optional
 # used for random colors (rand feature)
 rand = {version = "^0.8.0", optional = true}
 
+# used for bat viewer
+# NOTE update to 0.26 once ratatui 0.30 is released (dep issue with unicode-width crate)
+bat = {version = "^0.25.0", optional = true}
+
 # ------------------------------------------------------------------------------------------------------
 
 [features]
 # NOTE crate-features are documented in yeehaw/README_DOCS.md:119
 default = []
-full = ["table", "rand", "terminal", "terminal_editor", "textbox", "figlet", "image"] # enable everything
-rand = ["dep:rand"] # enables random colors, but requires the rand crate
-table = ["dep:box_drawing_logic"] # enable table element
+full = ["table", "rand", "terminal", "terminal_editor", "textbox", "figlet", "image", "bat"] # enable everything
 textbox = ["dep:arboard", "dep:num-traits"] # enable textbox, list-control, and file-editor elements
-figlet = ["dep:figlet-rs"] # enable figlet element
 terminal = ["dep:anyhow", "dep:vt100_yh", "dep:portable-pty"] # enable terminal panes
 terminal_editor = ["terminal", "dep:tempfile"] # enable terminal-editor panes
+table = ["dep:box_drawing_logic"] # enable table element
+bat = ["dep:bat"] # enable bat viewer element
+figlet = ["dep:figlet-rs"] # enable figlet element
 image = ["ratatui", "dep:image", "dep:ratatui-image"] # enable image viewing pane
 ratatui = ["dep:ratatui"] # enable ratatui compatibility functionality for ratatui ported elements
+rand = ["dep:rand"] # enables random colors, but requires the rand crate
 
 # ------------------------------------------------------------------------------------------------------
 [[example]]

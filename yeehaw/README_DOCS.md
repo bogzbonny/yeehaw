@@ -121,18 +121,19 @@ To minimize dependency requirements on your application, crate features gate
 dependancy usage.
 
  - **full** - enable everything
- - **rand** - enables random colors; uses the rand crate
- - **table** -  enable table element; uses box_drawing_logic crate
  - **textbox** - enable textbox, list-control, and file-editor elements; uses
                  arboard, and num-traits crates
- - **figlet** - enable figlet element, uses figlet-rs crate
  - **terminal** - enable terminal panes, uses anyhow, vt100_yh, and
                   portable-pty crates
  - **terminal_editor** - enable terminal-editor panes; uses tempfile crate
+ - **table** -  enable table element; uses box_drawing_logic crate
+ - **bat** -  enable bat viewer element; uses bat crate
+ - **figlet** - enable figlet element, uses figlet-rs crate
  - **image** - enable image viewing pane, uses ratatui, image, and
                ratatui-image crate
  - **ratatui** -  enable ratatui compatibility functionality for ratatui
                   ported elements; uses ratatui crate
+ - **rand** - enables random colors; uses the rand crate
 
 ## Stability, Upcoming Refactors, Bugs <!-- NOTE duplicate in README.md:192 -->
 

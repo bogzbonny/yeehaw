@@ -51,6 +51,13 @@ pub enum Error {
         source: anyhow::Error,
         backtrace: Backtrace,
     },
+
+    #[cfg(feature = "bat")]
+    #[snafu(context(false))]
+    BatError {
+        source: Box<bat::error::Error>,
+        backtrace: Backtrace,
+    },
 }
 
 impl Error {

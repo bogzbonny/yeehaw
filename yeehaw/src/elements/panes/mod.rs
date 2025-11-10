@@ -1,9 +1,11 @@
-pub mod bat_viewer;
 pub mod file_navigator;
 
 pub mod pane_limiter;
 pub mod pane_scrollable;
 pub mod pane_selectable;
+
+#[cfg(feature = "bat")]
+pub mod bat_viewer;
 
 #[cfg(feature = "textbox")]
 pub mod file_viewer;
