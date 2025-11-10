@@ -238,15 +238,92 @@ impl From<AnsiStates> for Style {
 }
 
 pub fn get_chs_2d(s: &[u8], sty: Style) -> DrawChs2D {
-    let mut chs = DrawChs2D::new(Vec::new());
-    let mut last = sty.clone();
-    let (mut x, mut y) = (0, 0);
+    // Simple parser that builds a 2‑D matrix manually while handling SGR codes.
+    let mut out: Vec<Vec<DrawCh>> = Vec::new();
+    let mut cur_style = sty.clone();
+    let mut x: usize = 0;
+    let mut y: usize = 0;
 
-    // TODO nom digest the bytes into DrawCh at x and y positions
-    // (have regard for \n newlines)
-    // TODO use DrawChss2D.set_ch_expand_if_necessary to insert all the chs
+    // Ensure a row exists for the given y index.
+    let mut ensure_row = |row: usize, vec: &mut Vec<Vec<DrawCh>>| {
+        while vec.len() <= row {
+            vec.push(Vec::new());
+        }
+    };
 
-    chs
+    let mut i = 0usize;
+    while i < s.len() {
+        // Parse SGR escape sequence.
+        if s[i] == 0x1b && i + 1 < s.len() && s[i + 1] == b'[' {
+            if let Ok((rem, opt_style)) = style_f(cur_style.clone())(&s[i..]) {
+                if let Some(new_style) = opt_style {
+                    cur_style = new_style;
+                }
+                i = s.len() - rem.len();
+                continue;
+            }
+        }
+        // Newline handling.
+        if s[i] == b'\n' {
+            y += 1;
+            x = 0;
+            i += 1;
+            continue;
+        }
+        // Decode next UTF‑8 character.
+        if let Ok(txt) = std::str::from_utf8(&s[i..]) {
+            if let Some(ch) = txt.chars().next() {
+                let ch_len = ch.len_utf8();
+                ensure_row(y, &mut out);
+                let row = &mut out[y];
+                while row.len() <= x {
+                    row.push(DrawCh::new(' ', sty.clone()));
+                }
+                row[x] = DrawCh::new(ch, cur_style.clone());
+                x += 1;
+                i += ch_len;
+                continue;
+            }
+        }
+        i += 1;
+    }
+
+    DrawChs2D(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{Color, ChPlus};
+    use crossterm::style::Color as CrosstermColor;
+
+    #[test]
+    fn test_get_chs_2d_simple() {
+        let s = b"ab\nc";
+        let chs = get_chs_2d(s, Style::default_const());
+        assert_eq!(chs.width(), 2);
+        assert_eq!(chs.height(), 2);
+        // Row 0
+        assert_eq!(chs[0][0].ch, ChPlus::Char('a'));
+        assert_eq!(chs[0][1].ch, ChPlus::Char('b'));
+        // Row 1
+        assert_eq!(chs[1][0].ch, ChPlus::Char('c'));
+    }
+
+    #[test]
+    fn test_get_chs_2d_ansi_color() {
+        // Red foreground for 'X', then reset, then normal 'Y'
+        let s = b"\x1b[31mX\x1b[0mY";
+        let chs = get_chs_2d(s, Style::default_const());
+        assert_eq!(chs.width(), 2);
+        // First character should have red foreground
+        match &chs[0][0].style.fg {
+            Some((Color::ANSI(CrosstermColor::DarkRed), _)) => {}
+            _ => panic!("First char does not have expected red foreground"),
+        }
+        // Second character should have no foreground set (default)
+        assert!(chs[0][1].style.fg.is_none());
+    }
 }
 
 //pub(crate) fn text(mut s: &[u8]) -> IResult<&[u8], Text<'static>> {
