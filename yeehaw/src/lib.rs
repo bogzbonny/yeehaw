@@ -3,6 +3,7 @@
 #[macro_use]
 pub mod log; // note, must be first for the macro to work throughout
 
+pub mod ansi;
 pub mod ch;
 pub mod color;
 pub mod context;

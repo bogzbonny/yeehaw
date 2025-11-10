@@ -101,11 +101,7 @@ impl TabsTop {
 
     pub fn get_selected_id(&self) -> Option<ElementID> {
         let i = *self.selected.borrow();
-        if let Some(i) = i {
-            self.els.borrow().get(i).map(|(id, _, _)| id.clone())
-        } else {
-            None
-        }
+        if let Some(i) = i { self.els.borrow().get(i).map(|(id, _, _)| id.clone()) } else { None }
     }
 }
 
@@ -168,7 +164,7 @@ impl Element for TabsTop {
             let name_len = name.chars().count();
             let name_chs = DrawChPos::new_from_string(name, pos as u16, 0, style);
             pos += name_len;
-            chs.extend(name_chs);
+            chs.extend(name_chs.0);
         }
         self.is_dirty.replace(false);
         // NOTE extend instead of update as we already have an update (don't want to overwrite)

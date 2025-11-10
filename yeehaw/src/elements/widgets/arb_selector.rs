@@ -155,7 +155,10 @@ impl ArbSelector {
         if base_height != pos_height || base_width != pos_width {
             log_err!(
                 "Drawing base and positions map must be the same size. Base: {}x{}, Positions: {}x{}",
-                base_height, base_width, pos_height, pos_width
+                base_height,
+                base_width,
+                pos_height,
+                pos_width
             );
         }
 
@@ -334,11 +337,7 @@ impl ArbSelector {
         let sel_changes = self.selection_changes.borrow();
         let updates = sel_changes.iter().find_map(
             |(ref pos_, ref changes)| {
-                if *pos_ == pos {
-                    Some(changes)
-                } else {
-                    None
-                }
+                if *pos_ == pos { Some(changes) } else { None }
             },
         );
 

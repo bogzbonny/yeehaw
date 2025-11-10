@@ -356,7 +356,7 @@ impl From<ratatui::buffer::Cell> for Style {
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Debug, Eq, Default)]
 pub struct Attributes {
     pub bold: bool,
-    pub faded: bool,
+    pub faded: bool, // dim
     pub italic: bool,
     pub underlined: bool,
     pub doubleunderlined: bool,

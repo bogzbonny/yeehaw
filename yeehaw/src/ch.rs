@@ -9,6 +9,9 @@ use {
     std::time::Duration,
 };
 
+#[cfg(feature = "terminal")]
+use vt100_yh::{self, Parser as VtParser};
+
 /// DrawCh is a character with a style and transparency
 #[derive(Clone, Debug, PartialEq)]
 pub struct DrawCh {
@@ -84,6 +87,13 @@ impl DrawCh {
     pub fn new<CH: Into<ChPlus>>(ch: CH, style: Style) -> DrawCh {
         DrawCh {
             ch: ch.into(),
+            style,
+        }
+    }
+
+    pub fn blank(style: Style) -> DrawCh {
+        DrawCh {
+            ch: " ".into(),
             style,
         }
     }
@@ -178,7 +188,7 @@ impl DrawChPos {
         self.ch.style.add_to_offset_colors(offset_x, offset_y);
     }
 
-    pub fn new_from_string(s: String, start_x: u16, start_y: u16, sty: Style) -> Vec<DrawChPos> {
+    pub fn new_from_string(s: String, start_x: u16, start_y: u16, sty: Style) -> DrawChPosVec {
         DrawChs2D::from_string(s.to_string(), sty).to_draw_ch_pos(start_x, start_y)
     }
 
@@ -371,6 +381,60 @@ impl DrawChs2D {
         DrawChs2D(out)
     }
 
+    #[cfg(feature = "terminal")]
+    /// Parses raw ANSI bytes into a `DrawChs2D` using the vt100_yh parser.
+    ///
+    /// Wide‑character continuation cells become `DrawCh::skip()`.
+    pub fn from_ansi_bytes(bytes: &[u8]) -> DrawChs2D {
+        let mut parser = VtParser::default();
+        parser.process(bytes);
+        let screen = parser.screen();
+        // Determine actual used dimensions based on cells present and their widths
+        let (rows, cols) = screen.size();
+        let mut used_width: usize = 0;
+        let mut used_height: usize = 0;
+        for y in 0..rows {
+            for x in 0..cols {
+                if let Some(cell) = screen.cell(y, x) {
+                    if cell.has_contents() {
+                        // update height (row count)
+                        used_height = used_height.max(y as usize + 1);
+                        // update width accounting for wide characters
+                        let cell_width = if cell.is_wide() { 2 } else { 1 };
+                        used_width = used_width.max(x as usize + cell_width);
+                    }
+                }
+            }
+        }
+        // start with an empty matrix sized to the used area
+        let mut out = DrawChs2D::new_empty_of_size(used_width, used_height, Style::default_const());
+        for y in 0..used_height as u16 {
+            for x in 0..used_width as u16 {
+                if let Some(cell) = screen.cell(y, x) {
+                    if cell.is_wide_continuation() {
+                        out[y as usize][x as usize] = DrawCh::skip();
+                        continue;
+                    }
+                    let ch = if cell.has_contents() {
+                        cell.contents().chars().next().unwrap_or(' ')
+                    } else {
+                        ' '
+                    };
+                    let mut style = Style::default_const();
+                    style.fg = Some((cell.fgcolor().into(), FgTranspSrc::LowerFg));
+                    style.bg = Some((cell.bgcolor().into(), BgTranspSrc::LowerBg));
+                    style.underline_color = Some((cell.ulcolor().into(), UlTranspSrc::LowerUl));
+                    style.attr.bold = cell.bold();
+                    style.attr.italic = cell.italic();
+                    style.attr.underlined = cell.underline();
+                    style.attr.reverse = cell.inverse();
+                    out[y as usize][x as usize] = DrawCh::new(ch, style);
+                }
+            }
+        }
+        out
+    }
+
     pub fn from_string(text: String, sty: Style) -> DrawChs2D {
         let s = Size::get_text_size(&text);
         let mut out = Self::new_empty_of_size(s.width as usize, s.height as usize, sty.clone());
@@ -412,7 +476,7 @@ impl DrawChs2D {
         DrawChs2D(out)
     }
 
-    pub fn from_vec_draw_ch_pos(chs: Vec<DrawChPos>, default_ch: DrawCh) -> DrawChs2D {
+    pub fn from_vec_draw_ch_pos(chs: DrawChPosVec, default_ch: DrawCh) -> DrawChs2D {
         // get the max x and y
         let mut max_x = 0;
         let mut max_y = 0;
@@ -431,7 +495,7 @@ impl DrawChs2D {
         DrawChs2D(out)
     }
 
-    pub fn to_draw_ch_pos(&self, start_x: u16, start_y: u16) -> Vec<DrawChPos> {
+    pub fn to_draw_ch_pos(&self, start_x: u16, start_y: u16) -> DrawChPosVec {
         let mut out = Vec::new();
         for (y, line) in self.0.iter().enumerate() {
             for (x, ch) in line.iter().enumerate() {
@@ -442,7 +506,7 @@ impl DrawChs2D {
                 ));
             }
         }
-        out
+        DrawChPosVec(out)
     }
 
     pub fn get_at(&self, x: usize, y: usize) -> Option<&DrawCh> {
@@ -463,8 +527,8 @@ impl DrawChs2D {
         Size::new(self.width() as u16, self.height() as u16)
     }
 
-    pub fn apply_vec_draw_ch_pos(&mut self, chs: Vec<DrawChPos>) {
-        for ch in chs {
+    pub fn apply_vec_draw_ch_pos(&mut self, chs: DrawChPosVec) {
+        for ch in chs.0 {
             self.apply_draw_ch_pos(ch);
         }
     }
@@ -481,6 +545,22 @@ impl DrawChs2D {
             return;
         };
         *chplus = ch;
+    }
+
+    /// set the ch and expand the DrawChs2D if necessary
+    /// new chs will be added with the default_sty
+    pub fn set_ch_expand_if_necessary(
+        &mut self, x: usize, y: usize, ch: DrawCh, default_sty: Style,
+    ) {
+        let (width, height) = (self.width(), self.height());
+        // begin with padding
+        if x >= width {
+            self.pad_right(DrawCh::blank(default_sty.clone()), (x + 1) - width);
+        }
+        if y >= height {
+            self.pad_bottom(DrawCh::blank(default_sty), (y + 1) - height);
+        }
+        self.set_ch(x, y, ch);
     }
 
     /// pads the DrawChs2D with the provided character added to the lefthand side the
@@ -748,11 +828,40 @@ impl DrawChs2D {
     }
 }
 
-// test
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crossterm::style::Color as CrosstermColor;
 
+    #[test]
+    #[cfg(feature = "terminal")]
+    fn test_from_ansi_bytes_simple() {
+        // Red colored character 'X'
+        let bytes = b"\x1b[31mX\x1b[0m";
+        let chs = DrawChs2D::from_ansi_bytes(bytes);
+        assert_eq!(chs.width(), 1);
+        assert_eq!(chs.height(), 1);
+        let cell = &chs[0][0];
+        assert_eq!(cell.ch, ChPlus::Char('X'));
+        match &cell.style.fg {
+            Some((Color::ANSI(CrosstermColor::AnsiValue(idx)), _)) => assert_eq!(*idx, 1),
+            _ => panic!("Foreground color not set correctly"),
+        }
+    }
+
+    #[test]
+    #[cfg(feature = "terminal")]
+    fn test_from_ansi_bytes_wide() {
+        // Unicode wide character (CJK) "好"
+        let bytes = "好".as_bytes();
+        let chs = DrawChs2D::from_ansi_bytes(bytes);
+        // Expect width 2 due to wide character handling, height 1
+        assert_eq!(chs.height(), 1);
+        assert_eq!(chs.width(), 2);
+        assert_eq!(chs[0][0].ch, ChPlus::Char('好'));
+        assert_eq!(chs[0][1].ch, ChPlus::Skip);
+    }
+    // Additional original draw_chs2d tests
     #[test]
     fn test_draw_chs2d() {
         let chs = DrawChs2D::from_string("abc\ndef".to_string(), Style::default_const());

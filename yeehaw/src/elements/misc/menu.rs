@@ -1179,7 +1179,7 @@ impl Element for MenuItem {
         let name = self.path.borrow().name().to_string();
         let name_chs = DrawChPos::new_from_string(name, x as u16, 0, sty.clone());
         x += name_chs.len();
-        out.extend(name_chs);
+        out.extend(name_chs.0);
 
         let arrow_text = if *self.is_folder.borrow()
             && (!self.is_primary() || (self.is_primary() && *self.show_folder_arrow.borrow()))
@@ -1203,7 +1203,7 @@ impl Element for MenuItem {
         // draw folder arrow
         let arrow_chs = DrawChPos::new_from_string(arrow_text, x as u16, 0, sty.clone());
         x += arrow_chs.len();
-        out.extend(arrow_chs);
+        out.extend(arrow_chs.0);
 
         // add right padding
         let (_, out) = MenuItem::draw_padding(m_sty.right_padding, x, sty.clone(), out);

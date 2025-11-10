@@ -1,4 +1,4 @@
-use yeehaw::*;
+use {box_drawing_logic::SideAttribute, yeehaw::*};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -12,10 +12,10 @@ async fn main() -> Result<(), Error> {
     let table = Table::new(&ctx)
         //.with_fixed_row_height(1)
         //.with_fixed_column_width(20)
-        .with_border(Some(BoxSideAttr::Thin))
-        .with_vertical_lines(Some(BoxSideAttr::Thick))
-        .with_header_line(Some(BoxSideAttr::Double));
-    //.with_horizontal_lines(Some(BoxSideAttr::Thin));
+        .with_border(Some(SideAttribute::Thin))
+        .with_vertical_lines(Some(SideAttribute::Thick))
+        .with_header_line(Some(SideAttribute::Double));
+    //.with_horizontal_lines(Some(SideAttribute::Thin));
 
     table.set_header(&ctx, vec!["ID", "Name", "Status", "Actions"]);
     table.set_data(
