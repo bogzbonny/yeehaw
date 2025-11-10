@@ -93,7 +93,7 @@ impl DrawCh {
 
     pub fn blank(style: Style) -> DrawCh {
         DrawCh {
-            ch: " ".into(),
+            ch: ' '.into(),
             style,
         }
     }
@@ -550,15 +550,15 @@ impl DrawChs2D {
     /// set the ch and expand the DrawChs2D if necessary
     /// new chs will be added with the default_sty
     pub fn set_ch_expand_if_necessary(
-        &mut self, x: usize, y: usize, ch: DrawCh, default_sty: Style,
+        &mut self, x: usize, y: usize, ch: DrawCh, default_sty: &Style,
     ) {
         let (width, height) = (self.width(), self.height());
-        // begin with padding
+        // begin with padding NOTE must pad y before x!
+        if y >= height {
+            self.pad_bottom(DrawCh::blank(default_sty.clone()), (y + 1) - height);
+        }
         if x >= width {
             self.pad_right(DrawCh::blank(default_sty.clone()), (x + 1) - width);
-        }
-        if y >= height {
-            self.pad_bottom(DrawCh::blank(default_sty), (y + 1) - height);
         }
         self.set_ch(x, y, ch);
     }
@@ -831,10 +831,12 @@ impl DrawChs2D {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(feature = "bat")]
     use crossterm::style::Color as CrosstermColor;
 
     #[test]
-    #[cfg(feature = "terminal")]
+    #[cfg(feature = "bat")]
     fn test_from_ansi_bytes_simple() {
         // Red colored character 'X'
         let bytes = b"\x1b[31mX\x1b[0m";
@@ -850,7 +852,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "terminal")]
+    #[cfg(feature = "bat")]
     fn test_from_ansi_bytes_wide() {
         // Unicode wide character (CJK) "好"
         let bytes = "好".as_bytes();

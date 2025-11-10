@@ -3,7 +3,6 @@
 #[macro_use]
 pub mod log; // note, must be first for the macro to work throughout
 
-pub mod ansi;
 pub mod ch;
 pub mod color;
 pub mod context;
@@ -20,6 +19,9 @@ pub mod organizer;
 pub mod sorting_hat;
 pub mod style;
 pub mod tui;
+
+#[cfg(feature = "bat")]
+pub mod ansi;
 
 pub use {
     ch::{ChPlus, DrawCh, DrawChPos, DrawChPosVec, DrawChs2D},

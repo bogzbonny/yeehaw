@@ -1,5 +1,7 @@
 // Code in this file was originally adapted from https://github.com/ratatui/ansi-to-tui
-// and is licensed under the MIT license.
+// and is thereby licensed under the MIT license. (Nov 10, 2025)
+// Original author: Uttarayan Mondal <email@uttarayan.me>
+// Thank you to the ratatui team! :)
 
 use {
     crate::*,
@@ -267,15 +269,7 @@ pub fn get_chs_2d(s: &[u8], sty: Style) -> DrawChs2D {
         if let Ok(txt) = std::str::from_utf8(&s[i..]) {
             if let Some(ch) = txt.chars().next() {
                 let ch_len = ch.len_utf8();
-                // Ensure the row exists.
-                while out.len() <= y {
-                    out.push(Vec::new());
-                }
-                let row = &mut out[y];
-                while row.len() <= x {
-                    row.push(DrawCh::new(' ', sty.clone()));
-                }
-                row[x] = DrawCh::new(ch, cur_style.clone());
+                out.set_ch_expand_if_necessary(x, y, DrawCh::new(ch, cur_style.clone()), &sty);
                 x += 1;
                 i += ch_len;
                 continue;
@@ -400,14 +394,12 @@ mod tests {
     fn test_get_chs_2d_simple() {
         let s = b"ab\nc";
         let chs = get_chs_2d(s, Style::default_const());
-        eprintln!("matrix: {:?}", chs);
+        eprintln!("matrix: {}", chs);
         assert_eq!(chs.width(), 2);
         assert_eq!(chs.height(), 2);
-        // Row 0
-        assert_eq!(chs[0][0].ch, ChPlus::Char('a'));
-        assert_eq!(chs[0][1].ch, ChPlus::Char('b'));
-        // Row 1
-        assert_eq!(chs[1][0].ch, ChPlus::Char('c'));
+        assert_eq!(chs.get_at(0, 0).unwrap().ch, ChPlus::Char('a'));
+        assert_eq!(chs.get_at(1, 0).unwrap().ch, ChPlus::Char('b'));
+        assert_eq!(chs.get_at(0, 1).unwrap().ch, ChPlus::Char('c'));
     }
 
     #[test]
@@ -417,12 +409,12 @@ mod tests {
         let chs = get_chs_2d(s, Style::default_const());
         assert_eq!(chs.width(), 2);
         // First character should have red foreground
-        match &chs[0][0].style.fg {
+        match &chs.get_at(0, 0).unwrap().style.fg {
             Some((Color::ANSI(CrosstermColor::DarkRed), _)) => {}
             _ => panic!("First char does not have expected red foreground"),
         }
         // Second character should have no foreground set (default)
-        assert!(chs[0][1].style.fg.is_none());
+        assert!(chs.get_at(1, 0).unwrap().style.fg.is_none());
     }
 
     #[test]
@@ -432,7 +424,7 @@ mod tests {
         let chs = get_chs_2d(s, Style::default_const());
         assert_eq!(chs.width(), 3);
         // First character: foreground RGB, no background.
-        match &chs[0][0].style.fg {
+        match &chs.get_at(0, 0).unwrap().style.fg {
             Some((Color::Rgba(rgba), _)) => {
                 assert_eq!(rgba.r, 10);
                 assert_eq!(rgba.g, 20);
@@ -440,9 +432,9 @@ mod tests {
             }
             _ => panic!("First char missing expected RGB foreground"),
         }
-        assert!(chs[0][0].style.bg.is_none());
+        assert!(chs.get_at(0, 0).unwrap().style.bg.is_none());
         // Second character: inherits foreground RGB, adds background RGB.
-        match &chs[0][1].style.fg {
+        match &chs.get_at(1, 0).unwrap().style.fg {
             Some((Color::Rgba(rgba), _)) => {
                 assert_eq!(rgba.r, 10);
                 assert_eq!(rgba.g, 20);
@@ -450,7 +442,7 @@ mod tests {
             }
             _ => panic!("Second char missing expected RGB foreground"),
         }
-        match &chs[0][1].style.bg {
+        match &chs.get_at(1, 0).unwrap().style.bg {
             Some((Color::Rgba(rgba), _)) => {
                 assert_eq!(rgba.r, 100);
                 assert_eq!(rgba.g, 110);
@@ -459,8 +451,8 @@ mod tests {
             _ => panic!("Second char missing expected RGB background"),
         }
         // Third character after reset should have no fg/bg.
-        assert!(chs[0][2].style.fg.is_none());
-        assert!(chs[0][2].style.bg.is_none());
+        assert!(chs.get_at(2, 0).unwrap().style.fg.is_none());
+        assert!(chs.get_at(2, 0).unwrap().style.bg.is_none());
     }
 
     #[test]
