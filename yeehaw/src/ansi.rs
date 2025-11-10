@@ -9,7 +9,7 @@ use {
         branch::alt,
         bytes::complete::*,
         character::complete::*,
-        combinator::{map_res, opt},
+        combinator::opt,
         multi::*,
         sequence::{delimited, preceded},
     },
@@ -228,8 +228,8 @@ impl From<AnsiStates> for Style {
                         style.set_bg(color)
                     }
                 }
-                AnsiCode::ForegroundColor(color) => style.set_fg(color.into()),
-                AnsiCode::BackgroundColor(color) => style.set_bg(color.into()),
+                AnsiCode::ForegroundColor(color) => style.set_fg(color),
+                AnsiCode::BackgroundColor(color) => style.set_bg(color),
                 _ => (),
             }
         }
@@ -238,24 +238,17 @@ impl From<AnsiStates> for Style {
 }
 
 pub fn get_chs_2d(s: &[u8], sty: Style) -> DrawChs2D {
-    // Simple parser that builds a 2‑D matrix manually while handling SGR codes.
-    let mut out: Vec<Vec<DrawCh>> = Vec::new();
+    // Manual construction without relying on automatic expansion.
+    let mut out: DrawChs2D = DrawChs2D::new(Vec::new());
     let mut cur_style = sty.clone();
     let mut x: usize = 0;
     let mut y: usize = 0;
-
-    // Ensure a row exists for the given y index.
-    let mut ensure_row = |row: usize, vec: &mut Vec<Vec<DrawCh>>| {
-        while vec.len() <= row {
-            vec.push(Vec::new());
-        }
-    };
 
     let mut i = 0usize;
     while i < s.len() {
         // Parse SGR escape sequence.
         if s[i] == 0x1b && i + 1 < s.len() && s[i + 1] == b'[' {
-            if let Ok((rem, opt_style)) = style_f(cur_style.clone())(&s[i..]) {
+            if let Ok((rem, opt_style)) = style_f(&s[i..], cur_style.clone()) {
                 if let Some(new_style) = opt_style {
                     cur_style = new_style;
                 }
@@ -274,7 +267,10 @@ pub fn get_chs_2d(s: &[u8], sty: Style) -> DrawChs2D {
         if let Ok(txt) = std::str::from_utf8(&s[i..]) {
             if let Some(ch) = txt.chars().next() {
                 let ch_len = ch.len_utf8();
-                ensure_row(y, &mut out);
+                // Ensure the row exists.
+                while out.len() <= y {
+                    out.push(Vec::new());
+                }
                 let row = &mut out[y];
                 while row.len() <= x {
                     row.push(DrawCh::new(' ', sty.clone()));
@@ -288,30 +284,26 @@ pub fn get_chs_2d(s: &[u8], sty: Style) -> DrawChs2D {
         i += 1;
     }
 
-    DrawChs2D(out)
+    out
 }
 
-fn style_f(
-    style: Style,
-) -> impl Fn(&[u8]) -> IResult<&[u8], Option<Style>, nom::error::Error<&[u8]>> {
-    move |s: &[u8]| -> IResult<&[u8], Option<Style>> {
-        let (s, r) = match opt(ansi_sgr_code).parse(s)? {
-            (s, Some(r)) => (s, Some(r)),
-            (s, None) => {
-                let (s, _) = any_escape_sequence(s)?;
-                (s, None)
-            }
-        };
-        Ok((
-            s,
-            r.map(|r| {
-                Style::from(AnsiStates {
-                    style: style.clone(),
-                    items: r,
-                })
-            }),
-        ))
-    }
+fn style_f(s: &[u8], style: Style) -> IResult<&[u8], Option<Style>, nom::error::Error<&[u8]>> {
+    let (s, r) = match opt(ansi_sgr_code).parse(s)? {
+        (s, Some(r)) => (s, Some(r)),
+        (s, None) => {
+            let (s, _) = any_escape_sequence(s)?;
+            (s, None)
+        }
+    };
+    Ok((
+        s,
+        r.map(|r| {
+            Style::from(AnsiStates {
+                style: style.clone(),
+                items: r,
+            })
+        }),
+    ))
 }
 
 /// A complete ANSI SGR code
@@ -408,6 +400,7 @@ mod tests {
     fn test_get_chs_2d_simple() {
         let s = b"ab\nc";
         let chs = get_chs_2d(s, Style::default_const());
+        eprintln!("matrix: {:?}", chs);
         assert_eq!(chs.width(), 2);
         assert_eq!(chs.height(), 2);
         // Row 0
@@ -483,7 +476,7 @@ mod tests {
     #[test]
     fn ansi_items_test() {
         let sc: Style = Default::default();
-        let t = style_f(sc.clone())(b"\x1b[38;2;3;3;3m").unwrap().1.unwrap();
+        let t = style_f(b"\x1b[38;2;3;3;3m", sc.clone()).unwrap().1.unwrap();
         assert_eq!(
             t,
             Style::from(AnsiStates {
@@ -496,7 +489,7 @@ mod tests {
             })
         );
         assert_eq!(
-            style_f(sc.clone())(b"\x1b[38;5;3m").unwrap().1.unwrap(),
+            style_f(b"\x1b[38;5;3m", sc.clone()).unwrap().1.unwrap(),
             Style::from(AnsiStates {
                 style: sc.clone(),
                 items: vec![AnsiItem {
@@ -507,7 +500,7 @@ mod tests {
             })
         );
         assert_eq!(
-            style_f(sc.clone())(b"\x1b[38;5;3;48;5;3m")
+            style_f(b"\x1b[38;5;3;48;5;3m", sc.clone())
                 .unwrap()
                 .1
                 .unwrap(),
@@ -527,7 +520,7 @@ mod tests {
             })
         );
         assert_eq!(
-            style_f(sc.clone())(b"\x1b[38;5;3;48;5;3;1m")
+            style_f(b"\x1b[38;5;3;48;5;3;1m", sc.clone())
                 .unwrap()
                 .1
                 .unwrap(),
