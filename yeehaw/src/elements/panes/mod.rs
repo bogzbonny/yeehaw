@@ -30,3 +30,6 @@ pub use terminal_editor::TermEditorPane;
 
 #[cfg(feature = "textbox")]
 pub use file_viewer::FileViewerPane;
+
+#[cfg(feature = "bat")]
+pub use bat_viewer::BatViewer;

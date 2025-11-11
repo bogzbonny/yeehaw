@@ -9,9 +9,6 @@ use {
     std::time::Duration,
 };
 
-#[cfg(feature = "terminal")]
-use vt100_yh::{self, Parser as VtParser};
-
 /// DrawCh is a character with a style and transparency
 #[derive(Clone, Debug, PartialEq)]
 pub struct DrawCh {
@@ -379,60 +376,6 @@ impl DrawChs2D {
             out.push(line);
         }
         DrawChs2D(out)
-    }
-
-    #[cfg(feature = "terminal")]
-    /// Parses raw ANSI bytes into a `DrawChs2D` using the vt100_yh parser.
-    ///
-    /// Wide‑character continuation cells become `DrawCh::skip()`.
-    pub fn from_ansi_bytes(bytes: &[u8]) -> DrawChs2D {
-        let mut parser = VtParser::default();
-        parser.process(bytes);
-        let screen = parser.screen();
-        // Determine actual used dimensions based on cells present and their widths
-        let (rows, cols) = screen.size();
-        let mut used_width: usize = 0;
-        let mut used_height: usize = 0;
-        for y in 0..rows {
-            for x in 0..cols {
-                if let Some(cell) = screen.cell(y, x) {
-                    if cell.has_contents() {
-                        // update height (row count)
-                        used_height = used_height.max(y as usize + 1);
-                        // update width accounting for wide characters
-                        let cell_width = if cell.is_wide() { 2 } else { 1 };
-                        used_width = used_width.max(x as usize + cell_width);
-                    }
-                }
-            }
-        }
-        // start with an empty matrix sized to the used area
-        let mut out = DrawChs2D::new_empty_of_size(used_width, used_height, Style::default_const());
-        for y in 0..used_height as u16 {
-            for x in 0..used_width as u16 {
-                if let Some(cell) = screen.cell(y, x) {
-                    if cell.is_wide_continuation() {
-                        out[y as usize][x as usize] = DrawCh::skip();
-                        continue;
-                    }
-                    let ch = if cell.has_contents() {
-                        cell.contents().chars().next().unwrap_or(' ')
-                    } else {
-                        ' '
-                    };
-                    let mut style = Style::default_const();
-                    style.fg = Some((cell.fgcolor().into(), FgTranspSrc::LowerFg));
-                    style.bg = Some((cell.bgcolor().into(), BgTranspSrc::LowerBg));
-                    style.underline_color = Some((cell.ulcolor().into(), UlTranspSrc::LowerUl));
-                    style.attr.bold = cell.bold();
-                    style.attr.italic = cell.italic();
-                    style.attr.underlined = cell.underline();
-                    style.attr.reverse = cell.inverse();
-                    out[y as usize][x as usize] = DrawCh::new(ch, style);
-                }
-            }
-        }
-        out
     }
 
     pub fn from_string(text: String, sty: Style) -> DrawChs2D {

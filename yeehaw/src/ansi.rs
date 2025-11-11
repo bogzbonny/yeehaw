@@ -17,6 +17,48 @@ use {
     },
 };
 
+pub fn get_chs_2d(s: &[u8], sty: Style) -> DrawChs2D {
+    // Manual construction without relying on automatic expansion.
+    let mut out: DrawChs2D = DrawChs2D::new(Vec::new());
+    let mut cur_style = sty.clone();
+    let mut x: usize = 0;
+    let mut y: usize = 0;
+
+    let mut i = 0usize;
+    while i < s.len() {
+        // Parse SGR escape sequence.
+        if s[i] == 0x1b && i + 1 < s.len() && s[i + 1] == b'[' {
+            if let Ok((rem, opt_style)) = style_f(&s[i..], cur_style.clone()) {
+                if let Some(new_style) = opt_style {
+                    cur_style = new_style;
+                }
+                i = s.len() - rem.len();
+                continue;
+            }
+        }
+        // Newline handling.
+        if s[i] == b'\n' {
+            y += 1;
+            x = 0;
+            i += 1;
+            continue;
+        }
+        // Decode next UTF‑8 character.
+        if let Ok(txt) = std::str::from_utf8(&s[i..]) {
+            if let Some(ch) = txt.chars().next() {
+                let ch_len = ch.len_utf8();
+                out.set_ch_expand_if_necessary(x, y, DrawCh::new(ch, cur_style.clone()), &sty);
+                x += 1;
+                i += ch_len;
+                continue;
+            }
+        }
+        i += 1;
+    }
+
+    out
+}
+
 #[derive(Debug, PartialEq, Clone)]
 #[non_exhaustive]
 pub enum AnsiCode {
@@ -237,48 +279,6 @@ impl From<AnsiStates> for Style {
         }
         style
     }
-}
-
-pub fn get_chs_2d(s: &[u8], sty: Style) -> DrawChs2D {
-    // Manual construction without relying on automatic expansion.
-    let mut out: DrawChs2D = DrawChs2D::new(Vec::new());
-    let mut cur_style = sty.clone();
-    let mut x: usize = 0;
-    let mut y: usize = 0;
-
-    let mut i = 0usize;
-    while i < s.len() {
-        // Parse SGR escape sequence.
-        if s[i] == 0x1b && i + 1 < s.len() && s[i + 1] == b'[' {
-            if let Ok((rem, opt_style)) = style_f(&s[i..], cur_style.clone()) {
-                if let Some(new_style) = opt_style {
-                    cur_style = new_style;
-                }
-                i = s.len() - rem.len();
-                continue;
-            }
-        }
-        // Newline handling.
-        if s[i] == b'\n' {
-            y += 1;
-            x = 0;
-            i += 1;
-            continue;
-        }
-        // Decode next UTF‑8 character.
-        if let Ok(txt) = std::str::from_utf8(&s[i..]) {
-            if let Some(ch) = txt.chars().next() {
-                let ch_len = ch.len_utf8();
-                out.set_ch_expand_if_necessary(x, y, DrawCh::new(ch, cur_style.clone()), &sty);
-                x += 1;
-                i += ch_len;
-                continue;
-            }
-        }
-        i += 1;
-    }
-
-    out
 }
 
 fn style_f(s: &[u8], style: Style) -> IResult<&[u8], Option<Style>, nom::error::Error<&[u8]>> {

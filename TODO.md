@@ -554,6 +554,9 @@ WIDGETS
            - OR optionally could close the window on external click (for
              non-important things)
 
+20. Phantasms - helper guys like the microsoft paperclip, overlayed like the
+    pop-up window.. maybe partially transparent.
+
 20. listbox over entire elements
     - abstract the listbox selector except to allow for an
       arbitrary interface.

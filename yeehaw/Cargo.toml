@@ -132,3 +132,8 @@ required-features = ["textbox"]
 name = "colors"
 path = "examples/colors.rs"
 required-features = ["textbox"]
+
+[[example]]
+name = "bat"
+path = "examples/bat.rs"
+required-features = ["bat"]
