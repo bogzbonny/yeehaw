@@ -134,38 +134,38 @@ impl BatViewer {
         if let Some(lang) = opts.language {
             pp.language(lang);
         }
-        //pp.tab_width(opts.tab_width);
-        //pp.colored_output(opts.colored_output);
-        //pp.true_color(opts.true_color);
-        //pp.header(opts.header);
+        pp.tab_width(opts.tab_width);
+        pp.colored_output(opts.colored_output);
+        pp.true_color(opts.true_color);
+        pp.header(opts.header);
         pp.line_numbers(opts.line_numbers);
-        //pp.grid(opts.grid);
-        //pp.rule(opts.rule);
-        //pp.vcs_modification_markers(opts.vcs_modification_markers);
-        //pp.show_nonprintable(opts.show_nonprintable);
-        //pp.snip(opts.snip);
-        //pp.strip_ansi(opts.strip_ansi);
-        //pp.wrapping_mode(opts.wrapping_mode);
-        //pp.use_italics(opts.use_italics);
-        //if let Some(pager) = opts.pager {
-        //    pp.pager(pager);
-        //}
-        //if let Some(mode) = opts.paging_mode {
-        //    pp.paging_mode(mode);
-        //}
-        //if let Some(ref ranges) = opts.line_ranges {
-        //    pp.line_ranges(ranges.clone());
-        //}
-        //for &(from, to) in &opts.highlighted {
-        //    pp.highlight_range(from, to);
-        //}
-        //pp.squeeze_empty_lines(opts.squeeze_empty_lines);
-        //if let Some(ref theme) = opts.theme {
-        //    pp.theme(theme);
-        //}
-        //if let Some(ref mapping) = opts.syntax_mapping {
-        //    pp.syntax_mapping(mapping.clone());
-        //}
+        pp.grid(opts.grid);
+        pp.rule(opts.rule);
+        pp.vcs_modification_markers(opts.vcs_modification_markers);
+        pp.show_nonprintable(opts.show_nonprintable);
+        pp.snip(opts.snip);
+        pp.strip_ansi(opts.strip_ansi);
+        pp.wrapping_mode(opts.wrapping_mode);
+        pp.use_italics(opts.use_italics);
+        if let Some(pager) = opts.pager {
+            pp.pager(pager);
+        }
+        if let Some(mode) = opts.paging_mode {
+            pp.paging_mode(mode);
+        }
+        if let Some(ref ranges) = opts.line_ranges {
+            pp.line_ranges(ranges.clone());
+        }
+        for &(from, to) in &opts.highlighted {
+            pp.highlight_range(from, to);
+        }
+        pp.squeeze_empty_lines(opts.squeeze_empty_lines);
+        if let Some(ref theme) = opts.theme {
+            pp.theme(theme);
+        }
+        if let Some(ref mapping) = opts.syntax_mapping {
+            pp.syntax_mapping(mapping.clone());
+        }
         pp
     }
 

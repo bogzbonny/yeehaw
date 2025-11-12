@@ -36,6 +36,7 @@ async fn main() -> Result<(), Error> {
         //.with_rule()
         //.with_show_nonprintable()
         //.with_rule()
+        //.with_header()
         .with_line_numbers()
         .with_language("rust")
         .with_input_from_bytes(bz)?;
