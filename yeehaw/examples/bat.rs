@@ -23,19 +23,22 @@ async fn main() -> Result<(), Error> {
             Box::new(DebugSizePane::new(&ctx).with_style(sty)),
             Style::default(),
         )
-        .with_dyn_width(hstack.avg_width()),
+        .with_dyn_width(hstack.avg_width().div(2.0)),
     );
     hstack.push(el);
 
-    // place the button 1 character below the label
-    let x = DynVal::new_flex(0.1); // 30% screen width
-    let y = DynVal::new_flex(0.1).plus(1.into()); // 30% screen height + 1 ch
-
     let bz = std::include_str!("../src/tui.rs").as_bytes();
 
-    let bat_viewer = BatViewer::new(&ctx, 20, 20)
-        .with_input_from_bytes(bz)?
-        .at(x, y);
+    let bat_viewer = BatViewer::new(&ctx, 300, 100)
+        //.with_grid()
+        //.with_paging_mode(bat::PagingMode::Never)
+        //.with_highlight(10)
+        //.with_rule()
+        //.with_show_nonprintable()
+        //.with_rule()
+        .with_line_numbers()
+        .with_language("rust")
+        .with_input_from_bytes(bz)?;
 
     hstack.push(Box::new(bat_viewer));
 
