@@ -46,12 +46,20 @@ impl DynLocation {
 
     pub fn height(&self, dr: &DrawRegion) -> usize {
         let out = self.end_y.get_val(dr.get_height()) - self.start_y.get_val(dr.get_height());
-        if out < 0 { 0 } else { out as usize }
+        if out < 0 {
+            0
+        } else {
+            out as usize
+        }
     }
 
     pub fn width(&self, dr: &DrawRegion) -> usize {
         let out = self.end_x.get_val(dr.get_width()) - self.start_x.get_val(dr.get_width());
-        if out < 0 { 0 } else { out as usize }
+        if out < 0 {
+            0
+        } else {
+            out as usize
+        }
     }
 
     pub fn size(&self, dr: &DrawRegion) -> Size {

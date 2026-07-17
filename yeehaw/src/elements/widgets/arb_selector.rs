@@ -337,7 +337,11 @@ impl ArbSelector {
         let sel_changes = self.selection_changes.borrow();
         let updates = sel_changes.iter().find_map(
             |(ref pos_, ref changes)| {
-                if *pos_ == pos { Some(changes) } else { None }
+                if *pos_ == pos {
+                    Some(changes)
+                } else {
+                    None
+                }
             },
         );
 

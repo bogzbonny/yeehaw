@@ -2,9 +2,8 @@
 use {
     super::{VerticalSBPositions, VerticalScrollbar},
     crate::{
-        Keyboard as KB,
         elements::menu::{MenuItem, MenuPath, MenuStyle},
-        *,
+        Keyboard as KB, *,
     },
     crossterm::event::{MouseButton, MouseEventKind},
 };
@@ -712,7 +711,11 @@ impl ListControlInner {
         let original = self.entries.borrow()[idx].clone();
         // Determine base name by stripping a trailing " (n)" if present.
         let base = if let Some(pos) = original.rfind(" (") {
-            if original.ends_with(')') { original[..pos].to_string() } else { original.clone() }
+            if original.ends_with(')') {
+                original[..pos].to_string()
+            } else {
+                original.clone()
+            }
         } else {
             original.clone()
         };

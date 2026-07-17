@@ -5,7 +5,7 @@ use {
     crate::*,
     compact_str::CompactString,
     crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEventKind},
-    portable_pty::{ChildKiller, CommandBuilder, MasterPty, PtySize, native_pty_system},
+    portable_pty::{native_pty_system, ChildKiller, CommandBuilder, MasterPty, PtySize},
     std::{
         io::{BufWriter, Read, Write},
         sync::{Arc, RwLock},

@@ -3,7 +3,7 @@ use {
     image::DynamicImage,
     ratatui::widgets::StatefulWidget,
     ratatui_image::{
-        Resize as RatResize, StatefulImage, picker::Picker, protocol::StatefulProtocol,
+        picker::Picker, protocol::StatefulProtocol, Resize as RatResize, StatefulImage,
     },
 };
 

@@ -1,8 +1,7 @@
 use {
     crate::{
-        Keyboard as KB,
         elements::menu::{MenuItem, MenuPath, MenuStyle},
-        *,
+        Keyboard as KB, *,
     },
     crossterm::event::{KeyEvent, KeyModifiers, MouseButton, MouseEventKind},
 };
@@ -735,12 +734,20 @@ impl TextBoxInner {
         let cur_pos = *self.cursor_pos.borrow();
         // NOTE the cursor can be placed at the end of the text
         // hence the position is the length
-        if cur_pos > self.text.borrow().len() { self.text.borrow().len() } else { cur_pos }
+        if cur_pos > self.text.borrow().len() {
+            self.text.borrow().len()
+        } else {
+            cur_pos
+        }
     }
 
     pub fn get_visual_mode_start_pos(&self) -> usize {
         let pos = *self.visual_mode_start_pos.borrow();
-        if pos >= self.text.borrow().len() { self.text.borrow().len() - 1 } else { pos }
+        if pos >= self.text.borrow().len() {
+            self.text.borrow().len() - 1
+        } else {
+            pos
+        }
     }
 
     pub fn set_cursor_pos(&self, new_abs_pos: usize) -> EventResponses {

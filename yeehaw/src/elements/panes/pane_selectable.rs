@@ -214,7 +214,11 @@ impl Element for SelectablePane {
 
     fn can_receive(&self, ev: &Event) -> bool {
         let attr_sel = self.get_selectability();
-        if let Selectability::Selected = attr_sel { self.pane.can_receive(ev) } else { false }
+        if let Selectability::Selected = attr_sel {
+            self.pane.can_receive(ev)
+        } else {
+            false
+        }
     }
 
     fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {

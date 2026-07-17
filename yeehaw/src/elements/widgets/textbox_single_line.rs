@@ -1,4 +1,4 @@
-use crate::{Keyboard as KB, textbox::TextBoxInner, *};
+use crate::{textbox::TextBoxInner, Keyboard as KB, *};
 
 // TODO increment functionality with up/down keys. Would need a way to set a default increment
 // for each number type as it would be annoying to have to input this.

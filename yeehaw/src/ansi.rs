@@ -7,13 +7,13 @@ use {
     crate::*,
     crossterm::style::Color as CrosstermColor,
     nom::{
-        AsChar, IResult, Parser,
         branch::alt,
         bytes::complete::*,
         character::complete::*,
         combinator::opt,
         multi::*,
         sequence::{delimited, preceded},
+        AsChar, IResult, Parser,
     },
 };
 

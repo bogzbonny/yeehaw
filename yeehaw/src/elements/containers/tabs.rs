@@ -101,7 +101,11 @@ impl TabsTop {
 
     pub fn get_selected_id(&self) -> Option<ElementID> {
         let i = *self.selected.borrow();
-        if let Some(i) = i { self.els.borrow().get(i).map(|(id, _, _)| id.clone()) } else { None }
+        if let Some(i) = i {
+            self.els.borrow().get(i).map(|(id, _, _)| id.clone())
+        } else {
+            None
+        }
     }
 }
 

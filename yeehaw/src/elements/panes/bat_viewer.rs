@@ -1,8 +1,8 @@
 use {
     crate::*,
     bat::{
-        self, PagingMode, PrettyPrinter, StripAnsiMode, SyntaxMapping, WrappingMode,
-        line_range::LineRanges,
+        self, line_range::LineRanges, PagingMode, PrettyPrinter, StripAnsiMode, SyntaxMapping,
+        WrappingMode,
     },
     std::cell::RefCell,
     std::path::Path,

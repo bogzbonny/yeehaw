@@ -1,9 +1,9 @@
 use {
     crate::{
+        elements::menu::{MenuItem, MenuStyle},
         Context, DrawRegion, DrawUpdate, DynLocation, DynLocationSet, DynVal, Element, ElementID,
         Event, EventResponse, EventResponses, MenuBar, MouseEvent, Parent, Point, ReceivableEvents,
         ZIndex,
-        elements::menu::{MenuItem, MenuStyle},
     },
     crossterm::event::{MouseButton, MouseEventKind},
     std::{cell::RefCell, rc::Rc},

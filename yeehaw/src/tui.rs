@@ -1,8 +1,8 @@
 use {
     crate::{
-        ColorStore, Context, DrawRegion, DrawingCache, DynLocation, DynLocationSet, Element,
-        ElementID, ElementOrganizer, Error, Event, EventResponse, EventResponses, MouseEvent,
-        Parent, SortingHat, keyboard::Keyboard,
+        keyboard::Keyboard, ColorStore, Context, DrawRegion, DrawingCache, DynLocation,
+        DynLocationSet, Element, ElementID, ElementOrganizer, Error, Event, EventResponse,
+        EventResponses, MouseEvent, Parent, SortingHat,
     },
     crossterm::{
         cursor::{self, MoveTo},
@@ -12,9 +12,9 @@ use {
         },
         execute, queue, style, terminal,
     },
-    futures::{StreamExt, future::FutureExt},
+    futures::{future::FutureExt, StreamExt},
     std::collections::HashMap,
-    std::io::{Write, stdout},
+    std::io::{stdout, Write},
     std::{cell::RefCell, rc::Rc},
     tokio::sync::mpsc::{Receiver as MpscReceiver, Sender as MpscSender},
     tokio::sync::watch::{Receiver as WatchReceiver, Sender as WatchSender},
