@@ -46,7 +46,7 @@ pub struct ListBoxInner {
     pub is_dirty: Rc<RefCell<bool>>,
 }
 
-pub type ListBoxFn = Box<dyn FnMut(Context, Vec<String>) -> EventResponses>;
+pub type ListBoxFn = Box<dyn FnMut(Context, Vec<String>, Option<String>) -> EventResponses>;
 
 #[derive(Clone)]
 pub enum SelectionMode {
@@ -257,7 +257,7 @@ impl ListBoxInner {
             item_selected_style: Rc::new(RefCell::new(Self::STYLE_ITEM_SELECTED)),
             cursor_over_unselected_style: Rc::new(RefCell::new(Self::STYLE_CURSOR_OVER_UNSELECTED)),
             cursor_over_selected_style: Rc::new(RefCell::new(Self::STYLE_CURSOR_OVER_SELECTED)),
-            selection_made_fn: Rc::new(RefCell::new(Box::new(|_, _| EventResponses::default()))),
+            selection_made_fn: Rc::new(RefCell::new(Box::new(|_, _, _| EventResponses::default()))),
             scrollbar: Rc::new(RefCell::new(None)),
             is_dirty: Rc::new(RefCell::new(true)),
         }
@@ -474,7 +474,9 @@ impl ListBoxInner {
             .map(|i| entries[*i].clone())
             .collect();
 
-        (self.selection_made_fn.borrow_mut())(ctx.clone(), selected_entries)
+        let cursor_entry = self.cursor.borrow().as_ref().and_then(|i| entries.get(*i).cloned());
+
+        (self.selection_made_fn.borrow_mut())(ctx.clone(), selected_entries, cursor_entry)
     }
 }
 
