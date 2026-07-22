@@ -271,7 +271,7 @@ pub enum EventResponse {
     /// the current element with another.
     /// Additionally EventResponses can be passed with the new element,
     /// these EventResponses are then considered to have come from the new element
-    NewElement(Box<(dyn Element)>, Option<EventResponses>),
+    NewElement(Box<dyn Element>, Option<EventResponses>),
 
     Move(MoveResponse),
 

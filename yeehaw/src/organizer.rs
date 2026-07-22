@@ -163,7 +163,7 @@ impl ElementOrganizer {
 
     /// get_el_at_pos returns the element at the given position
     pub fn get_element_details_at_pos(&self, dr: &DrawRegion, x: i32, y: i32) -> Option<ElDetails> {
-        for (_, details) in self.els.borrow().iter() {
+        for details in self.els.borrow().values() {
             if details.loc.borrow().contains(dr, x, y) {
                 return Some(details.clone());
             }
@@ -267,7 +267,7 @@ impl ElementOrganizer {
         }
 
         // sort z index from low to high
-        eoz.sort_by(|a, b| a.1.loc.borrow().z.cmp(&b.1.loc.borrow().z));
+        eoz.sort_by_key(|a| a.1.loc.borrow().z);
 
         let mut updates = self
             .removed_element_queue
@@ -417,7 +417,7 @@ impl ElementOrganizer {
                     *r = EventResponse::None;
                 }
                 EventResponse::UnfocusOthers => {
-                    for (el_id_, _) in self.els.borrow().iter() {
+                    for el_id_ in self.els.borrow().keys() {
                         if el_id_ == el_id {
                             continue;
                         }
@@ -464,7 +464,7 @@ impl ElementOrganizer {
 
     pub fn receivable(&self) -> Vec<Rc<RefCell<ReceivableEvents>>> {
         let mut rec = Vec::new();
-        for (_, details) in self.els.borrow().iter() {
+        for details in self.els.borrow().values() {
             let rec_ = details.el.receivable();
             rec.extend(rec_);
         }
@@ -573,7 +573,7 @@ impl ElementOrganizer {
             }
         }
         // order from highest z to lowest z
-        dests.sort_by(|a, b| b.1.cmp(&a.1));
+        dests.sort_by_key(|b| std::cmp::Reverse(b.1));
         dests.drain(..).map(|a| a.0).collect::<Vec<ElementID>>()
     }
 
@@ -629,7 +629,7 @@ impl ElementOrganizer {
     pub fn initialize(&self, ctx: &Context, parent: Box<dyn Parent>) -> EventResponses {
         // initialize all children
         let mut resps = EventResponses::default();
-        for (_, details) in self.els.borrow().iter() {
+        for details in self.els.borrow().values() {
             let (_, mut resp_) = details.el.receive_event(ctx, Event::Initialize);
             self.partially_process_ev_resps(ctx, &details.el.id(), &mut resp_, &parent);
             resps.0.extend(resp_.drain(..));
@@ -663,7 +663,7 @@ impl ElementOrganizer {
         }
 
         // reverse sort the elements by z-index (highest-z to lowest-z)
-        ezo.sort_by(|a, b| b.1.cmp(&a.1));
+        ezo.sort_by_key(|b| std::cmp::Reverse(b.1));
         ezo
     }
 
@@ -680,11 +680,7 @@ impl ElementOrganizer {
         let mut resps = EventResponses::default();
         let mut capturing_el_id = None;
         let mut i = 0;
-        loop {
-            let Some((el_id, _)) = eoz.get(i) else {
-                break; // past the end of the list
-            };
-
+        while let Some((el_id, _)) = eoz.get(i) {
             let details = self
                 .get_element_details(el_id)
                 .expect("no element for destination id");
@@ -752,7 +748,7 @@ impl ElementOrganizer {
     /// get_el_id_at_z_index returns the element-id at the given z index, or None if
     /// no element exists at the given z index
     pub fn get_el_at_z_index(&self, z: ZIndex) -> Option<ElDetails> {
-        for (_, details) in self.els.borrow().iter() {
+        for details in self.els.borrow().values() {
             if details.loc.borrow().z == z {
                 return Some(details.clone());
             }

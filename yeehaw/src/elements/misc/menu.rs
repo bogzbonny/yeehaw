@@ -415,7 +415,7 @@ impl MenuBar {
         let make_invis = *self.make_invisible_on_closedown.borrow();
 
         let menu_items = self.menu_items.borrow();
-        for (_, item) in menu_items.iter() {
+        for item in menu_items.values() {
             // close all non-primary menus
             if !item.is_primary() || make_invis {
                 item.set_visible(false);
@@ -437,7 +437,7 @@ impl MenuBar {
     /// useful for right click menu
     pub fn make_primary_visible(&self) {
         let menu_items = self.menu_items.borrow();
-        for (_, item) in menu_items.iter() {
+        for item in menu_items.values() {
             if item.is_primary() {
                 item.set_visible(true);
             }
@@ -848,7 +848,7 @@ impl MenuBar {
 
     pub fn collapse_non_primary(&self) {
         let menu_items = self.menu_items.borrow();
-        for (_, item) in menu_items.iter() {
+        for item in menu_items.values() {
             // close all non-primary menus
             if !item.is_primary() {
                 item.set_visible(false);

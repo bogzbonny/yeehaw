@@ -117,7 +117,7 @@ impl BoxDrawingCh {
         }
 
         // sort the attributes by count
-        attr_count.sort_by(|a, b| b.1.cmp(&a.1));
+        attr_count.sort_by_key(|b| std::cmp::Reverse(b.1));
 
         if attr_count[0].1 == 0 {
             return None;

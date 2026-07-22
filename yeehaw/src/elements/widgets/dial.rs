@@ -574,11 +574,9 @@ impl Spacing {
                 let mut sel_changes = Vec::new();
                 if has_a {
                     let mut a_sel_changes: SelChanges = SelChanges::default();
-                    let mut x = max_lh_width + self.start_x_from_center(&0) as usize;
-                    for ch in a.iter() {
+                    for (x, ch) in (max_lh_width + self.start_x_from_center(&0) as usize..).zip(a.iter()) {
                         let ch = DrawCh::new(ch.ch.clone(), label_selected_color.clone());
                         a_sel_changes.push((ch, x, 0).into());
-                        x += 1;
                     }
                     let x = max_lh_width;
                     let ch = DrawCh::new('°', dial_knob_sty.clone());
@@ -587,11 +585,9 @@ impl Spacing {
                 }
                 if has_b {
                     let mut b_sel_changes: SelChanges = SelChanges::default();
-                    let mut x = max_lh_width + self.start_x_from_center(&1) as usize;
-                    for ch in b.iter() {
+                    for (x, ch) in (max_lh_width + self.start_x_from_center(&1) as usize..).zip(b.iter()) {
                         let ch = DrawCh::new(ch.ch.clone(), label_selected_color.clone());
                         b_sel_changes.push((ch, x, 1).into());
-                        x += 1;
                     }
                     let x = max_lh_width + 1;
                     let ch = DrawCh::new('∘', dial_knob_sty.clone());
@@ -600,11 +596,9 @@ impl Spacing {
                 }
                 if has_c {
                     let mut c_sel_changes: SelChanges = SelChanges::default();
-                    let mut x = max_lh_width + self.start_x_from_center(&2) as usize;
-                    for ch in c.iter() {
+                    for (x, ch) in (max_lh_width + self.start_x_from_center(&2) as usize..).zip(c.iter()) {
                         let ch = DrawCh::new(ch.ch.clone(), label_selected_color.clone());
                         c_sel_changes.push((ch, x, 2).into());
-                        x += 1;
                     }
                     let x = max_lh_width + 1;
                     let ch = DrawCh::new('°', dial_knob_sty.clone());
@@ -613,11 +607,9 @@ impl Spacing {
                 }
                 if has_d {
                     let mut d_sel_changes: SelChanges = SelChanges::default();
-                    let mut x = max_lh_width + self.start_x_from_center(&3) as usize;
-                    for ch in d.iter() {
+                    for (x, ch) in (max_lh_width + self.start_x_from_center(&3) as usize..).zip(d.iter()) {
                         let ch = DrawCh::new(ch.ch.clone(), label_selected_color.clone());
                         d_sel_changes.push((ch, x, 3).into());
-                        x += 1;
                     }
                     let x = max_lh_width;
                     let ch = DrawCh::new('∘', dial_knob_sty.clone());
@@ -894,11 +886,9 @@ impl Spacing {
                 let mut sel_changes = Vec::new();
                 if has_a {
                     let mut a_sel_changes: SelChanges = SelChanges::default();
-                    let mut x = max_lh_width + self.start_x_from_center(&0) as usize;
-                    for ch in a.iter() {
+                    for (x, ch) in (max_lh_width + self.start_x_from_center(&0) as usize..).zip(a.iter()) {
                         let ch = DrawCh::new(ch.ch.clone(), label_selected_color.clone());
                         a_sel_changes.push((ch, x, 0).into());
-                        x += 1;
                     }
                     let x = max_lh_width;
                     let ch = DrawCh::new('°', dial_knob_sty.clone());
@@ -907,11 +897,9 @@ impl Spacing {
                 }
                 if has_b {
                     let mut b_sel_changes: SelChanges = SelChanges::default();
-                    let mut x = max_lh_width + self.start_x_from_center(&1) as usize;
-                    for ch in b.iter() {
+                    for (x, ch) in (max_lh_width + self.start_x_from_center(&1) as usize..).zip(b.iter()) {
                         let ch = DrawCh::new(ch.ch.clone(), label_selected_color.clone());
                         b_sel_changes.push((ch, x, 1).into());
-                        x += 1;
                     }
                     let x = max_lh_width + 1;
                     let ch = DrawCh::new('°', dial_knob_sty.clone());
@@ -920,11 +908,9 @@ impl Spacing {
                 }
                 if has_c {
                     let mut c_sel_changes: SelChanges = SelChanges::default();
-                    let mut x = max_lh_width + self.start_x_from_center(&2) as usize;
-                    for ch in c.iter() {
+                    for (x, ch) in (max_lh_width + self.start_x_from_center(&2) as usize..).zip(c.iter()) {
                         let ch = DrawCh::new(ch.ch.clone(), label_selected_color.clone());
                         c_sel_changes.push((ch, x, 2).into());
-                        x += 1;
                     }
                     let x = max_lh_width + 1;
                     let ch = DrawCh::new('∘', dial_knob_sty.clone());
@@ -933,11 +919,9 @@ impl Spacing {
                 }
                 if has_d {
                     let mut d_sel_changes: SelChanges = SelChanges::default();
-                    let mut x = max_lh_width + self.start_x_from_center(&3) as usize;
-                    for ch in d.iter() {
+                    for (x, ch) in (max_lh_width + self.start_x_from_center(&3) as usize..).zip(d.iter()) {
                         let ch = DrawCh::new(ch.ch.clone(), label_selected_color.clone());
                         d_sel_changes.push((ch, x, 3).into());
-                        x += 1;
                     }
                     let x = max_lh_width + 1;
                     let ch = DrawCh::new('°', dial_knob_sty.clone());
@@ -946,11 +930,9 @@ impl Spacing {
                 }
                 if has_e {
                     let mut e_sel_changes: SelChanges = SelChanges::default();
-                    let mut x = max_lh_width + self.start_x_from_center(&4) as usize;
-                    for ch in e.iter() {
+                    for (x, ch) in (max_lh_width + self.start_x_from_center(&4) as usize..).zip(e.iter()) {
                         let ch = DrawCh::new(ch.ch.clone(), label_selected_color.clone());
                         e_sel_changes.push((ch, x, 4).into());
-                        x += 1
                     }
                     let x = max_lh_width + 1;
                     let ch = DrawCh::new('∘', dial_knob_sty.clone());
@@ -959,11 +941,9 @@ impl Spacing {
                 }
                 if has_f {
                     let mut f_sel_changes: SelChanges = SelChanges::default();
-                    let mut x = max_lh_width + self.start_x_from_center(&5) as usize;
-                    for ch in f.iter() {
+                    for (x, ch) in (max_lh_width + self.start_x_from_center(&5) as usize..).zip(f.iter()) {
                         let ch = DrawCh::new(ch.ch.clone(), label_selected_color.clone());
                         f_sel_changes.push((ch, x, 5).into());
-                        x += 1
                     }
                     let x = max_lh_width;
                     let ch = DrawCh::new('∘', dial_knob_sty.clone());

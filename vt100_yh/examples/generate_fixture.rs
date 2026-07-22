@@ -14,9 +14,8 @@ fn main() {
             .unwrap();
     let inputs = std::io::BufReader::new(inputs);
 
-    let mut i = 1;
     let mut prev_input = vec![];
-    for line in inputs.lines() {
+    for (i, line) in (1..).zip(inputs.lines()) {
         let line = line.unwrap();
 
         let input = helpers::unhex(line.as_bytes());
@@ -36,7 +35,5 @@ fn main() {
         ))
         .unwrap();
         serde_json::to_writer_pretty(output_file, &screen).unwrap();
-
-        i += 1;
     }
 }

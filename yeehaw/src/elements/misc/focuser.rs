@@ -31,12 +31,12 @@ pub fn focus_on_click(ev: &Event, focused: bool) -> EventResponses {
     let mut resps = EventResponses::default();
     if let Event::Mouse(me) = ev {
         match me.kind {
-            MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Up(MouseButton::Left) => {
+            MouseEventKind::Down(MouseButton::Left) | MouseEventKind::Up(MouseButton::Left)
                 // set focused if unfocused
-                if !focused {
-                    resps.push(EventResponse::UnfocusOthers);
-                    resps.push(EventResponse::Focus);
-                }
+                if !focused =>
+            {
+                resps.push(EventResponse::UnfocusOthers);
+                resps.push(EventResponse::Focus);
             }
             _ => {}
         }

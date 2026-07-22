@@ -538,9 +538,9 @@ impl Element for Pane {
         let (xmin, xmax, ymin, ymax) = if let Some(vis_region) = dr.visible_region {
             (
                 // take the intersection of the visibile region and the elements region
-                (vis_region.start_x as usize).max(0),
+                vis_region.start_x as usize,
                 (vis_region.end_x as usize).min(dr.size.width as usize),
-                (vis_region.start_y as usize).max(0),
+                vis_region.start_y as usize,
                 (vis_region.end_y as usize).min(dr.size.height as usize),
             )
         } else {
@@ -610,7 +610,7 @@ impl Element for Pane {
 
     /// remove all hooks for the element with the given id
     fn clear_hooks_by_id(&self, el_id: ElementID) {
-        for (_, hook) in self.hooks.borrow_mut().iter_mut() {
+        for hook in self.hooks.borrow_mut().values_mut() {
             hook.retain(|(el_id_, _)| *el_id_ != el_id);
         }
     }
