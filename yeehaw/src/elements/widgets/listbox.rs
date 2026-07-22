@@ -636,6 +636,7 @@ impl Element for ListBoxInner {
                             ClickBehavior::SoftSelectFirst => {
                                 let current_cursor = *self.cursor.borrow();
                                 *self.cursor.borrow_mut() = Some(item_i);
+                                self.is_dirty.replace(true);
                                 if current_cursor == Some(item_i) {
                                     let resps_ = self.toggle_entry_selected_at_i(ctx, item_i);
                                     resps.extend(resps_);

@@ -53,7 +53,7 @@ pub struct Tui {
     /// event heavy periods.
     pub mouse_backlog: Option<CTMouseEvent>,
 
-    pub kill_on_ctrl_c: bool,
+    pub kill_keystrokes: Vec<CTKeyEvent>,
 
     /// if Some then the TUI is rendered inline in the terminal
     pub inline: Option<Rc<RefCell<InlineTui>>>,
@@ -94,7 +94,7 @@ impl Tui {
             mouse_processing: false,
             mouse_backlog: Option::None,
             animation_speed: DEFAULT_ANIMATION_SPEED,
-            kill_on_ctrl_c: true,
+            kill_keystrokes: vec![Keyboard::KEY_CTRL_C],
             inline: None,
             exit_recv,
             ev_recv,
@@ -112,6 +112,17 @@ impl Tui {
             self.cup.ev_tx.clone(),
             &self.cup.color_store,
         )
+    }
+
+    /// Set the list of keystrokes that will cause the TUI to exit.
+    pub fn set_kill_keystrokes(&mut self, keystrokes: Vec<CTKeyEvent>) {
+        self.kill_keystrokes = keystrokes;
+    }
+
+    /// Builder-style setter for kill keystrokes.
+    pub fn with_kill_keystrokes(mut self, keystrokes: Vec<CTKeyEvent>) -> Self {
+        self.kill_keystrokes = keystrokes;
+        self
     }
 
     pub fn draw_region(&self) -> DrawRegion {
@@ -313,7 +324,7 @@ impl Tui {
     pub fn process_event_key(&mut self, key_ev: CTKeyEvent) -> Result<bool, Error> {
         self.kb.add_ev(key_ev);
 
-        if key_ev == Keyboard::KEY_CTRL_C && self.kill_on_ctrl_c {
+        if self.kill_keystrokes.contains(&key_ev) {
             self.cup
                 .eo
                 .event_process(&self.context(), Event::Exit, Box::new(self.cup.clone()));

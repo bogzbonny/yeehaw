@@ -3,6 +3,8 @@
 10. bat preview window integration.
      - with scroll functionality
      - https://github.com/sharkdp/bat/blob/master/src/pretty_printer.rs
+
+01. mp3 player combo element
 __________________________________________________________________________
 EFFICIENCY
 flamegraph -o flame.svg --image-width=4000 --root -- ./target/debug/examples/colors teeff
