@@ -32,6 +32,7 @@ pub struct ListBoxInner {
     /// how many lines each item is to take up
     pub lines_per_item: Rc<RefCell<usize>>,
     pub selection_mode: Rc<RefCell<SelectionMode>>,
+    pub click_behavior: Rc<RefCell<ClickBehavior>>,
 
     #[allow(clippy::type_complexity)]
     /// function which executes when the selection changes. NOTE multiple items may be selected
@@ -61,6 +62,17 @@ pub enum SelectionMode {
     /// n items are selectable at a time, once n items are selected, no more items can
     /// be selected until one of the selected items is deselected
     UpTo(usize),
+}
+
+/// Controls how mouse clicks interact with the listbox.
+#[derive(Clone, Copy, PartialEq, Eq, Default)]
+pub enum ClickBehavior {
+    /// Click immediately toggles selection on the clicked item (default behavior).
+    #[default]
+    Immediate,
+    /// First click sets the cursor position only. A second click on the same
+    /// position toggles selection.
+    SoftSelectFirst,
 }
 
 #[yeehaw_derive::impl_pane_basics_from(pane)]
@@ -187,6 +199,15 @@ impl ListBox {
         self
     }
 
+    pub fn with_click_behavior(self, behavior: ClickBehavior) -> Self {
+        self.set_click_behavior(behavior);
+        self
+    }
+
+    pub fn set_click_behavior(&self, behavior: ClickBehavior) {
+        *self.inner.borrow().click_behavior.borrow_mut() = behavior;
+    }
+
     pub fn with_dyn_width(self, width: DynVal) -> Self {
         self.pane.set_dyn_width(width);
         self.inner.borrow().is_dirty.replace(true);
@@ -254,6 +275,7 @@ impl ListBoxInner {
             last_clicked_position: Rc::new(RefCell::new(None)),
             clicked_down: Rc::new(RefCell::new(false)),
             selection_mode: Rc::new(RefCell::new(SelectionMode::NoLimit)),
+            click_behavior: Rc::new(RefCell::new(ClickBehavior::default())),
             item_selected_style: Rc::new(RefCell::new(Self::STYLE_ITEM_SELECTED)),
             cursor_over_unselected_style: Rc::new(RefCell::new(Self::STYLE_CURSOR_OVER_UNSELECTED)),
             cursor_over_selected_style: Rc::new(RefCell::new(Self::STYLE_CURSOR_OVER_SELECTED)),
@@ -390,51 +412,70 @@ impl ListBoxInner {
     }
 
     /// returns if the cursor was moved
-    pub fn cursor_up(&self) -> bool {
+    pub fn cursor_up(&self, ctx: &Context) -> bool {
         self.is_dirty.replace(true);
-        let mut out = true;
         let cursor = *self.cursor.borrow();
         match cursor {
             Some(cursor) if cursor > 0 => {
                 *self.cursor.borrow_mut() = Some(cursor - 1);
+                self.fire_selection_callback(ctx);
+                true
             }
             None => {
                 if let Some(lcp) = *self.last_clicked_position.borrow() {
                     *self.cursor.borrow_mut() = Some(lcp);
-                    out = self.cursor_up();
+                    self.cursor_up(ctx)
                 } else {
                     *self.cursor.borrow_mut() = Some(self.entries.borrow().len() - 1);
+                    self.fire_selection_callback(ctx);
+                    true
                 }
             }
             _ => {
-                return false;
+                false
             }
         }
-        out
     }
 
     /// returns if the cursor was moved
-    pub fn cursor_down(&self) -> bool {
+    pub fn cursor_down(&self, ctx: &Context) -> bool {
         self.is_dirty.replace(true);
-        let mut out = true;
         let cursor = *self.cursor.borrow();
         match cursor {
             Some(cursor) if cursor < self.entries.borrow().len() - 1 => {
                 *self.cursor.borrow_mut() = Some(cursor + 1);
+                self.fire_selection_callback(ctx);
+                true
             }
             None => {
                 if let Some(lcp) = *self.last_clicked_position.borrow() {
                     *self.cursor.borrow_mut() = Some(lcp);
-                    out = self.cursor_down();
+                    self.cursor_down(ctx)
                 } else {
                     *self.cursor.borrow_mut() = Some(0);
+                    self.fire_selection_callback(ctx);
+                    true
                 }
             }
             _ => {
-                return false;
+                false
             }
         }
-        out
+    }
+
+    /// Fires the selection callback with current selections and cursor position.
+    fn fire_selection_callback(&self, ctx: &Context) -> EventResponses {
+        let entries = self.entries.borrow().clone();
+        let selected_entries = self
+            .selected
+            .borrow()
+            .iter()
+            .map(|i| entries[*i].clone())
+            .collect();
+
+        let cursor_entry = self.cursor.borrow().as_ref().and_then(|i| entries.get(*i).cloned());
+
+        (self.selection_made_fn.borrow_mut())(ctx.clone(), selected_entries, cursor_entry)
     }
 
     pub fn toggle_entry_selected_at_i(&self, ctx: &Context, i: usize) -> EventResponses {
@@ -466,17 +507,7 @@ impl ListBoxInner {
             }
         }
 
-        let entries = self.entries.borrow().clone();
-        let selected_entries = self
-            .selected
-            .borrow()
-            .iter()
-            .map(|i| entries[*i].clone())
-            .collect();
-
-        let cursor_entry = self.cursor.borrow().as_ref().and_then(|i| entries.get(*i).cloned());
-
-        (self.selection_made_fn.borrow_mut())(ctx.clone(), selected_entries, cursor_entry)
+        self.fire_selection_callback(ctx)
     }
 }
 
@@ -514,11 +545,11 @@ impl Element for ListBoxInner {
                         }
                     }
                     _ if ke[0] == KB::KEY_DOWN || ke[0] == KB::KEY_J => {
-                        let _ = self.cursor_down();
+                        let _ = self.cursor_down(ctx);
                         return (true, resps);
                     }
                     _ if ke[0] == KB::KEY_UP || ke[0] == KB::KEY_K => {
-                        let _ = self.cursor_up();
+                        let _ = self.cursor_up(ctx);
                         return (true, resps);
                     }
                     _ if ke[0] == KB::KEY_ENTER => {
@@ -560,12 +591,12 @@ impl Element for ListBoxInner {
                 }
 
                 match true {
-                    _ if scroll_up => {
-                        let captured = self.cursor_up();
+                                        _ if scroll_up => {
+                        let captured = self.cursor_up(ctx);
                         return (captured, resps);
                     }
                     _ if scroll_down => {
-                        let captured = self.cursor_down();
+                        let captured = self.cursor_down(ctx);
                         return (captured, resps);
                     }
                     _ if clicked => {
@@ -597,9 +628,23 @@ impl Element for ListBoxInner {
 
                         *self.last_clicked_position.borrow_mut() = Some(item_i);
 
-                        // toggle selection
-                        let resps_ = self.toggle_entry_selected_at_i(ctx, item_i);
-                        resps.extend(resps_);
+                        match *self.click_behavior.borrow() {
+                            ClickBehavior::Immediate => {
+                                let resps_ = self.toggle_entry_selected_at_i(ctx, item_i);
+                                resps.extend(resps_);
+                            }
+                            ClickBehavior::SoftSelectFirst => {
+                                let current_cursor = *self.cursor.borrow();
+                                *self.cursor.borrow_mut() = Some(item_i);
+                                if current_cursor == Some(item_i) {
+                                    let resps_ = self.toggle_entry_selected_at_i(ctx, item_i);
+                                    resps.extend(resps_);
+                                } else {
+                                    let resps_ = self.fire_selection_callback(ctx);
+                                    resps.extend(resps_);
+                                }
+                            }
+                        }
                         return (true, resps);
                     }
                     _ => return (false, resps),
