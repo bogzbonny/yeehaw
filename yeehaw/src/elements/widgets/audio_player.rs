@@ -3,13 +3,12 @@ use {
     std::rc::Rc,
     std::cell::RefCell,
     std::sync::Arc,
-    yeehaw_derive::{impl_pane_basics_from, impl_element_from},
     crate::dyn_value::DynVal,
     crate::dyn_location::{DynLocation, DynLocationSet, Size, ZIndex},
     crate::element::{Element, DrawUpdate, Parent},
     crate::draw_region::DrawRegion,
     crate::sorting_hat::ElementID,
-    crate::event::{Event, EventResponses, ReceivableEvents, ReceivableEvent},
+    crate::event::{Event, EventResponses, ReceivableEvents},
     crate::ch::{DrawCh, DrawChs2D},
     crate::color::Color,
     crate::style::Style,
@@ -32,6 +31,7 @@ pub enum AudioPlayerState {
 struct AudioContext {
     samples: Vec<f32>,
     sample_rate: u32,
+    channels: u16,
     position: usize,
     state: AudioPlayerState,
 }
@@ -67,9 +67,6 @@ pub struct AudioPlayer {
     // UI elements
     slider: Rc<RefCell<Slider>>,
     play_pause_btn: Rc<RefCell<Button>>,
-    stop_btn: Rc<RefCell<Button>>,
-    prev_btn: Rc<RefCell<Button>>,
-    next_btn: Rc<RefCell<Button>>,
 }
 
 impl AudioPlayer {
@@ -247,7 +244,7 @@ impl AudioPlayer {
         pane.add_element(Box::new(stop_btn.clone()));
         pane.add_element(Box::new(next_btn.clone()));
 
-        let mut player = Self {
+        let player = Self {
             pane,
             sources: sources_rc,
             current_index,
@@ -255,9 +252,6 @@ impl AudioPlayer {
             stream,
             slider: Rc::new(RefCell::new(slider)),
             play_pause_btn: Rc::new(RefCell::new(play_pause_btn)),
-            stop_btn: Rc::new(RefCell::new(stop_btn)),
-            prev_btn: Rc::new(RefCell::new(prev_btn)),
-            next_btn: Rc::new(RefCell::new(next_btn)),
         };
 
         // Load first track if sources provided
@@ -289,8 +283,14 @@ impl AudioPlayer {
     }
 
     /// Add a single audio file to the source list.
+    /// If this is the first source added, loads and prepares it for playback.
     pub fn add_source(&self, path: PathBuf) {
+        let was_empty = self.sources.borrow().is_empty();
         self.sources.borrow_mut().push(path);
+        if was_empty {
+            *self.current_index.borrow_mut() = 0;
+            self.load_current();
+        }
     }
 
     /// Load and prepare the currently selected track.
@@ -333,6 +333,7 @@ impl AudioPlayer {
         let ac = Arc::new(parking_lot::Mutex::new(AudioContext {
             samples: decoded.samples,
             sample_rate: decoded.sample_rate,
+            channels: decoded.channels,
             position: 0,
             state: AudioPlayerState::Stopped,
         }));
@@ -392,8 +393,8 @@ impl AudioPlayer {
         let track_id = track.id;
         let sample_rate = track.codec_params.sample_rate
             .ok_or_else(|| "Unknown sample rate".to_string())?;
-        let _channels = track.codec_params.channels
-            .map(|c| c.count())
+        let channels: u16 = track.codec_params.channels
+            .map(|c| c.count() as u16)
             .unwrap_or(1);
 
         // Create a decoder for the track
@@ -437,6 +438,7 @@ impl AudioPlayer {
         Ok(DecodedAudio {
             samples,
             sample_rate,
+            channels,
         })
     }
 
@@ -446,13 +448,15 @@ impl AudioPlayer {
         let device = host.default_output_device()
             .ok_or_else(|| "No default output device found".to_string())?;
 
-        let default_cfg = device.default_output_config()
-            .map_err(|e| format!("No default output config: {}", e))?;
+        // Use the audio file's sample rate and channel count for the stream config
+        let (sample_rate, channels) = {
+            let audio = ctx.lock();
+            (audio.sample_rate, audio.channels)
+        };
 
-        // Build StreamConfig from default; cpal handles sample format conversion
         let config = cpal::StreamConfig {
-            channels: default_cfg.channels(),
-            sample_rate: default_cfg.sample_rate(),
+            channels,
+            sample_rate: cpal::SampleRate(sample_rate),
             buffer_size: cpal::BufferSize::Default,
         };
 
@@ -599,4 +603,5 @@ impl Element for AudioPlayer {
 struct DecodedAudio {
     samples: Vec<f32>,
     sample_rate: u32,
+    channels: u16,
 }
