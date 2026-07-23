@@ -1,26 +1,25 @@
-use std::path::PathBuf;
-use std::rc::Rc;
-use std::cell::RefCell;
-use std::sync::Arc;
-
-use yeehaw_derive::{impl_pane_basics_from, impl_element_from};
-
-use crate::dyn_value::DynVal;
-use crate::dyn_location::{DynLocation, DynLocationSet, Size, ZIndex};
-use crate::element::{Element, DrawUpdate, Parent};
-use crate::draw_region::DrawRegion;
-use crate::sorting_hat::ElementID;
-use crate::event::{Event, EventResponses, ReceivableEvents, ReceivableEvent};
-use crate::ch::{DrawCh, DrawChs2D};
-use crate::color::Color;
-use crate::style::Style;
-use crate::context::Context;
-use crate::elements::panes::ParentPaneOfSelectable;
-use crate::elements::widgets::button::{Button, ButtonMicroShadow};
-use crate::elements::widgets::slider::Slider;
-use crate::{Ref, RefMut};
-
-use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use {
+    std::path::PathBuf,
+    std::rc::Rc,
+    std::cell::RefCell,
+    std::sync::Arc,
+    yeehaw_derive::{impl_pane_basics_from, impl_element_from},
+    crate::dyn_value::DynVal,
+    crate::dyn_location::{DynLocation, DynLocationSet, Size, ZIndex},
+    crate::element::{Element, DrawUpdate, Parent},
+    crate::draw_region::DrawRegion,
+    crate::sorting_hat::ElementID,
+    crate::event::{Event, EventResponses, ReceivableEvents, ReceivableEvent},
+    crate::ch::{DrawCh, DrawChs2D},
+    crate::color::Color,
+    crate::style::Style,
+    crate::context::Context,
+    crate::elements::panes::ParentPaneOfSelectable,
+    crate::elements::widgets::button::{Button, ButtonMicroShadow},
+    crate::elements::widgets::slider::Slider,
+    crate::{Ref, RefMut},
+    cpal::traits::{DeviceTrait, HostTrait, StreamTrait},
+};
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum AudioPlayerState {

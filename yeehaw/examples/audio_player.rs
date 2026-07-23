@@ -1,7 +1,8 @@
-use std::path::PathBuf;
-
-use yeehaw::*;
-use yeehaw::elements::widgets::SingleLineTextBox;
+use {
+    std::path::PathBuf,
+    yeehaw::*,
+    yeehaw::elements::widgets::SingleLineTextBox,
+};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
