@@ -5,6 +5,23 @@
      - https://github.com/sharkdp/bat/blob/master/src/pretty_printer.rs
 
 01. mp3 player combo element
+ ⏵∥ ⏯   ▶ ⏸ ⏹ ⏭  ⏮
+
+- [ ] Build a new combination element named AudioPlayer. This element should be a ParentPaneOfSelectable with a slider and buttons. 
+ - Study other elements to see how they work
+ - On the first row the slider should be a `new_basic_line` slider. 
+   - The slider should always reflect the position of audio playback. The user should be able to drag it and this will change the position of the playback
+   - If the slider is moved and the player is currently playing, it should continue playing but from the new position
+ - On the second row there should be the following buttons: Prev (`⏮ `), Play/Pause (`▶` or `⏸`), Stop (`⏹`), Next (`⏭ `)
+   - NOTE that the Prev and Next both have an extra space, this is intentional 
+   - All these buttons should use MicroShadow
+   - When the state of the audio player is Playing then the Play/Pause button should display `⏸` as its text. When the state is Paused then this button should display `▶`
+   - The stop button should stop audio playback and return the  
+ - audio playback should happen with the `cpal` crate. The audio player element as well as the cpal import should be under a new feature flag named `audio`
+ - The audio player should take in an vec of paths as input. It should also be able to set the audio source vec after its been initialized with a setter function. 
+ - Build out a simple example in the Examples directory which uses this element. The example should have a textbox where the user feeds in a location to the audio file as well as a button which loads this audio file into the AudioPlayer element 
+
+
 __________________________________________________________________________
 EFFICIENCY
 flamegraph -o flame.svg --image-width=4000 --root -- ./target/debug/examples/colors teeff
@@ -432,6 +449,8 @@ CONTAINERS
 __________________________________________________________________________
 WIDGETS
 
+10. pop-up file selector 
+    
 10. numbers textbox + dial slider is a nice pattern which should be grouped
     together.
 
