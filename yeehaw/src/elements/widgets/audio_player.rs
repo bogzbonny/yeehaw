@@ -144,7 +144,6 @@ impl AudioPlayer {
                         }
                         AudioPlayerState::Stopped => {
                             audio.state = AudioPlayerState::Playing;
-                            audio.position = 0;
                             if let Some(s) = stream_clone.borrow().as_ref() {
                                 let _ = s.play();
                             }
@@ -194,7 +193,7 @@ impl AudioPlayer {
                 let should_seek = {
                     if let Some(ac) = audio_ctx_clone.borrow().as_ref() {
                         let audio = ac.lock();
-                        audio.state == AudioPlayerState::Playing && audio.position > 0
+                        audio.position > 0
                     } else {
                         false
                     }
@@ -228,6 +227,7 @@ impl AudioPlayer {
                     &slider_clone,
                     &time_label_clone,
                     &filename_label_clone,
+                    idx,
                 );
                 EventResponses::default()
             }));
@@ -260,6 +260,7 @@ impl AudioPlayer {
                     &slider_clone,
                     &time_label_clone,
                     &filename_label_clone,
+                    idx,
                 );
                 EventResponses::default()
             }));
@@ -348,6 +349,7 @@ impl AudioPlayer {
                 &self.slider,
                 &self.time_label,
                 &self.filename_label,
+                idx,
             );
         }
     }
@@ -361,6 +363,7 @@ impl AudioPlayer {
         slider: &Rc<RefCell<Slider>>,
         time_label: &Rc<RefCell<Label>>,
         filename_label: &Rc<RefCell<Label>>,
+        index: usize,
     ) {
         // Stop any existing playback
         if let Some(s) = stream.borrow().as_ref() {
@@ -375,6 +378,8 @@ impl AudioPlayer {
                 return;
             }
         };
+
+        let duration_secs = decoded.samples.len() as f64 / (decoded.sample_rate as f64 * decoded.channels as f64);
 
         let ac = Arc::new(parking_lot::Mutex::new(AudioContext {
             samples: decoded.samples,
@@ -393,13 +398,9 @@ impl AudioPlayer {
                 slider.borrow().set_position(0.0);
                 *play_pause_btn.borrow_mut().text.borrow_mut() = "▶".to_string();
                 // Set time and filename labels
-                let duration_secs = decoded.samples.len() as f64 / decoded.sample_rate as f64;
                 let duration_str = format_time(duration_secs);
                 time_label.borrow().set_text(format!("0:00/{}", duration_str));
-                let filename = path.file_name()
-                    .map(|f| f.to_string_lossy().to_string())
-                    .unwrap_or_default();
-                filename_label.borrow().set_text(filename);
+                filename_label.borrow().set_text(format!("{}", index + 1));
                 // refresh_button skipped here — no Context available; UI updates next draw
             }
             Err(e) => {
@@ -644,8 +645,9 @@ impl AudioPlayer {
             };
             *self.play_pause_btn.borrow_mut().text.borrow_mut() = icon.to_string();
             // Update time label
-            let current_secs = audio.position as f64 / audio.sample_rate as f64;
-            let duration_secs = audio.samples.len() as f64 / audio.sample_rate as f64;
+            let samples_per_sec = audio.sample_rate as f64 * audio.channels as f64;
+            let current_secs = audio.position as f64 / samples_per_sec;
+            let duration_secs = audio.samples.len() as f64 / samples_per_sec;
             let time_str = format!("{}/{}", format_time(current_secs), format_time(duration_secs));
             self.time_label.borrow().set_text(time_str);
         }

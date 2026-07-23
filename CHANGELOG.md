@@ -9,6 +9,7 @@
  - introduced a table container element 
  - box drawing logic crate 
  - added list control element 
+ - added AudioPlayer element 
 
 ## Bugfixes
  - inline tui out-of-bounds mouse bugfix
