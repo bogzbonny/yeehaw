@@ -181,11 +181,11 @@ impl AudioPlayer {
             let slider_clone = Rc::new(RefCell::new(slider.clone()));
 
             prev_btn.set_fn(Box::new(move |_, _| {
-                let mut idx = *current_index_clone.borrow();
                 let sources = sources_clone.borrow();
-                if sources.is_empty() {
+                if sources.len() <= 1 {
                     return EventResponses::default();
                 }
+                let mut idx = *current_index_clone.borrow();
                 if idx > 0 {
                     idx -= 1;
                 } else {
@@ -213,11 +213,11 @@ impl AudioPlayer {
             let slider_clone = Rc::new(RefCell::new(slider.clone()));
 
             next_btn.set_fn(Box::new(move |_, _| {
-                let mut idx = *current_index_clone.borrow();
                 let sources = sources_clone.borrow();
-                if sources.is_empty() {
+                if sources.len() <= 1 {
                     return EventResponses::default();
                 }
+                let mut idx = *current_index_clone.borrow();
                 idx = (idx + 1) % sources.len();
                 *current_index_clone.borrow_mut() = idx;
                 AudioPlayer::load_track(
@@ -541,11 +541,11 @@ impl AudioPlayer {
 
     /// Play previous track.
     pub fn prev(&self) {
-        let mut idx = *self.current_index.borrow();
         let sources = self.sources.borrow();
-        if sources.is_empty() {
+        if sources.len() <= 1 {
             return;
         }
+        let mut idx = *self.current_index.borrow();
         if idx > 0 {
             idx -= 1;
         } else {
@@ -558,11 +558,11 @@ impl AudioPlayer {
 
     /// Play next track.
     pub fn next(&self) {
-        let mut idx = *self.current_index.borrow();
         let sources = self.sources.borrow();
-        if sources.is_empty() {
+        if sources.len() <= 1 {
             return;
         }
+        let mut idx = *self.current_index.borrow();
         idx = (idx + 1) % sources.len();
         *self.current_index.borrow_mut() = idx;
         self.load_current();
@@ -578,12 +578,17 @@ impl AudioPlayer {
         }
     }
 
-    /// Update slider position from audio context (called during drawing).
+    /// Update slider position and play/pause button text from audio context (called during drawing).
     fn update_slider_from_audio(&self) {
         if let Some(ctx) = self.audio_ctx.borrow().as_ref() {
             let audio = ctx.lock();
-            let frac = audio.fraction();
-            self.slider.borrow().set_position(frac);
+            self.slider.borrow().set_position(audio.fraction());
+            // Sync button text with actual state (state can change in cpal callback)
+            let icon = match audio.state {
+                AudioPlayerState::Playing => "⏸",
+                _ => "▶",
+            };
+            *self.play_pause_btn.borrow_mut().text.borrow_mut() = icon.to_string();
         }
     }
 }
