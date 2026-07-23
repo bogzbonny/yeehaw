@@ -322,8 +322,8 @@ impl AudioPlayer {
             let _ = s.pause();
         }
 
-        // Decode WAV file
-        let decoded = match Self::decode_wav(path) {
+        // Decode audio file (WAV, MP3, OGG, FLAC, AAC/M4A)
+        let decoded = match Self::decode_audio(path) {
             Ok(d) => d,
             Err(e) => {
                 eprintln!("Failed to decode audio file {:?}: {}", path, e);
@@ -354,20 +354,85 @@ impl AudioPlayer {
         }
     }
 
-    /// Decode a WAV file using hound. Returns f32 samples.
-    fn decode_wav(path: &PathBuf) -> Result<DecodedAudio, String> {
-        let mut reader = hound::WavReader::open(path)
-            .map_err(|e| format!("hound open error: {}", e))?;
+    /// Decode an audio file using symphonia. Supports WAV, MP3, OGG, FLAC, AAC/M4A.
+    /// Returns interleaved f32 samples held entirely in memory.
+    fn decode_audio(path: &PathBuf) -> Result<DecodedAudio, String> {
+        use symphonia::core::audio::{SampleBuffer, SignalSpec};
+        use symphonia::core::codecs::{DecoderOptions, CODEC_TYPE_NULL};
+        use symphonia::core::formats::FormatOptions;
+        use symphonia::core::io::MediaSourceStream;
+        use symphonia::core::meta::MetadataOptions;
+        use symphonia::core::probe::Hint;
 
-        let spec = reader.spec();
-        let sample_rate = spec.sample_rate;
+        // Build a hint from the file extension
+        let ext = path.extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("wav");
+        let mut hint = Hint::new();
+        hint.with_extension(ext);
 
-        // Read samples and convert to f32
+        // Open the file
+        let src = std::fs::File::open(path)
+            .map_err(|e| format!("Failed to open file: {}", e))?;
+        let mss = MediaSourceStream::new(Box::new(src), Default::default());
+
+        // Probe the media source
+        let meta_opts = MetadataOptions::default();
+        let fmt_opts = FormatOptions::default();
+        let probed = symphonia::default::get_probe()
+            .format(&hint, mss, &fmt_opts, &meta_opts)
+            .map_err(|e| format!("Failed to probe file (unsupported format?): {}", e))?;
+
+        let mut format = probed.format;
+
+        // Find the first audio track with a supported codec
+        let track = format.tracks().iter()
+            .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
+            .ok_or_else(|| "No audio track found".to_string())?;
+
+        let track_id = track.id;
+        let sample_rate = track.codec_params.sample_rate
+            .ok_or_else(|| "Unknown sample rate".to_string())?;
+        let _channels = track.codec_params.channels
+            .map(|c| c.count())
+            .unwrap_or(1);
+
+        // Create a decoder for the track
+        let dec_opts = DecoderOptions::default();
+        let mut decoder = symphonia::default::get_codecs()
+            .make(&track.codec_params, &dec_opts)
+            .map_err(|e| format!("Failed to create decoder: {}", e))?;
+
+        // Signal spec for the sample buffer (used for type conversion)
+        let spec = SignalSpec::new(
+            sample_rate,
+            track.codec_params.channels.unwrap_or_default(),
+        );
+
         let mut samples = Vec::new();
-        for sample in reader.samples::<i32>() {
-            let s = sample.map_err(|e| format!("hound sample error: {}", e))?;
-            let f = s as f64 / i32::MAX as f64;
-            samples.push(f as f32);
+
+        // Decode all packets
+        while let Ok(packet) = format.next_packet() {
+            if packet.track_id() != track_id {
+                continue;
+            }
+            let audio = match decoder.decode(&packet) {
+                Ok(a) => a,
+                Err(e) => {
+                    eprintln!("Decode error (skipping packet): {}", e);
+                    continue;
+                }
+            };
+
+            let n_frames = audio.frames();
+            if n_frames == 0 {
+                continue;
+            }
+
+            // Use SampleBuffer to convert any sample format to f32, interleaved
+            let mut samp_buf = SampleBuffer::<f32>::new(n_frames as u64, spec);
+            samp_buf.copy_interleaved_ref(audio);
+            samples.extend_from_slice(samp_buf.samples());
         }
 
         Ok(DecodedAudio {
