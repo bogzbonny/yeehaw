@@ -71,7 +71,7 @@ symphonia = { version = "0.5", features = ["mp3", "ogg", "flac", "isomp4", "wav"
 [features]
 # NOTE crate-features are documented in yeehaw/README_DOCS.md:119
 default = []
-full = ["table", "rand", "terminal", "terminal_editor", "textbox", "figlet", "image", "bat"] # enable everything
+full = ["table", "rand", "terminal", "terminal_editor", "textbox", "figlet", "image", "bat", "audio"] # enable everything
 textbox = ["dep:arboard", "dep:num-traits"] # enable textbox, list-control, and file-editor elements
 terminal = ["dep:anyhow", "dep:vt100_yh", "dep:portable-pty"] # enable terminal panes
 terminal_editor = ["terminal", "dep:tempfile"] # enable terminal-editor panes
