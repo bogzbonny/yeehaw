@@ -24,6 +24,9 @@ pub mod textbox_single_line;
 #[cfg(feature = "figlet")]
 pub mod figlet;
 
+#[cfg(feature = "audio")]
+pub mod audio_player;
+
 pub use {
     arb_selector::ArbSelector,
     button::{Button, ButtonMicroShadow, ButtonShadow, ButtonSides, ButtonStyle},
@@ -46,6 +49,9 @@ pub use image_viewer::ImageViewer;
 
 #[cfg(feature = "figlet")]
 pub use figlet::FigletText;
+
+#[cfg(feature = "audio")]
+pub use audio_player::AudioPlayer;
 
 #[cfg(feature = "textbox")]
 pub use {

@@ -62,6 +62,10 @@ rand = {version = "^0.8.0", optional = true}
 bat = {version = "^0.25.0", features = ["git", "paging"], optional = true}
 #bat = {version = "^0.25.0", optional = true}
 
+# audio feature deps
+cpal = { version = "^0.15.0", optional = true }
+hound = { version = "^3.5.0", optional = true }
+
 # ------------------------------------------------------------------------------------------------------
 
 [features]
@@ -77,6 +81,7 @@ figlet = ["dep:figlet-rs"] # enable figlet element
 image = ["ratatui", "dep:image", "dep:ratatui-image"] # enable image viewing pane
 ratatui = ["dep:ratatui"] # enable ratatui compatibility functionality for ratatui ported elements
 rand = ["dep:rand"] # enables random colors, but requires the rand crate
+audio = ["dep:cpal", "dep:hound"] # enable audio player element with cpal playback
 
 # ------------------------------------------------------------------------------------------------------
 [[example]]
@@ -138,3 +143,8 @@ required-features = ["textbox"]
 name = "bat"
 path = "examples/bat.rs"
 required-features = ["bat"]
+
+[[example]]
+name = "audio_player"
+path = "examples/audio_player.rs"
+required-features = ["audio", "textbox"]
