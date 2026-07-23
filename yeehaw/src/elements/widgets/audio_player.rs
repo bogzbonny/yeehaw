@@ -1,24 +1,24 @@
 use {
-    std::path::PathBuf,
-    std::rc::Rc,
-    std::cell::RefCell,
-    std::sync::Arc,
-    crate::dyn_value::DynVal,
-    crate::dyn_location::{DynLocation, DynLocationSet, Size, ZIndex},
-    crate::element::{Element, DrawUpdate, Parent},
-    crate::draw_region::DrawRegion,
-    crate::sorting_hat::ElementID,
-    crate::event::{Event, EventResponses, ReceivableEvents},
     crate::ch::{DrawCh, DrawChs2D},
     crate::color::Color,
-    crate::style::Style,
     crate::context::Context,
+    crate::draw_region::DrawRegion,
+    crate::dyn_location::{DynLocation, DynLocationSet, Size, ZIndex},
+    crate::dyn_value::DynVal,
+    crate::element::{DrawUpdate, Element, Parent},
     crate::elements::panes::ParentPaneOfSelectable,
     crate::elements::widgets::button::{Button, ButtonMicroShadow},
     crate::elements::widgets::label::Label,
     crate::elements::widgets::slider::Slider,
+    crate::event::{Event, EventResponses, ReceivableEvents},
+    crate::sorting_hat::ElementID,
+    crate::style::Style,
     crate::{Ref, RefMut},
     cpal::traits::{DeviceTrait, HostTrait, StreamTrait},
+    std::cell::RefCell,
+    std::path::PathBuf,
+    std::rc::Rc,
+    std::sync::Arc,
 };
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -83,7 +83,9 @@ impl AudioPlayer {
         let slider = Slider::new_basic_line(ctx);
         slider.pane.set_dyn_width(DynVal::FULL);
         slider.pane.set_dyn_height(DynVal::new_fixed(1));
-        slider.pane.set_at(DynVal::new_fixed(0), DynVal::new_fixed(0));
+        slider
+            .pane
+            .set_at(DynVal::new_fixed(0), DynVal::new_fixed(0));
         slider.set_position(0.0);
 
         // Create buttons with micro shadow
@@ -95,7 +97,8 @@ impl AudioPlayer {
 
         let sources_rc = Rc::new(RefCell::new(sources));
         let current_index = Rc::new(RefCell::new(0usize));
-        let audio_ctx: Rc<RefCell<Option<Arc<parking_lot::Mutex<AudioContext>>>>> = Rc::new(RefCell::new(None));
+        let audio_ctx: Rc<RefCell<Option<Arc<parking_lot::Mutex<AudioContext>>>>> =
+            Rc::new(RefCell::new(None));
         let stream: Rc<RefCell<Option<cpal::Stream>>> = Rc::new(RefCell::new(None));
 
         // Create labels for time and filename
@@ -267,14 +270,22 @@ impl AudioPlayer {
         }
 
         // Position buttons in row 1
-        prev_btn.pane.set_at(DynVal::new_fixed(0), DynVal::new_fixed(1));
-        play_pause_btn.pane.set_at(DynVal::new_fixed(4), DynVal::new_fixed(1));
-        stop_btn.pane.set_at(DynVal::new_fixed(8), DynVal::new_fixed(1));
-        next_btn.pane.set_at(DynVal::new_fixed(12), DynVal::new_fixed(1));
+        prev_btn
+            .pane
+            .set_at(DynVal::new_fixed(0), DynVal::new_fixed(1));
+        play_pause_btn
+            .pane
+            .set_at(DynVal::new_fixed(4), DynVal::new_fixed(1));
+        stop_btn
+            .pane
+            .set_at(DynVal::new_fixed(8), DynVal::new_fixed(1));
+        next_btn
+            .pane
+            .set_at(DynVal::new_fixed(12), DynVal::new_fixed(1));
 
         // Position labels on row 1, right side
-        time_label.set_at(DynVal::new_fixed(17), DynVal::new_fixed(1));
-        filename_label.set_at(DynVal::FULL.minus(1.into()), DynVal::new_fixed(1));
+        time_label.set_at(DynVal::new_fixed(16), DynVal::new_fixed(1));
+        filename_label.set_at(DynVal::new_fixed(26), DynVal::new_fixed(1));
 
         // Add elements to pane (clones share Rc<RefCell<...>> state with originals)
         pane.add_element(Box::new(slider.clone()));
@@ -356,14 +367,10 @@ impl AudioPlayer {
 
     /// Decode a WAV file and set up the cpal stream for playback.
     fn load_track(
-        path: &PathBuf,
-        audio_ctx: &Rc<RefCell<Option<Arc<parking_lot::Mutex<AudioContext>>>>>,
-        stream: &Rc<RefCell<Option<cpal::Stream>>>,
-        play_pause_btn: &Rc<RefCell<Button>>,
-        slider: &Rc<RefCell<Slider>>,
-        time_label: &Rc<RefCell<Label>>,
-        filename_label: &Rc<RefCell<Label>>,
-        index: usize,
+        path: &PathBuf, audio_ctx: &Rc<RefCell<Option<Arc<parking_lot::Mutex<AudioContext>>>>>,
+        stream: &Rc<RefCell<Option<cpal::Stream>>>, play_pause_btn: &Rc<RefCell<Button>>,
+        slider: &Rc<RefCell<Slider>>, time_label: &Rc<RefCell<Label>>,
+        filename_label: &Rc<RefCell<Label>>, index: usize,
     ) {
         // Stop any existing playback
         if let Some(s) = stream.borrow().as_ref() {
@@ -379,7 +386,8 @@ impl AudioPlayer {
             }
         };
 
-        let duration_secs = decoded.samples.len() as f64 / (decoded.sample_rate as f64 * decoded.channels as f64);
+        let duration_secs =
+            decoded.samples.len() as f64 / (decoded.sample_rate as f64 * decoded.channels as f64);
 
         let ac = Arc::new(parking_lot::Mutex::new(AudioContext {
             samples: decoded.samples,
@@ -399,8 +407,14 @@ impl AudioPlayer {
                 *play_pause_btn.borrow_mut().text.borrow_mut() = "▶".to_string();
                 // Set time and filename labels
                 let duration_str = format_time(duration_secs);
-                time_label.borrow().set_text(format!("0:00/{}", duration_str));
-                filename_label.borrow().set_text(format!("{}", index + 1));
+                time_label
+                    .borrow()
+                    .set_text(format!("0:00/{}", duration_str));
+                let name = path
+                    .file_name()
+                    .map(|f| f.to_string_lossy().to_string())
+                    .unwrap_or("".into());
+                filename_label.borrow().set_text(format!("{name}"));
                 // refresh_button skipped here — no Context available; UI updates next draw
             }
             Err(e) => {
@@ -413,22 +427,19 @@ impl AudioPlayer {
     /// Returns interleaved f32 samples held entirely in memory.
     fn decode_audio(path: &PathBuf) -> Result<DecodedAudio, String> {
         use symphonia::core::audio::{SampleBuffer, SignalSpec};
-        use symphonia::core::codecs::{DecoderOptions, CODEC_TYPE_NULL};
+        use symphonia::core::codecs::{CODEC_TYPE_NULL, DecoderOptions};
         use symphonia::core::formats::FormatOptions;
         use symphonia::core::io::MediaSourceStream;
         use symphonia::core::meta::MetadataOptions;
         use symphonia::core::probe::Hint;
 
         // Build a hint from the file extension
-        let ext = path.extension()
-            .and_then(|e| e.to_str())
-            .unwrap_or("wav");
+        let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("wav");
         let mut hint = Hint::new();
         hint.with_extension(ext);
 
         // Open the file
-        let src = std::fs::File::open(path)
-            .map_err(|e| format!("Failed to open file: {}", e))?;
+        let src = std::fs::File::open(path).map_err(|e| format!("Failed to open file: {}", e))?;
         let mss = MediaSourceStream::new(Box::new(src), Default::default());
 
         // Probe the media source
@@ -441,14 +452,20 @@ impl AudioPlayer {
         let mut format = probed.format;
 
         // Find the first audio track with a supported codec
-        let track = format.tracks().iter()
+        let track = format
+            .tracks()
+            .iter()
             .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
             .ok_or_else(|| "No audio track found".to_string())?;
 
         let track_id = track.id;
-        let sample_rate = track.codec_params.sample_rate
+        let sample_rate = track
+            .codec_params
+            .sample_rate
             .ok_or_else(|| "Unknown sample rate".to_string())?;
-        let channels: u16 = track.codec_params.channels
+        let channels: u16 = track
+            .codec_params
+            .channels
             .map(|c| c.count() as u16)
             .unwrap_or(1);
 
@@ -459,10 +476,7 @@ impl AudioPlayer {
             .map_err(|e| format!("Failed to create decoder: {}", e))?;
 
         // Signal spec for the sample buffer (used for type conversion)
-        let spec = SignalSpec::new(
-            sample_rate,
-            track.codec_params.channels.unwrap_or_default(),
-        );
+        let spec = SignalSpec::new(sample_rate, track.codec_params.channels.unwrap_or_default());
 
         let mut samples = Vec::new();
 
@@ -498,9 +512,12 @@ impl AudioPlayer {
     }
 
     /// Create a cpal output stream for playback.
-    fn create_cpal_stream(ctx: &Arc<parking_lot::Mutex<AudioContext>>) -> Result<cpal::Stream, String> {
+    fn create_cpal_stream(
+        ctx: &Arc<parking_lot::Mutex<AudioContext>>,
+    ) -> Result<cpal::Stream, String> {
         let host = cpal::default_host();
-        let device = host.default_output_device()
+        let device = host
+            .default_output_device()
             .ok_or_else(|| "No default output device found".to_string())?;
 
         // Use the audio file's sample rate and channel count for the stream config
@@ -541,14 +558,16 @@ impl AudioPlayer {
             }
         };
 
-        let stream = device.build_output_stream(
-            &config,
-            callback,
-            move |err: cpal::StreamError| {
-                eprintln!("Audio stream error: {}", err);
-            },
-            None,
-        ).map_err(|e| format!("Failed to build stream: {}", e))?;
+        let stream = device
+            .build_output_stream(
+                &config,
+                callback,
+                move |err: cpal::StreamError| {
+                    eprintln!("Audio stream error: {}", err);
+                },
+                None,
+            )
+            .map_err(|e| format!("Failed to build stream: {}", e))?;
 
         Ok(stream)
     }
@@ -648,15 +667,18 @@ impl AudioPlayer {
             let samples_per_sec = audio.sample_rate as f64 * audio.channels as f64;
             let current_secs = audio.position as f64 / samples_per_sec;
             let duration_secs = audio.samples.len() as f64 / samples_per_sec;
-            let time_str = format!("{}/{}", format_time(current_secs), format_time(duration_secs));
+            let time_str = format!(
+                "{}/{}",
+                format_time(current_secs),
+                format_time(duration_secs)
+            );
             self.time_label.borrow().set_text(time_str);
         }
     }
 }
 
 #[yeehaw_derive::impl_pane_basics_from(pane)]
-impl AudioPlayer {
-}
+impl AudioPlayer {}
 
 #[yeehaw_derive::impl_element_from(pane)]
 impl Element for AudioPlayer {
