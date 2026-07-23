@@ -15,6 +15,7 @@ use {
     crate::context::Context,
     crate::elements::panes::ParentPaneOfSelectable,
     crate::elements::widgets::button::{Button, ButtonMicroShadow},
+    crate::elements::widgets::label::Label,
     crate::elements::widgets::slider::Slider,
     crate::{Ref, RefMut},
     cpal::traits::{DeviceTrait, HostTrait, StreamTrait},
@@ -67,12 +68,14 @@ pub struct AudioPlayer {
     // UI elements
     slider: Rc<RefCell<Slider>>,
     play_pause_btn: Rc<RefCell<Button>>,
+    time_label: Rc<RefCell<Label>>,
+    filename_label: Rc<RefCell<Label>>,
 }
 
 impl AudioPlayer {
     /// Create a new AudioPlayer with the given audio file paths.
     pub fn new(ctx: &Context, sources: Vec<PathBuf>) -> Self {
-        let pane = ParentPaneOfSelectable::new(ctx);
+        let pane = ParentPaneOfSelectable::new(ctx).with_bg(Color::GREY10);
         pane.set_dyn_width(DynVal::FULL);
         pane.set_dyn_height(DynVal::new_fixed(2));
 
@@ -94,6 +97,10 @@ impl AudioPlayer {
         let current_index = Rc::new(RefCell::new(0usize));
         let audio_ctx: Rc<RefCell<Option<Arc<parking_lot::Mutex<AudioContext>>>>> = Rc::new(RefCell::new(None));
         let stream: Rc<RefCell<Option<cpal::Stream>>> = Rc::new(RefCell::new(None));
+
+        // Create labels for time and filename
+        let time_label = Label::new(ctx, "0:00/0:00");
+        let filename_label = Label::new(ctx, "");
 
         // Wire up slider callback for seeking
         {
@@ -179,8 +186,29 @@ impl AudioPlayer {
             let stream_clone = stream.clone();
             let play_pause_btn_clone = Rc::new(RefCell::new(play_pause_btn.clone()));
             let slider_clone = Rc::new(RefCell::new(slider.clone()));
+            let time_label_clone = Rc::new(RefCell::new(time_label.clone()));
+            let filename_label_clone = Rc::new(RefCell::new(filename_label.clone()));
 
             prev_btn.set_fn(Box::new(move |_, _| {
+                // If playing and not at position 0, seek to beginning
+                let should_seek = {
+                    if let Some(ac) = audio_ctx_clone.borrow().as_ref() {
+                        let audio = ac.lock();
+                        audio.state == AudioPlayerState::Playing && audio.position > 0
+                    } else {
+                        false
+                    }
+                };
+                if should_seek {
+                    if let Some(ac) = audio_ctx_clone.borrow().as_ref() {
+                        let mut audio = ac.lock();
+                        audio.position = 0;
+                    }
+                    slider_clone.borrow().set_position(0.0);
+                    return EventResponses::default();
+                }
+
+                // Go to previous track
                 let sources = sources_clone.borrow();
                 if sources.len() <= 1 {
                     return EventResponses::default();
@@ -198,6 +226,8 @@ impl AudioPlayer {
                     &stream_clone,
                     &play_pause_btn_clone,
                     &slider_clone,
+                    &time_label_clone,
+                    &filename_label_clone,
                 );
                 EventResponses::default()
             }));
@@ -211,6 +241,8 @@ impl AudioPlayer {
             let stream_clone = stream.clone();
             let play_pause_btn_clone = Rc::new(RefCell::new(play_pause_btn.clone()));
             let slider_clone = Rc::new(RefCell::new(slider.clone()));
+            let time_label_clone = Rc::new(RefCell::new(time_label.clone()));
+            let filename_label_clone = Rc::new(RefCell::new(filename_label.clone()));
 
             next_btn.set_fn(Box::new(move |_, _| {
                 let sources = sources_clone.borrow();
@@ -226,6 +258,8 @@ impl AudioPlayer {
                     &stream_clone,
                     &play_pause_btn_clone,
                     &slider_clone,
+                    &time_label_clone,
+                    &filename_label_clone,
                 );
                 EventResponses::default()
             }));
@@ -237,12 +271,18 @@ impl AudioPlayer {
         stop_btn.pane.set_at(DynVal::new_fixed(8), DynVal::new_fixed(1));
         next_btn.pane.set_at(DynVal::new_fixed(12), DynVal::new_fixed(1));
 
+        // Position labels on row 1, right side
+        time_label.set_at(DynVal::new_fixed(17), DynVal::new_fixed(1));
+        filename_label.set_at(DynVal::FULL.minus(1.into()), DynVal::new_fixed(1));
+
         // Add elements to pane (clones share Rc<RefCell<...>> state with originals)
         pane.add_element(Box::new(slider.clone()));
         pane.add_element(Box::new(prev_btn.clone()));
         pane.add_element(Box::new(play_pause_btn.clone()));
         pane.add_element(Box::new(stop_btn.clone()));
         pane.add_element(Box::new(next_btn.clone()));
+        pane.add_element(Box::new(time_label.clone()));
+        pane.add_element(Box::new(filename_label.clone()));
 
         let player = Self {
             pane,
@@ -252,6 +292,8 @@ impl AudioPlayer {
             stream,
             slider: Rc::new(RefCell::new(slider)),
             play_pause_btn: Rc::new(RefCell::new(play_pause_btn)),
+            time_label: Rc::new(RefCell::new(time_label)),
+            filename_label: Rc::new(RefCell::new(filename_label)),
         };
 
         // Load first track if sources provided
@@ -304,6 +346,8 @@ impl AudioPlayer {
                 &self.stream,
                 &self.play_pause_btn,
                 &self.slider,
+                &self.time_label,
+                &self.filename_label,
             );
         }
     }
@@ -315,6 +359,8 @@ impl AudioPlayer {
         stream: &Rc<RefCell<Option<cpal::Stream>>>,
         play_pause_btn: &Rc<RefCell<Button>>,
         slider: &Rc<RefCell<Slider>>,
+        time_label: &Rc<RefCell<Label>>,
+        filename_label: &Rc<RefCell<Label>>,
     ) {
         // Stop any existing playback
         if let Some(s) = stream.borrow().as_ref() {
@@ -346,6 +392,14 @@ impl AudioPlayer {
                 *audio_ctx.borrow_mut() = Some(ac);
                 slider.borrow().set_position(0.0);
                 *play_pause_btn.borrow_mut().text.borrow_mut() = "▶".to_string();
+                // Set time and filename labels
+                let duration_secs = decoded.samples.len() as f64 / decoded.sample_rate as f64;
+                let duration_str = format_time(duration_secs);
+                time_label.borrow().set_text(format!("0:00/{}", duration_str));
+                let filename = path.file_name()
+                    .map(|f| f.to_string_lossy().to_string())
+                    .unwrap_or_default();
+                filename_label.borrow().set_text(filename);
                 // refresh_button skipped here — no Context available; UI updates next draw
             }
             Err(e) => {
@@ -589,6 +643,11 @@ impl AudioPlayer {
                 _ => "▶",
             };
             *self.play_pause_btn.borrow_mut().text.borrow_mut() = icon.to_string();
+            // Update time label
+            let current_secs = audio.position as f64 / audio.sample_rate as f64;
+            let duration_secs = audio.samples.len() as f64 / audio.sample_rate as f64;
+            let time_str = format!("{}/{}", format_time(current_secs), format_time(duration_secs));
+            self.time_label.borrow().set_text(time_str);
         }
     }
 }
@@ -603,6 +662,14 @@ impl Element for AudioPlayer {
         self.update_slider_from_audio();
         self.pane.drawing(ctx, dr, force_update)
     }
+}
+
+/// Format seconds as "m:ss" (e.g. "3:14").
+fn format_time(secs: f64) -> String {
+    let total_secs = secs as u32;
+    let mins = total_secs / 60;
+    let s = total_secs % 60;
+    format!("{}:{:02}", mins, s)
 }
 
 struct DecodedAudio {
