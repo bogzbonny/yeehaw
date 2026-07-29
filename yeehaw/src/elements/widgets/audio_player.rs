@@ -47,10 +47,6 @@ impl RingBuffer {
         }
     }
 
-    fn capacity(&self) -> usize {
-        self.data.len()
-    }
-
     fn free_space(&self) -> usize {
         self.data.len() - self.len
     }
@@ -126,8 +122,14 @@ impl AudioContext {
 enum DecoderCmd {
     /// Seek to the given time in seconds.
     Seek(f64),
-    /// Stop the decoder thread.
-    Stop,
+}
+
+/// Probed metadata from an audio file (no decoding).
+struct ProbedAudio {
+    duration_secs: f64,
+    total_samples: usize,
+    sample_rate: u32,
+    channels: u16,
 }
 
 /// AudioPlayer element that plays audio files using cpal.
@@ -208,9 +210,10 @@ impl AudioPlayer {
             let seek_tx_clone = seek_tx.clone();
             slider.set_fn(Box::new(move |_: Context, sl: &Slider| {
                 let frac = sl.get_position();
+                let mut seek_secs = 0.0;
                 if let Some(ac) = audio_ctx_clone.borrow().as_ref() {
                     let audio = ac.lock();
-                    let seek_secs = frac * audio.total_samples as f64 / (audio.sample_rate as f64 * audio.channels as f64);
+                    seek_secs = frac * audio.total_samples as f64 / (audio.sample_rate as f64 * audio.channels as f64);
                     drop(audio);
                     // Update position immediately for responsive UI
                     let mut audio = ac.lock();
@@ -505,7 +508,7 @@ impl AudioPlayer {
         if let Some(stop_flag) = decoder_stop.borrow().as_ref() {
             stop_flag.store(true, Ordering::Relaxed);
         }
-        if let Some(handle) = decoder_handle.borrow().take() {
+        if let Some(handle) = decoder_handle.borrow_mut().take() {
             let _ = handle.join();
         }
         // Pause previous stream
@@ -544,21 +547,23 @@ impl AudioPlayer {
         match stream_result {
             Ok(s) => {
                 *stream.borrow_mut() = Some(s);
-                *audio_ctx.borrow_mut() = Some(ac);
 
                 // Spawn decoder thread
                 let (tx, rx) = mpsc::channel();
                 let stop_flag = Arc::new(AtomicBool::new(false));
                 let path_clone = path.clone();
                 let rb = ring_buf.clone();
-                let ac_clone = ac.clone();
+                let ac_clone = Arc::clone(&ac);
 
+                let stop_flag_clone = Arc::clone(&stop_flag);
                 let handle = std::thread::spawn(move || {
-                    Self::decoder_thread(path_clone, rx, stop_flag, rb, ac_clone);
+                    Self::decoder_thread(path_clone, rx, stop_flag_clone, rb, ac_clone);
                 });
 
+                *audio_ctx.borrow_mut() = Some(ac);
                 *decoder_handle.borrow_mut() = Some(handle);
                 *decoder_stop.borrow_mut() = Some(stop_flag);
+
                 *seek_tx.borrow_mut() = Some(tx);
 
                 slider.borrow().set_position(0.0);
@@ -571,20 +576,12 @@ impl AudioPlayer {
                     .file_name()
                     .map(|f| f.to_string_lossy().to_string())
                     .unwrap_or("".into());
-                filename_label.borrow().set_text(format!("{name}"));
+                filename_label.borrow().set_text(name.to_string());
             }
             Err(e) => {
                 eprintln!("Failed to create audio stream: {}", e);
             }
         }
-    }
-
-    /// Probed metadata from an audio file (no decoding).
-    struct ProbedAudio {
-        duration_secs: f64,
-        total_samples: usize,
-        sample_rate: u32,
-        channels: u16,
     }
 
     /// Probe an audio file for metadata without decoding. Uses n_frames from track info
@@ -640,11 +637,11 @@ impl AudioPlayer {
                 .make(&track.codec_params, &dec_opts)
                 .map_err(|e| format!("Failed to create decoder: {}", e))?;
             let track_id = track.id;
-            let spec = symphonia::core::audio::SignalSpec::new(
+            let _spec = symphonia::core::audio::SignalSpec::new(
                 sample_rate,
                 track.codec_params.channels.unwrap_or_default(),
             );
-            let mut total_frames: u64 = 0;
+            let mut total_frames: usize = 0;
             let mut fmt = format;
             while let Ok(packet) = fmt.next_packet() {
                 if packet.track_id() != track_id {
@@ -656,7 +653,7 @@ impl AudioPlayer {
                 }
             }
             let dur = total_frames as f64 / sample_rate as f64;
-            let total = (total_frames as usize).saturating_mul(channels as usize);
+            let total = total_frames.saturating_mul(channels as usize);
             (dur, total)
         };
 
@@ -717,10 +714,12 @@ impl AudioPlayer {
         let sample_rate = track.codec_params.sample_rate.expect("unknown sample rate");
         let channels = track.codec_params.channels.map(|c| c.count()).unwrap_or(1);
         let spec = SignalSpec::new(sample_rate, track.codec_params.channels.unwrap_or_default());
+        // Clone codec_params before moving probed (needed for decoder recreation after seek)
+        let codec_params_clone = track.codec_params.clone();
 
         let dec_opts = DecoderOptions::default();
         let mut format = probed;
-        let mut decoder = match symphonia::default::get_codecs().make(&track.codec_params, &dec_opts) {
+        let mut decoder = match symphonia::default::get_codecs().make(&codec_params_clone, &dec_opts) {
             Ok(d) => d,
             Err(e) => {
                 eprintln!("Decoder thread: failed to create decoder: {}", e);
@@ -732,29 +731,21 @@ impl AudioPlayer {
             // Check for commands (non-blocking)
             while let Ok(cmd) = cmd_rx.try_recv() {
                 match cmd {
-                    DecoderCmd::Stop => {
-                        return;
-                    }
                     DecoderCmd::Seek(time_secs) => {
                         // Seek to timestamp
                         let ts = (time_secs * sample_rate as f64) as u64;
-                        if let Ok(seeked) = format.seek(SeekMode::Accurate, symphonia::core::formats::SeekTo::TimeStamp { ts, track_id }) {
+                        if let Ok(_seeked) = format.seek(SeekMode::Accurate, symphonia::core::formats::SeekTo::TimeStamp { ts, track_id }) {
                             // Recreate decoder after seek (required by symphonia)
-                            let seeked_track = seeked.track;
-                            if let Ok(new_dec) = symphonia::default::get_codecs().make(&seeked_track.codec_params, &dec_opts) {
+                            if let Ok(new_dec) = symphonia::default::get_codecs().make(&codec_params_clone, &dec_opts) {
                                 decoder = new_dec;
                             }
                             // Clear ring buffer
                             ring_buf.lock().clear();
-                            // Update position to actual seek position
-                            let actual_ts = seeked.ts;
-                            let timebase = seeked.track.timebase;
-                            if timebase.0 > 0 {
-                                let pos_samples = (actual_ts as f64 / timebase.0 as f64 * sample_rate as f64 * channels as f64) as usize;
-                                let mut audio = audio_ctx.lock();
-                                audio.position = pos_samples;
-                                audio.is_eof = false;
-                            }
+                            // Update position — use requested time (keyframe alignment may cause small offset)
+                            let pos_samples = (time_secs * sample_rate as f64 * channels as f64) as usize;
+                            let mut audio = audio_ctx.lock();
+                            audio.position = pos_samples;
+                            audio.is_eof = false;
                         }
                     }
                 }
@@ -775,7 +766,7 @@ impl AudioPlayer {
                             if n_frames == 0 {
                                 continue;
                             }
-                            let mut samp_buf = SampleBuffer::<f32>::new(n_frames as u64, spec.clone());
+                            let mut samp_buf = SampleBuffer::<f32>::new(n_frames as u64, spec);
                             samp_buf.copy_interleaved_ref(audio);
                             ring_buf.lock().write(samp_buf.samples());
                         }
