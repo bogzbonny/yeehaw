@@ -272,16 +272,19 @@ impl AudioPlayer {
         {
             let audio_ctx_clone = audio_ctx.clone();
             let stream_clone = stream.clone();
+            let seek_tx_clone = seek_tx.clone();
             let play_pause_btn_clone = Rc::new(RefCell::new(play_pause_btn.clone()));
 
             stop_btn.set_fn(Box::new(move |_, ctx| {
                 if let Some(ac) = audio_ctx_clone.borrow().as_ref() {
-                    let mut audio = ac.lock();
-                    audio.state = AudioPlayerState::Stopped;
-                    audio.position = 0;
+                    apply_stop(ac);
                 }
                 if let Some(s) = stream_clone.borrow().as_ref() {
                     let _ = s.pause();
+                }
+                // Seek decoder to beginning so next play starts from start of file
+                if let Some(tx) = seek_tx_clone.borrow().as_ref() {
+                    let _ = tx.send(DecoderCmd::Seek(0.0));
                 }
                 *play_pause_btn_clone.borrow_mut().text.borrow_mut() = "▶".to_string();
                 Self::refresh_button(&play_pause_btn_clone, &ctx);
@@ -882,12 +885,14 @@ impl AudioPlayer {
     /// Stop playback and reset position.
     pub fn stop(&self) {
         if let Some(ctx) = self.audio_ctx.borrow().as_ref() {
-            let mut audio = ctx.lock();
-            audio.state = AudioPlayerState::Stopped;
-            audio.position = 0;
+            apply_stop(ctx);
         }
         if let Some(s) = self.stream.borrow().as_ref() {
             let _ = s.pause();
+        }
+        // Seek decoder to beginning so next play starts from start of file
+        if let Some(tx) = self.seek_tx.borrow().as_ref() {
+            let _ = tx.send(DecoderCmd::Seek(0.0));
         }
         *self.play_pause_btn.borrow_mut().text.borrow_mut() = "▶".to_string();
         self.slider.borrow().set_position(0.0);
@@ -975,6 +980,113 @@ fn format_time(secs: f64) -> String {
     let mins = total_secs / 60;
     let s = total_secs % 60;
     format!("{}:{:02}", mins, s)
+}
+
+/// Apply the stop operation to shared audio state.
+/// Called by both the public `stop()` method and the stop button handler.
+fn apply_stop(audio_ctx: &Arc<parking_lot::Mutex<AudioContext>>) {
+    let mut audio = audio_ctx.lock();
+    audio.state = AudioPlayerState::Stopped;
+    audio.position = 0;
+    audio.ring_buf.lock().clear();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_stop_clears_ring_buffer_and_resets_position() {
+        let ring_buf = Arc::new(parking_lot::Mutex::new(RingBuffer::new(1024)));
+        let audio_ctx = Arc::new(parking_lot::Mutex::new(AudioContext {
+            ring_buf: ring_buf.clone(),
+            sample_rate: 44100,
+            channels: 2,
+            total_samples: 10000,
+            position: 5000,
+            state: AudioPlayerState::Playing,
+            is_eof: false,
+        }));
+
+        // Write data to the ring buffer (simulating decoded audio mid-playback)
+        let samples = vec![1.0f32; 100];
+        ring_buf.lock().write(&samples);
+        assert_eq!(ring_buf.lock().len, 100);
+        assert_eq!(audio_ctx.lock().position, 5000);
+
+        // Perform stop via the shared stop logic
+        apply_stop(&audio_ctx);
+
+        // After stop, the ring buffer must be empty and position reset to 0
+        assert_eq!(
+            ring_buf.lock().len,
+            0,
+            "ring buffer should be cleared after stop"
+        );
+        assert_eq!(
+            audio_ctx.lock().position,
+            0,
+            "position should be reset to 0 after stop"
+        );
+        assert_eq!(
+            audio_ctx.lock().state,
+            AudioPlayerState::Stopped,
+            "state should be Stopped"
+        );
+    }
+
+    #[test]
+    fn test_stop_then_play_starts_from_beginning() {
+        let ring_buf = Arc::new(parking_lot::Mutex::new(RingBuffer::new(1024)));
+        let audio_ctx = Arc::new(parking_lot::Mutex::new(AudioContext {
+            ring_buf: ring_buf.clone(),
+            sample_rate: 44100,
+            channels: 2,
+            total_samples: 10000,
+            position: 0,
+            state: AudioPlayerState::Stopped,
+            is_eof: false,
+        }));
+
+        // Simulate playback: decoder writes data, cpal callback reads and advances position
+        let mid_data = vec![9.0f32; 50];
+        ring_buf.lock().write(&mid_data);
+        {
+            let mut audio = audio_ctx.lock();
+            audio.state = AudioPlayerState::Playing;
+            audio.position = 3000;
+        }
+        // Cpal callback drains some data
+        let mut out = vec![0.0f32; 30];
+        ring_buf.lock().read(&mut out);
+        {
+            let mut audio = audio_ctx.lock();
+            audio.position += 30;
+        }
+
+        // Now stop
+        apply_stop(&audio_ctx);
+
+        // After stop, buffer must be empty so play starts fresh
+        assert_eq!(ring_buf.lock().len, 0, "buffer must be empty after stop");
+        assert_eq!(audio_ctx.lock().position, 0, "position must be 0 after stop");
+
+        // Simulate play: decoder writes data from the beginning
+        let start_data = vec![1.0f32; 50];
+        ring_buf.lock().write(&start_data);
+        {
+            let mut audio = audio_ctx.lock();
+            audio.state = AudioPlayerState::Playing;
+        }
+
+        // Cpal callback reads — should get data from the beginning, not stale mid-data
+        let mut out = vec![0.0f32; 50];
+        ring_buf.lock().read(&mut out);
+        assert!(
+            out.iter().all(|&x| (x - 1.0).abs() < f32::EPSILON),
+            "playback after stop should start from beginning data, not stale mid-playback data"
+        );
+    }
 }
 
 
