@@ -18,6 +18,8 @@ use {
     std::cell::RefCell,
     std::path::PathBuf,
     std::rc::Rc,
+    std::sync::atomic::{AtomicBool, Ordering},
+    std::sync::mpsc,
     std::sync::Arc,
 };
 
@@ -28,25 +30,111 @@ pub enum AudioPlayerState {
     Stopped,
 }
 
-/// Shared audio state accessible from both the UI thread and the cpal callback thread.
+/// Circular buffer for streaming decoded audio samples (interleaved f32).
+/// Shared between the decoder thread (producer) and cpal callback (consumer).
+struct RingBuffer {
+    data: Vec<f32>,
+    read_pos: usize,
+    len: usize,
+}
+
+impl RingBuffer {
+    fn new(capacity: usize) -> Self {
+        Self {
+            data: vec![0.0; capacity],
+            read_pos: 0,
+            len: 0,
+        }
+    }
+
+    fn capacity(&self) -> usize {
+        self.data.len()
+    }
+
+    fn free_space(&self) -> usize {
+        self.data.len() - self.len
+    }
+
+    /// Read up to `out.len()` samples. Returns number read.
+    fn read(&mut self, out: &mut [f32]) -> usize {
+        if self.len == 0 {
+            return 0;
+        }
+        let to_read = out.len().min(self.len);
+        let cap = self.data.len();
+
+        let first_chunk = to_read.min(cap - self.read_pos);
+        out[..first_chunk].copy_from_slice(&self.data[self.read_pos..self.read_pos + first_chunk]);
+
+        if first_chunk < to_read {
+            let second = to_read - first_chunk;
+            out[first_chunk..].copy_from_slice(&self.data[..second]);
+        }
+
+        self.read_pos = (self.read_pos + to_read) % cap;
+        self.len -= to_read;
+        to_read
+    }
+
+    /// Write samples into the buffer. Returns number written.
+    fn write(&mut self, samples: &[f32]) -> usize {
+        if samples.is_empty() || self.len == self.data.len() {
+            return 0;
+        }
+        let to_write = samples.len().min(self.free_space());
+        let cap = self.data.len();
+        let write_pos = (self.read_pos + self.len) % cap;
+
+        let first_chunk = to_write.min(cap - write_pos);
+        self.data[write_pos..write_pos + first_chunk].copy_from_slice(&samples[..first_chunk]);
+
+        if first_chunk < to_write {
+            let second = to_write - first_chunk;
+            self.data[..second].copy_from_slice(&samples[first_chunk..to_write]);
+        }
+
+        self.len += to_write;
+        to_write
+    }
+
+    fn clear(&mut self) {
+        self.len = 0;
+    }
+}
+
+/// Shared audio state accessible from the UI thread, cpal callback thread, and decoder thread.
 struct AudioContext {
-    samples: Vec<f32>,
+    ring_buf: Arc<parking_lot::Mutex<RingBuffer>>,
     sample_rate: u32,
     channels: u16,
+    total_samples: usize,
     position: usize,
     state: AudioPlayerState,
+    is_eof: bool,
 }
 
 impl AudioContext {
     fn fraction(&self) -> f64 {
-        if self.samples.is_empty() {
+        if self.total_samples == 0 {
             return 0.0;
         }
-        self.position as f64 / self.samples.len() as f64
+        self.position as f64 / self.total_samples as f64
     }
 }
 
+/// Command sent to the decoder thread.
+enum DecoderCmd {
+    /// Seek to the given time in seconds.
+    Seek(f64),
+    /// Stop the decoder thread.
+    Stop,
+}
+
 /// AudioPlayer element that plays audio files using cpal.
+///
+/// Uses streaming decode: a background thread decodes packets on-demand into a ring buffer.
+/// The cpal callback reads from the ring buffer. Seeking is handled by seeking the format
+/// reader in the decoder thread and flushing the ring buffer.
 ///
 /// Layout:
 /// - Row 0: Slider showing playback position (draggable for seeking)
@@ -64,6 +152,11 @@ pub struct AudioPlayer {
 
     // Playback stream handle
     stream: Rc<RefCell<Option<cpal::Stream>>>,
+
+    // Decoder thread control
+    decoder_handle: Rc<RefCell<Option<std::thread::JoinHandle<()>>>>,
+    decoder_stop: Rc<RefCell<Option<Arc<AtomicBool>>>>,
+    seek_tx: Rc<RefCell<Option<mpsc::Sender<DecoderCmd>>>>,
 
     // UI elements
     slider: Rc<RefCell<Slider>>,
@@ -100,20 +193,33 @@ impl AudioPlayer {
         let audio_ctx: Rc<RefCell<Option<Arc<parking_lot::Mutex<AudioContext>>>>> =
             Rc::new(RefCell::new(None));
         let stream: Rc<RefCell<Option<cpal::Stream>>> = Rc::new(RefCell::new(None));
+        let decoder_handle: Rc<RefCell<Option<std::thread::JoinHandle<()>>>> =
+            Rc::new(RefCell::new(None));
+        let decoder_stop: Rc<RefCell<Option<Arc<AtomicBool>>>> = Rc::new(RefCell::new(None));
+        let seek_tx: Rc<RefCell<Option<mpsc::Sender<DecoderCmd>>>> = Rc::new(RefCell::new(None));
 
         // Create labels for time and filename
         let time_label = Label::new(ctx, "0:00/0:00");
         let filename_label = Label::new(ctx, "");
 
-        // Wire up slider callback for seeking
+        // Wire up slider callback for seeking (sends seek command to decoder thread)
         {
             let audio_ctx_clone = audio_ctx.clone();
+            let seek_tx_clone = seek_tx.clone();
             slider.set_fn(Box::new(move |_: Context, sl: &Slider| {
-                let pos = sl.get_position();
-                if let Some(ctx) = audio_ctx_clone.borrow().as_ref() {
-                    let mut audio = ctx.lock();
-                    let new_pos = (pos * audio.samples.len() as f64) as usize;
-                    audio.position = new_pos.min(audio.samples.len());
+                let frac = sl.get_position();
+                if let Some(ac) = audio_ctx_clone.borrow().as_ref() {
+                    let audio = ac.lock();
+                    let seek_secs = frac * audio.total_samples as f64 / (audio.sample_rate as f64 * audio.channels as f64);
+                    drop(audio);
+                    // Update position immediately for responsive UI
+                    let mut audio = ac.lock();
+                    audio.position = (frac * audio.total_samples as f64) as usize;
+                    audio.is_eof = false;
+                }
+                // Tell decoder thread to seek
+                if let Some(tx) = seek_tx_clone.borrow().as_ref() {
+                    let _ = tx.send(DecoderCmd::Seek(seek_secs));
                 }
                 EventResponses::default()
             }));
@@ -190,6 +296,9 @@ impl AudioPlayer {
             let slider_clone = Rc::new(RefCell::new(slider.clone()));
             let time_label_clone = Rc::new(RefCell::new(time_label.clone()));
             let filename_label_clone = Rc::new(RefCell::new(filename_label.clone()));
+            let decoder_handle_clone = decoder_handle.clone();
+            let decoder_stop_clone = decoder_stop.clone();
+            let seek_tx_clone = seek_tx.clone();
 
             prev_btn.set_fn(Box::new(move |_, _| {
                 // If playing and not at position 0, seek to beginning
@@ -205,8 +314,13 @@ impl AudioPlayer {
                     if let Some(ac) = audio_ctx_clone.borrow().as_ref() {
                         let mut audio = ac.lock();
                         audio.position = 0;
+                        audio.is_eof = false;
                     }
                     slider_clone.borrow().set_position(0.0);
+                    // Tell decoder to seek to beginning
+                    if let Some(tx) = seek_tx_clone.borrow().as_ref() {
+                        let _ = tx.send(DecoderCmd::Seek(0.0));
+                    }
                     return EventResponses::default();
                 }
 
@@ -230,7 +344,9 @@ impl AudioPlayer {
                     &slider_clone,
                     &time_label_clone,
                     &filename_label_clone,
-                    idx,
+                    &decoder_handle_clone,
+                    &decoder_stop_clone,
+                    &seek_tx_clone,
                 );
                 EventResponses::default()
             }));
@@ -246,6 +362,9 @@ impl AudioPlayer {
             let slider_clone = Rc::new(RefCell::new(slider.clone()));
             let time_label_clone = Rc::new(RefCell::new(time_label.clone()));
             let filename_label_clone = Rc::new(RefCell::new(filename_label.clone()));
+            let decoder_handle_clone = decoder_handle.clone();
+            let decoder_stop_clone = decoder_stop.clone();
+            let seek_tx_clone = seek_tx.clone();
 
             next_btn.set_fn(Box::new(move |_, _| {
                 let sources = sources_clone.borrow();
@@ -263,7 +382,9 @@ impl AudioPlayer {
                     &slider_clone,
                     &time_label_clone,
                     &filename_label_clone,
-                    idx,
+                    &decoder_handle_clone,
+                    &decoder_stop_clone,
+                    &seek_tx_clone,
                 );
                 EventResponses::default()
             }));
@@ -302,6 +423,9 @@ impl AudioPlayer {
             current_index,
             audio_ctx,
             stream,
+            decoder_handle,
+            decoder_stop,
+            seek_tx,
             slider: Rc::new(RefCell::new(slider)),
             play_pause_btn: Rc::new(RefCell::new(play_pause_btn)),
             time_label: Rc::new(RefCell::new(time_label)),
@@ -360,52 +484,85 @@ impl AudioPlayer {
                 &self.slider,
                 &self.time_label,
                 &self.filename_label,
-                idx,
+                &self.decoder_handle,
+                &self.decoder_stop,
+                &self.seek_tx,
             );
         }
     }
 
-    /// Decode a WAV file and set up the cpal stream for playback.
+    /// Load a track using streaming decode. Probes metadata, spawns a decoder thread,
+    /// and creates the cpal stream. Playback begins with zero pre-decoded samples.
     fn load_track(
         path: &PathBuf, audio_ctx: &Rc<RefCell<Option<Arc<parking_lot::Mutex<AudioContext>>>>>,
         stream: &Rc<RefCell<Option<cpal::Stream>>>, play_pause_btn: &Rc<RefCell<Button>>,
         slider: &Rc<RefCell<Slider>>, time_label: &Rc<RefCell<Label>>,
-        filename_label: &Rc<RefCell<Label>>, index: usize,
+        filename_label: &Rc<RefCell<Label>>, decoder_handle: &Rc<RefCell<Option<std::thread::JoinHandle<()>>>>,
+        decoder_stop: &Rc<RefCell<Option<Arc<AtomicBool>>>>,
+        seek_tx: &Rc<RefCell<Option<mpsc::Sender<DecoderCmd>>>>,
     ) {
-        // Stop any existing playback
+        // Stop previous decoder thread
+        if let Some(stop_flag) = decoder_stop.borrow().as_ref() {
+            stop_flag.store(true, Ordering::Relaxed);
+        }
+        if let Some(handle) = decoder_handle.borrow().take() {
+            let _ = handle.join();
+        }
+        // Pause previous stream
         if let Some(s) = stream.borrow().as_ref() {
             let _ = s.pause();
         }
 
-        // Decode audio file (WAV, MP3, OGG, FLAC, AAC/M4A)
-        let decoded = match Self::decode_audio(path) {
-            Ok(d) => d,
+        // Probe file metadata (fast — no decoding)
+        let probe = match Self::probe_audio(path) {
+            Ok(p) => p,
             Err(e) => {
-                eprintln!("Failed to decode audio file {:?}: {}", path, e);
+                eprintln!("Failed to probe audio file {:?}: {}", path, e);
                 return;
             }
         };
 
-        let duration_secs =
-            decoded.samples.len() as f64 / (decoded.sample_rate as f64 * decoded.channels as f64);
+        let duration_secs = probe.duration_secs;
+        let total_samples = probe.total_samples;
+
+        // Ring buffer: ~5 seconds of audio capacity
+        let rb_capacity = (probe.sample_rate as usize).saturating_mul(probe.channels as usize).saturating_mul(5);
+        let ring_buf = Arc::new(parking_lot::Mutex::new(RingBuffer::new(rb_capacity.max(44100))));
 
         let ac = Arc::new(parking_lot::Mutex::new(AudioContext {
-            samples: decoded.samples,
-            sample_rate: decoded.sample_rate,
-            channels: decoded.channels,
+            ring_buf: ring_buf.clone(),
+            sample_rate: probe.sample_rate,
+            channels: probe.channels,
+            total_samples,
             position: 0,
             state: AudioPlayerState::Stopped,
+            is_eof: false,
         }));
 
-        // Create cpal stream
+        // Create cpal stream (reads from ring buffer)
         let stream_result = Self::create_cpal_stream(&ac);
         match stream_result {
             Ok(s) => {
                 *stream.borrow_mut() = Some(s);
                 *audio_ctx.borrow_mut() = Some(ac);
+
+                // Spawn decoder thread
+                let (tx, rx) = mpsc::channel();
+                let stop_flag = Arc::new(AtomicBool::new(false));
+                let path_clone = path.clone();
+                let rb = ring_buf.clone();
+                let ac_clone = ac.clone();
+
+                let handle = std::thread::spawn(move || {
+                    Self::decoder_thread(path_clone, rx, stop_flag, rb, ac_clone);
+                });
+
+                *decoder_handle.borrow_mut() = Some(handle);
+                *decoder_stop.borrow_mut() = Some(stop_flag);
+                *seek_tx.borrow_mut() = Some(tx);
+
                 slider.borrow().set_position(0.0);
                 *play_pause_btn.borrow_mut().text.borrow_mut() = "▶".to_string();
-                // Set time and filename labels
                 let duration_str = format_time(duration_secs);
                 time_label
                     .borrow()
@@ -415,7 +572,6 @@ impl AudioPlayer {
                     .map(|f| f.to_string_lossy().to_string())
                     .unwrap_or("".into());
                 filename_label.borrow().set_text(format!("{name}"));
-                // refresh_button skipped here — no Context available; UI updates next draw
             }
             Err(e) => {
                 eprintln!("Failed to create audio stream: {}", e);
@@ -423,42 +579,43 @@ impl AudioPlayer {
         }
     }
 
-    /// Decode an audio file using symphonia. Supports WAV, MP3, OGG, FLAC, AAC/M4A.
-    /// Returns interleaved f32 samples held entirely in memory.
-    fn decode_audio(path: &PathBuf) -> Result<DecodedAudio, String> {
-        use symphonia::core::audio::{SampleBuffer, SignalSpec};
-        use symphonia::core::codecs::{CODEC_TYPE_NULL, DecoderOptions};
+    /// Probed metadata from an audio file (no decoding).
+    struct ProbedAudio {
+        duration_secs: f64,
+        total_samples: usize,
+        sample_rate: u32,
+        channels: u16,
+    }
+
+    /// Probe an audio file for metadata without decoding. Uses n_frames from track info
+    /// if available; otherwise does a fast packet scan to count frames.
+    fn probe_audio(path: &PathBuf) -> Result<ProbedAudio, String> {
+        use symphonia::core::codecs::CODEC_TYPE_NULL;
         use symphonia::core::formats::FormatOptions;
         use symphonia::core::io::MediaSourceStream;
         use symphonia::core::meta::MetadataOptions;
         use symphonia::core::probe::Hint;
 
-        // Build a hint from the file extension
         let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("wav");
         let mut hint = Hint::new();
         hint.with_extension(ext);
 
-        // Open the file
         let src = std::fs::File::open(path).map_err(|e| format!("Failed to open file: {}", e))?;
         let mss = MediaSourceStream::new(Box::new(src), Default::default());
 
-        // Probe the media source
         let meta_opts = MetadataOptions::default();
         let fmt_opts = FormatOptions::default();
         let probed = symphonia::default::get_probe()
             .format(&hint, mss, &fmt_opts, &meta_opts)
-            .map_err(|e| format!("Failed to probe file (unsupported format?): {}", e))?;
+            .map_err(|e| format!("Failed to probe file: {}", e))?;
 
-        let mut format = probed.format;
-
-        // Find the first audio track with a supported codec
+        let format = probed.format;
         let track = format
             .tracks()
             .iter()
             .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
             .ok_or_else(|| "No audio track found".to_string())?;
 
-        let track_id = track.id;
         let sample_rate = track
             .codec_params
             .sample_rate
@@ -469,49 +626,174 @@ impl AudioPlayer {
             .map(|c| c.count() as u16)
             .unwrap_or(1);
 
-        // Create a decoder for the track
-        let dec_opts = DecoderOptions::default();
-        let mut decoder = symphonia::default::get_codecs()
-            .make(&track.codec_params, &dec_opts)
-            .map_err(|e| format!("Failed to create decoder: {}", e))?;
+        // Try to get total frames from metadata
+        let total_frames = track.codec_params.n_frames;
 
-        // Signal spec for the sample buffer (used for type conversion)
-        let spec = SignalSpec::new(sample_rate, track.codec_params.channels.unwrap_or_default());
-
-        let mut samples = Vec::new();
-
-        // Decode all packets
-        while let Ok(packet) = format.next_packet() {
-            if packet.track_id() != track_id {
-                continue;
-            }
-            let audio = match decoder.decode(&packet) {
-                Ok(a) => a,
-                Err(e) => {
-                    eprintln!("Decode error (skipping packet): {}", e);
+        let (duration_secs, total_samples) = if let Some(n_frames) = total_frames {
+            let dur = n_frames as f64 / sample_rate as f64;
+            let total = (n_frames as usize).saturating_mul(channels as usize);
+            (dur, total)
+        } else {
+            // Fast scan: iterate packets and sum frame counts without full decode
+            let dec_opts = symphonia::core::codecs::DecoderOptions::default();
+            let mut decoder = symphonia::default::get_codecs()
+                .make(&track.codec_params, &dec_opts)
+                .map_err(|e| format!("Failed to create decoder: {}", e))?;
+            let track_id = track.id;
+            let spec = symphonia::core::audio::SignalSpec::new(
+                sample_rate,
+                track.codec_params.channels.unwrap_or_default(),
+            );
+            let mut total_frames: u64 = 0;
+            let mut fmt = format;
+            while let Ok(packet) = fmt.next_packet() {
+                if packet.track_id() != track_id {
                     continue;
                 }
-            };
-
-            let n_frames = audio.frames();
-            if n_frames == 0 {
-                continue;
+                match decoder.decode(&packet) {
+                    Ok(audio) => total_frames += audio.frames(),
+                    Err(_) => continue,
+                }
             }
+            let dur = total_frames as f64 / sample_rate as f64;
+            let total = (total_frames as usize).saturating_mul(channels as usize);
+            (dur, total)
+        };
 
-            // Use SampleBuffer to convert any sample format to f32, interleaved
-            let mut samp_buf = SampleBuffer::<f32>::new(n_frames as u64, spec);
-            samp_buf.copy_interleaved_ref(audio);
-            samples.extend_from_slice(samp_buf.samples());
-        }
-
-        Ok(DecodedAudio {
-            samples,
+        Ok(ProbedAudio {
+            duration_secs,
+            total_samples,
             sample_rate,
             channels,
         })
     }
 
-    /// Create a cpal output stream for playback.
+    /// Background decoder thread. Reads packets from the file, decodes them, and writes
+    /// interleaved f32 samples into the ring buffer. Listens for seek/stop commands.
+    fn decoder_thread(
+        path: PathBuf,
+        cmd_rx: mpsc::Receiver<DecoderCmd>,
+        stop_flag: Arc<AtomicBool>,
+        ring_buf: Arc<parking_lot::Mutex<RingBuffer>>,
+        audio_ctx: Arc<parking_lot::Mutex<AudioContext>>,
+    ) {
+        use symphonia::core::audio::{SampleBuffer, SignalSpec};
+        use symphonia::core::codecs::DecoderOptions;
+        use symphonia::core::formats::{FormatOptions, SeekMode};
+        use symphonia::core::io::MediaSourceStream;
+        use symphonia::core::meta::MetadataOptions;
+        use symphonia::core::probe::Hint;
+
+        let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("wav");
+        let mut hint = Hint::new();
+        hint.with_extension(ext);
+
+        let src = match std::fs::File::open(&path) {
+            Ok(f) => f,
+            Err(e) => {
+                eprintln!("Decoder thread: failed to open {:?}: {}", path, e);
+                return;
+            }
+        };
+        let mss = MediaSourceStream::new(Box::new(src), Default::default());
+
+        let meta_opts = MetadataOptions::default();
+        let fmt_opts = FormatOptions::default();
+        let probed = match symphonia::default::get_probe().format(&hint, mss, &fmt_opts, &meta_opts) {
+            Ok(p) => p.format,
+            Err(e) => {
+                eprintln!("Decoder thread: failed to probe: {}", e);
+                return;
+            }
+        };
+
+        use symphonia::core::codecs::CODEC_TYPE_NULL;
+        let track = probed
+            .tracks()
+            .iter()
+            .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
+            .expect("no audio track");
+        let track_id = track.id;
+        let sample_rate = track.codec_params.sample_rate.expect("unknown sample rate");
+        let channels = track.codec_params.channels.map(|c| c.count()).unwrap_or(1);
+        let spec = SignalSpec::new(sample_rate, track.codec_params.channels.unwrap_or_default());
+
+        let dec_opts = DecoderOptions::default();
+        let mut format = probed;
+        let mut decoder = match symphonia::default::get_codecs().make(&track.codec_params, &dec_opts) {
+            Ok(d) => d,
+            Err(e) => {
+                eprintln!("Decoder thread: failed to create decoder: {}", e);
+                return;
+            }
+        };
+
+        loop {
+            // Check for commands (non-blocking)
+            while let Ok(cmd) = cmd_rx.try_recv() {
+                match cmd {
+                    DecoderCmd::Stop => {
+                        return;
+                    }
+                    DecoderCmd::Seek(time_secs) => {
+                        // Seek to timestamp
+                        let ts = (time_secs * sample_rate as f64) as u64;
+                        if let Ok(seeked) = format.seek(SeekMode::Accurate, symphonia::core::formats::SeekTo::TimeStamp { ts, track_id }) {
+                            // Recreate decoder after seek (required by symphonia)
+                            let seeked_track = seeked.track;
+                            if let Ok(new_dec) = symphonia::default::get_codecs().make(&seeked_track.codec_params, &dec_opts) {
+                                decoder = new_dec;
+                            }
+                            // Clear ring buffer
+                            ring_buf.lock().clear();
+                            // Update position to actual seek position
+                            let actual_ts = seeked.ts;
+                            let timebase = seeked.track.timebase;
+                            if timebase.0 > 0 {
+                                let pos_samples = (actual_ts as f64 / timebase.0 as f64 * sample_rate as f64 * channels as f64) as usize;
+                                let mut audio = audio_ctx.lock();
+                                audio.position = pos_samples;
+                                audio.is_eof = false;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if stop_flag.load(Ordering::Relaxed) {
+                return;
+            }
+
+            match format.next_packet() {
+                Ok(packet) => {
+                    if packet.track_id() != track_id {
+                        continue;
+                    }
+                    match decoder.decode(&packet) {
+                        Ok(audio) => {
+                            let n_frames = audio.frames();
+                            if n_frames == 0 {
+                                continue;
+                            }
+                            let mut samp_buf = SampleBuffer::<f32>::new(n_frames as u64, spec.clone());
+                            samp_buf.copy_interleaved_ref(audio);
+                            ring_buf.lock().write(samp_buf.samples());
+                        }
+                        Err(e) => {
+                            eprintln!("Decoder thread: decode error: {}", e);
+                        }
+                    }
+                }
+                Err(_) => {
+                    // End of stream
+                    audio_ctx.lock().is_eof = true;
+                    return;
+                }
+            }
+        }
+    }
+
+    /// Create a cpal output stream that reads from the ring buffer.
     fn create_cpal_stream(
         ctx: &Arc<parking_lot::Mutex<AudioContext>>,
     ) -> Result<cpal::Stream, String> {
@@ -520,7 +802,6 @@ impl AudioPlayer {
             .default_output_device()
             .ok_or_else(|| "No default output device found".to_string())?;
 
-        // Use the audio file's sample rate and channel count for the stream config
         let (sample_rate, channels) = {
             let audio = ctx.lock();
             (audio.sample_rate, audio.channels)
@@ -538,18 +819,15 @@ impl AudioPlayer {
             let mut audio = ctx_clone.lock();
             match audio.state {
                 AudioPlayerState::Playing => {
-                    let available = audio.samples.len().saturating_sub(audio.position);
-                    let to_copy = available.min(data.len());
-                    if to_copy > 0 {
-                        let src = &audio.samples[audio.position..audio.position + to_copy];
-                        data[..to_copy].copy_from_slice(src);
-                    }
-                    if to_copy < data.len() {
-                        data[to_copy..].fill(0.0);
-                        audio.state = AudioPlayerState::Stopped;
-                        audio.position = 0;
-                    } else {
-                        audio.position += to_copy;
+                    let copied = audio.ring_buf.lock().read(data);
+                    audio.position += copied;
+                    if copied < data.len() {
+                        data[copied..].fill(0.0);
+                        // End of playback: ring buffer empty and decoder finished
+                        if audio.ring_buf.lock().len == 0 && audio.is_eof {
+                            audio.state = AudioPlayerState::Stopped;
+                            audio.position = 0;
+                        }
                     }
                 }
                 _ => {
@@ -666,7 +944,7 @@ impl AudioPlayer {
             // Update time label
             let samples_per_sec = audio.sample_rate as f64 * audio.channels as f64;
             let current_secs = audio.position as f64 / samples_per_sec;
-            let duration_secs = audio.samples.len() as f64 / samples_per_sec;
+            let duration_secs = audio.total_samples as f64 / samples_per_sec;
             let time_str = format!(
                 "{}/{}",
                 format_time(current_secs),
@@ -696,8 +974,4 @@ fn format_time(secs: f64) -> String {
     format!("{}:{:02}", mins, s)
 }
 
-struct DecodedAudio {
-    samples: Vec<f32>,
-    sample_rate: u32,
-    channels: u16,
-}
+
