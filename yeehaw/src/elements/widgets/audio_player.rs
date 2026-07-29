@@ -755,6 +755,18 @@ impl AudioPlayer {
                 return;
             }
 
+            // Back-pressure: don't decode unless the buffer has meaningful room.
+            // Keeps 20% of the buffer free so decoded packets aren't partially dropped.
+            {
+                let rb = ring_buf.lock();
+                let threshold = rb.data.len() / 5;
+                if rb.free_space() < threshold {
+                    drop(rb);
+                    std::thread::sleep(std::time::Duration::from_millis(10));
+                    continue;
+                }
+            }
+
             match format.next_packet() {
                 Ok(packet) => {
                     if packet.track_id() != track_id {
