@@ -7,7 +7,7 @@ async fn main() -> Result<(), Error> {
 
     // TextBox for entering audio file path
     let textbox = TextBox::new(&ctx, "")
-        .with_text_when_empty("enter text here")
+        .with_text_when_empty("audio file path (absolute)")
         .with_dyn_width(50.into())
         .with_dyn_height(2.into())
         .editable(&ctx)
