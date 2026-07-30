@@ -956,11 +956,6 @@ impl AudioPlayer {
         self
     }
 
-    /// Set the position of this AudioPlayer.
-    pub fn set_at(&self, x: DynVal, y: DynVal) {
-        self.pane.set_at(x, y);
-    }
-
     /// Update slider position and play/pause button text from audio context (called during drawing).
     fn update_slider_from_audio(&self) {
         if let Some(ctx) = self.audio_ctx.borrow().as_ref() {
