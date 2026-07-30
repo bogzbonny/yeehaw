@@ -18,9 +18,9 @@ use {
     std::cell::RefCell,
     std::path::PathBuf,
     std::rc::Rc,
+    std::sync::Arc,
     std::sync::atomic::{AtomicBool, Ordering},
     std::sync::mpsc,
-    std::sync::Arc,
 };
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -213,7 +213,8 @@ impl AudioPlayer {
                 let mut seek_secs = 0.0;
                 if let Some(ac) = audio_ctx_clone.borrow().as_ref() {
                     let audio = ac.lock();
-                    seek_secs = frac * audio.total_samples as f64 / (audio.sample_rate as f64 * audio.channels as f64);
+                    seek_secs = frac * audio.total_samples as f64
+                        / (audio.sample_rate as f64 * audio.channels as f64);
                     drop(audio);
                     // Update position immediately for responsive UI
                     let mut audio = ac.lock();
@@ -503,7 +504,8 @@ impl AudioPlayer {
         path: &PathBuf, audio_ctx: &Rc<RefCell<Option<Arc<parking_lot::Mutex<AudioContext>>>>>,
         stream: &Rc<RefCell<Option<cpal::Stream>>>, play_pause_btn: &Rc<RefCell<Button>>,
         slider: &Rc<RefCell<Slider>>, time_label: &Rc<RefCell<Label>>,
-        filename_label: &Rc<RefCell<Label>>, decoder_handle: &Rc<RefCell<Option<std::thread::JoinHandle<()>>>>,
+        filename_label: &Rc<RefCell<Label>>,
+        decoder_handle: &Rc<RefCell<Option<std::thread::JoinHandle<()>>>>,
         decoder_stop: &Rc<RefCell<Option<Arc<AtomicBool>>>>,
         seek_tx: &Rc<RefCell<Option<mpsc::Sender<DecoderCmd>>>>,
     ) {
@@ -532,8 +534,12 @@ impl AudioPlayer {
         let total_samples = probe.total_samples;
 
         // Ring buffer: ~5 seconds of audio capacity
-        let rb_capacity = (probe.sample_rate as usize).saturating_mul(probe.channels as usize).saturating_mul(5);
-        let ring_buf = Arc::new(parking_lot::Mutex::new(RingBuffer::new(rb_capacity.max(44100))));
+        let rb_capacity = (probe.sample_rate as usize)
+            .saturating_mul(probe.channels as usize)
+            .saturating_mul(5);
+        let ring_buf = Arc::new(parking_lot::Mutex::new(RingBuffer::new(
+            rb_capacity.max(44100),
+        )));
 
         let ac = Arc::new(parking_lot::Mutex::new(AudioContext {
             ring_buf: ring_buf.clone(),
@@ -671,9 +677,7 @@ impl AudioPlayer {
     /// Background decoder thread. Reads packets from the file, decodes them, and writes
     /// interleaved f32 samples into the ring buffer. Listens for seek/stop commands.
     fn decoder_thread(
-        path: PathBuf,
-        cmd_rx: mpsc::Receiver<DecoderCmd>,
-        stop_flag: Arc<AtomicBool>,
+        path: PathBuf, cmd_rx: mpsc::Receiver<DecoderCmd>, stop_flag: Arc<AtomicBool>,
         ring_buf: Arc<parking_lot::Mutex<RingBuffer>>,
         audio_ctx: Arc<parking_lot::Mutex<AudioContext>>,
     ) {
@@ -699,7 +703,8 @@ impl AudioPlayer {
 
         let meta_opts = MetadataOptions::default();
         let fmt_opts = FormatOptions::default();
-        let probed = match symphonia::default::get_probe().format(&hint, mss, &fmt_opts, &meta_opts) {
+        let probed = match symphonia::default::get_probe().format(&hint, mss, &fmt_opts, &meta_opts)
+        {
             Ok(p) => p.format,
             Err(e) => {
                 eprintln!("Decoder thread: failed to probe: {}", e);
@@ -722,13 +727,14 @@ impl AudioPlayer {
 
         let dec_opts = DecoderOptions::default();
         let mut format = probed;
-        let mut decoder = match symphonia::default::get_codecs().make(&codec_params_clone, &dec_opts) {
-            Ok(d) => d,
-            Err(e) => {
-                eprintln!("Decoder thread: failed to create decoder: {}", e);
-                return;
-            }
-        };
+        let mut decoder =
+            match symphonia::default::get_codecs().make(&codec_params_clone, &dec_opts) {
+                Ok(d) => d,
+                Err(e) => {
+                    eprintln!("Decoder thread: failed to create decoder: {}", e);
+                    return;
+                }
+            };
 
         loop {
             // Check for commands (non-blocking)
@@ -737,15 +743,21 @@ impl AudioPlayer {
                     DecoderCmd::Seek(time_secs) => {
                         // Seek to timestamp
                         let ts = (time_secs * sample_rate as f64) as u64;
-                        if let Ok(_seeked) = format.seek(SeekMode::Accurate, symphonia::core::formats::SeekTo::TimeStamp { ts, track_id }) {
+                        if let Ok(_seeked) = format.seek(
+                            SeekMode::Accurate,
+                            symphonia::core::formats::SeekTo::TimeStamp { ts, track_id },
+                        ) {
                             // Recreate decoder after seek (required by symphonia)
-                            if let Ok(new_dec) = symphonia::default::get_codecs().make(&codec_params_clone, &dec_opts) {
+                            if let Ok(new_dec) = symphonia::default::get_codecs()
+                                .make(&codec_params_clone, &dec_opts)
+                            {
                                 decoder = new_dec;
                             }
                             // Clear ring buffer
                             ring_buf.lock().clear();
                             // Update position — use requested time (keyframe alignment may cause small offset)
-                            let pos_samples = (time_secs * sample_rate as f64 * channels as f64) as usize;
+                            let pos_samples =
+                                (time_secs * sample_rate as f64 * channels as f64) as usize;
                             let mut audio = audio_ctx.lock();
                             audio.position = pos_samples;
                             audio.is_eof = false;
@@ -938,6 +950,17 @@ impl AudioPlayer {
         }
     }
 
+    /// Set the position of this AudioPlayer (builder pattern).
+    pub fn at<D: Into<DynVal>, D2: Into<DynVal>>(self, x: D, y: D2) -> Self {
+        self.pane.set_at(x.into(), y.into());
+        self
+    }
+
+    /// Set the position of this AudioPlayer.
+    pub fn set_at(&self, x: DynVal, y: DynVal) {
+        self.pane.set_at(x, y);
+    }
+
     /// Update slider position and play/pause button text from audio context (called during drawing).
     fn update_slider_from_audio(&self) {
         if let Some(ctx) = self.audio_ctx.borrow().as_ref() {
@@ -1069,7 +1092,11 @@ mod tests {
 
         // After stop, buffer must be empty so play starts fresh
         assert_eq!(ring_buf.lock().len, 0, "buffer must be empty after stop");
-        assert_eq!(audio_ctx.lock().position, 0, "position must be 0 after stop");
+        assert_eq!(
+            audio_ctx.lock().position,
+            0,
+            "position must be 0 after stop"
+        );
 
         // Simulate play: decoder writes data from the beginning
         let start_data = vec![1.0f32; 50];
@@ -1088,5 +1115,3 @@ mod tests {
         );
     }
 }
-
-
