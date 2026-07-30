@@ -1,26 +1,45 @@
 use {
-    crate::ch::{DrawCh, DrawChs2D},
-    crate::color::Color,
-    crate::context::Context,
-    crate::draw_region::DrawRegion,
-    crate::dyn_location::{DynLocation, DynLocationSet, Size, ZIndex},
-    crate::dyn_value::DynVal,
-    crate::element::{DrawUpdate, Element, Parent},
-    crate::elements::panes::ParentPaneOfSelectable,
-    crate::elements::widgets::button::{Button, ButtonMicroShadow},
-    crate::elements::widgets::label::Label,
-    crate::elements::widgets::slider::Slider,
-    crate::event::{Event, EventResponses, ReceivableEvents},
-    crate::sorting_hat::ElementID,
-    crate::style::Style,
-    crate::{Ref, RefMut},
+    crate::{
+        ch::{DrawCh, DrawChs2D},
+        color::Color,
+        context::Context,
+        draw_region::DrawRegion,
+        dyn_location::{DynLocation, DynLocationSet, Size, ZIndex},
+        dyn_value::DynVal,
+        element::{DrawUpdate, Element, Parent},
+        elements::{
+            panes::ParentPaneOfSelectable,
+            widgets::{
+                button::{Button, ButtonMicroShadow},
+                label::Label,
+                slider::Slider,
+            },
+        },
+        event::{Event, EventResponses, ReceivableEvents},
+        sorting_hat::ElementID,
+        style::Style,
+        {Ref, RefMut},
+    },
     cpal::traits::{DeviceTrait, HostTrait, StreamTrait},
-    std::cell::RefCell,
-    std::path::PathBuf,
-    std::rc::Rc,
-    std::sync::Arc,
-    std::sync::atomic::{AtomicBool, Ordering},
-    std::sync::mpsc,
+    std::{
+        cell::RefCell,
+        path::PathBuf,
+        rc::Rc,
+        sync::{
+            Arc,
+            atomic::{AtomicBool, Ordering},
+            mpsc,
+        },
+    },
+    symphonia::core::{
+        audio::{SampleBuffer, SignalSpec},
+        codecs::CODEC_TYPE_NULL,
+        codecs::DecoderOptions,
+        formats::{FormatOptions, SeekMode},
+        io::MediaSourceStream,
+        meta::MetadataOptions,
+        probe::Hint,
+    },
 };
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -596,12 +615,6 @@ impl AudioPlayer {
     /// Probe an audio file for metadata without decoding. Uses n_frames from track info
     /// if available; otherwise does a fast packet scan to count frames.
     fn probe_audio(path: &PathBuf) -> Result<ProbedAudio, String> {
-        use symphonia::core::codecs::CODEC_TYPE_NULL;
-        use symphonia::core::formats::FormatOptions;
-        use symphonia::core::io::MediaSourceStream;
-        use symphonia::core::meta::MetadataOptions;
-        use symphonia::core::probe::Hint;
-
         let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("wav");
         let mut hint = Hint::new();
         hint.with_extension(ext);
@@ -641,15 +654,13 @@ impl AudioPlayer {
             (dur, total)
         } else {
             // Fast scan: iterate packets and sum frame counts without full decode
-            let dec_opts = symphonia::core::codecs::DecoderOptions::default();
+            let dec_opts = DecoderOptions::default();
             let mut decoder = symphonia::default::get_codecs()
                 .make(&track.codec_params, &dec_opts)
                 .map_err(|e| format!("Failed to create decoder: {}", e))?;
             let track_id = track.id;
-            let _spec = symphonia::core::audio::SignalSpec::new(
-                sample_rate,
-                track.codec_params.channels.unwrap_or_default(),
-            );
+            let _spec =
+                SignalSpec::new(sample_rate, track.codec_params.channels.unwrap_or_default());
             let mut total_frames: usize = 0;
             let mut fmt = format;
             while let Ok(packet) = fmt.next_packet() {
@@ -681,13 +692,6 @@ impl AudioPlayer {
         ring_buf: Arc<parking_lot::Mutex<RingBuffer>>,
         audio_ctx: Arc<parking_lot::Mutex<AudioContext>>,
     ) {
-        use symphonia::core::audio::{SampleBuffer, SignalSpec};
-        use symphonia::core::codecs::DecoderOptions;
-        use symphonia::core::formats::{FormatOptions, SeekMode};
-        use symphonia::core::io::MediaSourceStream;
-        use symphonia::core::meta::MetadataOptions;
-        use symphonia::core::probe::Hint;
-
         let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("wav");
         let mut hint = Hint::new();
         hint.with_extension(ext);
