@@ -27,6 +27,9 @@ pub mod figlet;
 #[cfg(feature = "audio")]
 pub mod audio_player;
 
+#[cfg(feature = "multimedia")]
+pub mod multimedia_preview;
+
 pub use {
     arb_selector::ArbSelector,
     button::{Button, ButtonMicroShadow, ButtonShadow, ButtonSides, ButtonStyle},
@@ -52,6 +55,9 @@ pub use figlet::FigletText;
 
 #[cfg(feature = "audio")]
 pub use audio_player::AudioPlayer;
+
+#[cfg(feature = "multimedia")]
+pub use multimedia_preview::MultiMediaPreview;
 
 #[cfg(feature = "textbox")]
 pub use {
