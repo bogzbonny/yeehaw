@@ -75,7 +75,7 @@ nokhwa = { version = "0.10", default-features = false, features = ["input-native
 # NOTE crate-features are documented in yeehaw/README_DOCS.md:119
 default = []
 multimedia = ["audio", "image", "bat"] # enable multimedia preview element (audio + image + bat)
-full = ["table", "rand", "terminal", "terminal_editor", "textbox", "figlet", "image", "bat", "audio", "multimedia"] # enable everything
+full = ["table", "rand", "terminal", "terminal_editor", "textbox", "figlet", "image", "bat", "audio", "multimedia", "photobooth"] # enable everything
 textbox = ["dep:arboard", "dep:num-traits"] # enable textbox, list-control, and file-editor elements
 terminal = ["dep:anyhow", "dep:vt100_yh", "dep:portable-pty"] # enable terminal panes
 terminal_editor = ["terminal", "dep:tempfile"] # enable terminal-editor panes

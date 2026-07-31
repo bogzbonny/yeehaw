@@ -30,6 +30,11 @@ pub struct Photobooth {
     crop_y0: RefCell<Rc<RefCell<i32>>>,
     crop_x1: RefCell<Rc<RefCell<i32>>>,
     crop_y1: RefCell<Rc<RefCell<i32>>>,
+    /// Textbox references for crop value reset display update.
+    crop_x0_tb: RefCell<Rc<NumbersTextBox<i32>>>,
+    crop_y0_tb: RefCell<Rc<NumbersTextBox<i32>>>,
+    crop_x1_tb: RefCell<Rc<NumbersTextBox<i32>>>,
+    crop_y1_tb: RefCell<Rc<NumbersTextBox<i32>>>,
     image_dims: Rc<RefCell<(u32, u32)>>,
     /// Stored context for button/label creation.
     ctx: Rc<Context>,
@@ -110,6 +115,10 @@ impl Photobooth {
             crop_y0: RefCell::new(Rc::new(RefCell::new(0))),
             crop_x1: RefCell::new(Rc::new(RefCell::new(0))),
             crop_y1: RefCell::new(Rc::new(RefCell::new(0))),
+            crop_x0_tb: RefCell::new(Rc::new(NumbersTextBox::new(ctx, 0_i32))),
+            crop_y0_tb: RefCell::new(Rc::new(NumbersTextBox::new(ctx, 0_i32))),
+            crop_x1_tb: RefCell::new(Rc::new(NumbersTextBox::new(ctx, 0_i32))),
+            crop_y1_tb: RefCell::new(Rc::new(NumbersTextBox::new(ctx, 0_i32))),
             image_dims: Rc::new(RefCell::new((0, 0))),
             ctx: Rc::new(ctx.clone()),
         };
@@ -123,10 +132,13 @@ impl Photobooth {
     fn build_ui(&self) {
         let bottom_rows = if self.show_crop_controls { 2 } else { 1 };
 
-        // Add image viewer
+        // Add image viewer — fill full width, height minus bottom rows
         let img_viewer = self.image_viewer.clone();
-        self.pane
-            .add_element(Box::new((*img_viewer.clone()).clone().at(DynVal::FULL.minus_fixed(bottom_rows), DynVal::new_fixed(0))));
+        let iv = (*img_viewer.clone()).clone()
+            .with_dyn_width(DynVal::FULL)
+            .with_dyn_height(DynVal::FULL.minus_fixed(bottom_rows))
+            .at(DynVal::new_fixed(0), DynVal::new_fixed(0));
+        self.pane.add_element(Box::new(iv));
 
         // Add buttons row
         self.add_buttons_row();
@@ -179,24 +191,25 @@ impl Photobooth {
 
         // Mirror checkbox
         let mirror = self.mirror.clone();
+        let mirror_clone = mirror.clone();
         let dyn_img = self.dyn_img.clone();
         let image_viewer = self.image_viewer.clone();
         let mirror_cb = Checkbox::new(&self.ctx).with_fn(Box::new(move |_, checked| {
             *mirror.borrow_mut() = checked;
             // Re-apply mirror to current image
             let img = dyn_img.borrow().clone().into_rgb8();
-            if checked {
-                *dyn_img.borrow_mut() =
-                    DynamicImage::ImageRgb8(image::imageops::flip_horizontal(&img));
+            let final_img = if checked {
+                DynamicImage::ImageRgb8(image::imageops::flip_horizontal(&img))
             } else {
-                // Un-mirror: flip back
-                *dyn_img.borrow_mut() = DynamicImage::ImageRgb8(img);
-            }
-            image_viewer.force_update();
+                DynamicImage::ImageRgb8(img)
+            };
+            *dyn_img.borrow_mut() = final_img.clone();
+            image_viewer.update_image(final_img);
             EventResponses::default()
         }));
         // Set initial checked state
-        mirror_cb.pane.set_content_from_string(' ');
+        *mirror_cb.checked.borrow_mut() = *mirror_clone.borrow();
+        mirror_cb.pane.set_content_from_string(mirror_cb.text());
         self.pane.add_element(Box::new(mirror_cb.at(DynVal::FULL.minus_fixed(30), row_y)));
     }
 
@@ -204,10 +217,10 @@ impl Photobooth {
         let row_y = DynVal::FULL.minus_fixed(2);
 
         // Create textboxes with initial values
-        let x0_tb = NumbersTextBox::new(&self.ctx, 0_i32);
-        let y0_tb = NumbersTextBox::new(&self.ctx, 0_i32);
-        let x1_tb = NumbersTextBox::new(&self.ctx, 0_i32);
-        let y1_tb = NumbersTextBox::new(&self.ctx, 0_i32);
+        let x0_tb = Rc::new(NumbersTextBox::new(&self.ctx, 0_i32));
+        let y0_tb = Rc::new(NumbersTextBox::new(&self.ctx, 0_i32));
+        let x1_tb = Rc::new(NumbersTextBox::new(&self.ctx, 0_i32));
+        let y1_tb = Rc::new(NumbersTextBox::new(&self.ctx, 0_i32));
 
         // Share textbox value Rc's with struct fields
         *self.crop_x0.borrow_mut() = x0_tb.value.clone();
@@ -215,22 +228,28 @@ impl Photobooth {
         *self.crop_x1.borrow_mut() = x1_tb.value.clone();
         *self.crop_y1.borrow_mut() = y1_tb.value.clone();
 
+        // Store textbox references for crop button display update
+        *self.crop_x0_tb.borrow_mut() = x0_tb.clone();
+        *self.crop_y0_tb.borrow_mut() = y0_tb.clone();
+        *self.crop_x1_tb.borrow_mut() = x1_tb.clone();
+        *self.crop_y1_tb.borrow_mut() = y1_tb.clone();
+
         // Add labels and textboxes
         let x0_label = Label::new(&self.ctx, "x0:");
         self.pane.add_element(Box::new(x0_label.at(DynVal::new_fixed(0), row_y.clone())));
-        self.pane.add_element(Box::new(x0_tb.at(DynVal::new_fixed(3), row_y.clone())));
+        self.pane.add_element(Box::new((*x0_tb.clone()).clone().at(DynVal::new_fixed(3), row_y.clone())));
 
         let y0_label = Label::new(&self.ctx, "y0:");
         self.pane.add_element(Box::new(y0_label.at(DynVal::new_fixed(15), row_y.clone())));
-        self.pane.add_element(Box::new(y0_tb.at(DynVal::new_fixed(18), row_y.clone())));
+        self.pane.add_element(Box::new((*y0_tb.clone()).clone().at(DynVal::new_fixed(18), row_y.clone())));
 
         let x1_label = Label::new(&self.ctx, "x1:");
         self.pane.add_element(Box::new(x1_label.at(DynVal::new_fixed(30), row_y.clone())));
-        self.pane.add_element(Box::new(x1_tb.at(DynVal::new_fixed(33), row_y.clone())));
+        self.pane.add_element(Box::new((*x1_tb.clone()).clone().at(DynVal::new_fixed(33), row_y.clone())));
 
         let y1_label = Label::new(&self.ctx, "y1:");
         self.pane.add_element(Box::new(y1_label.at(DynVal::new_fixed(45), row_y.clone())));
-        self.pane.add_element(Box::new(y1_tb.at(DynVal::new_fixed(48), row_y.clone())));
+        self.pane.add_element(Box::new((*y1_tb.clone()).clone().at(DynVal::new_fixed(48), row_y.clone())));
 
         // Preview button
         let dyn_img = self.dyn_img.clone();
@@ -250,8 +269,8 @@ impl Photobooth {
                 if let Err(e) = cropped.save(&preview_path) {
                     log_err!("Failed to save crop preview: {}", e);
                 }
-                *dyn_img.borrow_mut() = cropped;
-                image_viewer.force_update();
+                *dyn_img.borrow_mut() = cropped.clone();
+                image_viewer.update_image(cropped);
             }
             EventResponses::default()
         }));
@@ -266,6 +285,10 @@ impl Photobooth {
         let crop_x1 = self.crop_x1.clone();
         let crop_y1 = self.crop_y1.clone();
         let image_dims = self.image_dims.clone();
+        let crop_x0_tb = self.crop_x0_tb.clone();
+        let crop_y0_tb = self.crop_y0_tb.clone();
+        let crop_x1_tb = self.crop_x1_tb.clone();
+        let crop_y1_tb = self.crop_y1_tb.clone();
         let crop_btn = Button::new(&self.ctx, "crop");
         crop_btn.set_fn(Box::new(move |_, _| {
             let img = dyn_img.borrow().clone();
@@ -280,14 +303,14 @@ impl Photobooth {
                 let preview_path = format!("{}_crop_preview.jpg", save_path.borrow());
                 let _ = std::fs::remove_file(&preview_path);
                 // Update shared image
-                *dyn_img.borrow_mut() = cropped;
-                image_viewer.force_update();
-                // Reset crop values to full image
+                *dyn_img.borrow_mut() = cropped.clone();
+                image_viewer.update_image(cropped);
+                // Reset crop values using set_value() to update textbox display
                 let (w, h) = *image_dims.borrow();
-                *crop_x0.borrow().borrow_mut() = 0;
-                *crop_y0.borrow().borrow_mut() = 0;
-                *crop_x1.borrow().borrow_mut() = w as i32;
-                *crop_y1.borrow().borrow_mut() = h as i32;
+                crop_x0_tb.borrow().set_value(0);
+                crop_y0_tb.borrow().set_value(0);
+                crop_x1_tb.borrow().set_value(w as i32);
+                crop_y1_tb.borrow().set_value(h as i32);
             }
             EventResponses::default()
         }));
@@ -331,6 +354,7 @@ impl Element for Photobooth {
             };
 
             if should_capture {
+                let mut captured = false;
                 if let Some(cam) = self.camera.borrow_mut().as_mut() {
                     if let Ok(buffer) = cam.frame() {
                         if let Ok(img) = buffer_to_dynamic_image(&buffer) {
@@ -350,12 +374,16 @@ impl Element for Photobooth {
                                 img
                             };
 
-                            *self.dyn_img.borrow_mut() = final_img;
-                            self.image_viewer.force_update();
+                            *self.dyn_img.borrow_mut() = final_img.clone();
+                            self.image_viewer.update_image(final_img);
+                            captured = true;
                         }
                     }
                 }
-                *self.last_capture.borrow_mut() = Some(now);
+                // Only advance timestamp on success; retry next cycle on failure
+                if captured {
+                    *self.last_capture.borrow_mut() = Some(now);
+                }
             }
         }
         self.pane.drawing(ctx, dr, force_update)

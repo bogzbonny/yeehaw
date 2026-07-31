@@ -88,6 +88,23 @@ impl ImageViewer {
     pub fn force_update(&self) {
         *self.last_size.borrow_mut() = Size::default();
     }
+
+    /// Replace the displayed image and recreate the rendering protocol.
+    pub fn update_image(&self, new_img: DynamicImage) {
+        *self.dyn_img.borrow_mut() = new_img.clone();
+        let mut picker = if std::env::var("YH_IMG_PROTOCOL").is_ok() {
+            Picker::from_fontsize((10, 20))
+        } else {
+            Picker::from_query_stdio().unwrap_or_else(|_| {
+                Picker::from_fontsize((10, 20))
+            })
+        };
+        let rgba = self.bg.borrow().to_rgba();
+        picker.set_background_color([rgba.r, rgba.g, rgba.b, rgba.a]);
+        let st_pro = picker.new_resize_protocol(new_img);
+        self.st_pro.replace(st_pro);
+        *self.last_size.borrow_mut() = Size::default();
+    }
 }
 
 #[yeehaw_derive::impl_element_from(pane)]
