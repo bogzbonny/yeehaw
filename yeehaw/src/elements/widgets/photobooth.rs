@@ -28,6 +28,8 @@ pub struct Photobooth {
     camera: Rc<RefCell<Option<Camera>>>,
     /// Last capture timestamp for frame rate control.
     last_capture: Rc<RefCell<Option<std::time::Instant>>>,
+    /// True until the first camera frame is captured.
+    first_frame: Rc<RefCell<bool>>,
     // Crop control state — Option because textboxes only exist when crop controls enabled.
     crop_x0: Option<Rc<RefCell<i32>>>,
     crop_y0: Option<Rc<RefCell<i32>>>,
@@ -38,9 +40,19 @@ pub struct Photobooth {
     crop_y0_tb: Option<Rc<NumbersTextBox<i32>>>,
     crop_x1_tb: Option<Rc<NumbersTextBox<i32>>>,
     crop_y1_tb: Option<Rc<NumbersTextBox<i32>>>,
-    image_dims: Rc<RefCell<(u32, u32)>>,
+    /// True while a crop preview is being displayed.
+    preview_active: Rc<RefCell<bool>>,
+    /// Holds the preview image (cropped region from src_img, mirror not applied).
+    preview_img: Rc<RefCell<Option<DynamicImage>>>,
     /// Stored context for button/label creation.
-    ctx: Rc<Context>,
+    ctx: Context,
+}
+
+impl Drop for Photobooth {
+    fn drop(&mut self) {
+        // Take camera out of Option; Camera::drop closes the stream automatically
+        self.camera.borrow_mut().take();
+    }
 }
 
 #[yeehaw_derive::impl_pane_basics_from(pane)]
@@ -115,6 +127,7 @@ impl Photobooth {
             stopped: Rc::new(RefCell::new(false)),
             camera: Rc::new(RefCell::new(Some(camera))),
             last_capture: Rc::new(RefCell::new(None)),
+            first_frame: Rc::new(RefCell::new(true)),
             crop_x0: None,
             crop_y0: None,
             crop_x1: None,
@@ -123,8 +136,9 @@ impl Photobooth {
             crop_y0_tb: None,
             crop_x1_tb: None,
             crop_y1_tb: None,
-            image_dims: Rc::new(RefCell::new((0, 0))),
-            ctx: Rc::new(ctx.clone()),
+            preview_active: Rc::new(RefCell::new(false)),
+            preview_img: Rc::new(RefCell::new(None)),
+            ctx: ctx.clone(),
         };
 
         // Build UI
@@ -137,15 +151,14 @@ impl Photobooth {
         let bottom_rows = if self.show_crop_controls { 2 } else { 1 };
 
         // Add image viewer — fill full width, height minus bottom rows
-        let img_viewer = self.image_viewer.clone();
-        let iv = (*img_viewer.clone()).clone()
+        let iv = self.image_viewer.as_ref().clone()
             .with_dyn_width(DynVal::FULL)
             .with_dyn_height(DynVal::FULL.minus_fixed(bottom_rows))
             .at(DynVal::new_fixed(0), DynVal::new_fixed(0));
         self.pane.add_element(Box::new(iv));
 
-        // Add buttons row (at bottom, accounting for crop row if present)
-        self.add_buttons_row(bottom_rows as usize);
+        // Add buttons row at bottom
+        self.add_buttons_row();
 
         // Add crop controls if enabled
         if self.show_crop_controls {
@@ -153,12 +166,13 @@ impl Photobooth {
         }
     }
 
-    fn add_buttons_row(&self, _bottom_rows: usize) {
+    fn add_buttons_row(&self) {
         // Buttons always go on the bottommost row
         let row_y = DynVal::FULL.minus_fixed(1);
 
         // Snap button
         let dyn_img = self.dyn_img.clone();
+        let src_img = self.src_img.clone();
         let save_path = self.save_path.clone();
         let stopped = self.stopped.clone();
         let snap_btn = Button::new(&self.ctx, "snap");
@@ -167,6 +181,8 @@ impl Photobooth {
             if let Err(e) = img.save(save_path.borrow().as_str()) {
                 log_err!("Failed to save image: {}", e);
             }
+            // Update src_img to match dyn_img so crop controls work on the snapped image
+            *src_img.borrow_mut() = dyn_img.borrow().clone();
             *stopped.borrow_mut() = true;
             EventResponses::default()
         }));
@@ -174,9 +190,14 @@ impl Photobooth {
 
         // Discard button
         let stopped = self.stopped.clone();
+        let preview_active = self.preview_active.clone();
+        let preview_img = self.preview_img.clone();
         let discard_btn = Button::new(&self.ctx, "discard");
         discard_btn.set_fn(Box::new(move |_, _| {
             *stopped.borrow_mut() = false;
+            // Clear any active crop preview when returning to capture mode
+            *preview_active.borrow_mut() = false;
+            *preview_img.borrow_mut() = None;
             EventResponses::default()
         }));
         self.pane.add_element(Box::new(discard_btn.at(DynVal::FULL.minus_fixed(15), row_y.clone())));
@@ -187,10 +208,21 @@ impl Photobooth {
         let src_img = self.src_img.clone();
         let dyn_img = self.dyn_img.clone();
         let image_viewer = self.image_viewer.clone();
+        let preview_active = self.preview_active.clone();
+        let preview_img = self.preview_img.clone();
         let mirror_cb = Checkbox::new(&self.ctx).with_fn(Box::new(move |_, checked| {
             *mirror.borrow_mut() = checked;
-            // Always re-derive display from src_img with current mirror setting
-            let img = src_img.borrow().clone().into_rgb8();
+            // Apply mirror to the correct base image depending on mode
+            let base_img = if *preview_active.borrow() {
+                // In preview mode, apply mirror to the preview crop
+                preview_img.borrow().as_ref().cloned().unwrap_or_else(|| {
+                    // Fallback to src_img if preview_img is empty
+                    src_img.borrow().clone()
+                })
+            } else {
+                src_img.borrow().clone()
+            };
+            let img = base_img.into_rgb8();
             let final_img = if checked {
                 DynamicImage::ImageRgb8(image::imageops::flip_horizontal(&img))
             } else {
@@ -245,16 +277,38 @@ impl Photobooth {
         self.pane.add_element(Box::new(y1_label.at(DynVal::new_fixed(45), row_y.clone())));
         self.pane.add_element(Box::new((*y1_tb.clone()).clone().at(DynVal::new_fixed(48), row_y.clone())));
 
+        // Helper: sync all crop textboxes from their text content into the shared Rc values
+        let sync_crop_values = |x0_tb: &Option<Rc<NumbersTextBox<i32>>>,
+                                y0_tb: &Option<Rc<NumbersTextBox<i32>>>,
+                                x1_tb: &Option<Rc<NumbersTextBox<i32>>>,
+                                y1_tb: &Option<Rc<NumbersTextBox<i32>>>| {
+            if let Some(tb) = x0_tb { tb.update_value_from_tb(); }
+            if let Some(tb) = y0_tb { tb.update_value_from_tb(); }
+            if let Some(tb) = x1_tb { tb.update_value_from_tb(); }
+            if let Some(tb) = y1_tb { tb.update_value_from_tb(); }
+        };
+
         // Preview button — crop from src_img, display only (do NOT modify src_img or dyn_img)
         let src_img = self.src_img.clone();
         let save_path = self.save_path.clone();
         let image_viewer = self.image_viewer.clone();
+        let dyn_img = self.dyn_img.clone();
         let crop_x0 = self.crop_x0.clone();
         let crop_y0 = self.crop_y0.clone();
         let crop_x1 = self.crop_x1.clone();
         let crop_y1 = self.crop_y1.clone();
+        let crop_x0_tb = self.crop_x0_tb.clone();
+        let crop_y0_tb = self.crop_y0_tb.clone();
+        let crop_x1_tb = self.crop_x1_tb.clone();
+        let crop_y1_tb = self.crop_y1_tb.clone();
+        let mirror = self.mirror.clone();
+        let preview_active = self.preview_active.clone();
+        let preview_img = self.preview_img.clone();
         let preview_btn = Button::new(&self.ctx, "preview");
         preview_btn.set_fn(Box::new(move |_, _| {
+            // Sync textbox values before reading
+            sync_crop_values(&crop_x0_tb, &crop_y0_tb, &crop_x1_tb, &crop_y1_tb);
+
             let img = src_img.borrow().clone();
             let (x0, y0) = match (&crop_x0, &crop_y0) {
                 (Some(a), Some(b)) => (*a.borrow(), *b.borrow()),
@@ -269,8 +323,18 @@ impl Photobooth {
                 if let Err(e) = cropped.save(&preview_path) {
                     log_err!("Failed to save crop preview: {}", e);
                 }
-                // Only update the image viewer — do NOT modify src_img or dyn_img
-                image_viewer.update_image(cropped);
+                // Store the uncropped preview for mirror reapplication
+                *preview_img.borrow_mut() = Some(cropped.clone());
+                // Apply current mirror setting to the preview
+                let display_img = if *mirror.borrow() {
+                    let rgb = cropped.to_rgb8();
+                    DynamicImage::ImageRgb8(image::imageops::flip_horizontal(&rgb))
+                } else {
+                    cropped
+                };
+                *dyn_img.borrow_mut() = display_img.clone();
+                image_viewer.update_image(display_img);
+                *preview_active.borrow_mut() = true;
             }
             EventResponses::default()
         }));
@@ -290,8 +354,13 @@ impl Photobooth {
         let crop_x1_tb = self.crop_x1_tb.clone();
         let crop_y1_tb = self.crop_y1_tb.clone();
         let mirror = self.mirror.clone();
+        let preview_active = self.preview_active.clone();
+        let preview_img = self.preview_img.clone();
         let crop_btn = Button::new(&self.ctx, "crop");
         crop_btn.set_fn(Box::new(move |_, _| {
+            // Sync textbox values before reading
+            sync_crop_values(&crop_x0_tb, &crop_y0_tb, &crop_x1_tb, &crop_y1_tb);
+
             let img = src_img.borrow().clone();
             let (x0, y0) = match (&crop_x0, &crop_y0) {
                 (Some(a), Some(b)) => (*a.borrow(), *b.borrow()),
@@ -321,6 +390,9 @@ impl Photobooth {
                 };
                 *dyn_img.borrow_mut() = final_img.clone();
                 image_viewer.update_image(final_img);
+                // Clear preview state
+                *preview_active.borrow_mut() = false;
+                *preview_img.borrow_mut() = None;
                 // Reset crop values to current image bounds; skip if no frame captured
                 if (cw, ch) != (0, 0) {
                     if let Some(tb) = &crop_x0_tb { tb.set_value(0); }
@@ -377,15 +449,18 @@ impl Element for Photobooth {
                         if let Ok(img) = buffer_to_dynamic_image(&buffer) {
                             let (w, h) = img.dimensions();
 
-                            // Update image dimensions on first frame
-                            if *self.image_dims.borrow() == (0, 0) {
-                                *self.image_dims.borrow_mut() = (w, h);
-                                // Update crop Rc values and textbox displays
+                            // Update crop bounds on first frame
+                            if *self.first_frame.borrow() {
+                                *self.first_frame.borrow_mut() = false;
                                 if let Some(rc) = &self.crop_x1 { *rc.borrow_mut() = w as i32; }
                                 if let Some(rc) = &self.crop_y1 { *rc.borrow_mut() = h as i32; }
                                 if let Some(tb) = &self.crop_x1_tb { tb.set_value(w as i32); }
                                 if let Some(tb) = &self.crop_y1_tb { tb.set_value(h as i32); }
                             }
+
+                            // Clear any active crop preview when a new frame arrives
+                            *self.preview_active.borrow_mut() = false;
+                            *self.preview_img.borrow_mut() = None;
 
                             // Store uncropped source image
                             *self.src_img.borrow_mut() = img.clone();
