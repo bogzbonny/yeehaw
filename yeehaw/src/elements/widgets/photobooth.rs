@@ -97,7 +97,7 @@ impl Photobooth {
         // Create camera
         let mut camera = Camera::new(
             CameraIndex::Index(0),
-            RequestedFormat::new::<RgbFormat>(RequestedFormatType::None),
+            RequestedFormat::new::<RgbFormat>(RequestedFormatType::DefaultValue),
         )
         .map_err(|e| {
             let msg = format!("Failed to create camera: {}", e);
