@@ -66,6 +66,9 @@ bat = {version = "^0.25.0", features = ["git", "paging"], optional = true}
 cpal = { version = "^0.15.0", optional = true }
 symphonia = { version = "0.5", features = ["mp3", "ogg", "flac", "isomp4", "wav"], optional = true }
 
+# photobooth feature deps
+nokhwa = { version = "0.10", default-features = false, features = ["input-native"], optional = true }
+
 # ------------------------------------------------------------------------------------------------------
 
 [features]
@@ -83,6 +86,7 @@ image = ["ratatui", "dep:image", "dep:ratatui-image"] # enable image viewing pan
 ratatui = ["dep:ratatui"] # enable ratatui compatibility functionality for ratatui ported elements
 rand = ["dep:rand"] # enables random colors, but requires the rand crate
 audio = ["dep:cpal", "dep:symphonia"] # enable audio player element with cpal playback
+photobooth = ["nokhwa", "image", "textbox"] # enable photobooth element with camera capture
 
 # ------------------------------------------------------------------------------------------------------
 [[example]]
@@ -154,3 +158,8 @@ required-features = ["audio", "textbox"]
 name = "multimedia_preview"
 path = "examples/multimedia_preview.rs"
 required-features = ["multimedia", "textbox"]
+
+[[example]]
+name = "photobooth"
+path = "examples/photobooth.rs"
+required-features = ["photobooth"]

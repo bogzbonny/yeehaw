@@ -83,6 +83,11 @@ impl ImageViewer {
 
         self.pane.set_content_if_diff(content);
     }
+
+    /// Force a content update on the next draw by resetting the cached size.
+    pub fn force_update(&self) {
+        *self.last_size.borrow_mut() = Size::default();
+    }
 }
 
 #[yeehaw_derive::impl_element_from(pane)]

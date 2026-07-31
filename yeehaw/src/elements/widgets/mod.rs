@@ -30,6 +30,9 @@ pub mod audio_player;
 #[cfg(feature = "multimedia")]
 pub mod multimedia_preview;
 
+#[cfg(feature = "photobooth")]
+pub mod photobooth;
+
 pub use {
     arb_selector::ArbSelector,
     button::{Button, ButtonMicroShadow, ButtonShadow, ButtonSides, ButtonStyle},
@@ -58,6 +61,9 @@ pub use audio_player::AudioPlayer;
 
 #[cfg(feature = "multimedia")]
 pub use multimedia_preview::MultiMediaPreview;
+
+#[cfg(feature = "photobooth")]
+pub use photobooth::Photobooth;
 
 #[cfg(feature = "textbox")]
 pub use {
