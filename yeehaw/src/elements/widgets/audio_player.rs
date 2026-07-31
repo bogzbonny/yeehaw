@@ -184,6 +184,9 @@ pub struct AudioPlayer {
     play_pause_btn: Rc<RefCell<Button>>,
     time_label: Rc<RefCell<Label>>,
     filename_label: Rc<RefCell<Label>>,
+
+    // Autoplay
+    autoplay: Rc<RefCell<bool>>,
 }
 
 impl AudioPlayer {
@@ -443,6 +446,7 @@ impl AudioPlayer {
         pane.add_element(Box::new(time_label.clone()));
         pane.add_element(Box::new(filename_label.clone()));
 
+        let autoplay = Rc::new(RefCell::new(false));
         let player = Self {
             pane,
             sources: sources_rc,
@@ -456,6 +460,7 @@ impl AudioPlayer {
             play_pause_btn: Rc::new(RefCell::new(play_pause_btn)),
             time_label: Rc::new(RefCell::new(time_label)),
             filename_label: Rc::new(RefCell::new(filename_label)),
+            autoplay,
         };
 
         // Load first track if sources provided
@@ -514,6 +519,9 @@ impl AudioPlayer {
                 &self.decoder_stop,
                 &self.seek_tx,
             );
+            if *self.autoplay.borrow() {
+                self.play();
+            }
         }
     }
 
@@ -957,6 +965,22 @@ impl AudioPlayer {
     /// Set the position of this AudioPlayer (builder pattern).
     pub fn at<D: Into<DynVal>, D2: Into<DynVal>>(self, x: D, y: D2) -> Self {
         self.pane.set_at(x.into(), y.into());
+        self
+    }
+
+    /// Get the autoplay setting.
+    pub fn autoplay(&self) -> bool {
+        *self.autoplay.borrow()
+    }
+
+    /// Set whether audio should automatically play when a track is loaded.
+    pub fn set_autoplay(&self, autoplay: bool) {
+        *self.autoplay.borrow_mut() = autoplay;
+    }
+
+    /// Builder: set whether audio should automatically play when a track is loaded.
+    pub fn with_autoplay(self, autoplay: bool) -> Self {
+        *self.autoplay.borrow_mut() = autoplay;
         self
     }
 

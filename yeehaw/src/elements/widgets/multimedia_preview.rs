@@ -42,18 +42,20 @@ fn detect_media_type(path: &Path) -> MediaType {
 pub struct MultiMediaPreview {
     pane: ParentPane,
     current_path: Rc<RefCell<Option<PathBuf>>>,
+    autoplay: Rc<RefCell<bool>>,
 }
 
 #[yeehaw_derive::impl_pane_basics_from(pane)]
 impl MultiMediaPreview {
     /// Create a new empty MultiMediaPreview.
     pub fn new(ctx: &Context) -> Self {
-        let pane = ParentPane::new(ctx, "multimedia_preview").with_bg(Color::GREY10);
+        let pane = ParentPane::new(ctx, "multimedia_preview");
         pane.set_dyn_width(DynVal::FULL);
         pane.set_dyn_height(DynVal::FULL);
         Self {
             pane,
             current_path: Rc::new(RefCell::new(None)),
+            autoplay: Rc::new(RefCell::new(false)),
         }
     }
 
@@ -72,25 +74,50 @@ impl MultiMediaPreview {
         // Clear existing child element
         self.pane.clear_elements();
 
+        // Check if file exists; show label if not
+        if !path.exists() {
+            let label = Label::new(ctx, "File not found");
+            label.pane.set_at(DynVal::HALF.minus_fixed(8), DynVal::HALF);
+            self.pane.add_element(Box::new(label));
+            *self.current_path.borrow_mut() = Some(path);
+            return Ok(());
+        }
+
         let media_type = detect_media_type(&path);
         let child: Box<dyn Element> = match media_type {
-            MediaType::Audio => Box::new(AudioPlayer::new(ctx, vec![path.clone()])),
+            MediaType::Audio => {
+                let player = AudioPlayer::new(ctx, vec![path.clone()]);
+                if *self.autoplay.borrow() {
+                    player.set_autoplay(true);
+                }
+                Box::new(player)
+            }
             MediaType::Image => {
-                let path_str = path
-                    .to_str()
-                    .ok_or_else(|| Error::YeehawError {
-                        message: "File path contains invalid UTF-8".to_string(),
-                    })?;
+                let path_str = path.to_str().ok_or_else(|| Error::YeehawError {
+                    message: "File path contains invalid UTF-8".to_string(),
+                })?;
                 Box::new(ImageViewer::new_from_path(ctx, path_str, Color::BLACK)?)
             }
-            MediaType::Text => {
-                Box::new(BatViewer::new(ctx, 300, 100).with_line_numbers().with_input_from_file(&path)?)
-            }
+            MediaType::Text => Box::new(
+                BatViewer::new(ctx, 300, 100)
+                    .with_line_numbers()
+                    .with_input_from_file(&path)?,
+            ),
         };
 
-        // Set child to fill the parent pane
+        // Center audio player vertically; fill parent for other types
         let loc_rc = child.get_ref_cell_dyn_location_set();
-        loc_rc.borrow_mut().l = DynLocation::full();
+        let loc = if media_type == MediaType::Audio {
+            DynLocation {
+                start_x: DynVal::new_fixed(0),
+                end_x: DynVal::FULL,
+                start_y: DynVal::HALF.minus_fixed(1),
+                end_y: DynVal::HALF.plus_fixed(1),
+            }
+        } else {
+            DynLocation::full()
+        };
+        loc_rc.borrow_mut().l = loc;
 
         self.pane.add_element(child);
         *self.current_path.borrow_mut() = Some(path);
@@ -100,6 +127,22 @@ impl MultiMediaPreview {
     /// Get the currently loaded file path, if any.
     pub fn current_path(&self) -> Option<PathBuf> {
         self.current_path.borrow().clone()
+    }
+
+    /// Get the autoplay setting.
+    pub fn autoplay(&self) -> bool {
+        *self.autoplay.borrow()
+    }
+
+    /// Set whether audio should automatically play when an audio file is loaded.
+    pub fn set_autoplay(&self, autoplay: bool) {
+        *self.autoplay.borrow_mut() = autoplay;
+    }
+
+    /// Builder: set whether audio should automatically play when an audio file is loaded.
+    pub fn with_autoplay(self, autoplay: bool) -> Self {
+        *self.autoplay.borrow_mut() = autoplay;
+        self
     }
 
     /// Set the position of the element.
