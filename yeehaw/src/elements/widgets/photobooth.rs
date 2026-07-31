@@ -2,9 +2,9 @@ use {
     crate::*,
     image::{DynamicImage, GenericImageView},
     nokhwa::{
+        Buffer, Camera,
         pixel_format::RgbFormat,
         utils::{CameraIndex, RequestedFormat, RequestedFormatType},
-        Buffer, Camera,
     },
 };
 
@@ -75,10 +75,7 @@ impl Photobooth {
     /// * `mirror` - Whether to mirror the image horizontally (default: false)
     /// * `show_crop_controls` - Whether to show crop control buttons (default: false)
     pub fn new(
-        ctx: &Context,
-        save_path: Option<String>,
-        frame_rate_ms: Option<u64>,
-        mirror: Option<bool>,
+        ctx: &Context, save_path: Option<String>, frame_rate_ms: Option<u64>, mirror: Option<bool>,
         show_crop_controls: Option<bool>,
     ) -> Result<Self, Error> {
         let save_path = save_path.unwrap_or_else(|| {
@@ -97,7 +94,7 @@ impl Photobooth {
         // Create camera
         let mut camera = Camera::new(
             CameraIndex::Index(0),
-            RequestedFormat::new::<RgbFormat>(RequestedFormatType::DefaultValue),
+            RequestedFormat::new::<RgbFormat>(RequestedFormatType::AbsoluteHighestResolution),
         )
         .map_err(|e| {
             let msg = format!("Failed to create camera: {}", e);
@@ -105,12 +102,10 @@ impl Photobooth {
         })?;
 
         // Open camera stream
-        camera
-            .open_stream()
-            .map_err(|e| {
-                let msg = format!("Failed to open camera stream: {}", e);
-                Error::new(msg.as_str())
-            })?;
+        camera.open_stream().map_err(|e| {
+            let msg = format!("Failed to open camera stream: {}", e);
+            Error::new(msg.as_str())
+        })?;
 
         // Create initial blank image (will be replaced by first frame)
         let blank = DynamicImage::new_rgb8(1, 1);
@@ -154,7 +149,10 @@ impl Photobooth {
         let bottom_rows = if self.show_crop_controls { 2 } else { 1 };
 
         // Add image viewer — fill full width, height minus bottom rows
-        let iv = self.image_viewer.as_ref().clone()
+        let iv = self
+            .image_viewer
+            .as_ref()
+            .clone()
             .with_dyn_width(DynVal::FULL)
             .with_dyn_height(DynVal::FULL.minus_fixed(bottom_rows))
             .at(DynVal::new_fixed(0), DynVal::new_fixed(0));
@@ -186,7 +184,8 @@ impl Photobooth {
             *stopped.borrow_mut() = true;
             EventResponses::default()
         }));
-        self.pane.add_element(Box::new(snap_btn.at(DynVal::new_fixed(0), row_y.clone())));
+        self.pane
+            .add_element(Box::new(snap_btn.at(DynVal::new_fixed(0), row_y.clone())));
 
         // Discard button
         let stopped = self.stopped.clone();
@@ -200,7 +199,9 @@ impl Photobooth {
             *preview_img.borrow_mut() = None;
             EventResponses::default()
         }));
-        self.pane.add_element(Box::new(discard_btn.at(DynVal::FULL.minus_fixed(15), row_y.clone())));
+        self.pane.add_element(Box::new(
+            discard_btn.at(DynVal::FULL.minus_fixed(15), row_y.clone()),
+        ));
 
         // Mirror checkbox
         let mirror = self.mirror.clone();
@@ -235,7 +236,8 @@ impl Photobooth {
         // Set initial checked state
         *mirror_cb.checked.borrow_mut() = *mirror_clone.borrow();
         mirror_cb.pane.set_content_from_string(mirror_cb.text());
-        self.pane.add_element(Box::new(mirror_cb.at(DynVal::FULL.minus_fixed(30), row_y)));
+        self.pane
+            .add_element(Box::new(mirror_cb.at(DynVal::FULL.minus_fixed(30), row_y)));
     }
 
     fn add_crop_row(&mut self) {
@@ -262,31 +264,60 @@ impl Photobooth {
 
         // Add labels and textboxes
         let x0_label = Label::new(&self.ctx, "x0:");
-        self.pane.add_element(Box::new(x0_label.at(DynVal::new_fixed(0), row_y.clone())));
-        self.pane.add_element(Box::new((*x0_tb.clone()).clone().at(DynVal::new_fixed(3), row_y.clone())));
+        self.pane
+            .add_element(Box::new(x0_label.at(DynVal::new_fixed(0), row_y.clone())));
+        self.pane.add_element(Box::new(
+            (*x0_tb.clone())
+                .clone()
+                .at(DynVal::new_fixed(3), row_y.clone()),
+        ));
 
         let y0_label = Label::new(&self.ctx, "y0:");
-        self.pane.add_element(Box::new(y0_label.at(DynVal::new_fixed(15), row_y.clone())));
-        self.pane.add_element(Box::new((*y0_tb.clone()).clone().at(DynVal::new_fixed(18), row_y.clone())));
+        self.pane
+            .add_element(Box::new(y0_label.at(DynVal::new_fixed(15), row_y.clone())));
+        self.pane.add_element(Box::new(
+            (*y0_tb.clone())
+                .clone()
+                .at(DynVal::new_fixed(18), row_y.clone()),
+        ));
 
         let x1_label = Label::new(&self.ctx, "x1:");
-        self.pane.add_element(Box::new(x1_label.at(DynVal::new_fixed(30), row_y.clone())));
-        self.pane.add_element(Box::new((*x1_tb.clone()).clone().at(DynVal::new_fixed(33), row_y.clone())));
+        self.pane
+            .add_element(Box::new(x1_label.at(DynVal::new_fixed(30), row_y.clone())));
+        self.pane.add_element(Box::new(
+            (*x1_tb.clone())
+                .clone()
+                .at(DynVal::new_fixed(33), row_y.clone()),
+        ));
 
         let y1_label = Label::new(&self.ctx, "y1:");
-        self.pane.add_element(Box::new(y1_label.at(DynVal::new_fixed(45), row_y.clone())));
-        self.pane.add_element(Box::new((*y1_tb.clone()).clone().at(DynVal::new_fixed(48), row_y.clone())));
+        self.pane
+            .add_element(Box::new(y1_label.at(DynVal::new_fixed(45), row_y.clone())));
+        self.pane.add_element(Box::new(
+            (*y1_tb.clone())
+                .clone()
+                .at(DynVal::new_fixed(48), row_y.clone()),
+        ));
 
         // Helper: sync all crop textboxes from their text content into the shared Rc values
-        let sync_crop_values = |x0_tb: &Option<Rc<NumbersTextBox<i32>>>,
-                                y0_tb: &Option<Rc<NumbersTextBox<i32>>>,
-                                x1_tb: &Option<Rc<NumbersTextBox<i32>>>,
-                                y1_tb: &Option<Rc<NumbersTextBox<i32>>>| {
-            if let Some(tb) = x0_tb { tb.update_value_from_tb(); }
-            if let Some(tb) = y0_tb { tb.update_value_from_tb(); }
-            if let Some(tb) = x1_tb { tb.update_value_from_tb(); }
-            if let Some(tb) = y1_tb { tb.update_value_from_tb(); }
-        };
+        let sync_crop_values =
+            |x0_tb: &Option<Rc<NumbersTextBox<i32>>>,
+             y0_tb: &Option<Rc<NumbersTextBox<i32>>>,
+             x1_tb: &Option<Rc<NumbersTextBox<i32>>>,
+             y1_tb: &Option<Rc<NumbersTextBox<i32>>>| {
+                if let Some(tb) = x0_tb {
+                    tb.update_value_from_tb();
+                }
+                if let Some(tb) = y0_tb {
+                    tb.update_value_from_tb();
+                }
+                if let Some(tb) = x1_tb {
+                    tb.update_value_from_tb();
+                }
+                if let Some(tb) = y1_tb {
+                    tb.update_value_from_tb();
+                }
+            };
 
         // Preview button — crop from src_img, display only (do NOT modify src_img or dyn_img)
         let src_img = self.src_img.clone();
@@ -338,7 +369,9 @@ impl Photobooth {
             }
             EventResponses::default()
         }));
-        self.pane.add_element(Box::new(preview_btn.at(DynVal::new_fixed(60), row_y.clone())));
+        self.pane.add_element(Box::new(
+            preview_btn.at(DynVal::new_fixed(60), row_y.clone()),
+        ));
 
         // Crop button — crop from src_img, then make it the new src_img
         let src_img = self.src_img.clone();
@@ -395,15 +428,28 @@ impl Photobooth {
                 *preview_img.borrow_mut() = None;
                 // Reset crop values and max bounds to current image dimensions
                 if (cw, ch) != (0, 0) {
-                    if let Some(tb) = &crop_x0_tb { tb.max_value.borrow_mut().replace(cw as i32); tb.set_value(0); }
-                    if let Some(tb) = &crop_y0_tb { tb.max_value.borrow_mut().replace(ch as i32); tb.set_value(0); }
-                    if let Some(tb) = &crop_x1_tb { tb.max_value.borrow_mut().replace(cw as i32); tb.set_value(cw as i32); }
-                    if let Some(tb) = &crop_y1_tb { tb.max_value.borrow_mut().replace(ch as i32); tb.set_value(ch as i32); }
+                    if let Some(tb) = &crop_x0_tb {
+                        tb.max_value.borrow_mut().replace(cw as i32);
+                        tb.set_value(0);
+                    }
+                    if let Some(tb) = &crop_y0_tb {
+                        tb.max_value.borrow_mut().replace(ch as i32);
+                        tb.set_value(0);
+                    }
+                    if let Some(tb) = &crop_x1_tb {
+                        tb.max_value.borrow_mut().replace(cw as i32);
+                        tb.set_value(cw as i32);
+                    }
+                    if let Some(tb) = &crop_y1_tb {
+                        tb.max_value.borrow_mut().replace(ch as i32);
+                        tb.set_value(ch as i32);
+                    }
                 }
             }
             EventResponses::default()
         }));
-        self.pane.add_element(Box::new(crop_btn.at(DynVal::new_fixed(70), row_y.clone())));
+        self.pane
+            .add_element(Box::new(crop_btn.at(DynVal::new_fixed(70), row_y.clone())));
 
         // Reset button — reset crop coords to full-image bounds and clear preview
         let src_img = self.src_img.clone();
@@ -422,10 +468,22 @@ impl Photobooth {
             let (w, h) = img.dimensions();
             drop(img);
             // Reset crop values to full image bounds
-            if let Some(tb) = &crop_x0_tb { tb.max_value.borrow_mut().replace(w as i32); tb.set_value(0); }
-            if let Some(tb) = &crop_y0_tb { tb.max_value.borrow_mut().replace(h as i32); tb.set_value(0); }
-            if let Some(tb) = &crop_x1_tb { tb.max_value.borrow_mut().replace(w as i32); tb.set_value(w as i32); }
-            if let Some(tb) = &crop_y1_tb { tb.max_value.borrow_mut().replace(h as i32); tb.set_value(h as i32); }
+            if let Some(tb) = &crop_x0_tb {
+                tb.max_value.borrow_mut().replace(w as i32);
+                tb.set_value(0);
+            }
+            if let Some(tb) = &crop_y0_tb {
+                tb.max_value.borrow_mut().replace(h as i32);
+                tb.set_value(0);
+            }
+            if let Some(tb) = &crop_x1_tb {
+                tb.max_value.borrow_mut().replace(w as i32);
+                tb.set_value(w as i32);
+            }
+            if let Some(tb) = &crop_y1_tb {
+                tb.max_value.borrow_mut().replace(h as i32);
+                tb.set_value(h as i32);
+            }
             // Clear preview state and restore src_img as display
             *preview_active.borrow_mut() = false;
             *preview_img.borrow_mut() = None;
@@ -440,7 +498,8 @@ impl Photobooth {
             image_viewer.update_image(final_img);
             EventResponses::default()
         }));
-        self.pane.add_element(Box::new(reset_btn.at(DynVal::new_fixed(76), row_y)));
+        self.pane
+            .add_element(Box::new(reset_btn.at(DynVal::new_fixed(76), row_y)));
     }
 }
 
@@ -492,7 +551,10 @@ impl Element for Photobooth {
             let should_capture = {
                 let last = self.last_capture.borrow();
                 match *last {
-                    Some(instant) => now.duration_since(instant) >= std::time::Duration::from_millis(self.frame_rate_ms),
+                    Some(instant) => {
+                        now.duration_since(instant)
+                            >= std::time::Duration::from_millis(self.frame_rate_ms)
+                    }
                     None => true,
                 }
             };
@@ -507,13 +569,29 @@ impl Element for Photobooth {
                             // Update crop bounds on first frame
                             if *self.first_frame.borrow() {
                                 *self.first_frame.borrow_mut() = false;
-                                if let Some(rc) = &self.crop_x1 { *rc.borrow_mut() = w as i32; }
-                                if let Some(rc) = &self.crop_y1 { *rc.borrow_mut() = h as i32; }
+                                if let Some(rc) = &self.crop_x1 {
+                                    *rc.borrow_mut() = w as i32;
+                                }
+                                if let Some(rc) = &self.crop_y1 {
+                                    *rc.borrow_mut() = h as i32;
+                                }
                                 // Set max bounds and initial values on all crop textboxes
-                                if let Some(tb) = &self.crop_x0_tb { tb.max_value.borrow_mut().replace(w as i32); tb.set_value(w as i32); }
-                                if let Some(tb) = &self.crop_y0_tb { tb.max_value.borrow_mut().replace(h as i32); tb.set_value(h as i32); }
-                                if let Some(tb) = &self.crop_x1_tb { tb.max_value.borrow_mut().replace(w as i32); tb.set_value(w as i32); }
-                                if let Some(tb) = &self.crop_y1_tb { tb.max_value.borrow_mut().replace(h as i32); tb.set_value(h as i32); }
+                                if let Some(tb) = &self.crop_x0_tb {
+                                    tb.max_value.borrow_mut().replace(w as i32);
+                                    tb.set_value(w as i32);
+                                }
+                                if let Some(tb) = &self.crop_y0_tb {
+                                    tb.max_value.borrow_mut().replace(h as i32);
+                                    tb.set_value(h as i32);
+                                }
+                                if let Some(tb) = &self.crop_x1_tb {
+                                    tb.max_value.borrow_mut().replace(w as i32);
+                                    tb.set_value(w as i32);
+                                }
+                                if let Some(tb) = &self.crop_y1_tb {
+                                    tb.max_value.borrow_mut().replace(h as i32);
+                                    tb.set_value(h as i32);
+                                }
                             }
 
                             // Clear any active crop preview when a new frame arrives
