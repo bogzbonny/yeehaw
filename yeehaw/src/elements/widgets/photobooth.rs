@@ -272,7 +272,6 @@ impl Photobooth {
         let crop_y0 = self.crop_y0.clone();
         let crop_x1 = self.crop_x1.clone();
         let crop_y1 = self.crop_y1.clone();
-        let image_dims = self.image_dims.clone();
         let crop_x0_tb = self.crop_x0_tb.clone();
         let crop_y0_tb = self.crop_y0_tb.clone();
         let crop_x1_tb = self.crop_x1_tb.clone();
@@ -292,10 +291,9 @@ impl Photobooth {
                 let _ = std::fs::remove_file(&preview_path);
                 // Update shared image
                 let (cw, ch) = cropped.dimensions();
-                *image_dims.borrow_mut() = (cw, ch);
                 *dyn_img.borrow_mut() = cropped.clone();
                 image_viewer.update_image(cropped);
-                // Reset crop values to full cropped-image bounds; skip if no frame captured
+                // Reset crop values to current image bounds; skip if no frame captured
                 if (cw, ch) != (0, 0) {
                     crop_x0_tb.borrow().set_value(0);
                     crop_y0_tb.borrow().set_value(0);
@@ -365,17 +363,8 @@ impl Element for Photobooth {
                                 img
                             };
 
-                            let old_dims = self.dyn_img.borrow().dimensions();
-                            let dims_changed = old_dims != final_img.dimensions();
                             *self.dyn_img.borrow_mut() = final_img.clone();
-
-                            // Only recreate the rendering protocol when dimensions change;
-                            // otherwise a cheap force_update suffices to refresh the frame.
-                            if dims_changed {
-                                self.image_viewer.update_image(final_img);
-                            } else {
-                                self.image_viewer.force_update();
-                            }
+                            self.image_viewer.update_image(final_img);
                             captured = true;
                         }
                     }
