@@ -403,15 +403,52 @@ impl Photobooth {
             }
             EventResponses::default()
         }));
-        self.pane.add_element(Box::new(crop_btn.at(DynVal::new_fixed(70), row_y)));
+        self.pane.add_element(Box::new(crop_btn.at(DynVal::new_fixed(70), row_y.clone())));
+
+        // Reset button — reset crop coords to full-image bounds and clear preview
+        let src_img = self.src_img.clone();
+        let dyn_img = self.dyn_img.clone();
+        let image_viewer = self.image_viewer.clone();
+        let mirror = self.mirror.clone();
+        let preview_active = self.preview_active.clone();
+        let preview_img = self.preview_img.clone();
+        let crop_x0_tb = self.crop_x0_tb.clone();
+        let crop_y0_tb = self.crop_y0_tb.clone();
+        let crop_x1_tb = self.crop_x1_tb.clone();
+        let crop_y1_tb = self.crop_y1_tb.clone();
+        let reset_btn = Button::new(&self.ctx, "reset");
+        reset_btn.set_fn(Box::new(move |_, _| {
+            let img = src_img.borrow();
+            let (w, h) = img.dimensions();
+            drop(img);
+            // Reset crop values to full image bounds
+            if let Some(tb) = &crop_x0_tb { tb.max_value.borrow_mut().replace(w as i32); tb.set_value(0); }
+            if let Some(tb) = &crop_y0_tb { tb.max_value.borrow_mut().replace(h as i32); tb.set_value(0); }
+            if let Some(tb) = &crop_x1_tb { tb.max_value.borrow_mut().replace(w as i32); tb.set_value(w as i32); }
+            if let Some(tb) = &crop_y1_tb { tb.max_value.borrow_mut().replace(h as i32); tb.set_value(h as i32); }
+            // Clear preview state and restore src_img as display
+            *preview_active.borrow_mut() = false;
+            *preview_img.borrow_mut() = None;
+            let src = src_img.borrow().clone();
+            let rgb = src.into_rgb8();
+            let final_img = if *mirror.borrow() {
+                DynamicImage::ImageRgb8(image::imageops::flip_horizontal(&rgb))
+            } else {
+                DynamicImage::ImageRgb8(rgb)
+            };
+            *dyn_img.borrow_mut() = final_img.clone();
+            image_viewer.update_image(final_img);
+            EventResponses::default()
+        }));
+        self.pane.add_element(Box::new(reset_btn.at(DynVal::new_fixed(76), row_y)));
     }
 }
 
 /// Build the preview file path by stripping the extension and appending _crop_preview.jpg.
 fn make_preview_path(save_path: &str) -> String {
     let stem = std::path::Path::new(save_path)
-        .stem()
-        .unwrap_or("photobooth")
+        .file_stem()
+        .unwrap_or_else(|| std::ffi::OsStr::new("photobooth"))
         .to_string_lossy()
         .to_string();
     let parent = std::path::Path::new(save_path)
