@@ -155,36 +155,24 @@ impl Photobooth {
         // Snap button
         let dyn_img = self.dyn_img.clone();
         let save_path = self.save_path.clone();
-        let mirror = self.mirror.clone();
-        let image_viewer = self.image_viewer.clone();
         let stopped = self.stopped.clone();
         let snap_btn = Button::new(&self.ctx, "snap");
         snap_btn.set_fn(Box::new(move |_, _| {
-            let img = dyn_img.borrow().clone().into_rgb8();
-            let final_img = if *mirror.borrow() {
-                DynamicImage::ImageRgb8(image::imageops::flip_horizontal(&img))
-            } else {
-                DynamicImage::ImageRgb8(img)
-            };
-            // Save the image
-            if let Err(e) = final_img.save(save_path.borrow().as_str()) {
+            // dyn_img already has mirror applied from drawing(), save as-is
+            let img = dyn_img.borrow().clone();
+            if let Err(e) = img.save(save_path.borrow().as_str()) {
                 log_err!("Failed to save image: {}", e);
             }
-            // Update the shared image
-            *dyn_img.borrow_mut() = final_img;
-            image_viewer.force_update();
             *stopped.borrow_mut() = true;
             EventResponses::default()
         }));
         self.pane.add_element(Box::new(snap_btn.at(DynVal::new_fixed(0), row_y.clone())));
 
         // Discard button
-        let image_viewer = self.image_viewer.clone();
         let stopped = self.stopped.clone();
         let discard_btn = Button::new(&self.ctx, "discard");
         discard_btn.set_fn(Box::new(move |_, _| {
             *stopped.borrow_mut() = false;
-            image_viewer.force_update();
             EventResponses::default()
         }));
         self.pane.add_element(Box::new(discard_btn.at(DynVal::FULL.minus_fixed(15), row_y.clone())));
@@ -303,14 +291,17 @@ impl Photobooth {
                 let preview_path = format!("{}_crop_preview.jpg", save_path.borrow());
                 let _ = std::fs::remove_file(&preview_path);
                 // Update shared image
+                let (cw, ch) = cropped.dimensions();
+                *image_dims.borrow_mut() = (cw, ch);
                 *dyn_img.borrow_mut() = cropped.clone();
                 image_viewer.update_image(cropped);
-                // Reset crop values using set_value() to update textbox display
-                let (w, h) = *image_dims.borrow();
-                crop_x0_tb.borrow().set_value(0);
-                crop_y0_tb.borrow().set_value(0);
-                crop_x1_tb.borrow().set_value(w as i32);
-                crop_y1_tb.borrow().set_value(h as i32);
+                // Reset crop values to full cropped-image bounds; skip if no frame captured
+                if (cw, ch) != (0, 0) {
+                    crop_x0_tb.borrow().set_value(0);
+                    crop_y0_tb.borrow().set_value(0);
+                    crop_x1_tb.borrow().set_value(cw as i32);
+                    crop_y1_tb.borrow().set_value(ch as i32);
+                }
             }
             EventResponses::default()
         }));
@@ -374,8 +365,17 @@ impl Element for Photobooth {
                                 img
                             };
 
+                            let old_dims = self.dyn_img.borrow().dimensions();
+                            let dims_changed = old_dims != final_img.dimensions();
                             *self.dyn_img.borrow_mut() = final_img.clone();
-                            self.image_viewer.update_image(final_img);
+
+                            // Only recreate the rendering protocol when dimensions change;
+                            // otherwise a cheap force_update suffices to refresh the frame.
+                            if dims_changed {
+                                self.image_viewer.update_image(final_img);
+                            } else {
+                                self.image_viewer.force_update();
+                            }
                             captured = true;
                         }
                     }
