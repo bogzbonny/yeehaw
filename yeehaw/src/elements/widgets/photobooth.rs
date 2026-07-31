@@ -19,22 +19,25 @@ pub struct Photobooth {
     mirror: Rc<RefCell<bool>>,
     show_crop_controls: bool,
     image_viewer: Rc<ImageViewer>,
+    /// Uncropped source image (what the camera captured or what was cropped).
+    src_img: Rc<RefCell<DynamicImage>>,
+    /// Currently displayed image (src_img with mirror applied, or preview crop).
     dyn_img: Rc<RefCell<DynamicImage>>,
     stopped: Rc<RefCell<bool>>,
     /// Camera stored for frame capture in drawing().
     camera: Rc<RefCell<Option<Camera>>>,
     /// Last capture timestamp for frame rate control.
     last_capture: Rc<RefCell<Option<std::time::Instant>>>,
-    // Crop control state - RefCell<Rc<RefCell<i32>>> allows swapping Rc to share textbox values
-    crop_x0: RefCell<Rc<RefCell<i32>>>,
-    crop_y0: RefCell<Rc<RefCell<i32>>>,
-    crop_x1: RefCell<Rc<RefCell<i32>>>,
-    crop_y1: RefCell<Rc<RefCell<i32>>>,
+    // Crop control state — Option because textboxes only exist when crop controls enabled.
+    crop_x0: Option<Rc<RefCell<i32>>>,
+    crop_y0: Option<Rc<RefCell<i32>>>,
+    crop_x1: Option<Rc<RefCell<i32>>>,
+    crop_y1: Option<Rc<RefCell<i32>>>,
     /// Textbox references for crop value reset display update.
-    crop_x0_tb: RefCell<Rc<NumbersTextBox<i32>>>,
-    crop_y0_tb: RefCell<Rc<NumbersTextBox<i32>>>,
-    crop_x1_tb: RefCell<Rc<NumbersTextBox<i32>>>,
-    crop_y1_tb: RefCell<Rc<NumbersTextBox<i32>>>,
+    crop_x0_tb: Option<Rc<NumbersTextBox<i32>>>,
+    crop_y0_tb: Option<Rc<NumbersTextBox<i32>>>,
+    crop_x1_tb: Option<Rc<NumbersTextBox<i32>>>,
+    crop_y1_tb: Option<Rc<NumbersTextBox<i32>>>,
     image_dims: Rc<RefCell<(u32, u32)>>,
     /// Stored context for button/label creation.
     ctx: Rc<Context>,
@@ -100,25 +103,26 @@ impl Photobooth {
         // Create image viewer
         let image_viewer = ImageViewer::new(ctx, blank.clone(), Color::TRANSPARENT)?;
 
-        let out = Self {
+        let mut out = Self {
             pane: ParentPaneOfSelectable::new(ctx),
             save_path: Rc::new(RefCell::new(save_path)),
             frame_rate_ms,
             mirror: Rc::new(RefCell::new(mirror)),
             show_crop_controls,
             image_viewer: Rc::new(image_viewer),
+            src_img: Rc::new(RefCell::new(blank.clone())),
             dyn_img: Rc::new(RefCell::new(blank)),
             stopped: Rc::new(RefCell::new(false)),
             camera: Rc::new(RefCell::new(Some(camera))),
             last_capture: Rc::new(RefCell::new(None)),
-            crop_x0: RefCell::new(Rc::new(RefCell::new(0))),
-            crop_y0: RefCell::new(Rc::new(RefCell::new(0))),
-            crop_x1: RefCell::new(Rc::new(RefCell::new(0))),
-            crop_y1: RefCell::new(Rc::new(RefCell::new(0))),
-            crop_x0_tb: RefCell::new(Rc::new(NumbersTextBox::new(ctx, 0_i32))),
-            crop_y0_tb: RefCell::new(Rc::new(NumbersTextBox::new(ctx, 0_i32))),
-            crop_x1_tb: RefCell::new(Rc::new(NumbersTextBox::new(ctx, 0_i32))),
-            crop_y1_tb: RefCell::new(Rc::new(NumbersTextBox::new(ctx, 0_i32))),
+            crop_x0: None,
+            crop_y0: None,
+            crop_x1: None,
+            crop_y1: None,
+            crop_x0_tb: None,
+            crop_y0_tb: None,
+            crop_x1_tb: None,
+            crop_y1_tb: None,
             image_dims: Rc::new(RefCell::new((0, 0))),
             ctx: Rc::new(ctx.clone()),
         };
@@ -129,7 +133,7 @@ impl Photobooth {
         Ok(out)
     }
 
-    fn build_ui(&self) {
+    fn build_ui(&mut self) {
         let bottom_rows = if self.show_crop_controls { 2 } else { 1 };
 
         // Add image viewer — fill full width, height minus bottom rows
@@ -140,8 +144,8 @@ impl Photobooth {
             .at(DynVal::new_fixed(0), DynVal::new_fixed(0));
         self.pane.add_element(Box::new(iv));
 
-        // Add buttons row
-        self.add_buttons_row();
+        // Add buttons row (at bottom, accounting for crop row if present)
+        self.add_buttons_row(bottom_rows as usize);
 
         // Add crop controls if enabled
         if self.show_crop_controls {
@@ -149,7 +153,8 @@ impl Photobooth {
         }
     }
 
-    fn add_buttons_row(&self) {
+    fn add_buttons_row(&self, _bottom_rows: usize) {
+        // Buttons always go on the bottommost row
         let row_y = DynVal::FULL.minus_fixed(1);
 
         // Snap button
@@ -158,7 +163,6 @@ impl Photobooth {
         let stopped = self.stopped.clone();
         let snap_btn = Button::new(&self.ctx, "snap");
         snap_btn.set_fn(Box::new(move |_, _| {
-            // dyn_img already has mirror applied from drawing(), save as-is
             let img = dyn_img.borrow().clone();
             if let Err(e) = img.save(save_path.borrow().as_str()) {
                 log_err!("Failed to save image: {}", e);
@@ -180,12 +184,13 @@ impl Photobooth {
         // Mirror checkbox
         let mirror = self.mirror.clone();
         let mirror_clone = mirror.clone();
+        let src_img = self.src_img.clone();
         let dyn_img = self.dyn_img.clone();
         let image_viewer = self.image_viewer.clone();
         let mirror_cb = Checkbox::new(&self.ctx).with_fn(Box::new(move |_, checked| {
             *mirror.borrow_mut() = checked;
-            // Re-apply mirror to current image
-            let img = dyn_img.borrow().clone().into_rgb8();
+            // Always re-derive display from src_img with current mirror setting
+            let img = src_img.borrow().clone().into_rgb8();
             let final_img = if checked {
                 DynamicImage::ImageRgb8(image::imageops::flip_horizontal(&img))
             } else {
@@ -201,7 +206,8 @@ impl Photobooth {
         self.pane.add_element(Box::new(mirror_cb.at(DynVal::FULL.minus_fixed(30), row_y)));
     }
 
-    fn add_crop_row(&self) {
+    fn add_crop_row(&mut self) {
+        // Crop row sits one row above the button row
         let row_y = DynVal::FULL.minus_fixed(2);
 
         // Create textboxes with initial values
@@ -211,16 +217,16 @@ impl Photobooth {
         let y1_tb = Rc::new(NumbersTextBox::new(&self.ctx, 0_i32));
 
         // Share textbox value Rc's with struct fields
-        *self.crop_x0.borrow_mut() = x0_tb.value.clone();
-        *self.crop_y0.borrow_mut() = y0_tb.value.clone();
-        *self.crop_x1.borrow_mut() = x1_tb.value.clone();
-        *self.crop_y1.borrow_mut() = y1_tb.value.clone();
+        self.crop_x0 = Some(x0_tb.value.clone());
+        self.crop_y0 = Some(y0_tb.value.clone());
+        self.crop_x1 = Some(x1_tb.value.clone());
+        self.crop_y1 = Some(y1_tb.value.clone());
 
         // Store textbox references for crop button display update
-        *self.crop_x0_tb.borrow_mut() = x0_tb.clone();
-        *self.crop_y0_tb.borrow_mut() = y0_tb.clone();
-        *self.crop_x1_tb.borrow_mut() = x1_tb.clone();
-        *self.crop_y1_tb.borrow_mut() = y1_tb.clone();
+        self.crop_x0_tb = Some(x0_tb.clone());
+        self.crop_y0_tb = Some(y0_tb.clone());
+        self.crop_x1_tb = Some(x1_tb.clone());
+        self.crop_y1_tb = Some(y1_tb.clone());
 
         // Add labels and textboxes
         let x0_label = Label::new(&self.ctx, "x0:");
@@ -239,8 +245,8 @@ impl Photobooth {
         self.pane.add_element(Box::new(y1_label.at(DynVal::new_fixed(45), row_y.clone())));
         self.pane.add_element(Box::new((*y1_tb.clone()).clone().at(DynVal::new_fixed(48), row_y.clone())));
 
-        // Preview button
-        let dyn_img = self.dyn_img.clone();
+        // Preview button — crop from src_img, display only (do NOT modify src_img or dyn_img)
+        let src_img = self.src_img.clone();
         let save_path = self.save_path.clone();
         let image_viewer = self.image_viewer.clone();
         let crop_x0 = self.crop_x0.clone();
@@ -249,22 +255,29 @@ impl Photobooth {
         let crop_y1 = self.crop_y1.clone();
         let preview_btn = Button::new(&self.ctx, "preview");
         preview_btn.set_fn(Box::new(move |_, _| {
-            let img = dyn_img.borrow().clone();
-            let (x0, y0) = (*crop_x0.borrow().borrow(), *crop_y0.borrow().borrow());
-            let (x1, y1) = (*crop_x1.borrow().borrow(), *crop_y1.borrow().borrow());
+            let img = src_img.borrow().clone();
+            let (x0, y0) = match (&crop_x0, &crop_y0) {
+                (Some(a), Some(b)) => (*a.borrow(), *b.borrow()),
+                _ => return EventResponses::default(),
+            };
+            let (x1, y1) = match (&crop_x1, &crop_y1) {
+                (Some(a), Some(b)) => (*a.borrow(), *b.borrow()),
+                _ => return EventResponses::default(),
+            };
             if let Some(cropped) = crop_image(&img, x0, y0, x1, y1) {
                 let preview_path = format!("{}_crop_preview.jpg", save_path.borrow());
                 if let Err(e) = cropped.save(&preview_path) {
                     log_err!("Failed to save crop preview: {}", e);
                 }
-                *dyn_img.borrow_mut() = cropped.clone();
+                // Only update the image viewer — do NOT modify src_img or dyn_img
                 image_viewer.update_image(cropped);
             }
             EventResponses::default()
         }));
         self.pane.add_element(Box::new(preview_btn.at(DynVal::new_fixed(60), row_y.clone())));
 
-        // Crop button
+        // Crop button — crop from src_img, then make it the new src_img
+        let src_img = self.src_img.clone();
         let dyn_img = self.dyn_img.clone();
         let save_path = self.save_path.clone();
         let image_viewer = self.image_viewer.clone();
@@ -276,11 +289,18 @@ impl Photobooth {
         let crop_y0_tb = self.crop_y0_tb.clone();
         let crop_x1_tb = self.crop_x1_tb.clone();
         let crop_y1_tb = self.crop_y1_tb.clone();
+        let mirror = self.mirror.clone();
         let crop_btn = Button::new(&self.ctx, "crop");
         crop_btn.set_fn(Box::new(move |_, _| {
-            let img = dyn_img.borrow().clone();
-            let (x0, y0) = (*crop_x0.borrow().borrow(), *crop_y0.borrow().borrow());
-            let (x1, y1) = (*crop_x1.borrow().borrow(), *crop_y1.borrow().borrow());
+            let img = src_img.borrow().clone();
+            let (x0, y0) = match (&crop_x0, &crop_y0) {
+                (Some(a), Some(b)) => (*a.borrow(), *b.borrow()),
+                _ => return EventResponses::default(),
+            };
+            let (x1, y1) = match (&crop_x1, &crop_y1) {
+                (Some(a), Some(b)) => (*a.borrow(), *b.borrow()),
+                _ => return EventResponses::default(),
+            };
             if let Some(cropped) = crop_image(&img, x0, y0, x1, y1) {
                 // Save cropped image to original path
                 if let Err(e) = cropped.save(save_path.borrow().as_str()) {
@@ -289,16 +309,24 @@ impl Photobooth {
                 // Delete preview file
                 let preview_path = format!("{}_crop_preview.jpg", save_path.borrow());
                 let _ = std::fs::remove_file(&preview_path);
-                // Update shared image
+                // Update src_img to the cropped image
                 let (cw, ch) = cropped.dimensions();
-                *dyn_img.borrow_mut() = cropped.clone();
-                image_viewer.update_image(cropped);
+                *src_img.borrow_mut() = cropped.clone();
+                // Re-derive display image from new src_img with current mirror setting
+                let rgb = cropped.into_rgb8();
+                let final_img = if *mirror.borrow() {
+                    DynamicImage::ImageRgb8(image::imageops::flip_horizontal(&rgb))
+                } else {
+                    DynamicImage::ImageRgb8(rgb)
+                };
+                *dyn_img.borrow_mut() = final_img.clone();
+                image_viewer.update_image(final_img);
                 // Reset crop values to current image bounds; skip if no frame captured
                 if (cw, ch) != (0, 0) {
-                    crop_x0_tb.borrow().set_value(0);
-                    crop_y0_tb.borrow().set_value(0);
-                    crop_x1_tb.borrow().set_value(cw as i32);
-                    crop_y1_tb.borrow().set_value(ch as i32);
+                    if let Some(tb) = &crop_x0_tb { tb.set_value(0); }
+                    if let Some(tb) = &crop_y0_tb { tb.set_value(0); }
+                    if let Some(tb) = &crop_x1_tb { tb.set_value(cw as i32); }
+                    if let Some(tb) = &crop_y1_tb { tb.set_value(ch as i32); }
                 }
             }
             EventResponses::default()
@@ -352,10 +380,17 @@ impl Element for Photobooth {
                             // Update image dimensions on first frame
                             if *self.image_dims.borrow() == (0, 0) {
                                 *self.image_dims.borrow_mut() = (w, h);
-                                *self.crop_x1.borrow().borrow_mut() = w as i32;
-                                *self.crop_y1.borrow().borrow_mut() = h as i32;
+                                // Update crop Rc values and textbox displays
+                                if let Some(rc) = &self.crop_x1 { *rc.borrow_mut() = w as i32; }
+                                if let Some(rc) = &self.crop_y1 { *rc.borrow_mut() = h as i32; }
+                                if let Some(tb) = &self.crop_x1_tb { tb.set_value(w as i32); }
+                                if let Some(tb) = &self.crop_y1_tb { tb.set_value(h as i32); }
                             }
 
+                            // Store uncropped source image
+                            *self.src_img.borrow_mut() = img.clone();
+
+                            // Derive display image from src_img with current mirror setting
                             let final_img = if *self.mirror.borrow() {
                                 let rgb = img.to_rgb8();
                                 DynamicImage::ImageRgb8(image::imageops::flip_horizontal(&rgb))
