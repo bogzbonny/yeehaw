@@ -105,6 +105,23 @@ impl Screen {
         self.dirty
     }
 
+    /// Returns the visible rows which have changed since the last call to
+    /// this function, and clears the change tracking.
+    ///
+    /// This is the fine-grained version of the dirty flag: the dirty flag
+    /// tells you that something has changed, this tells you which rows of
+    /// the visible screen have changed. Note that cursor movement and other
+    /// changes which don't alter the screen contents (for instance, `SGR`
+    /// sequences) do not cause rows to be reported here.
+    ///
+    /// Returns `None` if the entire visible screen has changed, otherwise
+    /// returns `Some(rows)` with the sorted indices of the changed visible
+    /// rows (empty if no rows have changed).
+    #[must_use]
+    pub fn take_changed_rows(&mut self) -> Option<Vec<u16>> {
+        self.grid_mut().take_changed_rows()
+    }
+
     /// Resizes the terminal.
     pub fn set_size(&mut self, rows: u16, cols: u16) {
         self.dirty = true;
@@ -712,10 +729,14 @@ impl Screen {
         self.grid_mut().set_scrollback(0);
         self.set_mode(MODE_ALTERNATE_SCREEN);
         self.alternate_grid.allocate_rows();
+        // the visible screen has switched to the alternate grid
+        self.alternate_grid.mark_dirty_all();
     }
 
     fn exit_alternate_grid(&mut self) {
         self.clear_mode(MODE_ALTERNATE_SCREEN);
+        // the visible screen has switched back to the main grid
+        self.grid.mark_dirty_all();
     }
 
     fn save_cursor(&mut self) {
@@ -813,6 +834,7 @@ impl Screen {
         }
         self.grid_mut().col_wrap(width, wrap);
         let pos = self.grid().pos();
+        self.grid_mut().mark_dirty_row(pos.row);
 
         if width == 0 {
             if pos.col > 0 {
@@ -883,6 +905,7 @@ impl Screen {
                             .unwrap();
                     }
                     prev_cell.append(c);
+                    self.grid_mut().mark_dirty_row(pos.row - 1);
                 }
             }
         } else {

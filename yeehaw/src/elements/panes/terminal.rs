@@ -308,8 +308,6 @@ impl Element for TerminalPane {
             self.resize_pty(dr);
         }
 
-        let mut out = Vec::with_capacity(dr.size.width as usize * dr.size.height as usize);
-
         let Ok(mut sc) = self.parser.write() else {
             log_err!("TerminalPane: failed to read parser");
             return Vec::new();
@@ -321,66 +319,12 @@ impl Element for TerminalPane {
         }
 
         let mut dirty = force_update;
-        let mut prev_draw_i = 0;
-        let grid = screen.grid();
-        let mut prev_draw = self.prev_draw.borrow_mut();
-        for (y, row) in grid.visible_rows().enumerate() {
-            if y > dr.size.height as usize {
-                break;
-            }
-            for (x, screen_cell) in row.cells().enumerate() {
-                if x > dr.size.width as usize {
-                    break;
-                }
-
-                let fg = screen_cell.fgcolor();
-                let bg = screen_cell.bgcolor();
-                let ul = screen_cell.ulcolor();
-                let ch = if screen_cell.has_contents() {
-                    ChPlus::Str(CompactString::new(screen_cell.contents()))
-                } else {
-                    ChPlus::Char(' ')
-                };
-                let fg: Color = fg.into();
-                let bg: Color = bg.into();
-                let ul: Color = ul.into();
-                let mut sty = Style::default()
-                    .with_fg(fg)
-                    .with_bg(bg)
-                    .with_underline_color(ul);
-                if screen_cell.bold() {
-                    sty.attr.bold = true;
-                }
-                if screen_cell.italic() {
-                    sty.attr.italic = true;
-                }
-                if screen_cell.underline() {
-                    sty.attr.underlined = true;
-                }
-                if screen_cell.inverse() {
-                    sty.attr.reverse = true;
-                }
-                let ch_out = DrawChPos {
-                    ch: DrawCh::new(ch, sty),
-                    x: x as u16,
-                    y: y as u16,
-                };
-                if let Some(prev_ch) = prev_draw.get_mut(prev_draw_i) {
-                    if prev_ch != &ch_out {
-                        *prev_ch = ch_out.clone();
-                        dirty = true;
-                    }
-                } else {
-                    if prev_draw_i == out.len() {
-                        // exact len so can push to final element
-                        prev_draw.push(ch_out.clone());
-                    }
-                    dirty = true;
-                }
-                prev_draw_i += 1;
-                out.push(ch_out);
-            }
-        }
+        let mut out = {
+            let mut prev_draw = self.prev_draw.borrow_mut();
+            let (out, changed) = active_full_draw(screen, &dr.size, &mut prev_draw);
+            dirty |= changed;
+            out
+        };
 
         let hide_cursor = screen.hide_cursor();
         if !*self.disable_cursor.borrow() && !hide_cursor {
@@ -403,6 +347,82 @@ impl Element for TerminalPane {
             Vec::new()
         }
     }
+}
+
+/// Converts a terminal cell into a DrawCh
+pub(crate) fn cell_to_drawch(cell: &vt100_yh::Cell) -> DrawCh {
+    let ch = if cell.has_contents() {
+        ChPlus::Str(CompactString::new(cell.contents()))
+    } else {
+        ChPlus::Char(' ')
+    };
+    let fg: Color = cell.fgcolor().into();
+    let bg: Color = cell.bgcolor().into();
+    let ul: Color = cell.ulcolor().into();
+    let mut sty = Style::default()
+        .with_fg(fg)
+        .with_bg(bg)
+        .with_underline_color(ul);
+    if cell.bold() {
+        sty.attr.bold = true;
+    }
+    if cell.italic() {
+        sty.attr.italic = true;
+    }
+    if cell.underline() {
+        sty.attr.underlined = true;
+    }
+    if cell.inverse() {
+        sty.attr.reverse = true;
+    }
+    DrawCh::new(ch, sty)
+}
+
+/// Actively draws the entire visible grid: converts every cell into a
+/// DrawChPos and compares each cell against the previous draw to detect
+/// changes.
+///
+/// Returns the full draw output along with whether any cell has changed
+/// since the previous draw.
+pub(crate) fn active_full_draw(
+    screen: &vt100_yh::Screen,
+    size: &Size,
+    prev_draw: &mut Vec<DrawChPos>,
+) -> (Vec<DrawChPos>, bool) {
+    let mut out = Vec::with_capacity(size.width as usize * size.height as usize);
+    let mut changed = false;
+    let mut prev_draw_i = 0;
+    let grid = screen.grid();
+    for (y, row) in grid.visible_rows().enumerate() {
+        if y > size.height as usize {
+            break;
+        }
+        for (x, screen_cell) in row.cells().enumerate() {
+            if x > size.width as usize {
+                break;
+            }
+            let ch_out = DrawChPos {
+                ch: cell_to_drawch(screen_cell),
+                x: x as u16,
+                y: y as u16,
+            };
+            if let Some(prev_ch) = prev_draw.get_mut(prev_draw_i) {
+                if prev_ch != &ch_out {
+                    *prev_ch = ch_out.clone();
+                    changed = true;
+                }
+            } else {
+                if prev_draw_i == out.len() {
+                    // exact len so can push to final element
+                    prev_draw.push(ch_out.clone());
+                }
+                changed = true;
+            }
+            prev_draw_i += 1;
+            out.push(ch_out);
+        }
+    }
+    (out, changed)
 }
 
 // this function takes a MouseEvent and returns the bytes that represent the mouse input.

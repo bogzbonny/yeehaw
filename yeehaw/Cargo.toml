@@ -101,6 +101,11 @@ path = "examples/terminal.rs"
 required-features = ["terminal"]
 
 [[example]]
+name = "sl"
+path = "examples/sl.rs"
+required-features = ["terminal"]
+
+[[example]]
 name = "editor"
 path = "examples/editor.rs"
 required-features = ["terminal"]

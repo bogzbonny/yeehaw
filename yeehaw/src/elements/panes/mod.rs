@@ -12,6 +12,8 @@ pub mod file_viewer;
 
 #[cfg(feature = "terminal")]
 pub mod terminal;
+#[cfg(feature = "terminal")]
+pub mod terminal2;
 #[cfg(feature = "terminal_editor")]
 pub mod terminal_editor;
 
@@ -24,6 +26,8 @@ pub use {
 
 #[cfg(feature = "terminal")]
 pub use terminal::TerminalPane;
+#[cfg(feature = "terminal")]
+pub use terminal2::TerminalPane2;
 
 #[cfg(feature = "terminal_editor")]
 pub use terminal_editor::TermEditorPane;

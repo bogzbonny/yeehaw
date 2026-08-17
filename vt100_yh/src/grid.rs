@@ -13,6 +13,13 @@ pub struct Grid {
     scrollback: std::collections::VecDeque<crate::row::Row>,
     scrollback_len: usize,
     scrollback_offset: usize,
+
+    /// visible rows which have changed since the last call to
+    /// `take_changed_rows`
+    dirty_rows: std::collections::BTreeSet<u16>,
+    /// the entire visible screen has changed since the last call to
+    /// `take_changed_rows`
+    dirty_all: bool,
 }
 
 impl Grid {
@@ -29,6 +36,46 @@ impl Grid {
             scrollback: std::collections::VecDeque::new(),
             scrollback_len,
             scrollback_offset: 0,
+
+            dirty_rows: std::collections::BTreeSet::new(),
+            // a new grid is considered to have a fully changed screen, so
+            // the first `take_changed_rows` will return `None`
+            dirty_all: true,
+        }
+    }
+
+    /// Marks the visible row at the given drawing row index as changed.
+    ///
+    /// While the visible window is scrolled into the scrollback, changes to
+    /// the drawing area are not visible, so they are not tracked.
+    pub fn mark_dirty_row(&mut self, row: u16) {
+        if self.scrollback_offset == 0 {
+            self.dirty_rows.insert(row);
+        }
+    }
+
+    /// Marks the entire visible screen as changed.
+    pub fn mark_dirty_all(&mut self) {
+        self.dirty_all = true;
+    }
+
+    /// Returns the visible rows which have changed since the last call to
+    /// this function, and clears the change tracking.
+    ///
+    /// Returns `None` if the entire visible screen has changed, otherwise
+    /// returns `Some(rows)` with the sorted indices of the changed visible
+    /// rows (empty if no rows have changed).
+    #[must_use]
+    pub fn take_changed_rows(&mut self) -> Option<Vec<u16>> {
+        let all = self.dirty_all;
+        self.dirty_all = false;
+        let rows: Vec<u16> = std::mem::take(&mut self.dirty_rows)
+            .into_iter()
+            .collect();
+        if all {
+            None
+        } else {
+            Some(rows)
         }
     }
 
@@ -48,6 +95,7 @@ impl Grid {
     }
 
     pub fn clear(&mut self) {
+        self.mark_dirty_all();
         self.pos = Pos::default();
         self.saved_pos = Pos::default();
         for row in self.drawing_rows_mut() {
@@ -64,6 +112,7 @@ impl Grid {
     }
 
     pub fn set_size(&mut self, size: Size) {
+        self.mark_dirty_all();
         if size.cols != self.size.cols {
             for row in &mut self.rows {
                 row.wrap(false);
@@ -190,6 +239,7 @@ impl Grid {
 
     pub fn set_scrollback(&mut self, rows: usize) {
         self.scrollback_offset = rows.min(self.scrollback.len());
+        self.mark_dirty_all();
     }
 
     pub fn write_contents(&self, contents: &mut String) {
@@ -446,12 +496,14 @@ impl Grid {
     }
 
     pub fn erase_all(&mut self, attrs: crate::attrs::Attrs) {
+        self.mark_dirty_all();
         for row in self.drawing_rows_mut() {
             row.clear(attrs);
         }
     }
 
     pub fn erase_all_forward(&mut self, attrs: crate::attrs::Attrs) {
+        self.mark_dirty_all();
         let pos = self.pos;
         for row in self.drawing_rows_mut().skip(usize::from(pos.row) + 1) {
             row.clear(attrs);
@@ -461,6 +513,7 @@ impl Grid {
     }
 
     pub fn erase_all_backward(&mut self, attrs: crate::attrs::Attrs) {
+        self.mark_dirty_all();
         let pos = self.pos;
         for row in self.drawing_rows_mut().take(usize::from(pos.row)) {
             row.clear(attrs);
@@ -470,10 +523,12 @@ impl Grid {
     }
 
     pub fn erase_row(&mut self, attrs: crate::attrs::Attrs) {
+        self.mark_dirty_row(self.pos.row);
         self.current_row_mut().clear(attrs);
     }
 
     pub fn erase_row_forward(&mut self, attrs: crate::attrs::Attrs) {
+        self.mark_dirty_row(self.pos.row);
         let size = self.size;
         let pos = self.pos;
         let row = self.current_row_mut();
@@ -483,6 +538,7 @@ impl Grid {
     }
 
     pub fn erase_row_backward(&mut self, attrs: crate::attrs::Attrs) {
+        self.mark_dirty_row(self.pos.row);
         let size = self.size;
         let pos = self.pos;
         let row = self.current_row_mut();
@@ -492,6 +548,9 @@ impl Grid {
     }
 
     pub fn insert_cells(&mut self, count: u16) {
+        if count > 0 {
+            self.mark_dirty_row(self.pos.row);
+        }
         let size = self.size;
         let pos = self.pos;
         let wide = pos.col < size.cols
@@ -516,6 +575,9 @@ impl Grid {
     }
 
     pub fn delete_cells(&mut self, count: u16) {
+        if count > 0 {
+            self.mark_dirty_row(self.pos.row);
+        }
         let size = self.size;
         let pos = self.pos;
         let row = self.current_row_mut();
@@ -526,6 +588,9 @@ impl Grid {
     }
 
     pub fn erase_cells(&mut self, count: u16, attrs: crate::attrs::Attrs) {
+        if count > 0 {
+            self.mark_dirty_row(self.pos.row);
+        }
         let size = self.size;
         let pos = self.pos;
         let row = self.current_row_mut();
@@ -535,6 +600,9 @@ impl Grid {
     }
 
     pub fn insert_lines(&mut self, count: u16) {
+        if count > 0 {
+            self.mark_dirty_all();
+        }
         for _ in 0..count {
             self.rows.remove(usize::from(self.scroll_bottom));
             self.rows.insert(usize::from(self.pos.row), self.new_row());
@@ -544,6 +612,9 @@ impl Grid {
     }
 
     pub fn delete_lines(&mut self, count: u16) {
+        if count > 0 {
+            self.mark_dirty_all();
+        }
         for _ in 0..(count.min(self.size.rows - self.pos.row)) {
             self.rows
                 .insert(usize::from(self.scroll_bottom) + 1, self.new_row());
@@ -552,6 +623,9 @@ impl Grid {
     }
 
     pub fn scroll_up(&mut self, count: u16) {
+        if count > 0 {
+            self.mark_dirty_all();
+        }
         for _ in 0..(count.min(self.size.rows - self.scroll_top)) {
             self.rows
                 .insert(usize::from(self.scroll_bottom) + 1, self.new_row());
@@ -570,6 +644,9 @@ impl Grid {
     }
 
     pub fn scroll_down(&mut self, count: u16) {
+        if count > 0 {
+            self.mark_dirty_all();
+        }
         for _ in 0..count {
             self.rows.remove(usize::from(self.scroll_bottom));
             self.rows
