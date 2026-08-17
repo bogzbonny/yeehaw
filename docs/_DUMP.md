@@ -4,6 +4,10 @@ will eventually be sifted through and included in actual docs - at which point
 this document will be deleted
 __________________________________________________
 
+10. bat preview window integration.
+     - with scroll functionality
+     - https://github.com/sharkdp/bat/blob/master/src/pretty_printer.rs
+
 01. BUG for inline TUI moving the mouse outside of the tui disables its from
     being able to click anymore - this has been the case FOR A WHILE, I suspect
     that it is getting caught in some kind of infinite loop 

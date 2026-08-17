@@ -1,9 +1,5 @@
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  DONE  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-10. bat preview window integration.
-     - with scroll functionality
-     - https://github.com/sharkdp/bat/blob/master/src/pretty_printer.rs
-
 01. There is a bug where a checkbox with a righthand label seems to prevent the
     checkbox from displaying, only the label displays even though it doesn't
     overlap the cb position
