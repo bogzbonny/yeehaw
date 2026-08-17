@@ -214,7 +214,11 @@ impl Element for SelectablePane {
 
     fn can_receive(&self, ev: &Event) -> bool {
         let attr_sel = self.get_selectability();
-        if let Selectability::Selected = attr_sel { self.pane.can_receive(ev) } else { false }
+        if let Selectability::Selected = attr_sel {
+            self.pane.can_receive(ev)
+        } else {
+            false
+        }
     }
 
     fn receive_event(&self, ctx: &Context, ev: Event) -> (bool, EventResponses) {
@@ -560,16 +564,19 @@ impl ParentPaneOfSelectable {
         None
     }
 
+    #[must_use]
     pub fn switch_to_next_widget(&self, ctx: &Context) -> EventResponses {
         let el_id = self.selected.borrow().clone();
         self.switch_between_els(ctx, el_id.clone(), self.next_ready_el_id(el_id))
     }
 
+    #[must_use]
     pub fn switch_to_prev_widget(&self, ctx: &Context) -> EventResponses {
         let el_id = self.selected.borrow().clone();
         self.switch_between_els(ctx, el_id.clone(), self.prev_ready_el_id(el_id))
     }
 
+    #[must_use]
     pub fn switch_to_specific_widget(&self, ctx: &Context, switch_to: ElementID) -> EventResponses {
         let el_id = self.selected.borrow().clone();
         self.switch_between_els(ctx, el_id.clone(), Some(switch_to))

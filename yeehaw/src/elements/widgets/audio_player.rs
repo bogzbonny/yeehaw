@@ -26,15 +26,14 @@ use {
         path::PathBuf,
         rc::Rc,
         sync::{
-            Arc,
             atomic::{AtomicBool, Ordering},
-            mpsc,
+            mpsc, Arc,
         },
     },
     symphonia::core::{
         audio::{SampleBuffer, SignalSpec},
-        codecs::CODEC_TYPE_NULL,
         codecs::DecoderOptions,
+        codecs::CODEC_TYPE_NULL,
         formats::{FormatOptions, SeekMode},
         io::MediaSourceStream,
         meta::MetadataOptions,

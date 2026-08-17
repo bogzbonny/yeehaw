@@ -431,9 +431,7 @@ impl ListBoxInner {
                     true
                 }
             }
-            _ => {
-                false
-            }
+            _ => false,
         }
     }
 
@@ -457,9 +455,7 @@ impl ListBoxInner {
                     true
                 }
             }
-            _ => {
-                false
-            }
+            _ => false,
         }
     }
 
@@ -473,7 +469,11 @@ impl ListBoxInner {
             .map(|i| entries[*i].clone())
             .collect();
 
-        let cursor_entry = self.cursor.borrow().as_ref().and_then(|i| entries.get(*i).cloned());
+        let cursor_entry = self
+            .cursor
+            .borrow()
+            .as_ref()
+            .and_then(|i| entries.get(*i).cloned());
 
         (self.selection_made_fn.borrow_mut())(ctx.clone(), selected_entries, cursor_entry)
     }
@@ -591,7 +591,7 @@ impl Element for ListBoxInner {
                 }
 
                 match true {
-                                        _ if scroll_up => {
+                    _ if scroll_up => {
                         let captured = self.cursor_up(ctx);
                         return (captured, resps);
                     }

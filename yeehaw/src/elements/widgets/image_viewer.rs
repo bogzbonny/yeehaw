@@ -95,9 +95,7 @@ impl ImageViewer {
         let mut picker = if std::env::var("YH_IMG_PROTOCOL").is_ok() {
             Picker::from_fontsize((10, 20))
         } else {
-            Picker::from_query_stdio().unwrap_or_else(|_| {
-                Picker::from_fontsize((10, 20))
-            })
+            Picker::from_query_stdio().unwrap_or_else(|_| Picker::from_fontsize((10, 20)))
         };
         let rgba = self.bg.borrow().to_rgba();
         picker.set_background_color([rgba.r, rgba.g, rgba.b, rgba.a]);

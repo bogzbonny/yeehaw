@@ -155,7 +155,9 @@ impl Element for RadioButtons {
                             return (true, resps);
                         }
                     }
-                    _ if (ke[0] == KB::KEY_UP || ke[0] == KB::KEY_K) && *self.selected.borrow() > 0 => {
+                    _ if (ke[0] == KB::KEY_UP || ke[0] == KB::KEY_K)
+                        && *self.selected.borrow() > 0 =>
+                    {
                         *self.selected.borrow_mut() -= 1;
                         let sel_i = *self.selected.borrow();
                         let sel_str = self.radios.borrow()[sel_i].clone();
